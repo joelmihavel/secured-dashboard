@@ -11,28 +11,39 @@
 -- CLEANUP (Reset for fresh seed)
 -- =============================================================================
 -- Delete in reverse order of foreign key dependencies
-DELETE FROM audit_logs WHERE id IN (
-  SELECT id FROM audit_logs WHERE entity_id::text LIKE 'aaaaaaaa%' OR entity_id::text LIKE 'bbbbbbbb%'
-);
-DELETE FROM cashback_ledger WHERE tenancy_id IN ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+DELETE FROM audit_logs WHERE entity_id::text LIKE 'aaaaaaaa%'
+  OR entity_id::text LIKE 'bbbbbbbb%'
+  OR entity_id::text LIKE 'pay11111%'
+  OR entity_id::text LIKE 'pay22222%';
+DELETE FROM cashback_ledger WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM payments WHERE tenancy_id IN ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
-DELETE FROM bank_accounts WHERE tenancy_id IN ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+DELETE FROM bank_accounts WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM identity_verifications WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM tenancies WHERE id IN ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
 DELETE FROM users WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+-- Also cleanup auth.users entries
+DELETE FROM auth.users WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 
 -- =============================================================================
--- TEST USERS
+-- TEST USERS (matches migration schema: full_name, not first_name/last_name)
 -- =============================================================================
-INSERT INTO users (id, phone, first_name, last_name, email, created_at, updated_at)
+-- First create auth.users entries (required for FK)
+INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data, aud, role)
+VALUES
+  ('11111111-1111-1111-1111-111111111111', 'tenant@flent.test', '', NOW(), NOW() - INTERVAL '30 days', NOW(), '{}', '{}', 'authenticated', 'authenticated'),
+  ('22222222-2222-2222-2222-222222222222', 'landlord@flent.test', '', NOW(), NOW() - INTERVAL '30 days', NOW(), '{}', '{}', 'authenticated', 'authenticated'),
+  ('33333333-3333-3333-3333-333333333333', 'pending@flent.test', '', NOW(), NOW() - INTERVAL '7 days', NOW(), '{}', '{}', 'authenticated', 'authenticated')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO users (id, phone, full_name, email, kyc_status, created_at, updated_at)
 VALUES
   -- Primary test tenant (fully verified)
   (
     '11111111-1111-1111-1111-111111111111',
     '+919999999901',
-    'Test',
-    'Tenant',
+    'Test Tenant',
     'tenant@flent.test',
+    'verified',
     NOW() - INTERVAL '30 days',
     NOW()
   ),
@@ -40,9 +51,9 @@ VALUES
   (
     '22222222-2222-2222-2222-222222222222',
     '+919999999902',
-    'Test',
-    'Landlord',
+    'Test Landlord',
     'landlord@flent.test',
+    'verified',
     NOW() - INTERVAL '30 days',
     NOW()
   ),
@@ -50,41 +61,44 @@ VALUES
   (
     '33333333-3333-3333-3333-333333333333',
     '+919999999903',
-    'Pending',
-    'Tenant',
+    'Pending Tenant',
     'pending@flent.test',
+    'pending',
     NOW() - INTERVAL '7 days',
     NOW()
   )
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- TEST IDENTITY VERIFICATIONS (Mobile 360 Data)
+-- TEST IDENTITY VERIFICATIONS (Cashfree Mobile 360 Data - matches migration schema)
 -- =============================================================================
 INSERT INTO identity_verifications (
-  id, user_id, phone, full_name, pan_status, aadhaar_linked,
-  verification_source, verified_at, created_at
+  id, user_id, verification_id, reference_id, status,
+  m360_full_name, m360_pan_details, m360_credit_score,
+  verified_at, created_at
 )
 VALUES
   (
-    'id111111-1111-1111-1111-111111111111',
+    '11110001-1111-1111-1111-111111111111',
     '11111111-1111-1111-1111-111111111111',
-    '+919999999901',
+    'VER_TEST_001',
+    'REF_TEST_001',
+    'SUCCESS',
     'Test Tenant',
-    'VALID',
-    true,
-    'mobile_360',
+    '[{"pan": "AAAAA1234A", "name": "Test Tenant", "type": "Individual", "aadhaar_linked": true}]'::jsonb,
+    750,
     NOW() - INTERVAL '30 days',
     NOW() - INTERVAL '30 days'
   ),
   (
-    'id222222-2222-2222-2222-222222222222',
+    '22220001-2222-2222-2222-222222222222',
     '22222222-2222-2222-2222-222222222222',
-    '+919999999902',
+    'VER_TEST_002',
+    'REF_TEST_002',
+    'SUCCESS',
     'Test Landlord',
-    'VALID',
-    true,
-    'mobile_360',
+    '[{"pan": "BBBBB5678B", "name": "Test Landlord", "type": "Individual", "aadhaar_linked": true}]'::jsonb,
+    780,
     NOW() - INTERVAL '30 days',
     NOW() - INTERVAL '30 days'
   )
@@ -155,29 +169,29 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- TEST BANK ACCOUNTS
+-- TEST BANK ACCOUNTS (matches migration schema - no tenancy_id)
 -- =============================================================================
 INSERT INTO bank_accounts (
-  id, user_id, tenancy_id, party_type,
-  account_holder_name, account_number_last4, account_number_encrypted,
-  ifsc_code, bank_name, verified, verification_method, name_at_bank,
-  created_at, verified_at
+  id, user_id, party_type,
+  account_holder_name, account_number_masked, account_number_encrypted,
+  ifsc_code, bank_name, verified, penny_drop_status, verified_account_holder_name,
+  is_primary, created_at, verified_at
 )
 VALUES
   -- Landlord's bank account (for active tenancy)
   (
-    'ba111111-1111-1111-1111-111111111111',
+    '11111111-0101-1111-1111-111111111111',
     '22222222-2222-2222-2222-222222222222',
-    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     'landlord',
     'Test Landlord',
-    '0123',
+    'XXXX1191',
     'encrypted_026291800001191', -- Test account number
     'YESB0000262',
     'Yes Bank',
     true,
-    'penny_drop',
+    'SUCCESS',
     'TEST LANDLORD',
+    true,
     NOW() - INTERVAL '25 days',
     NOW() - INTERVAL '25 days'
   )
@@ -198,7 +212,7 @@ INSERT INTO payments (
 VALUES
   -- Successful payment (last month)
   (
-    'pay11111-1111-1111-1111-111111111111',
+    '11111111-0001-1111-1111-111111111111',
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     5000000, -- ₹50,000
     0,
@@ -218,7 +232,7 @@ VALUES
   ),
   -- Pending payment (current month)
   (
-    'pay22222-2222-2222-2222-222222222222',
+    '22222222-0001-2222-2222-222222222222',
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     5000000, -- ₹50,000
     0,
@@ -239,65 +253,73 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- TEST CASHBACK LEDGER
+-- TEST CASHBACK LEDGER (matches migration schema - uses transaction_type, user_id, balance_after_paise)
 -- =============================================================================
 INSERT INTO cashback_ledger (
-  id, tenancy_id, payment_id,
-  type, amount_paise, description,
+  id, user_id, tenancy_id, payment_id,
+  transaction_type, amount_paise, balance_after_paise, description,
   created_at
 )
 VALUES
   -- Earned cashback from first payment
   (
-    'cb111111-1111-1111-1111-111111111111',
+    '11111111-0011-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    'pay11111-1111-1111-1111-111111111111',
+    '11111111-0001-1111-1111-111111111111',
     'earned',
     50000, -- ₹500 earned (1% of ₹50,000)
+    50000, -- Balance after: ₹500
     'Cashback earned on January 2024 rent',
-    NOW() - INTERVAL '25 days'
+    NOW() - INTERVAL '55 days'
   ),
-  -- Applied cashback (used in payment)
+  -- Applied cashback (used in payment) - amount is always positive, type indicates direction
   (
-    'cb222222-2222-2222-2222-222222222222',
+    '22222222-0011-2222-2222-222222222222',
+    '11111111-1111-1111-1111-111111111111',
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    'pay11111-1111-1111-1111-111111111111',
+    '11111111-0001-1111-1111-111111111111',
     'applied',
-    -50000, -- ₹500 used
+    50000, -- ₹500 used (positive, type indicates deduction)
+    0, -- Balance after: ₹0
     'Cashback applied to January 2024 rent',
     NOW() - INTERVAL '25 days'
   ),
-  -- Current balance (earned from previous month)
+  -- Current balance (earned from this month)
   (
-    'cb333333-3333-3333-3333-333333333333',
+    '33333333-0011-3333-3333-333333333333',
+    '11111111-1111-1111-1111-111111111111',
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     NULL,
     'earned',
     50000, -- ₹500 earned
-    'Cashback earned on December 2023 rent',
-    NOW() - INTERVAL '55 days'
+    50000, -- Balance after: ₹500
+    'Cashback earned on February 2024 rent',
+    NOW() - INTERVAL '5 days'
   )
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- TEST AUDIT LOGS
+-- TEST AUDIT LOGS (matches migration schema - uses user_id, action_category, status)
 -- =============================================================================
 INSERT INTO audit_logs (
-  id, entity_type, entity_id, action, actor_id, actor_type,
-  old_values, new_values, metadata,
-  created_at
+  id, user_id, actor_type, action, action_category,
+  entity_type, entity_id, old_values, new_values, details,
+  status, created_at
 )
 VALUES
   (
-    'audit1111-1111-1111-1111-111111111111',
-    'payment',
-    'pay11111-1111-1111-1111-111111111111',
-    'PAYMENT_STATUS_CHANGED',
+    '11111111-0111-1111-1111-111111111111',
     '11111111-1111-1111-1111-111111111111',
-    'user',
+    'service',
+    'PAYMENT_SUCCESS',
+    'payment',
+    'payment',
+    '11111111-0001-1111-1111-111111111111',
     '{"status": "initiated"}'::jsonb,
     '{"status": "success"}'::jsonb,
     '{"source": "payu_webhook", "ip": "127.0.0.1"}'::jsonb,
+    'success',
     NOW() - INTERVAL '25 days'
   )
 ON CONFLICT (id) DO NOTHING;

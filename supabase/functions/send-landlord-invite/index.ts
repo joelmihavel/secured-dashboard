@@ -205,7 +205,7 @@ serve(async (req: Request) => {
 
     const audit = new AuditLogger(supabase, {
       actorType: "user",
-      actorId: userId,
+      userId: userId,
       functionName: "send-landlord-invite",
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });

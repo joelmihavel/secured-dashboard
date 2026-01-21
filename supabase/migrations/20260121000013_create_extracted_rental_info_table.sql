@@ -76,10 +76,18 @@ CREATE INDEX idx_extracted_rental_info_pending ON extracted_rental_info(created_
 -- TRIGGER: Update updated_at timestamp
 -- ==============================================
 
+CREATE OR REPLACE FUNCTION update_extracted_rental_info_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER update_extracted_rental_info_timestamp
   BEFORE UPDATE ON extracted_rental_info
   FOR EACH ROW
-  EXECUTE FUNCTION update_timestamp();
+  EXECUTE FUNCTION update_extracted_rental_info_updated_at();
 
 -- ==============================================
 -- RLS POLICIES
@@ -116,3 +124,14 @@ COMMENT ON TABLE extracted_rental_info IS 'Stores rental information extracted f
 COMMENT ON COLUMN extracted_rental_info.extraction_confidence IS 'AI confidence score for the extraction (0.0 to 1.0)';
 COMMENT ON COLUMN extracted_rental_info.raw_extraction_response IS 'Full JSON response from extraction service for debugging';
 COMMENT ON COLUMN extracted_rental_info.corrections_made IS 'JSON tracking any manual corrections made by user';
+
+-- ==============================================
+-- ADD FK CONSTRAINT TO TENANCIES TABLE
+-- ==============================================
+-- This was deferred from migration 000003 to avoid circular dependency
+
+ALTER TABLE tenancies
+  ADD CONSTRAINT fk_tenancies_extracted_rental_info
+  FOREIGN KEY (extracted_rental_info_id)
+  REFERENCES extracted_rental_info(id)
+  ON DELETE SET NULL;

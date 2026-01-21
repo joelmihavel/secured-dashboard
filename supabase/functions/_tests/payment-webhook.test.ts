@@ -20,6 +20,20 @@ import {
   calculatePayUResponseHash,
 } from "./helpers/mock-payu.ts";
 
+// Helper to generate unique payment months for tests (avoid seed data conflicts)
+let testMonthCounter = 0;
+function getUniquePaymentMonth(): string {
+  testMonthCounter++;
+  // Use months in 2025 (before current date) to avoid conflicts with seed data's current month
+  const month = ((testMonthCounter % 12) + 1).toString().padStart(2, "0");
+  return `2025-${month}-01`;
+}
+
+function getUniqueDueDate(): string {
+  // Generate a due date in the past (matching the payment month year)
+  return `2025-${((testMonthCounter % 12) + 1).toString().padStart(2, "0")}-05`;
+}
+
 // =============================================================================
 // Test Suite: Payment Webhook
 // =============================================================================
@@ -60,9 +74,10 @@ describe("Payment Webhook Edge Function", () => {
 
       const response = await callEdgeFunctionForm("payment-webhook", payload);
 
-      assertEquals(response.status, 400);
+      // Function returns 401 for invalid webhook signature
+      assertEquals(response.status, 401);
       const body = await response.json();
-      assertEquals(body.error, "Invalid hash");
+      assertEquals(body.code, "INVALID_HASH");
     });
 
     it("should accept requests with valid hash", async () => {
@@ -98,7 +113,7 @@ describe("Payment Webhook Edge Function", () => {
       // Create a new payment record for this test
       const txnId = `TXN_SUCCESS_UPI_${Date.now()}`;
 
-      // Create payment in DB first
+      // Create payment in DB first (use unique month to avoid constraint violation)
       const { data: payment, error: createError } = await supabase
         .from("payments")
         .insert({
@@ -110,8 +125,8 @@ describe("Payment Webhook Edge Function", () => {
           status: "initiated",
           payment_method: "upi",
           payu_txn_id: txnId,
-          due_date: new Date().toISOString().split("T")[0],
-          payment_month: new Date().toISOString().slice(0, 7) + "-01",
+          due_date: getUniqueDueDate(),
+          payment_month: getUniquePaymentMonth(),
           idempotency_key: `idem_${txnId}`,
         })
         .select()
@@ -127,6 +142,7 @@ describe("Payment Webhook Edge Function", () => {
       const response = await callEdgeFunctionForm("payment-webhook", payload);
 
       assertEquals(response.status, 200);
+      await response.text(); // Consume response body to prevent leak
 
       // Verify payment status updated
       const { data: updatedPayment } = await supabase
@@ -146,7 +162,7 @@ describe("Payment Webhook Edge Function", () => {
     it("should process successful card payment", async () => {
       const txnId = `TXN_SUCCESS_CARD_${Date.now()}`;
 
-      // Create payment
+      // Create payment (use unique month to avoid constraint violation)
       await supabase.from("payments").insert({
         tenancy_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
         rent_amount_paise: 5000000,
@@ -156,8 +172,8 @@ describe("Payment Webhook Edge Function", () => {
         status: "initiated",
         payment_method: "card",
         payu_txn_id: txnId,
-        due_date: new Date().toISOString().split("T")[0],
-        payment_month: new Date().toISOString().slice(0, 7) + "-01",
+        due_date: getUniqueDueDate(),
+        payment_month: getUniquePaymentMonth(),
         idempotency_key: `idem_${txnId}`,
       });
 
@@ -165,6 +181,7 @@ describe("Payment Webhook Edge Function", () => {
       const response = await callEdgeFunctionForm("payment-webhook", payload);
 
       assertEquals(response.status, 200);
+      await response.text(); // Consume response body to prevent leak
 
       // Cleanup
       await supabase.from("payments").delete().eq("payu_txn_id", txnId);
@@ -189,8 +206,8 @@ describe("Payment Webhook Edge Function", () => {
         status: "initiated",
         payment_method: "upi",
         payu_txn_id: txnId,
-        due_date: new Date().toISOString().split("T")[0],
-        payment_month: new Date().toISOString().slice(0, 7) + "-01",
+        due_date: getUniqueDueDate(),
+        payment_month: getUniquePaymentMonth(),
         idempotency_key: `idem_${txnId}`,
       });
 
@@ -198,16 +215,17 @@ describe("Payment Webhook Edge Function", () => {
       const response = await callEdgeFunctionForm("payment-webhook", payload);
 
       assertEquals(response.status, 200);
+      await response.text(); // Consume response body to prevent leak
 
       // Verify payment marked as failed
       const { data: payment } = await supabase
         .from("payments")
-        .select("status, error_message")
+        .select("status, payu_error_message")
         .eq("payu_txn_id", txnId)
         .single();
 
       assertEquals(payment?.status, "failed");
-      assertExists(payment?.error_message);
+      assertExists(payment?.payu_error_message);
 
       // Cleanup
       await supabase.from("payments").delete().eq("payu_txn_id", txnId);
@@ -225,8 +243,8 @@ describe("Payment Webhook Edge Function", () => {
         status: "initiated",
         payment_method: "upi",
         payu_txn_id: txnId,
-        due_date: new Date().toISOString().split("T")[0],
-        payment_month: new Date().toISOString().slice(0, 7) + "-01",
+        due_date: getUniqueDueDate(),
+        payment_month: getUniquePaymentMonth(),
         idempotency_key: `idem_${txnId}`,
       });
 
@@ -234,6 +252,7 @@ describe("Payment Webhook Edge Function", () => {
       const response = await callEdgeFunctionForm("payment-webhook", payload);
 
       assertEquals(response.status, 200);
+      await response.text(); // Consume response body to prevent leak
 
       // Cleanup
       await supabase.from("payments").delete().eq("payu_txn_id", txnId);
@@ -257,8 +276,8 @@ describe("Payment Webhook Edge Function", () => {
         status: "initiated",
         payment_method: "upi",
         payu_txn_id: txnId,
-        due_date: new Date().toISOString().split("T")[0],
-        payment_month: new Date().toISOString().slice(0, 7) + "-01",
+        due_date: getUniqueDueDate(),
+        payment_month: getUniquePaymentMonth(),
         idempotency_key: `idem_${txnId}`,
       });
 
@@ -266,15 +285,16 @@ describe("Payment Webhook Edge Function", () => {
       const response = await callEdgeFunctionForm("payment-webhook", payload);
 
       assertEquals(response.status, 200);
+      await response.text(); // Consume response body to prevent leak
 
-      // Verify payment status is pending
+      // Verify payment status is processing (PayU "pending" maps to "processing")
       const { data: payment } = await supabase
         .from("payments")
         .select("status")
         .eq("payu_txn_id", txnId)
         .single();
 
-      assertEquals(payment?.status, "pending");
+      assertEquals(payment?.status, "processing");
 
       // Cleanup
       await supabase.from("payments").delete().eq("payu_txn_id", txnId);
@@ -299,8 +319,8 @@ describe("Payment Webhook Edge Function", () => {
         status: "initiated",
         payment_method: "upi",
         payu_txn_id: txnId,
-        due_date: new Date().toISOString().split("T")[0],
-        payment_month: new Date().toISOString().slice(0, 7) + "-01",
+        due_date: getUniqueDueDate(),
+        payment_month: getUniquePaymentMonth(),
         idempotency_key: `idem_${txnId}`,
       });
 
@@ -309,10 +329,12 @@ describe("Payment Webhook Edge Function", () => {
       // First call
       const response1 = await callEdgeFunctionForm("payment-webhook", payload);
       assertEquals(response1.status, 200);
+      await response1.text(); // Consume response body to prevent leak
 
       // Second call (duplicate)
       const response2 = await callEdgeFunctionForm("payment-webhook", payload);
       assertEquals(response2.status, 200); // Should still succeed (idempotent)
+      await response2.text(); // Consume response body to prevent leak
 
       // Verify only one status change occurred
       const { data: payment } = await supabase
@@ -342,8 +364,8 @@ describe("Payment Webhook Edge Function", () => {
         payu_txn_id: txnId,
         payu_mihpayid: "ALREADY_PROCESSED",
         paid_at: new Date().toISOString(),
-        due_date: new Date().toISOString().split("T")[0],
-        payment_month: new Date().toISOString().slice(0, 7) + "-01",
+        due_date: getUniqueDueDate(),
+        payment_month: getUniquePaymentMonth(),
         idempotency_key: `idem_${txnId}`,
       });
 
@@ -353,6 +375,7 @@ describe("Payment Webhook Edge Function", () => {
 
       // Should acknowledge but not re-process
       assertEquals(response.status, 200);
+      await response.text(); // Consume response body to prevent leak
 
       // Verify original mihpayid unchanged
       const { data: payment } = await supabase
@@ -386,8 +409,8 @@ describe("Payment Webhook Edge Function", () => {
         status: "initiated",
         payment_method: "upi",
         payu_txn_id: txnId,
-        due_date: new Date().toISOString().split("T")[0],
-        payment_month: new Date().toISOString().slice(0, 7) + "-01",
+        due_date: getUniqueDueDate(),
+        payment_month: getUniquePaymentMonth(),
         idempotency_key: `idem_${txnId}`,
       });
 
@@ -403,8 +426,9 @@ describe("Payment Webhook Edge Function", () => {
 
       const response = await callEdgeFunctionForm("payment-webhook", payload);
 
-      // Should reject due to hash mismatch
-      assertEquals(response.status, 400);
+      // Should reject due to hash mismatch (tampering invalidates the hash)
+      assertEquals(response.status, 401);
+      await response.text(); // Consume response body to prevent leak
 
       // Cleanup
       await supabase.from("payments").delete().eq("payu_txn_id", txnId);
@@ -417,6 +441,7 @@ describe("Payment Webhook Edge Function", () => {
 
       // Should return 404 or similar for unknown txn
       assertEquals(response.status >= 400, true);
+      await response.text(); // Consume response body to prevent leak
     });
   });
 
@@ -440,15 +465,16 @@ describe("Payment Webhook Edge Function", () => {
           status: "initiated",
           payment_method: "upi",
           payu_txn_id: txnId,
-          due_date: new Date().toISOString().split("T")[0],
-          payment_month: new Date().toISOString().slice(0, 7) + "-01",
+          due_date: getUniqueDueDate(),
+          payment_month: getUniquePaymentMonth(),
           idempotency_key: `idem_${txnId}`,
         })
         .select()
         .single();
 
       const payload = PayUTestScenarios.successfulUPI(txnId);
-      await callEdgeFunctionForm("payment-webhook", payload);
+      const response = await callEdgeFunctionForm("payment-webhook", payload);
+      await response.text(); // Consume response body to prevent leak
 
       // Check audit log
       const { data: auditLog } = await supabase
@@ -461,7 +487,7 @@ describe("Payment Webhook Edge Function", () => {
         .single();
 
       assertExists(auditLog);
-      assertEquals(auditLog?.action, "PAYMENT_STATUS_CHANGED");
+      assertEquals(auditLog?.action, "PAYMENT_SUCCESS");
 
       // Cleanup
       await supabase.from("audit_logs").delete().eq("entity_id", payment?.id);

@@ -22,7 +22,8 @@ export type ActionCategory =
   | "cashback"
   | "notification"
   | "system"
-  | "security";
+  | "security"
+  | "extraction";
 
 export interface AuditContext {
   userId?: string;
@@ -206,8 +207,16 @@ export const AuditActions = {
 
   // Landlord
   LANDLORD_INVITED: "LANDLORD_INVITED",
+  LANDLORD_INVITE_SENT: "LANDLORD_INVITE_SENT",
   LANDLORD_APPROVED: "LANDLORD_APPROVED",
   LANDLORD_DISPUTED: "LANDLORD_DISPUTED",
+  LANDLORD_OTP_SENT: "LANDLORD_OTP_SENT",
+  LANDLORD_OTP_VERIFIED: "LANDLORD_OTP_VERIFIED",
+
+  // Document Processing
+  DOCUMENT_UPLOADED: "DOCUMENT_UPLOADED",
+  DOCUMENT_PROCESSED: "DOCUMENT_PROCESSED",
+  DOCUMENT_PROCESSING_FAILED: "DOCUMENT_PROCESSING_FAILED",
 
   // Cashback
   CASHBACK_EARNED: "CASHBACK_EARNED",

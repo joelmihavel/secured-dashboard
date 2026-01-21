@@ -60,9 +60,9 @@ interface PayUWebhookPayload {
   hash: string;
   error?: string;
   error_Message?: string;
-  bank_ref_num?: string;
+  bank_ref_no?: string;
   bankcode?: string;
-  cardnum?: string;
+  card_no?: string;
   name_on_card?: string;
   mode?: string;
   PG_TYPE?: string;
@@ -151,10 +151,10 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
-    // Find the payment record
+    // Find the payment record with tenancy details
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
-      .select("*")
+      .select("*, tenancy:tenancies(user_id)")
       .eq("payu_txn_id", payload.txnid)
       .single();
 
@@ -162,6 +162,21 @@ serve(async (req: Request) => {
       console.error("Payment not found for txnid:", payload.txnid);
       throw new PaymentError("Payment not found", "PAYMENT_NOT_FOUND");
     }
+
+    // Idempotency check: Skip if payment is already in terminal state
+    const terminalStates = ["success", "failed"];
+    if (terminalStates.includes(payment.status)) {
+      console.log(`Payment ${payment.id} already in terminal state: ${payment.status}. Skipping update.`);
+      return jsonResponse({
+        status: "success",
+        message: "Payment already processed (idempotent)",
+        payment_id: payment.id,
+        current_status: payment.status,
+      });
+    }
+
+    // Extract user_id from the joined tenancy
+    const userId = (payment.tenancy as { user_id: string } | null)?.user_id;
 
     // Map PayU status to our status
     const newStatus = PAYU_STATUS_MAP[payload.status.toLowerCase()] ?? "failed";
@@ -176,11 +191,11 @@ serve(async (req: Request) => {
       payu_error_message: payload.error_Message,
       payment_method_details: {
         ...((payment.payment_method_details as Record<string, unknown>) ?? {}),
-        bank_ref_num: payload.bank_ref_num,
+        bank_ref_no: payload.bank_ref_no,
         bankcode: payload.bankcode,
         mode: payload.mode,
         pg_type: payload.PG_TYPE,
-        card_last4: payload.cardnum?.slice(-4),
+        card_last4: payload.card_no?.slice(-4),
         name_on_card: payload.name_on_card,
       },
     };
@@ -188,9 +203,9 @@ serve(async (req: Request) => {
     if (isSuccess) {
       updateData.paid_at = new Date().toISOString();
 
-      // Calculate cashback earned (1% of amount)
+      // Calculate cashback earned (1% of rent amount)
       const cashbackEarnedPaise = Math.min(
-        Math.floor(payment.amount_paise * CASHBACK_RATE),
+        Math.floor(payment.rent_amount_paise * CASHBACK_RATE),
         CASHBACK_MAX_PAISE
       );
       updateData.cashback_earned_paise = cashbackEarnedPaise;
@@ -207,10 +222,10 @@ serve(async (req: Request) => {
     }
 
     // If successful, credit cashback
-    if (isSuccess && (updateData.cashback_earned_paise as number) > 0) {
+    if (isSuccess && userId && (updateData.cashback_earned_paise as number) > 0) {
       await creditCashback(
         supabase,
-        payment.user_id,
+        userId,
         updateData.cashback_earned_paise as number,
         payment.id,
         payment.tenancy_id,
@@ -219,10 +234,10 @@ serve(async (req: Request) => {
     }
 
     // Send notifications
-    if (isSuccess) {
-      await sendPaymentSuccessNotification(supabase, payment, updateData.cashback_earned_paise as number);
-    } else if (newStatus === "failed") {
-      await sendPaymentFailedNotification(supabase, payment, payload.error_Message);
+    if (isSuccess && userId) {
+      await sendPaymentSuccessNotification(supabase, userId, payment, updateData.cashback_earned_paise as number);
+    } else if (newStatus === "failed" && userId) {
+      await sendPaymentFailedNotification(supabase, userId, payment, payload.error_Message);
     }
 
     // Log audit event
@@ -312,6 +327,7 @@ async function creditCashback(
 
 async function sendPaymentSuccessNotification(
   supabase: ReturnType<typeof createServiceClient>,
+  userId: string,
   payment: Record<string, unknown>,
   cashbackEarnedPaise: number
 ): Promise<void> {
@@ -319,22 +335,23 @@ async function sendPaymentSuccessNotification(
     // Get user details
     const { data: user } = await supabase
       .from("users")
-      .select("first_name, phone")
-      .eq("id", payment.user_id)
+      .select("full_name, phone")
+      .eq("id", userId)
       .single();
 
     if (!user) return;
 
-    const amountRupees = ((payment.amount_paise as number) / 100).toFixed(0);
+    const amountRupees = ((payment.rent_amount_paise as number) / 100).toFixed(0);
     const cashbackRupees = (cashbackEarnedPaise / 100).toFixed(0);
+    const firstName = user.full_name?.split(" ")[0] ?? "there";
 
     // Queue WhatsApp notification
     await supabase.from("notification_queue").insert({
-      user_id: payment.user_id,
+      user_id: userId,
       notification_type: "whatsapp",
       payload: {
         to: user.phone,
-        body: `Hi ${user.first_name}, your rent payment of ₹${amountRupees} was successful! You earned ₹${cashbackRupees} cashback. 🎉`,
+        body: `Hi ${firstName}, your rent payment of ₹${amountRupees} was successful! You earned ₹${cashbackRupees} cashback.`,
       },
       status: "pending",
     });
@@ -343,15 +360,15 @@ async function sendPaymentSuccessNotification(
     const { data: deviceTokens } = await supabase
       .from("device_tokens")
       .select("token")
-      .eq("user_id", payment.user_id);
+      .eq("user_id", userId);
 
     for (const dt of deviceTokens ?? []) {
       await supabase.from("notification_queue").insert({
-        user_id: payment.user_id,
+        user_id: userId,
         notification_type: "push",
         payload: {
           device_token: dt.token,
-          title: "Payment Successful! 🎉",
+          title: "Payment Successful!",
           body: `Rent payment of ₹${amountRupees} completed. +₹${cashbackRupees} cashback!`,
           data: {
             type: "payment_success",
@@ -368,28 +385,20 @@ async function sendPaymentSuccessNotification(
 
 async function sendPaymentFailedNotification(
   supabase: ReturnType<typeof createServiceClient>,
+  userId: string,
   payment: Record<string, unknown>,
   errorMessage?: string
 ): Promise<void> {
   try {
-    // Get user details
-    const { data: user } = await supabase
-      .from("users")
-      .select("first_name, phone")
-      .eq("id", payment.user_id)
-      .single();
-
-    if (!user) return;
-
-    // Queue push notification
+    // Get user's device tokens for push notification
     const { data: deviceTokens } = await supabase
       .from("device_tokens")
       .select("token")
-      .eq("user_id", payment.user_id);
+      .eq("user_id", userId);
 
     for (const dt of deviceTokens ?? []) {
       await supabase.from("notification_queue").insert({
-        user_id: payment.user_id,
+        user_id: userId,
         notification_type: "push",
         payload: {
           device_token: dt.token,

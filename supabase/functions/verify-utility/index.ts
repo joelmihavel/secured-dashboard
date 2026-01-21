@@ -336,8 +336,8 @@ function calculateAddressMatchScore(address1: string, address2: string): number 
   const jaccardSimilarity = intersection.length / union.size;
 
   // Also check if key identifiers match (numbers, pincode)
-  const numbers1 = s1.match(/\d+/g) ?? [];
-  const numbers2 = s2.match(/\d+/g) ?? [];
+  const numbers1: string[] = s1.match(/\d+/g) ?? [];
+  const numbers2: string[] = s2.match(/\d+/g) ?? [];
   const numberMatch = numbers1.some((n) => numbers2.includes(n)) ? 0.2 : 0;
 
   return Math.min(jaccardSimilarity + numberMatch, 1);

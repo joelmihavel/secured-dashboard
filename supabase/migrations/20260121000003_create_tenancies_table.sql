@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS tenancies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  extracted_rental_info_id UUID REFERENCES extracted_rental_info(id),
+  extracted_rental_info_id UUID, -- FK added later after extracted_rental_info table exists
 
   -- Status tracking
   status TEXT NOT NULL DEFAULT 'pending_verification'
@@ -38,6 +38,10 @@ CREATE TABLE IF NOT EXISTS tenancies (
   -- Vacancy cover
   vacancy_cover_active BOOLEAN NOT NULL DEFAULT FALSE,
   vacancy_cover_started_at TIMESTAMPTZ,
+
+  -- Cashback tracking (per-tenancy)
+  cashback_balance_paise BIGINT NOT NULL DEFAULT 0 CHECK (cashback_balance_paise >= 0),
+  lifetime_cashback_earned_paise BIGINT NOT NULL DEFAULT 0 CHECK (lifetime_cashback_earned_paise >= 0),
 
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

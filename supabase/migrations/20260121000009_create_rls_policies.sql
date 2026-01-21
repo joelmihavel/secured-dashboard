@@ -53,11 +53,17 @@ CREATE POLICY tenancies_service_all ON tenancies
 -- PAYMENTS POLICIES
 -- ==============================================
 
--- Users can view their own payments
+-- Users can view their own payments (via tenancy)
 CREATE POLICY payments_user_select ON payments
   FOR SELECT
   TO authenticated
-  USING (user_id = auth.uid());
+  USING (
+    EXISTS (
+      SELECT 1 FROM tenancies t
+      WHERE t.id = payments.tenancy_id
+        AND t.user_id = auth.uid()
+    )
+  );
 
 -- Landlords can view payments for their tenancies
 CREATE POLICY payments_landlord_select ON payments

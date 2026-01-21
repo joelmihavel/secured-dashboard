@@ -56,9 +56,8 @@ CREATE TABLE notifications (
 -- Fast lookup for user's notifications (unread first, then by date)
 CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read, created_at DESC);
 
--- Scheduled notifications
-CREATE INDEX idx_notifications_scheduled ON notifications(scheduled_for)
-  WHERE scheduled_for > NOW();
+-- Scheduled notifications (full index, queries filter by time)
+CREATE INDEX idx_notifications_scheduled ON notifications(scheduled_for);
 
 -- Find notifications for a specific entity
 CREATE INDEX idx_notifications_entity ON notifications(related_entity_type, related_entity_id)

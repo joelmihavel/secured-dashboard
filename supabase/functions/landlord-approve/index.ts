@@ -157,7 +157,8 @@ async function handleGetTenancyDetails(
   });
 
   // Return sanitized details
-  const user = tenancy.users as { first_name: string; last_name: string; phone: string } | null;
+  // Note: Supabase returns the joined user as an object (not array) for single foreign key relations
+  const user = (tenancy as any).users as { first_name: string; last_name: string; phone: string } | null;
 
   return jsonResponse({
     success: true,
@@ -411,11 +412,11 @@ async function handleApprove(
 
   // Validate required fields for approval
   if (!account_holder_name || !account_number || !ifsc_code) {
-    throw new ValidationError("Bank account details are required for approval", {
-      account_holder_name: account_holder_name ? undefined : "Required",
-      account_number: account_number ? undefined : "Required",
-      ifsc_code: ifsc_code ? undefined : "Required",
-    });
+    const fields: Record<string, string> = {};
+    if (!account_holder_name) fields.account_holder_name = "Required";
+    if (!account_number) fields.account_number = "Required";
+    if (!ifsc_code) fields.ifsc_code = "Required";
+    throw new ValidationError("Bank account details are required for approval", fields);
   }
 
   if (!isValidIfsc(ifsc_code)) {

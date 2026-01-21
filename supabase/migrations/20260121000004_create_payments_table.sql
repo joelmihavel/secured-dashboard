@@ -4,28 +4,29 @@
 CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenancy_id UUID NOT NULL REFERENCES tenancies(id) ON DELETE RESTRICT,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
 
   -- Amount breakdown (all in paise: 1 INR = 100 paise)
-  amount_paise BIGINT NOT NULL CHECK (amount_paise > 0),
+  rent_amount_paise BIGINT NOT NULL CHECK (rent_amount_paise > 0),
   pg_fee_paise BIGINT NOT NULL DEFAULT 0 CHECK (pg_fee_paise >= 0),
   cashback_applied_paise BIGINT NOT NULL DEFAULT 0 CHECK (cashback_applied_paise >= 0),
   cashback_earned_paise BIGINT NOT NULL DEFAULT 0 CHECK (cashback_earned_paise >= 0),
-  total_paid_paise BIGINT GENERATED ALWAYS AS (amount_paise + pg_fee_paise - cashback_applied_paise) STORED,
+  total_amount_paise BIGINT NOT NULL CHECK (total_amount_paise > 0),
 
   -- Payment status
-  status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'processing', 'success', 'failed', 'refunded', 'partially_refunded')),
+  status TEXT NOT NULL DEFAULT 'initiated'
+    CHECK (status IN ('initiated', 'processing', 'success', 'failed', 'refunded', 'partially_refunded')),
 
   -- PayU transaction details
+  payment_method TEXT CHECK (payment_method IN ('upi', 'upi_intent', 'upi_collect', 'card', 'netbanking', 'wallet', 'CC', 'NB')),
   payu_txn_id TEXT,
   payu_mihpayid TEXT UNIQUE, -- PayU's unique transaction ID
+  payu_bank_ref_num TEXT,
   payu_status TEXT, -- Raw status from PayU
   payu_error_code TEXT,
   payu_error_message TEXT,
+  error_message TEXT, -- Generic error message
 
   -- Payment method details
-  payment_method TEXT CHECK (payment_method IN ('upi', 'upi_intent', 'upi_collect', 'card', 'netbanking', 'wallet')),
   payment_method_details JSONB, -- Bank name, UPI app, card type, etc.
 
   -- Settlement details
@@ -37,8 +38,9 @@ CREATE TABLE IF NOT EXISTS payments (
   -- Idempotency
   idempotency_key TEXT UNIQUE NOT NULL,
 
-  -- For which month's rent
-  rent_month DATE NOT NULL, -- First day of the rent month
+  -- For which month's rent and due date
+  due_date DATE NOT NULL,
+  payment_month DATE NOT NULL, -- First day of the rent month
 
   -- Refund tracking
   refund_amount_paise BIGINT DEFAULT 0 CHECK (refund_amount_paise >= 0),
@@ -60,11 +62,10 @@ CREATE TABLE IF NOT EXISTS payments (
 
 -- Indexes for common queries
 CREATE INDEX idx_payments_tenancy_id ON payments(tenancy_id);
-CREATE INDEX idx_payments_user_id ON payments(user_id);
 CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_payments_payu_mihpayid ON payments(payu_mihpayid) WHERE payu_mihpayid IS NOT NULL;
 CREATE INDEX idx_payments_idempotency_key ON payments(idempotency_key);
-CREATE INDEX idx_payments_rent_month ON payments(tenancy_id, rent_month);
+CREATE INDEX idx_payments_payment_month ON payments(tenancy_id, payment_month);
 CREATE INDEX idx_payments_settlement_status ON payments(settlement_status) WHERE status = 'success';
 CREATE INDEX idx_payments_created_at ON payments(created_at DESC);
 
@@ -84,12 +85,13 @@ CREATE TRIGGER trigger_payments_updated_at
 
 -- Prevent duplicate payments for same month
 CREATE UNIQUE INDEX idx_payments_unique_month
-  ON payments(tenancy_id, rent_month)
-  WHERE status IN ('pending', 'processing', 'success');
+  ON payments(tenancy_id, payment_month)
+  WHERE status IN ('initiated', 'processing', 'success');
 
 COMMENT ON TABLE payments IS 'All rent payment transactions with full audit trail';
-COMMENT ON COLUMN payments.amount_paise IS 'Base rent amount in paise (before fees, after cashback deduction from rent)';
+COMMENT ON COLUMN payments.rent_amount_paise IS 'Base rent amount in paise';
 COMMENT ON COLUMN payments.pg_fee_paise IS 'Payment gateway fee charged to tenant in paise';
 COMMENT ON COLUMN payments.cashback_applied_paise IS 'Cashback amount deducted from this payment in paise';
-COMMENT ON COLUMN payments.cashback_earned_paise IS 'Cashback earned from this payment (1% of amount_paise)';
-COMMENT ON COLUMN payments.rent_month IS 'First day of the month this payment is for';
+COMMENT ON COLUMN payments.cashback_earned_paise IS 'Cashback earned from this payment (1% of rent_amount_paise)';
+COMMENT ON COLUMN payments.total_amount_paise IS 'Total amount charged (rent + fees - cashback applied)';
+COMMENT ON COLUMN payments.payment_month IS 'First day of the month this payment is for';

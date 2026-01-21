@@ -55,11 +55,11 @@ enable_signup = true
 enable_confirmations = false
 
 [auth.sms.twilio]
-enabled = true
-# Set these in .env.local
-# account_sid = ""
-# message_service_sid = ""
-# auth_token = ""
+enabled = false
+# Required fields (even when disabled)
+account_sid = "PLACEHOLDER_NOT_USED"
+message_service_sid = "PLACEHOLDER_NOT_USED"
+auth_token = "env(TWILIO_AUTH_TOKEN)"
 
 [auth.external.apple]
 enabled = false

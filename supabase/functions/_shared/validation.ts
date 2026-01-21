@@ -37,7 +37,7 @@ export type ValidationSchema = Record<string, FieldValidation>;
  * Validates an object against a schema.
  * Throws ValidationError if validation fails.
  */
-export function validateSchema<T extends Record<string, unknown>>(
+export function validateSchema<T>(
   data: unknown,
   schema: ValidationSchema,
   allowExtra = false
@@ -172,7 +172,8 @@ export function isValidPan(pan: string): boolean {
 /**
  * Validates a UUID.
  */
-export function isValidUuid(uuid: string): boolean {
+export function isValidUuid(uuid: unknown): boolean {
+  if (typeof uuid !== "string") return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     uuid
   );

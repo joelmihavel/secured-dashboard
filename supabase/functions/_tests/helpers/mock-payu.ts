@@ -5,6 +5,8 @@
  * Reference: https://devguide.payu.in/
  */
 
+import { createHash } from "node:crypto";
+
 // ==============================================
 // SANDBOX CREDENTIALS (Safe for testing)
 // ==============================================
@@ -55,7 +57,7 @@ interface PayUWebhookPayload {
   phone: string;
   hash: string;
   mode: string;
-  bank_ref_num?: string;
+  bank_ref_no?: string;
   error_Message?: string;
   udf1?: string;
   udf2?: string;
@@ -83,7 +85,7 @@ export function createMockPayUWebhook(
     phone: "9999999901",
     hash: "", // Will be calculated
     mode: "UPI",
-    bank_ref_num: `REF_${Date.now()}`,
+    bank_ref_no: `REF_${Date.now()}`,
     udf1: "",
     udf2: "",
     udf3: "",
@@ -202,26 +204,10 @@ export function calculatePayUVerifyHash(txnid: string): string {
 // ==============================================
 
 /**
- * Synchronous SHA-512 hash (for Deno).
+ * Synchronous SHA-512 hash using Node.js crypto (works in Deno).
  */
 function sha512Sync(str: string): string {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-
-  // Use Web Crypto API
-  const hashBuffer = new Uint8Array(64);
-  const hash = crypto.subtle.digestSync
-    ? crypto.subtle.digestSync("SHA-512", data)
-    : null;
-
-  if (hash) {
-    return Array.from(new Uint8Array(hash))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  // Fallback for async-only environments (use with await)
-  throw new Error("Use calculatePayUHashAsync for this environment");
+  return createHash("sha512").update(str).digest("hex");
 }
 
 /**
@@ -266,7 +252,7 @@ export const PayUTestScenarios = {
       txnid,
       status: "success",
       mode: "UPI",
-      bank_ref_num: `UPI_${Date.now()}`,
+      bank_ref_no: `UPI_${Date.now()}`,
     }),
 
   /** Successful card payment */
@@ -275,7 +261,7 @@ export const PayUTestScenarios = {
       txnid,
       status: "success",
       mode: "CC",
-      bank_ref_num: `CARD_${Date.now()}`,
+      bank_ref_no: `CARD_${Date.now()}`,
     }),
 
   /** Failed payment (insufficient funds) */

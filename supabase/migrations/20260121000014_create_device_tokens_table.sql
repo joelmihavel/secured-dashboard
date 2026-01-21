@@ -52,7 +52,7 @@ CREATE INDEX idx_device_tokens_last_used ON device_tokens(last_used_at)
 CREATE TRIGGER update_device_tokens_timestamp
   BEFORE UPDATE ON device_tokens
   FOR EACH ROW
-  EXECUTE FUNCTION update_timestamp();
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- ==============================================
 -- FUNCTION: Register or update device token

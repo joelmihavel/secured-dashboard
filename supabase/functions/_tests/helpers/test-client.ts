@@ -1,8 +1,9 @@
 /**
  * Flent Secured v2 - Test Client Utilities
+ * @version 1.1.0
  *
  * Provides helper functions for Edge Function testing.
- * Uses local Supabase instance - NEVER connects to production.
+ * Uses local Supabase instance or preview branches - NEVER connects to production.
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -15,11 +16,17 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "http://127.0.0.1:54321";
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
 
-// Safety check: NEVER connect to production - no bypass allowed
-if (SUPABASE_URL.includes("supabase.co") || SUPABASE_URL.includes("supabase.in")) {
+// Production project ID - tests NEVER run against this
+const PRODUCTION_PROJECT_ID = "uowjtrzmszuaiokqxgir";
+
+// Safety check: Block production, allow local and preview branches
+const isLocalUrl = SUPABASE_URL.includes("127.0.0.1") || SUPABASE_URL.includes("localhost");
+const isProductionUrl = SUPABASE_URL.includes(PRODUCTION_PROJECT_ID);
+
+if (!isLocalUrl && isProductionUrl) {
   throw new Error(
     "SAFETY: Tests cannot run against production Supabase. " +
-    "Use local instance (http://127.0.0.1:54321) or preview branch."
+    "Use local instance (http://127.0.0.1:54321) or a preview branch."
   );
 }
 
@@ -102,8 +109,8 @@ export const TEST_TENANCIES = {
 
 /** Standard test payment IDs (match seed.sql) */
 export const TEST_PAYMENTS = {
-  SUCCESS: "pay11111-1111-1111-1111-111111111111",
-  PENDING: "pay22222-2222-2222-2222-222222222222",
+  SUCCESS: "11111111-0001-1111-1111-111111111111",
+  PENDING: "22222222-0001-2222-2222-222222222222",
 } as const;
 
 // ==============================================
@@ -146,13 +153,23 @@ export async function callEdgeFunction(
 
 /**
  * Calls an Edge Function with form-urlencoded body (for webhooks).
+ * Accepts any object - converts values to strings and filters out undefined.
  */
 export async function callEdgeFunctionForm(
   functionName: string,
-  formData: Record<string, string>,
+  // deno-lint-ignore no-explicit-any
+  formData: Record<string, any>,
   headers: Record<string, string> = {}
 ): Promise<Response> {
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
+
+  // Convert to string record, filtering out undefined values
+  const cleanData: Record<string, string> = {};
+  for (const [key, value] of Object.entries(formData)) {
+    if (value !== undefined && value !== null) {
+      cleanData[key] = String(value);
+    }
+  }
 
   return fetch(url, {
     method: "POST",
@@ -160,7 +177,7 @@ export async function callEdgeFunctionForm(
       "Content-Type": "application/x-www-form-urlencoded",
       ...headers,
     },
-    body: new URLSearchParams(formData),
+    body: new URLSearchParams(cleanData),
   });
 }
 
