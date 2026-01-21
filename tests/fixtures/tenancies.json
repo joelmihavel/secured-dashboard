@@ -1,0 +1,160 @@
+{
+  "_comment": "Flent Secured v2 - Tenancy Test Fixtures",
+  "_version": "1.0.0",
+  "_description": "Test data for tenancy-related tests. IDs match seed.sql.",
+
+  "test_tenancies": {
+    "active_verified": {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "property": {
+        "address": "123 Test Street, Apartment 4B",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400001"
+      },
+      "monthly_rent_paise": 5000000,
+      "rent_due_day": 5,
+      "lease_start_date": "2024-01-01",
+      "lease_end_date": "2025-01-01",
+      "landlord": {
+        "name": "Test Landlord",
+        "phone": "+919999999902",
+        "email": "landlord@flent.test"
+      },
+      "status": "active",
+      "verifications": {
+        "bank_verified": true,
+        "utility_verified": true,
+        "landlord_approved": true
+      },
+      "cashback": {
+        "balance_paise": 50000,
+        "lifetime_earned_paise": 150000
+      }
+    },
+    "pending_verification": {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "user_id": "33333333-3333-3333-3333-333333333333",
+      "property": {
+        "address": "456 Another Street, Floor 2",
+        "city": "Delhi",
+        "state": "Delhi",
+        "pincode": "110001"
+      },
+      "monthly_rent_paise": 4500000,
+      "rent_due_day": 10,
+      "lease_start_date": "2024-06-01",
+      "lease_end_date": "2025-06-01",
+      "landlord": {
+        "name": "Another Landlord",
+        "phone": "+919999999904",
+        "email": null
+      },
+      "status": "pending_verification",
+      "verifications": {
+        "bank_verified": false,
+        "utility_verified": false,
+        "landlord_approved": false
+      },
+      "cashback": {
+        "balance_paise": 0,
+        "lifetime_earned_paise": 0
+      }
+    }
+  },
+
+  "test_users": {
+    "verified_tenant": {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "phone": "+919999999901",
+      "first_name": "Test",
+      "last_name": "Tenant",
+      "email": "tenant@flent.test"
+    },
+    "landlord": {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "phone": "+919999999902",
+      "first_name": "Test",
+      "last_name": "Landlord",
+      "email": "landlord@flent.test"
+    },
+    "pending_tenant": {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "phone": "+919999999903",
+      "first_name": "Pending",
+      "last_name": "Tenant",
+      "email": "pending@flent.test"
+    }
+  },
+
+  "test_bank_accounts": {
+    "landlord_verified": {
+      "id": "ba111111-1111-1111-1111-111111111111",
+      "user_id": "22222222-2222-2222-2222-222222222222",
+      "tenancy_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "party_type": "landlord",
+      "account_holder_name": "Test Landlord",
+      "account_number_last4": "0123",
+      "ifsc_code": "YESB0000262",
+      "bank_name": "Yes Bank",
+      "verified": true,
+      "verification_method": "penny_drop",
+      "name_at_bank": "TEST LANDLORD"
+    }
+  },
+
+  "tenancy_statuses": {
+    "pending_verification": {
+      "code": "pending_verification",
+      "display_name": "Pending Verification",
+      "can_pay": false,
+      "description": "Complete verification steps to enable payments"
+    },
+    "active": {
+      "code": "active",
+      "display_name": "Active",
+      "can_pay": true,
+      "description": "Tenancy is active and payments can be made"
+    },
+    "payment_pending": {
+      "code": "payment_pending",
+      "display_name": "Payment Due",
+      "can_pay": true,
+      "description": "A payment is due this month"
+    },
+    "expired": {
+      "code": "expired",
+      "display_name": "Lease Expired",
+      "can_pay": false,
+      "description": "Lease has ended, please renew or add new tenancy"
+    }
+  },
+
+  "verification_steps": {
+    "mobile_360": {
+      "name": "Identity Verification",
+      "required": true,
+      "auto_complete": true,
+      "description": "Verified via Mobile 360 during signup"
+    },
+    "bank_account": {
+      "name": "Landlord Bank Account",
+      "required": true,
+      "auto_complete": false,
+      "description": "Add landlord's bank details for rent transfer"
+    },
+    "utility_bill": {
+      "name": "Utility Bill Verification",
+      "required": false,
+      "auto_complete": false,
+      "description": "Required for cashback eligibility"
+    },
+    "landlord_approval": {
+      "name": "Landlord Approval",
+      "required": false,
+      "auto_complete": false,
+      "description": "Landlord confirms tenancy details"
+    }
+  }
+}

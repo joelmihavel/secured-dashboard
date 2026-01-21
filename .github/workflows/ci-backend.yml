@@ -1,0 +1,224 @@
+# =============================================================================
+# Flent Secured v2 - Backend CI/CD Pipeline
+# =============================================================================
+# Triggers: Pull requests to main branch affecting backend code
+# Jobs: Database tests, Edge Function tests, Integration tests, Claude review
+# =============================================================================
+
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'tests/**'
+      - '.github/workflows/ci-backend.yml'
+
+env:
+  SUPABASE_PROJECT_ID: uowjtrzmszuaiokqxgir
+  DENO_VERSION: v1.x
+
+jobs:
+  # ===========================================================================
+  # Setup: Create Supabase preview branch
+  # ===========================================================================
+  setup-branch:
+    name: Setup Supabase Branch
+    runs-on: ubuntu-latest
+    outputs:
+      api_url: ${{ steps.branch.outputs.api_url }}
+      anon_key: ${{ steps.branch.outputs.anon_key }}
+      service_key: ${{ steps.branch.outputs.service_role_key }}
+      db_host: ${{ steps.branch.outputs.db_host }}
+      db_port: ${{ steps.branch.outputs.db_port }}
+      db_password: ${{ steps.branch.outputs.db_password }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Create Preview Branch
+        id: branch
+        uses: 0xbigboss/supabase-branch-gh-action@v1
+        with:
+          supabase-access-token: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          supabase-project-id: ${{ env.SUPABASE_PROJECT_ID }}
+          git-branch: ${{ github.head_ref }}
+          wait-for-migrations: true
+          timeout: 180
+
+  # ===========================================================================
+  # Database Tests (pgTAP)
+  # ===========================================================================
+  db-tests:
+    name: Database Tests
+    needs: setup-branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+
+      - name: Run pgTAP Tests
+        run: |
+          supabase test db \
+            --db-url "postgresql://postgres:${{ needs.setup-branch.outputs.db_password }}@${{ needs.setup-branch.outputs.db_host }}:${{ needs.setup-branch.outputs.db_port }}/postgres"
+
+  # ===========================================================================
+  # Edge Function Unit Tests
+  # ===========================================================================
+  function-tests:
+    name: Edge Function Tests
+    needs: setup-branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Run Unit Tests
+        run: |
+          deno test supabase/functions/_tests/ \
+            --allow-env \
+            --allow-net \
+            --allow-read
+        env:
+          SUPABASE_URL: ${{ needs.setup-branch.outputs.api_url }}
+          SUPABASE_ANON_KEY: ${{ needs.setup-branch.outputs.anon_key }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ needs.setup-branch.outputs.service_key }}
+
+      - name: Generate Coverage Report
+        run: |
+          deno test supabase/functions/_tests/ \
+            --allow-env \
+            --allow-net \
+            --allow-read \
+            --coverage=./coverage
+          deno coverage ./coverage --lcov > coverage.lcov
+        continue-on-error: true
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.lcov
+          flags: edge-functions
+        continue-on-error: true
+
+  # ===========================================================================
+  # Integration Tests (Sandbox APIs)
+  # ===========================================================================
+  integration-tests:
+    name: Integration Tests
+    needs: setup-branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Run Sandbox Integration Tests
+        run: |
+          deno test tests/sandbox/ --allow-all
+        env:
+          SUPABASE_URL: ${{ needs.setup-branch.outputs.api_url }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ needs.setup-branch.outputs.service_key }}
+          # PayU Sandbox
+          PAYU_MERCHANT_KEY: ${{ secrets.PAYU_SANDBOX_KEY }}
+          PAYU_MERCHANT_SALT: ${{ secrets.PAYU_SANDBOX_SALT }}
+          PAYU_BASE_URL: https://sandboxsecure.payu.in
+          # Cashfree Sandbox
+          CASHFREE_APP_ID: ${{ secrets.CASHFREE_SANDBOX_ID }}
+          CASHFREE_SECRET_KEY: ${{ secrets.CASHFREE_SANDBOX_SECRET }}
+          CASHFREE_BASE_URL: https://sandbox.cashfree.com/verification
+
+  # ===========================================================================
+  # Claude Code Agentic Review
+  # ===========================================================================
+  claude-review:
+    name: Claude Code Review
+    needs: [db-tests, function-tests, integration-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            ## CONTEXT MANAGEMENT PROTOCOL
+
+            BEFORE ANY ACTION:
+            1. Activate Serena: mcp__serena__activate_project("Flent Secured")
+            2. Read memories: test_context, payment_flow_decisions, auth_flow_analysis
+            3. Check Mindbase for recent test sessions
+
+            DURING TESTING:
+            4. Log significant findings to Mindbase
+            5. Track code paths explored
+
+            AFTER TESTING:
+            6. Write memory with test results summary
+            7. Update test_context with new learnings
+
+            ## TASKS
+
+            1. **Analyze Changed Files**
+               - Review all files in this PR
+               - Identify test coverage gaps
+
+            2. **Run Tests**
+               - Execute: deno test supabase/functions/_tests/ --allow-all
+               - Check for failures
+
+            3. **Generate Missing Tests**
+               - If coverage < 80%, write new tests
+               - Payment functions MUST have 100% coverage
+
+            4. **Security Check**
+               - No hardcoded secrets
+               - PayU hash validation tested
+               - SQL injection prevention verified
+               - Input validation present
+
+            5. **Post Results**
+               - Comment on PR with coverage report
+               - List any issues found
+
+            ## COMMIT FORMAT
+            If generating tests: "test: add tests for [function name]"
+
+          claude_args: |
+            --max-turns 15
+            --allowedTools "Read,Write,Edit,Bash(deno test:*),Bash(git:*),Bash(gh pr comment:*)"
+
+  # ===========================================================================
+  # Cleanup Preview Branch (on PR close)
+  # ===========================================================================
+  cleanup:
+    name: Cleanup
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Preview Branch
+        run: |
+          echo "Preview branch will be automatically deleted by Supabase"

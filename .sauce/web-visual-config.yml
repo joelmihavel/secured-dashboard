@@ -1,0 +1,112 @@
+# =============================================================================
+# Flent Secured v2 - Sauce Labs Web Visual Testing Configuration
+# =============================================================================
+# Reference: https://docs.saucelabs.com/visual-testing/
+# =============================================================================
+
+apiVersion: v1alpha
+kind: playwright
+sauce:
+  region: us-west-1
+  concurrency: 5
+  metadata:
+    tags:
+      - flent-secured
+      - web
+      - landlord-portal
+      - visual-testing
+    build: ${CI_BUILD_ID:-local}
+
+# =============================================================================
+# Playwright Settings
+# =============================================================================
+playwright:
+  version: package.json
+  configFile: web/playwright.config.ts
+
+# =============================================================================
+# Test Suites
+# =============================================================================
+suites:
+  # ---------------------------------------------------------------------------
+  # Visual Regression - Desktop
+  # ---------------------------------------------------------------------------
+  - name: visual-desktop
+    platformName: Windows 11
+    testMatch: ['**/visual/**/*.spec.ts']
+    screenResolution: 1920x1080
+    env:
+      SAUCE_VISUAL: "true"
+      BASE_URL: "http://localhost:3000"
+
+  # ---------------------------------------------------------------------------
+  # Visual Regression - Tablet
+  # ---------------------------------------------------------------------------
+  - name: visual-tablet
+    platformName: macOS 13
+    testMatch: ['**/visual/**/*.spec.ts']
+    screenResolution: 1024x768
+    env:
+      SAUCE_VISUAL: "true"
+      VIEWPORT_WIDTH: "1024"
+      VIEWPORT_HEIGHT: "768"
+
+  # ---------------------------------------------------------------------------
+  # Landlord Dashboard Tests
+  # ---------------------------------------------------------------------------
+  - name: landlord-dashboard
+    platformName: Windows 11
+    testMatch: ['**/e2e/landlord/**/*.spec.ts']
+    screenResolution: 1920x1080
+    env:
+      TEST_EMAIL: "landlord@flent.test"
+      BASE_URL: "http://localhost:3000"
+
+  # ---------------------------------------------------------------------------
+  # Cross-Browser Testing
+  # ---------------------------------------------------------------------------
+  - name: cross-browser-chrome
+    platformName: Windows 11
+    testMatch: ['**/e2e/**/*.spec.ts']
+    params:
+      browserName: chromium
+    env:
+      BASE_URL: "http://localhost:3000"
+
+  - name: cross-browser-firefox
+    platformName: Windows 11
+    testMatch: ['**/e2e/**/*.spec.ts']
+    params:
+      browserName: firefox
+    env:
+      BASE_URL: "http://localhost:3000"
+
+  - name: cross-browser-safari
+    platformName: macOS 13
+    testMatch: ['**/e2e/**/*.spec.ts']
+    params:
+      browserName: webkit
+    env:
+      BASE_URL: "http://localhost:3000"
+
+# =============================================================================
+# Artifacts
+# =============================================================================
+artifacts:
+  download:
+    when: always
+    match:
+      - "*.xml"
+      - "*.json"
+      - "*.png"
+      - "trace.zip"
+    directory: ./test-results/sauce-labs-web/
+
+# =============================================================================
+# Reporters
+# =============================================================================
+reporters:
+  junit:
+    enabled: true
+  json:
+    enabled: true

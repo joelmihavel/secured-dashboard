@@ -1,0 +1,215 @@
+# =============================================================================
+# Flent Secured v2 - iOS CI/CD Pipeline
+# =============================================================================
+# Triggers: Pull requests to main branch affecting iOS code
+# Jobs: Build, Unit Tests, UI Tests, Sauce Labs visual testing
+# =============================================================================
+
+name: iOS CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ci-ios.yml'
+
+env:
+  XCODE_VERSION: '15.2'
+  IOS_SIMULATOR: 'iPhone 15 Pro'
+  IOS_VERSION: '17.2'
+
+jobs:
+  # ===========================================================================
+  # Build & Unit Tests
+  # ===========================================================================
+  build-test:
+    name: Build & Unit Tests
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - name: Cache SPM Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build for Testing
+        run: |
+          xcodebuild build-for-testing \
+            -project ios/FlentSecured.xcodeproj \
+            -scheme FlentSecured \
+            -destination "platform=iOS Simulator,name=${{ env.IOS_SIMULATOR }},OS=${{ env.IOS_VERSION }}" \
+            -derivedDataPath DerivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Run Unit Tests
+        run: |
+          xcodebuild test-without-building \
+            -project ios/FlentSecured.xcodeproj \
+            -scheme FlentSecured \
+            -destination "platform=iOS Simulator,name=${{ env.IOS_SIMULATOR }},OS=${{ env.IOS_VERSION }}" \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults.xcresult \
+            -enableCodeCoverage YES
+
+      - name: Generate Coverage Report
+        run: |
+          xcrun xccov view --report --json TestResults.xcresult > coverage.json
+        continue-on-error: true
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.json
+          flags: ios-unit
+        continue-on-error: true
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: TestResults.xcresult
+
+  # ===========================================================================
+  # UI Tests (Local Simulator)
+  # ===========================================================================
+  ui-tests:
+    name: UI Tests
+    runs-on: macos-14
+    needs: build-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - name: Restore SPM Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/**/Package.resolved') }}
+
+      - name: Run UI Tests
+        run: |
+          xcodebuild test \
+            -project ios/FlentSecured.xcodeproj \
+            -scheme FlentSecuredUITests \
+            -destination "platform=iOS Simulator,name=${{ env.IOS_SIMULATOR }},OS=${{ env.IOS_VERSION }}" \
+            -resultBundlePath UITestResults.xcresult
+        env:
+          # Use test credentials
+          TEST_PHONE: "9999999999"
+          TEST_OTP: "000000"
+          SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+
+      - name: Upload UI Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-results
+          path: UITestResults.xcresult
+
+  # ===========================================================================
+  # Sauce Labs Visual Testing (on merge to main)
+  # ===========================================================================
+  sauce-labs-visual:
+    name: Sauce Labs Visual Tests
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    needs: [build-test, ui-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup saucectl
+        uses: saucelabs/saucectl-run-action@v4
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+        with:
+          config-file: .sauce/xcuitest-config.yml
+          select-suite: visual-regression
+
+  # ===========================================================================
+  # SwiftLint Check
+  # ===========================================================================
+  lint:
+    name: SwiftLint
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run SwiftLint
+        run: |
+          brew install swiftlint
+          cd ios && swiftlint --reporter github-actions-logging
+
+  # ===========================================================================
+  # Claude Code Review (iOS Specific)
+  # ===========================================================================
+  claude-review:
+    name: Claude iOS Review
+    needs: [build-test, ui-tests, lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Claude iOS Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            ## iOS CODE REVIEW FOCUS
+
+            1. **SwiftUI Best Practices**
+               - Proper use of @State, @Binding, @ObservedObject
+               - View composition and reusability
+               - Memory management (no retain cycles)
+
+            2. **Security Check**
+               - No hardcoded API keys or secrets
+               - Keychain usage for sensitive data
+               - Certificate pinning if networking
+
+            3. **Payment Flow Review**
+               - PayU integration correctness
+               - Hash validation on callbacks
+               - Error handling completeness
+
+            4. **Accessibility**
+               - VoiceOver labels present
+               - Dynamic Type support
+               - Color contrast compliance
+
+            5. **Performance**
+               - No main thread blocking
+               - Efficient list rendering
+               - Image caching
+
+            ## OUTPUT
+            Comment on PR with findings organized by category.
+
+          claude_args: |
+            --max-turns 10
+            --allowedTools "Read,Grep,Glob,Bash(swift:*)"

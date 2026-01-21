@@ -1,0 +1,349 @@
+/**
+ * Flent Secured v2 - Notifications Helper
+ *
+ * Unified interface for sending notifications via:
+ * - Email (Resend)
+ * - Twilio (WhatsApp, SMS)
+ * - APNs (Push notifications)
+ */
+
+import { ExternalServiceError } from "./errors.ts";
+
+// ==============================================
+// CONFIGURATION
+// ==============================================
+
+// Email (Resend)
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const EMAIL_FROM_ADDRESS = Deno.env.get("EMAIL_FROM_ADDRESS") ?? "Flent Secured <noreply@flentsecured.com>";
+
+// Twilio
+const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
+const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+const TWILIO_WHATSAPP_NUMBER = Deno.env.get("TWILIO_WHATSAPP_NUMBER") ?? "whatsapp:+14155238886";
+const TWILIO_SMS_NUMBER = Deno.env.get("TWILIO_SMS_NUMBER");
+
+// ==============================================
+// TYPES
+// ==============================================
+
+export interface EmailMessage {
+  to: string | string[]; // Email address(es)
+  subject: string;
+  html?: string; // HTML body
+  text?: string; // Plain text body (fallback)
+  replyTo?: string;
+  cc?: string[];
+  bcc?: string[];
+}
+
+export interface WhatsAppMessage {
+  to: string; // Phone number with country code
+  template?: string; // WhatsApp template name
+  templateParams?: string[]; // Template parameters
+  body?: string; // For non-template messages (sandbox only)
+}
+
+export interface SmsMessage {
+  to: string;
+  body: string;
+}
+
+export interface PushNotification {
+  deviceToken: string;
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+  badge?: number;
+  sound?: string;
+}
+
+export interface NotificationResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+// ==============================================
+// EMAIL (RESEND)
+// ==============================================
+
+/**
+ * Sends an email via Resend.
+ */
+export async function sendEmail(message: EmailMessage): Promise<NotificationResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("Resend API key not configured");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM_ADDRESS,
+        to: Array.isArray(message.to) ? message.to : [message.to],
+        subject: message.subject,
+        html: message.html,
+        text: message.text,
+        reply_to: message.replyTo,
+        cc: message.cc,
+        bcc: message.bcc,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Resend API error:", data);
+      return {
+        success: false,
+        error: data.message ?? `HTTP ${response.status}`,
+      };
+    }
+
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error("Resend request failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// ==============================================
+// TWILIO BASE
+// ==============================================
+
+async function twilioRequest(
+  endpoint: string,
+  body: Record<string, string>
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+    console.warn("Twilio credentials not configured");
+    return { success: false, error: "Twilio not configured" };
+  }
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}${endpoint}`;
+  const auth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(body),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Twilio API error:", data);
+      return {
+        success: false,
+        error: data.message ?? `HTTP ${response.status}`,
+      };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("Twilio request failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// ==============================================
+// WHATSAPP
+// ==============================================
+
+/**
+ * Sends a WhatsApp message via Twilio.
+ */
+export async function sendWhatsApp(
+  message: WhatsAppMessage
+): Promise<NotificationResult> {
+  // Format phone number for WhatsApp
+  const to = message.to.startsWith("whatsapp:")
+    ? message.to
+    : `whatsapp:+91${message.to.replace(/^\+?91/, "")}`;
+
+  const body: Record<string, string> = {
+    From: TWILIO_WHATSAPP_NUMBER,
+    To: to,
+  };
+
+  // Use template or direct body
+  if (message.template) {
+    // Content SID for approved templates
+    body.ContentSid = message.template;
+    if (message.templateParams) {
+      body.ContentVariables = JSON.stringify(
+        Object.fromEntries(message.templateParams.map((p, i) => [`${i + 1}`, p]))
+      );
+    }
+  } else if (message.body) {
+    body.Body = message.body;
+  } else {
+    return { success: false, error: "Either template or body is required" };
+  }
+
+  const result = await twilioRequest("/Messages.json", body);
+
+  if (result.success && result.data) {
+    const data = result.data as { sid: string };
+    return { success: true, messageId: data.sid };
+  }
+
+  return { success: false, error: result.error };
+}
+
+// ==============================================
+// SMS
+// ==============================================
+
+/**
+ * Sends an SMS via Twilio.
+ */
+export async function sendSms(message: SmsMessage): Promise<NotificationResult> {
+  if (!TWILIO_SMS_NUMBER) {
+    return { success: false, error: "SMS number not configured" };
+  }
+
+  // Format phone number
+  const to = message.to.startsWith("+")
+    ? message.to
+    : `+91${message.to.replace(/^91/, "")}`;
+
+  const body: Record<string, string> = {
+    From: TWILIO_SMS_NUMBER,
+    To: to,
+    Body: message.body,
+  };
+
+  const result = await twilioRequest("/Messages.json", body);
+
+  if (result.success && result.data) {
+    const data = result.data as { sid: string };
+    return { success: true, messageId: data.sid };
+  }
+
+  return { success: false, error: result.error };
+}
+
+// ==============================================
+// PUSH NOTIFICATIONS (APNs)
+// ==============================================
+
+// Note: APNs push is handled by the existing send-push-notification Edge Function
+// This is a wrapper that calls that function
+
+/**
+ * Sends a push notification via APNs.
+ */
+export async function sendPushNotification(
+  notification: PushNotification,
+  supabaseUrl: string,
+  serviceKey: string
+): Promise<NotificationResult> {
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/send-push-notification`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          device_token: notification.deviceToken,
+          title: notification.title,
+          body: notification.body,
+          data: notification.data,
+          badge: notification.badge,
+          sound: notification.sound ?? "default",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      return { success: false, error };
+    }
+
+    const data = await response.json();
+    return { success: true, messageId: data.apns_id };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// ==============================================
+// MESSAGE TEMPLATES
+// ==============================================
+
+export const MessageTemplates = {
+  // Payment reminders
+  paymentReminder: (name: string, amount: string, dueDate: string) =>
+    `Hi ${name}, your rent of ${amount} is due on ${dueDate}. Pay now to earn 1% cashback!`,
+
+  paymentSuccess: (name: string, amount: string, cashback: string) =>
+    `Hi ${name}, your rent payment of ${amount} was successful. You earned ${cashback} cashback!`,
+
+  paymentFailed: (name: string) =>
+    `Hi ${name}, your rent payment failed. Please try again or use a different payment method.`,
+
+  // Landlord notifications
+  landlordInvite: (tenantName: string, propertyAddress: string) =>
+    `Hi! ${tenantName} has added you as their landlord for ${propertyAddress}. Please verify the details.`,
+
+  landlordPaymentReceived: (amount: string, tenantName: string) =>
+    `You've received ${amount} rent from ${tenantName}. The amount will be credited to your bank account.`,
+
+  // Verification
+  bankVerified: (name: string) =>
+    `Hi ${name}, your landlord's bank account has been verified successfully. You can now make rent payments.`,
+
+  // Cashback
+  cashbackExpiring: (name: string, amount: string, days: number) =>
+    `Hi ${name}, your ${amount} cashback expires in ${days} days. Use it on your next rent payment!`,
+} as const;
+
+// ==============================================
+// NOTIFICATION QUEUE HELPER
+// ==============================================
+
+/**
+ * Queues a notification for async delivery.
+ * Uses the notification_queue table for reliable delivery.
+ */
+export async function queueNotification(
+  supabase: { from: (table: string) => unknown },
+  notification: {
+    userId: string;
+    type: "whatsapp" | "sms" | "push";
+    payload: unknown;
+    scheduledFor?: Date;
+  }
+): Promise<void> {
+  // @ts-ignore - Supabase client typing
+  await supabase.from("notification_queue").insert({
+    user_id: notification.userId,
+    notification_type: notification.type,
+    payload: notification.payload,
+    scheduled_for: notification.scheduledFor?.toISOString() ?? new Date().toISOString(),
+    status: "pending",
+  });
+}
