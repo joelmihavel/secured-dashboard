@@ -100,37 +100,57 @@ export function createMockPennyDropIndeterminate(): PennyDropResponse {
 }
 
 // ==============================================
-// MOBILE 360 RESPONSES
+// MOBILE 360 RESPONSES (OTP Flow)
 // ==============================================
 
-interface Mobile360OtpResponse {
+interface Mobile360SendOtpResponse {
   verification_id: string;
-  status: "OTP_SENT" | "OTP_FAILED";
+  status: "OTP_GENERATED" | "OTP_GENERATION_FAILED" | "INVALID_MOBILE_NUMBER";
   message?: string;
 }
 
-interface Mobile360VerifyResponse {
+interface Mobile360VerifyOtpResponse {
   verification_id: string;
-  status: "SUCCESS" | "FAILED";
+  reference_id: string;
+  status: "SUCCESS" | "DETAILS_NOT_FOUND" | "OTP_INVALID" | "OTP_EXPIRED" | "VERIFICATION_FAILED";
   data?: {
     full_name?: string;
-    pan_status?: "VALID" | "INVALID" | "NOT_FOUND";
-    aadhaar_linked?: boolean;
-    alternate_numbers?: string[];
-    address?: string;
+    gender?: string;
+    dob?: string;
+    age?: number;
+    occupation?: string;
+    total_income?: string;
+    pan_details?: Array<{
+      pan: string;
+      name: string;
+      type: string;
+      aadhaar_linked: boolean;
+    }>;
+    aadhaar_number?: string;
+    addresses?: Array<{
+      address: string;
+      city: string;
+      state: string;
+      pincode: string;
+    }>;
+    credit_score?: number;
+    risk_intelligence?: {
+      safe: boolean;
+      risk_level: string;
+    };
   };
   message?: string;
 }
 
 /**
- * Creates a mock Mobile 360 OTP send response.
+ * Creates a mock Mobile 360 OTP generated response.
  */
-export function createMockMobile360OtpSent(
+export function createMockMobile360OtpGenerated(
   verificationId: string
-): Mobile360OtpResponse {
+): Mobile360SendOtpResponse {
   return {
     verification_id: verificationId,
-    status: "OTP_SENT",
+    status: "OTP_GENERATED",
   };
 }
 
@@ -140,10 +160,10 @@ export function createMockMobile360OtpSent(
 export function createMockMobile360OtpFailed(
   verificationId: string,
   reason: string = "Invalid phone number"
-): Mobile360OtpResponse {
+): Mobile360SendOtpResponse {
   return {
     verification_id: verificationId,
-    status: "OTP_FAILED",
+    status: "OTP_GENERATION_FAILED",
     message: reason,
   };
 }
@@ -153,17 +173,37 @@ export function createMockMobile360OtpFailed(
  */
 export function createMockMobile360Success(
   verificationId: string,
-  overrides: Partial<Mobile360VerifyResponse["data"]> = {}
-): Mobile360VerifyResponse {
+  overrides: Partial<Mobile360VerifyOtpResponse["data"]> = {}
+): Mobile360VerifyOtpResponse {
   return {
     verification_id: verificationId,
+    reference_id: `REF_${Date.now()}`,
     status: "SUCCESS",
     data: {
       full_name: "Atri Sharma",
-      pan_status: "VALID",
-      aadhaar_linked: true,
-      alternate_numbers: [],
-      address: "123 MG Road, Bangalore",
+      gender: "Male",
+      dob: "1990-01-15",
+      age: 35,
+      occupation: "Software Engineer",
+      total_income: "1500000",
+      pan_details: [{
+        pan: "ABCDE1234F",
+        name: "ATRI SHARMA",
+        type: "Individual",
+        aadhaar_linked: true,
+      }],
+      aadhaar_number: "123456789012",
+      addresses: [{
+        address: "123 MG Road",
+        city: "Bangalore",
+        state: "Karnataka",
+        pincode: "560001",
+      }],
+      credit_score: 750,
+      risk_intelligence: {
+        safe: true,
+        risk_level: "LOW",
+      },
       ...overrides,
     },
   };
@@ -175,13 +215,59 @@ export function createMockMobile360Success(
 export function createMockMobile360Failure(
   verificationId: string,
   reason: string = "Verification failed"
-): Mobile360VerifyResponse {
+): Mobile360VerifyOtpResponse {
   return {
     verification_id: verificationId,
-    status: "FAILED",
+    reference_id: `REF_${Date.now()}`,
+    status: "VERIFICATION_FAILED",
     message: reason,
   };
 }
+
+/**
+ * Creates a mock OTP invalid response.
+ */
+export function createMockMobile360OtpInvalid(
+  verificationId: string
+): Mobile360VerifyOtpResponse {
+  return {
+    verification_id: verificationId,
+    reference_id: `REF_${Date.now()}`,
+    status: "OTP_INVALID",
+    message: "Invalid OTP. Please try again.",
+  };
+}
+
+/**
+ * Creates a mock OTP expired response.
+ */
+export function createMockMobile360OtpExpired(
+  verificationId: string
+): Mobile360VerifyOtpResponse {
+  return {
+    verification_id: verificationId,
+    reference_id: `REF_${Date.now()}`,
+    status: "OTP_EXPIRED",
+    message: "OTP has expired. Please request a new one.",
+  };
+}
+
+/**
+ * Creates a mock details not found response.
+ */
+export function createMockMobile360DetailsNotFound(
+  verificationId: string
+): Mobile360VerifyOtpResponse {
+  return {
+    verification_id: verificationId,
+    reference_id: `REF_${Date.now()}`,
+    status: "DETAILS_NOT_FOUND",
+    message: "No identity data found for this phone number",
+  };
+}
+
+// Backward compatibility alias
+export const createMockMobile360OtpSent = createMockMobile360OtpGenerated;
 
 // ==============================================
 // API CALL HELPERS
@@ -225,29 +311,44 @@ export const CashfreeTestScenarios = {
   },
 
   mobile360: {
-    /** Full data found */
+    /** OTP generated successfully */
+    otpGenerated: (verificationId: string) =>
+      createMockMobile360OtpGenerated(verificationId),
+
+    /** OTP generation failed */
+    otpGenerationFailed: (verificationId: string) =>
+      createMockMobile360OtpFailed(verificationId, "Failed to send OTP"),
+
+    /** Full data found after OTP verification */
     fullData: (verificationId: string) =>
       createMockMobile360Success(verificationId, {
         full_name: "Atri Sharma",
-        pan_status: "VALID",
-        aadhaar_linked: true,
+        credit_score: 750,
       }),
 
     /** Partial data (no PAN) */
     partialData: (verificationId: string) =>
       createMockMobile360Success(verificationId, {
         full_name: "Atri Sharma",
-        pan_status: "NOT_FOUND",
-        aadhaar_linked: false,
+        pan_details: undefined,
+        aadhaar_number: undefined,
       }),
 
     /** No data found */
     notFound: (verificationId: string) =>
-      createMockMobile360Failure(verificationId, "No data found for this number"),
+      createMockMobile360DetailsNotFound(verificationId),
 
-    /** OTP verification failed */
-    otpFailed: (verificationId: string) =>
-      createMockMobile360Failure(verificationId, "Invalid OTP"),
+    /** Invalid OTP */
+    otpInvalid: (verificationId: string) =>
+      createMockMobile360OtpInvalid(verificationId),
+
+    /** OTP expired */
+    otpExpired: (verificationId: string) =>
+      createMockMobile360OtpExpired(verificationId),
+
+    /** Verification failed */
+    verificationFailed: (verificationId: string) =>
+      createMockMobile360Failure(verificationId, "Verification failed"),
   },
 };
 

@@ -44,17 +44,16 @@ interface VerifyUtilityRequest {
 }
 
 interface ElectricityBillResponse {
+  code?: number;
   status: string;
-  data?: {
+  response?: {
     consumer_name?: string;
-    consumer_number?: string;
     bill_amount?: number;
     due_date?: string;
-    bill_date?: string;
     address?: string;
     state?: string;
-    operator_name?: string;
   };
+  request_id?: string;
   message?: string;
 }
 
@@ -146,7 +145,7 @@ serve(async (req: Request) => {
       .filter(Boolean)
       .join(", ");
 
-    const billAddress = billResult.data?.address ?? "";
+    const billAddress = billResult.response?.address ?? "";
     const addressMatchScore = calculateAddressMatchScore(tenancyAddress, billAddress);
 
     // Create utility verification record
@@ -155,16 +154,16 @@ serve(async (req: Request) => {
       tenancy_id,
       utility_type: "electricity",
       operator_code,
-      operator_name: billResult.data?.operator_name,
+      operator_name: operator_code, // API Club doesn't return operator name in response
       consumer_number,
-      consumer_name: billResult.data?.consumer_name,
+      consumer_name: billResult.response?.consumer_name,
       status: billResult.status === "success" ? "success" : "failed",
-      bill_amount_paise: billResult.data?.bill_amount
-        ? Math.round(billResult.data.bill_amount * 100)
+      bill_amount_paise: billResult.response?.bill_amount
+        ? Math.round(billResult.response.bill_amount * 100)
         : null,
-      bill_due_date: billResult.data?.due_date,
+      bill_due_date: billResult.response?.due_date,
       bill_address: billAddress,
-      bill_data: billResult.data,
+      bill_data: billResult.response,
       address_match_score: addressMatchScore * 100,
       address_verified: addressMatchScore >= ADDRESS_MATCH_THRESHOLD,
       verified_at:
@@ -201,7 +200,7 @@ serve(async (req: Request) => {
         verification.id,
         {
           address_match_score: addressMatchScore,
-          consumer_name: billResult.data?.consumer_name,
+          consumer_name: billResult.response?.consumer_name,
         }
       );
     } else {
@@ -227,9 +226,9 @@ serve(async (req: Request) => {
       data: {
         verification_id: verification.id,
         verified: verification.address_verified,
-        consumer_name: billResult.data?.consumer_name,
-        bill_amount: billResult.data?.bill_amount,
-        bill_due_date: billResult.data?.due_date,
+        consumer_name: billResult.response?.consumer_name,
+        bill_amount: billResult.response?.bill_amount,
+        bill_due_date: billResult.response?.due_date,
         address_match_score: Math.round(addressMatchScore * 100),
         address_match_threshold: ADDRESS_MATCH_THRESHOLD * 100,
         message: verification.address_verified
@@ -290,9 +289,11 @@ async function fetchElectricityBill(
     }
 
     return {
+      code: data.code,
       status: data.status ?? "success",
-      data: data.data,
-      message: data.message,
+      response: data.response,
+      request_id: data.request_id,
+      message: data.message ?? (typeof data.response === 'string' ? data.response : undefined),
     };
   } catch (error) {
     console.error("API Club fetch failed:", error);

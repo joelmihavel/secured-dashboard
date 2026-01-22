@@ -187,8 +187,8 @@ serve(async (req: Request) => {
       .from("payments")
       .select("id, status")
       .eq("tenancy_id", tenancy_id)
-      .eq("rent_month", rentMonthDate)
-      .in("status", ["pending", "processing", "success"])
+      .eq("payment_month", rentMonthDate)
+      .in("status", ["initiated", "processing", "success"])
       .maybeSingle();
 
     if (existingPayment) {
@@ -249,20 +249,27 @@ serve(async (req: Request) => {
       udf3: userId,
     });
 
+    // Calculate due date (5th of the rent month, or next month if already past)
+    const dueDate = calculateDueDate(rent_month);
+
+    // Calculate total amount (rent + PG fee - cashback)
+    const totalAmountPaise = amountPaise + pgFeePaise;
+
     // Create payment record
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .insert({
         tenancy_id,
-        user_id: userId,
-        amount_paise: amountPaise,
+        rent_amount_paise: amountPaise,
         pg_fee_paise: pgFeePaise,
         cashback_applied_paise: cashbackAppliedPaise,
-        status: "pending",
+        total_amount_paise: totalAmountPaise,
+        status: "initiated",
         payu_txn_id: txnId,
         payment_method,
         idempotency_key: idempotencyKey,
-        rent_month: rentMonthDate,
+        payment_month: rentMonthDate,
+        due_date: dueDate,
         payment_method_details: {
           upi_app,
           upi_vpa,
@@ -385,6 +392,17 @@ serve(async (req: Request) => {
 // ==============================================
 // UPI INTENT URL BUILDER
 // ==============================================
+
+/**
+ * Calculates the due date for a rent payment.
+ * Default: 5th of the rent month
+ */
+function calculateDueDate(rentMonth: string): string {
+  const [year, month] = rentMonth.split("-").map(Number);
+  // Due date is 5th of the rent month
+  const dueDate = new Date(year, month - 1, 5);
+  return dueDate.toISOString().split("T")[0];
+}
 
 function buildUpiIntentUrl(params: {
   key: string;

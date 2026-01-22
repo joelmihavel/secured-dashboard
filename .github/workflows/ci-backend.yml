@@ -278,6 +278,7 @@ jobs:
 
   # ===========================================================================
   # Claude Code Review (generates missing tests and reviews changes)
+  # Uses Google Cloud Vertex AI with OIDC authentication
   # ===========================================================================
   claude-review:
     name: Claude Code Review
@@ -286,7 +287,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write
+      id-token: write  # Required for OIDC authentication with GCP
     steps:
       - uses: actions/checkout@v4
         with:
@@ -298,49 +299,81 @@ jobs:
         with:
           deno-version: v1.x
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install SuperClaude Framework
+        run: |
+          pip install pipx
+          pipx ensurepath
+          pipx install superclaude
+          export PATH="$HOME/.local/bin:$PATH"
+          superclaude install --non-interactive || true
+          superclaude doctor || true
+          echo "SuperClaude Framework installed"
+
+      # Authenticate to Google Cloud using Workload Identity Federation
+      - name: Authenticate to Google Cloud
+        id: gcp-auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
       - name: Claude Code Review
         uses: anthropics/claude-code-action@v1
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_vertex: "true"
+          show_full_output: "true"
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
             ## YOUR ROLE
-            You are responsible for:
-            1. Reviewing code changes in this PR
-            2. Generating missing tests if coverage is insufficient
-            3. Ensuring security best practices
+            You are an expert code reviewer using SuperClaude Framework testing agents.
+            Use /sc:test and /sc:analyze commands for comprehensive review.
 
             ## TASKS
 
-            1. **Analyze Changed Files**
-               - Review all files changed in this PR
-               - Identify code paths without test coverage
-               - Check for security issues (hardcoded secrets, SQL injection, etc.)
+            1. **Analyze with SuperClaude**
+               - Run `/sc:analyze --focus security,quality` on changed files
+               - Use sequential-thinking MCP for complex logic review
+               - Check for security issues (hardcoded secrets, SQL injection, OWASP Top 10)
 
-            2. **Generate Tests if Needed**
+            2. **Test Coverage with /sc:test**
+               - Run `/sc:test --coverage` to analyze test coverage
                - If Edge Functions lack tests, generate them in supabase/functions/_tests/
                - Payment functions MUST have 100% coverage
                - Use existing test helpers in supabase/functions/_tests/helpers/
 
-            3. **Run Tests Locally**
+            3. **Run Tests**
                - Execute: deno test supabase/functions/_tests/ --allow-all
-               - Verify tests pass before committing
+               - Verify all tests pass before approving
 
             4. **Security Checklist**
-               - [ ] No hardcoded secrets
-               - [ ] PayU hash validation implemented
-               - [ ] SQL injection prevention (parameterized queries)
+               - [ ] No hardcoded secrets (use Supabase secrets)
+               - [ ] PayU hash validation implemented correctly
+               - [ ] SQL injection prevention (parameterized queries only)
                - [ ] Input validation on all endpoints
-               - [ ] RLS policies for new tables
+               - [ ] RLS policies for any new tables
 
             5. **Post Review**
-               - Comment on PR with findings
+               - Comment on PR with detailed findings
                - If tests were added, commit with message: "test: add tests for [function name]"
+               - Use context7 MCP for API documentation references if needed
 
           claude_args: |
-            --max-turns 15
-            --allowedTools "Read,Write,Edit,Bash(deno test:*),Bash(git:*),Bash(gh pr comment:*)"
+            --model claude-opus-4-5@20251101
+            --max-turns 50
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(deno:*),Bash(git:*),Bash(gh:*),Bash(npx:*),mcp__sequential-thinking__*,mcp__context7__*,mcp__supabase__*,mcp__tavily__*"
+            --mcp-config '{"mcpServers":{"context7":{"type":"stdio","command":"npx","args":["-y","@upstash/context7-mcp"]},"sequential-thinking":{"type":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-sequential-thinking"]},"supabase":{"type":"http","url":"https://mcp.supabase.com/mcp"},"tavily":{"type":"stdio","command":"npx","args":["-y","tavily-mcp@0.1.2"],"env":{"TAVILY_API_KEY":"${{ secrets.TAVILY_API_KEY }}"}}}}'
+        env:
+          ANTHROPIC_VERTEX_PROJECT_ID: ${{ steps.gcp-auth.outputs.project_id }}
+          CLOUD_ML_REGION: global
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
 
   # ===========================================================================
   # NOTE: No cleanup job needed - we use a persistent branch (v2-backend-dev)
