@@ -274,11 +274,18 @@ Deno.serve(async (req) => {
     const base64Content = arrayBufferToBase64(arrayBuffer);
 
     // Get GCP credentials
+    // Document AI uses secured-by-flent project
     const gcpCredentials = Deno.env.get("GCP_DOCUMENT_AI_CREDENTIALS");
     const gcpProjectId = Deno.env.get("GCP_PROJECT_ID") || "secured-by-flent";
     const gcpProcessorId = Deno.env.get("GCP_PROCESSOR_ID");
     const gcpLocation = Deno.env.get("GCP_LOCATION") || "us";
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+
+    // Vertex AI for Secured - uses Flent AI APIs project (flent-ai-project-2)
+    // Primary: Vertex AI with dedicated service account
+    // Fallback: Gemini API key
+    const vertexAiCredentials = Deno.env.get("VERTEX_AI_CREDENTIALS");
+    const vertexAiProjectId = Deno.env.get("VERTEX_AI_PROJECT_ID") || "flent-ai-project-2";
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY_SECURED") || Deno.env.get("GEMINI_API_KEY");
 
     // Debug: Log configuration (masking sensitive values)
     console.log("[process-document] Config:", {
@@ -286,14 +293,16 @@ Deno.serve(async (req) => {
       gcpProjectId,
       hasProcessorId: !!gcpProcessorId,
       gcpLocation,
+      hasVertexAiCredentials: !!vertexAiCredentials,
+      vertexAiProjectId,
       hasGeminiApiKey: !!geminiApiKey,
-      geminiApiKeyPrefix: geminiApiKey ? geminiApiKey.substring(0, 10) + "..." : "NOT SET"
+      geminiApiKeyPrefix: geminiApiKey ? geminiApiKey.substring(0, 10) + "..." : "NOT SET",
     });
 
     let extractedData: ExtractedData;
 
     if (gcpCredentials && gcpProcessorId) {
-      // Production: Use GCP Document AI + Gemini Pro
+      // Production: Use GCP Document AI + Vertex AI Gemini
       extractedData = await processWithDocumentAI(
         base64Content,
         "application/pdf",
@@ -301,6 +310,8 @@ Deno.serve(async (req) => {
         gcpProjectId,
         gcpProcessorId,
         gcpLocation,
+        vertexAiCredentials,
+        vertexAiProjectId,
         geminiApiKey
       );
     } else {
@@ -503,11 +514,13 @@ async function processWithDocumentAI(
   projectId: string,
   processorId: string,
   location: string,
+  vertexAiCredentials?: string,
+  vertexAiProjectId?: string,
   geminiApiKey?: string
 ): Promise<ExtractedData> {
   const credentialsJson = JSON.parse(credentials);
 
-  // Get access token
+  // Get access token for Document AI
   const accessToken = await getGCPAccessToken(credentialsJson);
 
   // Step 1: Call Document AI for OCR
@@ -555,7 +568,7 @@ async function processWithDocumentAI(
   };
 
   // Step 2: Use Gemini to extract/verify if text exists
-  // Try Vertex AI first (uses service account), then fall back to API key if provided
+  // Try Vertex AI first (uses dedicated service account for flent-ai-project-2), then fall back to API key
   if (documentText.length > 100) {
     geminiDebug.gemini_attempted = true;
     console.log("[process-document] Document text extracted, using Gemini for entity extraction...");
@@ -563,51 +576,61 @@ async function processWithDocumentAI(
 
     let geminiResult: any = null;
 
-    // Try Vertex AI Gemini (uses same GCP credentials)
+    // Try Vertex AI Gemini with dedicated credentials (flent-ai-project-2)
     // Note: Vertex AI uses specific regions like "us-central1", not just "us"
     const vertexLocation = location === "us" ? "us-central1" : location;
-    try {
-      geminiDebug.vertex_ai_attempted = true;
-      console.log(`[process-document] Attempting Vertex AI Gemini in ${vertexLocation}...`);
-      geminiResult = await extractWithVertexAIGemini(
-        documentText,
-        accessToken,
-        projectId,
-        vertexLocation
-      );
-      geminiDebug.vertex_ai_success = true;
-      geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-    } catch (vertexError: any) {
-      geminiDebug.vertex_ai_error = vertexError.message || String(vertexError);
-      console.error("[process-document] Vertex AI Gemini failed:", vertexError.message || vertexError);
-      console.error("[process-document] Vertex AI error details:", JSON.stringify({
-        name: vertexError.name,
-        message: vertexError.message,
-        stack: vertexError.stack?.substring(0, 500)
-      }));
+    if (vertexAiCredentials && vertexAiProjectId) {
+      try {
+        geminiDebug.vertex_ai_attempted = true;
+        console.log(`[process-document] Attempting Vertex AI Gemini in ${vertexLocation} (project: ${vertexAiProjectId})...`);
 
-      // Fall back to API key if provided
-      if (geminiApiKey) {
-        geminiDebug.api_key_attempted = true;
-        console.log("[process-document] Falling back to Gemini API key...");
-        console.log(`[process-document] API key prefix: ${geminiApiKey.substring(0, 10)}...`);
-        try {
-          geminiResult = await verifyWithGemini(
-            documentText,
-            extractedData,
-            geminiApiKey
-          );
-          geminiDebug.api_key_success = true;
-          geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-          console.log("[process-document] API key Gemini result:", JSON.stringify(geminiResult).substring(0, 500));
-        } catch (apiKeyError: any) {
-          geminiDebug.api_key_error = apiKeyError.message || String(apiKeyError);
-          console.error("[process-document] API key Gemini failed:", apiKeyError.message || apiKeyError);
-        }
-      } else {
-        geminiDebug.api_key_error = "No GEMINI_API_KEY set";
-        console.warn("[process-document] No GEMINI_API_KEY fallback available. Entity extraction limited.");
+        // Get separate access token for Vertex AI service account
+        const vertexCredentialsJson = JSON.parse(vertexAiCredentials);
+        const vertexAccessToken = await getGCPAccessToken(vertexCredentialsJson);
+
+        geminiResult = await extractWithVertexAIGemini(
+          documentText,
+          vertexAccessToken,
+          vertexAiProjectId,
+          vertexLocation
+        );
+        geminiDebug.vertex_ai_success = true;
+        geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+      } catch (vertexError: any) {
+        geminiDebug.vertex_ai_error = vertexError.message || String(vertexError);
+        console.error("[process-document] Vertex AI Gemini failed:", vertexError.message || vertexError);
+        console.error("[process-document] Vertex AI error details:", JSON.stringify({
+          name: vertexError.name,
+          message: vertexError.message,
+          stack: vertexError.stack?.substring(0, 500)
+        }));
       }
+    } else {
+      geminiDebug.vertex_ai_error = "No VERTEX_AI_CREDENTIALS configured";
+      console.log("[process-document] Vertex AI credentials not configured, skipping...");
+    }
+
+    // Fall back to API key if Vertex AI failed or not configured
+    if (!geminiResult && geminiApiKey) {
+      geminiDebug.api_key_attempted = true;
+      console.log("[process-document] Falling back to Gemini API key...");
+      console.log(`[process-document] API key prefix: ${geminiApiKey.substring(0, 10)}...`);
+      try {
+        geminiResult = await verifyWithGemini(
+          documentText,
+          extractedData,
+          geminiApiKey
+        );
+        geminiDebug.api_key_success = true;
+        geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+        console.log("[process-document] API key Gemini result:", JSON.stringify(geminiResult).substring(0, 500));
+      } catch (apiKeyError: any) {
+        geminiDebug.api_key_error = apiKeyError.message || String(apiKeyError);
+        console.error("[process-document] API key Gemini failed:", apiKeyError.message || apiKeyError);
+      }
+    } else if (!geminiResult) {
+      geminiDebug.api_key_error = "No GEMINI_API_KEY_SECURED set";
+      console.warn("[process-document] No Gemini fallback available. Entity extraction limited.");
     }
 
     console.log("[process-document] Final geminiResult:", geminiResult ? Object.keys(geminiResult).length + " keys" : "null");

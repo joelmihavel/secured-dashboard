@@ -1,11 +1,18 @@
 /**
  * Flent Secured v2 - Verify Utility Edge Function
  *
- * Verifies address using electricity bill via API Club.
- * Used to verify tenant actually resides at the rental property.
+ * Verifies property ownership using electricity bills via API Club.
+ * Matches:
+ * 1. Consumer name on bill with landlord name (ownership verification)
+ * 2. Bill address with property address (location verification)
  *
- * Endpoint: POST /functions/v1/verify-utility
- * Auth: Required (JWT)
+ * Endpoints:
+ * - POST /functions/v1/verify-utility - Verify electricity bill
+ * - GET /functions/v1/verify-utility?action=operators - Get electricity operator list
+ *
+ * Auth: Required (JWT) for POST, Optional for GET operators
+ *
+ * Reference: https://www.apiclub.in/product/electricity_fetch_bill_api
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -30,8 +37,13 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 const API_CLUB_KEY = Deno.env.get("API_CLUB_KEY");
 const API_CLUB_BASE_URL = "https://api.apiclub.in/api/v1";
 
-// Address matching threshold (70%)
-const ADDRESS_MATCH_THRESHOLD = 0.7;
+// Matching thresholds
+const ADDRESS_MATCH_THRESHOLD = 0.7; // 70%
+const NAME_MATCH_THRESHOLD = 0.7; // 70%
+
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
 
 // ==============================================
 // TYPES
@@ -43,7 +55,7 @@ interface VerifyUtilityRequest {
   operator_code: string;
 }
 
-interface ElectricityBillResponse {
+interface BillFetchResponse {
   code?: number;
   status: string;
   response?: {
@@ -52,9 +64,25 @@ interface ElectricityBillResponse {
     due_date?: string;
     address?: string;
     state?: string;
+    city?: string;
+    bill_number?: string;
+    bill_date?: string;
+    bill_period?: string;
+    connection_type?: string;
+    meter_number?: string;
+    sanctioned_load?: string;
+    total_units?: number;
+    current_reading?: number;
+    previous_reading?: number;
   };
   request_id?: string;
   message?: string;
+}
+
+interface OperatorInfo {
+  operator_code: string;
+  operator_name: string;
+  state?: string;
 }
 
 // ==============================================
@@ -64,7 +92,7 @@ interface ElectricityBillResponse {
 const requestSchema = {
   tenancy_id: { required: true, type: "string" as const },
   consumer_number: { required: true, type: "string" as const, minLength: 5, maxLength: 30 },
-  operator_code: { required: true, type: "string" as const, minLength: 2, maxLength: 20 },
+  operator_code: { required: true, type: "string" as const, minLength: 2, maxLength: 30 },
 };
 
 // ==============================================
@@ -76,11 +104,70 @@ serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  // Only allow POST
-  if (req.method !== "POST") {
-    return errorResponse("Method not allowed", 405);
+  const url = new URL(req.url);
+  const action = url.searchParams.get("action");
+
+  // GET /verify-utility?action=operators - Return electricity operator list
+  if (req.method === "GET" && action === "operators") {
+    return await handleGetOperators();
   }
 
+  // POST /verify-utility - Verify electricity bill
+  if (req.method === "POST") {
+    return await handleVerifyUtility(req);
+  }
+
+  return errorResponse("Method not allowed", 405);
+});
+
+// ==============================================
+// GET OPERATORS HANDLER
+// ==============================================
+
+async function handleGetOperators(): Promise<Response> {
+  if (!API_CLUB_KEY) {
+    return errorResponse("API not configured", 503);
+  }
+
+  try {
+    const response = await fetchWithRetry(`${API_CLUB_BASE_URL}/fetch_bill_operator`, {
+      headers: {
+        "x-api-key": API_CLUB_KEY,
+      },
+    });
+
+    const data = await response.json();
+
+    // Normalize operator data
+    const operators: OperatorInfo[] = (data.data ?? data.response ?? []).map(
+      (op: Record<string, unknown>) => ({
+        operator_code: op.operator_code ?? op.code ?? op.id,
+        operator_name: op.operator_name ?? op.name ?? op.operator,
+        state: op.state,
+      })
+    );
+
+    return jsonResponse({
+      success: true,
+      data: {
+        operators,
+        count: operators.length,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to fetch operators:", error);
+    return errorResponse(
+      error instanceof Error ? error.message : "Failed to fetch operators",
+      500
+    );
+  }
+}
+
+// ==============================================
+// VERIFY UTILITY HANDLER
+// ==============================================
+
+async function handleVerifyUtility(req: Request): Promise<Response> {
   const supabase = createServiceClient();
   let audit: AuditLogger | null = null;
   let userId: string | null = null;
@@ -113,14 +200,22 @@ serve(async (req: Request) => {
       {
         tenancy_id,
         operator_code,
-        consumer_number_masked: `${consumer_number.slice(0, 3)}***${consumer_number.slice(-3)}`,
+        consumer_number_masked: maskConsumerNumber(consumer_number),
       }
     );
 
-    // Verify tenancy belongs to user and get address
+    // Verify tenancy belongs to user and get landlord + address info
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
-      .select("id, user_id, property_address, property_city, property_state, property_pincode")
+      .select(`
+        id,
+        user_id,
+        landlord_name,
+        property_address,
+        property_city,
+        property_state,
+        property_pincode
+      `)
       .eq("id", tenancy_id)
       .single();
 
@@ -135,18 +230,32 @@ serve(async (req: Request) => {
     // Fetch electricity bill from API Club
     const billResult = await fetchElectricityBill(consumer_number, operator_code);
 
-    // Calculate address match score
-    const tenancyAddress = [
+    // Build addresses for comparison
+    const tenancyAddress = buildAddress(
       tenancy.property_address,
       tenancy.property_city,
       tenancy.property_state,
-      tenancy.property_pincode,
-    ]
-      .filter(Boolean)
-      .join(", ");
+      tenancy.property_pincode
+    );
 
-    const billAddress = billResult.response?.address ?? "";
+    const billAddress = buildAddress(
+      billResult.response?.address,
+      billResult.response?.city,
+      billResult.response?.state
+    );
+
+    // Calculate match scores
     const addressMatchScore = calculateAddressMatchScore(tenancyAddress, billAddress);
+    const nameMatchScore = calculateNameMatchScore(
+      tenancy.landlord_name,
+      billResult.response?.consumer_name ?? ""
+    );
+
+    // Determine verification status
+    const isBillFetched = billResult.status === "success" && billResult.response;
+    const isAddressVerified = isBillFetched && addressMatchScore >= ADDRESS_MATCH_THRESHOLD;
+    const isNameVerified = isBillFetched && nameMatchScore >= NAME_MATCH_THRESHOLD;
+    const isFullyVerified = isAddressVerified && isNameVerified;
 
     // Create utility verification record
     const verificationData = {
@@ -154,10 +263,10 @@ serve(async (req: Request) => {
       tenancy_id,
       utility_type: "electricity",
       operator_code,
-      operator_name: operator_code, // API Club doesn't return operator name in response
+      operator_name: operator_code,
       consumer_number,
       consumer_name: billResult.response?.consumer_name,
-      status: billResult.status === "success" ? "success" : "failed",
+      status: isBillFetched ? "success" : "failed",
       bill_amount_paise: billResult.response?.bill_amount
         ? Math.round(billResult.response.bill_amount * 100)
         : null,
@@ -165,11 +274,10 @@ serve(async (req: Request) => {
       bill_address: billAddress,
       bill_data: billResult.response,
       address_match_score: addressMatchScore * 100,
-      address_verified: addressMatchScore >= ADDRESS_MATCH_THRESHOLD,
-      verified_at:
-        addressMatchScore >= ADDRESS_MATCH_THRESHOLD
-          ? new Date().toISOString()
-          : null,
+      name_match_score: nameMatchScore * 100,
+      address_verified: isAddressVerified,
+      name_verified: isNameVerified,
+      verified_at: isFullyVerified ? new Date().toISOString() : null,
     };
 
     const { data: verification, error: insertError } = await supabase
@@ -183,8 +291,8 @@ serve(async (req: Request) => {
       throw new AppError("Failed to save verification result", "DB_ERROR", 500);
     }
 
-    // Update tenancy verification status if address verified
-    if (verification.address_verified) {
+    // Update tenancy verification status if fully verified
+    if (isFullyVerified) {
       await supabase
         .from("tenancies")
         .update({ utility_verified: true })
@@ -192,7 +300,7 @@ serve(async (req: Request) => {
     }
 
     // Log result
-    if (verification.address_verified) {
+    if (isFullyVerified) {
       await audit.logSuccess(
         AuditActions.UTILITY_VERIFICATION_SUCCESS,
         "verification",
@@ -200,42 +308,71 @@ serve(async (req: Request) => {
         verification.id,
         {
           address_match_score: addressMatchScore,
+          name_match_score: nameMatchScore,
           consumer_name: billResult.response?.consumer_name,
+          landlord_name: tenancy.landlord_name,
         }
       );
     } else {
+      const failureReason = !isBillFetched
+        ? "BILL_FETCH_FAILED"
+        : !isNameVerified
+        ? "NAME_MISMATCH"
+        : "ADDRESS_MISMATCH";
+
+      const failureMessage = !isBillFetched
+        ? billResult.message ?? "Failed to fetch bill"
+        : !isNameVerified
+        ? `Name match ${(nameMatchScore * 100).toFixed(0)}% below threshold (bill: "${billResult.response?.consumer_name}", landlord: "${tenancy.landlord_name}")`
+        : `Address match ${(addressMatchScore * 100).toFixed(0)}% below threshold`;
+
       await audit.logFailure(
         AuditActions.UTILITY_VERIFICATION_FAILED,
         "verification",
-        billResult.status !== "success" ? "BILL_FETCH_FAILED" : "ADDRESS_MISMATCH",
-        billResult.status !== "success"
-          ? billResult.message ?? "Failed to fetch bill"
-          : `Address match score ${(addressMatchScore * 100).toFixed(0)}% below threshold`,
+        failureReason,
+        failureMessage,
         "utility_verification",
         verification.id,
         {
           address_match_score: addressMatchScore,
+          name_match_score: nameMatchScore,
           tenancy_address: tenancyAddress,
           bill_address: billAddress,
+          landlord_name: tenancy.landlord_name,
+          consumer_name: billResult.response?.consumer_name,
         }
       );
+    }
+
+    // Build verification message
+    let message: string;
+    if (isFullyVerified) {
+      message = "Ownership verified successfully - landlord name and address match";
+    } else if (!isBillFetched) {
+      message = billResult.message ?? "Failed to fetch electricity bill";
+    } else if (!isNameVerified && !isAddressVerified) {
+      message = "Verification failed - neither landlord name nor address match";
+    } else if (!isNameVerified) {
+      message = "Landlord name on bill doesn't match";
+    } else {
+      message = "Address on bill doesn't match property address";
     }
 
     return jsonResponse({
       success: true,
       data: {
         verification_id: verification.id,
-        verified: verification.address_verified,
+        verified: isFullyVerified,
+        name_verified: isNameVerified,
+        address_verified: isAddressVerified,
         consumer_name: billResult.response?.consumer_name,
+        landlord_name: tenancy.landlord_name,
+        name_match_score: Math.round(nameMatchScore * 100),
+        address_match_score: Math.round(addressMatchScore * 100),
+        match_threshold: NAME_MATCH_THRESHOLD * 100,
         bill_amount: billResult.response?.bill_amount,
         bill_due_date: billResult.response?.due_date,
-        address_match_score: Math.round(addressMatchScore * 100),
-        address_match_threshold: ADDRESS_MATCH_THRESHOLD * 100,
-        message: verification.address_verified
-          ? "Address verified successfully"
-          : billResult.status !== "success"
-          ? billResult.message ?? "Failed to fetch electricity bill"
-          : "Address on bill doesn't match rental property address",
+        message,
       },
     });
   } catch (error) {
@@ -251,7 +388,7 @@ serve(async (req: Request) => {
 
     return handleError(error, req.headers.get("x-request-id") ?? undefined);
   }
-});
+}
 
 // ==============================================
 // API CLUB ELECTRICITY BILL API
@@ -260,13 +397,13 @@ serve(async (req: Request) => {
 async function fetchElectricityBill(
   consumerNumber: string,
   operatorCode: string
-): Promise<ElectricityBillResponse> {
+): Promise<BillFetchResponse> {
   if (!API_CLUB_KEY) {
     throw new ExternalServiceError("API Club", "API key not configured");
   }
 
   try {
-    const response = await fetch(`${API_CLUB_BASE_URL}/fetch_bill`, {
+    const response = await fetchWithRetry(`${API_CLUB_BASE_URL}/fetch_bill`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -281,22 +418,25 @@ async function fetchElectricityBill(
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("API Club error:", data);
+      console.error("API Club electricity bill error:", data);
       return {
         status: "error",
         message: data.message ?? `HTTP ${response.status}`,
       };
     }
 
+    // Handle API Club's response wrapper
+    const billData = data.response ?? data;
+
     return {
       code: data.code,
       status: data.status ?? "success",
-      response: data.response,
+      response: typeof billData === "object" ? billData : undefined,
       request_id: data.request_id,
-      message: data.message ?? (typeof data.response === 'string' ? data.response : undefined),
+      message: data.message ?? (typeof billData === "string" ? billData : undefined),
     };
   } catch (error) {
-    console.error("API Club fetch failed:", error);
+    console.error("API Club electricity bill fetch failed:", error);
     throw new ExternalServiceError(
       "API Club",
       error instanceof Error ? error.message : "Unknown error"
@@ -305,15 +445,146 @@ async function fetchElectricityBill(
 }
 
 // ==============================================
+// RETRY LOGIC
+// ==============================================
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries: number = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Don't retry on client errors (4xx) except 429 (rate limit)
+      if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 429)) {
+        return response;
+      }
+
+      // Retry on server errors (5xx) and rate limits (429)
+      if (attempt < retries) {
+        const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.log(`API call failed (attempt ${attempt}/${retries}), retrying in ${delay}ms...`);
+        await sleep(delay);
+      } else {
+        return response;
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < retries) {
+        const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.log(`API call error (attempt ${attempt}/${retries}): ${lastError.message}, retrying in ${delay}ms...`);
+        await sleep(delay);
+      }
+    }
+  }
+
+  throw lastError ?? new Error("Request failed after retries");
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ==============================================
+// NAME MATCHING
+// ==============================================
+
+/**
+ * Calculates name match score using Levenshtein distance.
+ * Handles common Indian name variations (initials, middle names, etc.)
+ */
+function calculateNameMatchScore(name1: string, name2: string): number {
+  // Normalize names
+  const normalize = (s: string) =>
+    s
+      .toUpperCase()
+      .replace(/[^A-Z\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const n1 = normalize(name1);
+  const n2 = normalize(name2);
+
+  if (n1 === n2) return 1;
+  if (!n1 || !n2) return 0;
+
+  // Split into words and compare
+  const words1 = n1.split(" ");
+  const words2 = n2.split(" ");
+
+  // Check if one name contains initials (single letter words)
+  const hasInitials1 = words1.some((w) => w.length === 1);
+  const hasInitials2 = words2.some((w) => w.length === 1);
+
+  // If initials present, expand comparison
+  if (hasInitials1 || hasInitials2) {
+    // Compare first letters of each word
+    const initials1 = words1.map((w) => w[0]).join("");
+    const initials2 = words2.map((w) => w[0]).join("");
+
+    if (initials1 === initials2) {
+      return 0.85; // High match for matching initials
+    }
+
+    // Check if full name contains initial pattern
+    const fullWords1 = words1.filter((w) => w.length > 1);
+    const fullWords2 = words2.filter((w) => w.length > 1);
+
+    const fullInitials1 = fullWords1.map((w) => w[0]).join("");
+    const fullInitials2 = fullWords2.map((w) => w[0]).join("");
+
+    if (fullInitials1.includes(initials2.replace(/[^A-Z]/g, "")) ||
+        fullInitials2.includes(initials1.replace(/[^A-Z]/g, ""))) {
+      return 0.8;
+    }
+  }
+
+  // Calculate Levenshtein distance
+  const matrix: number[][] = [];
+  for (let i = 0; i <= n1.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= n2.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= n1.length; i++) {
+    for (let j = 1; j <= n2.length; j++) {
+      const cost = n1[i - 1] === n2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  const distance = matrix[n1.length][n2.length];
+  const maxLen = Math.max(n1.length, n2.length);
+  return 1 - distance / maxLen;
+}
+
+// ==============================================
 // ADDRESS MATCHING
 // ==============================================
 
 /**
+ * Builds a normalized address string from components.
+ */
+function buildAddress(...parts: (string | null | undefined)[]): string {
+  return parts.filter(Boolean).join(", ");
+}
+
+/**
  * Calculates similarity score between two addresses.
- * Uses word overlap and fuzzy matching.
+ * Uses word overlap, pincode matching, and location keywords.
  */
 function calculateAddressMatchScore(address1: string, address2: string): number {
-  // Normalize addresses
   const normalize = (s: string) =>
     s
       .toLowerCase()
@@ -327,53 +598,59 @@ function calculateAddressMatchScore(address1: string, address2: string): number 
   if (s1 === s2) return 1;
   if (s1.length === 0 || s2.length === 0) return 0;
 
-  // Word overlap score
+  // Extract significant words (length > 2)
   const words1 = new Set(s1.split(" ").filter((w) => w.length > 2));
   const words2 = new Set(s2.split(" ").filter((w) => w.length > 2));
 
+  // Calculate Jaccard similarity
   const intersection = [...words1].filter((w) => words2.has(w));
   const union = new Set([...words1, ...words2]);
+  const jaccardSimilarity = union.size > 0 ? intersection.length / union.size : 0;
 
-  const jaccardSimilarity = intersection.length / union.size;
+  // Extract and compare numbers
+  const numbers1 = s1.match(/\d+/g) ?? [];
+  const numbers2 = s2.match(/\d+/g) ?? [];
 
-  // Also check if key identifiers match (numbers, pincode)
-  const numbers1: string[] = s1.match(/\d+/g) ?? [];
-  const numbers2: string[] = s2.match(/\d+/g) ?? [];
-  const numberMatch = numbers1.some((n) => numbers2.includes(n)) ? 0.2 : 0;
+  // Pincode match (6 digits) is very important
+  const pincodes1 = numbers1.filter((n) => n.length === 6);
+  const pincodes2 = numbers2.filter((n) => n.length === 6);
+  const pincodeMatch = pincodes1.some((p) => pincodes2.includes(p)) ? 0.3 : 0;
 
-  return Math.min(jaccardSimilarity + numberMatch, 1);
+  // Other number matches (flat, building numbers)
+  const otherNumbers1 = numbers1.filter((n) => n.length < 6);
+  const otherNumbers2 = numbers2.filter((n) => n.length < 6);
+  const numberMatch = otherNumbers1.some((n) => otherNumbers2.includes(n)) ? 0.1 : 0;
+
+  // Location keywords
+  const locationKeywords = [
+    "nagar", "colony", "society", "apartments", "tower", "heights",
+    "residency", "enclave", "complex", "park", "garden", "villa",
+    "layout", "sector", "phase", "block", "wing", "floor",
+  ];
+  const hasLocationMatch = locationKeywords.some(
+    (kw) => s1.includes(kw) && s2.includes(kw)
+  );
+  const locationBonus = hasLocationMatch ? 0.1 : 0;
+
+  // Combine scores
+  const finalScore = Math.min(
+    jaccardSimilarity * 0.5 + pincodeMatch + numberMatch + locationBonus,
+    1
+  );
+
+  return finalScore;
 }
 
 // ==============================================
-// OPERATOR LIST ENDPOINT
+// HELPERS
 // ==============================================
 
 /**
- * GET /functions/v1/verify-utility/operators
- * Returns list of supported electricity operators
+ * Masks consumer number for logging.
  */
-export async function getOperators(): Promise<Response> {
-  if (!API_CLUB_KEY) {
-    return errorResponse("API not configured", 503);
+function maskConsumerNumber(consumerNumber: string): string {
+  if (consumerNumber.length <= 6) {
+    return "***";
   }
-
-  try {
-    const response = await fetch(`${API_CLUB_BASE_URL}/fetch_bill_operator`, {
-      headers: {
-        "x-api-key": API_CLUB_KEY,
-      },
-    });
-
-    const data = await response.json();
-
-    return jsonResponse({
-      success: true,
-      data: data.data ?? [],
-    });
-  } catch (error) {
-    return errorResponse(
-      error instanceof Error ? error.message : "Failed to fetch operators",
-      500
-    );
-  }
+  return `${consumerNumber.slice(0, 3)}***${consumerNumber.slice(-3)}`;
 }

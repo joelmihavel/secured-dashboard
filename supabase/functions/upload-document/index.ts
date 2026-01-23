@@ -1,0 +1,289 @@
+/**
+ * Flent Secured v2 - Edge Function: upload-document
+ *
+ * V1 COMPATIBILITY: Generates signed upload URLs for rent agreement PDFs.
+ * iOS app calls this to get a pre-signed URL before uploading.
+ *
+ * V2 IMPROVEMENTS:
+ * - Creates extracted_rental_info record (V2 table) instead of waitlist entry
+ * - Validates file type and size
+ * - Comprehensive audit logging
+ * - Better error handling
+ */
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
+import { handleCors, getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { AuthError, ValidationError, handleError } from "../_shared/errors.ts";
+import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+
+// ==============================================
+// CONSTANTS
+// ==============================================
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const ALLOWED_MIME_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/heif",
+];
+
+// ==============================================
+// TYPES
+// ==============================================
+
+interface UploadDocumentRequest {
+  file_name: string;
+  file_type: string;
+  file_size: number;
+}
+
+interface UploadDocumentResponse {
+  success: boolean;
+  upload_url?: string;
+  waitlist_entry_id?: string; // V1 field (actually extracted_rental_info_id)
+  extracted_rental_info_id?: string; // V2 field
+  download_url?: string;
+  document_path?: string;
+  error?: string;
+}
+
+// ==============================================
+// MAIN HANDLER
+// ==============================================
+
+serve(async (req) => {
+  // Handle CORS preflight
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const headers = getCorsHeaders(req);
+
+  try {
+    if (req.method !== "POST") {
+      throw new ValidationError("Method not allowed", { method: "POST required" });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Validate auth header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new AuthError("Missing authorization header");
+    }
+
+    // Create client with user's auth
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new AuthError("Unauthorized");
+    }
+
+    // Parse and validate request body
+    const body: UploadDocumentRequest = await req.json();
+
+    if (!body.file_name) {
+      throw new ValidationError("Missing file_name", { file_name: "Required" });
+    }
+
+    if (!body.file_type) {
+      throw new ValidationError("Missing file_type", { file_type: "Required" });
+    }
+
+    if (!body.file_size || body.file_size <= 0) {
+      throw new ValidationError("Invalid file_size", {
+        file_size: "Must be a positive number",
+      });
+    }
+
+    // Validate file type
+    if (!ALLOWED_MIME_TYPES.includes(body.file_type)) {
+      throw new ValidationError("Invalid file type", {
+        file_type: `Allowed types: ${ALLOWED_MIME_TYPES.join(", ")}`,
+      });
+    }
+
+    // Validate file size
+    if (body.file_size > MAX_FILE_SIZE) {
+      throw new ValidationError("File too large", {
+        file_size: `Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+      });
+    }
+
+    // Create admin client
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Initialize audit logger
+    const audit = AuditLogger.fromRequest(
+      adminClient,
+      req,
+      user.id,
+      "upload-document"
+    );
+
+    // ==============================================
+    // CHECK FOR EXISTING PENDING EXTRACTION
+    // ==============================================
+    // If user already has a pending extraction, return that instead of creating new
+
+    const { data: existingExtraction } = await supabase
+      .from("extracted_rental_info")
+      .select("id, document_storage_path, extraction_status")
+      .eq("user_id", user.id)
+      .in("extraction_status", ["pending", "processing"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingExtraction && existingExtraction.extraction_status === "processing") {
+      // Document is currently being processed - don't allow new upload
+      throw new ValidationError("Document processing in progress", {
+        extraction_status: "Please wait for current extraction to complete",
+      });
+    }
+
+    // ==============================================
+    // GENERATE STORAGE PATH
+    // ==============================================
+
+    const fileExtension = body.file_name.split(".").pop() || "pdf";
+    const timestamp = Date.now();
+    const randomId = crypto.randomUUID().slice(0, 8);
+    const storagePath = `rent-agreements/${user.id}/${timestamp}-${randomId}.${fileExtension}`;
+
+    // ==============================================
+    // CREATE SIGNED UPLOAD URL
+    // ==============================================
+
+    const { data: uploadData, error: uploadError } = await adminClient.storage
+      .from("documents")
+      .createSignedUploadUrl(storagePath, {
+        upsert: true,
+      });
+
+    if (uploadError || !uploadData) {
+      console.error("Failed to create signed URL:", uploadError);
+      throw new ValidationError("Failed to create upload URL", {
+        storage: uploadError?.message || "Unknown error",
+      });
+    }
+
+    // ==============================================
+    // CREATE EXTRACTED_RENTAL_INFO RECORD
+    // ==============================================
+    // V2: We create the extraction record before upload
+    // This replaces V1's waitlist_entries table
+
+    let extractionId: string;
+
+    if (existingExtraction && existingExtraction.extraction_status === "pending") {
+      // Update existing pending record with new document path
+      await adminClient
+        .from("extracted_rental_info")
+        .update({
+          document_storage_path: storagePath,
+          original_filename: body.file_name,
+          file_size_bytes: body.file_size,
+          mime_type: body.file_type,
+          extraction_status: "pending",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingExtraction.id);
+
+      extractionId = existingExtraction.id;
+    } else {
+      // Create new extraction record
+      const { data: newExtraction, error: insertError } = await adminClient
+        .from("extracted_rental_info")
+        .insert({
+          user_id: user.id,
+          document_storage_path: storagePath,
+          document_type: "lease_agreement",
+          original_filename: body.file_name,
+          file_size_bytes: body.file_size,
+          mime_type: body.file_type,
+          extraction_status: "pending",
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !newExtraction) {
+        console.error("Failed to create extraction record:", insertError);
+        throw new ValidationError("Failed to create document record", {
+          database: insertError?.message || "Unknown error",
+        });
+      }
+
+      extractionId = newExtraction.id;
+    }
+
+    // ==============================================
+    // ALSO CREATE WAITLIST_ENTRIES RECORD (V1 compatibility)
+    // ==============================================
+    // Some V1 iOS code may query waitlist_entries directly
+
+    await adminClient.from("waitlist_entries").upsert(
+      {
+        user_id: user.id,
+        document_url: storagePath,
+        status: "pending_review",
+        extraction_status: "pending",
+        contract_status: "uploading",
+      },
+      { onConflict: "user_id" }
+    );
+
+    // ==============================================
+    // GENERATE DOWNLOAD URL (for verification)
+    // ==============================================
+
+    const { data: downloadData } = await adminClient.storage
+      .from("documents")
+      .createSignedUrl(storagePath, 3600); // 1 hour expiry
+
+    // ==============================================
+    // AUDIT LOG
+    // ==============================================
+
+    await audit.logSuccess(
+      AuditActions.DOCUMENT_UPLOADED,
+      "extraction",
+      "extracted_rental_info",
+      extractionId,
+      {
+        file_name: body.file_name,
+        file_type: body.file_type,
+        file_size: body.file_size,
+        storage_path: storagePath,
+      }
+    );
+
+    // ==============================================
+    // RETURN RESPONSE (V1 + V2 compatible)
+    // ==============================================
+
+    const response: UploadDocumentResponse = {
+      success: true,
+      upload_url: uploadData.signedUrl,
+      waitlist_entry_id: extractionId, // V1 field name (maps to extraction ID)
+      extracted_rental_info_id: extractionId, // V2 field name
+      download_url: downloadData?.signedUrl,
+      document_path: storagePath,
+    };
+
+    return jsonResponse(response, 200, headers);
+  } catch (error) {
+    return handleError(error);
+  }
+});

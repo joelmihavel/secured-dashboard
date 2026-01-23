@@ -6,6 +6,7 @@
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
+import { AuthError } from "./errors.ts";
 
 // ==============================================
 // ENVIRONMENT CONFIGURATION
@@ -101,13 +102,13 @@ export async function getUserIdFromAuth(
  * Returns both the client and user info.
  *
  * @param authHeader - The Authorization header from the request
- * @throws Error if authentication fails
+ * @throws AuthError if authentication fails
  */
 export async function createAuthenticatedClient(
   authHeader: string | null
 ): Promise<{ client: SupabaseClient; userId: string; user: { id: string; phone?: string; email?: string } }> {
   if (!authHeader) {
-    throw new Error("No authorization header provided");
+    throw new AuthError("No authorization header provided");
   }
 
   const client = createUserClient(authHeader);
@@ -117,7 +118,7 @@ export async function createAuthenticatedClient(
   } = await client.auth.getUser();
 
   if (error || !user) {
-    throw new Error(`Authentication failed: ${error?.message ?? "Invalid token"}`);
+    throw new AuthError(`Authentication failed: ${error?.message ?? "Invalid token"}`);
   }
 
   return {
@@ -141,18 +142,18 @@ export async function createAuthenticatedClient(
  *
  * @param authHeader - The Authorization header from the request
  * @returns true if the request is using service role authentication
- * @throws Error if authorization fails
+ * @throws AuthError if authorization fails
  */
 export function verifyServiceRole(authHeader: string | null): boolean {
   if (!authHeader) {
-    throw new Error("No authorization header provided");
+    throw new AuthError("No authorization header provided");
   }
 
   const token = authHeader.replace("Bearer ", "");
 
   // Use strict equality comparison - no substring matching
   if (token !== SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("Unauthorized - service role required");
+    throw new AuthError("Unauthorized - service role required");
   }
 
   return true;

@@ -70,3 +70,21 @@ export {
   isValidOtpFormat,
   isTestOtp,
 } from "./mock-twilio.ts";
+
+// =============================================================================
+// API Club Mocks (Electricity Bill Verification)
+// =============================================================================
+export {
+  API_CLUB_SANDBOX,
+  API_CLUB_TEST_DATA,
+  createMockOperatorListSuccess,
+  createMockBillFetchSuccess,
+  createMockBillFetchWithDetails,
+  createMockBillFetchFailure,
+  createMockBillFetchInvalidConsumer,
+  createMockBillFetchInvalidOperator,
+  createMockBillFetchServiceUnavailable,
+  ApiClubTestScenarios,
+  getApiClubHeaders,
+  TEST_VERIFICATION_DATA,
+} from "./mock-apiclub.ts";
