@@ -6,7 +6,8 @@
  * Uses local Supabase instance or preview branches - NEVER connects to production.
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Use jsr for better Deno compatibility in CI environments
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
 // ==============================================
 // CONFIGURATION

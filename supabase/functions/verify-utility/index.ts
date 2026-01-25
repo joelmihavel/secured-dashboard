@@ -29,6 +29,7 @@ import {
 } from "../_shared/errors.ts";
 import { validateSchema } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { verifyUtilityWithGemini } from "../_shared/gemini.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -37,9 +38,12 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 const API_CLUB_KEY = Deno.env.get("API_CLUB_KEY");
 const API_CLUB_BASE_URL = "https://api.apiclub.in/api/v1";
 
-// Matching thresholds
+// Matching thresholds (used as fallback if Gemini fails)
 const ADDRESS_MATCH_THRESHOLD = 0.7; // 70%
 const NAME_MATCH_THRESHOLD = 0.7; // 70%
+
+// Use Gemini AI for matching (recommended for production)
+const USE_GEMINI_MATCHING = Deno.env.get("USE_GEMINI_MATCHING") !== "false";
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -83,6 +87,7 @@ interface OperatorInfo {
   operator_code: string;
   operator_name: string;
   state?: string;
+  params?: string[]; // Additional params required by some operators (e.g., "Billing Unit")
 }
 
 // ==============================================
@@ -138,14 +143,47 @@ async function handleGetOperators(): Promise<Response> {
 
     const data = await response.json();
 
+    // API Club returns object with numeric keys: {"0": {...}, "1": {...}, "timestamp": "..."}
+    // NOT an array. We need to extract operator objects from this structure.
+    let operatorEntries: Record<string, unknown>[];
+
+    if (Array.isArray(data)) {
+      // If response is already an array (shouldn't happen, but handle it)
+      operatorEntries = data;
+    } else if (data.data && Array.isArray(data.data)) {
+      // If wrapped in data field as array
+      operatorEntries = data.data;
+    } else if (data.response && Array.isArray(data.response)) {
+      // If wrapped in response field as array
+      operatorEntries = data.response;
+    } else if (typeof data === "object" && data !== null) {
+      // API Club format: object with numeric keys {"0": {...}, "1": {...}, "timestamp": "..."}
+      operatorEntries = Object.entries(data)
+        .filter(([key, value]) => {
+          // Filter out non-operator keys like "timestamp", keep numeric keys
+          const isNumericKey = /^\d+$/.test(key);
+          const isOperatorObject =
+            typeof value === "object" &&
+            value !== null &&
+            ("operator_code" in value || "code" in value);
+          return isNumericKey && isOperatorObject;
+        })
+        .map(([, value]) => value as Record<string, unknown>);
+    } else {
+      operatorEntries = [];
+    }
+
     // Normalize operator data
-    const operators: OperatorInfo[] = (data.data ?? data.response ?? []).map(
+    const operators: OperatorInfo[] = operatorEntries.map(
       (op: Record<string, unknown>) => ({
-        operator_code: op.operator_code ?? op.code ?? op.id,
-        operator_name: op.operator_name ?? op.name ?? op.operator,
-        state: op.state,
+        operator_code: String(op.operator_code ?? op.code ?? op.id ?? ""),
+        operator_name: String(op.operator_name ?? op.name ?? op.operator ?? "Unknown"),
+        state: op.state ? String(op.state) : undefined,
+        params: Array.isArray(op.params) ? op.params.map(String) : undefined,
       })
-    );
+    ).filter(op => op.operator_code); // Filter out any with empty codes
+
+    console.log(`[verify-utility] Fetched ${operators.length} operators from API Club`);
 
     return jsonResponse({
       success: true,
@@ -244,17 +282,71 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       billResult.response?.state
     );
 
-    // Calculate match scores
-    const addressMatchScore = calculateAddressMatchScore(tenancyAddress, billAddress);
-    const nameMatchScore = calculateNameMatchScore(
-      tenancy.landlord_name,
-      billResult.response?.consumer_name ?? ""
-    );
-
-    // Determine verification status
+    // Determine if bill was fetched successfully
     const isBillFetched = billResult.status === "success" && billResult.response;
-    const isAddressVerified = isBillFetched && addressMatchScore >= ADDRESS_MATCH_THRESHOLD;
-    const isNameVerified = isBillFetched && nameMatchScore >= NAME_MATCH_THRESHOLD;
+    const consumerName = billResult.response?.consumer_name ?? "";
+    const landlordName = tenancy.landlord_name ?? "";
+
+    // Calculate match scores - use Gemini AI if available, fallback to algorithmic
+    let addressMatchScore: number;
+    let nameMatchScore: number;
+    let isAddressVerified: boolean;
+    let isNameVerified: boolean;
+    let matchDetails: {
+      gemini_used: boolean;
+      name_reasoning?: string;
+      address_reasoning?: string;
+      name_match_type?: string;
+      address_match_type?: string;
+    } = { gemini_used: false };
+
+    if (isBillFetched && USE_GEMINI_MATCHING && consumerName && landlordName) {
+      try {
+        console.log("[verify-utility] Using Gemini AI for semantic matching");
+        const geminiResult = await verifyUtilityWithGemini(
+          landlordName,
+          consumerName,
+          tenancyAddress,
+          billAddress
+        );
+
+        // Use Gemini results
+        nameMatchScore = geminiResult.name_match.confidence / 100;
+        addressMatchScore = geminiResult.address_match.confidence / 100;
+        isNameVerified = geminiResult.name_match.is_match;
+        isAddressVerified = geminiResult.address_match.is_match;
+        matchDetails = {
+          gemini_used: true,
+          name_reasoning: geminiResult.name_match.reasoning,
+          address_reasoning: geminiResult.address_match.reasoning,
+          name_match_type: geminiResult.name_match.match_type,
+          address_match_type: geminiResult.address_match.match_type,
+        };
+
+        console.log("[verify-utility] Gemini matching result:", {
+          name_match: geminiResult.name_match.is_match,
+          name_confidence: geminiResult.name_match.confidence,
+          address_match: geminiResult.address_match.is_match,
+          address_confidence: geminiResult.address_match.confidence,
+          overall: geminiResult.overall_verified,
+          recommendation: geminiResult.recommendation,
+        });
+      } catch (geminiError) {
+        console.warn("[verify-utility] Gemini matching failed, falling back to algorithmic:", geminiError);
+        // Fallback to algorithmic matching
+        addressMatchScore = calculateAddressMatchScore(tenancyAddress, billAddress);
+        nameMatchScore = calculateNameMatchScore(landlordName, consumerName);
+        isAddressVerified = addressMatchScore >= ADDRESS_MATCH_THRESHOLD;
+        isNameVerified = nameMatchScore >= NAME_MATCH_THRESHOLD;
+      }
+    } else {
+      // Use algorithmic matching (Gemini disabled or no data)
+      addressMatchScore = isBillFetched ? calculateAddressMatchScore(tenancyAddress, billAddress) : 0;
+      nameMatchScore = isBillFetched ? calculateNameMatchScore(landlordName, consumerName) : 0;
+      isAddressVerified = isBillFetched && addressMatchScore >= ADDRESS_MATCH_THRESHOLD;
+      isNameVerified = isBillFetched && nameMatchScore >= NAME_MATCH_THRESHOLD;
+    }
+
     const isFullyVerified = isAddressVerified && isNameVerified;
 
     // Create utility verification record
@@ -278,6 +370,14 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       address_verified: isAddressVerified,
       name_verified: isNameVerified,
       verified_at: isFullyVerified ? new Date().toISOString() : null,
+      // Gemini AI matching details
+      match_details: matchDetails.gemini_used ? {
+        gemini_used: true,
+        name_reasoning: matchDetails.name_reasoning,
+        address_reasoning: matchDetails.address_reasoning,
+        name_match_type: matchDetails.name_match_type,
+        address_match_type: matchDetails.address_match_type,
+      } : null,
     };
 
     const { data: verification, error: insertError } = await supabase
@@ -373,6 +473,14 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
         bill_amount: billResult.response?.bill_amount,
         bill_due_date: billResult.response?.due_date,
         message,
+        // Include Gemini matching details in response
+        matching_method: matchDetails.gemini_used ? "gemini_ai" : "algorithmic",
+        ...(matchDetails.gemini_used && {
+          name_reasoning: matchDetails.name_reasoning,
+          address_reasoning: matchDetails.address_reasoning,
+          name_match_type: matchDetails.name_match_type,
+          address_match_type: matchDetails.address_match_type,
+        }),
       },
     });
   } catch (error) {

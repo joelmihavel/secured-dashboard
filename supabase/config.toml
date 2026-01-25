@@ -86,6 +86,9 @@ verify_jwt = true
 [functions.verify-identity]
 verify_jwt = true
 
+[functions.auth-otp]
+verify_jwt = false
+
 # Longer timeout for document processing
 [functions.process-document]
 verify_jwt = true

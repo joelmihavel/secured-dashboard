@@ -1,11 +1,17 @@
 /**
  * Flent Secured v2 - Verify Identity Edge Function
  *
- * Verifies user identity using Cashfree Mobile 360 API with OTP flow.
+ * Verifies user identity using Cashfree Mobile 360 API.
  *
- * Two-step process:
- * 1. action: "send_otp" - Sends OTP to user's mobile
- * 2. action: "verify_otp" - Verifies OTP and retrieves identity data
+ * Supports multiple flows:
+ * 1. action: "send_otp" - Sends OTP via Cashfree (legacy, if Twilio consent not available)
+ * 2. action: "verify_otp" - Verifies Cashfree OTP and retrieves identity data (legacy)
+ * 3. action: "fetch_with_consent" - Uses pre-recorded consent from Twilio auth (preferred)
+ *
+ * The preferred flow is:
+ * - User authenticates via auth-otp (Twilio Verify) with consent_for_mobile360=true
+ * - User calls verify-identity with action: "fetch_with_consent"
+ * - This function uses the pre-recorded consent to fetch Mobile 360 data
  *
  * Endpoint: POST /functions/v1/verify-identity
  * Auth: Required (JWT)
@@ -57,7 +63,12 @@ interface VerifyOtpRequest {
   tenancy_id?: string;
 }
 
-type VerifyIdentityRequest = SendOtpRequest | VerifyOtpRequest;
+interface FetchWithConsentRequest {
+  action: "fetch_with_consent";
+  tenancy_id?: string;
+}
+
+type VerifyIdentityRequest = SendOtpRequest | VerifyOtpRequest | FetchWithConsentRequest;
 
 // Response from Send OTP API
 interface Mobile360SendOtpResponse {
@@ -173,6 +184,11 @@ const verifyOtpSchema = {
   tenancy_id: { required: false, type: "string" as const },
 };
 
+const fetchWithConsentSchema = {
+  action: { required: true, type: "string" as const, enum: ["fetch_with_consent"] },
+  tenancy_id: { required: false, type: "string" as const },
+};
+
 // ==============================================
 // MAIN HANDLER
 // ==============================================
@@ -207,14 +223,19 @@ serve(async (req: Request) => {
       throw new ValidationError("action is required", { action: "Required field" });
     }
 
+    // Get client IP for consent tracking
+    const clientIp = getClientIp(req);
+
     // Route based on action
     if (body.action === "send_otp") {
-      return await handleSendOtp(body, userId, supabase, audit);
+      return await handleSendOtp(body, userId, supabase, audit, clientIp);
     } else if (body.action === "verify_otp") {
       return await handleVerifyOtp(body, userId, supabase, audit);
+    } else if (body.action === "fetch_with_consent") {
+      return await handleFetchWithConsent(body, userId, supabase, audit, user);
     } else {
-      throw new ValidationError("Invalid action. Use 'send_otp' or 'verify_otp'", {
-        action: "Must be 'send_otp' or 'verify_otp'",
+      throw new ValidationError("Invalid action. Use 'send_otp', 'verify_otp', or 'fetch_with_consent'", {
+        action: "Must be 'send_otp', 'verify_otp', or 'fetch_with_consent'",
       });
     }
   } catch (error) {
@@ -241,7 +262,8 @@ async function handleSendOtp(
   body: unknown,
   userId: string,
   supabase: ReturnType<typeof createServiceClient>,
-  audit: AuditLogger
+  audit: AuditLogger,
+  clientIp: string
 ): Promise<Response> {
   // Validate request
   const validatedBody = validateSchema<SendOtpRequest>(body, sendOtpSchema, true);
@@ -283,6 +305,7 @@ async function handleSendOtp(
     mobile_number: sanitizedPhone,
     name,
     notification_modes,
+    consent_ip: clientIp,
   });
 
   // Store pending verification record
@@ -492,6 +515,7 @@ interface SendOtpParams {
   mobile_number: string;
   name: string;
   notification_modes: ("sms" | "whatsapp")[];
+  consent_ip: string;
 }
 
 async function callCashfreeSendOtp(
@@ -517,7 +541,7 @@ async function callCashfreeSendOtp(
         user_consent: {
           consent_given: true,
           consent_timestamp: new Date().toISOString(),
-          consent_ip: "0.0.0.0", // Will be replaced by actual IP in production
+          consent_ip: params.consent_ip || "0.0.0.0",
         },
         notification_modes: params.notification_modes.map((m) => m.toUpperCase()),
       }),
@@ -669,4 +693,368 @@ async function callCashfreeVerifyOtp(
       error instanceof Error ? error.message : "Unknown error"
     );
   }
+}
+
+// ==============================================
+// FETCH WITH CONSENT HANDLER
+// ==============================================
+
+/**
+ * Fetches Mobile 360 data using pre-recorded consent from Twilio auth.
+ * This is the preferred flow when user has already authenticated via auth-otp
+ * with consent_for_mobile360=true.
+ */
+async function handleFetchWithConsent(
+  body: unknown,
+  userId: string,
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger,
+  user: { id: string; phone?: string; email?: string }
+): Promise<Response> {
+  // Validate request
+  const validatedBody = validateSchema<FetchWithConsentRequest>(body, fetchWithConsentSchema, true);
+  const { tenancy_id } = validatedBody;
+
+  // Get user's phone number
+  const userPhone = user.phone;
+  if (!userPhone) {
+    throw new ValidationError("User phone number not found. Please authenticate first.");
+  }
+
+  const sanitizedPhone = sanitizePhone(userPhone);
+
+  // Check for existing consent record
+  const { data: consentRecord, error: consentError } = await supabase
+    .from("identity_verifications")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "CONSENT_GIVEN")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (consentError || !consentRecord) {
+    throw new ValidationError(
+      "No consent record found. Please authenticate via OTP first with consent_for_mobile360=true.",
+      { consent: "Not found" }
+    );
+  }
+
+  // Check if consent is still valid (within 24 hours)
+  const consentAge = Date.now() - new Date(consentRecord.consent_timestamp || consentRecord.created_at).getTime();
+  const maxConsentAge = 24 * 60 * 60 * 1000; // 24 hours
+
+  if (consentAge > maxConsentAge) {
+    throw new ValidationError(
+      "Consent has expired. Please re-authenticate to give fresh consent.",
+      { consent: "Expired" }
+    );
+  }
+
+  // Log verification initiation
+  await audit.logSuccess(
+    AuditActions.IDENTITY_VERIFICATION_INITIATED,
+    "verification",
+    "identity_verification",
+    consentRecord.id,
+    {
+      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+      tenancy_id,
+      action: "fetch_with_consent",
+      consent_record_id: consentRecord.id,
+    }
+  );
+
+  // Call Cashfree Mobile 360 with consent (non-OTP flow)
+  // Note: Cashfree Mobile 360 consent-based API
+  const m360Result = await callCashfreeMobile360WithConsent({
+    mobile_number: sanitizedPhone,
+    name: consentRecord.m360_full_name || "User",
+    consent_timestamp: consentRecord.consent_timestamp || consentRecord.created_at,
+    consent_ip: consentRecord.consent_ip || "0.0.0.0",
+  });
+
+  // Prepare verification data
+  const verificationData = {
+    reference_id: m360Result.reference_id,
+    status: m360Result.status === "SUCCESS" ? "SUCCESS" : m360Result.status,
+    verified_at: m360Result.status === "SUCCESS" ? new Date().toISOString() : null,
+    tenancy_id: tenancy_id ?? null,
+
+    // Personal details
+    m360_full_name: m360Result.data?.full_name,
+    m360_gender: m360Result.data?.gender,
+    m360_date_of_birth: m360Result.data?.dob,
+    m360_age: m360Result.data?.age,
+    m360_occupation: m360Result.data?.occupation,
+    m360_total_income: m360Result.data?.total_income,
+    m360_relatives: m360Result.data?.relatives,
+
+    // Contact info
+    m360_phone_numbers: m360Result.data?.phone_numbers,
+    m360_emails: m360Result.data?.emails,
+
+    // Identity documents (masked)
+    m360_pan_details: m360Result.data?.pan_details?.map((p: { pan: string }) => ({
+      ...p,
+      pan: maskPan(p.pan),
+    })),
+    m360_aadhaar_masked: m360Result.data?.aadhaar_number
+      ? maskAadhaar(m360Result.data.aadhaar_number)
+      : null,
+    m360_passport_details: m360Result.data?.passport_details,
+    m360_driving_license_details: m360Result.data?.driving_license_details,
+    m360_voter_details: m360Result.data?.voter_details,
+    m360_ration_card_details: m360Result.data?.ration_card_details,
+
+    // Financial data (masked)
+    m360_bank_accounts: m360Result.data?.bank_accounts?.map((b: { account_number: string; ifsc: string; bank_name: string }) => ({
+      account_masked: `XXXX${b.account_number.slice(-4)}`,
+      ifsc: b.ifsc,
+      bank_name: b.bank_name,
+    })),
+    m360_employment_details: m360Result.data?.employment_details,
+
+    // Addresses
+    m360_addresses: m360Result.data?.addresses,
+
+    // Intelligence scores
+    m360_credit_score: m360Result.data?.credit_score,
+    m360_mobile_intelligence: m360Result.data?.mobile_intelligence,
+    m360_risk_intelligence: m360Result.data?.risk_intelligence,
+
+    // Social profiles
+    m360_social_profiles: m360Result.data?.social_profiles,
+
+    // Raw response (for audit)
+    raw_response: m360Result,
+  };
+
+  // Update the consent record with Mobile 360 data
+  const { data: verification, error: updateError } = await supabase
+    .from("identity_verifications")
+    .update(verificationData)
+    .eq("id", consentRecord.id)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error("Failed to update identity verification:", updateError);
+    throw new AppError("Failed to save verification result", "DB_ERROR", 500);
+  }
+
+  // Update user profile with verified name if successful
+  if (m360Result.status === "SUCCESS" && m360Result.data?.full_name) {
+    const nameParts = m360Result.data.full_name.split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ");
+
+    await supabase
+      .from("users")
+      .update({
+        first_name: firstName,
+        last_name: lastName || null,
+        full_name: m360Result.data.full_name,
+      })
+      .eq("id", userId);
+  }
+
+  // Log result
+  if (m360Result.status === "SUCCESS") {
+    await audit.logSuccess(
+      AuditActions.IDENTITY_VERIFICATION_SUCCESS,
+      "verification",
+      "identity_verification",
+      verification.id,
+      {
+        has_name: !!m360Result.data?.full_name,
+        has_credit_score: !!m360Result.data?.credit_score,
+        risk_level: m360Result.data?.risk_intelligence?.risk_level,
+      }
+    );
+  } else {
+    await audit.logFailure(
+      AuditActions.IDENTITY_VERIFICATION_FAILED,
+      "verification",
+      m360Result.status,
+      m360Result.message ?? "Verification failed",
+      "identity_verification",
+      verification.id
+    );
+  }
+
+  // Return sanitized response
+  return jsonResponse({
+    success: m360Result.status === "SUCCESS",
+    data: {
+      verification_id: verification.id,
+      status: verification.status,
+      name: m360Result.data?.full_name,
+      has_pan: !!m360Result.data?.pan_details?.length,
+      has_aadhaar: !!m360Result.data?.aadhaar_number,
+      credit_score: m360Result.data?.credit_score,
+      risk_safe: m360Result.data?.risk_intelligence?.safe ?? true,
+      message:
+        m360Result.status === "SUCCESS"
+          ? "Identity verified successfully"
+          : m360Result.status === "DETAILS_NOT_FOUND"
+          ? "No identity data found for this phone number"
+          : m360Result.message ?? "Verification failed",
+    },
+  });
+}
+
+// ==============================================
+// CASHFREE MOBILE 360 WITH CONSENT (NON-OTP)
+// ==============================================
+
+interface Mobile360ConsentParams {
+  mobile_number: string;
+  name: string;
+  consent_timestamp: string;
+  consent_ip: string;
+}
+
+/**
+ * Calls Cashfree Mobile 360 API using pre-recorded consent.
+ * This is the consent-based flow where OTP was already verified via Twilio.
+ */
+async function callCashfreeMobile360WithConsent(
+  params: Mobile360ConsentParams
+): Promise<Mobile360VerifyOtpResponse> {
+  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    throw new ExternalServiceError("Cashfree", "API credentials not configured");
+  }
+
+  // Generate verification ID for this request
+  const verificationId = `FLENT_CONSENT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+  try {
+    // Note: Cashfree Mobile 360 consent-based API endpoint
+    // This calls the data fetch endpoint directly with consent proof
+    const response = await fetch(`${CASHFREE_BASE_URL}/mobile360/data`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-client-id": CASHFREE_APP_ID,
+        "x-client-secret": CASHFREE_SECRET_KEY,
+        "x-api-version": "2024-12-01",
+      },
+      body: JSON.stringify({
+        verification_id: verificationId,
+        mobile_number: params.mobile_number.startsWith("+91")
+          ? params.mobile_number.slice(3)
+          : params.mobile_number,
+        name: params.name,
+        user_consent: {
+          consent_given: true,
+          consent_timestamp: params.consent_timestamp,
+          consent_ip: params.consent_ip,
+          consent_mode: "OTP_VERIFIED", // Indicates OTP was verified externally
+        },
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Cashfree Mobile 360 consent API error:", data);
+
+      // No data found is a valid response
+      if (data.status === "DETAILS_NOT_FOUND") {
+        return {
+          verification_id: verificationId,
+          reference_id: data.reference_id ?? verificationId,
+          status: "DETAILS_NOT_FOUND",
+          message: "No identity data found for this phone number",
+        };
+      }
+
+      // If consent-based flow is not supported, fall back to error
+      if (data.code === "consent_required" || data.code === "otp_required") {
+        throw new AppError(
+          "Consent-based Mobile 360 not available. Please use OTP flow.",
+          "CONSENT_FLOW_UNAVAILABLE",
+          400
+        );
+      }
+
+      throw new ExternalServiceError(
+        "Cashfree",
+        data.message ?? `HTTP ${response.status}`
+      );
+    }
+
+    // Map Cashfree response to our interface
+    return {
+      verification_id: data.verification_id ?? verificationId,
+      reference_id: data.reference_id ?? verificationId,
+      status: data.status ?? "SUCCESS",
+      data: {
+        full_name: data.full_name ?? data.name,
+        gender: data.gender,
+        dob: data.dob,
+        age: data.age,
+        occupation: data.occupation,
+        total_income: data.total_income,
+        relatives: data.relatives,
+        phone_numbers: data.phone_numbers,
+        emails: data.emails,
+        pan_details: data.pan_details,
+        aadhaar_number: data.aadhaar_number,
+        passport_details: data.passport_details,
+        driving_license_details: data.driving_license_details,
+        voter_details: data.voter_details,
+        ration_card_details: data.ration_card_details,
+        bank_accounts: data.bank_accounts,
+        employment_details: data.employment_details,
+        addresses: data.addresses,
+        credit_score: data.credit_score,
+        mobile_intelligence: data.mobile_intelligence,
+        risk_intelligence: data.risk_intelligence,
+        social_profiles: data.social_profiles,
+      },
+    };
+  } catch (error) {
+    if (error instanceof ExternalServiceError || error instanceof AppError) throw error;
+
+    console.error("Cashfree Mobile 360 consent call failed:", error);
+    throw new ExternalServiceError(
+      "Cashfree",
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
+}
+
+// ==============================================
+// HELPER FUNCTIONS
+// ==============================================
+
+/**
+ * Extracts client IP from request headers.
+ * Handles various proxy/CDN headers.
+ */
+function getClientIp(req: Request): string {
+  // Check common headers in order of priority
+  const headers = [
+    "cf-connecting-ip", // Cloudflare
+    "x-real-ip", // Nginx
+    "x-forwarded-for", // Standard proxy header
+    "x-client-ip",
+    "true-client-ip",
+  ];
+
+  for (const header of headers) {
+    const value = req.headers.get(header);
+    if (value) {
+      // x-forwarded-for can contain multiple IPs, take the first
+      const ip = value.split(",")[0].trim();
+      if (ip && ip !== "unknown") {
+        return ip;
+      }
+    }
+  }
+
+  // Fallback - in Deno Deploy, we might not have direct access to IP
+  return "0.0.0.0";
 }

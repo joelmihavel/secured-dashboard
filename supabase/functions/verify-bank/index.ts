@@ -28,6 +28,10 @@ import {
 } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { encrypt } from "../_shared/crypto.ts";
+import {
+  IdempotencyManager,
+  generateIdempotencyKey,
+} from "../_shared/idempotency.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -129,6 +133,37 @@ serve(async (req: Request) => {
 
     // Sanitize inputs
     const sanitizedIfsc = sanitizeIfsc(ifsc_code);
+
+    // Generate idempotency key to prevent duplicate penny drops (which cost money)
+    const idempotencyKey = await generateIdempotencyKey(
+      "verify-bank",
+      tenancy_id,
+      account_number,
+      sanitizedIfsc
+    );
+
+    // Check idempotency - prevent duplicate verifications
+    const idempotency = new IdempotencyManager(supabase);
+    const idempotencyResult = await idempotency.check(idempotencyKey, validatedBody, {
+      userId,
+      endpoint: "verify-bank",
+      ttlHours: 24, // Cache for 24 hours
+    });
+
+    // If we have a cached response, return it
+    if (!idempotencyResult.isNew && idempotencyResult.cachedResponse) {
+      console.log(`[verify-bank] Returning cached response for idempotency key`);
+      return new Response(
+        JSON.stringify(idempotencyResult.cachedResponse.body),
+        {
+          status: idempotencyResult.cachedResponse.status,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Idempotency-Cached": "true",
+          },
+        }
+      );
+    }
 
     // Log verification initiation
     await audit.logSuccess(
@@ -241,7 +276,7 @@ serve(async (req: Request) => {
       );
     }
 
-    return jsonResponse({
+    const responseBody = {
       success: true,
       data: {
         bank_account_id: bankAccount.id,
@@ -252,14 +287,29 @@ serve(async (req: Request) => {
         name_match_score: Math.round(nameMatchScore * 100),
         name_match_threshold: NAME_MATCH_THRESHOLD * 100,
         verification_status: pennyDropResult.status,
+        bank_name: pennyDropResult.bank_name,
+        branch: pennyDropResult.branch,
         message: bankAccount.verified
           ? "Bank account verified successfully"
           : pennyDropResult.status === "SUCCESS"
           ? `Name mismatch: provided "${account_holder_name}", bank returned "${pennyDropResult.name_at_bank}"`
           : pennyDropResult.message ?? "Verification failed",
       },
-    });
+    };
+
+    // Cache successful response for idempotency
+    await idempotency.complete(idempotencyKey, 200, responseBody);
+
+    return jsonResponse(responseBody);
   } catch (error) {
+    // Mark idempotency as failed to allow retry
+    if (typeof idempotencyKey !== "undefined") {
+      const idempotency = new IdempotencyManager(supabase);
+      await idempotency.fail(
+        idempotencyKey,
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
     // Log failure if audit logger initialized
     if (audit && userId) {
       await audit.logFailure(

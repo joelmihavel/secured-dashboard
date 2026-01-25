@@ -21,7 +21,7 @@ export const API_CLUB_SANDBOX = {
 export const API_CLUB_TEST_DATA = {
   VALID_CONSUMER: {
     consumer_number: "123456789012",
-    operator_code: "TATA_MUM",
+    operator_code: "TAPM", // Tata Power Mumbai - matches real API Club code
     consumer_name: "RAMESH SHARMA", // Should match landlord name
     address: "123 MG Road, Andheri East",
     city: "Mumbai",
@@ -29,6 +29,17 @@ export const API_CLUB_TEST_DATA = {
     pincode: "400069",
     bill_amount: 2500.50,
     due_date: "2024-02-15",
+  },
+  BESCOM_CONSUMER: {
+    consumer_number: "987654321098",
+    operator_code: "BESC", // BESCOM - matches real API Club code
+    consumer_name: "SURESH KUMAR",
+    address: "456 Indiranagar, 12th Main",
+    city: "Bangalore",
+    state: "Karnataka",
+    pincode: "560038",
+    bill_amount: 1800.00,
+    due_date: "2024-02-20",
   },
   INVALID_CONSUMER: {
     consumer_number: "999999999999",
@@ -40,31 +51,68 @@ export const API_CLUB_TEST_DATA = {
 // OPERATOR RESPONSES
 // ==============================================
 
+interface OperatorData {
+  operator_code?: string;
+  code?: string;
+  operator_name?: string;
+  name?: string;
+  state?: string;
+}
+
+// API Club returns operators as object with numeric keys, not array
+// Example: {"0": {...}, "1": {...}, "timestamp": "..."}
 interface OperatorResponse {
-  status: string;
-  data?: Array<{
-    operator_code: string;
-    operator_name: string;
-    state?: string;
-  }>;
-  message?: string;
+  status?: string;
+  timestamp?: string;
+  [key: string]: OperatorData | string | undefined;
 }
 
 /**
  * Creates a mock successful electricity operator list response.
+ * IMPORTANT: This matches the real API Club format - an object with numeric keys,
+ * NOT an array. The parsing logic in verify-utility handles this format.
+ *
+ * Real API Club response format:
+ * {
+ *   "0": { "code": "TAPM", "name": "TATA POWER MUMBAI", "state": "Maharashtra" },
+ *   "1": { "code": "BESC", "name": "BESCOM (BENGALURU)", "state": "Karnataka" },
+ *   ...
+ *   "timestamp": "2026-01-25T12:00:00Z"
+ * }
  */
 export function createMockOperatorListSuccess(): OperatorResponse {
   return {
+    "0": { code: "TAPM", name: "TATA POWER MUMBAI", state: "Maharashtra" },
+    "1": { code: "ADANI_MUM", name: "ADANI ELECTRICITY MUMBAI", state: "Maharashtra" },
+    "2": { code: "MSEDCL", name: "MSEDCL (MAHARASHTRA)", state: "Maharashtra" },
+    "3": { code: "BEST", name: "BEST UNDERTAKING MUMBAI", state: "Maharashtra" },
+    "4": { code: "BESC", name: "BESCOM (BENGALURU)", state: "Karnataka" },
+    "5": { code: "TNEB", name: "TNEB (TAMIL NADU)", state: "Tamil Nadu" },
+    "6": { code: "TPDDL", name: "TATA POWER DDL (DELHI)", state: "Delhi" },
+    "7": { code: "BSES_RAJ", name: "BSES RAJDHANI (DELHI)", state: "Delhi" },
+    "8": { code: "BSES_YAM", name: "BSES YAMUNA (DELHI)", state: "Delhi" },
+    "9": { code: "UPPCL", name: "UPPCL (UTTAR PRADESH)", state: "Uttar Pradesh" },
+    "10": { code: "WBSEDCL", name: "WBSEDCL (WEST BENGAL)", state: "West Bengal" },
+    "11": { code: "CESC", name: "CESC (KOLKATA)", state: "West Bengal" },
+    "12": { code: "PGVCL", name: "PGVCL (GUJARAT)", state: "Gujarat" },
+    "13": { code: "DGVCL", name: "DGVCL (GUJARAT)", state: "Gujarat" },
+    "14": { code: "MGVCL", name: "MGVCL (GUJARAT)", state: "Gujarat" },
+    "15": { code: "UGVCL", name: "UGVCL (GUJARAT)", state: "Gujarat" },
+    timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * Creates an operator list in legacy array format for backward compatibility testing.
+ */
+export function createMockOperatorListSuccessArray(): { status: string; data: OperatorData[] } {
+  return {
     status: "success",
     data: [
-      { operator_code: "TATA_MUM", operator_name: "Tata Power Mumbai", state: "Maharashtra" },
-      { operator_code: "MSEB", operator_name: "Maharashtra State Electricity Board", state: "Maharashtra" },
-      { operator_code: "BEST", operator_name: "BEST Undertaking", state: "Maharashtra" },
-      { operator_code: "BESCOM", operator_name: "Bangalore Electricity Supply", state: "Karnataka" },
-      { operator_code: "TNEB", operator_name: "Tamil Nadu Electricity Board", state: "Tamil Nadu" },
-      { operator_code: "TPDDL", operator_name: "Tata Power Delhi", state: "Delhi" },
-      { operator_code: "BSES_YAMUNA", operator_name: "BSES Yamuna", state: "Delhi" },
-      { operator_code: "BSES_RAJDHANI", operator_name: "BSES Rajdhani", state: "Delhi" },
+      { operator_code: "TAPM", operator_name: "TATA POWER MUMBAI", state: "Maharashtra" },
+      { operator_code: "BESC", operator_name: "BESCOM (BENGALURU)", state: "Karnataka" },
+      { operator_code: "TNEB", operator_name: "TNEB (TAMIL NADU)", state: "Tamil Nadu" },
+      { operator_code: "TPDDL", operator_name: "TATA POWER DDL (DELHI)", state: "Delhi" },
     ],
   };
 }

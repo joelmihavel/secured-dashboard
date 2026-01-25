@@ -78,6 +78,7 @@ export {
   API_CLUB_SANDBOX,
   API_CLUB_TEST_DATA,
   createMockOperatorListSuccess,
+  createMockOperatorListSuccessArray,
   createMockBillFetchSuccess,
   createMockBillFetchWithDetails,
   createMockBillFetchFailure,
@@ -88,3 +89,13 @@ export {
   getApiClubHeaders,
   TEST_VERIFICATION_DATA,
 } from "./mock-apiclub.ts";
+
+// =============================================================================
+// Test Utilities
+// =============================================================================
+export {
+  cleanupTestData,
+  assertStatus,
+  assertResponseContains,
+  waitFor,
+} from "./test-client.ts";

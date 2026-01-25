@@ -34,16 +34,42 @@ if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
 const CASHBACK_RATE = 0.01; // 1% cashback on rent payments
 const CASHBACK_MAX_PAISE = 100000; // Max ₹1,000 cashback per payment
 
-// PayU status mapping
+// PayU status mapping - comprehensive list of all PayU statuses
 const PAYU_STATUS_MAP: Record<string, string> = {
+  // Success statuses
   success: "success",
-  failure: "failed",
+  captured: "success",
+
+  // Processing/Pending statuses
   pending: "processing",
-  userCancelled: "failed",
+  initiated: "processing",
+  inprogress: "processing",
+  in_progress: "processing",
+  on_hold: "processing", // Fraud check hold
+  authorized: "processing", // Pre-capture state
+
+  // Failure statuses
+  failure: "failed",
+  failed: "failed",
+  usercancelled: "failed",
+  user_cancelled: "failed",
   dropped: "failed",
   bounced: "failed",
-  initiated: "processing",
+  timeout: "failed",
+  not_initiated: "failed",
+  expired: "failed",
+  rejected: "failed",
+  cancelled: "failed",
+
+  // Refund statuses
+  refunded: "refunded",
+  refund: "refunded",
+  partially_refunded: "partially_refunded",
+  partial_refund: "partially_refunded",
 };
+
+// Terminal states - cannot be changed once reached
+const TERMINAL_STATES = ["success", "failed", "refunded", "partially_refunded"];
 
 // ==============================================
 // TYPES
@@ -163,9 +189,8 @@ serve(async (req: Request) => {
       throw new PaymentError("Payment not found", "PAYMENT_NOT_FOUND");
     }
 
-    // Idempotency check: Skip if payment is already in terminal state
-    const terminalStates = ["success", "failed"];
-    if (terminalStates.includes(payment.status)) {
+    // Idempotency check 1: Skip if payment is already in terminal state
+    if (TERMINAL_STATES.includes(payment.status)) {
       console.log(`Payment ${payment.id} already in terminal state: ${payment.status}. Skipping update.`);
       return jsonResponse({
         status: "success",
@@ -173,6 +198,49 @@ serve(async (req: Request) => {
         payment_id: payment.id,
         current_status: payment.status,
       });
+    }
+
+    // Idempotency check 2: Skip if same mihpayid already processed
+    if (payment.payu_mihpayid && payment.payu_mihpayid === payload.mihpayid) {
+      console.log(`Payment ${payment.id} already has mihpayid ${payload.mihpayid}. Skipping duplicate.`);
+      return jsonResponse({
+        status: "success",
+        message: "Webhook already processed (duplicate mihpayid)",
+        payment_id: payment.id,
+        current_status: payment.status,
+      });
+    }
+
+    // CRITICAL SECURITY CHECK: Verify amount matches initiated payment
+    const initiatedAmountRupees = (payment.total_amount_paise / 100).toFixed(2);
+    const webhookAmountRupees = parseFloat(payload.amount).toFixed(2);
+    if (initiatedAmountRupees !== webhookAmountRupees) {
+      console.error(`[SECURITY] Amount mismatch for payment ${payment.id}:`, {
+        initiated: initiatedAmountRupees,
+        webhook: webhookAmountRupees,
+        txnid: payload.txnid,
+        mihpayid: payload.mihpayid,
+      });
+
+      // Log security event
+      await audit.logFailure(
+        "PAYMENT_AMOUNT_MISMATCH",
+        "security",
+        "AMOUNT_MISMATCH",
+        `Webhook amount (₹${webhookAmountRupees}) differs from initiated amount (₹${initiatedAmountRupees})`,
+        "payment",
+        payment.id,
+        {
+          initiated_amount: initiatedAmountRupees,
+          webhook_amount: webhookAmountRupees,
+          mihpayid: payload.mihpayid,
+        }
+      );
+
+      throw new PaymentError(
+        "Amount mismatch - potential tampering detected",
+        "AMOUNT_MISMATCH"
+      );
     }
 
     // Extract user_id from the joined tenancy
