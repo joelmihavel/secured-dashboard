@@ -1,0 +1,26 @@
+// Release.xcconfig
+// Flent Secured v2 - Release Build Configuration
+//
+// IMPORTANT: Production secrets should be injected via CI/CD
+// Never commit actual keys to this file
+
+// Supabase Configuration
+SUPABASE_URL = https:/$()/uowjtrzmszuaiokqxgir.supabase.co
+SUPABASE_ANON_KEY =
+
+// PayU Configuration (Production)
+PAYU_MERCHANT_KEY =
+PAYU_BASE_URL = https:/$()/secure.payu.in
+
+// API Environment
+API_ENVIRONMENT = production
+
+// Bundle Identifier
+PRODUCT_BUNDLE_IDENTIFIER = app.flent.secured
+
+// App Display Name
+PRODUCT_NAME = Flent
+
+// Disable Debug Features
+ENABLE_DEBUG_FEATURES = NO
+ENABLE_MOCK_DATA = NO

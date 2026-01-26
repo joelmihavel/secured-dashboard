@@ -1,0 +1,182 @@
+name: FlentSecured
+options:
+  bundleIdPrefix: app.flent
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "15.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  usesTabs: false
+  indentWidth: 4
+  tabWidth: 4
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: "H84887VH7U"
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+    INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+    INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Automatic
+
+configs:
+  Debug:
+    settings:
+      DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+  Release:
+    settings:
+      DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.5.0
+  Lottie:
+    url: https://github.com/airbnb/lottie-ios
+    version: 4.4.0
+  Pow:
+    url: https://github.com/EmergeTools/Pow
+    version: 1.0.0
+  ConfettiSwiftUI:
+    url: https://github.com/simibac/ConfettiSwiftUI
+    version: 1.1.0
+  Nuke:
+    url: https://github.com/kean/Nuke
+    from: 12.0.0
+  Shimmer:
+    url: https://github.com/markiv/SwiftUI-Shimmer
+    version: 1.4.0
+  SwiftUIIntrospect:
+    url: https://github.com/siteline/swiftui-introspect
+    version: 1.1.0
+  KeychainAccess:
+    url: https://github.com/kishikawakatsumi/KeychainAccess
+    version: 4.2.2
+  PostHog:
+    url: https://github.com/PostHog/posthog-ios
+    version: 3.2.0
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: 8.40.0
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing
+    version: 1.15.0
+
+targets:
+  FlentSecured:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: App
+      - path: Core
+      - path: Features
+      - path: Resources
+    resources:
+      - path: Resources/Assets.xcassets
+      - path: Resources/Animations
+      - path: Resources/Fonts
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.flent.secured
+        INFOPLIST_FILE: Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_NAME: Flent
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - package: Supabase
+      - package: Lottie
+      - package: Pow
+      - package: ConfettiSwiftUI
+      - package: Nuke
+        product: Nuke
+      - package: Nuke
+        product: NukeUI
+      - package: Shimmer
+      - package: SwiftUIIntrospect
+      - package: KeychainAccess
+      - package: PostHog
+      - package: Sentry
+    configFiles:
+      Debug: Configuration/Debug.xcconfig
+      Release: Configuration/Release.xcconfig
+    info:
+      path: Info.plist
+      properties:
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - flent
+        SUPABASE_URL: $(SUPABASE_URL)
+        SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
+        PAYU_MERCHANT_KEY: $(PAYU_MERCHANT_KEY)
+        PAYU_BASE_URL: $(PAYU_BASE_URL)
+        API_ENVIRONMENT: $(API_ENVIRONMENT)
+        ENABLE_DEBUG_FEATURES: $(ENABLE_DEBUG_FEATURES)
+        ENABLE_MOCK_DATA: $(ENABLE_MOCK_DATA)
+        NSCameraUsageDescription: "Flent needs camera access to scan your rental agreement"
+        NSPhotoLibraryUsageDescription: "Flent needs photo library access to upload your rental agreement"
+
+  FlentSecuredTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: ../FlentSecuredTests
+        excludes:
+          - "**/__Snapshots__/**"
+    dependencies:
+      - target: FlentSecured
+      - package: SnapshotTesting
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.flent.secured.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Flent.app/Flent"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    configFiles:
+      Debug: Configuration/Debug.xcconfig
+      Release: Configuration/Release.xcconfig
+
+  FlentSecuredUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: ../FlentSecuredUITests
+    dependencies:
+      - target: FlentSecured
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.flent.secured.uitests
+
+schemes:
+  FlentSecured:
+    build:
+      targets:
+        FlentSecured: all
+        FlentSecuredTests: [test]
+        FlentSecuredUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - FlentSecuredTests
+        - FlentSecuredUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,76 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode - User-specific
+xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+Packages/
+
+# CocoaPods (if used later)
+Pods/
+Podfile.lock
+
+# Carthage (if used later)
+Carthage/Build/
+Carthage/Checkouts/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# Code Injection
+iOSInjectionProject/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+Thumb.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets and environment
+*.env
+*.env.*
+!*.env.example
+secrets/
+credentials/
+
+# Test artifacts
+*.xcresult
+coverage/
+
+# Archives
+*.xcarchive
+
+# Snapshots (re-record as needed, but track reference images)
+# FlentSecuredTests/Snapshots/__Snapshots__/
+
+# Temporary files
+*.tmp
+*.temp
