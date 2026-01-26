@@ -159,6 +159,7 @@ jobs:
 
   # ===========================================================================
   # Claude Code Review (iOS Specific)
+  # Uses Google Cloud Vertex AI with OIDC authentication
   # ===========================================================================
   claude-review:
     name: Claude iOS Review
@@ -167,15 +168,27 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write  # Required for OIDC authentication with GCP
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
+      # Authenticate to Google Cloud using Workload Identity Federation
+      - name: Authenticate to Google Cloud
+        id: gcp-auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
       - name: Claude iOS Code Review
         uses: anthropics/claude-code-action@v1
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_vertex: "true"
+          model: "claude-opus-4-5-20251101"
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
@@ -211,5 +224,8 @@ jobs:
             Comment on PR with findings organized by category.
 
           claude_args: |
-            --max-turns 10
-            --allowedTools "Read,Grep,Glob,Bash(swift:*)"
+            --max-turns 20
+            --allowedTools "Read,Grep,Glob,Bash(swift:*),Bash(xcodebuild:*)"
+        env:
+          ANTHROPIC_VERTEX_PROJECT_ID: ${{ steps.gcp-auth.outputs.project_id }}
+          CLOUD_ML_REGION: global

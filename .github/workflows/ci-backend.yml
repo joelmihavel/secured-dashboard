@@ -327,6 +327,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           use_vertex: "true"
+          model: "claude-opus-4-5-20251101"
           show_full_output: "true"
           prompt: |
             REPO: ${{ github.repository }}
@@ -366,7 +367,6 @@ jobs:
                - Use context7 MCP for API documentation references if needed
 
           claude_args: |
-            --model claude-opus-4-5@20251101
             --max-turns 50
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(deno:*),Bash(git:*),Bash(gh:*),Bash(npx:*),mcp__sequential-thinking__*,mcp__context7__*,mcp__supabase__*,mcp__tavily__*"
             --mcp-config '{"mcpServers":{"context7":{"type":"stdio","command":"npx","args":["-y","@upstash/context7-mcp"]},"sequential-thinking":{"type":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-sequential-thinking"]},"supabase":{"type":"http","url":"https://mcp.supabase.com/mcp"},"tavily":{"type":"stdio","command":"npx","args":["-y","tavily-mcp@0.1.2"],"env":{"TAVILY_API_KEY":"${{ secrets.TAVILY_API_KEY }}"}}}}'
