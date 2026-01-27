@@ -113,9 +113,34 @@ final class HomeViewModel {
         upcomingPayment?.cashbackEligible ?? false
     }
 
-    var setupProgress: (completed: Int, total: Int) {
-        guard let tenancy = tenancy else { return (0, 3) }
-        return (tenancy.completedVerificationCount, 3)
+    var setupProgress: Int {
+        guard let tenancy = tenancy else { return 0 }
+        return tenancy.completedVerificationCount
+    }
+
+    var bankDetailsComplete: Bool {
+        tenancy?.bankDetailsComplete ?? false
+    }
+
+    var addressProofComplete: Bool {
+        tenancy?.addressProofComplete ?? false
+    }
+
+    var landlordInvited: Bool {
+        tenancy?.landlordInvited ?? false
+    }
+
+    var onTimePayments: Int {
+        // Count successful payments from recent payments
+        recentPayments.filter { $0.paymentStatus == .success || $0.paymentStatus == .settled }.count
+    }
+
+    var propertyName: String {
+        tenancy?.propertyName ?? tenancy?.addressLine1 ?? "Your Property"
+    }
+
+    var propertyAddress: String {
+        tenancy?.fullAddress ?? ""
     }
 
     // MARK: - Dependencies

@@ -29,15 +29,15 @@ protocol UserServiceProtocol {
 
 struct UserProfileData: Codable, Equatable {
     let id: String
-    let phone: String
+    let phone: String?
     let firstName: String?
     let lastName: String?
     let email: String?
-    let role: String
-    let isRoleLocked: Bool
-    let userStatus: String
+    let role: String?
+    let isRoleLocked: Bool?
+    let userStatus: String?
     let kycStatus: String?
-    let createdAt: String
+    let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -59,7 +59,8 @@ struct UserProfileData: Codable, Equatable {
     }
 
     var status: UserStatus {
-        UserStatus(rawValue: userStatus) ?? .unknown
+        guard let userStatus = userStatus else { return .unknown }
+        return UserStatus(rawValue: userStatus) ?? .unknown
     }
 }
 
@@ -150,6 +151,33 @@ struct TenancyData: Codable, Identifiable, Equatable {
     /// Count of completed verifications
     var completedVerificationCount: Int {
         [bankVerified, utilityVerified, landlordApproved].filter { $0 }.count
+    }
+
+    // MARK: - Convenience Aliases for UI
+
+    /// Alias for bankVerified (UI naming)
+    var bankDetailsComplete: Bool {
+        bankVerified
+    }
+
+    /// Alias for utilityVerified (UI naming)
+    var addressProofComplete: Bool {
+        utilityVerified
+    }
+
+    /// Alias for landlordApproved (UI naming)
+    var landlordInvited: Bool {
+        landlordApproved
+    }
+
+    /// Property name from address line
+    var propertyName: String {
+        propertyAddress ?? "Your Property"
+    }
+
+    /// Address line 1 for display
+    var addressLine1: String? {
+        propertyAddress
     }
 }
 

@@ -5,11 +5,11 @@
 /// Follows design system specifications from Figma
 ///
 /// Figma: Components / Buttons / Primary
-/// - Background: brand/500 (#FF9A6D)
-/// - Height: 56pt
-/// - Corner Radius: 12pt
+/// - Outer Container: brand/600 (#CC7B57), rd-12
+/// - Inner Button: gradient brand/400→brand/500, rd-8
+/// - Height: 56pt total
 /// - Font: Body/md SemiBold (16px)
-/// - Text Color: black/700 (#131313)
+/// - Text Color: white (#FFFFFF)
 
 import SwiftUI
 
@@ -18,6 +18,24 @@ struct PrimaryButton: View {
     var isLoading: Bool = false
     var isEnabled: Bool = true
     let action: () -> Void
+
+    /// Gradient from brand/400 to brand/500
+    private var buttonGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [AppColors.brand400, AppColors.brand500]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    /// Disabled state gradient (muted)
+    private var disabledGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [AppColors.black500, AppColors.black500]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
 
     var body: some View {
         Button(action: {
@@ -29,23 +47,25 @@ struct PrimaryButton: View {
                 action()
             }
         }) {
+            // Inner button with gradient
             HStack(spacing: Spacing.xs) {
                 if isLoading {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.textOnPrimary))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(0.8)
                 }
 
                 Text(title)
                     .font(Typography.button)
-                    .foregroundColor(AppColors.textOnPrimary)
+                    .foregroundColor(.white)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                isEnabled ? AppColors.accentPrimary : AppColors.disabled
-            )
-            .cornerRadius(Radius.button)
+            .frame(height: 48) // Inner height
+            .background(isEnabled ? buttonGradient : disabledGradient)
+            .cornerRadius(Radius.sm) // rd-8 for inner
+            .padding(4) // Creates the outer padding effect
+            .background(isEnabled ? AppColors.brand600 : AppColors.black400)
+            .cornerRadius(Radius.md) // rd-12 for outer
         }
         .buttonStyle(PressableButtonStyle())
         .disabled(!isEnabled || isLoading)

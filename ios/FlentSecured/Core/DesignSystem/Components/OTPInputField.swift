@@ -1,8 +1,15 @@
 /// OTPInputField.swift
 /// Flent Secured v2 - OTP Input Component
 ///
-/// 6-digit OTP input with auto-focus and paste support
-/// Figma: Onboarding / OTP Verification
+/// 4-digit OTP input with auto-focus and paste support
+///
+/// Figma: Components / OTP Input
+/// - Box size: 56x64px
+/// - Background: #202020 (black/500)
+/// - Border: 1px #4D4D4D (or brand/500 when focused)
+/// - Corner radius: 8px
+/// - Text: 32px SemiBold white, centered
+/// - Spacing: 12px between boxes
 
 import SwiftUI
 
@@ -15,7 +22,7 @@ struct OTPInputField: View {
 
     init(
         otp: Binding<String>,
-        digitCount: Int = 6,
+        digitCount: Int = 4,  // Default to 4 digits per Figma
         onComplete: ((String) -> Void)? = nil
     ) {
         self._otp = otp
@@ -88,33 +95,35 @@ struct OTPDigitBox: View {
 
     var body: some View {
         ZStack {
+            // Background with border
             RoundedRectangle(cornerRadius: Radius.sm)
-                .stroke(
-                    isFocused ? AppColors.accentPrimary : (digit.isEmpty ? AppColors.border : AppColors.borderActive),
-                    lineWidth: isFocused ? 2 : 1
-                )
-                .background(
+                .fill(AppColors.black500) // #202020
+                .overlay(
                     RoundedRectangle(cornerRadius: Radius.sm)
-                        .fill(AppColors.backgroundSecondary)
+                        .stroke(
+                            isFocused ? AppColors.brand500 : AppColors.black400,
+                            lineWidth: isFocused ? 2 : 1
+                        )
                 )
 
             if digit.isEmpty && isFocused {
-                // Cursor
+                // Cursor animation
                 Rectangle()
-                    .fill(AppColors.accentPrimary)
-                    .frame(width: 2, height: 24)
+                    .fill(AppColors.brand500)
+                    .frame(width: 2, height: 28)
                     .opacity(1)
                     .animation(
                         .easeInOut(duration: 0.5).repeatForever(autoreverses: true),
                         value: isFocused
                     )
             } else {
+                // Digit text - 32px SemiBold white
                 Text(digit)
-                    .font(Typography.amountLarge)
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundColor(.white)
             }
         }
-        .frame(width: 48, height: 56)
+        .frame(width: 56, height: 64) // 56x64 per Figma
     }
 }
 

@@ -147,9 +147,15 @@ extension AppEnvironment {
 
 extension AppEnvironment {
     /// Whether to use mock services (for testing/preview)
+    /// Checks both environment variable (UI tests) and xcconfig flag (device builds)
     static var useMockServices: Bool {
         #if DEBUG
-        return ProcessInfo.processInfo.environment["USE_MOCK_SERVICES"] == "true"
+        // Check environment variable (for UI tests)
+        if ProcessInfo.processInfo.environment["USE_MOCK_SERVICES"] == "true" {
+            return true
+        }
+        // Check xcconfig flag (for device debug builds)
+        return Configuration.useMockData
         #else
         return false
         #endif

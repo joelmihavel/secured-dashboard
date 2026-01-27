@@ -62,8 +62,13 @@ enum Spacing {
 
     // MARK: - Semantic Aliases
 
-    /// Screen horizontal padding (typically 16-24pt)
-    static let screenHorizontal: CGFloat = lg
+    /// Screen horizontal padding for onboarding screens (40pt)
+    /// Figma: Splash, Phone, OTP screens use 40px horizontal padding
+    static let screenHorizontal: CGFloat = xxl
+
+    /// Screen horizontal padding for main app screens (24pt)
+    /// Figma: Home, Payment, Profile screens use 24px horizontal padding
+    static let screenHorizontalCompact: CGFloat = lg
 
     /// Screen top padding
     static let screenTop: CGFloat = md
@@ -93,9 +98,14 @@ enum Spacing {
 // MARK: - View Extensions for Consistent Spacing
 
 extension View {
-    /// Apply screen-level horizontal padding
+    /// Apply screen-level horizontal padding for onboarding (40pt)
     func screenPadding() -> some View {
         self.padding(.horizontal, Spacing.screenHorizontal)
+    }
+
+    /// Apply screen-level horizontal padding for main app (24pt)
+    func screenPaddingCompact() -> some View {
+        self.padding(.horizontal, Spacing.screenHorizontalCompact)
     }
 
     /// Apply card-level padding

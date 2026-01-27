@@ -38,6 +38,10 @@ enum Radius {
     /// 24pt - Extra large rounding
     static let xl: CGFloat = 24
 
+    /// 40pt - Pills and tags
+    /// Figma: --radius/rd-40
+    static let xxl: CGFloat = 40
+
     /// 200pt - Pill shape (fully rounded)
     /// Figma: --radius/rd-200
     static let pill: CGFloat = 200

@@ -1,13 +1,13 @@
 /// PhoneEntryView.swift
 /// Flent Secured v2 - Phone Number Entry Screen
 ///
-/// States handled:
-/// - .idle: Initial state with empty phone field
-/// - .loading: Sending OTP
-/// - .success: OTP sent successfully
-/// - .error: Error state
-///
-/// Figma: auth / sign up --enter phone number (and variants)
+/// Figma: node-id=1:29108
+/// - Dark background with dotted pattern
+/// - Logo at top-left
+/// - "Let's get to" (white) + "know you" (orange)
+/// - Phone input with underline style
+/// - Consent toggle
+/// - Get Started button (disabled until valid)
 
 import SwiftUI
 
@@ -16,83 +16,86 @@ struct PhoneEntryView: View {
     @Environment(AppState.self) private var appState
 
     @State private var viewModel = PhoneEntryViewModel()
+    @State private var consentGiven = false
     @FocusState private var isPhoneFocused: Bool
 
     var body: some View {
         ZStack {
+            // Background
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: Spacing.xl) {
-                // Header
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text("Enter your phone number")
-                        .font(Typography.h4)
-                        .foregroundColor(AppColors.textPrimary)
+            // Dotted grid pattern
+            DottedGridPattern()
+                .ignoresSafeArea()
 
-                    Text("We'll send you a verification code")
-                        .font(Typography.bodyMd2)
-                        .foregroundColor(AppColors.textSecondary)
-                }
+            VStack(alignment: .leading, spacing: 0) {
+                // Logo
+                FlentLogo()
+                    .padding(.top, Spacing.xxl)
 
-                // Phone Input
-                HStack(spacing: Spacing.sm) {
-                    // Country Code
-                    Text("+91")
-                        .font(Typography.bodyMd)
-                        .foregroundColor(AppColors.textPrimary)
-                        .padding(.horizontal, Spacing.md)
-                        .frame(height: 56)
-                        .background(AppColors.backgroundSecondary)
-                        .cornerRadius(Radius.input)
+                Spacer()
+                    .frame(height: Spacing.huge)
 
-                    // Phone Number Field
-                    TextField("Enter 10-digit mobile number", text: $viewModel.phoneNumber)
-                        .font(Typography.bodyMd)
-                        .foregroundColor(AppColors.textPrimary)
-                        .keyboardType(.numberPad)
-                        .textContentType(.telephoneNumber)
-                        .padding(.horizontal, Spacing.md)
-                        .frame(height: 56)
-                        .background(AppColors.backgroundSecondary)
-                        .cornerRadius(Radius.input)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Radius.input)
-                                .stroke(
-                                    viewModel.errorMessage != nil ? AppColors.error : AppColors.border,
-                                    lineWidth: 1
-                                )
-                        )
-                        .focused($isPhoneFocused)
-                        .accessibilityIdentifier("phone_input")
-                        .accessibilityLabel("Phone number")
-                }
-
-                // Error Message
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(Typography.bodySm)
-                        .foregroundColor(AppColors.error)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                // Headline
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Let's get to")
+                        .font(.system(size: 40, weight: .light))
+                        .foregroundColor(.white)
+                    Text("know you")
+                        .font(.system(size: 40, weight: .light))
+                        .foregroundColor(AppColors.brand500)
                 }
 
                 Spacer()
+                    .frame(height: Spacing.xxl)
 
-                // Continue Button
+                // Phone Input - Underline style
+                PhoneInputField(
+                    label: "Phone",
+                    text: $viewModel.phoneNumber,
+                    placeholder: "Enter Number",
+                    errorMessage: viewModel.errorMessage,
+                    showEditLink: !viewModel.phoneNumber.isEmpty
+                )
+                .focused($isPhoneFocused)
+                .accessibilityIdentifier("phone_input")
+
+                Spacer()
+
+                // Get Started Button
                 PrimaryButton(
-                    title: "Continue",
+                    title: "Get Started",
                     isLoading: viewModel.isLoading,
-                    isEnabled: viewModel.canProceed
+                    isEnabled: viewModel.canProceed && consentGiven
                 ) {
                     sendOTP()
                 }
+
+                // Consent Toggle
+                HStack(alignment: .top, spacing: Spacing.sm) {
+                    Toggle("", isOn: $consentGiven)
+                        .toggleStyle(.switch)
+                        .tint(AppColors.brand500)
+                        .labelsHidden()
+
+                    Text("I consent to a one-time verification check via Cashfree to help verify my profile.")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(AppColors.neutral500)
+                        .lineSpacing(4)
+                }
+                .padding(.top, Spacing.md)
+
+                Spacer()
+                    .frame(height: Spacing.xl)
             }
-            .screenPadding()
-            .padding(.top, Spacing.xl)
+            .padding(.horizontal, Spacing.screenHorizontal) // 40px
         }
         .navigationBarHidden(true)
         .onAppear {
-            isPhoneFocused = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isPhoneFocused = true
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage)
     }

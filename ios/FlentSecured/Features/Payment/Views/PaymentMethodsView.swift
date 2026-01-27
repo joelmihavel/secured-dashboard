@@ -1,10 +1,13 @@
 /// PaymentMethodsView.swift
 /// Flent Secured v2 - Payment Methods Selection Screen
 ///
-/// Allows user to select payment method
-/// Available methods depend on user status (QUALIFIED vs COMPLETE)
-///
-/// Figma: Pay Rent / Payment Page screens
+/// Figma: node-id=1:34854
+/// - Presented as bottom sheet (dark bg #1A1A1A)
+/// - "Choose a" white + "Payment Method" orange
+/// - Cashback pill badge
+/// - Radio buttons for payment options
+/// - Fee labels on right
+/// - Primary button with amount
 
 import SwiftUI
 
@@ -44,150 +47,119 @@ struct PaymentMethodsView: View {
 
     var body: some View {
         ZStack {
+            // Background with dimmed content
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: Spacing.xl) {
-                // Back Button
-                Button {
-                    coordinator.pop()
-                } label: {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(AppColors.textPrimary)
-                        .frame(width: 44, height: 44) // Minimum tap target for accessibility
-                }
-                .accessibilityIdentifier("back_button")
-                .accessibilityLabel("Go back")
+            // Dotted grid pattern (like onboarding screens)
+            DottedGridPattern()
+                .ignoresSafeArea()
 
-                // Header
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text("Choose a Payment Method")
-                        .font(Typography.h4)
-                        .foregroundColor(AppColors.textPrimary)
-
-                    // Amount Summary
-                    HStack {
-                        Text("Total:")
-                            .font(Typography.bodyMd2)
-                            .foregroundColor(AppColors.textSecondary)
-
-                        Text(viewModel.formattedTotalAmount)
-                            .font(Typography.amountMedium)
-                            .foregroundColor(AppColors.textPrimary)
-                    }
-                }
-
-                // Payment Methods
-                VStack(spacing: Spacing.md) {
-                    // UPI Section
-                    PaymentMethodSection(title: "UPI") {
-                        PaymentMethodCard(
-                            method: .upiIntent,
-                            title: "Google Pay",
-                            icon: "g.circle.fill",
-                            isSelected: viewModel.selectedMethod == .upiIntent && viewModel.selectedUPIApp == .gpay
-                        ) {
-                            viewModel.selectUPIApp(.gpay)
-                        }
-
-                        PaymentMethodCard(
-                            method: .upiIntent,
-                            title: "PhonePe",
-                            icon: "p.circle.fill",
-                            isSelected: viewModel.selectedMethod == .upiIntent && viewModel.selectedUPIApp == .phonePe
-                        ) {
-                            viewModel.selectUPIApp(.phonePe)
-                        }
-
-                        PaymentMethodCard(
-                            method: .upiIntent,
-                            title: "Other UPI",
-                            icon: "link.circle.fill",
-                            isSelected: viewModel.selectedMethod == .upiIntent && viewModel.selectedUPIApp == .other
-                        ) {
-                            viewModel.selectUPIApp(.other)
-                        }
-                    }
-
-                    // Bank Section
-                    PaymentMethodSection(title: "Bank Account") {
-                        PaymentMethodCard(
-                            method: .netBanking,
-                            title: "Net Banking",
-                            icon: "building.columns.fill",
-                            isSelected: viewModel.selectedMethod == .netBanking
-                        ) {
-                            viewModel.selectMethod(.netBanking)
-                        }
-                    }
-
-                    // Card Section (only for COMPLETE users)
-                    if viewModel.canUseCreditCard {
-                        PaymentMethodSection(title: "Cards") {
-                            PaymentMethodCard(
-                                method: .creditCard,
-                                title: "Credit/Debit Card",
-                                icon: "creditcard.fill",
-                                isSelected: viewModel.selectedMethod == .creditCard
-                            ) {
-                                viewModel.selectMethod(.creditCard)
-                            }
-                        }
-                    } else {
-                        // Locked section for QUALIFIED users
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            HStack {
-                                Text("Cards")
-                                    .font(Typography.label)
-                                    .foregroundColor(AppColors.textMuted)
-
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(AppColors.textMuted)
-                            }
-
-                            Text("Complete 3 on-time payments to unlock")
-                                .font(Typography.caption)
-                                .foregroundColor(AppColors.textMuted)
-                        }
-                    }
-                }
-
-                // Error Message
-                if let error = viewModel.errorMessage {
-                    HStack(spacing: Spacing.xs) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(AppColors.error)
-                        Text(error)
-                            .font(Typography.bodySm)
-                            .foregroundColor(AppColors.error)
-                    }
-                    .padding(Spacing.sm)
-                    .background(AppColors.error.opacity(0.1))
-                    .cornerRadius(Radius.sm)
-                }
+            // Dimmed header content
+            VStack(alignment: .leading) {
+                FlentLogo()
+                    .padding(.top, Spacing.xxl)
+                    .opacity(0.3)
 
                 Spacer()
+            }
+            .padding(.horizontal, Spacing.screenHorizontal)
 
-                // Pay Button
-                PrimaryButton(
-                    title: "Pay \(viewModel.formattedTotalAmount)",
-                    isLoading: viewModel.isInitiating,
-                    isEnabled: viewModel.canInitiate
-                ) {
-                    initiatePayment()
+            // Bottom sheet
+            VStack {
+                Spacer()
+
+                BottomSheetContainer {
+                    VStack(alignment: .leading, spacing: Spacing.xl) {
+                        // Title - Split color
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Choose a")
+                                .font(.system(size: 28, weight: .regular))
+                                .foregroundColor(.white)
+                            Text("Payment Method")
+                                .font(.system(size: 28, weight: .regular))
+                                .foregroundColor(AppColors.brand500)
+                        }
+
+                        // Cashback pill
+                        Text("You'll earn ₹\(viewModel.estimatedCashbackFormatted) cashback on this payment")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, Spacing.md)
+                            .padding(.vertical, Spacing.sm)
+                            .frame(maxWidth: .infinity)
+                            .background(AppColors.black500)
+                            .cornerRadius(Radius.pill)
+
+                        // Payment Methods with Radio Buttons
+                        VStack(spacing: Spacing.md) {
+                            // UPI Option
+                            PaymentMethodRadioRow(
+                                icon: "link",
+                                title: "UPI",
+                                fee: "No fee",
+                                isSelected: viewModel.selectedMethod == .upiIntent
+                            ) {
+                                viewModel.selectMethod(.upiIntent)
+                            }
+
+                            // Cards Option (conditionally available)
+                            if viewModel.canUseCreditCard {
+                                PaymentMethodRadioRow(
+                                    icon: "creditcard",
+                                    title: "Credit/Debit Card",
+                                    fee: "1.2% fee",
+                                    isSelected: viewModel.selectedMethod == .creditCard
+                                ) {
+                                    viewModel.selectMethod(.creditCard)
+                                }
+                            } else {
+                                PaymentMethodRadioRow(
+                                    icon: "creditcard",
+                                    title: "Credit/Debit Card",
+                                    fee: "1.2% fee",
+                                    isSelected: false,
+                                    isLocked: true,
+                                    lockMessage: "Complete 3 payments to unlock"
+                                ) {}
+                            }
+
+                            // Net Banking Option
+                            PaymentMethodRadioRow(
+                                icon: "building.columns",
+                                title: "Net Banking",
+                                fee: "No fee",
+                                isSelected: viewModel.selectedMethod == .netBanking
+                            ) {
+                                viewModel.selectMethod(.netBanking)
+                            }
+                        }
+
+                        // Error Message
+                        if let error = viewModel.errorMessage {
+                            Text(error)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(AppColors.error)
+                        }
+
+                        // Pay Button
+                        PrimaryButton(
+                            title: "Pay \(viewModel.formattedTotalAmount)",
+                            isLoading: viewModel.isInitiating,
+                            isEnabled: viewModel.canInitiate
+                        ) {
+                            initiatePayment()
+                        }
+                    }
                 }
             }
-            .screenPadding()
-            .padding(.top, Spacing.xl)
         }
         .navigationBarHidden(true)
         .task {
             // Fetch user profile to get correct userStatus
             do {
                 let userProfile = try await AppEnvironment.shared.userService.getCurrentUser()
-                let status = UserStatus(rawValue: userProfile.userStatus) ?? .qualified
+                let status = userProfile.userStatus.flatMap { UserStatus(rawValue: $0) } ?? .qualified
 
                 // Also try to get tenancy data
                 let tenancy = try? await AppEnvironment.shared.userService.getCurrentTenancy()
@@ -253,64 +225,78 @@ struct PaymentMethodsView: View {
     }
 }
 
-// MARK: - PaymentMethod moved to PaymentServiceProtocol.swift
+// MARK: - Payment Method Radio Row
 
-// MARK: - Payment Method Section
-
-struct PaymentMethodSection<Content: View>: View {
-    let title: String
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(title)
-                .font(Typography.label)
-                .foregroundColor(AppColors.textSecondary)
-
-            content()
-        }
-    }
-}
-
-// MARK: - Payment Method Card
-
-struct PaymentMethodCard: View {
-    let method: PaymentMethod
-    let title: String
+struct PaymentMethodRadioRow: View {
     let icon: String
+    let title: String
+    let fee: String
     let isSelected: Bool
+    var isLocked: Bool = false
+    var lockMessage: String? = nil
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            if !isLocked {
+                action()
+            }
+        }) {
             HStack(spacing: Spacing.md) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.textSecondary)
+                // Radio button
+                ZStack {
+                    Circle()
+                        .stroke(isLocked ? AppColors.black400 : (isSelected ? AppColors.brand500 : AppColors.neutral500), lineWidth: 2)
+                        .frame(width: 24, height: 24)
 
-                Text(title)
-                    .font(Typography.bodyMd)
-                    .foregroundColor(AppColors.textPrimary)
+                    if isSelected && !isLocked {
+                        Circle()
+                            .fill(AppColors.brand500)
+                            .frame(width: 14, height: 14)
+                    }
+
+                    if isLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(AppColors.black400)
+                    }
+                }
+
+                // Icon
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(isLocked ? AppColors.black400 : .white)
+                    .frame(width: 24)
+
+                // Title
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(isLocked ? AppColors.black400 : .white)
+
+                    if let message = lockMessage, isLocked {
+                        Text(message)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(AppColors.black400)
+                    }
+                }
 
                 Spacer()
 
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(AppColors.accentPrimary)
-                }
+                // Fee
+                Text(fee)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(isLocked ? AppColors.black400 : AppColors.neutral500)
             }
             .padding(Spacing.md)
-            .background(isSelected ? AppColors.accentPrimary.opacity(0.1) : AppColors.backgroundSecondary)
+            .background(isSelected && !isLocked ? AppColors.brand500.opacity(0.1) : Color.clear)
             .cornerRadius(Radius.sm)
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.sm)
-                    .stroke(
-                        isSelected ? AppColors.accentPrimary : AppColors.border,
-                        lineWidth: isSelected ? 2 : 1
-                    )
+                    .stroke(isSelected && !isLocked ? AppColors.brand500 : AppColors.black400, lineWidth: 1)
             )
         }
-        .accessibilityIdentifier("payment_method_\(title.lowercased().replacingOccurrences(of: " ", with: "_"))")
+        .disabled(isLocked)
     }
 }
 

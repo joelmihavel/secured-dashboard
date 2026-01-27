@@ -1,9 +1,12 @@
 /// PaymentResultView.swift
 /// Flent Secured v2 - Payment Result Screen
 ///
-/// Shows payment success or failure
-///
-/// Figma: Pay Rent / Success and Failure screens
+/// Figma: node-id=1:35238 (Success), node-id=1:35361 (Failed)
+/// - Receipt card with ticket cutout
+/// - PAID/FAILED stamp
+/// - Transaction details with # prefix
+/// - Cashback badge (success)
+/// - Error messages with icons (failure)
 
 import SwiftUI
 
@@ -25,48 +28,72 @@ struct PaymentResultView: View {
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            VStack(spacing: Spacing.xxl) {
-                Spacer()
+            // Dotted grid pattern
+            DottedGridPattern()
+                .ignoresSafeArea()
 
-                // Result Content
-                if viewModel.isSuccess {
-                    successContent
-                } else {
-                    failureContent
-                }
+            ScrollView {
+                VStack(spacing: Spacing.xl) {
+                    Spacer()
+                        .frame(height: Spacing.xxl)
 
-                Spacer()
+                    // Receipt Card
+                    if viewModel.isSuccess {
+                        successReceiptCard
+                    } else {
+                        failureReceiptCard
+                    }
 
-                // Actions
-                if viewModel.isSuccess {
+                    // Action Buttons
                     VStack(spacing: Spacing.md) {
-                        PrimaryButton(title: "Done") {
-                            coordinator.popToRoot()
-                            coordinator.navigate(to: .home(state: .paidThisMonth(settlementStatus: .processing)))
-                        }
-
-                        TextButton(title: "View Receipt") {
-                            Task {
-                                await viewModel.generateReceipt()
-                                if viewModel.receiptUrl != nil {
-                                    showShareSheet = true
+                        if viewModel.isSuccess {
+                            PrimaryButton(title: "Download Receipt") {
+                                Task {
+                                    await viewModel.generateReceipt()
+                                    if viewModel.receiptUrl != nil {
+                                        showShareSheet = true
+                                    }
                                 }
+                            }
+
+                            Button(action: {
+                                // Contact support
+                            }) {
+                                Text("Contact Support")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(AppColors.neutral500)
+                            }
+
+                            Button(action: {
+                                coordinator.popToRoot()
+                                coordinator.navigate(to: .home(state: .paidThisMonth(settlementStatus: .processing)))
+                            }) {
+                                Text("Back to home")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(AppColors.brand500)
+                                    .underline()
+                            }
+                        } else {
+                            PrimaryButton(title: "Contact Support") {
+                                // Open support
+                            }
+
+                            Button(action: {
+                                coordinator.pop()
+                            }) {
+                                Text("Try Again")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(AppColors.brand500)
+                                    .underline()
                             }
                         }
                     }
-                } else {
-                    VStack(spacing: Spacing.md) {
-                        PrimaryButton(title: "Try Again") {
-                            coordinator.pop()
-                        }
+                    .padding(.horizontal, Spacing.screenHorizontalCompact)
 
-                        TextButton(title: "Contact Support") {
-                            // Open support
-                        }
-                    }
+                    Spacer()
+                        .frame(height: Spacing.xl)
                 }
             }
-            .screenPadding()
         }
         .navigationBarHidden(true)
         .navigationBarBackButtonHidden(true)
@@ -80,76 +107,112 @@ struct PaymentResultView: View {
         }
     }
 
-    private var successContent: some View {
-        VStack(spacing: Spacing.lg) {
-            // Success Icon
-            ZStack {
-                Circle()
-                    .fill(AppColors.success.opacity(0.2))
-                    .frame(width: 120, height: 120)
+    // MARK: - Success Receipt Card
 
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(AppColors.success)
+    private var successReceiptCard: some View {
+        ReceiptCard {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                // Header with stamp
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Payment")
+                            .font(.system(size: 24, weight: .regular))
+                            .foregroundColor(.white)
+                        Text("Successful")
+                            .font(.system(size: 24, weight: .regular))
+                            .foregroundColor(AppColors.brand500)
+                    }
+
+                    Spacer()
+
+                    PaymentStamp(status: .paid)
+                }
+
+                // Divider
+                Rectangle()
+                    .fill(AppColors.black400)
+                    .frame(height: 1)
+
+                // Transaction Details
+                VStack(spacing: Spacing.sm) {
+                    ReceiptRow(label: "Amount paid", value: viewModel.formattedAmount)
+                    ReceiptRow(label: "Date", value: viewModel.formattedDate)
+                    ReceiptRow(label: "Method", value: viewModel.paymentMethod)
+                    ReceiptRow(label: "Transaction ID", value: viewModel.transactionId)
+                }
+
+                // Cashback pill
+                if viewModel.cashbackAmount > 0 {
+                    Text("₹\(viewModel.formattedCashback) cashback applied")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.sm)
+                        .frame(maxWidth: .infinity)
+                        .background(AppColors.black500)
+                        .cornerRadius(Radius.pill)
+                }
+
+                // Payable rent
+                ReceiptRow(label: "Payable Rent", value: viewModel.formattedPayableRent)
             }
-            .accessibilityIdentifier("payment_success_icon")
-
-            // Text
-            VStack(spacing: Spacing.sm) {
-                Text("Payment Successful!")
-                    .font(Typography.h4)
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text("₹25,000")
-                    .font(Typography.amountLarge)
-                    .foregroundColor(AppColors.success)
-
-                Text("Jan 26, 2026 at 10:30 AM")
-                    .font(Typography.bodyMd2)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-
-            // Cashback Badge
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "gift.fill")
-                    .foregroundColor(AppColors.accentPrimary)
-
-                Text("+₹250 cashback earned!")
-                    .font(Typography.bodySmMedium)
-                    .foregroundColor(AppColors.accentPrimary)
-            }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
-            .background(AppColors.accentPrimary.opacity(0.1))
-            .cornerRadius(Radius.pill)
         }
+        .padding(.horizontal, Spacing.screenHorizontalCompact)
     }
 
-    private var failureContent: some View {
-        VStack(spacing: Spacing.lg) {
-            // Failure Icon
-            ZStack {
-                Circle()
-                    .fill(AppColors.error.opacity(0.2))
-                    .frame(width: 120, height: 120)
+    // MARK: - Failure Receipt Card
 
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(AppColors.error)
+    private var failureReceiptCard: some View {
+        ReceiptCard {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                // Header with stamp
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Payment")
+                            .font(.system(size: 24, weight: .regular))
+                            .foregroundColor(.white)
+                        Text("Failed")
+                            .font(.system(size: 24, weight: .regular))
+                            .foregroundColor(AppColors.error)
+                    }
+
+                    Spacer()
+
+                    PaymentStamp(status: .failed)
+                }
+
+                // Divider
+                Rectangle()
+                    .fill(AppColors.black400)
+                    .frame(height: 1)
+
+                // Error Messages
+                VStack(alignment: .leading, spacing: Spacing.md) {
+                    PaymentErrorRow(text: "Something didn't go through this time.")
+                    PaymentErrorRow(text: "Your money is safe and hasn't been deducted.")
+                    PaymentErrorRow(text: "If your account was debited, it will be automatically reversed within 3-5 business days.")
+                }
             }
-            .accessibilityIdentifier("payment_failure_icon")
+        }
+        .padding(.horizontal, Spacing.screenHorizontalCompact)
+    }
+}
 
-            // Text
-            VStack(spacing: Spacing.sm) {
-                Text("Payment Failed")
-                    .font(Typography.h4)
-                    .foregroundColor(AppColors.textPrimary)
+// MARK: - Payment Error Row
 
-                Text("Your payment couldn't be processed. Please try again.")
-                    .font(Typography.bodyMd2)
-                    .foregroundColor(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
+struct PaymentErrorRow: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.sm) {
+            Image(systemName: "creditcard.fill")
+                .font(.system(size: 20))
+                .foregroundColor(AppColors.brand500)
+
+            Text(text)
+                .font(.system(size: 14, weight: .regular))
+                .foregroundColor(AppColors.neutral300)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

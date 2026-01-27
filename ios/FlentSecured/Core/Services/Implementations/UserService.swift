@@ -33,18 +33,61 @@ final class UserService: UserServiceProtocol {
         }
 
         do {
-            let user: UserProfileData = try await supabase.client
+            // Try to get existing user
+            let users: [UserProfileData] = try await supabase.client
                 .from("users")
                 .select()
                 .eq("id", value: userId.uuidString)
-                .single()
+                .limit(1)
                 .execute()
                 .value
 
-            return user
+            if let user = users.first {
+                return user
+            }
+
+            // User doesn't exist in public.users table - create one
+            // This happens when user signs up via Supabase Auth directly
+            let phone = await supabase.currentUser?.phone
+            let newUser = try await createUserRecord(userId: userId, phone: phone)
+            return newUser
         } catch {
             throw mapError(error)
         }
+    }
+
+    /// Create user record in public.users table
+    private func createUserRecord(userId: UUID, phone: String?) async throws -> UserProfileData {
+        // Sanitize phone (remove +91 prefix for storage)
+        let sanitizedPhone = phone?.hasPrefix("+91") == true
+            ? String(phone!.dropFirst(3))
+            : phone
+
+        struct NewUserInsert: Encodable {
+            let id: String
+            let phone: String?
+            let user_status: String
+        }
+
+        let newUser = NewUserInsert(
+            id: userId.uuidString,
+            phone: sanitizedPhone,
+            user_status: "signed_up"
+        )
+
+        let users: [UserProfileData] = try await supabase.client
+            .from("users")
+            .insert(newUser)
+            .select()
+            .execute()
+            .value
+
+        guard let user = users.first else {
+            throw UserServiceError.serverError("Failed to create user record")
+        }
+
+        print("[UserService] Created new user record: \(userId)")
+        return user
     }
 
     func updateProfile(firstName: String?, lastName: String?) async throws -> UserProfileData {

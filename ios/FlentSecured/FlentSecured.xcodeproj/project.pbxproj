@@ -52,6 +52,10 @@
 		5A7EBA02EC9CCE4307BE60D4 /* AddBankViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858A1861C15837BFFB66C680 /* AddBankViewModelTests.swift */; };
 		5AD4A806011750300B4D65B7 /* AddBankViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C25774407B8B3DE2D8B067E4 /* AddBankViewModel.swift */; };
 		5B0158F34993C08788C78347 /* OTPInputField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E6EA2DF3387222D18F3F76 /* OTPInputField.swift */; };
+		M1N2O3P4Q5R6S7T8U9V0W1X2 /* BottomSheetContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6G7H8I9J0K1L2 /* BottomSheetContainer.swift */; };
+		N2O3P4Q5R6S7T8U9V0W1X2Y3 /* ReceiptCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6G7H8I9J0K1L2M3 /* ReceiptCard.swift */; };
+		O3P4Q5R6S7T8U9V0W1X2Y3Z4 /* SetupProgressCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6G7H8I9J0K1L2M3N4 /* SetupProgressCard.swift */; };
+		P4Q5R6S7T8U9V0W1X2Y3Z4A5 /* TabBarPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6G7H8I9J0K1L2M3N4O5 /* TabBarPill.swift */; };
 		606A6396735ED1F2DBB7646A /* TransactionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F614AEA004E95CCBB14785C /* TransactionsViewModel.swift */; };
 		6495ECCAF6024C1D272ACD71 /* InviteLandlordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1252A9546BF7E7DE3E1454C6 /* InviteLandlordViewModel.swift */; };
 		66DA81DE12CB4B921EC85FBE /* SetupFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566338F4F23BDE18C437D8E5 /* SetupFlowUITests.swift */; };
@@ -219,6 +223,10 @@
 		B0BABB44EDFE00CBEC0569A4 /* PendingStepsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingStepsViewModel.swift; sourceTree = "<group>"; };
 		B3DCB4ED568A8009302D17BF /* PaymentMethodsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodsView.swift; sourceTree = "<group>"; };
 		B3E6EA2DF3387222D18F3F76 /* OTPInputField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OTPInputField.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6G7H8I9J0K1L2 /* BottomSheetContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomSheetContainer.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6G7H8I9J0K1L2M3 /* ReceiptCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceiptCard.swift; sourceTree = "<group>"; };
+		C3D4E5F6G7H8I9J0K1L2M3N4 /* SetupProgressCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupProgressCard.swift; sourceTree = "<group>"; };
+		D4E5F6G7H8I9J0K1L2M3N4O5 /* TabBarPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarPill.swift; sourceTree = "<group>"; };
 		B3EB6EC3011AE2F23EA21550 /* FlentSecuredTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlentSecuredTests.swift; sourceTree = "<group>"; };
 		B43245E5863ED3A9D94646B8 /* OnboardingSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSnapshotTests.swift; sourceTree = "<group>"; };
 		B7FC452C65152574EB6D843B /* SupabaseAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthService.swift; sourceTree = "<group>"; };
@@ -528,6 +536,10 @@
 				6E5FFDE7502DDC20A2648B06 /* LottieView.swift */,
 				B3E6EA2DF3387222D18F3F76 /* OTPInputField.swift */,
 				8853416072EC9768E03D80AA /* PrimaryButton.swift */,
+				A1B2C3D4E5F6G7H8I9J0K1L2 /* BottomSheetContainer.swift */,
+				B2C3D4E5F6G7H8I9J0K1L2M3 /* ReceiptCard.swift */,
+				C3D4E5F6G7H8I9J0K1L2M3N4 /* SetupProgressCard.swift */,
+				D4E5F6G7H8I9J0K1L2M3N4O5 /* TabBarPill.swift */,
 				FA3A1903807C0AA355E17073 /* Toast.swift */,
 			);
 			path = Components;
@@ -936,6 +948,10 @@
 				C73DD8196F269A36F1949CA8 /* NameVerificationView.swift in Sources */,
 				2E1DBA7E0E2BA8118FFDE314 /* NameVerificationViewModel.swift in Sources */,
 				5B0158F34993C08788C78347 /* OTPInputField.swift in Sources */,
+				M1N2O3P4Q5R6S7T8U9V0W1X2 /* BottomSheetContainer.swift in Sources */,
+				N2O3P4Q5R6S7T8U9V0W1X2Y3 /* ReceiptCard.swift in Sources */,
+				O3P4Q5R6S7T8U9V0W1X2Y3Z4 /* SetupProgressCard.swift in Sources */,
+				P4Q5R6S7T8U9V0W1X2Y3Z4A5 /* TabBarPill.swift in Sources */,
 				BA0389BA6E76FA04AC39C92E /* OTPVerificationView.swift in Sources */,
 				91FD91BD9447CC5EB8A9DC23 /* OTPVerificationViewModel.swift in Sources */,
 				F5E6DF17A056272E192E0BB2 /* OnboardingCoordinator.swift in Sources */,

@@ -1,5 +1,12 @@
 /// ProfileView.swift
 /// Flent Secured v2 - Profile Screen
+///
+/// Figma: node-id=1:34492
+/// - "My" white + "Profile" orange header
+/// - Payment history bar chart
+/// - Sections: SECURED ACCOUNT, PAYMENT INFORMATION, SUPPORT, APP
+/// - Menu items with orange chevrons
+/// - Delete Account (red text)
 
 import SwiftUI
 
@@ -14,99 +21,131 @@ struct ProfileView: View {
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
+            // Dotted grid pattern
+            DottedGridPattern()
+                .ignoresSafeArea()
+
             if viewModel.isLoading {
                 ProgressView()
-                    .tint(AppColors.accentPrimary)
+                    .tint(AppColors.brand500)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Spacing.xl) {
-                        // Back Button
-                        Button {
-                            coordinator.pop()
-                        } label: {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(AppColors.textPrimary)
-                        }
-
-                        // Profile Header
-                        VStack(spacing: Spacing.md) {
-                            Circle()
-                                .fill(AppColors.backgroundSecondary)
-                                .frame(width: 80, height: 80)
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 32))
-                                        .foregroundColor(AppColors.textMuted)
-                                )
-
-                            Text(viewModel.fullName)
-                                .font(Typography.h4)
-                                .foregroundColor(AppColors.textPrimary)
-
-                            Text(viewModel.phone)
-                                .font(Typography.bodyMd2)
-                                .foregroundColor(AppColors.textSecondary)
-
-                            if !viewModel.memberSince.isEmpty {
-                                Text(viewModel.memberSince)
-                                    .font(Typography.caption)
-                                    .foregroundColor(AppColors.textMuted)
+                        // Header with back button
+                        HStack {
+                            Button {
+                                coordinator.pop()
+                            } label: {
+                                Image(systemName: "arrow.left")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(.white)
                             }
+
+                            Spacer()
                         }
-                        .frame(maxWidth: .infinity)
+                        .padding(.top, Spacing.md)
 
-                        // Account Info
-                        if let address = viewModel.propertyAddress, !address.isEmpty {
-                            VStack(alignment: .leading, spacing: Spacing.sm) {
-                                Text("Current Tenancy")
-                                    .font(Typography.label)
-                                    .foregroundColor(AppColors.textMuted)
+                        // Title - Split color
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("My")
+                                .font(.system(size: 32, weight: .light))
+                                .foregroundColor(.white)
+                            Text("Profile")
+                                .font(.system(size: 32, weight: .light))
+                                .foregroundColor(AppColors.brand500)
+                        }
 
-                                VStack(alignment: .leading, spacing: Spacing.xxs) {
-                                    Text(address)
-                                        .font(Typography.bodyMd)
-                                        .foregroundColor(AppColors.textPrimary)
+                        // Payment History Chart
+                        PaymentHistoryCard(
+                            onTimeCount: viewModel.onTimePayments,
+                            lateCount: viewModel.latePayments,
+                            monthsData: viewModel.paymentHistory
+                        )
 
-                                    if let rent = viewModel.monthlyRent {
-                                        Text("Monthly Rent: \(rent)")
-                                            .font(Typography.bodySm)
-                                            .foregroundColor(AppColors.textSecondary)
-                                    }
-                                }
-                                .padding(Spacing.md)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(AppColors.backgroundSecondary)
-                                .cornerRadius(Radius.card)
+                        // SECURED ACCOUNT Section
+                        ProfileMenuSection(title: "SECURED ACCOUNT") {
+                            ProfileMenuItem(
+                                icon: "person.fill",
+                                title: "Personal Details"
+                            ) {
+                                // Navigate to personal details
+                            }
+
+                            ProfileMenuItem(
+                                icon: "house.fill",
+                                title: "Tenancy Details"
+                            ) {
+                                // Navigate to tenancy details
+                            }
+
+                            ProfileMenuItem(
+                                icon: "person.2.fill",
+                                title: "Linked Landlord"
+                            ) {
+                                // Navigate to linked landlord
                             }
                         }
 
-                        // Menu Items
-                        VStack(spacing: Spacing.sm) {
-                            ProfileMenuItem(icon: "gearshape", title: "Settings") {
-                                coordinator.navigate(to: .settings)
+                        // PAYMENT INFORMATION Section
+                        ProfileMenuSection(title: "PAYMENT INFORMATION") {
+                            ProfileMenuItem(
+                                icon: "building.columns.fill",
+                                title: "Landlord Bank Account"
+                            ) {
+                                // Navigate to bank account
                             }
 
-                            ProfileMenuItem(icon: "person.2", title: "Referrals") {
-                                coordinator.navigate(to: .referral)
-                            }
-
-                            ProfileMenuItem(icon: "questionmark.circle", title: "Help & Support") {
-                                // Open support
-                            }
-
-                            ProfileMenuItem(icon: "doc.text", title: "Terms & Privacy") {
-                                // Show terms
+                            ProfileMenuItem(
+                                icon: "creditcard.fill",
+                                title: "Payment History"
+                            ) {
+                                // Navigate to payment history
                             }
                         }
 
-                        Spacer()
-                            .frame(height: Spacing.lg)
+                        // SUPPORT Section
+                        ProfileMenuSection(title: "SUPPORT") {
+                            ProfileMenuItem(
+                                icon: "questionmark.circle.fill",
+                                title: "Help & FAQ"
+                            ) {
+                                // Open help
+                            }
+
+                            ProfileMenuItem(
+                                icon: "bubble.left.fill",
+                                title: "Contact Support"
+                            ) {
+                                // Open support chat
+                            }
+                        }
+
+                        // APP Section
+                        ProfileMenuSection(title: "APP") {
+                            ProfileMenuItem(
+                                icon: "doc.text.fill",
+                                title: "Terms & Conditions"
+                            ) {
+                                // Open terms
+                            }
+
+                            ProfileMenuItem(
+                                icon: "lock.shield.fill",
+                                title: "Privacy Policy"
+                            ) {
+                                // Open privacy policy
+                            }
+
+                            ProfileMenuItem(
+                                icon: "star.fill",
+                                title: "Rate the App"
+                            ) {
+                                // Open App Store rating
+                            }
+                        }
 
                         // Logout Button
-                        SecondaryButton(
-                            title: viewModel.isLoggingOut ? "Logging out..." : "Log Out"
-                        ) {
+                        Button(action: {
                             Task {
                                 let success = await viewModel.logout()
                                 if success {
@@ -114,22 +153,155 @@ struct ProfileView: View {
                                     coordinator.popToRoot()
                                 }
                             }
+                        }) {
+                            HStack {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(AppColors.neutral500)
+
+                                Text(viewModel.isLoggingOut ? "Logging out..." : "Log Out")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(AppColors.neutral500)
+
+                                Spacer()
+                            }
+                            .padding(Spacing.md)
+                        }
+
+                        // Delete Account
+                        Button(action: {
+                            // Show delete confirmation
+                        }) {
+                            HStack {
+                                Image(systemName: "trash.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(AppColors.error)
+
+                                Text("Delete Account")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(AppColors.error)
+
+                                Spacer()
+                            }
+                            .padding(Spacing.md)
                         }
 
                         // Version
                         Text(viewModel.appVersion)
-                            .font(Typography.caption)
-                            .foregroundColor(AppColors.textMuted)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(AppColors.neutral500)
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, Spacing.md)
+
+                        Spacer()
+                            .frame(height: Spacing.xl)
                     }
-                    .screenPadding()
-                    .padding(.top, Spacing.xl)
+                    .padding(.horizontal, Spacing.screenHorizontalCompact)
                 }
             }
         }
         .navigationBarHidden(true)
         .task {
             await viewModel.loadProfile()
+        }
+    }
+}
+
+// MARK: - Payment History Card
+
+struct PaymentHistoryCard: View {
+    let onTimeCount: Int
+    let lateCount: Int
+    let monthsData: [PaymentMonthData]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header
+            Text("Payment History")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+
+            // Bar Chart
+            HStack(alignment: .bottom, spacing: 8) {
+                ForEach(monthsData) { month in
+                    VStack(spacing: 4) {
+                        // Bar
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(month.isOnTime ? AppColors.successApproved : AppColors.error)
+                            .frame(width: 24, height: CGFloat(month.percentage) * 0.8)
+
+                        // Month label
+                        Text(month.monthLabel)
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundColor(AppColors.neutral500)
+                    }
+                }
+            }
+            .frame(height: 100)
+            .frame(maxWidth: .infinity)
+
+            // Legend
+            HStack(spacing: Spacing.lg) {
+                HStack(spacing: Spacing.xs) {
+                    Circle()
+                        .fill(AppColors.successApproved)
+                        .frame(width: 8, height: 8)
+                    Text("On Time (\(onTimeCount))")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(AppColors.neutral500)
+                }
+
+                HStack(spacing: Spacing.xs) {
+                    Circle()
+                        .fill(AppColors.error)
+                        .frame(width: 8, height: 8)
+                    Text("Late (\(lateCount))")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(AppColors.neutral500)
+                }
+            }
+        }
+        .padding(Spacing.md)
+        .background(AppColors.black500)
+        .cornerRadius(Radius.md)
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.md)
+                .stroke(AppColors.black400, lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Payment Month Data
+
+struct PaymentMonthData: Identifiable {
+    let id = UUID()
+    let monthLabel: String
+    let percentage: Int // 0-100
+    let isOnTime: Bool
+}
+
+// MARK: - Profile Menu Section
+
+struct ProfileMenuSection<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(AppColors.neutral500)
+                .padding(.leading, Spacing.xs)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(AppColors.black500)
+            .cornerRadius(Radius.md)
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(AppColors.black400, lineWidth: 1)
+            )
         }
     }
 }
@@ -146,22 +318,20 @@ struct ProfileMenuItem: View {
             HStack(spacing: Spacing.md) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(AppColors.textSecondary)
-                    .frame(width: 32)
+                    .foregroundColor(AppColors.brand500)
+                    .frame(width: 24)
 
                 Text(title)
-                    .font(Typography.bodyMd)
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(.white)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppColors.textMuted)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(AppColors.brand500)
             }
             .padding(Spacing.md)
-            .background(AppColors.backgroundSecondary)
-            .cornerRadius(Radius.sm)
         }
     }
 }

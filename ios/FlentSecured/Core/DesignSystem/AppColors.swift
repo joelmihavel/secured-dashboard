@@ -48,6 +48,14 @@ enum AppColors {
     /// Figma: --colours/neutral/100
     static let neutral100 = Color(hex: "EEEEEE")
 
+    /// High emphasis text - #DDDDDD
+    /// Figma: --colours/neutral/200
+    static let neutral200 = Color(hex: "DDDDDD")
+
+    /// Medium emphasis text, underline borders - #CBCBCB
+    /// Figma: --colours/neutral/300
+    static let neutral300 = Color(hex: "CBCBCB")
+
     /// Gray text - #A9A9A9
     /// Figma: --colours/neutral/500
     static let neutral500 = Color(hex: "A9A9A9")
@@ -59,6 +67,10 @@ enum AppColors {
     /// Dark gray text - #444444
     /// Figma: --colours/neutral/800
     static let neutral800 = Color(hex: "444444")
+
+    /// Near-black text (input text on light backgrounds) - #222222
+    /// Figma: --colours/neutral/900
+    static let neutral900 = Color(hex: "222222")
 
     // MARK: - Brand Colors (Orange Accent)
 
@@ -76,15 +88,21 @@ enum AppColors {
 
     // MARK: - Semantic Colors
 
-    /// Success green - #70BF73
+    /// Success green (default) - #70BF73
     /// Figma: --colour/icons/success/default-2
     static let success = Color(hex: "70BF73")
 
-    /// Error red - #EF4444
-    static let error = Color(hex: "EF4444")
+    /// Success green (approved stamps) - #06C270
+    /// Figma: --colours/success/approved
+    static let successApproved = Color(hex: "06C270")
 
-    /// Warning yellow - #EAB308
-    static let warning = Color(hex: "EAB308")
+    /// Error red - #FF8080
+    /// Figma: --colours/error/default
+    static let error = Color(hex: "FF8080")
+
+    /// Warning yellow - #FFD580
+    /// Figma: --colours/warning/default
+    static let warning = Color(hex: "FFD580")
 
     /// Pure white - #FFFFFF
     static let white = Color.white

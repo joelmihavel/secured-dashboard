@@ -91,6 +91,63 @@ final class PaymentResultViewModel {
         "Your payment couldn't be processed. Please try again or use a different payment method."
     }
 
+    // MARK: - Receipt Card Properties
+
+    /// Formatted amount for receipt display
+    var formattedAmount: String {
+        guard let details = paymentDetails else { return "₹ 25,000" }
+        return "₹ " + formatCurrencyNoSymbol(details.totalAmount)
+    }
+
+    /// Formatted date for receipt display
+    var formattedDate: String {
+        guard let details = paymentDetails,
+              let completedAt = details.completedAt else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM yyyy"
+            return formatter.string(from: Date())
+        }
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        if let date = isoFormatter.date(from: completedAt) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "d MMM yyyy"
+            return displayFormatter.string(from: date)
+        }
+        return completedAt
+    }
+
+    /// Payment method for receipt display
+    var paymentMethod: String {
+        guard let details = paymentDetails else { return "UPI" }
+        return details.paymentMethod?.rawValue.capitalized ?? "UPI"
+    }
+
+    /// Transaction ID for receipt display
+    var transactionId: String {
+        paymentId.prefix(12).uppercased()
+    }
+
+    /// Cashback amount in paise
+    var cashbackAmount: Int {
+        guard let details = paymentDetails else { return 25000 } // ₹250 default
+        return Int(details.rentAmount * 0.01 * 100) // 1% of rent
+    }
+
+    /// Formatted cashback for receipt display
+    var formattedCashback: String {
+        let amount = Double(cashbackAmount) / 100.0
+        return formatCurrencyNoSymbol(amount)
+    }
+
+    /// Formatted payable rent for receipt display
+    var formattedPayableRent: String {
+        guard let details = paymentDetails else { return "₹ 25,000" }
+        return "₹ " + formatCurrencyNoSymbol(details.rentAmount)
+    }
+
     // MARK: - Dependencies
 
     private let paymentService: PaymentServiceProtocol
@@ -155,6 +212,14 @@ final class PaymentResultViewModel {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy 'at' h:mm a"
         return formatter.string(from: date)
+    }
+
+    private func formatCurrencyNoSymbol(_ amount: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: amount)) ?? "\(Int(amount))"
     }
 }
 

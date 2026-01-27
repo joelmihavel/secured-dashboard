@@ -111,6 +111,16 @@ final class PaymentMethodsViewModel {
         formatCurrency(cashbackToApply)
     }
 
+    /// Estimated cashback for display in UI
+    var estimatedCashbackFormatted: String {
+        // Estimate 1% cashback on rent amount
+        let estimatedCashback = Double(rentAmountPaise) * 0.01 / 100.0
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: estimatedCashback)) ?? "\(Int(estimatedCashback))"
+    }
+
     // MARK: - Dependencies
 
     private let tenancyId: String

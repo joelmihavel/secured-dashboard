@@ -1,8 +1,12 @@
 /// HomeView.swift
 /// Flent Secured v2 - Home Screen
 ///
-/// IMPORTANT: Single file handles ALL home states via HomeState enum
-/// No separate files for different states!
+/// Figma: node-id=1:32816
+/// - Header: Logo + "Hi, [Name]" + Avatar + Menu
+/// - Tab bar: "Home | Transactions" pill style
+/// - Setup progress card with checklist
+/// - Stats cards and property details
+/// - Sticky footer with due amount
 ///
 /// States handled:
 /// - .zeroState: Setup incomplete
@@ -10,9 +14,7 @@
 /// - .activeComplete: COMPLETE user (all methods)
 /// - .latePayment: After 7th, no cashback
 /// - .missedPayment: Overdue
-/// - .paidThisMonth(settlementStatus): Payment made, showing settlement
-///
-/// Figma: Home screens (all variants)
+/// - .paidThisMonth(settlementStatus): Payment made
 
 import SwiftUI
 
@@ -21,6 +23,7 @@ struct HomeView: View {
     @Environment(AppState.self) private var appState
 
     @State private var viewModel = HomeViewModel()
+    @State private var selectedTab: HomeTabBar.HomeTab = .home
 
     let state: HomeState
 
@@ -33,16 +36,33 @@ struct HomeView: View {
                 ProgressView()
                     .tint(AppColors.accentPrimary)
             } else {
-                ScrollView {
-                    VStack(spacing: Spacing.lg) {
-                        // Header
-                        headerSection
+                VStack(spacing: 0) {
+                    // Main scrollable content
+                    ScrollView {
+                        VStack(spacing: Spacing.lg) {
+                            // Header
+                            headerSection
 
-                        // State-specific content
-                        stateContent
+                            // Tab bar
+                            HomeTabBar(selectedTab: $selectedTab)
+                                .padding(.vertical, Spacing.sm)
+
+                            // Tab content
+                            if selectedTab == .home {
+                                homeTabContent
+                            } else {
+                                transactionsTabContent
+                            }
+                        }
+                        .padding(.horizontal, Spacing.screenHorizontalCompact)
+                        .padding(.top, Spacing.md)
+                        .padding(.bottom, 100) // Space for sticky footer
                     }
-                    .screenPadding()
-                    .padding(.top, Spacing.md)
+
+                    // Sticky footer
+                    if state != .zeroState {
+                        stickyFooter
+                    }
                 }
             }
         }
@@ -55,50 +75,112 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Header
+    // MARK: - Header (Figma style)
 
     private var headerSection: some View {
         HStack {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text("Hello, \(viewModel.firstName)")
-                    .font(Typography.h4)
-                    .foregroundColor(AppColors.textPrimary)
+            // Logo
+            FlentLogo(size: 24)
 
-                Text(greetingSubtext)
-                    .font(Typography.bodySm)
-                    .foregroundColor(AppColors.textSecondary)
-            }
+            // Greeting
+            Text("Hi, \(viewModel.firstName)")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundColor(AppColors.neutral500)
 
             Spacer()
 
-            // Profile Button
+            // Avatar
             Button {
                 coordinator.navigate(to: .profile)
             } label: {
                 Circle()
-                    .fill(AppColors.backgroundSecondary)
-                    .frame(width: 44, height: 44)
+                    .fill(AppColors.brand500)
+                    .frame(width: 32, height: 32)
                     .overlay(
                         Image(systemName: "person.fill")
-                            .foregroundColor(AppColors.textMuted)
+                            .font(.system(size: 14))
+                            .foregroundColor(.white)
                     )
+            }
+
+            // Menu
+            Button {
+                // Toggle menu
+            } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
             }
         }
     }
 
-    private var greetingSubtext: String {
-        switch state {
-        case .zeroState:
-            return "Complete your setup to get started"
-        case .paidThisMonth:
-            return "You're all set for this month!"
-        case .latePayment:
-            return "Don't forget to pay your rent"
-        case .missedPayment:
-            return "Your rent is overdue"
-        default:
-            return "Ready to pay rent?"
+    // MARK: - Home Tab Content
+
+    @ViewBuilder
+    private var homeTabContent: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            // Welcome message
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Welcome to")
+                    .font(.system(size: 28, weight: .regular))
+                    .foregroundColor(.white)
+                Text("Flent Secured")
+                    .font(.system(size: 28, weight: .regular))
+                    .foregroundColor(AppColors.brand500)
+            }
+
+            // State-specific content
+            stateContent
         }
+    }
+
+    // MARK: - Transactions Tab Content
+
+    private var transactionsTabContent: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text("Transactions")
+                .font(.system(size: 28, weight: .regular))
+                .foregroundColor(.white)
+
+            // Transaction list placeholder
+            Text("No transactions yet")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundColor(AppColors.neutral500)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, Spacing.xxl)
+        }
+    }
+
+    // MARK: - Sticky Footer
+
+    private var stickyFooter: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Due in \(viewModel.daysUntilDue) Days")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.neutral500)
+                Text("₹\(viewModel.rentAmount)")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+
+            Spacer()
+
+            Button(action: {
+                coordinator.navigate(to: .paymentMethods)
+            }) {
+                Text("View Details")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.sm)
+                    .background(AppColors.brand500)
+                    .cornerRadius(Radius.pill)
+            }
+        }
+        .padding(.horizontal, Spacing.screenHorizontalCompact)
+        .padding(.vertical, Spacing.md)
+        .background(AppColors.backgroundSecondary)
     }
 
     // MARK: - State Content
@@ -123,34 +205,139 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Zero State
+    // MARK: - Zero State (Figma style)
 
     private var zeroStateContent: some View {
         VStack(spacing: Spacing.lg) {
             // Setup Progress Card
-            VStack(spacing: Spacing.md) {
-                HStack {
-                    Text("Complete Setup")
-                        .font(Typography.bodyMd)
-                        .foregroundColor(AppColors.textPrimary)
+            SetupProgressCard(
+                title: "Setup incomplete",
+                progress: "\(viewModel.setupProgress)/3",
+                items: [
+                    SetupItem(
+                        title: "Add landlord's bank details",
+                        subtitle: "enables secure payouts",
+                        status: viewModel.bankDetailsComplete ? .completed : .inProgress
+                    ),
+                    SetupItem(
+                        title: "Upload address proof",
+                        subtitle: "for verification",
+                        status: viewModel.addressProofComplete ? .completed : .pending
+                    ),
+                    SetupItem(
+                        title: "Invite your landlord",
+                        subtitle: "needed for cashback eligibility",
+                        status: viewModel.landlordInvited ? .completed : .pending
+                    )
+                ]
+            )
+            .accessibilityIdentifier("setup_progress_card")
 
-                    Spacer()
+            // Get Started section
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text("GET STARTED")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.neutral500)
+                    .tracking(1)
 
-                    Text("0/3")
-                        .font(Typography.bodySm)
-                        .foregroundColor(AppColors.textMuted)
-                }
-
-                ProgressBar(completed: 0, total: 3)
-
-                PrimaryButton(title: "Continue Setup") {
-                    coordinator.navigate(to: .pendingSteps)
+                HStack(spacing: Spacing.sm) {
+                    PillButton(icon: "sparkles", title: "Add UPI method") {
+                        coordinator.navigate(to: .paymentMethods)
+                    }
+                    PillButton(icon: "creditcard", title: "Add Credit Card") {
+                        coordinator.navigate(to: .paymentMethods)
+                    }
                 }
             }
-            .cardPadding()
-            .background(AppColors.backgroundSecondary)
-            .cornerRadius(Radius.card)
-            .accessibilityIdentifier("setup_progress_card")
+
+            // Landlord invitation warning
+            landlordInvitationCard
+
+            // Stats cards
+            statsSection
+
+            // Property details
+            propertyDetailsSection
+        }
+    }
+
+    // MARK: - Landlord Invitation Card
+
+    private var landlordInvitationCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("LANDLORD INVITATION")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(AppColors.neutral500)
+                .tracking(1)
+
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text("Your landlord declined the invite")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+
+                Text("Some landlords prefer to understand before joining. You can continue paying rent.")
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(AppColors.neutral500)
+
+                Button(action: {
+                    // Contact support
+                }) {
+                    Text("Contact support")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(AppColors.brand500)
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.xs)
+                        .background(AppColors.brand500.opacity(0.2))
+                        .cornerRadius(Radius.xs)
+                }
+            }
+            .padding(Spacing.md)
+            .background(AppColors.black500)
+            .cornerRadius(Radius.md)
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(AppColors.error.opacity(0.3), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Stats Section
+
+    private var statsSection: some View {
+        HStack(spacing: Spacing.md) {
+            // On-time payments
+            StatsCard(
+                icon: "checkmark.circle",
+                iconColor: AppColors.success,
+                title: "On-Time",
+                subtitle: "Payments made",
+                value: "\(viewModel.onTimePayments)"
+            )
+
+            // Cashback earned
+            StatsCard(
+                icon: "gift",
+                iconColor: AppColors.brand500,
+                title: "Cashback",
+                subtitle: "Available",
+                value: viewModel.cashbackAvailable
+            )
+        }
+    }
+
+    // MARK: - Property Details Section
+
+    private var propertyDetailsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("About your Home")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                PropertyDetailRow(icon: "building.2", label: "Property Name", value: viewModel.propertyName)
+                PropertyDetailRow(icon: "mappin.and.ellipse", label: "Address", value: viewModel.propertyAddress)
+                PropertyDetailRow(icon: "indianrupeesign.circle", label: "Monthly Rent", value: viewModel.rentAmount)
+            }
         }
     }
 
@@ -408,6 +595,101 @@ struct QuickActionButton: View {
             .padding(Spacing.md)
             .background(AppColors.backgroundSecondary)
             .cornerRadius(Radius.sm)
+        }
+    }
+}
+
+// MARK: - Pill Button (for GET STARTED section)
+
+struct PillButton: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.xs)
+            .background(AppColors.black500)
+            .cornerRadius(Radius.pill)
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.pill)
+                    .stroke(AppColors.black400, lineWidth: 1)
+            )
+        }
+    }
+}
+
+// MARK: - Stats Card
+
+struct StatsCard: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let subtitle: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            // Icon with circular border
+            ZStack {
+                Circle()
+                    .stroke(iconColor.opacity(0.3), lineWidth: 2)
+                    .frame(width: 40, height: 40)
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(iconColor)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(AppColors.neutral500)
+                Text(subtitle)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(AppColors.neutral500)
+            }
+
+            Text(value)
+                .font(.system(size: 32, weight: .light))
+                .foregroundColor(AppColors.brand500)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(AppColors.black500)
+        .cornerRadius(Radius.md)
+    }
+}
+
+// MARK: - Property Detail Row
+
+struct PropertyDetailRow: View {
+    let icon: String
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(AppColors.neutral500)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(AppColors.neutral500)
+                Text(value)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(.white)
+            }
         }
     }
 }

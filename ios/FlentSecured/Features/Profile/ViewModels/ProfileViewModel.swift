@@ -99,6 +99,32 @@ final class ProfileViewModel {
         return "Version \(version) (\(build))"
     }
 
+    // MARK: - Payment History
+
+    /// Number of on-time payments
+    var onTimePayments: Int {
+        paymentHistory.filter { $0.isOnTime }.count
+    }
+
+    /// Number of late payments
+    var latePayments: Int {
+        paymentHistory.filter { !$0.isOnTime }.count
+    }
+
+    /// Payment history data for chart
+    var paymentHistory: [PaymentMonthData] {
+        // Sample data - would be loaded from backend in real implementation
+        [
+            PaymentMonthData(monthLabel: "Jun", percentage: 100, isOnTime: true),
+            PaymentMonthData(monthLabel: "Jul", percentage: 100, isOnTime: true),
+            PaymentMonthData(monthLabel: "Aug", percentage: 80, isOnTime: true),
+            PaymentMonthData(monthLabel: "Sep", percentage: 100, isOnTime: true),
+            PaymentMonthData(monthLabel: "Oct", percentage: 60, isOnTime: false),
+            PaymentMonthData(monthLabel: "Nov", percentage: 100, isOnTime: true),
+            PaymentMonthData(monthLabel: "Dec", percentage: 100, isOnTime: true)
+        ]
+    }
+
     // MARK: - Dependencies
 
     private let userService: UserServiceProtocol

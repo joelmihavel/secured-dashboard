@@ -282,7 +282,8 @@ extension OTPVerificationViewModel {
             let userProfile = try await AppEnvironment.shared.userService.getCurrentUser()
 
             // Route based on user status
-            if let status = UserStatus(rawValue: userProfile.userStatus) {
+            if let userStatus = userProfile.userStatus,
+               let status = UserStatus(rawValue: userStatus) {
                 switch status {
                 case .complete:
                     // Fully verified user - go to home with full access

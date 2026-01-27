@@ -1,13 +1,13 @@
 /// OTPVerificationView.swift
 /// Flent Secured v2 - OTP Verification Screen
 ///
-/// States handled:
-/// - .idle: Entering OTP digits
-/// - .verifying: Verifying OTP with backend
-/// - .verified: Successfully verified
-/// - .error: Invalid OTP or verification failed
-///
-/// Figma: auth / sign up --enter OTP (and variants)
+/// Figma: node-id=1:31277
+/// - Presented as bottom sheet (dark bg #1A1A1A)
+/// - "Let's verify your number" title
+/// - "We've sent a 4-digit code..." subtitle
+/// - 4 OTP boxes
+/// - "Proceed" button
+/// - "Didn't receive the code? Resend" link
 
 import SwiftUI
 
@@ -18,7 +18,7 @@ struct OTPVerificationView: View {
     let phone: String
 
     @State private var viewModel: OTPVerificationViewModel
-    @FocusState private var focusedField: Int?
+    @State private var otpCode: String = ""
 
     init(phone: String) {
         self.phone = phone
@@ -27,143 +27,119 @@ struct OTPVerificationView: View {
 
     var body: some View {
         ZStack {
+            // Background with phone entry visible behind
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: Spacing.xl) {
-                // Back Button
-                Button {
-                    coordinator.pop()
-                } label: {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(AppColors.textPrimary)
-                        .frame(width: 44, height: 44) // Minimum tap target for accessibility
-                }
-                .accessibilityIdentifier("back_button")
-                .accessibilityLabel("Go back")
+            // Dotted grid pattern
+            DottedGridPattern()
+                .ignoresSafeArea()
 
-                // Header
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text("Enter verification code")
-                        .font(Typography.h4)
-                        .foregroundColor(AppColors.textPrimary)
+            // Dimmed background content (simulating the phone screen behind)
+            VStack(alignment: .leading) {
+                FlentLogo()
+                    .padding(.top, Spacing.xxl)
 
-                    Text("We sent a code to \(phone)")
-                        .font(Typography.bodyMd2)
-                        .foregroundColor(AppColors.textSecondary)
-                }
+                Spacer()
+                    .frame(height: Spacing.huge)
 
-                // OTP Input Fields
-                HStack(spacing: Spacing.xs) {
-                    ForEach(0..<6, id: \.self) { index in
-                        OTPDigitField(
-                            digit: $viewModel.otpDigits[index],
-                            isFocused: focusedField == index,
-                            hasError: viewModel.errorMessage != nil
-                        )
-                        .focused($focusedField, equals: index)
-                        .onChange(of: viewModel.otpDigits[index]) { _, newValue in
-                            handleDigitChange(at: index, newValue: newValue)
-                        }
-                        .accessibilityIdentifier("otp_input_\(index)")
-                    }
-                }
-
-                // Error Message
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(Typography.bodySm)
-                        .foregroundColor(AppColors.error)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-
-                // Resend Code
-                HStack {
-                    Text("Didn't receive a code?")
-                        .font(Typography.bodySm)
-                        .foregroundColor(AppColors.textSecondary)
-
-                    if viewModel.canResend {
-                        Button("Resend") {
-                            resendOTP()
-                        }
-                        .font(Typography.bodySmMedium)
-                        .foregroundColor(AppColors.accentPrimary)
-                        .disabled(viewModel.isResending)
-                    } else {
-                        Text("Resend in \(viewModel.resendCountdown)s")
-                            .font(Typography.bodySm)
-                            .foregroundColor(AppColors.textMuted)
-                    }
-                }
-
-                // Mobile 360 Consent
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Toggle(isOn: $viewModel.consentForMobile360) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: Spacing.xxs) {
-                                Text("Allow identity verification")
-                                    .font(Typography.bodySm)
-                                    .foregroundColor(AppColors.textPrimary)
-                                Text("*")
-                                    .font(Typography.bodySm)
-                                    .foregroundColor(AppColors.error)
-                            }
-                            Text("We'll fetch your name from your mobile number")
-                                .font(Typography.caption)
-                                .foregroundColor(AppColors.textMuted)
-                        }
-                    }
-                    .toggleStyle(SwitchToggleStyle(tint: AppColors.accentPrimary))
-                    .accessibilityIdentifier("consent_toggle")
-
-                    // Consent warning message
-                    if let consentError = viewModel.consentErrorMessage {
-                        Text(consentError)
-                            .font(Typography.caption)
-                            .foregroundColor(AppColors.error)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Let's get to")
+                        .font(.system(size: 40, weight: .light))
+                        .foregroundColor(.white.opacity(0.3))
+                    Text("know you")
+                        .font(.system(size: 40, weight: .light))
+                        .foregroundColor(AppColors.brand500.opacity(0.3))
                 }
 
                 Spacer()
+            }
+            .padding(.horizontal, Spacing.screenHorizontal)
 
-                // Verify Button
-                PrimaryButton(
-                    title: "Verify",
-                    isLoading: viewModel.isVerifying,
-                    isEnabled: viewModel.canVerify
-                ) {
-                    verifyOTP()
+            // Bottom sheet
+            VStack {
+                Spacer()
+
+                BottomSheetContainer {
+                    VStack(alignment: .leading, spacing: Spacing.xl) {
+                        // Title
+                        Text("Let's verify your number")
+                            .font(.system(size: 24, weight: .regular))
+                            .foregroundColor(.white)
+
+                        // Subtitle
+                        Text("We've sent a 4-digit code to your phone. It'll auto-verify once entered")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(AppColors.neutral500)
+
+                        // OTP Input - 4 digits
+                        OTPInputField(otp: $otpCode, digitCount: 4) { code in
+                            handleOTPComplete(code)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                        // Error Message
+                        if let error = viewModel.errorMessage {
+                            Text(error)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(AppColors.error)
+                        }
+
+                        // Proceed Button
+                        PrimaryButton(
+                            title: "Proceed",
+                            isLoading: viewModel.isVerifying,
+                            isEnabled: otpCode.count == 4
+                        ) {
+                            verifyOTP()
+                        }
+
+                        // Resend link
+                        Button(action: {
+                            resendOTP()
+                        }) {
+                            HStack(spacing: 4) {
+                                Text("Didn't receive the code?")
+                                    .foregroundColor(AppColors.neutral500)
+                                Text("Resend")
+                                    .foregroundColor(AppColors.brand500)
+                            }
+                            .font(.system(size: 14, weight: .medium))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .disabled(!viewModel.canResend)
+                        .opacity(viewModel.canResend ? 1 : 0.5)
+                    }
                 }
             }
-            .screenPadding()
-            .padding(.top, Spacing.xl)
         }
         .navigationBarHidden(true)
         .onAppear {
-            focusedField = 0
             viewModel.startResendTimer()
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.consentForMobile360)
+    }
+
+    private func handleOTPComplete(_ code: String) {
+        // Update viewModel with new OTP format
+        for (index, char) in code.enumerated() {
+            if index < viewModel.otpDigits.count {
+                viewModel.otpDigits[index] = String(char)
+            }
+        }
+        // Auto-verify
+        verifyOTP()
     }
 
     // MARK: - OTP Logic
 
-    private func handleDigitChange(at index: Int, newValue: String) {
-        if let nextIndex = viewModel.handleDigitInput(at: index, newValue: newValue) {
-            focusedField = nextIndex
-        } else if viewModel.isOTPComplete && viewModel.canVerify {
-            // Auto-verify when complete and consent given
-            focusedField = nil
-            verifyOTP()
-        }
-    }
-
     private func verifyOTP() {
-        focusedField = nil
+        // Update viewModel digits from otpCode
+        for (index, char) in otpCode.enumerated() {
+            if index < viewModel.otpDigits.count {
+                viewModel.otpDigits[index] = String(char)
+            }
+        }
 
         Task {
             let result = await viewModel.verifyOTP()
@@ -179,8 +155,8 @@ struct OTPVerificationView: View {
                     coordinator.navigate(to: nextRoute)
                 }
             } else {
-                // Error occurred - focus first field
-                focusedField = 0
+                // Error occurred - clear OTP for retry
+                otpCode = ""
             }
         }
     }
@@ -192,53 +168,7 @@ struct OTPVerificationView: View {
     }
 }
 
-// MARK: - OTP Digit Field
-
-struct OTPDigitField: View {
-    @Binding var digit: String
-    let isFocused: Bool
-    var hasError: Bool = false
-
-    var body: some View {
-        TextField("", text: $digit)
-            .font(Typography.otpInput)
-            .foregroundColor(AppColors.textPrimary)
-            .multilineTextAlignment(.center)
-            .keyboardType(.numberPad)
-            .textContentType(.oneTimeCode)
-            .frame(width: 48, height: 56)
-            .background(AppColors.backgroundSecondary)
-            .cornerRadius(Radius.sm)
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.sm)
-                    .stroke(
-                        hasError ? AppColors.error :
-                        isFocused ? AppColors.accentPrimary : AppColors.border,
-                        lineWidth: isFocused ? 2 : 1
-                    )
-            )
-            .animation(.easeInOut(duration: 0.15), value: isFocused)
-    }
-}
-
-#Preview("Empty") {
-    OTPVerificationView(phone: "+919999999999")
-        .environment(AppCoordinator())
-        .environment(AppState())
-}
-
-#Preview("With OTP") {
-    struct PreviewWrapper: View {
-        var body: some View {
-            OTPVerificationView(phone: "+919999999999")
-                .environment(AppCoordinator())
-                .environment(AppState())
-        }
-    }
-    return PreviewWrapper()
-}
-
-#Preview("Error") {
+#Preview("OTP Verification") {
     OTPVerificationView(phone: "+919999999999")
         .environment(AppCoordinator())
         .environment(AppState())

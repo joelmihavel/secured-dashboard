@@ -153,6 +153,14 @@ final class AgreementUploadViewModel {
     /// Upload the selected document
     @MainActor
     func uploadDocument(from url: URL) async {
+        // In test mode, simulate successful upload
+        #if DEBUG
+        if AppEnvironment.useMockServices {
+            await simulateMockUpload()
+            return
+        }
+        #endif
+
         guard url.startAccessingSecurityScopedResource() else {
             state = .error("Cannot access the selected file")
             return
@@ -230,6 +238,30 @@ final class AgreementUploadViewModel {
             state = .error("Upload failed: \(error.localizedDescription)")
         }
     }
+
+    /// Simulate mock upload for test mode
+    #if DEBUG
+    @MainActor
+    private func simulateMockUpload() async {
+        state = .uploading(progress: 0.2)
+        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+
+        state = .uploading(progress: 0.5)
+        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+
+        state = .uploading(progress: 0.8)
+        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+
+        state = .processing
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+
+        let mockExtractionId = "mock-extraction-\(UUID().uuidString.prefix(8))"
+        extractionId = mockExtractionId
+        state = .processed(extractionId: mockExtractionId)
+
+        print("[AgreementUploadViewModel] 🧪 Mock upload completed with extraction ID: \(mockExtractionId)")
+    }
+    #endif
 
     /// Retry upload with previously selected file
     @MainActor
