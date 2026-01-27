@@ -177,6 +177,10 @@ enum Route: Hashable {
     // MARK: - Profile
 
     case profile
+    case personalDetails
+    case tenancyDetails
+    case paymentHistory
+    case helpFAQ
     case settings
     case referral
 }
@@ -284,6 +288,10 @@ extension Route: Identifiable {
         case .transactions: return "transactions"
         case .transactionDetail(let id): return "transactionDetail-\(id)"
         case .profile: return "profile"
+        case .personalDetails: return "personalDetails"
+        case .tenancyDetails: return "tenancyDetails"
+        case .paymentHistory: return "paymentHistory"
+        case .helpFAQ: return "helpFAQ"
         case .settings: return "settings"
         case .referral: return "referral"
         }

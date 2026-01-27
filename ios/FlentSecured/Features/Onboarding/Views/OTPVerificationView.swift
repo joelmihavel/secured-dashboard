@@ -25,6 +25,21 @@ struct OTPVerificationView: View {
         self._viewModel = State(initialValue: OTPVerificationViewModel(phone: phone))
     }
 
+    /// Format phone number for display (e.g., "+91 99999 99999")
+    private var formattedPhone: String {
+        // Format: +91 XXXXX XXXXX for Indian numbers
+        let cleaned = phone.replacingOccurrences(of: " ", with: "")
+        if cleaned.hasPrefix("+91") && cleaned.count == 13 {
+            let index5 = cleaned.index(cleaned.startIndex, offsetBy: 3)
+            let index10 = cleaned.index(cleaned.startIndex, offsetBy: 8)
+            let countryCode = cleaned[..<index5]
+            let firstPart = cleaned[index5..<index10]
+            let secondPart = cleaned[index10...]
+            return "\(countryCode) \(firstPart) \(secondPart)"
+        }
+        return phone
+    }
+
     var body: some View {
         ZStack {
             // Background with phone entry visible behind
@@ -67,8 +82,8 @@ struct OTPVerificationView: View {
                             .font(.system(size: 24, weight: .regular))
                             .foregroundColor(.white)
 
-                        // Subtitle
-                        Text("We've sent a 4-digit code to your phone. It'll auto-verify once entered")
+                        // Subtitle with phone number
+                        Text("We've sent a 4-digit code to \(formattedPhone)")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(AppColors.neutral500)
 

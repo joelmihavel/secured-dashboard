@@ -215,7 +215,7 @@ final class OnboardingCoordinator {
             return .agreementReview
         case .waitlist:
             return .waitlist
-        case .splash, .home, .payment, .paymentMethods, .paymentProcessing, .paymentResult, .paymentSummary, .transactions, .transactionDetail, .profile, .settings, .pendingSteps, .addBank, .addUtility, .inviteLandlord, .referral:
+        case .splash, .home, .payment, .paymentMethods, .paymentProcessing, .paymentResult, .paymentSummary, .transactions, .transactionDetail, .profile, .personalDetails, .tenancyDetails, .paymentHistory, .helpFAQ, .settings, .pendingSteps, .addBank, .addUtility, .inviteLandlord, .referral:
             return nil
         }
     }

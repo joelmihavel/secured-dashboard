@@ -142,6 +142,12 @@ struct ReceiptCardShape: Shape {
 
 // MARK: - Payment Status Stamp
 
+/// Payment status stamp for receipt cards
+/// Figma: node-id=1:35238 (PAID), node-id=1:35361 (FAILED)
+/// - Size: 64x64
+/// - Rotation: -15 degrees
+/// - PAID: green (#06C270) with checkmark and stars
+/// - FAILED: red (#FF8080) with X and stars
 struct PaymentStamp: View {
     enum Status {
         case paid
@@ -167,31 +173,56 @@ struct PaymentStamp: View {
         }
     }
 
+    private var stampIcon: String {
+        switch status {
+        case .paid: return "checkmark"
+        case .failed: return "xmark"
+        case .refunded: return "arrow.uturn.backward"
+        }
+    }
+
     var body: some View {
         ZStack {
-            // Stamp border
+            // Outer stamp border with dashed pattern
             Circle()
-                .stroke(stampColor, lineWidth: 2)
+                .stroke(stampColor, style: StrokeStyle(lineWidth: 2, dash: [4, 2]))
                 .frame(width: 64, height: 64)
 
-            // Inner circle with pattern
+            // Inner circle
             Circle()
-                .stroke(stampColor.opacity(0.3), lineWidth: 1)
+                .stroke(stampColor.opacity(0.5), lineWidth: 1)
                 .frame(width: 54, height: 54)
 
-            // Stars
+            // Content
             VStack(spacing: 2) {
-                HStack(spacing: 4) {
-                    ForEach(0..<3) { _ in
+                // Stars row
+                HStack(spacing: 3) {
+                    ForEach(0..<3, id: \.self) { _ in
                         Image(systemName: "star.fill")
-                            .font(.system(size: 6))
+                            .font(.system(size: 5))
                             .foregroundColor(stampColor)
                     }
                 }
 
-                Text(stampText)
-                    .font(.system(size: 10, weight: .bold))
+                // Status icon
+                Image(systemName: stampIcon)
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(stampColor)
+
+                // Status text
+                Text(stampText)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(stampColor)
+                    .tracking(1)
+
+                // Bottom stars row
+                HStack(spacing: 3) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 5))
+                            .foregroundColor(stampColor)
+                    }
+                }
             }
         }
         .rotationEffect(.degrees(-15))
@@ -200,28 +231,34 @@ struct PaymentStamp: View {
 
 // MARK: - Receipt Row
 
+/// Transaction detail row for receipt cards
+/// Figma: node-id=1:35238
+/// - Label: # prefix (orange) + label text (neutral)
+/// - Value: white text, right aligned
+/// - Highlighted: larger font for total/payable rows
 struct ReceiptRow: View {
     let label: String
     let value: String
     var showHash: Bool = true
+    var isHighlighted: Bool = false
 
     var body: some View {
         HStack {
             HStack(spacing: Spacing.xs) {
                 if showHash {
                     Text("#")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: isHighlighted ? 16 : 14, weight: .medium))
                         .foregroundColor(AppColors.brand500)
                 }
                 Text(label)
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(AppColors.neutral500)
+                    .font(.system(size: isHighlighted ? 16 : 14, weight: isHighlighted ? .medium : .regular))
+                    .foregroundColor(isHighlighted ? .white : AppColors.neutral500)
             }
 
             Spacer()
 
             Text(value)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: isHighlighted ? 16 : 14, weight: isHighlighted ? .semibold : .medium))
                 .foregroundColor(.white)
         }
     }

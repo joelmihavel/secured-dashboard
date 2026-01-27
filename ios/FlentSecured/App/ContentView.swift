@@ -132,6 +132,18 @@ struct ContentView: View {
         case .profile:
             ProfileView()
 
+        case .personalDetails:
+            PersonalDetailsView()
+
+        case .tenancyDetails:
+            TenancyDetailsView()
+
+        case .paymentHistory:
+            PaymentHistoryView()
+
+        case .helpFAQ:
+            HelpFAQView()
+
         case .settings:
             SettingsView()
 

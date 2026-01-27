@@ -4,9 +4,9 @@
 /// Figma: node-id=1:34854
 /// - Presented as bottom sheet (dark bg #1A1A1A)
 /// - "Choose a" white + "Payment Method" orange
-/// - Cashback pill badge
-/// - Radio buttons for payment options
-/// - Fee labels on right
+/// - Cashback pill badge (dark bg, rounded pill)
+/// - Radio buttons for payment options with selection state
+/// - Fee labels on right (muted text)
 /// - Primary button with amount
 
 import SwiftUI
@@ -70,8 +70,8 @@ struct PaymentMethodsView: View {
                 Spacer()
 
                 BottomSheetContainer {
-                    VStack(alignment: .leading, spacing: Spacing.xl) {
-                        // Title - Split color
+                    VStack(alignment: .leading, spacing: Spacing.lg) {
+                        // Title - Split color (Figma: 28px regular)
                         VStack(alignment: .leading, spacing: 0) {
                             Text("Choose a")
                                 .font(.system(size: 28, weight: .regular))
@@ -81,18 +81,30 @@ struct PaymentMethodsView: View {
                                 .foregroundColor(AppColors.brand500)
                         }
 
-                        // Cashback pill
-                        Text("You'll earn ₹\(viewModel.estimatedCashbackFormatted) cashback on this payment")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, Spacing.md)
-                            .padding(.vertical, Spacing.sm)
-                            .frame(maxWidth: .infinity)
-                            .background(AppColors.black500)
-                            .cornerRadius(Radius.pill)
+                        // Cashback pill - Figma: dark bg (#202020), rounded pill, 14px medium
+                        HStack(spacing: Spacing.xs) {
+                            Image(systemName: "gift.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(AppColors.brand500)
+
+                            Text("You'll earn ")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(AppColors.neutral500)
+                            + Text("\u{20B9}\(viewModel.estimatedCashbackFormatted) cashback")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                            + Text(" on this payment")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(AppColors.neutral500)
+                        }
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.sm)
+                        .frame(maxWidth: .infinity)
+                        .background(AppColors.black500)
+                        .cornerRadius(Radius.pill)
 
                         // Payment Methods with Radio Buttons
-                        VStack(spacing: Spacing.md) {
+                        VStack(spacing: Spacing.sm) {
                             // UPI Option
                             PaymentMethodRadioRow(
                                 icon: "link",
@@ -137,9 +149,14 @@ struct PaymentMethodsView: View {
 
                         // Error Message
                         if let error = viewModel.errorMessage {
-                            Text(error)
-                                .font(.system(size: 14, weight: .regular))
-                                .foregroundColor(AppColors.error)
+                            HStack(spacing: Spacing.xs) {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(AppColors.error)
+                                Text(error)
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(AppColors.error)
+                            }
                         }
 
                         // Pay Button
@@ -227,6 +244,14 @@ struct PaymentMethodsView: View {
 
 // MARK: - Payment Method Radio Row
 
+/// Payment method selection row with radio button
+/// Figma: node-id=1:34854
+/// - Radio button: 24x24, 2px stroke, inner fill 14px when selected
+/// - Icon: 20px SF Symbol
+/// - Title: 16px medium white
+/// - Fee: 14px regular neutral/500
+/// - Selected: brand/500 border, brand/500 10% fill
+/// - Locked: gray icons, lock icon in radio, subtitle text
 struct PaymentMethodRadioRow: View {
     let icon: String
     let title: String
@@ -239,6 +264,9 @@ struct PaymentMethodRadioRow: View {
     var body: some View {
         Button(action: {
             if !isLocked {
+                // Haptic feedback
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
                 action()
             }
         }) {
@@ -246,7 +274,10 @@ struct PaymentMethodRadioRow: View {
                 // Radio button
                 ZStack {
                     Circle()
-                        .stroke(isLocked ? AppColors.black400 : (isSelected ? AppColors.brand500 : AppColors.neutral500), lineWidth: 2)
+                        .stroke(
+                            isLocked ? AppColors.black400 : (isSelected ? AppColors.brand500 : AppColors.black400),
+                            lineWidth: 2
+                        )
                         .frame(width: 24, height: 24)
 
                     if isSelected && !isLocked {
@@ -268,7 +299,7 @@ struct PaymentMethodRadioRow: View {
                     .foregroundColor(isLocked ? AppColors.black400 : .white)
                     .frame(width: 24)
 
-                // Title
+                // Title and lock message
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 16, weight: .medium))
@@ -277,31 +308,45 @@ struct PaymentMethodRadioRow: View {
                     if let message = lockMessage, isLocked {
                         Text(message)
                             .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(AppColors.black400)
+                            .foregroundColor(AppColors.black300)
                     }
                 }
 
                 Spacer()
 
-                // Fee
+                // Fee label
                 Text(fee)
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(isLocked ? AppColors.black400 : AppColors.neutral500)
             }
             .padding(Spacing.md)
-            .background(isSelected && !isLocked ? AppColors.brand500.opacity(0.1) : Color.clear)
-            .cornerRadius(Radius.sm)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.sm)
+                    .fill(isSelected && !isLocked ? AppColors.brand500.opacity(0.1) : Color.clear)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.sm)
-                    .stroke(isSelected && !isLocked ? AppColors.brand500 : AppColors.black400, lineWidth: 1)
+                    .stroke(
+                        isSelected && !isLocked ? AppColors.brand500 : AppColors.black400,
+                        lineWidth: isSelected && !isLocked ? 1.5 : 1
+                    )
             )
         }
+        .buttonStyle(PlainButtonStyle())
         .disabled(isLocked)
     }
 }
 
-#Preview {
-    PaymentMethodsView()
+// MARK: - Previews
+
+#Preview("Payment Methods - Qualified User") {
+    PaymentMethodsView(userStatus: .qualified)
+        .environment(AppCoordinator())
+        .environment(AppState())
+}
+
+#Preview("Payment Methods - Complete User") {
+    PaymentMethodsView(userStatus: .complete)
         .environment(AppCoordinator())
         .environment(AppState())
 }

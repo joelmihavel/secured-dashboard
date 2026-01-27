@@ -68,14 +68,14 @@ struct ProfileView: View {
                                 icon: "person.fill",
                                 title: "Personal Details"
                             ) {
-                                // Navigate to personal details
+                                coordinator.navigate(to: .personalDetails)
                             }
 
                             ProfileMenuItem(
                                 icon: "house.fill",
                                 title: "Tenancy Details"
                             ) {
-                                // Navigate to tenancy details
+                                coordinator.navigate(to: .tenancyDetails)
                             }
 
                             ProfileMenuItem(
@@ -99,7 +99,7 @@ struct ProfileView: View {
                                 icon: "creditcard.fill",
                                 title: "Payment History"
                             ) {
-                                // Navigate to payment history
+                                coordinator.navigate(to: .paymentHistory)
                             }
                         }
 
@@ -109,14 +109,14 @@ struct ProfileView: View {
                                 icon: "questionmark.circle.fill",
                                 title: "Help & FAQ"
                             ) {
-                                // Open help
+                                coordinator.navigate(to: .helpFAQ)
                             }
 
                             ProfileMenuItem(
                                 icon: "bubble.left.fill",
                                 title: "Contact Support"
                             ) {
-                                // Open support chat
+                                openSupportEmail()
                             }
                         }
 
@@ -204,6 +204,13 @@ struct ProfileView: View {
         .task {
             await viewModel.loadProfile()
         }
+    }
+
+    // MARK: - Private Helpers
+
+    private func openSupportEmail() {
+        guard let url = URL(string: "mailto:support@flent.in?subject=Support%20Request") else { return }
+        UIApplication.shared.open(url)
     }
 }
 

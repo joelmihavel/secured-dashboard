@@ -42,7 +42,7 @@ final class OTPVerificationViewModel {
 
     let phone: String
 
-    var otpDigits: [String] = Array(repeating: "", count: 6) {
+    var otpDigits: [String] = Array(repeating: "", count: 4) {
         didSet {
             if case .error = state {
                 state = .idle
@@ -65,7 +65,7 @@ final class OTPVerificationViewModel {
     }
 
     var isOTPComplete: Bool {
-        otpCode.count == 6 && otpCode.allSatisfy(\.isNumber)
+        otpCode.count == 4 && otpCode.allSatisfy(\.isNumber)
     }
 
     var isVerifying: Bool {
@@ -120,7 +120,7 @@ final class OTPVerificationViewModel {
     @MainActor
     func verifyOTP() async -> AuthResult? {
         guard isOTPComplete else {
-            state = .error("Please enter the complete 6-digit code")
+            state = .error("Please enter the complete 4-digit code")
             return nil
         }
 
@@ -208,7 +208,7 @@ final class OTPVerificationViewModel {
     /// Handle digit input at specific index
     func handleDigitInput(at index: Int, newValue: String) -> Int? {
         // Handle paste of full OTP
-        if newValue.count == 6 && newValue.allSatisfy(\.isNumber) {
+        if newValue.count == 4 && newValue.allSatisfy(\.isNumber) {
             for (i, char) in newValue.enumerated() {
                 otpDigits[i] = String(char)
             }
@@ -221,7 +221,7 @@ final class OTPVerificationViewModel {
         }
 
         // Return next focus index
-        if !newValue.isEmpty && index < 5 {
+        if !newValue.isEmpty && index < 3 {
             return index + 1
         }
 
@@ -238,7 +238,7 @@ final class OTPVerificationViewModel {
 
     /// Clear all OTP digits
     func clearOTP() {
-        otpDigits = Array(repeating: "", count: 6)
+        otpDigits = Array(repeating: "", count: 4)
     }
 
     /// Reset state
@@ -289,8 +289,13 @@ extension OTPVerificationViewModel {
                     // Fully verified user - go to home with full access
                     return .home(state: .activeComplete)
                 case .qualified:
-                    // Needs setup steps - go to pending steps or home with limited access
-                    return .home(state: .activeQualified)
+                    // Check if tenancy verification is complete
+                    if let tenancy = try? await AppEnvironment.shared.userService.getCurrentTenancy(),
+                       tenancy.isFullyVerified {
+                        return .home(state: .activeQualified)
+                    }
+                    // Needs setup steps
+                    return .pendingSteps
                 case .waitlisted:
                     return .waitlist
                 case .notEligible:
@@ -299,12 +304,16 @@ extension OTPVerificationViewModel {
                     return .nameVerification
                 }
             }
+
+            // User status is nil - treat as new user who needs to complete profile
+            return .nameVerification
         } catch {
             print("[OTPVerificationViewModel] Failed to fetch user profile: \(error)")
+            // For existing users where profile fetch fails, show an error state
+            // rather than sending them through onboarding again.
+            // The safest fallback is to try waitlist which will re-fetch status.
+            return .waitlist
         }
-
-        // Fallback to name verification
-        return .nameVerification
     }
 }
 
@@ -317,13 +326,13 @@ extension OTPVerificationViewModel {
 
     static var previewWithOTP: OTPVerificationViewModel {
         let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        vm.otpDigits = ["1", "2", "3", "4"]
         return vm
     }
 
     static var previewVerifying: OTPVerificationViewModel {
         let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        vm.otpDigits = ["1", "2", "3", "4"]
         vm.state = .verifying
         return vm
     }
