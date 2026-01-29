@@ -10,6 +10,7 @@ import Observation
 
 // MARK: - Profile ViewModel
 
+@MainActor
 @Observable
 final class ProfileViewModel {
 

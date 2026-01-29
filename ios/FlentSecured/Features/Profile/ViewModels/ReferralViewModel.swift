@@ -10,6 +10,7 @@ import Observation
 
 // MARK: - Referral ViewModel
 
+@MainActor
 @Observable
 final class ReferralViewModel {
 

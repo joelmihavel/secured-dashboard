@@ -107,6 +107,8 @@ struct TenancyData: Codable, Identifiable, Equatable {
     let bankVerified: Bool
     let utilityVerified: Bool
     let landlordApproved: Bool
+    let landlordDeclined: Bool
+    let landlordInvitationSentAt: String?
     let createdAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -128,7 +130,82 @@ struct TenancyData: Codable, Identifiable, Equatable {
         case bankVerified = "bank_verified"
         case utilityVerified = "utility_verified"
         case landlordApproved = "landlord_approved"
+        case landlordDeclined = "landlord_declined"
+        case landlordInvitationSentAt = "landlord_invitation_sent_at"
         case createdAt = "created_at"
+    }
+
+    /// Initialize with defaults for optional fields
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        userId = try container.decode(String.self, forKey: .userId)
+        status = try container.decode(String.self, forKey: .status)
+        propertyAddress = try container.decodeIfPresent(String.self, forKey: .propertyAddress)
+        propertyCity = try container.decodeIfPresent(String.self, forKey: .propertyCity)
+        propertyState = try container.decodeIfPresent(String.self, forKey: .propertyState)
+        propertyPincode = try container.decodeIfPresent(String.self, forKey: .propertyPincode)
+        monthlyRentPaise = try container.decode(Int.self, forKey: .monthlyRentPaise)
+        securityDepositPaise = try container.decodeIfPresent(Int.self, forKey: .securityDepositPaise)
+        rentDueDay = try container.decode(Int.self, forKey: .rentDueDay)
+        leaseStartDate = try container.decodeIfPresent(String.self, forKey: .leaseStartDate)
+        leaseEndDate = try container.decodeIfPresent(String.self, forKey: .leaseEndDate)
+        landlordName = try container.decodeIfPresent(String.self, forKey: .landlordName)
+        landlordPhone = try container.decodeIfPresent(String.self, forKey: .landlordPhone)
+        landlordEmail = try container.decodeIfPresent(String.self, forKey: .landlordEmail)
+        bankVerified = try container.decode(Bool.self, forKey: .bankVerified)
+        utilityVerified = try container.decode(Bool.self, forKey: .utilityVerified)
+        landlordApproved = try container.decode(Bool.self, forKey: .landlordApproved)
+        landlordDeclined = try container.decodeIfPresent(Bool.self, forKey: .landlordDeclined) ?? false
+        landlordInvitationSentAt = try container.decodeIfPresent(String.self, forKey: .landlordInvitationSentAt)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+    }
+
+    /// Memberwise initializer for mock data and testing
+    init(
+        id: String,
+        userId: String,
+        status: String,
+        propertyAddress: String? = nil,
+        propertyCity: String? = nil,
+        propertyState: String? = nil,
+        propertyPincode: String? = nil,
+        monthlyRentPaise: Int,
+        securityDepositPaise: Int? = nil,
+        rentDueDay: Int,
+        leaseStartDate: String? = nil,
+        leaseEndDate: String? = nil,
+        landlordName: String? = nil,
+        landlordPhone: String? = nil,
+        landlordEmail: String? = nil,
+        bankVerified: Bool,
+        utilityVerified: Bool,
+        landlordApproved: Bool,
+        landlordDeclined: Bool = false,
+        landlordInvitationSentAt: String? = nil,
+        createdAt: String
+    ) {
+        self.id = id
+        self.userId = userId
+        self.status = status
+        self.propertyAddress = propertyAddress
+        self.propertyCity = propertyCity
+        self.propertyState = propertyState
+        self.propertyPincode = propertyPincode
+        self.monthlyRentPaise = monthlyRentPaise
+        self.securityDepositPaise = securityDepositPaise
+        self.rentDueDay = rentDueDay
+        self.leaseStartDate = leaseStartDate
+        self.leaseEndDate = leaseEndDate
+        self.landlordName = landlordName
+        self.landlordPhone = landlordPhone
+        self.landlordEmail = landlordEmail
+        self.bankVerified = bankVerified
+        self.utilityVerified = utilityVerified
+        self.landlordApproved = landlordApproved
+        self.landlordDeclined = landlordDeclined
+        self.landlordInvitationSentAt = landlordInvitationSentAt
+        self.createdAt = createdAt
     }
 
     /// Monthly rent in rupees

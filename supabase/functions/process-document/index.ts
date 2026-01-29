@@ -20,8 +20,11 @@ const corsHeaders = {
 // ============================================
 
 interface ProcessDocumentRequest {
-  waitlist_entry_id: string;
-  document_path: string;
+  // V2 parameters (preferred)
+  extraction_id?: string;
+  // V1 parameters (legacy support)
+  waitlist_entry_id?: string;
+  document_path?: string;
 }
 
 interface ExtractedData {
@@ -216,41 +219,80 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Create service role client outside try block so it's accessible in catch
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  let waitlist_entry_id: string | undefined;
+  let extraction_id: string | undefined;
 
   try {
-    // Parse request
-    const body = await req.json();
-    waitlist_entry_id = body.waitlist_entry_id;
-    const document_path = body.document_path;
-
-    if (!waitlist_entry_id || !document_path) {
-      return jsonResponse({ error: "Missing waitlist_entry_id or document_path" }, 400);
+    // Validate auth header (required by Supabase Edge Functions)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return jsonResponse({ success: false, error: "Missing authorization header" }, 401);
     }
 
-    console.log(`[process-document] Processing document for: ${waitlist_entry_id}`);
+    // Verify the user's JWT
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      console.error("[process-document] Auth error:", authError);
+      return jsonResponse({ success: false, error: "Unauthorized" }, 401);
+    }
+
+    console.log(`[process-document] Authenticated user: ${user.id}`);
+
+    // Parse request
+    const body = await req.json();
+
+    // V2: Accept extraction_id (from iOS app) OR V1: waitlist_entry_id + document_path
+    extraction_id = body.extraction_id || body.waitlist_entry_id;
+    let document_path = body.document_path;
+
+    if (!extraction_id) {
+      return jsonResponse({ error: "Missing extraction_id" }, 400);
+    }
+
+    console.log(`[process-document] Processing document for extraction: ${extraction_id}`);
+
+    // If document_path not provided, look it up from extracted_rental_info table
+    if (!document_path) {
+      const { data: extractionRecord, error: lookupError } = await supabase
+        .from("extracted_rental_info")
+        .select("document_storage_path")
+        .eq("id", extraction_id)
+        .single();
+
+      if (lookupError || !extractionRecord) {
+        console.error("[process-document] Failed to find extraction record:", lookupError);
+        return jsonResponse({
+          error: "Extraction record not found",
+          extraction_id
+        }, 404);
+      }
+
+      document_path = extractionRecord.document_storage_path;
+      console.log(`[process-document] Found document path: ${document_path}`);
+    }
+
+    if (!document_path) {
+      return jsonResponse({ error: "No document path found for this extraction" }, 400);
+    }
 
     // Update status to processing
-    await updateWaitlistStatus(supabase, waitlist_entry_id, {
-      extraction_status: "in_progress",
-      contract_status: "pending_extraction",
-      extraction_started_at: new Date().toISOString(),
-      // Initialize extraction progress fields
-      extraction_fields_count: 0,
-      extraction_total_fields: TOTAL_EXTRACTION_FIELDS,
-      requires_manual_review: false,
-      manual_review_reason: null,
+    await updateExtractionStatus(supabase, extraction_id, {
+      extraction_status: "processing",
     });
 
     // Validate PDF-only (critical requirement)
     if (!document_path.toLowerCase().endsWith('.pdf')) {
-      await updateWaitlistStatus(supabase, waitlist_entry_id, {
+      await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
-        contract_status: "rejected",
-        extraction_error: "Only PDF documents are allowed. Please upload a PDF file.",
       });
 
       return jsonResponse({
@@ -340,11 +382,10 @@ Deno.serve(async (req) => {
       extractedData  // Pass full extracted data for minimum fields validation
     );
 
-    // Store extracted data
+    // Store extracted data - update the existing extraction record
     const { data: rentalInfo, error: insertError } = await supabase
       .from("extracted_rental_info")
-      .upsert({
-        waitlist_id: waitlist_entry_id,
+      .update({
         property_name: extractedData.property_name,
         property_address: extractedData.property_address,
         property_city: extractedData.property_city,
@@ -384,9 +425,10 @@ Deno.serve(async (req) => {
         gemini_raw_response: extractedData.raw_gemini_data,
         // Raw data for debugging (without duplicated fields)
         raw_extraction_data: extractedData.raw_doc_ai_data,
-      }, {
-        onConflict: 'waitlist_id',
+        // Update extraction status
+        extraction_status: "completed",
       })
+      .eq("id", extraction_id)
       .select()
       .single();
 
@@ -397,14 +439,14 @@ Deno.serve(async (req) => {
     // Store rental parties
     const partyInserts = [
       ...extractedData.tenants.map((t) => ({
-        extracted_rental_info_id: rentalInfo.id,
+        extracted_rental_info_id: extraction_id,
         party_type: "tenant",
         name: t.name,
         phone_number: t.phone,
         email: t.email,
       })),
       ...extractedData.landlords.map((l) => ({
-        extracted_rental_info_id: rentalInfo.id,
+        extracted_rental_info_id: extraction_id,
         party_type: "landlord",
         name: l.name,
         phone_number: l.phone,
@@ -417,7 +459,7 @@ Deno.serve(async (req) => {
       await supabase
         .from("rental_parties")
         .delete()
-        .eq("extracted_rental_info_id", rentalInfo.id);
+        .eq("extracted_rental_info_id", extraction_id);
 
       await supabase.from("rental_parties").insert(partyInserts);
     }
@@ -428,7 +470,7 @@ Deno.serve(async (req) => {
       try {
         await geocodePropertyAddress(
           supabase,
-          rentalInfo.id,
+          extraction_id,
           extractedData,
           googleMapsApiKey
         );
@@ -438,28 +480,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update waitlist entry with results
-    // CRITICAL: Include all fields the iOS app needs for polling
-    await updateWaitlistStatus(supabase, waitlist_entry_id, {
+    // Also update waitlist_entries for V1 compatibility
+    await updateWaitlistEntries(supabase, rentalInfo?.user_id, {
       extraction_status: "completed",
       contract_status: evaluationResult.contract_status,
-      extraction_completed_at: new Date().toISOString(),
-      // Fields needed by iOS app for polling and display
-      requires_manual_review: evaluationResult.needs_manual_review,
-      manual_review_reason: evaluationResult.review_reason || null,
-      extraction_fields_count: extractedData.fields_extracted,
-      extraction_total_fields: extractedData.total_fields,
-      // Store review info in review_notes if manual review needed
-      review_notes: evaluationResult.needs_manual_review
-        ? `Needs review: ${evaluationResult.review_reason}. Fields: ${extractedData.fields_extracted}/${extractedData.total_fields}`
-        : null,
     });
-
-    // Note: Rewards system removed - table no longer exists
 
     const result: ProcessingResult = {
       success: true,
-      extracted_rental_info_id: rentalInfo.id,
+      extracted_rental_info_id: extraction_id,
       confidence_score: extractedData.confidence_score,
       needs_manual_review: evaluationResult.needs_manual_review,
       review_reason: evaluationResult.review_reason,
@@ -487,11 +516,9 @@ Deno.serve(async (req) => {
     console.error("[process-document] Error:", error);
 
     // Update status to failed
-    if (waitlist_entry_id) {
-      await updateWaitlistStatus(supabase, waitlist_entry_id, {
+    if (extraction_id) {
+      await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
-        contract_status: "manual_review",
-        extraction_error: error.message,
       });
     }
 
@@ -1375,18 +1402,36 @@ function categorizeError(message: string): string {
   return 'UNKNOWN_ERROR';
 }
 
-async function updateWaitlistStatus(
+async function updateExtractionStatus(
   supabase: any,
-  waitlistEntryId: string,
+  extractionId: string,
   updates: Record<string, any>
 ) {
   const { error } = await supabase
-    .from("waitlist")
+    .from("extracted_rental_info")
     .update(updates)
-    .eq("id", waitlistEntryId);
+    .eq("id", extractionId);
 
   if (error) {
-    console.error("[process-document] Failed to update waitlist status:", error);
+    console.error("[process-document] Failed to update extraction status:", error);
+  }
+}
+
+async function updateWaitlistEntries(
+  supabase: any,
+  userId: string | undefined,
+  updates: Record<string, any>
+) {
+  if (!userId) return;
+
+  const { error } = await supabase
+    .from("waitlist_entries")
+    .update(updates)
+    .eq("user_id", userId);
+
+  if (error) {
+    // Non-fatal - waitlist_entries is for V1 compatibility only
+    console.log("[process-document] Note: waitlist_entries update failed (non-fatal):", error.message);
   }
 }
 

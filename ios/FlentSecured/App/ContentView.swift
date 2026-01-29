@@ -15,12 +15,14 @@ struct ContentView: View {
     @Environment(AppState.self) private var appState
     @Environment(AppCoordinator.self) private var coordinator
 
+    // Local state to force view updates
+    @State private var isReady = false
+
     var body: some View {
         @Bindable var coordinator = coordinator
 
         Group {
-            if !appState.isInitialized {
-                // App is loading
+            if !isReady {
                 LoadingView()
             } else {
                 // Main navigation
@@ -39,6 +41,13 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark) // Force dark mode
+        .onChange(of: appState.isInitialized) { _, newValue in
+            isReady = newValue
+        }
+        .onAppear {
+            // Check initial state
+            isReady = appState.isInitialized
+        }
         .alert("Error", isPresented: .init(
             get: { appState.showError },
             set: { if !$0 { appState.dismissError() } }
@@ -70,8 +79,8 @@ struct ContentView: View {
         case .splash:
             SplashView()
 
-        case .phoneEntry:
-            PhoneEntryView()
+        case .phoneEntry(let authIntent):
+            PhoneEntryView(authIntent: authIntent)
 
         case .otpVerification(let phone):
             OTPVerificationView(phone: phone)
@@ -88,6 +97,12 @@ struct ContentView: View {
 
         case .waitlist:
             WaitlistView()
+
+        case .postApprovalStep1:
+            PostApprovalStep1View()
+
+        case .postApprovalStep2:
+            PostApprovalStep2View()
 
         // Setup
         case .pendingSteps:
@@ -109,6 +124,12 @@ struct ContentView: View {
         case .payment:
             PaymentView()
 
+        case .paymentTransaction(let tenancyId, let rentAmountPaise):
+            PaymentTransactionView(
+                tenancyId: tenancyId,
+                rentAmountPaise: rentAmountPaise
+            )
+
         case .paymentMethods:
             PaymentMethodsView()
 
@@ -118,8 +139,8 @@ struct ContentView: View {
         case .paymentProcessing(let paymentId):
             PaymentProcessingView(paymentId: paymentId)
 
-        case .paymentResult(let paymentId, let success):
-            PaymentResultView(paymentId: paymentId, success: success)
+        case .paymentResult(let paymentId, let success, let refunded):
+            PaymentResultView(paymentId: paymentId, success: success, refunded: refunded)
 
         // Transactions
         case .transactions:
@@ -149,6 +170,15 @@ struct ContentView: View {
 
         case .referral:
             ReferralView()
+
+        case .linkedLandlord:
+            LinkedLandlordView()
+
+        case .landlordBankAccount:
+            LandlordBankAccountView()
+
+        case .agreementDetails:
+            AgreementDetailsView()
         }
     }
 }

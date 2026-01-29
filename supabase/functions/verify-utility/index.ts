@@ -145,6 +145,7 @@ async function handleGetOperators(): Promise<Response> {
 
     // API Club returns object with numeric keys: {"0": {...}, "1": {...}, "timestamp": "..."}
     // NOT an array. We need to extract operator objects from this structure.
+    // BUG FIX: Also handle when data/response is an object (not array) with operators nested inside
     let operatorEntries: Record<string, unknown>[];
 
     if (Array.isArray(data)) {
@@ -156,6 +157,30 @@ async function handleGetOperators(): Promise<Response> {
     } else if (data.response && Array.isArray(data.response)) {
       // If wrapped in response field as array
       operatorEntries = data.response;
+    } else if (data.data && typeof data.data === "object" && !Array.isArray(data.data)) {
+      // BUG FIX: API Club may return data as object with numeric keys inside "data" field
+      operatorEntries = Object.entries(data.data)
+        .filter(([key, value]) => {
+          const isNumericKey = /^\d+$/.test(key);
+          const isOperatorObject =
+            typeof value === "object" &&
+            value !== null &&
+            ("operator_code" in value || "code" in value || "name" in value);
+          return isNumericKey && isOperatorObject;
+        })
+        .map(([, value]) => value as Record<string, unknown>);
+    } else if (data.response && typeof data.response === "object" && !Array.isArray(data.response)) {
+      // BUG FIX: API Club may return data as object with numeric keys inside "response" field
+      operatorEntries = Object.entries(data.response)
+        .filter(([key, value]) => {
+          const isNumericKey = /^\d+$/.test(key);
+          const isOperatorObject =
+            typeof value === "object" &&
+            value !== null &&
+            ("operator_code" in value || "code" in value || "name" in value);
+          return isNumericKey && isOperatorObject;
+        })
+        .map(([, value]) => value as Record<string, unknown>);
     } else if (typeof data === "object" && data !== null) {
       // API Club format: object with numeric keys {"0": {...}, "1": {...}, "timestamp": "..."}
       operatorEntries = Object.entries(data)
@@ -165,7 +190,7 @@ async function handleGetOperators(): Promise<Response> {
           const isOperatorObject =
             typeof value === "object" &&
             value !== null &&
-            ("operator_code" in value || "code" in value);
+            ("operator_code" in value || "code" in value || "name" in value);
           return isNumericKey && isOperatorObject;
         })
         .map(([, value]) => value as Record<string, unknown>);

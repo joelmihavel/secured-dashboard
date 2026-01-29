@@ -23,6 +23,9 @@ final class MockUserService: UserServiceProtocol {
     var mockTenancy: TenancyData?
     var mockWaitlistStatus: WaitlistStatusData?
 
+    /// When true, getCurrentTenancy returns nil instead of falling back to mock data
+    var shouldReturnNilTenancy: Bool = false
+
     // MARK: - Call Tracking
 
     private(set) var getCurrentUserCalled = false
@@ -95,6 +98,11 @@ final class MockUserService: UserServiceProtocol {
             throw errorToThrow ?? UserServiceError.tenancyNotFound
         }
 
+        // Return nil if explicitly requested (for testing "no tenancy" scenarios)
+        if shouldReturnNilTenancy {
+            return nil
+        }
+
         return mockTenancy ?? Self.createMockTenancy()
     }
 
@@ -131,6 +139,7 @@ final class MockUserService: UserServiceProtocol {
         mockDashboard = nil
         mockTenancy = nil
         mockWaitlistStatus = nil
+        shouldReturnNilTenancy = false
     }
 
     // MARK: - Mock Data Factories
@@ -179,6 +188,8 @@ final class MockUserService: UserServiceProtocol {
             bankVerified: bankVerified,
             utilityVerified: utilityVerified,
             landlordApproved: landlordApproved,
+            landlordDeclined: false,
+            landlordInvitationSentAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 7)),
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
     }

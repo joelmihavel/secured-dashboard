@@ -29,17 +29,38 @@ import { AuditLogger } from "../_shared/audit.ts";
 interface ConfirmExtractionRequest {
   waitlist_entry_id?: string; // V1 format (actually extracted_rental_info_id)
   extracted_rental_info_id?: string; // V2 format
-  confirmed_role: "tenant" | "landlord";
+  extraction_id?: string; // V2 iOS format
+  confirmed_role?: "tenant" | "landlord"; // Optional - defaults to "tenant" for iOS
+  // Extraction data from iOS
+  tenant_name?: string;
+  landlord_name?: string;
+  property_address?: string;
+  property_city?: string;
+  property_state?: string;
+  property_pincode?: string;
+  monthly_rent_paise?: number;
+  security_deposit_paise?: number;
+  rent_due_day?: number;
+  lease_start_date?: string;
+  lease_end_date?: string;
+  landlord_phone?: string;
+  landlord_email?: string;
 }
 
 interface ConfirmExtractionResponse {
   success: boolean;
+  // V1/V2 flat fields for backward compatibility
   waitlist_entry_id?: string;
   extraction_id?: string;
   user_id?: string;
   confirmed_role?: string;
   contract_status?: string;
   tenancy_id?: string; // V2: created tenancy
+  // iOS expects nested data object
+  data?: {
+    tenancy_id: string;
+    user_status: string;
+  };
   error?: string;
 }
 
@@ -86,18 +107,21 @@ serve(async (req) => {
     // Parse request body
     const body: ConfirmExtractionRequest = await req.json();
 
-    // V1 uses waitlist_entry_id, V2 uses extracted_rental_info_id
+    // V1 uses waitlist_entry_id, V2 uses extracted_rental_info_id or extraction_id
     const extractionId =
-      body.extracted_rental_info_id || body.waitlist_entry_id;
-    const confirmedRole = body.confirmed_role;
+      body.extraction_id || body.extracted_rental_info_id || body.waitlist_entry_id;
+    // Default to "tenant" for iOS app (iOS users are always tenants during onboarding)
+    const confirmedRole = body.confirmed_role || "tenant";
+
+    console.log(`[confirm-extraction] Processing for extraction: ${extractionId}, role: ${confirmedRole}`);
 
     if (!extractionId) {
       throw new ValidationError("Missing extraction ID", {
-        waitlist_entry_id: "Required",
+        extraction_id: "Required",
       });
     }
 
-    if (!confirmedRole || !["tenant", "landlord"].includes(confirmedRole)) {
+    if (!["tenant", "landlord"].includes(confirmedRole)) {
       throw new ValidationError("Invalid role", {
         confirmed_role: "Must be 'tenant' or 'landlord'",
       });
@@ -146,15 +170,62 @@ serve(async (req) => {
     }
 
     // ==============================================
-    // UPDATE EXTRACTED INFO - MARK AS VERIFIED
+    // UPDATE EXTRACTED INFO - MARK AS VERIFIED + USER CORRECTIONS
     // ==============================================
+    // iOS sends user-corrected data that should update the extraction
+
+    const updateData: Record<string, any> = {
+      user_verified: true,
+      verified_at: new Date().toISOString(),
+    };
+
+    // Apply user corrections from iOS if provided
+    if (body.tenant_name) {
+      updateData.tenant_names = [body.tenant_name];
+    }
+    if (body.landlord_name) {
+      updateData.landlord_names = [body.landlord_name];
+      updateData.landlord_name = body.landlord_name; // Also update single field
+    }
+    if (body.property_address) {
+      updateData.property_address = body.property_address;
+    }
+    if (body.property_city) {
+      updateData.property_city = body.property_city;
+    }
+    if (body.property_state) {
+      updateData.property_state = body.property_state;
+    }
+    if (body.property_pincode) {
+      updateData.property_pincode = body.property_pincode;
+    }
+    if (body.monthly_rent_paise) {
+      updateData.monthly_rent_paise = body.monthly_rent_paise;
+    }
+    if (body.security_deposit_paise) {
+      updateData.security_deposit_paise = body.security_deposit_paise;
+    }
+    if (body.rent_due_day) {
+      updateData.rent_due_day = body.rent_due_day;
+    }
+    if (body.lease_start_date) {
+      updateData.lease_start_date = body.lease_start_date;
+    }
+    if (body.lease_end_date) {
+      updateData.lease_end_date = body.lease_end_date;
+    }
+    if (body.landlord_phone) {
+      updateData.landlord_phone = body.landlord_phone;
+    }
+    if (body.landlord_email) {
+      updateData.landlord_email = body.landlord_email;
+    }
+
+    console.log("[confirm-extraction] Updating extraction with:", JSON.stringify(updateData).substring(0, 500));
 
     const { error: updateError } = await adminClient
       .from("extracted_rental_info")
-      .update({
-        user_verified: true,
-        verified_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", extractionId);
 
     if (updateError) {
@@ -261,6 +332,11 @@ serve(async (req) => {
       confirmed_role: confirmedRole,
       contract_status: "confirmed",
       tenancy_id: tenancyId, // V2 addition
+      // Nested data object for iOS compatibility
+      data: tenancyId ? {
+        tenancy_id: tenancyId,
+        user_status: "waitlisted",
+      } : undefined,
     };
 
     return jsonResponse(response, 200, headers);

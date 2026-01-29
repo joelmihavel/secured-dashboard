@@ -1,361 +1,669 @@
 /// HomeViewModelTests.swift
 /// Flent Secured v2 - Home ViewModel Tests
 ///
-/// Tests for dashboard state management and data loading
+/// Comprehensive tests for home screen states, dashboard loading, and computed properties.
+/// Critical for user experience and payment flow initiation.
 
-import Testing
-import Foundation
+import XCTest
 @testable import Flent
 
-@Suite("HomeViewModel Tests")
-struct HomeViewModelTests {
+@MainActor
+final class HomeViewModelTests: XCTestCase {
+
+    // MARK: - Properties
+
+    private var sut: HomeViewModel!
+    private var mockUserService: MockUserService!
+
+    // MARK: - Setup & Teardown
+
+    override func setUp() async throws {
+        try await super.setUp()
+        mockUserService = MockUserService()
+        mockUserService.simulatedDelay = 0
+        sut = HomeViewModel(userService: mockUserService)
+    }
+
+    override func tearDown() async throws {
+        sut = nil
+        mockUserService = nil
+        try await super.tearDown()
+    }
 
     // MARK: - Initialization Tests
 
-    @Test("ViewModel initializes with idle state")
-    func initializesWithIdleState() {
-        let viewModel = HomeViewModel(userService: MockUserService())
+    func testInitialState() {
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.dashboardData)
+        XCTAssertFalse(sut.isRefreshing)
+        XCTAssertFalse(sut.realtimeSubscriptionActive)
+        XCTAssertEqual(sut.landlordInvitationStatus, .notSent)
+    }
 
-        if case .idle = viewModel.state {
-            // Correct
+    // MARK: - Dashboard Loading Tests
+
+    func testLoadDashboard_Success() async {
+        // Given
+        let mockDashboard = MockUserService.createMockDashboard()
+        mockUserService.mockDashboard = mockDashboard
+        mockUserService.shouldSucceed = true
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertTrue(mockUserService.getDashboardDataCalled)
+        XCTAssertNotNil(sut.dashboardData)
+
+        if case .loaded(let homeState) = sut.state {
+            XCTAssertNotNil(homeState)
         } else {
-            Issue.record("Expected idle state")
+            XCTFail("Expected loaded state")
         }
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage == nil)
     }
 
-    // MARK: - Home State Tests (via loadDashboard)
+    func testLoadDashboard_Failure() async {
+        // Given
+        mockUserService.shouldSucceed = false
+        mockUserService.errorToThrow = .serverError("Server unavailable")
 
-    @Test("Zero state when no tenancy")
-    @MainActor
-    func zeroStateNoTenancy() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: false,
-            hasUpcomingPayment: false
-        )
+        // When
+        await sut.loadDashboard()
 
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
+        // Then
+        XCTAssertTrue(mockUserService.getDashboardDataCalled)
 
-        #expect(viewModel.homeState == .zeroState)
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Server unavailable")
+        } else {
+            XCTFail("Expected error state")
+        }
     }
 
-    @Test("Active qualified state")
-    @MainActor
-    func activeQualifiedState() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .qualified,
-            hasTenancy: true,
-            hasUpcomingPayment: true,
-            daysUntilDue: 5
-        )
+    func testLoadDashboard_SetsLoadingState() async {
+        // Given
+        mockUserService.simulatedDelay = 0.5
 
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
+        // When
+        let task = Task {
+            await sut.loadDashboard()
+        }
 
-        #expect(viewModel.homeState == .activeQualified)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertTrue(sut.isLoading)
+
+        await task.value
     }
 
-    @Test("Active complete state")
-    @MainActor
-    func activeCompleteState() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: true,
-            hasUpcomingPayment: true,
-            daysUntilDue: 5
-        )
+    func testRefresh() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
 
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
+        // When
+        await sut.refresh()
 
-        #expect(viewModel.homeState == .activeComplete)
+        // Then
+        XCTAssertTrue(mockUserService.getDashboardDataCalled)
+        XCTAssertFalse(sut.isRefreshing)
     }
 
-    @Test("Late payment state when past cashback eligibility")
-    @MainActor
-    func latePaymentState() async {
-        let mockService = MockUserService()
-        // Days > 7 means no cashback eligibility
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: true,
-            hasUpcomingPayment: true,
-            daysUntilDue: 10 // After 7th, not eligible for cashback
-        )
+    // MARK: - Home State Determination Tests
 
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
+    func testHomeState_ZeroState_NoTenancy() async {
+        // Given
+        let dashboard = MockUserService.createMockDashboard(hasTenancy: false)
+        mockUserService.mockDashboard = dashboard
 
-        #expect(viewModel.homeState == .latePayment)
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.homeState, .zeroState)
     }
 
-    @Test("Missed payment state when overdue")
-    @MainActor
-    func missedPaymentState() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: true,
-            hasUpcomingPayment: true,
-            daysUntilDue: -3 // Overdue
+    func testHomeState_SetupPayment_TenancyNotFullyVerified() async {
+        // Given - Tenancy exists but not fully verified, no UPI set up
+        // Expected: setupPayment (need to add payment method)
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(status: .qualified),
+            tenancy: MockUserService.createMockTenancy(
+                bankVerified: true,
+                utilityVerified: false,
+                landlordApproved: false
+            ),
+            upcomingPayment: nil,
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
         )
+        mockUserService.mockDashboard = dashboard
 
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
+        // When
+        await sut.loadDashboard()
 
-        #expect(viewModel.homeState == .missedPayment)
+        // Then - setupPayment because tenancy exists but no UPI set up
+        XCTAssertEqual(sut.homeState, .setupPayment)
+    }
+
+    func testHomeState_ActiveQualified() async {
+        // Given
+        let dashboard = MockUserService.createMockDashboard(userStatus: .qualified, daysUntilDue: 5)
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.homeState, .activeQualified)
+    }
+
+    func testHomeState_ActiveComplete() async {
+        // Given
+        let dashboard = MockUserService.createMockDashboard(userStatus: .complete, daysUntilDue: 5)
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.homeState, .activeComplete)
+    }
+
+    func testHomeState_LatePayment_AfterCashbackDeadline() async {
+        // Given - After 7th, no cashback but not overdue
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(status: .complete),
+            tenancy: MockUserService.createMockTenancy(),
+            upcomingPayment: UpcomingPaymentData(
+                dueDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86400 * 10)),
+                amountPaise: 4000000,
+                daysUntilDue: 10,
+                isOverdue: false,
+                cashbackEligible: false  // Past 7th, no cashback
+            ),
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.homeState, .latePayment)
+    }
+
+    func testHomeState_MissedPayment_Overdue() async {
+        // Given
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(status: .complete),
+            tenancy: MockUserService.createMockTenancy(),
+            upcomingPayment: UpcomingPaymentData(
+                dueDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 5)),
+                amountPaise: 4000000,
+                daysUntilDue: -5,
+                isOverdue: true,
+                cashbackEligible: false
+            ),
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.homeState, .missedPayment)
     }
 
     // MARK: - Computed Properties Tests
 
-    @Test("Days until due returns 0 when no upcoming payment")
-    func daysUntilDueDefault() {
-        let viewModel = HomeViewModel(userService: MockUserService())
+    func testFirstName_WithName() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
 
-        #expect(viewModel.daysUntilDue == 0)
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.firstName, "Amit")
     }
 
-    @Test("First name defaults to 'there' when no profile")
-    func firstNameDefault() {
-        let viewModel = HomeViewModel(userService: MockUserService())
-
-        #expect(viewModel.firstName == "there")
-    }
-
-    @Test("Rent amount shows ₹0 when no tenancy")
-    func rentAmountDefault() {
-        let viewModel = HomeViewModel(userService: MockUserService())
-
-        #expect(viewModel.rentAmount == "₹0")
-    }
-
-    @Test("Cashback available shows ₹0 when no cashback data")
-    func cashbackAvailableDefault() {
-        let viewModel = HomeViewModel(userService: MockUserService())
-
-        #expect(viewModel.cashbackAvailable == "₹0")
-    }
-
-    @Test("Has cashback is false when no data")
-    func hasCashbackDefault() {
-        let viewModel = HomeViewModel(userService: MockUserService())
-
-        #expect(viewModel.hasCashback == false)
-    }
-
-    @Test("Cashback eligibility is false when no upcoming payment")
-    func cashbackEligibleDefault() {
-        let viewModel = HomeViewModel(userService: MockUserService())
-
-        #expect(viewModel.cashbackEligible == false)
-    }
-
-    @Test("Setup progress defaults to 0 of 3 when no tenancy")
-    func setupProgressDefault() {
-        let viewModel = HomeViewModel(userService: MockUserService())
-
-        let progress = viewModel.setupProgress
-        #expect(progress.completed == 0)
-        #expect(progress.total == 3)
-    }
-
-    // MARK: - Loading State Tests
-
-    @Test("Loading state is true during loadDashboard")
-    @MainActor
-    func loadingSetsState() async {
-        let mockService = MockUserService()
-        mockService.simulatedDelay = 0.5
-
-        let viewModel = HomeViewModel(userService: mockService)
-
-        let task = Task {
-            await viewModel.loadDashboard()
-        }
-
-        // Give time for loading to start
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        #expect(viewModel.isLoading == true)
-
-        task.cancel()
-    }
-
-    @Test("Successful dashboard load sets loaded state")
-    @MainActor
-    func successfulDashboardLoad() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: true,
-            hasUpcomingPayment: true,
-            daysUntilDue: 5
+    func testFirstName_NoName() async {
+        // Given
+        let dashboard = DashboardData(
+            user: UserProfileData(
+                id: "test",
+                phone: "+919876543210",
+                firstName: nil,
+                lastName: nil,
+                email: nil,
+                role: nil,
+                isRoleLocked: nil,
+                userStatus: "complete",
+                kycStatus: nil,
+                createdAt: nil
+            ),
+            tenancy: nil,
+            upcomingPayment: nil,
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
         )
+        mockUserService.mockDashboard = dashboard
 
-        let viewModel = HomeViewModel(userService: mockService)
+        // When
+        await sut.loadDashboard()
 
-        await viewModel.loadDashboard()
+        // Then
+        XCTAssertEqual(sut.firstName, "there")
+    }
 
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage == nil)
+    func testRentAmount() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
 
-        if case .loaded = viewModel.state {
-            // Correct
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertTrue(sut.rentAmount.contains("40,000"))
+    }
+
+    func testRentAmount_NoTenancy() {
+        XCTAssertTrue(sut.rentAmount.contains("0"))
+    }
+
+    func testCashbackAvailable() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertTrue(sut.hasCashback)
+        XCTAssertTrue(sut.cashbackAvailable.contains("500"))
+    }
+
+    func testCashbackAvailable_NoCashback() async {
+        // Given
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(),
+            tenancy: MockUserService.createMockTenancy(),
+            upcomingPayment: nil,
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertFalse(sut.hasCashback)
+    }
+
+    func testDaysUntilDue() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard(daysUntilDue: 5)
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.daysUntilDue, 5)
+    }
+
+    func testDaysUntilDue_NoUpcomingPayment() {
+        XCTAssertEqual(sut.daysUntilDue, 0)
+    }
+
+    // MARK: - Due In Text Tests
+
+    func testDueInText_DueToday() async {
+        // Given
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(),
+            tenancy: MockUserService.createMockTenancy(),
+            upcomingPayment: UpcomingPaymentData(
+                dueDate: ISO8601DateFormatter().string(from: Date()),
+                amountPaise: 4000000,
+                daysUntilDue: 0,
+                isOverdue: false,
+                cashbackEligible: true
+            ),
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.dueInText, "Due today")
+    }
+
+    func testDueInText_DueTomorrow() async {
+        // Given
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(),
+            tenancy: MockUserService.createMockTenancy(),
+            upcomingPayment: UpcomingPaymentData(
+                dueDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86400)),
+                amountPaise: 4000000,
+                daysUntilDue: 1,
+                isOverdue: false,
+                cashbackEligible: true
+            ),
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.dueInText, "Due tomorrow")
+    }
+
+    func testDueInText_DueInDays() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard(daysUntilDue: 5)
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.dueInText, "Due in 5 days")
+    }
+
+    func testDueInText_Overdue() async {
+        // Given
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(),
+            tenancy: MockUserService.createMockTenancy(),
+            upcomingPayment: UpcomingPaymentData(
+                dueDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 3)),
+                amountPaise: 4000000,
+                daysUntilDue: -3,
+                isOverdue: true,
+                cashbackEligible: false
+            ),
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.dueInText, "Overdue by 3 days")
+    }
+
+    // MARK: - Setup Progress Tests
+
+    func testSetupProgress() async {
+        // Given
+        let tenancy = MockUserService.createMockTenancy(
+            bankVerified: true,
+            utilityVerified: true,
+            landlordApproved: false
+        )
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(status: .qualified),
+            tenancy: tenancy,
+            upcomingPayment: nil,
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.setupProgress, 2)
+        XCTAssertTrue(sut.bankDetailsComplete)
+        XCTAssertTrue(sut.addressProofComplete)
+        XCTAssertFalse(sut.landlordInvited)
+    }
+
+    // MARK: - Landlord Invitation Status Tests
+
+    func testLandlordInvitationStatus_Accepted() async {
+        // Given
+        let tenancy = MockUserService.createMockTenancy(landlordApproved: true)
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(),
+            tenancy: tenancy,
+            upcomingPayment: nil,
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.landlordInvitationStatus, .accepted)
+    }
+
+    func testLandlordInvitationStatus_Pending() async {
+        // Given
+        let tenancy = MockUserService.createMockTenancy(landlordApproved: false)
+        let dashboard = DashboardData(
+            user: MockUserService.createMockUser(),
+            tenancy: tenancy,
+            upcomingPayment: nil,
+            cashback: CashbackData(
+                availableBalancePaise: 0,
+                pendingBalancePaise: 0,
+                totalEarnedPaise: 0,
+                totalUsedPaise: 0
+            ),
+            recentPayments: [],
+            notifications: [],
+            unreadNotificationCount: 0
+        )
+        mockUserService.mockDashboard = dashboard
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.landlordInvitationStatus, .pending)
+    }
+
+    // MARK: - Currency Formatting Tests
+
+    func testFormatCurrency() {
+        XCTAssertTrue(sut.formatCurrency(25000).contains("25,000"))
+        XCTAssertTrue(sut.formatCurrency(100).contains("100"))
+        XCTAssertTrue(sut.formatCurrency(0).contains("0"))
+    }
+
+    // MARK: - Realtime Subscription Tests
+
+    func testStartRealtimeSubscription() {
+        // When
+        sut.startRealtimeSubscription()
+
+        // Then
+        XCTAssertTrue(sut.realtimeSubscriptionActive)
+    }
+
+    func testStopRealtimeSubscription() {
+        // Given
+        sut.startRealtimeSubscription()
+
+        // When
+        sut.stopRealtimeSubscription()
+
+        // Then
+        XCTAssertFalse(sut.realtimeSubscriptionActive)
+    }
+
+    func testStartRealtimeSubscription_AlreadyActive() {
+        // Given
+        sut.startRealtimeSubscription()
+        XCTAssertTrue(sut.realtimeSubscriptionActive)
+
+        // When - Call again
+        sut.startRealtimeSubscription()
+
+        // Then - Should still be active (no crash)
+        XCTAssertTrue(sut.realtimeSubscriptionActive)
+    }
+
+    // MARK: - Property Details Tests
+
+    func testPropertyName() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertTrue(sut.propertyName.contains("Prestige"))
+    }
+
+    func testPropertyAddress() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertTrue(sut.propertyAddress.contains("Bangalore"))
+    }
+
+    func testRentDueDay() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.rentDueDay, 5)
+    }
+
+    func testRentDueOrdinal() async {
+        // Given
+        mockUserService.mockDashboard = MockUserService.createMockDashboard()
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertEqual(sut.rentDueOrdinal, "th")  // 5th
+    }
+
+    // MARK: - Error Handling Tests
+
+    func testLoadDashboard_NetworkError() async {
+        // Given
+        mockUserService.shouldSucceed = false
+        mockUserService.errorToThrow = .networkError(URLError(.notConnectedToInternet))
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        XCTAssertNotNil(sut.errorMessage)
+    }
+
+    func testLoadDashboard_UserNotFound() async {
+        // Given
+        mockUserService.shouldSucceed = false
+        mockUserService.errorToThrow = .userNotFound
+
+        // When
+        await sut.loadDashboard()
+
+        // Then
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "User profile not found")
         } else {
-            Issue.record("Expected loaded state")
+            XCTFail("Expected error state")
         }
-    }
-
-    @Test("Failed dashboard load shows error")
-    @MainActor
-    func failedDashboardLoad() async {
-        let mockService = MockUserService()
-        mockService.shouldSucceed = false
-        mockService.errorToThrow = UserServiceError.networkError(URLError(.notConnectedToInternet))
-
-        let viewModel = HomeViewModel(userService: mockService)
-
-        await viewModel.loadDashboard()
-
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage != nil)
-    }
-
-    @Test("Refresh calls loadDashboard")
-    @MainActor
-    func refreshCallsLoadDashboard() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard()
-
-        let viewModel = HomeViewModel(userService: mockService)
-
-        await viewModel.refresh()
-
-        #expect(mockService.getDashboardDataCalled == true)
-    }
-
-    // MARK: - Dashboard Data Tests
-
-    @Test("Dashboard data populates computed properties")
-    @MainActor
-    func dashboardDataPopulatesProperties() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: true,
-            hasUpcomingPayment: true,
-            daysUntilDue: 5
-        )
-
-        let viewModel = HomeViewModel(userService: mockService)
-
-        await viewModel.loadDashboard()
-
-        #expect(viewModel.firstName == "Amit")
-        #expect(viewModel.daysUntilDue == 5)
-        #expect(viewModel.cashbackEligible == true) // Before 7th
-    }
-
-    @Test("Dashboard with overdue payment shows missed payment state")
-    @MainActor
-    func overduePaymentShowsMissedState() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: true,
-            hasUpcomingPayment: true,
-            daysUntilDue: -3 // Overdue
-        )
-
-        let viewModel = HomeViewModel(userService: mockService)
-
-        await viewModel.loadDashboard()
-
-        #expect(viewModel.homeState == .missedPayment)
-    }
-
-    @Test("Dashboard without tenancy shows zero state")
-    @MainActor
-    func noTenancyShowsZeroState() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            userStatus: .complete,
-            hasTenancy: false,
-            hasUpcomingPayment: false
-        )
-
-        let viewModel = HomeViewModel(userService: mockService)
-
-        await viewModel.loadDashboard()
-
-        #expect(viewModel.homeState == .zeroState)
-    }
-
-    // MARK: - Due Date Text Tests
-
-    @Test("Due in text shows 'Due today' for 0 days")
-    @MainActor
-    func dueInTextToday() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            daysUntilDue: 0
-        )
-
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
-
-        #expect(viewModel.dueInText == "Due today")
-    }
-
-    @Test("Due in text shows 'Due tomorrow' for 1 day")
-    @MainActor
-    func dueInTextTomorrow() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            daysUntilDue: 1
-        )
-
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
-
-        #expect(viewModel.dueInText == "Due tomorrow")
-    }
-
-    @Test("Due in text shows days for multiple days")
-    @MainActor
-    func dueInTextMultipleDays() async {
-        let mockService = MockUserService()
-        mockService.mockDashboard = MockUserService.createMockDashboard(
-            daysUntilDue: 5
-        )
-
-        let viewModel = HomeViewModel(userService: mockService)
-        await viewModel.loadDashboard()
-
-        #expect(viewModel.dueInText.contains("5 days"))
-    }
-
-    // MARK: - Preview Helpers
-
-    @Test("Preview helpers create valid view models")
-    func previewHelpers() {
-        let preview = HomeViewModel.preview
-        // Preview is a non-nil HomeViewModel
-        #expect(preview.state != nil || true) // Just verify it doesn't crash
-
-        let zeroState = HomeViewModel.previewZeroState
-        #expect(zeroState.homeState == .zeroState)
-
-        let active = HomeViewModel.previewActive
-        #expect(active.homeState == .activeComplete)
-
-        let paid = HomeViewModel.previewPaid
-        #expect(paid.homeState == .paidThisMonth(settlementStatus: .processing))
     }
 }

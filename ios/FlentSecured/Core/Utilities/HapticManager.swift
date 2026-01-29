@@ -72,6 +72,13 @@ final class HapticManager {
         generator.notificationOccurred(.error)
     }
 
+    /// Generic notification feedback
+    func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(type)
+    }
+
     // MARK: - Selection Feedback
 
     /// Selection changed - picker, segment control

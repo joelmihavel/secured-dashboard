@@ -11,6 +11,7 @@ import Observation
 
 // MARK: - Add Utility ViewModel
 
+@MainActor
 @Observable
 final class AddUtilityViewModel {
 

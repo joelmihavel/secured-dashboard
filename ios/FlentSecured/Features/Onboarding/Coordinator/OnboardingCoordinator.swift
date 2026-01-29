@@ -23,6 +23,7 @@ final class OnboardingCoordinator {
         case agreementUpload = 3
         case agreementReview = 4
         case waitlist = 5
+        case postApproval = 6
 
         var id: Int { rawValue }
 
@@ -34,11 +35,16 @@ final class OnboardingCoordinator {
             case .agreementUpload: return "Upload"
             case .agreementReview: return "Review"
             case .waitlist: return "Status"
+            case .postApproval: return "Welcome"
             }
         }
 
         var isDocumentStep: Bool {
             self == .agreementUpload || self == .agreementReview
+        }
+
+        var isPostApproval: Bool {
+            self == .postApproval
         }
     }
 
@@ -126,7 +132,7 @@ final class OnboardingCoordinator {
             currentStep = .waitlist
             return .waitlist
         case .unknown:
-            return .phoneEntry
+            return .phoneEntry()
         }
     }
 
@@ -186,7 +192,7 @@ final class OnboardingCoordinator {
     func currentRoute() -> Route {
         switch currentStep {
         case .phoneEntry:
-            return .phoneEntry
+            return .phoneEntry()
         case .otpVerification:
             return .otpVerification(phone: phoneNumber ?? "")
         case .nameVerification:
@@ -197,13 +203,15 @@ final class OnboardingCoordinator {
             return .agreementReview(extractionId: extractionId ?? "")
         case .waitlist:
             return .waitlist
+        case .postApproval:
+            return .postApprovalStep1
         }
     }
 
     /// Convert Route to Step (if applicable)
     func step(for route: Route) -> Step? {
         switch route {
-        case .phoneEntry:
+        case .phoneEntry(_):
             return .phoneEntry
         case .otpVerification(_):
             return .otpVerification
@@ -215,7 +223,9 @@ final class OnboardingCoordinator {
             return .agreementReview
         case .waitlist:
             return .waitlist
-        case .splash, .home, .payment, .paymentMethods, .paymentProcessing, .paymentResult, .paymentSummary, .transactions, .transactionDetail, .profile, .personalDetails, .tenancyDetails, .paymentHistory, .helpFAQ, .settings, .pendingSteps, .addBank, .addUtility, .inviteLandlord, .referral:
+        case .postApprovalStep1, .postApprovalStep2:
+            return .postApproval
+        case .splash, .home, .payment, .paymentTransaction, .paymentMethods, .paymentProcessing, .paymentResult, .paymentSummary, .transactions, .transactionDetail, .profile, .personalDetails, .tenancyDetails, .paymentHistory, .helpFAQ, .settings, .pendingSteps, .addBank, .addUtility, .inviteLandlord, .referral, .linkedLandlord, .landlordBankAccount, .agreementDetails:
             return nil
         }
     }

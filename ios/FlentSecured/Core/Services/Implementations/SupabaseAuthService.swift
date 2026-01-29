@@ -128,6 +128,12 @@ final class SupabaseAuthService: AuthServiceProtocol {
             // Store user ID in SecureStorage
             SecureStorage.shared.saveUserId(userId)
 
+            // Wait for session to be available before making authenticated requests
+            // The SDK stores the session asynchronously after verifyOTP returns
+            print("[SupabaseAuthService] verifyOTP succeeded, waiting for session to propagate...")
+            try await waitForSession(maxAttempts: 10, delayMs: 100)
+            print("[SupabaseAuthService] Session is now available")
+
             // Record Mobile 360 consent if requested
             if consentForMobile360 {
                 await recordMobile360Consent(userId: userId, phone: cleanPhone)
@@ -155,6 +161,22 @@ final class SupabaseAuthService: AuthServiceProtocol {
         } catch {
             throw mapSupabaseError(error)
         }
+    }
+
+    /// Wait for the session to become available after authentication
+    /// The Supabase SDK stores sessions asynchronously, so we need to poll
+    /// Uses direct client access to avoid MainActor isolation issues
+    private func waitForSession(maxAttempts: Int, delayMs: UInt64) async throws {
+        for attempt in 1...maxAttempts {
+            // Access client.auth.session directly to avoid MainActor isolation issues
+            if let session = try? await supabase.client.auth.session {
+                print("[SupabaseAuthService] Session available after \(attempt) attempt(s), user: \(session.user.id)")
+                return
+            }
+            print("[SupabaseAuthService] Waiting for session... attempt \(attempt)/\(maxAttempts)")
+            try await Task.sleep(nanoseconds: delayMs * 1_000_000)
+        }
+        print("[SupabaseAuthService] WARNING: Session not available after \(maxAttempts) attempts, proceeding anyway")
     }
 
     func getCurrentSession() async -> SessionInfo? {
@@ -240,11 +262,23 @@ final class SupabaseAuthService: AuthServiceProtocol {
 
     /// Record Mobile 360 consent in identity_verifications table
     private func recordMobile360Consent(userId: String, phone: String) async {
+        print("[SupabaseAuthService] recordMobile360Consent - Starting for userId: \(userId)")
+
+        // Check current session state - access client directly to avoid MainActor issues
+        if let session = try? await supabase.client.auth.session {
+            print("[SupabaseAuthService] recordMobile360Consent - Session user id: \(session.user.id)")
+            print("[SupabaseAuthService] recordMobile360Consent - Session access token prefix: \(String(session.accessToken.prefix(20)))...")
+        } else {
+            print("[SupabaseAuthService] recordMobile360Consent - WARNING: No session!")
+        }
+
         do {
             // Sanitize phone (remove +91 prefix for storage)
             let sanitizedPhone = phone.hasPrefix("+91")
                 ? String(phone.dropFirst(3))
                 : phone
+
+            print("[SupabaseAuthService] recordMobile360Consent - Inserting consent record")
 
             // Insert consent record
             try await supabase.client
@@ -261,7 +295,7 @@ final class SupabaseAuthService: AuthServiceProtocol {
             print("[SupabaseAuthService] Mobile 360 consent recorded for user: \(userId)")
         } catch {
             // Log but don't fail auth if consent recording fails
-            print("[SupabaseAuthService] Failed to record consent: \(error.localizedDescription)")
+            print("[SupabaseAuthService] Failed to record consent: \(error)")
         }
     }
 }

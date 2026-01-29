@@ -10,6 +10,7 @@ import Observation
 
 // MARK: - Payment Result ViewModel
 
+@MainActor
 @Observable
 final class PaymentResultViewModel {
 
@@ -30,6 +31,7 @@ final class PaymentResultViewModel {
 
     let paymentId: String
     let isSuccess: Bool
+    let isRefunded: Bool
 
     // MARK: - Computed Properties
 
@@ -157,10 +159,12 @@ final class PaymentResultViewModel {
     init(
         paymentId: String,
         isSuccess: Bool,
+        isRefunded: Bool = false,
         paymentService: PaymentServiceProtocol = AppEnvironment.shared.paymentService
     ) {
         self.paymentId = paymentId
-        self.isSuccess = isSuccess
+        self.isSuccess = isSuccess && !isRefunded
+        self.isRefunded = isRefunded
         self.paymentService = paymentService
     }
 

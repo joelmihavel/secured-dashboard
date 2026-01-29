@@ -226,18 +226,31 @@ export function isValidRentDueDay(day: unknown): boolean {
 // ==============================================
 
 /**
- * Sanitizes a phone number to standard format.
+ * Sanitizes a phone number to standard 10-digit format (no country code).
  */
 export function sanitizePhone(phone: string): string {
   // Remove all non-digits
   let cleaned = phone.replace(/\D/g, "");
 
-  // Remove leading 91 if present
-  if (cleaned.startsWith("91") && cleaned.length === 12) {
+  // Remove leading 91 if present (handles both 91XXXXXXXXXX and +91XXXXXXXXXX after digit extraction)
+  if (cleaned.length === 12 && cleaned.startsWith("91")) {
     cleaned = cleaned.substring(2);
+  }
+  // Also handle case where 91 was already stripped but we still have extra digits
+  if (cleaned.length > 10) {
+    // Take the last 10 digits (the actual phone number)
+    cleaned = cleaned.slice(-10);
   }
 
   return cleaned;
+}
+
+/**
+ * Formats a phone number with +91 country code.
+ */
+export function formatPhoneWithCountryCode(phone: string): string {
+  const sanitized = sanitizePhone(phone);
+  return `+91${sanitized}`;
 }
 
 /**

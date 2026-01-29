@@ -218,6 +218,8 @@ final class TestModeUserService: UserServiceProtocol {
             bankVerified: allVerified,
             utilityVerified: allVerified,
             landlordApproved: allVerified,
+            landlordDeclined: false,
+            landlordInvitationSentAt: nil,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
     }

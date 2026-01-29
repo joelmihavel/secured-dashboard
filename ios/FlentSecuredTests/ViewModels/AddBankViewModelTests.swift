@@ -1,263 +1,481 @@
 /// AddBankViewModelTests.swift
 /// Flent Secured v2 - Add Bank ViewModel Tests
 ///
-/// Tests bank account form validation and verification flow
+/// Tests for bank account validation and verification flow.
+/// Critical for secure bank account verification in fintech.
 
-import Foundation
-import Testing
+import XCTest
 @testable import Flent
 
-@Suite("AddBankViewModel Tests")
-struct AddBankViewModelTests {
+@MainActor
+final class AddBankViewModelTests: XCTestCase {
 
-    // MARK: - Form Validation
+    // MARK: - Properties
 
-    @Test("Account holder name validation")
-    func accountHolderNameValidation() {
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: MockVerificationService())
+    private var sut: AddBankViewModel!
+    private var mockVerificationService: MockVerificationService!
 
-        // Too short
-        vm.accountHolderName = "A"
-        #expect(vm.isAccountHolderNameValid == false)
+    private let testTenancyId = "test-tenancy-123"
 
-        // Valid
-        vm.accountHolderName = "Rajesh Kumar"
-        #expect(vm.isAccountHolderNameValid == true)
+    // MARK: - Setup & Teardown
+
+    override func setUp() async throws {
+        try await super.setUp()
+        mockVerificationService = MockVerificationService()
+        mockVerificationService.simulatedDelay = 0
+
+        sut = AddBankViewModel(
+            tenancyId: testTenancyId,
+            verificationService: mockVerificationService
+        )
     }
 
-    @Test("Account number validation")
-    func accountNumberValidation() {
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: MockVerificationService())
-
-        // Too short
-        vm.accountNumber = "12345678"
-        #expect(vm.isAccountNumberValid == false)
-
-        // Non-numeric
-        vm.accountNumber = "12345678ABC"
-        #expect(vm.isAccountNumberValid == false)
-
-        // Valid (9 digits)
-        vm.accountNumber = "123456789"
-        #expect(vm.isAccountNumberValid == true)
-
-        // Valid (18 digits)
-        vm.accountNumber = "123456789012345678"
-        #expect(vm.isAccountNumberValid == true)
-
-        // Too long
-        vm.accountNumber = "1234567890123456789"
-        #expect(vm.isAccountNumberValid == false)
+    override func tearDown() async throws {
+        sut = nil
+        mockVerificationService = nil
+        try await super.tearDown()
     }
 
-    @Test("Account numbers must match")
-    func accountNumbersMatch() {
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: MockVerificationService())
+    // MARK: - Initialization Tests
 
-        vm.accountNumber = "1234567890"
-        vm.confirmAccountNumber = "1234567891"
-        #expect(vm.doAccountNumbersMatch == false)
-        #expect(vm.accountNumberMismatchError != nil)
-
-        vm.confirmAccountNumber = "1234567890"
-        #expect(vm.doAccountNumbersMatch == true)
-        #expect(vm.accountNumberMismatchError == nil)
+    func testInitialState() {
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.accountHolderName, "")
+        XCTAssertEqual(sut.accountNumber, "")
+        XCTAssertEqual(sut.confirmAccountNumber, "")
+        XCTAssertEqual(sut.ifscCode, "")
+        XCTAssertFalse(sut.isVerifying)
+        XCTAssertFalse(sut.isVerified)
+        XCTAssertNil(sut.errorMessage)
+        XCTAssertNil(sut.verificationResult)
     }
 
-    @Test("IFSC code validation")
-    func ifscCodeValidation() {
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: MockVerificationService())
+    // MARK: - Account Holder Name Validation Tests
 
-        // Invalid format - wrong length
-        vm.ifscCode = "HDFC"
-        #expect(vm.isIFSCValid == false)
-
-        // Invalid format - 5th char not 0
-        vm.ifscCode = "HDFC10001234"
-        #expect(vm.isIFSCValid == false)
-
-        // Invalid format - first 4 not letters
-        vm.ifscCode = "HDF10001234"
-        #expect(vm.isIFSCValid == false)
-
-        // Valid IFSC
-        vm.ifscCode = "HDFC0001234"
-        #expect(vm.isIFSCValid == true)
-
-        // Valid IFSC lowercase (should normalize)
-        vm.ifscCode = "hdfc0001234"
-        #expect(vm.isIFSCValid == true)
+    func testAccountHolderName_Valid() {
+        sut.accountHolderName = "Rajesh Kumar"
+        XCTAssertTrue(sut.isAccountHolderNameValid)
     }
 
-    @Test("Form is valid only when all fields are valid")
-    func formValidation() {
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: MockVerificationService())
-
-        // All empty
-        #expect(vm.isFormValid == false)
-        #expect(vm.canVerify == false)
-
-        // Fill valid data
-        vm.accountHolderName = "Rajesh Kumar"
-        vm.accountNumber = "1234567890123"
-        vm.confirmAccountNumber = "1234567890123"
-        vm.ifscCode = "HDFC0001234"
-
-        #expect(vm.isFormValid == true)
-        #expect(vm.canVerify == true)
+    func testAccountHolderName_TooShort() {
+        sut.accountHolderName = "R"
+        XCTAssertFalse(sut.isAccountHolderNameValid)
     }
 
-    // MARK: - Masked Account Number
-
-    @Test("Masked account number shows last 4 digits")
-    func maskedAccountNumber() {
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: MockVerificationService())
-
-        vm.accountNumber = "1234567890123"
-
-        #expect(vm.maskedAccountNumber == "XXXXXXXXX0123")
+    func testAccountHolderName_MinimumLength() {
+        sut.accountHolderName = "RK"  // 2 characters
+        XCTAssertTrue(sut.isAccountHolderNameValid)
     }
 
-    // MARK: - Verification Flow
-
-    @Test("Cannot verify with invalid form")
-    @MainActor
-    func cannotVerifyInvalidForm() async {
-        let mockService = MockVerificationService()
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: mockService)
-
-        // Incomplete form
-        vm.accountHolderName = "Test"
-        vm.accountNumber = "123" // Invalid
-
-        let result = await vm.verifyAccount()
-
-        #expect(result == false)
-        #expect(mockService.verifyBankCalled == false)
+    func testAccountHolderName_Empty() {
+        sut.accountHolderName = ""
+        XCTAssertFalse(sut.isAccountHolderNameValid)
     }
 
-    @Test("Successful bank verification")
-    @MainActor
-    func successfulVerification() async {
-        let mockService = MockVerificationService()
-        mockService.mockBankResult = MockVerificationService.createMockBankResult(
-            accountNumber: "1234567890123",
+    // MARK: - Account Number Validation Tests
+
+    func testAccountNumber_Valid_9Digits() {
+        sut.accountNumber = "123456789"
+        XCTAssertTrue(sut.isAccountNumberValid)
+    }
+
+    func testAccountNumber_Valid_18Digits() {
+        sut.accountNumber = "123456789012345678"
+        XCTAssertTrue(sut.isAccountNumberValid)
+    }
+
+    func testAccountNumber_Valid_12Digits() {
+        sut.accountNumber = "123456789012"
+        XCTAssertTrue(sut.isAccountNumberValid)
+    }
+
+    func testAccountNumber_TooShort() {
+        sut.accountNumber = "12345678"  // 8 digits
+        XCTAssertFalse(sut.isAccountNumberValid)
+    }
+
+    func testAccountNumber_TooLong() {
+        sut.accountNumber = "1234567890123456789"  // 19 digits
+        XCTAssertFalse(sut.isAccountNumberValid)
+    }
+
+    func testAccountNumber_ContainsLetters() {
+        sut.accountNumber = "12345ABC789"
+        XCTAssertFalse(sut.isAccountNumberValid)
+    }
+
+    func testAccountNumber_Empty() {
+        sut.accountNumber = ""
+        XCTAssertFalse(sut.isAccountNumberValid)
+    }
+
+    // MARK: - Account Number Match Tests
+
+    func testAccountNumbersMatch_Match() {
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        XCTAssertTrue(sut.doAccountNumbersMatch)
+        XCTAssertNil(sut.accountNumberMismatchError)
+    }
+
+    func testAccountNumbersMatch_NoMatch() {
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789013"
+        XCTAssertFalse(sut.doAccountNumbersMatch)
+        XCTAssertEqual(sut.accountNumberMismatchError, "Account numbers don't match")
+    }
+
+    func testAccountNumbersMatch_ConfirmEmpty() {
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = ""
+        XCTAssertFalse(sut.doAccountNumbersMatch)
+        XCTAssertNil(sut.accountNumberMismatchError)  // No error when confirm is empty
+    }
+
+    func testAccountNumbersMatch_BothEmpty() {
+        sut.accountNumber = ""
+        sut.confirmAccountNumber = ""
+        XCTAssertFalse(sut.doAccountNumbersMatch)
+    }
+
+    // MARK: - IFSC Validation Tests
+
+    func testIFSC_Valid_HDFC() {
+        sut.ifscCode = "HDFC0001234"
+        XCTAssertTrue(sut.isIFSCValid)
+        XCTAssertNil(sut.ifscError)
+    }
+
+    func testIFSC_Valid_SBI() {
+        sut.ifscCode = "SBIN0012345"
+        XCTAssertTrue(sut.isIFSCValid)
+    }
+
+    func testIFSC_Valid_ICICI() {
+        sut.ifscCode = "ICIC0006789"
+        XCTAssertTrue(sut.isIFSCValid)
+    }
+
+    func testIFSC_Valid_Lowercase() {
+        sut.ifscCode = "hdfc0001234"  // Should work with lowercase
+        XCTAssertTrue(sut.isIFSCValid)
+    }
+
+    func testIFSC_Invalid_WrongFormat() {
+        sut.ifscCode = "HDFC1001234"  // 5th char should be 0
+        XCTAssertFalse(sut.isIFSCValid)
+        XCTAssertEqual(sut.ifscError, "Invalid IFSC format")
+    }
+
+    func testIFSC_Invalid_TooShort() {
+        sut.ifscCode = "HDFC000123"
+        XCTAssertFalse(sut.isIFSCValid)
+    }
+
+    func testIFSC_Invalid_TooLong() {
+        sut.ifscCode = "HDFC00012345"
+        XCTAssertFalse(sut.isIFSCValid)
+    }
+
+    func testIFSC_Invalid_NoNumbers() {
+        sut.ifscCode = "HDFCOABCDEF"
+        XCTAssertFalse(sut.isIFSCValid)
+    }
+
+    func testIFSC_Empty() {
+        sut.ifscCode = ""
+        XCTAssertFalse(sut.isIFSCValid)
+        XCTAssertNil(sut.ifscError)  // No error when empty
+    }
+
+    // MARK: - Form Validation Tests
+
+    func testIsFormValid_AllValid() {
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+
+        XCTAssertTrue(sut.isFormValid)
+    }
+
+    func testIsFormValid_InvalidName() {
+        sut.accountHolderName = "R"  // Too short
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+
+        XCTAssertFalse(sut.isFormValid)
+    }
+
+    func testIsFormValid_InvalidAccountNumber() {
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "1234"  // Too short
+        sut.confirmAccountNumber = "1234"
+        sut.ifscCode = "HDFC0001234"
+
+        XCTAssertFalse(sut.isFormValid)
+    }
+
+    func testIsFormValid_MismatchedAccountNumbers() {
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789013"  // Different
+        sut.ifscCode = "HDFC0001234"
+
+        XCTAssertFalse(sut.isFormValid)
+    }
+
+    func testIsFormValid_InvalidIFSC() {
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "INVALID"
+
+        XCTAssertFalse(sut.isFormValid)
+    }
+
+    // MARK: - Can Verify Tests
+
+    func testCanVerify_ValidForm() {
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+
+        XCTAssertTrue(sut.canVerify)
+    }
+
+    func testCanVerify_InvalidForm() {
+        sut.accountHolderName = "R"
+        XCTAssertFalse(sut.canVerify)
+    }
+
+    func testCanVerify_WhileVerifying() async {
+        // Given
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+        mockVerificationService.simulatedDelay = 1.0  // Long delay to catch verifying state
+
+        // When - Start verification in background
+        let task = Task {
+            await sut.verifyAccount()
+        }
+
+        try? await Task.sleep(nanoseconds: 100_000_000)  // Wait for state change
+
+        // Then
+        XCTAssertTrue(sut.isVerifying)
+        XCTAssertFalse(sut.canVerify)
+
+        task.cancel()
+    }
+
+    // MARK: - Masked Account Number Tests
+
+    func testMaskedAccountNumber() {
+        sut.accountNumber = "123456789012"
+        XCTAssertEqual(sut.maskedAccountNumber, "XXXXXXXX9012")
+    }
+
+    func testMaskedAccountNumber_ShortNumber() {
+        sut.accountNumber = "1234"
+        XCTAssertEqual(sut.maskedAccountNumber, "1234")
+    }
+
+    func testMaskedAccountNumber_FiveDigits() {
+        sut.accountNumber = "12345"
+        XCTAssertEqual(sut.maskedAccountNumber, "X2345")
+    }
+
+    // MARK: - Verification Tests
+
+    func testVerifyAccount_Success() async {
+        // Given
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+        mockVerificationService.shouldSucceed = true
+
+        // When
+        let result = await sut.verifyAccount()
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockVerificationService.verifyBankCalled)
+        XCTAssertEqual(mockVerificationService.lastAccountNumber, "123456789012")
+        XCTAssertEqual(mockVerificationService.lastIFSC, "HDFC0001234")
+        XCTAssertEqual(mockVerificationService.lastPartyType, .landlord)
+        XCTAssertTrue(sut.isVerified)
+        XCTAssertNotNil(sut.verificationResult)
+    }
+
+    func testVerifyAccount_Failure_InvalidForm() async {
+        // Given - Invalid form (no data)
+
+        // When
+        let result = await sut.verifyAccount()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockVerificationService.verifyBankCalled)
+        XCTAssertNotNil(sut.errorMessage)
+    }
+
+    func testVerifyAccount_Failure_VerificationFailed() async {
+        // Given
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+        mockVerificationService.shouldSucceed = false
+        mockVerificationService.errorToThrow = .bankVerificationFailed("Account not found")
+
+        // When
+        let result = await sut.verifyAccount()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertTrue(mockVerificationService.verifyBankCalled)
+        XCTAssertFalse(sut.isVerified)
+        XCTAssertNotNil(sut.errorMessage)
+    }
+
+    func testVerifyAccount_Failure_NameMismatch() async {
+        // Given
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+
+        mockVerificationService.shouldSucceed = true
+        mockVerificationService.mockBankResult = BankVerificationResult(
+            bankAccountId: "test-id",
+            verified: false,
+            accountNumberMasked: "XXXXXXXX9012",
             ifscCode: "HDFC0001234",
-            name: "RAJESH KUMAR",
-            verified: true
+            verifiedName: "DIFFERENT NAME",
+            nameMatchScore: 45,  // Below threshold
+            nameMatchThreshold: 80,
+            verificationStatus: "FAILED",
+            bankName: "HDFC BANK",
+            branch: "WHITEFIELD",
+            message: "Name mismatch"
         )
 
-        let vm = AddBankViewModel(tenancyId: "test-tenancy-id", verificationService: mockService)
-        vm.accountHolderName = "Rajesh Kumar"
-        vm.accountNumber = "1234567890123"
-        vm.confirmAccountNumber = "1234567890123"
-        vm.ifscCode = "HDFC0001234"
+        // When
+        let result = await sut.verifyAccount()
 
-        let result = await vm.verifyAccount()
-
-        #expect(result == true)
-        #expect(vm.isVerified == true)
-        #expect(mockService.verifyBankCalled == true)
-        #expect(mockService.lastAccountNumber == "1234567890123")
-        #expect(mockService.lastIFSC == "HDFC0001234")
-        #expect(mockService.lastPartyType == .landlord)
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertNotNil(sut.errorMessage)
+        XCTAssertTrue(sut.errorMessage!.contains("doesn't match"))
     }
 
-    @Test("Failed verification shows error")
-    @MainActor
-    func failedVerificationShowsError() async {
-        let mockService = MockVerificationService()
-        mockService.mockBankResult = MockVerificationService.createMockBankResult(
-            accountNumber: "1234567890123",
-            ifscCode: "HDFC0001234",
-            name: "SOMEONE ELSE",
-            verified: false
-        )
+    func testVerifyAccount_SetsVerifyingState() async {
+        // Given
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+        mockVerificationService.simulatedDelay = 0.5
 
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: mockService)
-        vm.accountHolderName = "Rajesh Kumar"
-        vm.accountNumber = "1234567890123"
-        vm.confirmAccountNumber = "1234567890123"
-        vm.ifscCode = "HDFC0001234"
+        // When
+        let task = Task {
+            await sut.verifyAccount()
+        }
 
-        let result = await vm.verifyAccount()
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
-        #expect(result == false)
-        #expect(vm.isVerified == false)
-        #expect(vm.errorMessage != nil)
+        // Then
+        XCTAssertTrue(sut.isVerifying)
+        XCTAssertFalse(sut.canVerify)
+
+        _ = await task.value
     }
 
-    @Test("Network error handling")
-    @MainActor
-    func networkErrorHandling() async {
-        let mockService = MockVerificationService()
-        mockService.shouldSucceed = false
-        mockService.errorToThrow = .networkError(URLError(.notConnectedToInternet))
+    // MARK: - Reset Tests
 
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: mockService)
-        vm.accountHolderName = "Rajesh Kumar"
-        vm.accountNumber = "1234567890123"
-        vm.confirmAccountNumber = "1234567890123"
-        vm.ifscCode = "HDFC0001234"
+    func testReset() async {
+        // Given - Trigger an error state via API
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+        mockVerificationService.shouldSucceed = false
+        mockVerificationService.errorToThrow = .bankVerificationFailed("Test error")
+        _ = await sut.verifyAccount()
 
-        let result = await vm.verifyAccount()
+        XCTAssertNotNil(sut.errorMessage)  // Confirm error state
 
-        #expect(result == false)
-        #expect(vm.errorMessage != nil)
+        // When
+        sut.reset()
+
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.accountHolderName, "")
+        XCTAssertEqual(sut.accountNumber, "")
+        XCTAssertEqual(sut.confirmAccountNumber, "")
+        XCTAssertEqual(sut.ifscCode, "")
+        XCTAssertNil(sut.verificationResult)
     }
 
-    // MARK: - State Management
+    func testClearError() async {
+        // Given - Trigger error state via API
+        _ = await sut.verifyAccount()  // Empty form causes error
 
-    @Test("Reset clears all form data")
-    @MainActor
-    func resetClearsForm() async {
-        let mockService = MockVerificationService()
-        mockService.shouldSucceed = false
-        mockService.errorToThrow = .networkError(URLError(.notConnectedToInternet))
+        XCTAssertNotNil(sut.errorMessage)
 
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: mockService)
+        // When
+        sut.clearError()
 
-        // Fill form with valid data
-        vm.accountHolderName = "Rajesh Kumar"
-        vm.accountNumber = "1234567890123"
-        vm.confirmAccountNumber = "1234567890123"
-        vm.ifscCode = "HDFC0001234"
-
-        // Trigger an error state by attempting verification
-        _ = await vm.verifyAccount()
-
-        // Now reset should clear everything
-        vm.reset()
-
-        #expect(vm.accountHolderName == "")
-        #expect(vm.accountNumber == "")
-        #expect(vm.confirmAccountNumber == "")
-        #expect(vm.ifscCode == "")
-        #expect(vm.errorMessage == nil)
+        // Then
+        XCTAssertEqual(sut.state, .idle)
     }
 
-    @Test("Clear error resets error message to nil")
-    @MainActor
-    func clearErrorResetsState() async {
-        let mockService = MockVerificationService()
-        mockService.shouldSucceed = false
-        mockService.errorToThrow = .networkError(URLError(.notConnectedToInternet))
+    func testClearError_NotInErrorState() {
+        // Given - idle state (not error)
+        XCTAssertEqual(sut.state, .idle)
 
-        let vm = AddBankViewModel(tenancyId: "test", verificationService: mockService)
+        // When
+        sut.clearError()
 
-        // Set up valid form
-        vm.accountHolderName = "Rajesh Kumar"
-        vm.accountNumber = "1234567890123"
-        vm.confirmAccountNumber = "1234567890123"
-        vm.ifscCode = "HDFC0001234"
+        // Then - State unchanged
+        XCTAssertEqual(sut.state, .idle)
+    }
 
-        // Trigger error
-        _ = await vm.verifyAccount()
-        #expect(vm.errorMessage != nil)
+    // MARK: - Edge Cases
 
-        // Clear the error
-        vm.clearError()
+    func testVerify_WithWhitespaceInName() async {
+        // Given
+        sut.accountHolderName = "  Rajesh Kumar  "
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "HDFC0001234"
+        mockVerificationService.shouldSucceed = true
 
-        #expect(vm.errorMessage == nil)
+        // When
+        _ = await sut.verifyAccount()
+
+        // Then - Name should be trimmed
+        XCTAssertTrue(mockVerificationService.verifyBankCalled)
+    }
+
+    func testVerify_LowercaseIFSCConverted() async {
+        // Given
+        sut.accountHolderName = "Rajesh Kumar"
+        sut.accountNumber = "123456789012"
+        sut.confirmAccountNumber = "123456789012"
+        sut.ifscCode = "hdfc0001234"  // Lowercase
+        mockVerificationService.shouldSucceed = true
+
+        // When
+        _ = await sut.verifyAccount()
+
+        // Then - IFSC should be uppercase
+        XCTAssertEqual(mockVerificationService.lastIFSC, "HDFC0001234")
     }
 }

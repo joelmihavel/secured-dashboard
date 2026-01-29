@@ -150,6 +150,50 @@ enum AppColors {
 
     /// Disabled text
     static let textDisabled = black300
+
+    // MARK: - Gradients
+
+    /// Primary button gradient (brand/400 to brand/500, top to bottom)
+    static let buttonGradient = LinearGradient(
+        colors: [brand400, brand500],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
+    /// Disabled button gradient (solid black/500)
+    static let buttonGradientDisabled = LinearGradient(
+        colors: [black500, black500],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
+    /// Skeleton shimmer gradient
+    static func shimmerGradient(phase: CGFloat) -> LinearGradient {
+        LinearGradient(
+            colors: [.clear, backgroundElevated.opacity(0.5), .clear],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    // MARK: - Opacity Tokens
+
+    enum Opacity {
+        /// Disabled state opacity
+        static let disabled: Double = 0.5
+
+        /// Overlay backdrop opacity
+        static let overlay: Double = 0.5
+
+        /// Shimmer highlight opacity
+        static let shimmer: Double = 0.5
+
+        /// Pressed state dim opacity
+        static let pressed: Double = 0.9
+
+        /// Icon background tint opacity
+        static let iconBackground: Double = 0.2
+    }
 }
 
 // MARK: - Color Extension for Hex Support

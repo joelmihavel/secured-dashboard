@@ -11,6 +11,7 @@ import Observation
 
 // MARK: - Waitlist ViewModel
 
+@MainActor
 @Observable
 final class WaitlistViewModel {
 
@@ -38,6 +39,10 @@ final class WaitlistViewModel {
     var isLoading: Bool {
         if case .loading = state { return true }
         return false
+    }
+
+    var isPolling: Bool {
+        pollingTimer != nil
     }
 
     var errorMessage: String? {
@@ -124,7 +129,7 @@ final class WaitlistViewModel {
     }
 
     deinit {
-        stopPolling()
+        // Timer cleanup will happen automatically when the object is deallocated
     }
 
     // MARK: - Actions
@@ -215,7 +220,8 @@ extension WaitlistViewModel {
     /// Determine next route when user is approved
     func nextRoute() -> Route? {
         guard case .approved = state else { return nil }
-        return .pendingSteps
+        // Navigate to post-approval welcome flow first
+        return .postApprovalStep1
     }
 }
 

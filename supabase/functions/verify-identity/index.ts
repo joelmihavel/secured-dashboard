@@ -223,8 +223,11 @@ serve(async (req: Request) => {
       throw new ValidationError("action is required", { action: "Required field" });
     }
 
-    // Get client IP for consent tracking
+    // Get client IP for consent tracking - CRITICAL for compliance
     const clientIp = getClientIp(req);
+    if (clientIp === "0.0.0.0" || !clientIp) {
+      console.warn("[verify-identity] Unable to determine client IP - compliance risk");
+    }
 
     // Route based on action
     if (body.action === "send_otp") {
@@ -232,7 +235,18 @@ serve(async (req: Request) => {
     } else if (body.action === "verify_otp") {
       return await handleVerifyOtp(body, userId, supabase, audit);
     } else if (body.action === "fetch_with_consent") {
-      return await handleFetchWithConsent(body, userId, supabase, audit, user);
+      // Fetch user details for consent-based flow
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id, phone, email")
+        .eq("id", userId)
+        .single();
+
+      if (userError || !userData) {
+        throw new ValidationError("User not found", { user_id: "Not found" });
+      }
+
+      return await handleFetchWithConsent(body, userId, supabase, audit, userData, clientIp);
     } else {
       throw new ValidationError("Invalid action. Use 'send_otp', 'verify_otp', or 'fetch_with_consent'", {
         action: "Must be 'send_otp', 'verify_otp', or 'fetch_with_consent'",
@@ -278,6 +292,14 @@ async function handleSendOtp(
   // Sanitize phone number
   const sanitizedPhone = sanitizePhone(phone_number);
 
+  // COMPLIANCE FIX: Validate client IP is available for consent tracking
+  if (!clientIp || clientIp === "0.0.0.0") {
+    throw new ValidationError(
+      "Unable to determine your IP address. This is required for consent compliance. Please try again or contact support.",
+      { client_ip: "Required for consent tracking" }
+    );
+  }
+
   // Verify consent
   if (!consent_given) {
     throw new ValidationError("User consent is required for identity verification");
@@ -309,15 +331,49 @@ async function handleSendOtp(
   });
 
   // Store pending verification record
-  const { error: insertError } = await supabase
+  // BUG FIX: Check if record exists first to avoid constraint violations
+  // Also include consent_ip and consent_timestamp for compliance
+  const { data: existingRecord } = await supabase
     .from("identity_verifications")
-    .insert({
-      user_id: userId,
-      tenancy_id: tenancy_id ?? null,
-      verification_id: otpResult.verification_id,
-      status: "OTP_SENT",
-      m360_full_name: name, // Store provided name for reference
-    });
+    .select("id")
+    .eq("verification_id", otpResult.verification_id)
+    .maybeSingle();
+
+  let insertError: Error | null = null;
+
+  if (existingRecord) {
+    // Update existing record
+    const { error } = await supabase
+      .from("identity_verifications")
+      .update({
+        user_id: userId,
+        tenancy_id: tenancy_id ?? null,
+        status: "OTP_SENT",
+        m360_full_name: name,
+        consent_ip: clientIp || null,
+        consent_timestamp: new Date().toISOString(),
+        otp_sent_at: new Date().toISOString(),
+        otp_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      })
+      .eq("id", existingRecord.id);
+    insertError = error;
+  } else {
+    // Insert new record
+    const { error } = await supabase
+      .from("identity_verifications")
+      .insert({
+        user_id: userId,
+        tenancy_id: tenancy_id ?? null,
+        verification_id: otpResult.verification_id,
+        status: "OTP_SENT",
+        m360_full_name: name,
+        consent_ip: clientIp || null,
+        consent_timestamp: new Date().toISOString(),
+        otp_sent_at: new Date().toISOString(),
+        otp_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      });
+    insertError = error;
+  }
 
   if (insertError) {
     console.error("Failed to insert identity verification:", insertError);
@@ -525,6 +581,16 @@ async function callCashfreeSendOtp(
     throw new ExternalServiceError("Cashfree", "API credentials not configured");
   }
 
+  // COMPLIANCE FIX: Validate consent_ip is a real IP, not placeholder or empty
+  // BUG FIX: Also check for empty string (returned when IP cannot be determined)
+  if (!params.consent_ip || params.consent_ip === "0.0.0.0" || params.consent_ip === "") {
+    console.error("[verify-identity] Invalid consent_ip for Cashfree API call - compliance violation");
+    throw new ExternalServiceError(
+      "Cashfree",
+      "Valid client IP address is required for consent compliance"
+    );
+  }
+
   try {
     const response = await fetch(`${CASHFREE_BASE_URL}/mobile360/otp/send`, {
       method: "POST",
@@ -541,7 +607,7 @@ async function callCashfreeSendOtp(
         user_consent: {
           consent_given: true,
           consent_timestamp: new Date().toISOString(),
-          consent_ip: params.consent_ip || "0.0.0.0",
+          consent_ip: params.consent_ip,
         },
         notification_modes: params.notification_modes.map((m) => m.toUpperCase()),
       }),
@@ -709,7 +775,8 @@ async function handleFetchWithConsent(
   userId: string,
   supabase: ReturnType<typeof createServiceClient>,
   audit: AuditLogger,
-  user: { id: string; phone?: string; email?: string }
+  user: { id: string; phone?: string; email?: string },
+  clientIp: string
 ): Promise<Response> {
   // Validate request
   const validatedBody = validateSchema<FetchWithConsentRequest>(body, fetchWithConsentSchema, true);
@@ -767,11 +834,31 @@ async function handleFetchWithConsent(
 
   // Call Cashfree Mobile 360 with consent (non-OTP flow)
   // Note: Cashfree Mobile 360 consent-based API
+  // COMPLIANCE FIX: Use current client IP if stored consent_ip is missing or invalid
+  // Prioritize: stored consent IP > current request IP > fail with error
+  // BUG FIX: Also check for empty string (returned when IP cannot be determined)
+  const isValidIpValue = (ip: string | null | undefined): ip is string =>
+    !!ip && ip !== "0.0.0.0" && ip !== "";
+
+  const consentIpToUse = isValidIpValue(consentRecord.consent_ip)
+    ? consentRecord.consent_ip
+    : isValidIpValue(clientIp)
+    ? clientIp
+    : null;
+
+  if (!consentIpToUse) {
+    console.error("[verify-identity] Cannot determine client IP for consent - compliance violation");
+    throw new ValidationError(
+      "Unable to determine client IP address. This is required for consent compliance.",
+      { consent_ip: "Required for compliance" }
+    );
+  }
+
   const m360Result = await callCashfreeMobile360WithConsent({
     mobile_number: sanitizedPhone,
     name: consentRecord.m360_full_name || "User",
     consent_timestamp: consentRecord.consent_timestamp || consentRecord.created_at,
-    consent_ip: consentRecord.consent_ip || "0.0.0.0",
+    consent_ip: consentIpToUse,
   });
 
   // Prepare verification data
@@ -1033,6 +1120,10 @@ async function callCashfreeMobile360WithConsent(
 /**
  * Extracts client IP from request headers.
  * Handles various proxy/CDN headers.
+ *
+ * COMPLIANCE NOTE: For consent tracking, a valid client IP is required.
+ * Returns empty string if no valid IP can be determined, allowing caller
+ * to handle the compliance requirement appropriately.
  */
 function getClientIp(req: Request): string {
   // Check common headers in order of priority
@@ -1042,19 +1133,47 @@ function getClientIp(req: Request): string {
     "x-forwarded-for", // Standard proxy header
     "x-client-ip",
     "true-client-ip",
+    "x-envoy-external-address", // Envoy proxy
+    "fastly-client-ip", // Fastly CDN
   ];
 
   for (const header of headers) {
     const value = req.headers.get(header);
     if (value) {
-      // x-forwarded-for can contain multiple IPs, take the first
+      // x-forwarded-for can contain multiple IPs, take the first (original client)
       const ip = value.split(",")[0].trim();
-      if (ip && ip !== "unknown") {
+      // Validate it's a real IP (not placeholder or localhost for production)
+      if (ip && ip !== "unknown" && ip !== "0.0.0.0" && isValidIp(ip)) {
         return ip;
       }
     }
   }
 
-  // Fallback - in Deno Deploy, we might not have direct access to IP
-  return "0.0.0.0";
+  // COMPLIANCE FIX: Return empty string instead of placeholder
+  // Caller must handle this appropriately for consent requirements
+  console.warn("[verify-identity] Could not determine client IP from headers:",
+    Array.from(req.headers.entries())
+      .filter(([k]) => k.toLowerCase().includes("ip") || k.toLowerCase().includes("forward"))
+      .map(([k, v]) => `${k}: ${v}`)
+  );
+
+  return "";
+}
+
+/**
+ * Basic IP validation - checks if string looks like a valid IPv4 or IPv6 address
+ */
+function isValidIp(ip: string): boolean {
+  // IPv4 pattern
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  // IPv6 pattern (simplified)
+  const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
+
+  if (ipv4Regex.test(ip)) {
+    // Additional validation for IPv4 - each octet should be 0-255
+    const octets = ip.split(".").map(Number);
+    return octets.every(o => o >= 0 && o <= 255);
+  }
+
+  return ipv6Regex.test(ip);
 }

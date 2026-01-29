@@ -151,20 +151,24 @@ final class SupabaseManager: ObservableObject {
 // MARK: - Keychain Auth Storage
 
 /// Custom auth storage using Keychain for secure token persistence
-final class KeychainAuthStorage: AuthLocalStorage {
+final class KeychainAuthStorage: AuthLocalStorage, @unchecked Sendable {
     private let secureStorage = SecureStorage.shared
-    private let key = "supabase_auth_session"
 
     func store(key: String, value: Data) throws {
-        try secureStorage.setData(value, forKey: self.key)
+        print("[KeychainAuthStorage] Storing data for key: \(key), size: \(value.count) bytes")
+        try secureStorage.setData(value, forKey: key)
+        print("[KeychainAuthStorage] Successfully stored data for key: \(key)")
     }
 
     func retrieve(key: String) throws -> Data? {
-        try secureStorage.getData(self.key)
+        let data = try secureStorage.getData(key)
+        print("[KeychainAuthStorage] Retrieved data for key: \(key), found: \(data != nil), size: \(data?.count ?? 0) bytes")
+        return data
     }
 
     func remove(key: String) throws {
-        try secureStorage.remove(self.key)
+        print("[KeychainAuthStorage] Removing data for key: \(key)")
+        try secureStorage.remove(key)
     }
 }
 

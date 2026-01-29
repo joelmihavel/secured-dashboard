@@ -12,6 +12,7 @@ import Combine
 
 // MARK: - OTP Verification ViewModel
 
+@MainActor
 @Observable
 final class OTPVerificationViewModel {
 
@@ -42,9 +43,14 @@ final class OTPVerificationViewModel {
 
     let phone: String
 
-    var otpDigits: [String] = Array(repeating: "", count: 4) {
+    /// OTP digit count - Figma: 6 boxes per 02_OTP_ENTRY_SCREEN.md
+    static let otpDigitCount = 6
+
+    var otpDigits: [String] = Array(repeating: "", count: OTPVerificationViewModel.otpDigitCount) {
         didSet {
-            if case .error = state {
+            // Clear error when user types (non-empty input), but not when OTP is cleared programmatically
+            if case .error = state,
+               otpDigits.contains(where: { !$0.isEmpty }) {
                 state = .idle
             }
         }
@@ -54,7 +60,8 @@ final class OTPVerificationViewModel {
 
     private(set) var state: State = .idle
     private(set) var resendCountdown: Int = 30
-    private(set) var canResend: Bool = false
+    // Internal for testing - normally controlled by timer
+    var canResend: Bool = false
 
     private var resendTimer: Timer?
 
@@ -65,7 +72,7 @@ final class OTPVerificationViewModel {
     }
 
     var isOTPComplete: Bool {
-        otpCode.count == 4 && otpCode.allSatisfy(\.isNumber)
+        otpCode.count == Self.otpDigitCount && otpCode.allSatisfy(\.isNumber)
     }
 
     var isVerifying: Bool {
@@ -111,7 +118,8 @@ final class OTPVerificationViewModel {
     }
 
     deinit {
-        resendTimer?.invalidate()
+        // Timer cleanup will happen automatically when the object is deallocated
+        // Note: Timer holds a weak reference to its target if using block-based API
     }
 
     // MARK: - Actions
@@ -120,7 +128,7 @@ final class OTPVerificationViewModel {
     @MainActor
     func verifyOTP() async -> AuthResult? {
         guard isOTPComplete else {
-            state = .error("Please enter the complete 4-digit code")
+            state = .error("Please enter the complete \(Self.otpDigitCount)-digit code")
             return nil
         }
 
@@ -208,20 +216,20 @@ final class OTPVerificationViewModel {
     /// Handle digit input at specific index
     func handleDigitInput(at index: Int, newValue: String) -> Int? {
         // Handle paste of full OTP
-        if newValue.count == 4 && newValue.allSatisfy(\.isNumber) {
+        if newValue.count == Self.otpDigitCount && newValue.allSatisfy(\.isNumber) {
             for (i, char) in newValue.enumerated() {
                 otpDigits[i] = String(char)
             }
             return nil // No focus change, trigger verification
         }
 
-        // Allow only single digit
-        if newValue.count > 1 {
+        // Set the digit value (single digit or take last digit if multiple)
+        if !newValue.isEmpty {
             otpDigits[index] = String(newValue.suffix(1))
         }
 
         // Return next focus index
-        if !newValue.isEmpty && index < 3 {
+        if !newValue.isEmpty && index < Self.otpDigitCount - 1 {
             return index + 1
         }
 
@@ -238,7 +246,7 @@ final class OTPVerificationViewModel {
 
     /// Clear all OTP digits
     func clearOTP() {
-        otpDigits = Array(repeating: "", count: 4)
+        otpDigits = Array(repeating: "", count: Self.otpDigitCount)
     }
 
     /// Reset state
@@ -326,13 +334,13 @@ extension OTPVerificationViewModel {
 
     static var previewWithOTP: OTPVerificationViewModel {
         let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "3", "4"]
+        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
         return vm
     }
 
     static var previewVerifying: OTPVerificationViewModel {
         let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "3", "4"]
+        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
         vm.state = .verifying
         return vm
     }

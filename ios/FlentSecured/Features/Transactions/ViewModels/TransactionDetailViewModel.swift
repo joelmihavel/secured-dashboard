@@ -10,6 +10,7 @@ import Observation
 
 // MARK: - Transaction Detail ViewModel
 
+@MainActor
 @Observable
 final class TransactionDetailViewModel {
 

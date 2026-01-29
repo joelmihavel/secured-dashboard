@@ -39,6 +39,7 @@ struct PrimaryButton: View {
 
     var body: some View {
         Button(action: {
+            print("DEBUG: PrimaryButton tapped, isEnabled=\(isEnabled), isLoading=\(isLoading)")
             if isEnabled && !isLoading {
                 // Haptic feedback
                 let generator = UIImpactFeedbackGenerator(style: .medium)

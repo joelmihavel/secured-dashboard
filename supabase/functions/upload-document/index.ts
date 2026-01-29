@@ -55,6 +55,8 @@ interface UploadDocumentResponse {
 // ==============================================
 
 serve(async (req) => {
+  console.log("[upload-document] v2 - Using bucket: rent-agreements");
+
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -139,7 +141,7 @@ serve(async (req) => {
 
     const { data: existingExtraction } = await supabase
       .from("extracted_rental_info")
-      .select("id, document_storage_path, extraction_status")
+      .select("id, document_storage_path, extraction_status, updated_at")
       .eq("user_id", user.id)
       .in("extraction_status", ["pending", "processing"])
       .order("created_at", { ascending: false })
@@ -147,10 +149,29 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingExtraction && existingExtraction.extraction_status === "processing") {
-      // Document is currently being processed - don't allow new upload
-      throw new ValidationError("Document processing in progress", {
-        extraction_status: "Please wait for current extraction to complete",
-      });
+      // Check if the processing record is stale (older than 5 minutes)
+      const updatedAt = new Date(existingExtraction.updated_at || 0);
+      const now = new Date();
+      const staleThresholdMs = 5 * 60 * 1000; // 5 minutes
+      const isStale = (now.getTime() - updatedAt.getTime()) > staleThresholdMs;
+
+      if (isStale) {
+        // Reset stale processing record to failed so user can retry
+        console.log(`[upload-document] Resetting stale processing record ${existingExtraction.id} to failed`);
+        await adminClient
+          .from("extracted_rental_info")
+          .update({
+            extraction_status: "failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingExtraction.id);
+        // Continue to create new upload
+      } else {
+        // Document is actively being processed - don't allow new upload
+        throw new ValidationError("Document processing in progress", {
+          extraction_status: "Please wait for current extraction to complete",
+        });
+      }
     }
 
     // ==============================================
@@ -160,20 +181,24 @@ serve(async (req) => {
     const fileExtension = body.file_name.split(".").pop() || "pdf";
     const timestamp = Date.now();
     const randomId = crypto.randomUUID().slice(0, 8);
-    const storagePath = `rent-agreements/${user.id}/${timestamp}-${randomId}.${fileExtension}`;
+    const storagePath = `${user.id}/${timestamp}-${randomId}.${fileExtension}`;
 
     // ==============================================
     // CREATE SIGNED UPLOAD URL
     // ==============================================
 
+    console.log("[upload-document] Creating signed URL for bucket: rent-agreements, path:", storagePath);
+
     const { data: uploadData, error: uploadError } = await adminClient.storage
-      .from("documents")
+      .from("rent-agreements")
       .createSignedUploadUrl(storagePath, {
         upsert: true,
       });
 
+    console.log("[upload-document] Upload result - data:", !!uploadData, "error:", uploadError);
+
     if (uploadError || !uploadData) {
-      console.error("Failed to create signed URL:", uploadError);
+      console.error("[upload-document] Failed to create signed URL:", uploadError);
       throw new ValidationError("Failed to create upload URL", {
         storage: uploadError?.message || "Unknown error",
       });
@@ -249,7 +274,7 @@ serve(async (req) => {
     // ==============================================
 
     const { data: downloadData } = await adminClient.storage
-      .from("documents")
+      .from("rent-agreements")
       .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
     // ==============================================

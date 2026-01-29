@@ -12,6 +12,7 @@ import Supabase
 
 // MARK: - Agreement Review ViewModel
 
+@MainActor
 @Observable
 final class AgreementReviewViewModel {
 
@@ -149,7 +150,7 @@ final class AgreementReviewViewModel {
     }
 
     deinit {
-        pollingTimer?.invalidate()
+        // Timer cleanup will happen automatically when the object is deallocated
     }
 
     // MARK: - Actions
@@ -158,22 +159,29 @@ final class AgreementReviewViewModel {
     @MainActor
     func loadExtractionStatus() async {
         state = .loading
+        print("[AgreementReviewViewModel] Loading extraction status for ID: \(extractionId)")
 
         do {
             let info = try await fetchExtraction()
+            print("[AgreementReviewViewModel] Fetched extraction - status: \(info.extractionStatus)")
 
             if info.extractionStatus == "completed" {
+                print("[AgreementReviewViewModel] Extraction complete, populating fields")
                 populateFields(from: info)
                 extractedInfo = info
                 state = .extractionComplete(info)
+                print("[AgreementReviewViewModel] State set to extractionComplete")
             } else if info.extractionStatus == "failed" {
+                print("[AgreementReviewViewModel] Extraction failed: \(info.extractionError ?? "unknown")")
                 state = .error(info.extractionError ?? "Document processing failed")
             } else {
                 // Still processing - start polling
+                print("[AgreementReviewViewModel] Extraction pending, starting polling")
                 state = .extractionPending
                 startPolling()
             }
         } catch {
+            print("[AgreementReviewViewModel] Error loading extraction: \(error)")
             state = .error("Failed to load extraction: \(error.localizedDescription)")
         }
     }
@@ -181,12 +189,17 @@ final class AgreementReviewViewModel {
     /// Confirm the extracted/edited information
     @MainActor
     func confirmExtraction() async -> Bool {
+        print("[AgreementReviewViewModel] confirmExtraction called")
+        print("[AgreementReviewViewModel] canConfirm: \(canConfirm), tenantName: \(tenantName), landlordName: \(landlordName)")
+
         guard canConfirm else {
+            print("[AgreementReviewViewModel] Cannot confirm - missing required fields")
             state = .error("Please fill in all required fields")
             return false
         }
 
         state = .confirming
+        print("[AgreementReviewViewModel] State set to confirming")
 
         do {
             let request = ConfirmExtractionRequest(
@@ -206,20 +219,26 @@ final class AgreementReviewViewModel {
                 landlordEmail: landlordEmail.isEmpty ? nil : landlordEmail
             )
 
+            print("[AgreementReviewViewModel] Calling confirm-extraction function...")
+
             let response: ConfirmExtractionResponse = try await supabase.client.functions.invoke(
                 "confirm-extraction",
                 options: FunctionInvokeOptions(body: request)
             )
 
+            print("[AgreementReviewViewModel] Response: success=\(response.success), error=\(response.error ?? "nil")")
+
             if response.success {
+                print("[AgreementReviewViewModel] Confirmation successful!")
                 state = .confirmed
                 return true
             } else {
+                print("[AgreementReviewViewModel] Confirmation failed: \(response.error ?? "unknown")")
                 state = .error(response.error ?? "Confirmation failed")
                 return false
             }
         } catch {
-            state = .error("Failed to confirm: \(error.localizedDescription)")
+            print("[AgreementReviewViewModel] Error confirming: \(error)")
             return false
         }
     }
@@ -234,15 +253,22 @@ final class AgreementReviewViewModel {
     // MARK: - Private Methods
 
     private func fetchExtraction() async throws -> ExtractedRentalInfo {
-        let info: ExtractedRentalInfo = try await supabase.client
-            .from("extracted_rental_info")
-            .select()
-            .eq("id", value: extractionId)
-            .single()
-            .execute()
-            .value
+        print("[AgreementReviewViewModel] Fetching extraction from database...")
+        do {
+            let info: ExtractedRentalInfo = try await supabase.client
+                .from("extracted_rental_info")
+                .select()
+                .eq("id", value: extractionId)
+                .single()
+                .execute()
+                .value
 
-        return info
+            print("[AgreementReviewViewModel] Successfully fetched extraction: \(info.id)")
+            return info
+        } catch {
+            print("[AgreementReviewViewModel] Failed to fetch extraction: \(error)")
+            throw error
+        }
     }
 
     private func populateFields(from info: ExtractedRentalInfo) {
@@ -270,8 +296,9 @@ final class AgreementReviewViewModel {
             leaseEndDate = ISO8601DateFormatter().date(from: endStr)
         }
 
-        landlordPhone = info.landlordPhone ?? ""
-        landlordEmail = info.landlordEmail ?? ""
+        // landlordPhone and landlordEmail are stored in rental_parties table, not here
+        landlordPhone = ""
+        landlordEmail = ""
     }
 
     private func startPolling() {
@@ -321,8 +348,10 @@ struct ExtractedRentalInfo: Codable, Identifiable {
     let userId: String
     let extractionStatus: String
     let extractionError: String?
-    let tenantName: String?
-    let landlordName: String?
+    // Database stores arrays for tenant_names and landlord_names
+    let tenantNames: [String]?
+    let landlordNames: [String]?
+    let propertyName: String?
     let propertyAddress: String?
     let propertyCity: String?
     let propertyState: String?
@@ -332,18 +361,26 @@ struct ExtractedRentalInfo: Codable, Identifiable {
     let rentDueDay: Int?
     let leaseStartDate: String?
     let leaseEndDate: String?
-    let landlordPhone: String?
-    let landlordEmail: String?
     let documentPath: String?
     let createdAt: String
+
+    // Convenience accessors for first tenant/landlord name
+    var tenantName: String? {
+        tenantNames?.first
+    }
+
+    var landlordName: String? {
+        landlordNames?.first
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
         case extractionStatus = "extraction_status"
         case extractionError = "extraction_error"
-        case tenantName = "tenant_name"
-        case landlordName = "landlord_name"
+        case tenantNames = "tenant_names"
+        case landlordNames = "landlord_names"
+        case propertyName = "property_name"
         case propertyAddress = "property_address"
         case propertyCity = "property_city"
         case propertyState = "property_state"
@@ -353,8 +390,6 @@ struct ExtractedRentalInfo: Codable, Identifiable {
         case rentDueDay = "rent_due_day"
         case leaseStartDate = "lease_start_date"
         case leaseEndDate = "lease_end_date"
-        case landlordPhone = "landlord_phone"
-        case landlordEmail = "landlord_email"
         case documentPath = "document_path"
         case createdAt = "created_at"
     }
@@ -436,8 +471,9 @@ extension AgreementReviewViewModel {
             userId: "user-id",
             extractionStatus: "completed",
             extractionError: nil,
-            tenantName: "Amit Kumar",
-            landlordName: "Rajesh Gupta",
+            tenantNames: ["Amit Kumar"],
+            landlordNames: ["Rajesh Gupta"],
+            propertyName: "Prestige Lakeside Habitat",
             propertyAddress: "Prestige Lakeside Habitat",
             propertyCity: "Bangalore",
             propertyState: "Karnataka",
@@ -447,8 +483,6 @@ extension AgreementReviewViewModel {
             rentDueDay: 5,
             leaseStartDate: nil,
             leaseEndDate: nil,
-            landlordPhone: "+919876543211",
-            landlordEmail: nil,
             documentPath: nil,
             createdAt: "2026-01-26T10:00:00Z"
         ))

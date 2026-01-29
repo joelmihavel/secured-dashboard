@@ -11,6 +11,7 @@ import Observation
 
 // MARK: - Pending Steps ViewModel
 
+@MainActor
 @Observable
 final class PendingStepsViewModel {
 

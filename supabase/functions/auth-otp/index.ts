@@ -23,7 +23,7 @@ import {
   ExternalServiceError,
   handleError,
 } from "../_shared/errors.ts";
-import { validateSchema, sanitizePhone, isValidIndianPhone } from "../_shared/validation.ts";
+import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, isValidIndianPhone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 
 // ==============================================
@@ -217,11 +217,14 @@ async function handleSendOtp(
     consent_for_mobile360 = true,
   } = validatedBody;
 
-  // Sanitize phone number
+  // Sanitize phone number and format with country code
   const sanitizedPhone = sanitizePhone(phone_number);
-  const phoneWithCountryCode = sanitizedPhone.startsWith("91")
-    ? `+${sanitizedPhone}`
-    : `+91${sanitizedPhone}`;
+  const phoneWithCountryCode = formatPhoneWithCountryCode(phone_number);
+
+  // Debug logging for troubleshooting
+  console.log("[DEBUG] send_otp - Raw phone_number:", phone_number);
+  console.log("[DEBUG] send_otp - sanitizedPhone:", sanitizedPhone);
+  console.log("[DEBUG] send_otp - phoneWithCountryCode:", phoneWithCountryCode);
 
   // Log OTP initiation
   await audit.logSuccess(
@@ -254,24 +257,26 @@ async function handleSendOtp(
 
     if (existingConsent) {
       // Update existing record
+      // BUG FIX: Only store consent_ip if we have a valid IP (not empty)
       await supabase
         .from("identity_verifications")
         .update({
           otp_sent_at: new Date().toISOString(),
           otp_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min expiry
           otp_attempts: 0,
-          consent_ip: clientIp,
+          ...(clientIp ? { consent_ip: clientIp } : {}),
         })
         .eq("id", existingConsent.id);
     } else {
       // Create new pending consent record
+      // BUG FIX: Only include consent_ip if valid, otherwise let it be null
       await supabase
         .from("identity_verifications")
         .insert({
           verification_id: result.sid,
           status: "OTP_SENT",
           consent_phone: sanitizedPhone,
-          consent_ip: clientIp,
+          ...(clientIp ? { consent_ip: clientIp } : {}),
           otp_sent_at: new Date().toISOString(),
           otp_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
           otp_attempts: 0,
@@ -313,11 +318,9 @@ async function handleVerifyOtp(
     consent_for_mobile360 = true,
   } = validatedBody;
 
-  // Sanitize phone number
+  // Sanitize phone number and format with country code
   const sanitizedPhone = sanitizePhone(phone_number);
-  const phoneWithCountryCode = sanitizedPhone.startsWith("91")
-    ? `+${sanitizedPhone}`
-    : `+91${sanitizedPhone}`;
+  const phoneWithCountryCode = formatPhoneWithCountryCode(phone_number);
 
   // Call Twilio Verify Check API
   const result = await callTwilioVerifyOtp({
@@ -368,14 +371,20 @@ async function handleVerifyOtp(
   let userId: string;
   if (authError?.message?.includes("already been registered")) {
     // User exists, generate magic link or session
+    // Query with both formats for backward compatibility
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
-      .eq("phone", sanitizedPhone)
+      .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
       .single();
 
     if (existingUser) {
       userId = existingUser.id;
+      // Update phone to consistent format if using old format
+      await supabase
+        .from("users")
+        .update({ phone: phoneWithCountryCode })
+        .eq("id", userId);
     } else {
       // Edge case: auth user exists but profile doesn't
       throw new AppError("User account exists but profile not found", "USER_NOT_FOUND", 404);
@@ -392,7 +401,7 @@ async function handleVerifyOtp(
         .from("users")
         .update({
           full_name: name,
-          phone: sanitizedPhone,
+          phone: phoneWithCountryCode,
         })
         .eq("id", userId);
     }
@@ -401,6 +410,9 @@ async function handleVerifyOtp(
   // Record Mobile 360 consent if requested
   let consentVerificationId: string | null = null;
   if (consent_for_mobile360) {
+    // BUG FIX: Only store consent_ip if valid, otherwise omit it (will be captured later)
+    const consentIpData = clientIp ? { consent_ip: clientIp } : {};
+
     // Update pending consent record to CONSENT_GIVEN
     const { data: consentRecord, error: consentError } = await supabase
       .from("identity_verifications")
@@ -408,7 +420,7 @@ async function handleVerifyOtp(
         user_id: userId,
         status: "CONSENT_GIVEN",
         consent_timestamp: new Date().toISOString(),
-        consent_ip: clientIp,
+        ...consentIpData,
         m360_full_name: name,
       })
       .eq("consent_phone", sanitizedPhone)
@@ -428,7 +440,7 @@ async function handleVerifyOtp(
           status: "CONSENT_GIVEN",
           consent_phone: sanitizedPhone,
           consent_timestamp: new Date().toISOString(),
-          consent_ip: clientIp,
+          ...consentIpData,
           m360_full_name: name,
         })
         .select("id")
@@ -655,6 +667,9 @@ function getClientIp(req: Request): string {
     }
   }
 
-  // Fallback - in Deno Deploy, we might not have direct access to IP
-  return "0.0.0.0";
+  // BUG FIX: Return empty string instead of "0.0.0.0" to indicate IP not available
+  // This allows callers to handle missing IP appropriately for compliance
+  // "0.0.0.0" was being stored and later passed to Cashfree, violating compliance
+  console.warn("[auth-otp] Could not determine client IP from headers");
+  return "";
 }

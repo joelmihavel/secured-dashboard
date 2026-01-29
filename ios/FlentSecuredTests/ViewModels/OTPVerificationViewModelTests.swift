@@ -1,340 +1,523 @@
 /// OTPVerificationViewModelTests.swift
 /// Flent Secured v2 - OTP Verification ViewModel Tests
 ///
-/// Tests OTP entry, validation, verification flow, and resend logic
+/// Comprehensive tests for OTP verification, timer logic, and authentication flow.
+/// Critical for secure user authentication.
 
-import Foundation
-import Testing
+import XCTest
 @testable import Flent
 
-// MARK: - Test Helpers
+@MainActor
+final class OTPVerificationViewModelTests: XCTestCase {
 
-/// Helper extension to create AuthResult instances for testing
-extension AuthResult {
-    /// Creates a successful AuthResult for testing
-    /// - Parameters:
-    ///   - userId: The user ID (defaults to "test-user-id")
-    ///   - isNewUser: Whether this is a new user (defaults to false)
-    ///   - consentVerificationId: Optional consent verification ID
-    ///   - consentStatus: Optional consent status
-    ///   - message: The message (defaults to "Authentication successful")
-    ///   - nextSteps: Optional array of next steps
-    /// - Returns: A configured AuthResult for testing
-    static func testSuccess(
-        userId: String = "test-user-id",
-        isNewUser: Bool = false,
-        consentVerificationId: String? = nil,
-        consentStatus: String? = nil,
-        message: String = "Authentication successful",
-        nextSteps: [String]? = nil
-    ) -> AuthResult {
-        AuthResult(
+    // MARK: - Properties
+
+    private var sut: OTPVerificationViewModel!
+    private var mockAuthService: MockAuthService!
+    private let testPhone = "+919876543210"
+
+    // MARK: - Setup & Teardown
+
+    override func setUp() async throws {
+        try await super.setUp()
+        mockAuthService = MockAuthService()
+        mockAuthService.simulatedDelay = 0
+        sut = OTPVerificationViewModel(phone: testPhone, authService: mockAuthService)
+    }
+
+    override func tearDown() async throws {
+        sut = nil
+        mockAuthService = nil
+        try await super.tearDown()
+    }
+
+    // MARK: - Initialization Tests
+
+    func testInitialState() {
+        XCTAssertEqual(sut.phone, testPhone)
+        XCTAssertEqual(sut.otpDigits, ["", "", "", "", "", ""])  // 6-digit OTP per Figma
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertFalse(sut.isOTPComplete)
+        XCTAssertFalse(sut.isVerifying)
+        XCTAssertFalse(sut.isResending)
+        XCTAssertNil(sut.errorMessage)
+        XCTAssertTrue(sut.consentForMobile360)  // Default consent is true
+    }
+
+    // MARK: - OTP Input Tests
+
+    func testOTPCode() {
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        XCTAssertEqual(sut.otpCode, "123456")
+    }
+
+    func testIsOTPComplete_AllDigitsFilled() {
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        XCTAssertTrue(sut.isOTPComplete)
+    }
+
+    func testIsOTPComplete_PartiallyFilled() {
+        sut.otpDigits = ["1", "2", "", "4", "5", "6"]
+        XCTAssertFalse(sut.isOTPComplete)
+    }
+
+    func testIsOTPComplete_Empty() {
+        XCTAssertFalse(sut.isOTPComplete)
+    }
+
+    func testIsOTPComplete_NonNumericCharacters() {
+        sut.otpDigits = ["a", "b", "c", "d", "e", "f"]
+        XCTAssertFalse(sut.isOTPComplete)
+    }
+
+    func testHandleDigitInput_SingleDigit() {
+        let nextFocus = sut.handleDigitInput(at: 0, newValue: "1")
+
+        XCTAssertEqual(sut.otpDigits[0], "1")
+        XCTAssertEqual(nextFocus, 1)  // Should move focus to next field
+    }
+
+    func testHandleDigitInput_LastDigit() {
+        sut.otpDigits = ["1", "2", "3", "4", "5", ""]
+        let nextFocus = sut.handleDigitInput(at: 5, newValue: "6")
+
+        XCTAssertEqual(sut.otpDigits[5], "6")
+        XCTAssertNil(nextFocus)  // No next field
+    }
+
+    func testHandleDigitInput_FullOTPPaste() {
+        let nextFocus = sut.handleDigitInput(at: 0, newValue: "123456")
+
+        XCTAssertEqual(sut.otpDigits, ["1", "2", "3", "4", "5", "6"])
+        XCTAssertNil(nextFocus)  // Should trigger verification, no focus change
+    }
+
+    func testHandleDigitInput_MultipleDigits_TakesLast() {
+        let nextFocus = sut.handleDigitInput(at: 0, newValue: "12")
+
+        XCTAssertEqual(sut.otpDigits[0], "2")  // Takes last digit
+        XCTAssertEqual(nextFocus, 1)
+    }
+
+    func testHandleBackspace_WithContent() {
+        sut.otpDigits = ["1", "", "", "", "", ""]
+        let previousFocus = sut.handleBackspace(at: 1)
+
+        XCTAssertEqual(previousFocus, 0)  // Should move focus to previous field
+    }
+
+    func testHandleBackspace_AtFirstField() {
+        let previousFocus = sut.handleBackspace(at: 0)
+
+        XCTAssertNil(previousFocus)  // No previous field
+    }
+
+    func testClearOTP() {
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        sut.clearOTP()
+
+        XCTAssertEqual(sut.otpDigits, ["", "", "", "", "", ""])
+    }
+
+    // MARK: - Verification Tests
+
+    func testVerifyOTP_Success_NewUser() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = true
+        mockAuthService.mockAuthResult = AuthResult(
             success: true,
-            data: AuthResultData(
-                userId: userId,
-                isNewUser: isNewUser,
-                consentVerificationId: consentVerificationId,
-                consentStatus: consentStatus,
-                message: message,
-                nextSteps: nextSteps
+            data: AuthResult.AuthResultData(
+                userId: "test-user-id",
+                isNewUser: true,
+                consentVerificationId: "test-consent-id",
+                consentStatus: "CONSENT_GIVEN",
+                message: "Verified",
+                nextSteps: nil
             ),
             error: nil
         )
+
+        // When
+        let result = await sut.verifyOTP()
+
+        // Then
+        XCTAssertNotNil(result)
+        XCTAssertTrue(result!.success)
+        XCTAssertTrue(result!.isNewUser)
+        XCTAssertTrue(mockAuthService.verifyOTPCalled)
+        XCTAssertEqual(mockAuthService.lastOTPVerified, "123456")
+        XCTAssertTrue(mockAuthService.lastConsentValue ?? false)
+
+        if case .verified(let authResult) = sut.state {
+            XCTAssertTrue(authResult.success)
+        } else {
+            XCTFail("Expected verified state")
+        }
     }
 
-    /// Creates a failed AuthResult for testing
-    /// - Parameter error: The error message
-    /// - Returns: A configured AuthResult representing a failure
-    static func testFailure(error: String = "Authentication failed") -> AuthResult {
-        AuthResult(
-            success: false,
-            data: nil,
-            error: error
-        )
-    }
-}
-
-@Suite("OTPVerificationViewModel Tests")
-struct OTPVerificationViewModelTests {
-
-    // MARK: - OTP Entry Validation
-
-    @Test("Empty OTP is not complete")
-    func emptyOTPNotComplete() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-
-        #expect(vm.isOTPComplete == false)
-        #expect(vm.canVerify == false)
-    }
-
-    @Test("Partial OTP is not complete")
-    func partialOTPNotComplete() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "3", "", "", ""]
-
-        #expect(vm.isOTPComplete == false)
-        #expect(vm.canVerify == false)
-    }
-
-    @Test("6-digit OTP is complete")
-    func fullOTPIsComplete() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
-
-        #expect(vm.isOTPComplete == true)
-        #expect(vm.otpCode == "123456")
-        #expect(vm.canVerify == true)
-    }
-
-    @Test("OTP with non-numeric characters is not complete")
-    func nonNumericOTPNotComplete() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "A", "4", "5", "6"]
-
-        #expect(vm.isOTPComplete == false)
-    }
-
-    // MARK: - Digit Input Handling
-
-    @Test("Handle paste of full OTP")
-    func handleFullOTPPaste() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-
-        let focusResult = vm.handleDigitInput(at: 0, newValue: "123456")
-
-        #expect(focusResult == nil) // No focus change, trigger verification
-        #expect(vm.otpDigits == ["1", "2", "3", "4", "5", "6"])
-    }
-
-    @Test("Handle single digit input moves focus")
-    func singleDigitMovesFocus() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-
-        // Note: handleDigitInput returns the next focus index but doesn't set the digit
-        // The digit is set by SwiftUI TextField binding, this method just handles focus
-        let focusResult = vm.handleDigitInput(at: 0, newValue: "1")
-
-        #expect(focusResult == 1) // Move to next field
-    }
-
-    @Test("Backspace on empty field moves focus back")
-    func backspaceMovesFocus() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.otpDigits = ["1", "2", "", "", "", ""]
-
-        let focusResult = vm.handleBackspace(at: 2)
-
-        #expect(focusResult == 1) // Move back to previous field
-    }
-
-    // MARK: - OTP Verification
-
-    @Test("Successful OTP verification")
-    @MainActor
-    func successfulVerification() async {
-        let mockAuth = MockAuthService()
-        mockAuth.mockAuthResult = .testSuccess(
-            userId: "test-user-id",
-            isNewUser: true,
-            consentVerificationId: "test-consent-id",
-            consentStatus: "CONSENT_GIVEN",
-            message: "Phone verified successfully",
-            nextSteps: ["identity_verification_ready"]
+    func testVerifyOTP_Success_ExistingUser() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = true
+        mockAuthService.mockAuthResult = AuthResult(
+            success: true,
+            data: AuthResult.AuthResultData(
+                userId: "test-user-id",
+                isNewUser: false,
+                consentVerificationId: nil,
+                consentStatus: nil,
+                message: "Welcome back",
+                nextSteps: nil
+            ),
+            error: nil
         )
 
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: mockAuth)
-        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        // When
+        let result = await sut.verifyOTP()
 
-        let result = await vm.verifyOTP()
-
-        #expect(result != nil)
-        #expect(result?.success == true)
-        #expect(mockAuth.verifyOTPCalled == true)
-        #expect(mockAuth.lastOTPVerified == "123456")
+        // Then
+        XCTAssertNotNil(result)
+        XCTAssertFalse(result!.isNewUser)
     }
 
-    @Test("Failed OTP verification clears OTP and resets state")
-    @MainActor
-    func failedVerificationClearsOTP() async {
-        let mockAuth = MockAuthService()
-        mockAuth.mockAuthResult = .testFailure(error: "Invalid OTP")
+    func testVerifyOTP_Failure_InvalidOTP() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = false
+        mockAuthService.errorToThrow = .invalidOTP
 
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: mockAuth)
-        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        // When
+        let result = await sut.verifyOTP()
 
-        let result = await vm.verifyOTP()
-
-        #expect(result == nil)
-        // OTP is cleared, and the didSet on otpDigits also clears error state
-        #expect(vm.otpDigits == Array(repeating: "", count: 6))
-        // Error is cleared when OTP changes (by design - see otpDigits didSet)
-        #expect(vm.errorMessage == nil)
+        // Then
+        XCTAssertNil(result)
+        XCTAssertNotNil(sut.errorMessage)
+        XCTAssertEqual(sut.otpDigits, ["", "", "", "", "", ""])  // OTP should be cleared on failure
     }
 
-    @Test("Cannot verify incomplete OTP")
-    @MainActor
-    func cannotVerifyIncompleteOTP() async {
-        let mockAuth = MockAuthService()
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: mockAuth)
-        vm.otpDigits = ["1", "2", "3", "", "", ""]
+    func testVerifyOTP_Failure_ExpiredOTP() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = false
+        mockAuthService.errorToThrow = .otpExpired
 
-        let result = await vm.verifyOTP()
+        // When
+        let result = await sut.verifyOTP()
 
-        #expect(result == nil)
-        #expect(mockAuth.verifyOTPCalled == false)
-        #expect(vm.errorMessage != nil)
+        // Then
+        XCTAssertNil(result)
+        XCTAssertNotNil(sut.errorMessage)
     }
 
-    // MARK: - Resend OTP
+    func testVerifyOTP_IncompleteOTP() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "", "", ""]
 
-    @Test("Resend timer starts at 30 seconds")
-    func resendTimerStartsCorrectly() {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
+        // When
+        let result = await sut.verifyOTP()
 
-        vm.startResendTimer()
+        // Then
+        XCTAssertNil(result)
+        XCTAssertFalse(mockAuthService.verifyOTPCalled)
 
-        #expect(vm.resendCountdown == 30)
-        #expect(vm.canResend == false)
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Please enter the complete 6-digit code")
+        } else {
+            XCTFail("Expected error state")
+        }
     }
 
-    @Test("Cannot resend during countdown")
-    @MainActor
-    func cannotResendDuringCountdown() async {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-        vm.startResendTimer()
+    func testVerifyOTP_WithoutConsent() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        sut.consentForMobile360 = false
 
-        let result = await vm.resendOTP()
+        // When
+        let result = await sut.verifyOTP()
 
-        #expect(result == false)
+        // Then
+        XCTAssertNil(result)
+        XCTAssertFalse(mockAuthService.verifyOTPCalled)
+
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Please allow identity verification to continue")
+        } else {
+            XCTFail("Expected error state")
+        }
     }
 
-    // MARK: - Next Route Determination
+    func testVerifyOTP_SetsVerifyingState() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.simulatedDelay = 0.5
 
-    @Test("New user goes to name verification")
-    @MainActor
-    func newUserGoesToNameVerification() async {
-        let mockAuth = MockAuthService()
-        mockAuth.mockAuthResult = .testSuccess(
-            userId: "test-user-id",
-            isNewUser: true,
-            consentVerificationId: "test-consent-id",
-            consentStatus: "CONSENT_GIVEN",
-            message: "Phone verified successfully",
-            nextSteps: ["identity_verification_ready"]
+        // When
+        let task = Task {
+            await sut.verifyOTP()
+        }
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertTrue(sut.isVerifying)
+        XCTAssertFalse(sut.canVerify)
+
+        _ = await task.value
+    }
+
+    // MARK: - Resend OTP Tests
+
+    func testResendOTP_CannotResendWhenTimerRunning() async {
+        // Given - Start timer (sets canResend = false)
+        sut.startResendTimer()
+        XCTAssertFalse(sut.canResend)
+
+        // When
+        let result = await sut.resendOTP()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockAuthService.sendOTPCalled)
+    }
+
+    func testResendOTP_InitiallyCannotResend() async {
+        // Given - Fresh ViewModel (canResend is false by default after timer starts)
+        sut.startResendTimer()
+
+        // When
+        let result = await sut.resendOTP()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockAuthService.sendOTPCalled)
+    }
+
+    // Note: Testing successful resend would require waiting 30+ seconds for timer
+    // This test verifies the timer mechanism works correctly instead
+    func testResendTimer_SetsCanResendFalse() {
+        // When
+        sut.startResendTimer()
+
+        // Then
+        XCTAssertFalse(sut.canResend)
+        XCTAssertEqual(sut.resendCountdown, 30)
+    }
+
+    // MARK: - Timer Tests
+
+    func testStartResendTimer() {
+        // When
+        sut.startResendTimer()
+
+        // Then
+        XCTAssertEqual(sut.resendCountdown, 30)
+        XCTAssertFalse(sut.canResend)
+    }
+
+    func testResendTimerCountdown() async throws {
+        // Given
+        sut.startResendTimer()
+
+        // Wait for a couple of ticks
+        try await Task.sleep(nanoseconds: 2_500_000_000)  // 2.5 seconds
+
+        // Then
+        XCTAssertLessThan(sut.resendCountdown, 30)
+        XCTAssertFalse(sut.canResend)
+    }
+
+    // MARK: - Consent Tests
+
+    func testCanVerify_WithConsent() {
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        sut.consentForMobile360 = true
+
+        XCTAssertTrue(sut.canVerify)
+    }
+
+    func testCanVerify_WithoutConsent() {
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        sut.consentForMobile360 = false
+
+        XCTAssertFalse(sut.canVerify)
+    }
+
+    func testConsentErrorMessage() {
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        sut.consentForMobile360 = false
+
+        XCTAssertNotNil(sut.consentErrorMessage)
+        XCTAssertEqual(sut.consentErrorMessage, "Please allow identity verification to continue")
+    }
+
+    func testConsentErrorMessage_WhenOTPIncomplete() {
+        sut.otpDigits = ["1", "2", "", "", "", ""]
+        sut.consentForMobile360 = false
+
+        // Error should only show when OTP is complete
+        XCTAssertNil(sut.consentErrorMessage)
+    }
+
+    // MARK: - State Management Tests
+
+    func testTypingClearsError() async {
+        // Given - Trigger error via API (incomplete OTP verification)
+        sut.otpDigits = ["1", "2", "3", "", "", ""]  // Incomplete
+        _ = await sut.verifyOTP()
+        XCTAssertNotNil(sut.errorMessage)
+
+        // When
+        sut.otpDigits = ["1", "", "", "", "", ""]
+
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.errorMessage)
+    }
+
+    func testReset() async {
+        // Given - Trigger error via API
+        sut.otpDigits = ["1", "2", "3", "", "", ""]  // Incomplete
+        _ = await sut.verifyOTP()
+        XCTAssertNotNil(sut.errorMessage)
+
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]  // Set some digits
+
+        // When
+        sut.reset()
+
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(sut.otpDigits, ["", "", "", "", "", ""])
+    }
+
+    // MARK: - Computed Properties Tests
+
+    func testAuthResult() async {
+        // Given - Verify OTP successfully to get authResult
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = true
+        mockAuthService.mockAuthResult = AuthResult(
+            success: true,
+            data: AuthResult.AuthResultData(
+                userId: "test-id",
+                isNewUser: true,
+                consentVerificationId: nil,
+                consentStatus: nil,
+                message: "OK",
+                nextSteps: nil
+            ),
+            error: nil
         )
 
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: mockAuth)
-        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        _ = await sut.verifyOTP()
 
-        _ = await vm.verifyOTP()
-        let nextRoute = vm.determineNextRoute()
-
-        #expect(nextRoute == .nameVerification)
+        // Then
+        XCTAssertNotNil(sut.authResult)
+        XCTAssertTrue(sut.authResult!.success)
     }
 
-    @Test("Existing user goes to name verification")
-    @MainActor
-    func existingUserGoesToNameVerification() async {
-        let mockAuth = MockAuthService()
-        mockAuth.mockAuthResult = .testSuccess(
-            userId: "test-user-id",
-            isNewUser: false,
-            consentVerificationId: "test-consent-id",
-            consentStatus: "CONSENT_GIVEN",
-            message: "Welcome back!",
-            nextSteps: ["profile_completion"]
+    func testAuthResult_WhenNotVerified() {
+        // Initially - no auth result
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.authResult)
+    }
+
+    // MARK: - Route Determination Tests
+
+    func testDetermineNextRoute_NewUser() async {
+        // Given - Verify OTP successfully as new user
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = true
+        mockAuthService.mockAuthResult = AuthResult(
+            success: true,
+            data: AuthResult.AuthResultData(
+                userId: "test-id",
+                isNewUser: true,
+                consentVerificationId: nil,
+                consentStatus: nil,
+                message: "OK",
+                nextSteps: nil
+            ),
+            error: nil
         )
 
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: mockAuth)
-        vm.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        _ = await sut.verifyOTP()
 
-        _ = await vm.verifyOTP()
-        let nextRoute = vm.determineNextRoute()
+        // When
+        let route = sut.determineNextRoute()
 
-        // Current implementation routes all users to name verification
-        // App coordinator will determine final routing based on user profile
-        #expect(nextRoute == .nameVerification)
+        // Then
+        XCTAssertEqual(route, .nameVerification)
     }
 
-    @Test("No route when auth result is nil")
-    @MainActor
-    func noRouteWhenAuthResultNil() async {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-
-        let nextRoute = vm.determineNextRoute()
-
-        #expect(nextRoute == nil)
-    }
-
-    // MARK: - State Management
-
-    @Test("Error clears when OTP changes")
-    @MainActor
-    func errorClearsOnOTPChange() async {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-
-        // Set incomplete OTP - verifyOTP will set error without calling clearOTP
-        vm.otpDigits = ["1", "2", "3", "", "", ""]
-
-        // Trigger error state through incomplete OTP verification
-        _ = await vm.verifyOTP()
-        #expect(vm.errorMessage == "Please enter the complete 6-digit code")
-
-        // Now change OTP digit - should clear error
-        vm.otpDigits[3] = "4"
-
-        #expect(vm.errorMessage == nil)
-    }
-
-    @Test("Reset clears all state")
-    @MainActor
-    func resetClearsState() async {
-        let vm = OTPVerificationViewModel(phone: "+919876543210", authService: MockAuthService())
-
-        // Set incomplete OTP - verifyOTP will set error without calling clearOTP
-        vm.otpDigits = ["1", "2", "3", "", "", ""]
-
-        // Trigger error state
-        _ = await vm.verifyOTP()
-        #expect(vm.errorMessage != nil)
-
-        // Reset should clear everything
-        vm.reset()
-
-        #expect(vm.otpDigits == Array(repeating: "", count: 6))
-        #expect(vm.errorMessage == nil)
-    }
-
-    // MARK: - AuthResult Data Access
-
-    @Test("AuthResult provides userId through computed property")
-    func authResultProvidesUserId() {
-        let result = AuthResult.testSuccess(userId: "user-123")
-
-        #expect(result.userId == "user-123")
-        #expect(result.isNewUser == false)
-    }
-
-    @Test("AuthResult handles missing data gracefully")
-    func authResultHandlesMissingData() {
-        let result = AuthResult.testFailure(error: "Some error")
-
-        #expect(result.userId == nil)
-        #expect(result.isNewUser == false)
-    }
-
-    @Test("AuthResult preserves consent information")
-    func authResultPreservesConsentInfo() {
-        let result = AuthResult.testSuccess(
-            userId: "user-456",
-            isNewUser: true,
-            consentVerificationId: "consent-789",
-            consentStatus: "pending",
-            nextSteps: ["verify_email", "upload_documents"]
+    func testDetermineNextRoute_ExistingUser() async {
+        // Given - Verify OTP successfully as existing user
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = true
+        mockAuthService.mockAuthResult = AuthResult(
+            success: true,
+            data: AuthResult.AuthResultData(
+                userId: "test-id",
+                isNewUser: false,
+                consentVerificationId: nil,
+                consentStatus: nil,
+                message: "OK",
+                nextSteps: nil
+            ),
+            error: nil
         )
 
-        #expect(result.data?.consentVerificationId == "consent-789")
-        #expect(result.data?.consentStatus == "pending")
-        #expect(result.data?.nextSteps == ["verify_email", "upload_documents"])
+        _ = await sut.verifyOTP()
+
+        // When
+        let route = sut.determineNextRoute()
+
+        // Then
+        XCTAssertEqual(route, .nameVerification)
+    }
+
+    func testDetermineNextRoute_NoAuthResult() {
+        // Initially - no auth result
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.determineNextRoute())
+    }
+
+    // MARK: - Edge Cases
+
+    func testVerifyWithServerError() async {
+        // Given
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = false
+        mockAuthService.errorToThrow = .serverError("Internal server error")
+
+        // When
+        let result = await sut.verifyOTP()
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertNotNil(sut.errorMessage)
+    }
+
+    func testMultipleVerificationAttempts() async {
+        // First attempt - failure
+        sut.otpDigits = ["1", "2", "3", "4", "5", "6"]
+        mockAuthService.shouldSucceed = false
+        mockAuthService.errorToThrow = .invalidOTP
+
+        _ = await sut.verifyOTP()
+
+        XCTAssertEqual(sut.otpDigits, ["", "", "", "", "", ""])  // Should be cleared
+
+        // Second attempt - success
+        sut.otpDigits = ["5", "6", "7", "8", "9", "0"]
+        mockAuthService.shouldSucceed = true
+        mockAuthService.errorToThrow = nil
+        mockAuthService.reset()
+
+        let result = await sut.verifyOTP()
+
+        XCTAssertNotNil(result)
+        XCTAssertTrue(result!.success)
     }
 }

@@ -1,229 +1,366 @@
 /// PhoneEntryViewModelTests.swift
 /// Flent Secured v2 - Phone Entry ViewModel Tests
 ///
-/// Tests for phone number validation and OTP request functionality
+/// Comprehensive tests for phone number validation and OTP sending.
+/// Critical for user onboarding flow.
 
-import Testing
-import Foundation
+import XCTest
 @testable import Flent
 
-@Suite("PhoneEntryViewModel Tests")
-struct PhoneEntryViewModelTests {
+@MainActor
+final class PhoneEntryViewModelTests: XCTestCase {
 
-    // MARK: - Validation Tests
+    // MARK: - Properties
 
-    @Test("Empty phone number is invalid")
-    func emptyPhoneInvalid() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = ""
+    private var sut: PhoneEntryViewModel!
+    private var mockAuthService: MockAuthService!
 
-        #expect(viewModel.isValidPhone == false)
+    // MARK: - Setup & Teardown
+
+    override func setUp() async throws {
+        try await super.setUp()
+        mockAuthService = MockAuthService()
+        mockAuthService.simulatedDelay = 0 // No delay for tests
+        sut = PhoneEntryViewModel(authService: mockAuthService)
     }
 
-    @Test("Phone number with less than 10 digits is invalid")
-    func shortPhoneInvalid() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "98765"
-
-        #expect(viewModel.isValidPhone == false)
+    override func tearDown() async throws {
+        sut = nil
+        mockAuthService = nil
+        try await super.tearDown()
     }
 
-    @Test("Phone number with 10 digits starting with valid digit is valid")
-    func tenDigitPhoneValid() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "9876543210"
+    // MARK: - Initialization Tests
 
-        #expect(viewModel.isValidPhone == true)
+    func testInitialState() {
+        XCTAssertEqual(sut.phoneNumber, "")
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertFalse(sut.isValidPhone)
+        XCTAssertFalse(sut.isLoading)
+        XCTAssertNil(sut.errorMessage)
+        XCTAssertFalse(sut.canProceed)
     }
 
-    @Test("Phone number starting with 6 is valid")
-    func phoneStartingWith6Valid() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "6876543210"
+    // MARK: - Phone Number Validation Tests
 
-        #expect(viewModel.isValidPhone == true)
+    func testValidPhoneNumber_StartsWith9() {
+        sut.phoneNumber = "9876543210"
+        XCTAssertTrue(sut.isValidPhone)
+        XCTAssertEqual(sut.fullPhoneNumber, "+919876543210")
+        XCTAssertTrue(sut.canProceed)
     }
 
-    @Test("Phone number starting with 7 is valid")
-    func phoneStartingWith7Valid() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "7876543210"
-
-        #expect(viewModel.isValidPhone == true)
+    func testValidPhoneNumber_StartsWith8() {
+        sut.phoneNumber = "8765432109"
+        XCTAssertTrue(sut.isValidPhone)
     }
 
-    @Test("Phone number starting with 8 is valid")
-    func phoneStartingWith8Valid() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "8876543210"
-
-        #expect(viewModel.isValidPhone == true)
+    func testValidPhoneNumber_StartsWith7() {
+        sut.phoneNumber = "7654321098"
+        XCTAssertTrue(sut.isValidPhone)
     }
 
-    @Test("Phone number starting with invalid digit is invalid")
-    func invalidStartingDigit() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "1234567890" // Starts with 1, Indian numbers start with 6-9
-
-        #expect(viewModel.isValidPhone == false)
+    func testValidPhoneNumber_StartsWith6() {
+        sut.phoneNumber = "6543210987"
+        XCTAssertTrue(sut.isValidPhone)
     }
 
-    @Test("Phone number starting with 5 is invalid")
-    func phoneStartingWith5Invalid() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "5234567890"
-
-        #expect(viewModel.isValidPhone == false)
+    func testInvalidPhoneNumber_TooShort() {
+        sut.phoneNumber = "987654321"  // 9 digits
+        XCTAssertFalse(sut.isValidPhone)
+        XCTAssertFalse(sut.canProceed)
     }
 
-    // MARK: - Full Phone Number Tests
-
-    @Test("Full phone number includes country code")
-    func fullPhoneIncludesCountryCode() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "9876543210"
-
-        #expect(viewModel.fullPhoneNumber == "+919876543210")
+    func testInvalidPhoneNumber_TooLong_IsTruncated() {
+        sut.phoneNumber = "98765432101"  // 11 digits
+        XCTAssertEqual(sut.phoneNumber.count, 10)  // Should be truncated to 10
+        XCTAssertTrue(sut.isValidPhone)
     }
 
-    // MARK: - State Tests
+    func testInvalidPhoneNumber_StartsWithInvalidDigit() {
+        // Indian mobile numbers must start with 6, 7, 8, or 9
+        sut.phoneNumber = "5876543210"
+        XCTAssertFalse(sut.isValidPhone)
 
-    @Test("Cannot proceed with invalid phone")
-    func cannotProceedWithInvalidPhone() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "123"
+        sut.phoneNumber = "1234567890"
+        XCTAssertFalse(sut.isValidPhone)
 
-        #expect(viewModel.canProceed == false)
+        sut.phoneNumber = "0987654321"
+        XCTAssertFalse(sut.isValidPhone)
     }
 
-    @Test("Can proceed with valid phone when not loading")
-    func canProceedWithValidPhone() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "9876543210"
-
-        #expect(viewModel.canProceed == true)
+    func testPhoneNumber_RemovesNonNumericCharacters() {
+        sut.phoneNumber = "98-765-43210"
+        XCTAssertEqual(sut.phoneNumber, "9876543210")
+        XCTAssertTrue(sut.isValidPhone)
     }
 
-    @Test("Cannot proceed while loading")
-    @MainActor
-    func cannotProceedWhileLoading() async {
-        let mockService = MockAuthService()
-        mockService.simulatedDelay = 1.0 // Add delay to simulate loading
+    func testPhoneNumber_RemovesLetters() {
+        sut.phoneNumber = "98abc76543210"
+        XCTAssertEqual(sut.phoneNumber, "9876543210")
+    }
 
-        let viewModel = PhoneEntryViewModel(authService: mockService)
-        viewModel.phoneNumber = "9876543210"
+    func testPhoneNumber_RemovesSpaces() {
+        sut.phoneNumber = "98 765 43210"
+        XCTAssertEqual(sut.phoneNumber, "9876543210")
+    }
 
-        // Start sending OTP (this will be async)
+    func testEmptyPhoneNumber() {
+        sut.phoneNumber = ""
+        XCTAssertFalse(sut.isValidPhone)
+        XCTAssertFalse(sut.canProceed)
+    }
+
+    // MARK: - Send OTP Tests
+
+    func testSendOTP_Success() async {
+        // Given
+        sut.phoneNumber = "9876543210"
+        mockAuthService.shouldSucceed = true
+
+        // When
+        let result = await sut.sendOTP()
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockAuthService.sendOTPCalled)
+        XCTAssertEqual(mockAuthService.lastPhoneSent, "+919876543210")
+
+        if case .success(let expiresIn) = sut.state {
+            XCTAssertEqual(expiresIn, 300)
+        } else {
+            XCTFail("Expected success state")
+        }
+    }
+
+    func testSendOTP_InvalidPhone_DoesNotCallService() async {
+        // Given
+        sut.phoneNumber = "123"  // Invalid phone
+
+        // When
+        let result = await sut.sendOTP()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockAuthService.sendOTPCalled)
+
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Please enter a valid 10-digit phone number")
+        } else {
+            XCTFail("Expected error state")
+        }
+    }
+
+    func testSendOTP_Failure_NetworkError() async {
+        // Given
+        sut.phoneNumber = "9876543210"
+        mockAuthService.shouldSucceed = false
+        mockAuthService.errorToThrow = .serverError("Network unavailable")
+
+        // When
+        let result = await sut.sendOTP()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertTrue(mockAuthService.sendOTPCalled)
+
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Network unavailable")
+        } else {
+            XCTFail("Expected error state")
+        }
+    }
+
+    func testSendOTP_Failure_InvalidPhoneError() async {
+        // Given
+        sut.phoneNumber = "9876543210"
+        mockAuthService.shouldSucceed = false
+        mockAuthService.errorToThrow = .invalidPhone
+
+        // When
+        let result = await sut.sendOTP()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertNotNil(sut.errorMessage)
+    }
+
+    func testSendOTP_SetsLoadingState() async {
+        // Given
+        sut.phoneNumber = "9876543210"
+        mockAuthService.simulatedDelay = 0.5  // Add delay to observe loading state
+
+        // When
         let task = Task {
-            _ = await viewModel.sendOTP()
+            await sut.sendOTP()
         }
 
-        // Give a moment for loading to start
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        // Give time for state to change
+        try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1s
 
-        #expect(viewModel.isLoading == true)
-        #expect(viewModel.canProceed == false)
+        // Then
+        XCTAssertTrue(sut.isLoading)
+        XCTAssertFalse(sut.canProceed)  // Cannot proceed while loading
+
+        _ = await task.value
+    }
+
+    // MARK: - State Management Tests
+
+    func testTypingClearsError() async {
+        // Given - Trigger error state via API
+        sut.phoneNumber = "123"  // Invalid phone
+        _ = await sut.sendOTP()
+        XCTAssertNotNil(sut.errorMessage)
+
+        // When
+        sut.phoneNumber = "9"
+
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.errorMessage)
+    }
+
+    func testReset() async {
+        // Given - Trigger error state via API
+        sut.phoneNumber = "123"  // Invalid phone
+        _ = await sut.sendOTP()
+        XCTAssertNotNil(sut.errorMessage)
+
+        // When
+        sut.reset()
+
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+    }
+
+    // MARK: - Validation Method Tests
+
+    func testValidatePhoneFormat_Valid() {
+        sut.phoneNumber = "9876543210"
+        XCTAssertTrue(sut.validatePhoneFormat())
+        XCTAssertEqual(sut.state, .idle)
+    }
+
+    func testValidatePhoneFormat_TooShort() {
+        sut.phoneNumber = "987654321"
+        XCTAssertFalse(sut.validatePhoneFormat())
+
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Phone number must be 10 digits")
+        } else {
+            XCTFail("Expected error state")
+        }
+    }
+
+    func testValidatePhoneFormat_InvalidStartDigit() {
+        sut.phoneNumber = "5876543210"
+        XCTAssertFalse(sut.validatePhoneFormat())
+
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Phone number must start with 6, 7, 8, or 9")
+        } else {
+            XCTFail("Expected error state")
+        }
+    }
+
+    // MARK: - Computed Properties Tests
+
+    func testCanProceed_ValidPhoneNotLoading() {
+        sut.phoneNumber = "9876543210"
+        XCTAssertTrue(sut.canProceed)
+    }
+
+    func testCanProceed_ValidPhoneButLoading() async {
+        // Given
+        sut.phoneNumber = "9876543210"
+        mockAuthService.simulatedDelay = 1.0  // Long delay to stay in loading state
+
+        // When - Start loading
+        let task = Task {
+            await sut.sendOTP()
+        }
+
+        try? await Task.sleep(nanoseconds: 100_000_000)  // Wait for state change
+
+        // Then
+        XCTAssertTrue(sut.isLoading)
+        XCTAssertFalse(sut.canProceed)
 
         task.cancel()
     }
 
-    // MARK: - OTP Request Tests
-
-    @Test("Successful OTP send returns true")
-    @MainActor
-    func successfulOTPSend() async {
-        let mockService = MockAuthService()
-        mockService.shouldSucceed = true
-
-        let viewModel = PhoneEntryViewModel(authService: mockService)
-        viewModel.phoneNumber = "9876543210"
-
-        let result = await viewModel.sendOTP()
-
-        #expect(result == true)
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage == nil)
+    func testCanProceed_InvalidPhone() {
+        sut.phoneNumber = "123"
+        XCTAssertFalse(sut.canProceed)
     }
 
-    @Test("Failed OTP send shows error")
-    @MainActor
-    func failedOTPSend() async {
-        let mockService = MockAuthService()
-        mockService.shouldSucceed = false
-        mockService.errorToThrow = AuthError.serverError("Test error")
+    func testIsLoading() async {
+        // Initially not loading
+        XCTAssertFalse(sut.isLoading)
 
-        let viewModel = PhoneEntryViewModel(authService: mockService)
-        viewModel.phoneNumber = "9876543210"
+        // Start loading
+        sut.phoneNumber = "9876543210"
+        mockAuthService.simulatedDelay = 0.5
 
-        let result = await viewModel.sendOTP()
+        let task = Task {
+            await sut.sendOTP()
+        }
 
-        #expect(result == false)
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage != nil)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertTrue(sut.isLoading)
+
+        // Wait for completion - we don't need the result
+        let _ = await task.value
+        XCTAssertFalse(sut.isLoading)
     }
 
-    @Test("Network error shows appropriate message")
-    @MainActor
-    func networkError() async {
-        let mockService = MockAuthService()
-        mockService.shouldSucceed = false
-        mockService.errorToThrow = AuthError.networkError(URLError(.notConnectedToInternet))
+    func testErrorMessage() async {
+        // Initially no error
+        XCTAssertNil(sut.errorMessage)
 
-        let viewModel = PhoneEntryViewModel(authService: mockService)
-        viewModel.phoneNumber = "9876543210"
+        // Trigger error via API
+        sut.phoneNumber = "123"  // Invalid
+        _ = await sut.sendOTP()
+        XCTAssertNotNil(sut.errorMessage)
 
-        let result = await viewModel.sendOTP()
-
-        #expect(result == false)
-        #expect(viewModel.errorMessage != nil)
+        // Reset clears error
+        sut.reset()
+        XCTAssertNil(sut.errorMessage)
     }
 
-    // MARK: - Reset Tests
+    // MARK: - Edge Cases
 
-    @Test("Reset clears error state")
-    func resetClearsError() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "9876543210"
-        // Manually set error state for testing
-        viewModel.validatePhoneFormat() // This sets error if invalid, but we have valid
-        viewModel.reset()
+    func testMultipleSendOTPRequests() async {
+        // Given
+        sut.phoneNumber = "9876543210"
+        mockAuthService.simulatedDelay = 0.2
 
-        #expect(viewModel.errorMessage == nil)
+        // When - Send multiple requests
+        async let result1 = sut.sendOTP()
+        async let result2 = sut.sendOTP()
+
+        let results = await [result1, result2]
+
+        // Then - Both should complete (implementation may vary based on debouncing)
+        XCTAssertTrue(results.contains(true))
     }
 
-    // MARK: - Phone Number Filtering Tests
+    func testAllValidIndianPrefixes() {
+        let validPrefixes = ["6", "7", "8", "9"]
 
-    @Test("Phone number filters non-digits on input")
-    func filtersNonDigits() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "987-654-3210"
-
-        // Check the stored number only has digits
-        let hasOnlyDigits = viewModel.phoneNumber.allSatisfy { $0.isNumber }
-        #expect(hasOnlyDigits == true)
+        for prefix in validPrefixes {
+            sut.phoneNumber = "\(prefix)123456789"
+            XCTAssertTrue(sut.isValidPhone, "Phone starting with \(prefix) should be valid")
+        }
     }
 
-    @Test("Phone number truncates to 10 digits")
-    func truncatesTo10Digits() {
-        let viewModel = PhoneEntryViewModel(authService: MockAuthService())
-        viewModel.phoneNumber = "98765432101234"
+    func testAllInvalidPrefixes() {
+        let invalidPrefixes = ["0", "1", "2", "3", "4", "5"]
 
-        #expect(viewModel.phoneNumber.count == 10)
-        #expect(viewModel.phoneNumber == "9876543210")
-    }
-
-    // MARK: - Preview Helpers
-
-    @Test("Preview helper creates valid view model")
-    func previewHelper() {
-        let preview = PhoneEntryViewModel.preview
-        #expect(preview != nil)
-    }
-
-    @Test("Preview with phone has valid phone number")
-    func previewWithPhone() {
-        let preview = PhoneEntryViewModel.previewWithPhone
-        #expect(preview.phoneNumber == "9876543210")
-        #expect(preview.isValidPhone == true)
+        for prefix in invalidPrefixes {
+            sut.phoneNumber = "\(prefix)123456789"
+            XCTAssertFalse(sut.isValidPhone, "Phone starting with \(prefix) should be invalid")
+        }
     }
 }

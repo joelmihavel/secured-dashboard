@@ -11,6 +11,7 @@ import Observation
 
 // MARK: - Payment Methods ViewModel
 
+@MainActor
 @Observable
 final class PaymentMethodsViewModel {
 

@@ -212,9 +212,18 @@ serve(async (req: Request) => {
     }
 
     // CRITICAL SECURITY CHECK: Verify amount matches initiated payment
+    // BUG FIX: Use integer comparison in paise to avoid floating-point precision issues
+    // PayU sends amount in rupees with decimals (e.g., "50000.00")
+    const initiatedAmountPaise = payment.total_amount_paise;
+    // Parse webhook amount carefully: multiply by 100 and round to handle floating-point
+    const webhookAmountPaise = Math.round(parseFloat(payload.amount) * 100);
+
+    // Also keep string comparison for logging purposes
     const initiatedAmountRupees = (payment.total_amount_paise / 100).toFixed(2);
-    const webhookAmountRupees = parseFloat(payload.amount).toFixed(2);
-    if (initiatedAmountRupees !== webhookAmountRupees) {
+    const webhookAmountRupees = (webhookAmountPaise / 100).toFixed(2);
+
+    // Compare in paise (integers) for accuracy
+    if (initiatedAmountPaise !== webhookAmountPaise) {
       console.error(`[SECURITY] Amount mismatch for payment ${payment.id}:`, {
         initiated: initiatedAmountRupees,
         webhook: webhookAmountRupees,

@@ -12,6 +12,7 @@ import UIKit
 
 // MARK: - Invite Landlord ViewModel
 
+@MainActor
 @Observable
 final class InviteLandlordViewModel {
 

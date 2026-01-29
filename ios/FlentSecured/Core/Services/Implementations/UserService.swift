@@ -24,16 +24,32 @@ final class UserService: UserServiceProtocol {
     // MARK: - UserServiceProtocol
 
     func getCurrentUser() async throws -> UserProfileData {
-        guard await supabase.checkIsAuthenticated() else {
+        let isAuth = await supabase.checkIsAuthenticated()
+        print("[UserService] getCurrentUser - isAuthenticated: \(isAuth)")
+
+        guard isAuth else {
+            print("[UserService] getCurrentUser - NOT AUTHENTICATED, throwing error")
             throw UserServiceError.notAuthenticated
         }
 
         guard let userId = await supabase.getCurrentUserId() else {
+            print("[UserService] getCurrentUser - No userId available")
             throw UserServiceError.notAuthenticated
+        }
+
+        print("[UserService] getCurrentUser - userId: \(userId.uuidString)")
+
+        // Check if we have a valid session with access token - access client directly
+        if let session = try? await supabase.client.auth.session {
+            print("[UserService] getCurrentUser - session exists, accessToken prefix: \(String(session.accessToken.prefix(20)))...")
+            print("[UserService] getCurrentUser - session user id: \(session.user.id)")
+        } else {
+            print("[UserService] getCurrentUser - WARNING: No session available!")
         }
 
         do {
             // Try to get existing user
+            print("[UserService] getCurrentUser - Querying users table for id: \(userId.uuidString)")
             let users: [UserProfileData] = try await supabase.client
                 .from("users")
                 .select()
@@ -42,16 +58,21 @@ final class UserService: UserServiceProtocol {
                 .execute()
                 .value
 
+            print("[UserService] getCurrentUser - Query returned \(users.count) users")
+
             if let user = users.first {
+                print("[UserService] getCurrentUser - Found user: \(user.id)")
                 return user
             }
 
             // User doesn't exist in public.users table - create one
             // This happens when user signs up via Supabase Auth directly
+            print("[UserService] getCurrentUser - User not found, attempting to create")
             let phone = await supabase.currentUser?.phone
             let newUser = try await createUserRecord(userId: userId, phone: phone)
             return newUser
         } catch {
+            print("[UserService] getCurrentUser - ERROR: \(error)")
             throw mapError(error)
         }
     }

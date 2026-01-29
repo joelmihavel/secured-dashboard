@@ -103,12 +103,12 @@ final class AppCoordinator {
 
         // Check user status
         guard let userStatus = appState.userStatus else {
-            return .phoneEntry
+            return .phoneEntry()
         }
 
         switch userStatus {
         case .unknown, .signedUp:
-            return .phoneEntry
+            return .phoneEntry()
 
         case .waitlisted:
             return .waitlist
@@ -137,13 +137,19 @@ final class AppCoordinator {
 
 // MARK: - Route
 
+/// Authentication intent passed from splash to phone entry
+enum AuthIntent: Hashable, Sendable {
+    case signup
+    case login
+}
+
 /// Type-safe navigation routes
 enum Route: Hashable {
 
     // MARK: - Splash & Auth
 
     case splash
-    case phoneEntry
+    case phoneEntry(authIntent: AuthIntent = .signup)
     case otpVerification(phone: String)
 
     // MARK: - Onboarding
@@ -152,6 +158,8 @@ enum Route: Hashable {
     case agreementUpload
     case agreementReview(extractionId: String)
     case waitlist  // View manages its own state via WaitlistViewModel
+    case postApprovalStep1
+    case postApprovalStep2
 
     // MARK: - Setup
 
@@ -164,10 +172,11 @@ enum Route: Hashable {
 
     case home(state: HomeState)
     case payment
+    case paymentTransaction(tenancyId: String, rentAmountPaise: Int)
     case paymentMethods
     case paymentSummary(paymentId: String)
     case paymentProcessing(paymentId: String)
-    case paymentResult(paymentId: String, success: Bool)
+    case paymentResult(paymentId: String, success: Bool, refunded: Bool = false)
 
     // MARK: - Transactions
 
@@ -183,6 +192,9 @@ enum Route: Hashable {
     case helpFAQ
     case settings
     case referral
+    case linkedLandlord
+    case landlordBankAccount
+    case agreementDetails
 }
 
 // MARK: - Screen States
@@ -252,13 +264,45 @@ enum WaitlistState: Hashable {
 }
 
 /// Home screen states
+/// Figma: 20 states total across Empty, Active, Payment Issue, and Invitation categories
 enum HomeState: Hashable {
-    case zeroState             // Setup incomplete
-    case activeQualified       // QUALIFIED user (UPI/NetBanking only)
-    case activeComplete        // COMPLETE user (all methods)
-    case latePayment           // After 7th, no cashback
-    case missedPayment         // Overdue
+    // MARK: - Empty States (Pre-Verification) - 9 states
+    case zeroState                          // 41:4569 - Base empty state, setup incomplete
+    case setupPaymentUPI                    // 41:3186 - Setup payment with UPI focus
+    case setupPayment                       // 41:7005 - Setup payment methods
+    case emptyWithUPIPayments               // 41:5792 - Has UPI, has payments
+    case emptyWithUPIPaid                   // 41:5998 - Has UPI, paid rent
+    case emptyWithUPINoPayments             // 41:6204 - Has UPI, no payments
+    case emptyWithCashback                  // 41:6385 - Has UPI, has cashback
+    case emptyWithCashbackPaid              // 41:6598 - Has UPI, cashback, paid
+    case emptyNoCashback                    // 41:6811 - Has UPI, no cashback
+
+    // MARK: - Active States (Post-Verification) - 4 states
+    case activeQualified                    // 41:3267, 41:7246 - QUALIFIED user (UPI/NetBanking only)
+    case activeComplete                     // 41:3472, 41:7460 - COMPLETE user (all methods)
+
+    // MARK: - Payment Issue States - 3 states
+    case latePayment                        // 41:3677 - After due date, before 7th (yellow warning)
+    case missedPayment                      // 41:3885 - After 7th, overdue (red error)
+    case multipleMissedPayments(months: Int, totalAmount: Double) // 41:4093 - Multiple months overdue
+
+    // MARK: - Paid State
     case paidThisMonth(settlementStatus: SettlementStatus)
+
+    // MARK: - Landlord Invitation States - 5 states (shown as overlay cards in zeroState)
+    // These are handled via LandlordInvitationStatus in HomeViewModel
+}
+
+/// Landlord invitation UI substates (shown within zeroState)
+/// Figma: 41:4765, 41:4969, 41:5175, 41:5381, 41:5587
+enum LandlordInvitationUIState: Hashable {
+    case notSent                            // No invitation sent yet
+    case sent                               // 41:4765 - Just sent
+    case pendingUnder24hrs(hoursRemaining: Int)  // 41:4969 - Resent <24hrs, cooldown active
+    case pendingOver24hrs(daysSinceSent: Int)    // 41:5175 - Resent >24hrs, can resend
+    case failed(reason: String)             // 41:5381 - Send/resend failed
+    case declined                           // 41:5587 - Landlord declined
+    case accepted                           // Landlord accepted (transition to active)
 }
 
 // Note: SettlementStatus is defined in Core/Services/Protocols/PaymentServiceProtocol.swift
@@ -269,22 +313,25 @@ extension Route: Identifiable {
     var id: String {
         switch self {
         case .splash: return "splash"
-        case .phoneEntry: return "phoneEntry"
+        case .phoneEntry(let intent): return "phoneEntry-\(intent)"
         case .otpVerification(let phone): return "otp-\(phone)"
         case .nameVerification: return "nameVerification"
         case .agreementUpload: return "agreementUpload"
         case .agreementReview(let id): return "agreementReview-\(id)"
         case .waitlist: return "waitlist"
+        case .postApprovalStep1: return "postApprovalStep1"
+        case .postApprovalStep2: return "postApprovalStep2"
         case .pendingSteps: return "pendingSteps"
         case .addBank: return "addBank"
         case .addUtility: return "addUtility"
         case .inviteLandlord: return "inviteLandlord"
         case .home(let state): return "home-\(state)"
         case .payment: return "payment"
+        case .paymentTransaction(let tenancyId, _): return "paymentTransaction-\(tenancyId)"
         case .paymentMethods: return "paymentMethods"
         case .paymentSummary(let id): return "paymentSummary-\(id)"
         case .paymentProcessing(let id): return "paymentProcessing-\(id)"
-        case .paymentResult(let id, let success): return "paymentResult-\(id)-\(success)"
+        case .paymentResult(let id, let success, let refunded): return "paymentResult-\(id)-\(success)-\(refunded)"
         case .transactions: return "transactions"
         case .transactionDetail(let id): return "transactionDetail-\(id)"
         case .profile: return "profile"
@@ -294,6 +341,9 @@ extension Route: Identifiable {
         case .helpFAQ: return "helpFAQ"
         case .settings: return "settings"
         case .referral: return "referral"
+        case .linkedLandlord: return "linkedLandlord"
+        case .landlordBankAccount: return "landlordBankAccount"
+        case .agreementDetails: return "agreementDetails"
         }
     }
 }

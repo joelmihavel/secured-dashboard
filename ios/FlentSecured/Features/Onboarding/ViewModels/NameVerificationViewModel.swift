@@ -11,6 +11,7 @@ import Observation
 
 // MARK: - Name Verification ViewModel
 
+@MainActor
 @Observable
 final class NameVerificationViewModel {
 

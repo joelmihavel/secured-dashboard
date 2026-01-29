@@ -9,6 +9,7 @@ import Observation
 
 // MARK: - Phone Entry ViewModel
 
+@MainActor
 @Observable
 final class PhoneEntryViewModel {
 

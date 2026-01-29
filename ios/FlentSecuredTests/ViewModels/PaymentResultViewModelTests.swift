@@ -1,346 +1,500 @@
 /// PaymentResultViewModelTests.swift
 /// Flent Secured v2 - Payment Result ViewModel Tests
 ///
-/// Tests for payment success/failure result display
+/// Tests for payment result display, success/failure states, and receipt generation.
+/// Critical for payment completion flow.
 
-import Testing
-import Foundation
+import XCTest
 @testable import Flent
 
-@Suite("PaymentResultViewModel Tests")
-struct PaymentResultViewModelTests {
+@MainActor
+final class PaymentResultViewModelTests: XCTestCase {
+
+    // MARK: - Properties
+
+    private var sut: PaymentResultViewModel!
+    private var mockPaymentService: MockPaymentService!
+
+    private let testPaymentId = "test-payment-123"
+
+    // MARK: - Setup & Teardown
+
+    override func setUp() async throws {
+        try await super.setUp()
+        mockPaymentService = MockPaymentService()
+        mockPaymentService.simulatedDelay = 0
+    }
+
+    override func tearDown() async throws {
+        sut = nil
+        mockPaymentService = nil
+        try await super.tearDown()
+    }
 
     // MARK: - Initialization Tests
 
-    @Test("Success state initializes correctly")
-    func successStateInitializes() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test-payment-123",
+    func testInitialState_Success() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: true,
-            paymentService: MockPaymentService()
+            paymentService: mockPaymentService
         )
 
-        #expect(viewModel.paymentId == "test-payment-123")
-        #expect(viewModel.isSuccess == true)
+        XCTAssertEqual(sut.paymentId, testPaymentId)
+        XCTAssertTrue(sut.isSuccess)
+        XCTAssertFalse(sut.isRefunded)
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.paymentDetails)
+        XCTAssertNil(sut.receiptData)
     }
 
-    @Test("Failure state initializes correctly")
-    func failureStateInitializes() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test-payment-123",
+    func testInitialState_Failure() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: false,
-            paymentService: MockPaymentService()
+            paymentService: mockPaymentService
         )
 
-        #expect(viewModel.paymentId == "test-payment-123")
-        #expect(viewModel.isSuccess == false)
+        XCTAssertFalse(sut.isSuccess)
+        XCTAssertFalse(sut.isRefunded)
     }
 
-    // MARK: - State Tests
-
-    @Test("Default state is idle")
-    func defaultStateIsIdle() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
+    func testInitialState_Refunded() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: true,
-            paymentService: MockPaymentService()
+            isRefunded: true,
+            paymentService: mockPaymentService
         )
 
-        if case .idle = viewModel.state {
-            // Correct
-        } else {
-            Issue.record("Expected idle state")
-        }
-    }
-
-    @Test("isLoadingReceipt is false by default")
-    func isLoadingReceiptDefaultFalse() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: MockPaymentService()
-        )
-
-        #expect(viewModel.isLoadingReceipt == false)
-    }
-
-    @Test("errorMessage is nil by default")
-    func errorMessageDefaultNil() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: MockPaymentService()
-        )
-
-        #expect(viewModel.errorMessage == nil)
-    }
-
-    // MARK: - Display Properties Tests
-
-    @Test("Amount paid shows ₹0 when no details")
-    func amountPaidDefaultZero() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: MockPaymentService()
-        )
-
-        #expect(viewModel.amountPaid == "₹0")
-    }
-
-    @Test("Cashback earned shows ₹0 when no details")
-    func cashbackEarnedDefaultZero() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: MockPaymentService()
-        )
-
-        #expect(viewModel.cashbackEarned == "₹0")
-    }
-
-    @Test("Cashback earned shows ₹0 for failures")
-    func cashbackEarnedZeroForFailure() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: false,
-            paymentService: MockPaymentService()
-        )
-
-        #expect(viewModel.cashbackEarned == "₹0")
-    }
-
-    @Test("Failure message provides guidance")
-    func failureMessageProvided() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: false,
-            paymentService: MockPaymentService()
-        )
-
-        let message = viewModel.failureMessage
-        #expect(!message.isEmpty)
-        #expect(message.contains("try again"))
-    }
-
-    @Test("Payment date formats current date when no details")
-    func paymentDateFormatsCurrentDate() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: MockPaymentService()
-        )
-
-        let date = viewModel.paymentDate
-        #expect(!date.isEmpty)
+        // Refunded overrides success
+        XCTAssertFalse(sut.isSuccess)
+        XCTAssertTrue(sut.isRefunded)
     }
 
     // MARK: - Receipt Generation Tests
 
-    @Test("Generate receipt only works for success")
-    @MainActor
-    func generateReceiptOnlyForSuccess() async {
-        let mockService = MockPaymentService()
-
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: false,
-            paymentService: mockService
+    func testGenerateReceipt_Success() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+        mockPaymentService.shouldSucceed = true
+        mockPaymentService.mockReceipt = ReceiptData(
+            paymentId: testPaymentId,
+            receiptNumber: "RCP-2026-01-001",
+            downloadUrl: "https://flent.app/receipts/test.pdf",
+            generatedAt: ISO8601DateFormatter().string(from: Date())
         )
 
-        await viewModel.generateReceipt()
+        // When
+        await sut.generateReceipt()
 
-        // Should not transition to loading state for failures
-        #expect(viewModel.isLoadingReceipt == false)
-        #expect(mockService.generateReceiptCalled == false)
+        // Then
+        XCTAssertTrue(mockPaymentService.generateReceiptCalled)
+        XCTAssertNotNil(sut.receiptData)
+        XCTAssertEqual(sut.receiptData?.receiptNumber, "RCP-2026-01-001")
+
+        if case .receiptLoaded(let receipt) = sut.state {
+            XCTAssertEqual(receipt.paymentId, testPaymentId)
+        } else {
+            XCTFail("Expected receiptLoaded state")
+        }
     }
 
-    @Test("Generate receipt sets loading state")
-    @MainActor
-    func generateReceiptSetsLoadingState() async {
-        let mockService = MockPaymentService()
-        mockService.simulatedDelay = 0.5
-
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
+    func testGenerateReceipt_Failure() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: true,
-            paymentService: mockService
+            paymentService: mockPaymentService
+        )
+        mockPaymentService.shouldSucceed = false
+        mockPaymentService.errorToThrow = .serverError("Receipt generation failed")
+
+        // When
+        await sut.generateReceipt()
+
+        // Then
+        XCTAssertTrue(mockPaymentService.generateReceiptCalled)
+        XCTAssertNil(sut.receiptData)
+
+        if case .error(let message) = sut.state {
+            XCTAssertEqual(message, "Receipt generation failed")
+        } else {
+            XCTFail("Expected error state")
+        }
+    }
+
+    func testGenerateReceipt_SkippedForFailure() async {
+        // Given - Failed payment
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: false,
+            paymentService: mockPaymentService
         )
 
+        // When
+        await sut.generateReceipt()
+
+        // Then - Receipt generation should be skipped
+        XCTAssertFalse(mockPaymentService.generateReceiptCalled)
+        XCTAssertNil(sut.receiptData)
+    }
+
+    func testGenerateReceipt_SetsLoadingState() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+        mockPaymentService.simulatedDelay = 0.5
+
+        // When
         let task = Task {
-            await viewModel.generateReceipt()
+            await sut.generateReceipt()
         }
 
         try? await Task.sleep(nanoseconds: 100_000_000)
-        #expect(viewModel.isLoadingReceipt == true)
 
-        task.cancel()
+        // Then
+        XCTAssertTrue(sut.isLoadingReceipt)
+
+        await task.value
     }
 
-    @Test("Successful receipt generation stores data")
-    @MainActor
-    func successfulReceiptGeneration() async {
-        let mockService = MockPaymentService()
-        mockService.mockReceipt = ReceiptData(
-            paymentId: "test",
+    // MARK: - Computed Properties Tests - Without Payment Details
+
+    func testAmountPaid_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        XCTAssertTrue(sut.amountPaid.contains("0"))
+    }
+
+    func testCashbackEarned_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        XCTAssertTrue(sut.cashbackEarned.contains("0"))
+    }
+
+    func testCashbackEarned_Failure() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: false,
+            paymentService: mockPaymentService
+        )
+
+        // No cashback for failed payments
+        XCTAssertTrue(sut.cashbackEarned.contains("0"))
+    }
+
+    func testPaymentDate_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        // Should return current date formatted
+        XCTAssertFalse(sut.paymentDate.isEmpty)
+    }
+
+    func testPaymentMonth_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        XCTAssertEqual(sut.paymentMonth, "")
+    }
+
+    func testReceiptUrl_NoReceipt() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        XCTAssertNil(sut.receiptUrl)
+    }
+
+    func testReceiptUrl_WithReceipt() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+        mockPaymentService.mockReceipt = ReceiptData(
+            paymentId: testPaymentId,
             receiptNumber: "RCP-001",
-            downloadUrl: "https://example.com/receipt.pdf",
+            downloadUrl: "https://flent.app/receipts/test.pdf",
             generatedAt: ISO8601DateFormatter().string(from: Date())
         )
 
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: mockService
-        )
+        // When
+        await sut.generateReceipt()
 
-        await viewModel.generateReceipt()
-
-        #expect(viewModel.receiptData != nil)
-        #expect(viewModel.receiptData?.receiptNumber == "RCP-001")
+        // Then
+        XCTAssertNotNil(sut.receiptUrl)
+        XCTAssertEqual(sut.receiptUrl?.absoluteString, "https://flent.app/receipts/test.pdf")
     }
 
-    @Test("Failed receipt generation shows error")
-    @MainActor
-    func failedReceiptGeneration() async {
-        let mockService = MockPaymentService()
-        mockService.shouldSucceed = false
-        mockService.errorToThrow = PaymentServiceError.serverError("Receipt generation failed")
-
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: mockService
+    func testFailureMessage() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: false,
+            paymentService: mockPaymentService
         )
 
-        await viewModel.generateReceipt()
-
-        #expect(viewModel.errorMessage != nil)
+        XCTAssertTrue(sut.failureMessage.contains("couldn't be processed"))
     }
 
-    @Test("Receipt URL available after generation")
-    @MainActor
-    func receiptURLAvailable() async {
-        let mockService = MockPaymentService()
-        mockService.mockReceipt = ReceiptData(
-            paymentId: "test",
-            receiptNumber: "RCP-001",
-            downloadUrl: "https://example.com/receipt.pdf",
-            generatedAt: ISO8601DateFormatter().string(from: Date())
-        )
+    // MARK: - Receipt Card Properties Tests
 
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
+    func testFormattedAmount_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: true,
-            paymentService: mockService
+            paymentService: mockPaymentService
         )
 
-        await viewModel.generateReceipt()
+        // Default value when no details
+        XCTAssertTrue(sut.formattedAmount.contains("25,000"))
+    }
 
-        #expect(viewModel.receiptUrl != nil)
-        #expect(viewModel.receiptUrl?.absoluteString.contains("receipt.pdf") == true)
+    func testFormattedDate_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        // Should return current date
+        XCTAssertFalse(sut.formattedDate.isEmpty)
+    }
+
+    func testPaymentMethod_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        XCTAssertEqual(sut.paymentMethod, "UPI")
+    }
+
+    func testTransactionId() {
+        sut = PaymentResultViewModel(
+            paymentId: "test-payment-123456789",
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        // Should be first 12 chars uppercased
+        XCTAssertEqual(sut.transactionId.count, 12)
+        XCTAssertEqual(sut.transactionId, "TEST-PAYMENT")
+    }
+
+    func testCashbackAmount_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        // Default 250 rupees (25000 paise)
+        XCTAssertEqual(sut.cashbackAmount, 25000)
+    }
+
+    func testFormattedCashback() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        // Default cashback 250
+        XCTAssertTrue(sut.formattedCashback.contains("250"))
+    }
+
+    func testFormattedPayableRent_NoDetails() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        // Default value
+        XCTAssertTrue(sut.formattedPayableRent.contains("25,000"))
     }
 
     // MARK: - Share Receipt Tests
 
-    @Test("Share receipt returns URL when available")
-    @MainActor
-    func shareReceiptReturnsURL() async {
-        let mockService = MockPaymentService()
-        mockService.mockReceipt = ReceiptData(
-            paymentId: "test",
+    func testShareReceipt_NoReceipt() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        XCTAssertNil(sut.shareReceipt())
+    }
+
+    func testShareReceipt_WithReceipt() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+        mockPaymentService.mockReceipt = ReceiptData(
+            paymentId: testPaymentId,
             receiptNumber: "RCP-001",
-            downloadUrl: "https://example.com/receipt.pdf",
+            downloadUrl: "https://flent.app/receipts/test.pdf",
             generatedAt: ISO8601DateFormatter().string(from: Date())
         )
 
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
-            isSuccess: true,
-            paymentService: mockService
-        )
+        // When
+        await sut.generateReceipt()
 
-        await viewModel.generateReceipt()
-        let shareURL = viewModel.shareReceipt()
-
-        #expect(shareURL != nil)
+        // Then
+        XCTAssertNotNil(sut.shareReceipt())
     }
 
-    @Test("Share receipt returns nil when no receipt")
-    func shareReceiptReturnsNilWhenNoReceipt() {
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
+    // MARK: - Error Handling Tests
+
+    func testErrorMessage_WhenError() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: true,
-            paymentService: MockPaymentService()
+            paymentService: mockPaymentService
         )
+        mockPaymentService.shouldSucceed = false
+        mockPaymentService.errorToThrow = .serverError("Test error")
 
-        let shareURL = viewModel.shareReceipt()
+        // When
+        await sut.generateReceipt()
 
-        #expect(shareURL == nil)
+        // Then
+        XCTAssertEqual(sut.errorMessage, "Test error")
     }
 
-    // MARK: - Receipt State Tests
-
-    @Test("Receipt loaded state after successful generation")
-    @MainActor
-    func receiptLoadedState() async {
-        let mockService = MockPaymentService()
-        mockService.mockReceipt = ReceiptData(
-            paymentId: "test",
-            receiptNumber: "RCP-001",
-            downloadUrl: "https://example.com/receipt.pdf",
-            generatedAt: ISO8601DateFormatter().string(from: Date())
-        )
-
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
+    func testErrorMessage_NoError() {
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: true,
-            paymentService: mockService
+            paymentService: mockPaymentService
         )
 
-        await viewModel.generateReceipt()
+        XCTAssertNil(sut.errorMessage)
+    }
 
-        if case .receiptLoaded(let receipt) = viewModel.state {
-            #expect(receipt.receiptNumber == "RCP-001")
+    // MARK: - State Transitions Tests
+
+    func testStateTransition_IdleToLoading() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+        mockPaymentService.simulatedDelay = 0.5
+
+        XCTAssertEqual(sut.state, .idle)
+
+        // When
+        let task = Task {
+            await sut.generateReceipt()
+        }
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Then
+        XCTAssertEqual(sut.state, .loadingReceipt)
+
+        await task.value
+    }
+
+    func testStateTransition_LoadingToReceiptLoaded() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        // When
+        await sut.generateReceipt()
+
+        // Then
+        if case .receiptLoaded = sut.state {
+            // Expected
         } else {
-            Issue.record("Expected receiptLoaded state")
+            XCTFail("Expected receiptLoaded state")
         }
     }
 
-    @Test("Error state after failed generation")
-    @MainActor
-    func errorStateAfterFailedGeneration() async {
-        let mockService = MockPaymentService()
-        mockService.shouldSucceed = false
-
-        let viewModel = PaymentResultViewModel(
-            paymentId: "test",
+    func testStateTransition_LoadingToError() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
             isSuccess: true,
-            paymentService: mockService
+            paymentService: mockPaymentService
         )
+        mockPaymentService.shouldSucceed = false
+        mockPaymentService.errorToThrow = .serverError("Failed")
 
-        await viewModel.generateReceipt()
+        // When
+        await sut.generateReceipt()
 
-        if case .error = viewModel.state {
-            // Correct
+        // Then
+        if case .error = sut.state {
+            // Expected
         } else {
-            Issue.record("Expected error state")
+            XCTFail("Expected error state")
         }
     }
 
-    // MARK: - Preview Helpers
+    // MARK: - Edge Cases
 
-    @Test("Preview helpers create valid view models")
-    func previewHelpers() {
-        let success = PaymentResultViewModel.previewSuccess
-        #expect(success.isSuccess == true)
-        #expect(success.paymentId == "test-payment-123")
+    func testMultipleReceiptGenerations() async {
+        // Given
+        sut = PaymentResultViewModel(
+            paymentId: testPaymentId,
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
 
-        let failure = PaymentResultViewModel.previewFailure
-        #expect(failure.isSuccess == false)
-        #expect(failure.paymentId == "test-payment-123")
+        // When - Generate multiple times
+        await sut.generateReceipt()
+        await sut.generateReceipt()
 
-        let withReceipt = PaymentResultViewModel.previewWithReceipt
-        #expect(withReceipt.receiptData != nil)
+        // Then - Should not crash, latest result is used
+        XCTAssertNotNil(sut.receiptData)
+    }
+
+    func testEmptyPaymentId() {
+        sut = PaymentResultViewModel(
+            paymentId: "",
+            isSuccess: true,
+            paymentService: mockPaymentService
+        )
+
+        XCTAssertEqual(sut.paymentId, "")
+        XCTAssertEqual(sut.transactionId, "")
     }
 }

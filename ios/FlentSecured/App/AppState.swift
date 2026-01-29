@@ -7,6 +7,9 @@
 import SwiftUI
 import Observation
 import Combine
+import os.log
+
+private let logger = Logger(subsystem: "app.flent.secured", category: "AppState")
 
 // MARK: - App State
 
@@ -115,6 +118,7 @@ final class AppState {
 
     // MARK: - Private Helpers
 
+    @MainActor
     private func restoreSession() async throws -> Bool {
         guard let session = SecureStorage.shared.getSession() else {
             return false

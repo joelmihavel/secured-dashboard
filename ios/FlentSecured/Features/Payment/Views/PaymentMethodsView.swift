@@ -1,13 +1,17 @@
 /// PaymentMethodsView.swift
 /// Flent Secured v2 - Payment Methods Selection Screen
 ///
-/// Figma: node-id=1:34854
-/// - Presented as bottom sheet (dark bg #1A1A1A)
-/// - "Choose a" white + "Payment Method" orange
-/// - Cashback pill badge (dark bg, rounded pill)
-/// - Radio buttons for payment options with selection state
-/// - Fee labels on right (muted text)
-/// - Primary button with amount
+/// Figma Nodes:
+/// - 41:8901 - Without Setup (cards locked for QUALIFIED users)
+/// - 41:9004 - Before 7th (cashback eligible, all methods for COMPLETE)
+/// - 41:9114 - After 7th (no cashback earning)
+///
+/// Features:
+/// - Payment method selection with radio buttons
+/// - Locked card option for non-COMPLETE users
+/// - Cashback pill showing earnings
+/// - Fee transparency per method
+/// - PayU WebView integration
 
 import SwiftUI
 
@@ -17,6 +21,10 @@ struct PaymentMethodsView: View {
 
     @State private var viewModel: PaymentMethodsViewModel
     @State private var showPayUWebView = false
+    @State private var showSummarySheet = false
+    @State private var showAddUPI = false
+    @State private var showAddCard = false
+    @State private var showAddNetBanking = false
     @State private var currentPaymentInitiation: PaymentInitiation?
 
     // Store init params to rebuild viewModel with correct userStatus from AppState
@@ -45,130 +53,67 @@ struct PaymentMethodsView: View {
         return formatter.string(from: Date())
     }
 
+    /// Check if before 7th (cashback eligible)
+    private var isCashbackEligible: Bool {
+        let day = Calendar.current.component(.day, from: Date())
+        return day <= 7
+    }
+
     var body: some View {
         ZStack {
-            // Background with dimmed content
+            // Background
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            // Dotted grid pattern (like onboarding screens)
+            // Dotted grid pattern
             DottedGridPattern()
                 .ignoresSafeArea()
 
-            // Dimmed header content
-            VStack(alignment: .leading) {
-                FlentLogo()
-                    .padding(.top, Spacing.xxl)
-                    .opacity(0.3)
+            VStack(spacing: 0) {
+                // Navigation Header - Figma: Standard nav bar
+                HStack {
+                    Button {
+                        HapticManager.shared.lightImpact()
+                        coordinator.pop()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                    }
+
+                    Spacer()
+
+                    Text("Payment")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    // Spacer for alignment
+                    Color.clear.frame(width: 44, height: 44)
+                }
+                .padding(.horizontal, Spacing.xs)
+                .background(AppColors.backgroundPrimary)
+
+                // Dimmed logo section - Figma: Faded Flent logo
+                VStack(alignment: .leading) {
+                    FlentLogo()
+                        .padding(.top, Spacing.lg)
+                        .padding(.leading, Spacing.screenHorizontal)
+                        .opacity(0.3)
+
+                    Spacer()
+                }
 
                 Spacer()
             }
-            .padding(.horizontal, Spacing.screenHorizontal)
 
-            // Bottom sheet
+            // Bottom sheet - Figma: BottomSheetContainer style
             VStack {
                 Spacer()
 
-                BottomSheetContainer {
-                    VStack(alignment: .leading, spacing: Spacing.lg) {
-                        // Title - Split color (Figma: 28px regular)
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("Choose a")
-                                .font(.system(size: 28, weight: .regular))
-                                .foregroundColor(.white)
-                            Text("Payment Method")
-                                .font(.system(size: 28, weight: .regular))
-                                .foregroundColor(AppColors.brand500)
-                        }
-
-                        // Cashback pill - Figma: dark bg (#202020), rounded pill, 14px medium
-                        HStack(spacing: Spacing.xs) {
-                            Image(systemName: "gift.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.brand500)
-
-                            Text("You'll earn ")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(AppColors.neutral500)
-                            + Text("\u{20B9}\(viewModel.estimatedCashbackFormatted) cashback")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                            + Text(" on this payment")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(AppColors.neutral500)
-                        }
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.vertical, Spacing.sm)
-                        .frame(maxWidth: .infinity)
-                        .background(AppColors.black500)
-                        .cornerRadius(Radius.pill)
-
-                        // Payment Methods with Radio Buttons
-                        VStack(spacing: Spacing.sm) {
-                            // UPI Option
-                            PaymentMethodRadioRow(
-                                icon: "link",
-                                title: "UPI",
-                                fee: "No fee",
-                                isSelected: viewModel.selectedMethod == .upiIntent
-                            ) {
-                                viewModel.selectMethod(.upiIntent)
-                            }
-
-                            // Cards Option (conditionally available)
-                            if viewModel.canUseCreditCard {
-                                PaymentMethodRadioRow(
-                                    icon: "creditcard",
-                                    title: "Credit/Debit Card",
-                                    fee: "1.2% fee",
-                                    isSelected: viewModel.selectedMethod == .creditCard
-                                ) {
-                                    viewModel.selectMethod(.creditCard)
-                                }
-                            } else {
-                                PaymentMethodRadioRow(
-                                    icon: "creditcard",
-                                    title: "Credit/Debit Card",
-                                    fee: "1.2% fee",
-                                    isSelected: false,
-                                    isLocked: true,
-                                    lockMessage: "Complete 3 payments to unlock"
-                                ) {}
-                            }
-
-                            // Net Banking Option
-                            PaymentMethodRadioRow(
-                                icon: "building.columns",
-                                title: "Net Banking",
-                                fee: "No fee",
-                                isSelected: viewModel.selectedMethod == .netBanking
-                            ) {
-                                viewModel.selectMethod(.netBanking)
-                            }
-                        }
-
-                        // Error Message
-                        if let error = viewModel.errorMessage {
-                            HStack(spacing: Spacing.xs) {
-                                Image(systemName: "exclamationmark.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(AppColors.error)
-                                Text(error)
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(AppColors.error)
-                            }
-                        }
-
-                        // Pay Button
-                        PrimaryButton(
-                            title: "Pay \(viewModel.formattedTotalAmount)",
-                            isLoading: viewModel.isInitiating,
-                            isEnabled: viewModel.canInitiate
-                        ) {
-                            initiatePayment()
-                        }
-                    }
-                }
+                paymentMethodsSheet
             }
         }
         .navigationBarHidden(true)
@@ -202,9 +147,217 @@ struct PaymentMethodsView: View {
                 )
             }
         }
+        .sheet(isPresented: $showSummarySheet) {
+            PaymentSummaryView(
+                paymentId: currentPaymentInitiation?.paymentId ?? "",
+                rentAmountPaise: viewModel.rentAmountPaise,
+                pgFeePaise: viewModel.pgFeePaise,
+                cashbackAppliedPaise: viewModel.applyCashback ? Int(viewModel.cashbackToApply * 100) : 0,
+                paymentMethod: viewModel.selectedMethod ?? .upiIntent,
+                onConfirm: {
+                    showSummarySheet = false
+                    proceedWithPayment()
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showAddUPI) {
+            AddUPIView { upiId in
+                print("Added UPI: \(upiId)")
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showAddCard) {
+            AddCreditCardView {
+                print("Card added")
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showAddNetBanking) {
+            AddNetBankingView { bank in
+                print("Selected bank: \(bank.name)")
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.hidden)
+        }
     }
 
+    // MARK: - Payment Methods Sheet
+
+    /// Figma: Bottom sheet with payment method options
+    private var paymentMethodsSheet: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Drag handle
+            DragHandle()
+                .padding(.top, Spacing.md)
+                .padding(.bottom, Spacing.lg)
+                .frame(maxWidth: .infinity)
+
+            // Title - Figma: Split color, 28px regular
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Choose a")
+                    .font(.system(size: 28, weight: .regular))
+                    .foregroundColor(.white)
+                Text("Payment Method")
+                    .font(.system(size: 28, weight: .regular))
+                    .foregroundColor(AppColors.brand500)
+            }
+            .padding(.bottom, Spacing.lg)
+
+            // Cashback pill - Only show when eligible (before 7th)
+            if isCashbackEligible && viewModel.estimatedCashbackFormatted != "0" {
+                cashbackEarningPill
+                    .padding(.bottom, Spacing.lg)
+            } else if !isCashbackEligible {
+                // Late payment notice
+                latePaymentNoticePill
+                    .padding(.bottom, Spacing.lg)
+            }
+
+            // Payment Methods with Radio Buttons
+            VStack(spacing: Spacing.sm) {
+                // UPI Option - Always available
+                PaymentMethodRadioRow(
+                    icon: "link",
+                    title: "UPI",
+                    subtitle: nil,
+                    fee: "No fee",
+                    isSelected: viewModel.selectedMethod == .upiIntent,
+                    isLocked: false,
+                    lockMessage: nil
+                ) {
+                    viewModel.selectMethod(.upiIntent)
+                }
+
+                // Cards Option (conditionally available)
+                if viewModel.canUseCreditCard {
+                    PaymentMethodRadioRow(
+                        icon: "creditcard",
+                        title: "Credit/Debit Card",
+                        subtitle: nil,
+                        fee: "1.2% fee",
+                        isSelected: viewModel.selectedMethod == .creditCard,
+                        isLocked: false,
+                        lockMessage: nil
+                    ) {
+                        viewModel.selectMethod(.creditCard)
+                    }
+                } else {
+                    PaymentMethodRadioRow(
+                        icon: "creditcard",
+                        title: "Credit/Debit Card",
+                        subtitle: "Complete 3 payments to unlock",
+                        fee: "1.2% fee",
+                        isSelected: false,
+                        isLocked: true,
+                        lockMessage: "Complete 3 payments to unlock"
+                    ) {
+                        // No action for locked
+                    }
+                }
+
+                // Net Banking Option - Always available
+                PaymentMethodRadioRow(
+                    icon: "building.columns",
+                    title: "Net Banking",
+                    subtitle: nil,
+                    fee: "No fee",
+                    isSelected: viewModel.selectedMethod == .netBanking,
+                    isLocked: false,
+                    lockMessage: nil
+                ) {
+                    viewModel.selectMethod(.netBanking)
+                }
+            }
+            .padding(.bottom, Spacing.lg)
+
+            // Error Message
+            if let error = viewModel.errorMessage {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(AppColors.error)
+                    Text(error)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(AppColors.error)
+                }
+                .padding(.bottom, Spacing.md)
+            }
+
+            // Pay Button - Figma: Primary CTA with amount
+            PrimaryButton(
+                title: "Pay \(viewModel.formattedTotalAmount)",
+                isLoading: viewModel.isInitiating,
+                isEnabled: viewModel.canInitiate
+            ) {
+                initiatePayment()
+            }
+        }
+        .padding(.horizontal, Spacing.screenHorizontalCompact)
+        .padding(.bottom, Spacing.xl)
+        .background(AppColors.backgroundSecondary)
+        .clipShape(RoundedCorner(radius: Radius.xl, corners: [.topLeft, .topRight]))
+    }
+
+    // MARK: - Cashback Earning Pill
+
+    /// Figma: dark bg (#202020), rounded pill, 14px medium
+    /// Shows estimated cashback earnings
+    private var cashbackEarningPill: some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: "gift.fill")
+                .font(.system(size: 14))
+                .foregroundColor(AppColors.brand500)
+
+            Group {
+                Text("You'll earn ")
+                    .foregroundColor(AppColors.neutral500)
+                + Text("\u{20B9}\(viewModel.estimatedCashbackFormatted) cashback")
+                    .foregroundColor(.white)
+                + Text(" on this payment")
+                    .foregroundColor(AppColors.neutral500)
+            }
+            .font(.system(size: 14, weight: .medium))
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.black500)
+        .cornerRadius(Radius.pill)
+    }
+
+    // MARK: - Late Payment Notice Pill
+
+    /// Shown when payment is after 7th (no cashback earning)
+    private var latePaymentNoticePill: some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 14))
+                .foregroundColor(AppColors.warning)
+
+            Text("No cashback on payments after the 7th")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(AppColors.neutral500)
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.warning.opacity(0.1))
+        .cornerRadius(Radius.pill)
+    }
+
+    // MARK: - Payment Flow
+
     private func initiatePayment() {
+        // First show summary for confirmation
+        HapticManager.shared.mediumImpact()
+        showSummarySheet = true
+    }
+
+    private func proceedWithPayment() {
         Task {
             if let initiation = await viewModel.initiatePayment() {
                 currentPaymentInitiation = initiation
@@ -218,6 +371,7 @@ struct PaymentMethodsView: View {
                     PayUManager.shared.openUPIIntent(url: url) { success in
                         if success {
                             // App opened - navigate to processing view
+                            HapticManager.shared.success()
                             coordinator.navigate(to: .paymentProcessing(paymentId: initiation.paymentId))
                         } else {
                             // Fallback to WebView
@@ -228,6 +382,9 @@ struct PaymentMethodsView: View {
                     // Use WebView for other payment methods
                     showPayUWebView = true
                 }
+            } else {
+                // Payment initiation failed - show error haptic
+                HapticManager.shared.error()
             }
         }
     }
@@ -255,6 +412,7 @@ struct PaymentMethodsView: View {
 struct PaymentMethodRadioRow: View {
     let icon: String
     let title: String
+    let subtitle: String?
     let fee: String
     let isSelected: Bool
     var isLocked: Bool = false
@@ -264,14 +422,12 @@ struct PaymentMethodRadioRow: View {
     var body: some View {
         Button(action: {
             if !isLocked {
-                // Haptic feedback
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
+                HapticManager.shared.lightImpact()
                 action()
             }
         }) {
             HStack(spacing: Spacing.md) {
-                // Radio button
+                // Radio button - Figma: 24x24, 2px stroke
                 ZStack {
                     Circle()
                         .stroke(
@@ -293,20 +449,20 @@ struct PaymentMethodRadioRow: View {
                     }
                 }
 
-                // Icon
+                // Icon - Figma: 20px
                 Image(systemName: icon)
                     .font(.system(size: 20))
                     .foregroundColor(isLocked ? AppColors.black400 : .white)
                     .frame(width: 24)
 
-                // Title and lock message
+                // Title and subtitle
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(isLocked ? AppColors.black400 : .white)
 
-                    if let message = lockMessage, isLocked {
-                        Text(message)
+                    if let sub = subtitle, isLocked {
+                        Text(sub)
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(AppColors.black300)
                     }
@@ -314,7 +470,7 @@ struct PaymentMethodRadioRow: View {
 
                 Spacer()
 
-                // Fee label
+                // Fee label - Figma: 14px regular
                 Text(fee)
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(isLocked ? AppColors.black400 : AppColors.neutral500)

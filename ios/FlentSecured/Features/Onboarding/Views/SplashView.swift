@@ -1,192 +1,126 @@
 /// SplashView.swift
 /// Flent Secured v2 - Splash/Get Started Screen
 ///
-/// Figma: node-id=1:28055
-/// - Background: #131313 with dotted grid pattern
-/// - Logo: Flent keyhole icon, top-left, white
-/// - Headline: "Make your rent" (white) + "work for you->" (orange #FF9A6D)
-/// - Subtitle: "Rewards for trustworthy tenants..."
-/// - CTA: "Get Started" button with outer border padding
-/// - Link: "Already a user? Log in" - 14px, neutral, underlined
+/// Figma File: HZaVuwWn6B6jOjrmxZ7Kzv - Flent Secured v1.2 - Dev
+/// Node IDs:
+/// - 1:28071 - Splash / get-started --animation (Video intro)
+/// - 1:28055 - Splash / get-started (Base state with button)
+/// - 1:28985 - Splash / get-started --carousel 4 (Good Habits)
+/// - 1:29025 - Splash / get-started --carousel 5 (Earn Everytime)
+/// - 1:29065 - Splash / get-started --carousel 6 (It Gets Better)
+///
+/// This is the entry point wrapper that uses SplashCarouselView for the
+/// full animated carousel experience. A static version is also available
+/// for quick loading scenarios.
 
 import SwiftUI
 
+/// SplashView - Main entry point for splash screen
+/// Uses SplashCarouselView with animated carousel
 struct SplashView: View {
     @Environment(AppCoordinator.self) private var coordinator
 
     var body: some View {
+        SplashCarouselView()
+            .environment(coordinator)
+    }
+}
+
+/// StaticSplashView - Non-animated version for quick loading
+/// Use this if you need a simpler splash without carousel animations
+///
+/// Figma: 1:28055 - Splash / get-started (static version)
+/// Pixel-perfect specifications:
+/// - Background: #131313 with dotted grid pattern
+/// - Headline: H1/Regular 400 (48px, line-height 64px, tracking -2px)
+/// - First lines: #A9A9A9 (neutral500), Last line: #FF9A6D (brand500)
+/// - Subtitle: 14px Regular, #A6A6A6 (black200), line-height 20px
+/// - Horizontal padding: 48px (sp-48)
+struct StaticSplashView: View {
+    @Environment(AppCoordinator.self) private var coordinator
+
+    var body: some View {
         ZStack {
-            // Background with dotted pattern
+            // Background: #131313 with dotted pattern
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            // Dotted grid pattern overlay
             DottedGridPattern()
                 .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
-                // Logo - Flent keyhole icon
+                // Logo - Flent keyhole, top-left (33.375x40pt)
                 FlentLogo()
-                    .padding(.top, Spacing.xxl)
+                    .padding(.top, Spacing.xxl) // 40pt from safe area
 
                 Spacer()
-                    .frame(height: Spacing.huge)
+                    .frame(height: Spacing.xxl) // 40pt gap (sp-40)
 
-                // Headline - "Make your rent" (white) + "work for you->" (orange)
+                // Headline - Figma H1/Regular 400
+                // Plus Jakarta Sans 48px, line-height 64px, tracking -2px
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Make your rent")
-                        .font(.system(size: 40, weight: .light))
-                        .foregroundColor(.white)
+                    Text("Make\nyour rent")
+                        .font(Typography.h1) // 48px Regular
+                        .foregroundColor(AppColors.neutral500) // #A9A9A9
+                        .tracking(-2)
+                        .lineSpacing(16) // 64 - 48 = 16
 
-                    HStack(spacing: 0) {
-                        Text("work for you")
-                            .font(.system(size: 40, weight: .light))
-                            .foregroundColor(AppColors.brand500)
-                        Text("\u{2192}") // Unicode right arrow
-                            .font(.system(size: 40, weight: .light))
-                            .foregroundColor(AppColors.brand500)
-                    }
+                    Text("work for you→")
+                        .font(Typography.h1) // 48px Regular
+                        .foregroundColor(AppColors.brand500) // #FF9A6D
+                        .tracking(-2)
+                        .lineSpacing(16)
                 }
 
-                // Subtitle
-                Text("Rewards for trustworthy tenants\n& Free protection for homeowners")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(AppColors.neutral500)
-                    .padding(.top, Spacing.md)
+                // Subtitle - Figma md-1/Regular 400
+                // 14px Regular, #A6A6A6 (black200), line-height 20px
+                Text("Rewards for trustworthy tenants\n& Free  protection for homeowners")
+                    .font(Typography.bodyMd2) // 14px Regular
+                    .foregroundColor(AppColors.black200) // #A6A6A6
+                    .lineSpacing(6) // 20 - 14 = 6
+                    .padding(.top, Spacing.md) // 16pt gap
 
                 Spacer()
 
-                // Get Started Button
+                // Get Started Button - Figma: gradient brand500→brand600
                 PrimaryButton(title: "Get Started") {
-                    coordinator.navigate(to: .phoneEntry)
+                    coordinator.navigate(to: .phoneEntry(authIntent: .signup))
                 }
 
-                // Log in link - entire text neutral, "Log in" underlined
+                // Log in link - Figma: 14px white, "Log in" underlined
                 Button(action: {
-                    coordinator.navigate(to: .phoneEntry) // Same flow, different handling
+                    coordinator.navigate(to: .phoneEntry(authIntent: .login))
                 }) {
                     HStack(spacing: 4) {
                         Text("Already a user?")
-                            .foregroundColor(AppColors.neutral500)
+                            .foregroundColor(.white)
                         Text("Log in")
-                            .foregroundColor(AppColors.neutral500)
+                            .foregroundColor(.white)
                             .underline()
                     }
-                    .font(.system(size: 14, weight: .regular))
+                    .font(Typography.bodyMd2) // 14px Regular
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, Spacing.md)
+                .padding(.top, Spacing.lg) // 24pt gap (sp-24)
 
                 Spacer()
-                    .frame(height: Spacing.xl)
+                    .frame(height: Spacing.huge) // 64pt bottom padding (scale/64)
             }
-            .padding(.horizontal, Spacing.screenHorizontal) // 40px
+            .padding(.horizontal, Spacing.xxxl) // 48pt horizontal (sp-48)
         }
         .navigationBarHidden(true)
     }
 }
 
-// MARK: - Flent Logo (Keyhole "f" Icon)
+// Note: FlentLogo, KeyholeShape, and DottedGridPattern are defined in
+// Core/DesignSystem/Components/BackgroundPatterns.swift for shared access across screens
 
-/// Custom Flent keyhole logo drawn with SwiftUI
-/// Represents the Flent brand - a stylized keyhole shape
-struct FlentLogo: View {
-    var size: CGFloat = 40
-
-    var body: some View {
-        // Keyhole shape: circle on top, triangle/trapezoid on bottom
-        ZStack {
-            // Outer keyhole shape
-            KeyholeShape()
-                .fill(Color.white)
-                .frame(width: size, height: size * 1.2)
-        }
-    }
-}
-
-/// Custom keyhole shape for Flent logo
-struct KeyholeShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-
-        let width = rect.width
-        let height = rect.height
-
-        // Circle portion (top 60% of height)
-        let circleRadius = width * 0.4
-        let circleCenter = CGPoint(x: width / 2, y: circleRadius + (height * 0.05))
-
-        // Keyhole notch dimensions
-        let notchWidth = width * 0.25
-        let notchTop = circleCenter.y + circleRadius * 0.3
-        let notchBottom = height
-
-        // Draw the circle
-        path.addArc(
-            center: circleCenter,
-            radius: circleRadius,
-            startAngle: .degrees(0),
-            endAngle: .degrees(360),
-            clockwise: false
-        )
-
-        // Draw the keyhole notch (trapezoid shape extending down)
-        let notchPath = Path { p in
-            // Start from left side of notch at top
-            p.move(to: CGPoint(x: (width - notchWidth) / 2, y: notchTop))
-            // Bottom left (slightly wider)
-            p.addLine(to: CGPoint(x: (width - notchWidth * 1.3) / 2, y: notchBottom))
-            // Bottom right
-            p.addLine(to: CGPoint(x: (width + notchWidth * 1.3) / 2, y: notchBottom))
-            // Top right
-            p.addLine(to: CGPoint(x: (width + notchWidth) / 2, y: notchTop))
-            p.closeSubpath()
-        }
-
-        path.addPath(notchPath)
-
-        return path
-    }
-}
-
-// MARK: - Dotted Grid Pattern
-
-/// Background dotted grid pattern overlay
-/// Figma: Subtle dot pattern on #131313 background
-struct DottedGridPattern: View {
-    let dotSize: CGFloat = 1.5
-    let spacing: CGFloat = 20
-
-    var body: some View {
-        GeometryReader { geometry in
-            Canvas { context, size in
-                let rows = Int(size.height / spacing) + 1
-                let cols = Int(size.width / spacing) + 1
-
-                for row in 0...rows {
-                    for col in 0...cols {
-                        let x = CGFloat(col) * spacing
-                        let y = CGFloat(row) * spacing
-
-                        let rect = CGRect(
-                            x: x - dotSize / 2,
-                            y: y - dotSize / 2,
-                            width: dotSize,
-                            height: dotSize
-                        )
-
-                        context.fill(
-                            Circle().path(in: rect),
-                            with: .color(AppColors.black400.opacity(0.4))
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-#Preview {
+#Preview("Carousel Version") {
     SplashView()
+        .environment(AppCoordinator())
+}
+
+#Preview("Static Version") {
+    StaticSplashView()
         .environment(AppCoordinator())
 }

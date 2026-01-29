@@ -11,6 +11,7 @@ import Observation
 
 // MARK: - Add Bank ViewModel
 
+@MainActor
 @Observable
 final class AddBankViewModel {
 

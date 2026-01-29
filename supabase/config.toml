@@ -89,9 +89,17 @@ verify_jwt = true
 [functions.auth-otp]
 verify_jwt = false
 
+# Document upload - handles auth internally
+[functions.upload-document]
+verify_jwt = false
+
 # Longer timeout for document processing
 [functions.process-document]
-verify_jwt = true
+verify_jwt = false
+
+# Confirm extraction - handles auth internally
+[functions.confirm-extraction]
+verify_jwt = false
 
 # Utility verification - JWT disabled for GET operators, POST handles auth internally
 [functions.verify-utility]

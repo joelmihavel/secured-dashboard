@@ -49,27 +49,28 @@ struct DottedGridPattern: View {
     }
 }
 
-// MARK: - Flent Logo (Keyhole)
+// MARK: - Flent Logo
 
-/// Flent brand logo - keyhole shape
+/// Flent brand logo - uses bundled asset
 /// Figma: Used on splash, phone entry, and other onboarding screens
-/// Default size: 40pt width, 48pt height (1.2 aspect ratio)
+/// Sizes: 33.375×40pt (Get Started) or 26.7×32pt (Carousel)
 struct FlentLogo: View {
-    var size: CGFloat = 40
+    var size: CGFloat = 33.375
+
+    /// Computed height based on Figma aspect ratio (33.375:40 = 0.834)
+    private var height: CGFloat { size * 1.2 }
 
     var body: some View {
-        ZStack {
-            KeyholeShape()
-                .fill(Color.white)
-                .frame(width: size, height: size * 1.2)
-        }
+        Image("flent-logo")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size, height: height)
     }
 }
 
-// MARK: - Keyhole Shape
+// MARK: - Keyhole Shape (Fallback)
 
-/// Custom keyhole shape for Flent logo
-/// Circle at top with tapered notch extending downward
+/// Simple keyhole shape - fallback if logo asset not available
 struct KeyholeShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
