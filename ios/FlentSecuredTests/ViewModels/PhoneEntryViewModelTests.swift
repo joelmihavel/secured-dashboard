@@ -34,8 +34,10 @@ final class PhoneEntryViewModelTests: XCTestCase {
 
     func testInitialState() {
         XCTAssertEqual(sut.phoneNumber, "")
+        XCTAssertEqual(sut.name, "")
         XCTAssertEqual(sut.state, .idle)
         XCTAssertFalse(sut.isValidPhone)
+        XCTAssertFalse(sut.isValidName)
         XCTAssertFalse(sut.isLoading)
         XCTAssertNil(sut.errorMessage)
         XCTAssertFalse(sut.canProceed)
@@ -45,6 +47,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
 
     func testValidPhoneNumber_StartsWith9() {
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         XCTAssertTrue(sut.isValidPhone)
         XCTAssertEqual(sut.fullPhoneNumber, "+919876543210")
         XCTAssertTrue(sut.canProceed)
@@ -116,6 +119,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
     func testSendOTP_Success() async {
         // Given
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         mockAuthService.shouldSucceed = true
 
         // When
@@ -154,6 +158,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
     func testSendOTP_Failure_NetworkError() async {
         // Given
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         mockAuthService.shouldSucceed = false
         mockAuthService.errorToThrow = .serverError("Network unavailable")
 
@@ -174,6 +179,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
     func testSendOTP_Failure_InvalidPhoneError() async {
         // Given
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         mockAuthService.shouldSucceed = false
         mockAuthService.errorToThrow = .invalidPhone
 
@@ -188,6 +194,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
     func testSendOTP_SetsLoadingState() async {
         // Given
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         mockAuthService.simulatedDelay = 0.5  // Add delay to observe loading state
 
         // When
@@ -264,16 +271,68 @@ final class PhoneEntryViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - Name Validation Tests
+
+    func testValidName() {
+        sut.name = "John Appleseed"
+        XCTAssertTrue(sut.isValidName)
+        XCTAssertEqual(sut.trimmedName, "John Appleseed")
+    }
+
+    func testValidName_WithLeadingTrailingSpaces() {
+        sut.name = "  John Appleseed  "
+        XCTAssertTrue(sut.isValidName)
+        XCTAssertEqual(sut.trimmedName, "John Appleseed")
+    }
+
+    func testInvalidName_Empty() {
+        sut.name = ""
+        XCTAssertFalse(sut.isValidName)
+    }
+
+    func testInvalidName_OnlyWhitespace() {
+        sut.name = "   "
+        XCTAssertFalse(sut.isValidName)
+    }
+
+    func testTypingNameClearsError() async {
+        // Given - Trigger error state via API
+        sut.phoneNumber = "123"  // Invalid phone
+        _ = await sut.sendOTP()
+        XCTAssertNotNil(sut.errorMessage)
+
+        // When
+        sut.name = "J"
+
+        // Then
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.errorMessage)
+    }
+
     // MARK: - Computed Properties Tests
 
-    func testCanProceed_ValidPhoneNotLoading() {
+    func testCanProceed_ValidPhoneAndNameNotLoading() {
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         XCTAssertTrue(sut.canProceed)
     }
 
-    func testCanProceed_ValidPhoneButLoading() async {
+    func testCanProceed_ValidPhoneOnly() {
+        sut.phoneNumber = "9876543210"
+        sut.name = ""
+        XCTAssertFalse(sut.canProceed)
+    }
+
+    func testCanProceed_ValidNameOnly() {
+        sut.phoneNumber = ""
+        sut.name = "John Appleseed"
+        XCTAssertFalse(sut.canProceed)
+    }
+
+    func testCanProceed_ValidPhoneAndNameButLoading() async {
         // Given
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         mockAuthService.simulatedDelay = 1.0  // Long delay to stay in loading state
 
         // When - Start loading
@@ -292,6 +351,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
 
     func testCanProceed_InvalidPhone() {
         sut.phoneNumber = "123"
+        sut.name = "John Appleseed"
         XCTAssertFalse(sut.canProceed)
     }
 
@@ -301,6 +361,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
 
         // Start loading
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         mockAuthService.simulatedDelay = 0.5
 
         let task = Task {
@@ -334,6 +395,7 @@ final class PhoneEntryViewModelTests: XCTestCase {
     func testMultipleSendOTPRequests() async {
         // Given
         sut.phoneNumber = "9876543210"
+        sut.name = "John Appleseed"
         mockAuthService.simulatedDelay = 0.2
 
         // When - Send multiple requests

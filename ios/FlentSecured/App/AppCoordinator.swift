@@ -150,7 +150,7 @@ enum Route: Hashable {
 
     case splash
     case phoneEntry(authIntent: AuthIntent = .signup)
-    case otpVerification(phone: String)
+    case otpVerification(phone: String, name: String)
 
     // MARK: - Onboarding
 

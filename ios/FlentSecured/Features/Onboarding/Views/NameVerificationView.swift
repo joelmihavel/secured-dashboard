@@ -28,6 +28,7 @@ import SwiftUI
 
 struct NameVerificationView: View {
     @Environment(AppCoordinator.self) private var coordinator
+    @Environment(AppState.self) private var appState
 
     @State private var viewModel = NameVerificationViewModel()
     @State private var isEditing = false
@@ -102,6 +103,9 @@ struct NameVerificationView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
+            // Pre-fill with name entered during phone entry (if available)
+            viewModel.prefillWithPendingName(appState.pendingUserName)
+
             Task {
                 await viewModel.fetchNameFromIdentity()
 

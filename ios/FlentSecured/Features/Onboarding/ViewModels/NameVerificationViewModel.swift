@@ -98,6 +98,20 @@ final class NameVerificationViewModel {
 
     // MARK: - Actions
 
+    /// Pre-fill with name entered during phone entry (stored in AppState.pendingUserName)
+    func prefillWithPendingName(_ pendingName: String?) {
+        guard let name = pendingName, !name.isEmpty else { return }
+
+        // Split the name into first and last
+        let components = name.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
+        if !components.isEmpty {
+            firstName = String(components[0])
+            if components.count > 1 {
+                lastName = String(components[1])
+            }
+        }
+    }
+
     /// Fetch name from Mobile 360 (Cashfree identity verification)
     @MainActor
     func fetchNameFromIdentity() async {

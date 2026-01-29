@@ -35,7 +35,7 @@ const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://sandboxsecure.pa
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 
 // PG fee rates (approximate)
-const PG_FEE_RATES = {
+const PG_FEE_RATES: Record<string, number> = {
   upi: 0, // UPI is typically free or very low
   upi_intent: 0,
   upi_collect: 0,
@@ -44,6 +44,19 @@ const PG_FEE_RATES = {
   wallet: 0.02, // 2%
 };
 
+// Normalize payment method values from iOS
+// iOS sends: net_banking, credit_card, debit_card
+// Backend expects: netbanking, card
+const PAYMENT_METHOD_ALIASES: Record<string, string> = {
+  net_banking: "netbanking",
+  credit_card: "card",
+  debit_card: "card",
+};
+
+function normalizePaymentMethod(method: string): string {
+  return PAYMENT_METHOD_ALIASES[method] || method;
+}
+
 // ==============================================
 // TYPES
 // ==============================================
@@ -51,7 +64,8 @@ const PG_FEE_RATES = {
 interface InitiatePaymentRequest {
   tenancy_id: string;
   amount_paise?: number; // Optional - defaults to monthly rent
-  payment_method: "upi" | "upi_intent" | "upi_collect" | "card" | "netbanking" | "wallet";
+  // Accept both iOS and backend formats (normalized internally)
+  payment_method: "upi" | "upi_intent" | "upi_collect" | "card" | "netbanking" | "wallet" | "net_banking" | "credit_card" | "debit_card";
   upi_app?: string; // For upi_intent: gpay, phonepe, paytm, etc.
   upi_vpa?: string; // For upi_collect
   card_token?: string; // For card payments (tokenized)
@@ -70,7 +84,8 @@ const requestSchema = {
   payment_method: {
     required: true,
     type: "string" as const,
-    enum: ["upi", "upi_intent", "upi_collect", "card", "netbanking", "wallet"],
+    // Accept both iOS and backend formats
+    enum: ["upi", "upi_intent", "upi_collect", "card", "netbanking", "wallet", "net_banking", "credit_card", "debit_card"],
   },
   upi_app: { required: false, type: "string" as const },
   upi_vpa: { required: false, type: "string" as const },
@@ -122,7 +137,7 @@ serve(async (req: Request) => {
 
     const {
       tenancy_id,
-      payment_method,
+      payment_method: rawPaymentMethod,
       upi_app,
       upi_vpa,
       card_token,
@@ -130,6 +145,9 @@ serve(async (req: Request) => {
       apply_cashback = true,
       rent_month,
     } = validatedBody;
+
+    // Normalize payment method (iOS sends net_banking, credit_card, debit_card)
+    const payment_method = normalizePaymentMethod(rawPaymentMethod);
 
     // Get idempotency key
     idempotencyKey = getIdempotencyKey(req, `payment:${userId}:${rent_month}`);

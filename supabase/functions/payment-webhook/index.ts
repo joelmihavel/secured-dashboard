@@ -141,6 +141,21 @@ serve(async (req: Request) => {
       throw new AppError("Unsupported content type", "INVALID_CONTENT_TYPE", 400);
     }
 
+    // Validate required fields before processing
+    const requiredFields = ["txnid", "status", "amount", "hash"] as const;
+    const missingFields = requiredFields.filter(
+      (field) => !payload[field] || payload[field].toString().trim() === ""
+    );
+
+    if (missingFields.length > 0) {
+      console.error("PayU webhook missing required fields:", missingFields);
+      throw new AppError(
+        `Missing required fields: ${missingFields.join(", ")}`,
+        "VALIDATION_ERROR",
+        400
+      );
+    }
+
     console.log("PayU webhook received:", {
       txnid: payload.txnid,
       status: payload.status,

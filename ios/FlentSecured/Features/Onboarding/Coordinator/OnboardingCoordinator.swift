@@ -55,6 +55,7 @@ final class OnboardingCoordinator {
 
     // Data passed between steps
     var phoneNumber: String?
+    var userName: String?
     var extractionId: String?
     var authResult: AuthResult?
 
@@ -194,7 +195,7 @@ final class OnboardingCoordinator {
         case .phoneEntry:
             return .phoneEntry()
         case .otpVerification:
-            return .otpVerification(phone: phoneNumber ?? "")
+            return .otpVerification(phone: phoneNumber ?? "", name: userName ?? "")
         case .nameVerification:
             return .nameVerification
         case .agreementUpload:
@@ -213,7 +214,7 @@ final class OnboardingCoordinator {
         switch route {
         case .phoneEntry(_):
             return .phoneEntry
-        case .otpVerification(_):
+        case .otpVerification(_, _):
             return .otpVerification
         case .nameVerification:
             return .nameVerification

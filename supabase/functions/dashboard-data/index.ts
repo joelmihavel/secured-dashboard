@@ -26,6 +26,13 @@ interface DashboardData {
     first_name: string;
     last_name: string | null;
     phone: string | null;
+    email: string | null;
+    role: string;
+    is_role_locked: boolean;
+    user_status: string;
+    kyc_status: string | null;
+    cashback_balance_paise: number;
+    created_at: string;
   };
   tenancy: {
     id: string;
@@ -45,8 +52,11 @@ interface DashboardData {
   upcoming_payment: {
     due_date: string;
     amount: number;
+    amount_paise: number;
     days_until_due: number;
     is_overdue: boolean;
+    cashback_eligible: boolean;
+    rent_month: string;
   } | null;
   cashback: {
     available_balance: number;
@@ -84,7 +94,8 @@ serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  if (req.method !== "GET") {
+  // Accept both GET and POST (iOS Supabase SDK uses POST by default)
+  if (req.method !== "GET" && req.method !== "POST") {
     return errorResponse("Method not allowed", 405);
   }
 
@@ -95,10 +106,10 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     const { userId, user } = await createAuthenticatedClient(authHeader);
 
-    // Fetch user profile
+    // Fetch user profile (include all fields iOS expects)
     const { data: userProfile } = await supabase
       .from("users")
-      .select("id, first_name, last_name, phone")
+      .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, created_at")
       .eq("id", userId)
       .single();
 
@@ -148,8 +159,11 @@ serve(async (req: Request) => {
         upcomingPayment = {
           due_date: dueDate.toISOString().split("T")[0],
           amount: tenancy.monthly_rent_paise / 100,
+          amount_paise: tenancy.monthly_rent_paise,
           days_until_due: daysUntilDue,
           is_overdue: daysUntilDue < 0,
+          cashback_eligible: tenancy.landlord_approved === true,
+          rent_month: rentMonthStr,
         };
       }
     }

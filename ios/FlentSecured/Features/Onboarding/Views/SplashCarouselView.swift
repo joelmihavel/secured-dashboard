@@ -215,8 +215,15 @@ struct SplashCarouselView: View {
             
             // Dotted grid pattern
             DottedGridPattern()
+                .opacity(viewModel.shouldShowVideo && videoPlayer.isReady ? 0.6 : 0.4)
+                .mask(
+                    LinearGradient(
+                        colors: [.black, .black.opacity(0.2), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
                 .ignoresSafeArea()
-                .opacity(viewModel.shouldShowVideo && videoPlayer.isReady ? 0.6 : 1.0)
         }
     }
     

@@ -42,12 +42,32 @@ final class PhoneEntryViewModel {
         }
     }
 
+    /// User's name - required per Figma design (1:29108, 1:31073, 1:31671)
+    var name: String = "" {
+        didSet {
+            // Clear error when user types
+            if case .error = state {
+                state = .idle
+            }
+        }
+    }
+
     private(set) var state: State = .idle
 
     // MARK: - Computed Properties
 
     var isValidPhone: Bool {
         phoneNumber.count == 10 && phoneNumber.first.map { "6789".contains($0) } ?? false
+    }
+
+    /// Name must not be empty (trimmed)
+    var isValidName: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Trimmed name for submission
+    var trimmedName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var fullPhoneNumber: String {
@@ -65,7 +85,7 @@ final class PhoneEntryViewModel {
     }
 
     var canProceed: Bool {
-        isValidPhone && !isLoading
+        isValidPhone && isValidName && !isLoading
     }
 
     // MARK: - Dependencies
@@ -141,12 +161,14 @@ extension PhoneEntryViewModel {
     static var previewWithPhone: PhoneEntryViewModel {
         let vm = PhoneEntryViewModel(authService: MockAuthService())
         vm.phoneNumber = "9876543210"
+        vm.name = "John Appleseed"
         return vm
     }
 
     static var previewLoading: PhoneEntryViewModel {
         let vm = PhoneEntryViewModel(authService: MockAuthService())
         vm.phoneNumber = "9876543210"
+        vm.name = "John Appleseed"
         vm.state = .loading
         return vm
     }
@@ -154,6 +176,7 @@ extension PhoneEntryViewModel {
     static var previewError: PhoneEntryViewModel {
         let vm = PhoneEntryViewModel(authService: MockAuthService())
         vm.phoneNumber = "9876543210"
+        vm.name = "John Appleseed"
         vm.state = .error("Failed to send OTP. Please try again.")
         return vm
     }

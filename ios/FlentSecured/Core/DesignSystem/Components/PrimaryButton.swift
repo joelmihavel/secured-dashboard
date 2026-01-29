@@ -19,54 +19,50 @@ struct PrimaryButton: View {
     var isEnabled: Bool = true
     let action: () -> Void
 
-    /// Gradient from brand/400 to brand/500
-    private var buttonGradient: LinearGradient {
-        LinearGradient(
-            gradient: Gradient(colors: [AppColors.brand400, AppColors.brand500]),
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
-    /// Disabled state gradient (muted)
-    private var disabledGradient: LinearGradient {
-        LinearGradient(
-            gradient: Gradient(colors: [AppColors.black500, AppColors.black500]),
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
     var body: some View {
         Button(action: {
             print("DEBUG: PrimaryButton tapped, isEnabled=\(isEnabled), isLoading=\(isLoading)")
             if isEnabled && !isLoading {
-                // Haptic feedback
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
-
                 action()
             }
         }) {
-            // Inner button with gradient
             HStack(spacing: Spacing.xs) {
                 if isLoading {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: isEnabled ? .white : AppColors.textDisabled))
                         .scaleEffect(0.8)
                 }
 
                 Text(title)
-                    .font(Typography.button)
-                    .foregroundColor(.white)
+                    .font(Typography.bodyMdMedium)
+                    .foregroundColor(isEnabled ? .white : AppColors.black300)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 48) // Inner height
-            .background(isEnabled ? buttonGradient : disabledGradient)
-            .cornerRadius(Radius.sm) // rd-8 for inner
-            .padding(4) // Creates the outer padding effect
-            .background(isEnabled ? AppColors.brand600 : AppColors.black400)
-            .cornerRadius(Radius.md) // rd-12 for outer
+            .frame(height: 56)
+            .background(AppColors.black500)
+            .cornerRadius(Radius.md) // 12px
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(isEnabled ? AppColors.brand600 : AppColors.black500, lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2) // Outer shadow
+            // Inner shadows simulated with overlays
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .blur(radius: 2)
+                    .offset(y: -3)
+                    .mask(RoundedRectangle(cornerRadius: Radius.md).padding(2))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(Color.black, lineWidth: 1)
+                    .blur(radius: 2)
+                    .offset(x: -2, y: -4)
+                    .mask(RoundedRectangle(cornerRadius: Radius.md).padding(2))
+            )
         }
         .buttonStyle(PressableButtonStyle())
         .disabled(!isEnabled || isLoading)

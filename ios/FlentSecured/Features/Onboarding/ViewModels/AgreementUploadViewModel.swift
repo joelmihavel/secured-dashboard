@@ -127,8 +127,8 @@ final class AgreementUploadViewModel {
 
     // MARK: - Initialization
 
-    init(supabase: SupabaseManager = .shared) {
-        self.supabase = supabase
+    init(supabase: SupabaseManager? = nil) {
+        self.supabase = supabase ?? .shared
     }
 
     // MARK: - Actions
@@ -398,6 +398,16 @@ private struct ProcessDocumentResponse: Decodable {
     let success: Bool
     let message: String?
     let error: String?
+}
+
+// MARK: - Upload Error Type
+
+enum UploadErrorType {
+    case generic
+    case fileTooLarge
+    case expired
+    case invalidFormat
+    case networkError
 }
 
 // MARK: - Upload Error

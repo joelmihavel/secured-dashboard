@@ -37,6 +37,7 @@ struct PhoneEntryView: View {
     @State private var viewModel = PhoneEntryViewModel()
     @State private var consentGiven = false
     @FocusState private var isPhoneFocused: Bool
+    @FocusState private var isNameFocused: Bool
 
     // Animation states
     @State private var showContent = false
@@ -112,6 +113,28 @@ struct PhoneEntryView: View {
                 .accessibilityHint("Enter your 10-digit Indian mobile number")
 
                 Spacer()
+                    .frame(height: Spacing.lg) // 24pt gap between Phone and Name inputs
+
+                // Name Input with "Name" label - per Figma (1:29108, 1:31073, 1:31671)
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    // "Name" label
+                    Text("Name")
+                        .font(Typography.bodyMd2) // 14px Regular
+                        .foregroundColor(AppColors.black300) // Gray label
+
+                    NameInputFieldBox(
+                        text: $viewModel.name,
+                        isFocused: isNameFocused
+                    )
+                    .focused($isNameFocused)
+                }
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 20)
+                .accessibilityIdentifier("name_input")
+                .accessibilityLabel("Name input")
+                .accessibilityHint("Enter your full name")
+
+                Spacer()
 
                 // Consent Toggle - above button
                 ConsentToggleView(isOn: $consentGiven)
@@ -172,8 +195,10 @@ struct PhoneEntryView: View {
     private var buttonAccessibilityHint: String {
         if viewModel.isLoading {
             return "Sending verification code"
-        } else if !viewModel.canProceed {
+        } else if !viewModel.isValidPhone {
             return "Enter a valid 10-digit phone number to continue"
+        } else if !viewModel.isValidName {
+            return "Enter your name to continue"
         } else if !consentGiven {
             return "Enable consent toggle to continue"
         }
@@ -190,7 +215,7 @@ struct PhoneEntryView: View {
             if success {
                 // Haptic success feedback
                 HapticManager.shared.success()
-                coordinator.navigate(to: .otpVerification(phone: viewModel.fullPhoneNumber))
+                coordinator.navigate(to: .otpVerification(phone: viewModel.fullPhoneNumber, name: viewModel.trimmedName))
             }
         }
     }
@@ -281,6 +306,58 @@ struct PhoneInputFieldBox: View {
 
     private var borderWidth: CGFloat {
         (isFocused || hasError) ? 1 : 0
+    }
+}
+
+// MARK: - Name Input Field (Box Style)
+
+/// Name input field with box style matching Phone input per Figma spec
+/// - Height: 56pt
+/// - Corner Radius: 12pt
+/// - Background: #262626
+/// - Internal padding: 16pt
+/// - Font: 16pt Regular
+/// - Focus border: #00C853 (brand green) or brand color
+/// - Placeholder: "e.g. John Appleseed"
+struct NameInputFieldBox: View {
+    @Binding var text: String
+    var isFocused: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            // Input box
+            HStack(spacing: 0) {
+                // Name input - Figma placeholder: "e.g. John Appleseed"
+                TextField("e.g. John Appleseed", text: $text)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(.white)
+                    .keyboardType(.default)
+                    .textContentType(.name)
+                    .autocapitalization(.words)
+                    .disableAutocorrection(false)
+                    .tint(AppColors.brand500)
+                    .padding(.horizontal, Spacing.md)
+            }
+            .frame(height: 56)
+            .background(Color(hex: "262626"))
+            .cornerRadius(Radius.md) // 12pt
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(borderColor, lineWidth: borderWidth)
+            )
+            .animation(.easeInOut(duration: 0.2), value: isFocused)
+        }
+    }
+
+    private var borderColor: Color {
+        if isFocused {
+            return AppColors.brand500 // Using brand color for focus
+        }
+        return Color.clear // No border when not focused
+    }
+
+    private var borderWidth: CGFloat {
+        isFocused ? 1 : 0
     }
 }
 

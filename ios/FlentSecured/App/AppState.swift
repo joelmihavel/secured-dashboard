@@ -38,6 +38,12 @@ final class AppState {
     /// Current tenancy
     var currentTenancy: Tenancy?
 
+    // MARK: - Onboarding State
+
+    /// Name entered during phone entry (before profile is created)
+    /// Used to pre-fill NameVerificationView
+    var pendingUserName: String?
+
     // MARK: - App State
 
     /// Whether the app has finished initializing

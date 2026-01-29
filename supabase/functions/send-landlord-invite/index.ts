@@ -346,10 +346,14 @@ serve(async (req: Request) => {
     return jsonResponse({
       success: true,
       data: {
-        message: "Landlord invitation email sent successfully",
+        // Include fields iOS expects
+        invite_id: tenancy_id, // Use tenancy_id as invite identifier
+        status: "sent",
         sent_via: "email",
-        landlord_email_masked: maskEmail(finalLandlordEmail),
         expires_at: tokenExpiresAt,
+        message: "Landlord invitation email sent successfully",
+        invite_link: approvalUrl, // Include full approval URL for reference
+        landlord_email_masked: maskEmail(finalLandlordEmail),
       },
     });
   } catch (error) {

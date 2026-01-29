@@ -77,13 +77,13 @@ struct ContentView: View {
         switch route {
         // Splash & Auth
         case .splash:
-            SplashView()
+            SplashCarouselView()
 
         case .phoneEntry(let authIntent):
             PhoneEntryView(authIntent: authIntent)
 
-        case .otpVerification(let phone):
-            OTPVerificationView(phone: phone)
+        case .otpVerification(let phone, let name):
+            OTPVerificationView(phone: phone, name: name)
 
         // Onboarding
         case .nameVerification:

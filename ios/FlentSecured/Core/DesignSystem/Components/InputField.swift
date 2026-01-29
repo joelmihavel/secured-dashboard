@@ -18,6 +18,7 @@ struct InputField: View {
     var keyboardType: UIKeyboardType = .default
     var isSecure: Bool = false
     var errorMessage: String?
+    var topErrorMessage: String? // New prop for top-right error
     var helperText: String?
     var isDisabled: Bool = false
     var showEditLink: Bool = false
@@ -26,12 +27,12 @@ struct InputField: View {
     @FocusState private var isFocused: Bool
 
     private var hasError: Bool {
-        errorMessage != nil
+        errorMessage != nil || topErrorMessage != nil
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            // Label row with optional edit link
+            // Label row with optional edit link or top error
             HStack {
                 Text(label)
                     .font(.system(size: 12, weight: .medium))
@@ -39,7 +40,11 @@ struct InputField: View {
 
                 Spacer()
 
-                if showEditLink {
+                if let topError = topErrorMessage {
+                    Text(topError)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(AppColors.error)
+                } else if showEditLink {
                     Button(action: {
                         onEditTapped?()
                     }) {
@@ -59,7 +64,7 @@ struct InputField: View {
                 }
             }
             .font(.system(size: 20, weight: .regular))
-            .foregroundColor(isDisabled ? AppColors.textMuted : AppColors.textPrimary)
+            .foregroundColor(hasError ? AppColors.error : (isDisabled ? AppColors.textMuted : AppColors.textPrimary)) // Red text on error
             .keyboardType(keyboardType)
             .focused($isFocused)
             .disabled(isDisabled)
@@ -70,7 +75,7 @@ struct InputField: View {
                 .fill(underlineColor)
                 .frame(height: isFocused ? 2 : 1)
 
-            // Helper/Error Text
+            // Helper/Error Text (Bottom)
             if let error = errorMessage {
                 Text(error)
                     .font(Typography.caption)
@@ -102,13 +107,14 @@ struct PhoneInputField: View {
     var placeholder: String = "Enter Number"
     var countryCode: String = "+91"
     var errorMessage: String?
+    var topErrorMessage: String? // New prop
     var showEditLink: Bool = false
     var onEditTapped: (() -> Void)?
 
     @FocusState private var isFocused: Bool
 
     private var hasError: Bool {
-        errorMessage != nil
+        errorMessage != nil || topErrorMessage != nil
     }
 
     var body: some View {
@@ -121,7 +127,11 @@ struct PhoneInputField: View {
 
                 Spacer()
 
-                if showEditLink {
+                if let topError = topErrorMessage {
+                    Text(topError)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(AppColors.error)
+                } else if showEditLink {
                     Button(action: {
                         onEditTapped?()
                     }) {
@@ -147,7 +157,7 @@ struct PhoneInputField: View {
                 // Phone number input
                 TextField(placeholder, text: $text)
                     .font(.system(size: 20, weight: .regular))
-                    .foregroundColor(AppColors.textPrimary)
+                    .foregroundColor(hasError ? AppColors.error : AppColors.textPrimary) // Red text on error
                     .keyboardType(.phonePad)
                     .focused($isFocused)
             }
@@ -158,7 +168,7 @@ struct PhoneInputField: View {
                 .fill(underlineColor)
                 .frame(height: isFocused ? 2 : 1)
 
-            // Error Text
+            // Error Text (Bottom)
             if let error = errorMessage {
                 Text(error)
                     .font(Typography.caption)
