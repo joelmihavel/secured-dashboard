@@ -184,11 +184,3 @@ extension View {
     }
 }
 
-// MARK: - Tracking (Letter Spacing) Extension
-
-extension Text {
-    /// Apply letter spacing (tracking)
-    func tracking(_ value: CGFloat) -> Text {
-        self.tracking(value)
-    }
-}
