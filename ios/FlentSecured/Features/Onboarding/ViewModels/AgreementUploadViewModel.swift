@@ -53,6 +53,15 @@ final class AgreementUploadViewModel {
         return 0
     }
 
+    var isUploading: Bool {
+        switch state {
+        case .uploading, .processing:
+            return true
+        default:
+            return false
+        }
+    }
+
     var errorMessage: String? {
         if case .error(let message) = state { return message }
         return nil
@@ -123,6 +132,16 @@ final class AgreementUploadViewModel {
     }
 
     // MARK: - Actions
+
+    /// Start upload process manually
+    @MainActor
+    func startUpload() async {
+        print("[AgreementUploadViewModel] startUpload called")
+        // If we are in test mode or just simulating for UI
+        #if DEBUG
+        await simulateMockUpload()
+        #endif
+    }
 
     /// Handle file selection from document picker
     @MainActor

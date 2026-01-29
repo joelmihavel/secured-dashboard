@@ -87,18 +87,21 @@ struct PaymentTransactionView: View {
                 } else {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: Spacing.lg) {
+                            // Status Card (when eligible but no balance)
+                            if viewState == .firstVisit || viewState == .withoutCashback {
+                                UnlockCashbackCard(
+                                    daysDue: viewModel.daysUntilDue,
+                                    potentialCashback: viewModel.formattedEstimatedCashback
+                                )
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+
                             // Payment Summary Card - Figma: Receipt-style card
                             paymentSummaryCard
 
                             // Cashback Applied Card (when balance available and applied)
                             if viewState == .withCashback && viewModel.cashbackAppliedPaise > 0 {
                                 cashbackAppliedCard
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
-                            }
-
-                            // Cashback Promo Card (when eligible but no balance)
-                            if viewState == .firstVisit || viewState == .withoutCashback {
-                                cashbackPromoCard
                                     .transition(.opacity.combined(with: .move(edge: .top)))
                             }
 
@@ -134,7 +137,6 @@ struct PaymentTransactionView: View {
 
     // MARK: - Navigation Header
 
-    /// Figma: Standard navigation with back button and title
     private var navigationHeader: some View {
         HStack {
             Button {
@@ -155,7 +157,6 @@ struct PaymentTransactionView: View {
 
             Spacer()
 
-            // Spacer for alignment
             Color.clear.frame(width: 44, height: 44)
         }
         .padding(.horizontal, Spacing.xs)
@@ -164,15 +165,8 @@ struct PaymentTransactionView: View {
 
     // MARK: - Payment Summary Card
 
-    /// Figma: Payment summary card with rent breakdown
-    /// - Background: #1A1A1A (black/600)
-    /// - Corner radius: 12px
-    /// - Title section: "Rent Payment" + month
-    /// - Amount breakdown with labels
-    /// - Due date indicator
     private var paymentSummaryCard: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            // Header - Figma: Label + Month title
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text("Rent Payment")
                     .font(.system(size: 14, weight: .medium))
@@ -183,18 +177,14 @@ struct PaymentTransactionView: View {
                     .foregroundColor(.white)
             }
 
-            // Dashed Divider - Figma: Ticket-style receipt divider
             DashedDivider()
 
-            // Amount breakdown
             VStack(spacing: Spacing.sm) {
-                // Rent amount row
                 BreakdownRow(
                     label: "Monthly Rent",
                     value: viewModel.formattedRentAmount
                 )
 
-                // Platform fee (if any)
                 if viewModel.platformFeePaise > 0 {
                     BreakdownRow(
                         label: "Platform Fee",
@@ -203,7 +193,6 @@ struct PaymentTransactionView: View {
                     )
                 }
 
-                // Cashback applied (when has balance)
                 if viewModel.cashbackAppliedPaise > 0 {
                     BreakdownRow(
                         label: "Cashback Applied",
@@ -211,12 +200,18 @@ struct PaymentTransactionView: View {
                         valueColor: AppColors.success
                     )
                 }
+                
+                if viewState == .withoutCashback {
+                     BreakdownRow(
+                        label: "Cashback 🔒",
+                        value: "- \(viewModel.formattedEstimatedCashback)",
+                        valueColor: Color(hex: "EF9194")
+                    )
+                }
             }
 
-            // Dashed Divider
             DashedDivider()
 
-            // Total Amount Row - Figma: Emphasized with larger font
             HStack {
                 Text("Total Amount")
                     .font(.system(size: 16, weight: .semibold))
@@ -229,7 +224,6 @@ struct PaymentTransactionView: View {
                     .foregroundColor(.white)
             }
 
-            // Due date indicator
             dueDateIndicator
         }
         .padding(Spacing.lg)
@@ -239,7 +233,6 @@ struct PaymentTransactionView: View {
 
     // MARK: - Due Date Indicator
 
-    /// Figma: Calendar icon + due date message with color states
     private var dueDateIndicator: some View {
         HStack(spacing: Spacing.xs) {
             Image(systemName: "calendar")
@@ -268,11 +261,8 @@ struct PaymentTransactionView: View {
 
     // MARK: - Cashback Applied Card
 
-    /// Figma: Green-tinted card showing applied cashback
-    /// Shown when user has cashback being applied
     private var cashbackAppliedCard: some View {
         HStack(spacing: Spacing.md) {
-            // Checkmark icon in circle
             ZStack {
                 Circle()
                     .fill(AppColors.success.opacity(0.2))
@@ -295,7 +285,6 @@ struct PaymentTransactionView: View {
 
             Spacer()
 
-            // Remove button
             Button {
                 HapticManager.shared.lightImpact()
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -322,52 +311,10 @@ struct PaymentTransactionView: View {
         )
     }
 
-    // MARK: - Cashback Promo Card
-
-    /// Figma: Orange-tinted promo card for first-time or no-balance users
-    /// Shows estimated cashback earnings
-    private var cashbackPromoCard: some View {
-        HStack(spacing: Spacing.md) {
-            // Gift icon in circle
-            ZStack {
-                Circle()
-                    .fill(AppColors.brand500.opacity(0.2))
-                    .frame(width: 44, height: 44)
-
-                Image(systemName: "gift.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(AppColors.brand500)
-            }
-
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text("Earn Cashback")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
-
-                Text("Pay before \(viewModel.cashbackDeadlineFormatted) to earn \(viewModel.formattedEstimatedCashback)")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(AppColors.neutral500)
-            }
-
-            Spacer()
-        }
-        .padding(Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: Radius.card)
-                .fill(AppColors.brand500.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.card)
-                .stroke(AppColors.brand500.opacity(0.3), lineWidth: 1)
-        )
-    }
-
     // MARK: - Earn More Cashback Card
 
-    /// Shown when user has balance AND is eligible to earn more
     private var earnMoreCashbackCard: some View {
         HStack(spacing: Spacing.md) {
-            // Gift icon
             ZStack {
                 Circle()
                     .fill(AppColors.brand500.opacity(0.2))
@@ -403,8 +350,6 @@ struct PaymentTransactionView: View {
 
     // MARK: - Late Payment Warning
 
-    /// Figma: node-id=41:9746
-    /// Warning shown when payment is after the 7th (no cashback earning)
     private var latePaymentWarning: some View {
         HStack(alignment: .top, spacing: Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -433,7 +378,6 @@ struct PaymentTransactionView: View {
 
     // MARK: - Bottom CTA
 
-    /// Fixed bottom section with CTA and terms
     private var bottomCTA: some View {
         VStack(spacing: Spacing.sm) {
             PrimaryButton(
@@ -444,7 +388,6 @@ struct PaymentTransactionView: View {
                 coordinator.navigate(to: .paymentMethods)
             }
 
-            // Terms text - Figma: 12px regular neutral/500
             Text("By proceeding, you agree to the payment terms")
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(AppColors.neutral500)
@@ -454,11 +397,55 @@ struct PaymentTransactionView: View {
         .padding(.vertical, Spacing.md)
         .background(AppColors.backgroundSecondary)
     }
+    
+    // MARK: - Unlock Cashback Card
+    
+    struct UnlockCashbackCard: View {
+        let daysDue: Int
+        let potentialCashback: String
+        
+        var body: some View {
+            VStack(spacing: Spacing.lg) {
+                VStack(spacing: Spacing.xs) {
+                    Text("Rent due in \(daysDue) days")
+                        .font(Typography.bodySm)
+                        .foregroundColor(AppColors.neutral600)
+                    
+                    Text("Complete setup to unlock 1% cashback")
+                        .font(Typography.bodyMd2)
+                        .foregroundColor(AppColors.neutral300)
+                    
+                    Text("\(potentialCashback) available to unlock")
+                        .font(Typography.bodySm)
+                        .foregroundColor(AppColors.brand500)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(AppColors.black600)
+                        .cornerRadius(200)
+                }
+                
+                // Vector graphic placeholder
+                Rectangle()
+                    .fill(LinearGradient(colors: [AppColors.black600, AppColors.black500], startPoint: .leading, endPoint: .trailing))
+                    .frame(height: 120)
+                    .mask(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        Path { path in
+                            path.move(to: CGPoint(x: 0, y: 120))
+                            path.addCurve(to: CGPoint(x: 300, y: 0), control1: CGPoint(x: 100, y: 100), control2: CGPoint(x: 200, y: 50))
+                        }
+                        .stroke(AppColors.brand500.opacity(0.2), lineWidth: 2)
+                    )
+            }
+            .padding(Spacing.lg)
+            .background(AppColors.backgroundElevated)
+            .cornerRadius(Radius.card)
+        }
+    }
 }
 
 // MARK: - Breakdown Row
 
-/// Payment breakdown row with label and value
 struct BreakdownRow: View {
     let label: String
     let value: String
@@ -479,9 +466,8 @@ struct BreakdownRow: View {
     }
 }
 
-// MARK: - Dashed Divider (Reimplemented for consistency)
+// MARK: - Dashed Divider
 
-/// Figma: Dashed line divider for receipt cards
 struct DashedDivider: View {
     var color: Color = AppColors.black400
 
@@ -496,54 +482,4 @@ struct DashedDivider: View {
         }
         .frame(height: 1)
     }
-}
-
-// MARK: - Preview
-
-#Preview("First Visit") {
-    PaymentTransactionView(
-        tenancyId: "test-tenancy",
-        rentAmountPaise: 2500000,
-        cashbackAvailablePaise: 0,
-        dueDate: Date().addingTimeInterval(86400 * 5),
-        isCashbackEligible: true
-    )
-    .environment(AppCoordinator())
-    .environment(AppState())
-}
-
-#Preview("With Cashback") {
-    PaymentTransactionView(
-        tenancyId: "test-tenancy",
-        rentAmountPaise: 2500000,
-        cashbackAvailablePaise: 50000,
-        dueDate: Date().addingTimeInterval(86400 * 5),
-        isCashbackEligible: true
-    )
-    .environment(AppCoordinator())
-    .environment(AppState())
-}
-
-#Preview("Without Cashback Balance") {
-    PaymentTransactionView(
-        tenancyId: "test-tenancy",
-        rentAmountPaise: 2500000,
-        cashbackAvailablePaise: 0,
-        dueDate: Date().addingTimeInterval(86400 * 5),
-        isCashbackEligible: true
-    )
-    .environment(AppCoordinator())
-    .environment(AppState())
-}
-
-#Preview("Late Payment") {
-    PaymentTransactionView(
-        tenancyId: "test-tenancy",
-        rentAmountPaise: 2500000,
-        cashbackAvailablePaise: 0,
-        dueDate: Date().addingTimeInterval(-86400 * 3),
-        isCashbackEligible: false
-    )
-    .environment(AppCoordinator())
-    .environment(AppState())
 }

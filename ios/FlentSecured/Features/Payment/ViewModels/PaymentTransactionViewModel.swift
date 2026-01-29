@@ -50,6 +50,10 @@ final class PaymentTransactionViewModel {
         Calendar.current.isDateInTomorrow(dueDate)
     }
 
+    var daysUntilDue: Int {
+        Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: Calendar.current.startOfDay(for: dueDate)).day ?? 0
+    }
+
     var isLatePayment: Bool {
         !isCashbackEligible && !isOverdue
     }

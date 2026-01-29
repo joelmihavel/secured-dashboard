@@ -10,18 +10,10 @@
 /// PIXEL PERFECT from Figma:
 /// - Background: #131313 with dotted grid pattern
 /// - Header: H1/Regular 400 (48px, tracking -2px)
-///   - "Upload your" - Gray (#A9A9A9)
-///   - "agreement" - Brand (#FF9A6D)
-/// - Subtitle: 14px Regular, #A6A6A6
+///   - "One" - Gray (#A9A9A9)
+///   - "More Step" - Brand (#FF9A6D)
+/// - Subtitle: 14px Regular, #797979
 /// - Horizontal padding: 48pt (sp-48)
-///
-/// States handled:
-/// - .idle: Upload prompt
-/// - .selecting: Choosing file
-/// - .uploading: Uploading document with progress
-/// - .processing: Document being processed by AI
-/// - .processed: Ready to review
-/// - .error: Various error states (expired, too large, generic)
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -51,24 +43,24 @@ struct AgreementUploadView: View {
                         .foregroundColor(.white)
                 }
 
-                // Header - Figma: H1/Regular 400 with two-color format
+                // Header - Figma: H1/Regular 400 (48px, tracking -2px)
                 VStack(alignment: .leading, spacing: Spacing.md) {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("Upload your")
+                        Text("One")
                             .font(Typography.h1) // 48px Regular
                             .foregroundColor(AppColors.neutral500) // #A9A9A9
                             .tracking(-2)
                             .lineSpacing(16)
-                        Text("agreement")
+                        Text("More Step")
                             .font(Typography.h1) // 48px Regular
                             .foregroundColor(AppColors.brand500) // #FF9A6D
                             .tracking(-2)
                             .lineSpacing(16)
                     }
 
-                    Text("We'll extract your rental details automatically")
+                    Text("Your rental agreement helps us confirm your details and unlock your Secured benefits.")
                         .font(Typography.bodyMd2) // 14px Regular
-                        .foregroundColor(AppColors.black200) // #A6A6A6
+                        .foregroundColor(AppColors.black300) // #797979
                         .lineSpacing(6)
                 }
 
@@ -80,42 +72,66 @@ struct AgreementUploadView: View {
                     fileName: viewModel.selectedFileName,
                     fileSize: viewModel.fileSizeFormatted,
                     progress: viewModel.uploadProgress,
-                    errorType: viewModel.errorType
-                ) {
-                    showDocumentPicker = true
-                }
+                    errorType: viewModel.errorType,
+                    onTap: {
+                        if case .idle = viewModel.state {
+                            showDocumentPicker = true
+                        }
+                    },
+                    onDelete: {
+                        viewModel.reset()
+                    }
+                )
 
                 // Enhanced Error Display
                 if case .error = viewModel.state {
-                    uploadErrorView
+                    if viewModel.selectedFileName != nil {
+                         // Show inline error text for file-specific errors
+                         Text(viewModel.errorType.message)
+                             .font(Typography.bodyMd2)
+                             .foregroundColor(AppColors.error)
+                             .multilineTextAlignment(.center)
+                             .padding(.top, Spacing.md)
+                             .frame(maxWidth: .infinity)
+                    } else {
+                        uploadErrorView
+                    }
                 }
 
                 Spacer()
 
-                // Security Info
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.textMuted)
-
-                    Text("Your document is encrypted and secure")
-                        .font(Typography.caption)
-                        .foregroundColor(AppColors.textMuted)
-                }
-
-                // File Requirements
+                // File Requirements - Only show in idle
                 if case .idle = viewModel.state {
                     fileRequirementsView
                 }
 
-                // Continue Button (only shown when processed)
+                // Proceed / Upload Again Button
                 if case .processed(let extractionId) = viewModel.state {
                     PrimaryButton(
-                        title: "Continue",
+                        title: "Proceed",
                         isLoading: false,
                         isEnabled: true
                     ) {
                         coordinator.navigate(to: .agreementReview(extractionId: extractionId))
+                    }
+                } else if case .error = viewModel.state {
+                    PrimaryButton(
+                        title: "Upload Again",
+                        isLoading: false,
+                        isEnabled: true
+                    ) {
+                        viewModel.retry()
+                        showDocumentPicker = true
+                    }
+                } else if viewModel.selectedFileName != nil && !viewModel.isUploading {
+                     PrimaryButton(
+                        title: "Proceed",
+                        isLoading: false,
+                        isEnabled: true
+                    ) {
+                         Task {
+                             await viewModel.startUpload()
+                         }
                     }
                 }
             }
@@ -132,11 +148,8 @@ struct AgreementUploadView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.state)
         .onChange(of: viewModel.state) { _, newState in
-            print("[AgreementUploadView] State changed to: \(newState)")
             if case .processed(let extractionId) = newState {
-                print("[AgreementUploadView] Document processed, navigating to review with ID: \(extractionId)")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    print("[AgreementUploadView] Executing navigation to agreementReview")
                     coordinator.navigate(to: .agreementReview(extractionId: extractionId))
                 }
             }
@@ -150,7 +163,6 @@ struct AgreementUploadView: View {
 
     private var uploadErrorView: some View {
         VStack(spacing: Spacing.md) {
-            // Error Card
             HStack(spacing: Spacing.sm) {
                 Image(systemName: viewModel.errorType.iconName)
                     .font(.system(size: 24))
@@ -187,7 +199,6 @@ struct AgreementUploadView: View {
                     .stroke(viewModel.errorType.color.opacity(0.3), lineWidth: 1)
             )
 
-            // Action Buttons
             HStack(spacing: Spacing.sm) {
                 SecondaryButton(title: "Try Again") {
                     viewModel.retry()
@@ -241,13 +252,11 @@ struct AgreementUploadView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: Spacing.xl) {
-                        // Error Icon
                         Image(systemName: viewModel.errorType.iconName)
                             .font(.system(size: 60))
                             .foregroundColor(viewModel.errorType.color)
                             .frame(maxWidth: .infinity)
 
-                        // Error Details
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             Text(viewModel.errorType.detailTitle)
                                 .font(Typography.h5)
@@ -259,7 +268,6 @@ struct AgreementUploadView: View {
                                 .lineSpacing(4)
                         }
 
-                        // Help Steps
                         if !viewModel.errorType.helpSteps.isEmpty {
                             VStack(alignment: .leading, spacing: Spacing.sm) {
                                 Text("What you can do:")
@@ -337,6 +345,7 @@ struct EnhancedUploadDropZone: View {
     let progress: Double
     let errorType: UploadErrorType
     let onTap: () -> Void
+    var onDelete: (() -> Void)? = nil
 
     @State private var pulseAnimation = false
 
@@ -360,12 +369,20 @@ struct EnhancedUploadDropZone: View {
     }
 
     var body: some View {
-        Button(action: onTap) {
+        Button(action: {
+             if fileName != nil {
+                 // Do nothing
+             } else {
+                 onTap()
+             }
+        }) {
             VStack(spacing: Spacing.md) {
                 if isUploading {
                     uploadingState
                 } else if isProcessed {
                     successState
+                } else if hasError && fileName != nil {
+                    fileSelectedState
                 } else if hasError {
                     errorState
                 } else if fileName != nil {
@@ -375,12 +392,12 @@ struct EnhancedUploadDropZone: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 220)
+            .frame(height: fileName != nil ? 160 : 220)
             .background(backgroundColor)
             .cornerRadius(Radius.md)
             .overlay(borderOverlay)
         }
-        .disabled(isUploading)
+        .disabled(isUploading || (fileName != nil))
         .animation(.easeInOut(duration: 0.3), value: state)
         .onAppear {
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
@@ -419,7 +436,6 @@ struct EnhancedUploadDropZone: View {
     private var uploadingState: some View {
         VStack(spacing: Spacing.md) {
             if case .uploading(let progress) = state {
-                // Upload Progress Ring
                 ZStack {
                     Circle()
                         .stroke(AppColors.border, lineWidth: 6)
@@ -438,7 +454,6 @@ struct EnhancedUploadDropZone: View {
                         .font(Typography.bodyMd)
                         .foregroundColor(AppColors.textPrimary)
                 }
-                .animation(.easeInOut, value: progress)
 
                 VStack(spacing: Spacing.xs) {
                     Text("Uploading...")
@@ -453,7 +468,6 @@ struct EnhancedUploadDropZone: View {
                     }
                 }
             } else {
-                // Processing with AI animation
                 ZStack {
                     Circle()
                         .fill(AppColors.accentPrimary.opacity(0.1))
@@ -507,36 +521,33 @@ struct EnhancedUploadDropZone: View {
     }
 
     private var fileSelectedState: some View {
-        VStack(spacing: Spacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: Radius.sm)
-                    .fill(AppColors.accentPrimary.opacity(0.1))
-                    .frame(width: 64, height: 80)
+        ZStack {
+            VStack(spacing: 12) {
+                 Image(systemName: "doc.text")
+                    .font(.system(size: 32))
+                    .foregroundColor(AppColors.textSecondary)
 
-                Image(systemName: "doc.fill")
-                    .font(.system(size: 36))
-                    .foregroundColor(AppColors.accentPrimary)
-            }
-
-            VStack(spacing: Spacing.xs) {
-                if let name = fileName {
+                 if let name = fileName {
                     Text(name)
-                        .font(Typography.bodyMd)
-                        .foregroundColor(AppColors.textPrimary)
-                        .lineLimit(1)
+                        .font(Typography.bodySmMedium)
+                        .foregroundColor(AppColors.black400)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .frame(width: 167)
                 }
-
-                if let size = fileSize {
-                    Text(size)
-                        .font(Typography.caption)
-                        .foregroundColor(AppColors.textSecondary)
+            }
+            
+            if let onDelete = onDelete {
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                         .font(.system(size: 16))
+                         .foregroundColor(AppColors.error)
                 }
-
-                Text("Tap to change")
-                    .font(Typography.caption)
-                    .foregroundColor(AppColors.accentPrimary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(16)
             }
         }
+        .padding(Spacing.md)
     }
 
     private var errorState: some View {
@@ -566,6 +577,9 @@ struct EnhancedUploadDropZone: View {
     // MARK: - Styling
 
     private var backgroundColor: Color {
+        if fileName != nil {
+            return AppColors.black500
+        }
         if hasError {
             return errorType.color.opacity(0.05)
         }
@@ -576,8 +590,8 @@ struct EnhancedUploadDropZone: View {
         RoundedRectangle(cornerRadius: Radius.md)
             .strokeBorder(
                 style: StrokeStyle(
-                    lineWidth: 2,
-                    dash: (isUploading || isProcessed || hasError) ? [] : [8]
+                    lineWidth: hasError ? 1 : 2,
+                    dash: (isUploading || isProcessed || hasError || fileName != nil) ? [] : [8]
                 )
             )
             .foregroundColor(borderColor)
@@ -587,9 +601,11 @@ struct EnhancedUploadDropZone: View {
         if isProcessed {
             return AppColors.success
         } else if hasError {
-            return errorType.color.opacity(0.5)
+            return errorType.color
         } else if isUploading {
             return AppColors.accentPrimary
+        } else if fileName != nil {
+            return Color.clear
         } else {
             return AppColors.border
         }
@@ -669,9 +685,9 @@ enum UploadErrorType: Equatable {
         case .generic:
             return "Something went wrong. Please try again."
         case .fileTooLarge:
-            return "Maximum file size is \(AgreementUploadViewModel.maxFileSizeMB)MB"
+            return "This file is too large. Please upload a file under 10MB"
         case .expired:
-            return "This agreement has expired. Please upload a valid agreement."
+            return "The agreement is invalid or expired. Please upload a valid one."
         case .invalidFormat:
             return "Please upload a PDF file"
         case .networkError:
@@ -754,29 +770,4 @@ enum UploadErrorType: Equatable {
             return []
         }
     }
-}
-
-#Preview("Initial") {
-    AgreementUploadView()
-        .environment(AppCoordinator())
-}
-
-#Preview("Uploading") {
-    AgreementUploadView()
-        .environment(AppCoordinator())
-}
-
-#Preview("Processing") {
-    AgreementUploadView()
-        .environment(AppCoordinator())
-}
-
-#Preview("Error - Too Large") {
-    AgreementUploadView()
-        .environment(AppCoordinator())
-}
-
-#Preview("Error - Expired") {
-    AgreementUploadView()
-        .environment(AppCoordinator())
 }
