@@ -59,6 +59,11 @@ struct PhoneEntryView: View {
             DottedGridPattern()
                 .ignoresSafeArea()
 
+            // Decorative "Hola!" flourish - top-right per Figma (1:29108, 1:31073)
+            // Positioned to align with headline area, ~140pt from top safe area
+            HolaDecorativeOverlay(trailingOffset: -20, topOffset: 140)
+                .opacity(showContent ? 1 : 0)
+
             VStack(alignment: .leading, spacing: 0) {
                 // Logo - Flent keyhole, top-left (33.375x40pt)
                 FlentLogo()
@@ -90,18 +95,29 @@ struct PhoneEntryView: View {
                 Spacer()
                     .frame(height: Spacing.xl) // 32pt gap to input
 
-                // Phone Input with "Phone" label - Box style per Figma
+                // Phone Input with "Phone" label - Underline style per Figma
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    // "Phone" label
-                    Text("Phone")
-                        .font(Typography.bodyMd2) // 14px Regular
-                        .foregroundColor(AppColors.black300) // Gray label
+                    // "Phone" label + inline error (Figma: 1-31590, 1-31671)
+                    HStack {
+                        Text("Phone")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(AppColors.neutral500) // #A9A9A9
+
+                        Spacer()
+
+                        // Inline error message (right-aligned per Figma)
+                        if let error = viewModel.errorMessage {
+                            Text(error)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(AppColors.brand500) // Orange error text
+                                .transition(.opacity)
+                        }
+                    }
 
                     PhoneInputFieldBox(
                         text: $viewModel.phoneNumber,
                         isFocused: isPhoneFocused,
-                        hasError: viewModel.errorMessage != nil,
-                        errorMessage: viewModel.errorMessage
+                        hasError: viewModel.errorMessage != nil
                     )
                     .focused($isPhoneFocused)
                 }
@@ -117,9 +133,9 @@ struct PhoneEntryView: View {
 
                 // Name Input with "Name" label - per Figma (1:29108, 1:31073, 1:31671)
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    // "Name" label
+                    // "Name" label - Figma: 12px Medium
                     Text("Name")
-                        .font(Typography.bodyMd2) // 14px Regular
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(AppColors.black300) // Gray label
 
                     NameInputFieldBox(
@@ -136,13 +152,7 @@ struct PhoneEntryView: View {
 
                 Spacer()
 
-                // Consent Toggle - above button
-                ConsentToggleView(isOn: $consentGiven)
-                    .padding(.bottom, Spacing.md) // 16pt gap to button
-                    .opacity(showContent ? 1 : 0)
-                    .accessibilityIdentifier("consent_toggle")
-
-                // Get Started Button - Figma: disabled until valid phone + consent
+                // Get Started Button - Figma: above consent toggle per 1:29108
                 PrimaryButton(
                     title: "Get Started",
                     isLoading: viewModel.isLoading,
@@ -150,13 +160,19 @@ struct PhoneEntryView: View {
                 ) {
                     sendOTP()
                 }
+                .padding(.bottom, Spacing.md) // 16pt gap to consent
                 .opacity(showContent ? 1 : 0)
                 .accessibilityIdentifier("continue_button")
                 .accessibilityLabel("Get Started")
                 .accessibilityHint(buttonAccessibilityHint)
 
+                // Consent Toggle - below button per Figma 1:29108
+                ConsentToggleView(isOn: $consentGiven)
+                    .opacity(showContent ? 1 : 0)
+                    .accessibilityIdentifier("consent_toggle")
+
                 Spacer()
-                    .frame(height: Spacing.huge) // 64pt bottom padding (scale/64)
+                    .frame(height: Spacing.xxxl) // 48pt bottom padding per Figma
             }
             .padding(.horizontal, Spacing.xxxl) // 48pt horizontal (sp-48)
         }
@@ -215,109 +231,111 @@ struct PhoneEntryView: View {
             if success {
                 // Haptic success feedback
                 HapticManager.shared.success()
-                coordinator.navigate(to: .otpVerification(phone: viewModel.fullPhoneNumber, name: viewModel.trimmedName))
+                // Present OTP as sheet per Figma design (modal overlay)
+                coordinator.present(sheet: .otpVerification(phone: viewModel.fullPhoneNumber, name: viewModel.trimmedName))
             }
         }
     }
 }
 
-// MARK: - Phone Input Field (Box Style)
+// MARK: - Phone Input Field (Underline Style - Figma)
 
-/// Phone input field with box style per Figma spec (01_PHONE_ENTRY_SCREEN.md)
-/// - Height: 56pt
-/// - Corner Radius: 12pt
-/// - Background: #262626
-/// - Country code width: 80pt
-/// - Internal padding: 16pt
-/// - Font: 16pt Regular
-/// - Focus border: #00C853 (brand green)
-/// - Error border: #FF5252
+/// Phone input field with underline/transparent style per Figma spec
+/// Figma Node: 1:29108, 1:31073, 1:31590, 1:31671
+/// - No background (transparent)
+/// - Vertical padding: 16pt
+/// - Font: 20px Regular for input, #DDD placeholder, orange when error
+/// - Country code: "+91" with chevron-down
+/// - Underline: gray normally, orange when error
 struct PhoneInputFieldBox: View {
     @Binding var text: String
     var isFocused: Bool = false
     var hasError: Bool = false
-    var errorMessage: String?
+
+    /// Formats phone number with space after 5 digits: "98765 43210"
+    private var formattedDisplay: String {
+        let digits = text.filter { $0.isNumber }
+        if digits.count > 5 {
+            let index = digits.index(digits.startIndex, offsetBy: 5)
+            return String(digits[..<index]) + " " + String(digits[index...])
+        }
+        return digits
+    }
+
+    /// Text color changes to orange when error (Figma: 1-31590, 1-31671)
+    private var inputTextColor: Color {
+        hasError ? AppColors.brand500 : AppColors.neutral200
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Input box
-            HStack(spacing: 0) {
-                // Country Code Picker - 80pt width
-                HStack(spacing: Spacing.xxs) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Input row - transparent background per Figma
+            HStack(spacing: Spacing.md) {
+                // Country Code Picker
+                HStack(spacing: 4) {
                     Text("+91")
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundColor(.white)
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundColor(hasError ? AppColors.brand500 : AppColors.neutral200)
 
                     Image(systemName: "chevron.down")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(AppColors.neutral800)
                 }
-                .frame(width: 80)
                 .accessibilityLabel("Country code India plus 91")
 
-                // Divider
-                Rectangle()
-                    .fill(Color.white.opacity(0.4))
-                    .frame(width: 1, height: 24)
+                // Phone number input - Figma: 20px Regular
+                ZStack(alignment: .leading) {
+                    // Show formatted text when not empty
+                    if !text.isEmpty {
+                        Text(formattedDisplay)
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundColor(inputTextColor) // Orange when error
+                    }
 
-                // Phone number input - Figma placeholder: "Enter Number"
-                TextField("Enter Number", text: $text)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundColor(.white)
-                    .keyboardType(.phonePad)
-                    .textContentType(.telephoneNumber)
-                    .tint(AppColors.brand500)
-                    .padding(.leading, Spacing.md)
-            }
-            .frame(height: 56)
-            .background(Color(hex: "262626"))
-            .cornerRadius(Radius.md) // 12pt
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(borderColor, lineWidth: borderWidth)
-            )
-            .animation(.easeInOut(duration: 0.2), value: isFocused)
-            .animation(.easeInOut(duration: 0.2), value: hasError)
+                    // Hidden text field for input
+                    TextField("", text: $text)
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundColor(.clear) // Hide actual text, show formatted
+                        .keyboardType(.phonePad)
+                        .textContentType(.telephoneNumber)
+                        .tint(AppColors.brand500)
+                        .onChange(of: text) { _, newValue in
+                            // Limit to 10 digits
+                            let digits = newValue.filter { $0.isNumber }
+                            if digits.count > 10 {
+                                text = String(digits.prefix(10))
+                            } else {
+                                text = digits
+                            }
+                        }
 
-            // Error message
-            if let error = errorMessage {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppColors.error)
-
-                    Text(error)
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(AppColors.error)
+                    // Placeholder when empty - Figma: "Enter Number"
+                    if text.isEmpty {
+                        Text("Enter Number")
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundColor(AppColors.neutral800) // #444 placeholder
+                    }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-        }
-    }
+            .padding(.vertical, Spacing.md) // py-16pt per Figma
 
-    private var borderColor: Color {
-        if hasError {
-            return AppColors.error // #FF5252
-        } else if isFocused {
-            return AppColors.brand500 // Using brand color for focus
+            // Underline - orange when error (Figma: 1-31590, 1-31671)
+            Rectangle()
+                .fill(hasError ? AppColors.brand500 : AppColors.neutral800)
+                .frame(height: 1)
         }
-        return Color.clear // No border when not focused
-    }
-
-    private var borderWidth: CGFloat {
-        (isFocused || hasError) ? 1 : 0
+        .animation(.easeInOut(duration: 0.2), value: isFocused)
+        .animation(.easeInOut(duration: 0.2), value: hasError)
     }
 }
 
-// MARK: - Name Input Field (Box Style)
+// MARK: - Name Input Field (Underline Style - Figma)
 
-/// Name input field with box style matching Phone input per Figma spec
-/// - Height: 56pt
-/// - Corner Radius: 12pt
-/// - Background: #262626
-/// - Internal padding: 16pt
-/// - Font: 16pt Regular
-/// - Focus border: #00C853 (brand green) or brand color
+/// Name input field with underline/transparent style per Figma spec (matching Phone input)
+/// Figma Node: 1:29108, 1:31073, 1:31671
+/// - No background (transparent)
+/// - Vertical padding: 16pt
+/// - Font: 20px Regular for input, #DDD placeholder, white for filled
 /// - Placeholder: "e.g. John Appleseed"
 struct NameInputFieldBox: View {
     @Binding var text: String
@@ -325,39 +343,38 @@ struct NameInputFieldBox: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Input box
+            // Input row - transparent background per Figma
             HStack(spacing: 0) {
-                // Name input - Figma placeholder: "e.g. John Appleseed"
-                TextField("e.g. John Appleseed", text: $text)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundColor(.white)
-                    .keyboardType(.default)
-                    .textContentType(.name)
-                    .autocapitalization(.words)
-                    .disableAutocorrection(false)
-                    .tint(AppColors.brand500)
-                    .padding(.horizontal, Spacing.md)
+                // Name input - Figma: 20px Regular (matching phone input)
+                ZStack(alignment: .leading) {
+                    // Show text when not empty
+                    if !text.isEmpty {
+                        Text(text)
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundColor(AppColors.neutral200) // #DDD for filled text
+                    }
+
+                    // Hidden text field for input
+                    TextField("", text: $text)
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundColor(.clear) // Hide actual text, show formatted
+                        .keyboardType(.default)
+                        .textContentType(.name)
+                        .autocapitalization(.words)
+                        .disableAutocorrection(false)
+                        .tint(AppColors.brand500)
+
+                    // Placeholder when empty
+                    if text.isEmpty {
+                        Text("e.g. John Appleseed")
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundColor(AppColors.neutral800) // #444 placeholder
+                    }
+                }
             }
-            .frame(height: 56)
-            .background(Color(hex: "262626"))
-            .cornerRadius(Radius.md) // 12pt
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(borderColor, lineWidth: borderWidth)
-            )
+            .padding(.vertical, Spacing.md) // py-16pt per Figma
             .animation(.easeInOut(duration: 0.2), value: isFocused)
         }
-    }
-
-    private var borderColor: Color {
-        if isFocused {
-            return AppColors.brand500 // Using brand color for focus
-        }
-        return Color.clear // No border when not focused
-    }
-
-    private var borderWidth: CGFloat {
-        isFocused ? 1 : 0
     }
 }
 
@@ -378,12 +395,19 @@ struct ConsentToggleView: View {
                 .accessibilityLabel("Verification consent")
                 .accessibilityValue(isOn ? "Enabled" : "Disabled")
 
-            Text("I consent to a identity verification via to help verify my profile and other privacy policy and TnC.")
-                .font(Typography.bodySm) // 12px Regular
-                .foregroundColor(AppColors.black300) // Gray text from Figma
-                .lineSpacing(4) // 20 - 12 = 8, but using 4 for tighter look
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityHidden(true) // Read as part of toggle
+            // Figma: "I consent to a one-time verification to confirm my profile details.
+            // Verification is securely handled via Cashfree"
+            (
+                Text("I consent to a one-time verification to confirm my profile details. Verification is securely handled via ")
+                    .foregroundColor(AppColors.black300)
+                + Text("Cashfree")
+                    .foregroundColor(AppColors.brand500)
+                    .underline()
+            )
+            .font(Typography.bodySm) // 12px Regular
+            .lineSpacing(4)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityHidden(true) // Read as part of toggle
         }
     }
 }

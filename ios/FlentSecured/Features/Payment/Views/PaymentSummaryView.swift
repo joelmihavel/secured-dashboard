@@ -182,8 +182,11 @@ struct PaymentSummaryView: View {
             Spacer()
                 .frame(height: Spacing.sm)
 
-            // Confirm Button
-            PrimaryButton(title: "Confirm & Pay \(formattedTotal)") {
+            // Confirm Button - Figma: Secondary style (dark bg with orange border)
+            PrimaryButton(
+                title: "Confirm & Pay \(formattedTotal)",
+                style: .secondary
+            ) {
                 onConfirm()
             }
 

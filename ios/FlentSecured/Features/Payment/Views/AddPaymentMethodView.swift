@@ -879,6 +879,655 @@ struct Bank: Identifiable, Equatable {
     ]
 }
 
+// MARK: - Edit UPI Method View (Full Screen)
+
+/// Edit UPI payment method - Full screen view
+/// Figma: node-id=41:8450
+/// Specifications:
+/// - Full screen with back button
+/// - Title: "Edit your" (white) + "UPI Method" (orange) - H1 style
+/// - Underline-style inputs with "edit" links
+/// - Save Changes button at bottom
+struct EditUPIMethodView: View {
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focusedField: Field?
+
+    @State private var accountHolderName: String
+    @State private var upiId: String
+    @State private var isSaving = false
+
+    enum Field: Hashable {
+        case name, upiId
+    }
+
+    let existingName: String
+    let existingUpiId: String
+    let onSave: (String, String) -> Void
+
+    init(accountHolderName: String = "", upiId: String = "", onSave: @escaping (String, String) -> Void) {
+        self.existingName = accountHolderName
+        self.existingUpiId = upiId
+        self._accountHolderName = State(initialValue: accountHolderName)
+        self._upiId = State(initialValue: upiId)
+        self.onSave = onSave
+    }
+
+    private var canSave: Bool {
+        !accountHolderName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        upiId.contains("@") &&
+        upiId.count >= 5
+    }
+
+    var body: some View {
+        ZStack {
+            // Background
+            AppColors.backgroundPrimary
+                .ignoresSafeArea()
+
+            // Dotted grid pattern
+            DottedGridPattern()
+                .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                // Back Button - Figma: 20px arrow.left
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44, alignment: .leading)
+                }
+                .padding(.top, Spacing.lg)
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                // Title - Figma: H1/Regular split color
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Edit your")
+                        .font(Typography.h1) // 48px
+                        .foregroundColor(AppColors.neutral500) // Gray
+                        .tracking(-2)
+
+                    Text("UPI Method")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.brand500) // Orange
+                        .tracking(-2)
+                }
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                // Account Holder Name - Underline style input
+                UnderlineInputField(
+                    label: "Account holder name",
+                    text: $accountHolderName,
+                    placeholder: "e.g. John Smith",
+                    showEditLink: true
+                )
+                .focused($focusedField, equals: .name)
+
+                Spacer()
+                    .frame(height: Spacing.lg)
+
+                // UPI ID - Underline style input
+                UnderlineInputField(
+                    label: "UPI ID",
+                    text: $upiId,
+                    placeholder: "e.g. john@oksbi",
+                    showEditLink: true
+                )
+                .focused($focusedField, equals: .upiId)
+
+                Spacer()
+
+                // Save Changes Button - Figma: Primary button with gradient border
+                PrimaryButton(
+                    title: "Save Changes",
+                    isLoading: isSaving,
+                    isEnabled: canSave
+                ) {
+                    saveChanges()
+                }
+            }
+            .padding(.horizontal, Spacing.xxxl) // 48pt (sp-48)
+            .padding(.bottom, Spacing.xl)
+        }
+        .navigationBarHidden(true)
+    }
+
+    private func saveChanges() {
+        guard canSave else { return }
+        isSaving = true
+        HapticManager.shared.mediumImpact()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isSaving = false
+            HapticManager.shared.success()
+            onSave(accountHolderName, upiId)
+            dismiss()
+        }
+    }
+}
+
+// MARK: - Add UPI Method View (Full Screen)
+
+/// Add UPI payment method - Full screen view (alternative to bottom sheet)
+/// Figma: node-id=41:8369
+/// Same layout as Edit but with "Add your" title
+struct AddUPIMethodFullScreenView: View {
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focusedField: Field?
+
+    @State private var accountHolderName: String = ""
+    @State private var upiId: String = ""
+    @State private var isAdding = false
+
+    enum Field: Hashable {
+        case name, upiId
+    }
+
+    let onComplete: (String, String) -> Void
+
+    private var canProceed: Bool {
+        !accountHolderName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        upiId.contains("@") &&
+        upiId.count >= 5
+    }
+
+    var body: some View {
+        ZStack {
+            AppColors.backgroundPrimary
+                .ignoresSafeArea()
+
+            DottedGridPattern()
+                .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                // Back Button
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44, alignment: .leading)
+                }
+                .padding(.top, Spacing.lg)
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                // Title - "Add your / UPI Method"
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Add your")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.neutral500)
+                        .tracking(-2)
+
+                    Text("UPI Method")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.brand500)
+                        .tracking(-2)
+                }
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                // Account Holder Name
+                UnderlineInputField(
+                    label: "Account holder name",
+                    text: $accountHolderName,
+                    placeholder: "e.g. John Smith",
+                    showEditLink: true
+                )
+                .focused($focusedField, equals: .name)
+
+                Spacer()
+                    .frame(height: Spacing.lg)
+
+                // UPI ID
+                UnderlineInputField(
+                    label: "UPI ID",
+                    text: $upiId,
+                    placeholder: "e.g. john@oksbi",
+                    showEditLink: true
+                )
+                .focused($focusedField, equals: .upiId)
+
+                Spacer()
+
+                // Info text
+                Text("This will be used to make rent payments and earn cashback.")
+                    .font(Typography.bodySm)
+                    .foregroundColor(AppColors.textMuted)
+                    .padding(.bottom, Spacing.md)
+
+                // Proceed Button
+                PrimaryButton(
+                    title: "Proceed",
+                    isLoading: isAdding,
+                    isEnabled: canProceed
+                ) {
+                    addUPI()
+                }
+            }
+            .padding(.horizontal, Spacing.xxxl)
+            .padding(.bottom, Spacing.xl)
+        }
+        .navigationBarHidden(true)
+    }
+
+    private func addUPI() {
+        guard canProceed else { return }
+        isAdding = true
+        HapticManager.shared.mediumImpact()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isAdding = false
+            HapticManager.shared.success()
+            onComplete(accountHolderName, upiId)
+            dismiss()
+        }
+    }
+}
+
+// MARK: - Add Credit Card View (Full Screen with Underline Inputs)
+
+/// Add Credit Card - Full screen view matching Figma 41:8529
+/// Uses underline-style inputs with "edit" links
+struct AddCreditCardFullScreenView: View {
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focusedField: CardField?
+
+    @State private var cardholderName: String = ""
+    @State private var cardNumber: String = ""
+    @State private var expiryDate: String = ""
+    @State private var cvv: String = ""
+    @State private var isAdding = false
+
+    enum CardField: Hashable {
+        case name, number, expiry, cvv
+    }
+
+    let onComplete: () -> Void
+
+    private var isValid: Bool {
+        let cleanedNumber = cardNumber.replacingOccurrences(of: " ", with: "")
+        return !cardholderName.trimmingCharacters(in: .whitespaces).isEmpty &&
+               cleanedNumber.count >= 15 &&
+               cleanedNumber.count <= 16 &&
+               expiryDate.count == 5 &&
+               cvv.count >= 3
+    }
+
+    var body: some View {
+        ZStack {
+            AppColors.backgroundPrimary
+                .ignoresSafeArea()
+
+            DottedGridPattern()
+                .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                // Back Button
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44, alignment: .leading)
+                }
+                .padding(.top, Spacing.lg)
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                // Title - "Add your / Credit Card"
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Add your")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.neutral500)
+                        .tracking(-2)
+
+                    Text("Credit Card")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.brand500)
+                        .tracking(-2)
+                }
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: Spacing.lg) {
+                        // Cardholder name
+                        UnderlineInputField(
+                            label: "Cardholder name",
+                            text: $cardholderName,
+                            placeholder: "e.g. John Smith",
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .name)
+
+                        // Card number
+                        UnderlineInputField(
+                            label: "Card number",
+                            text: $cardNumber,
+                            placeholder: "e.g. 1234 5678 9012 3456",
+                            keyboardType: .numberPad,
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .number)
+                        .onChange(of: cardNumber) { _, newValue in
+                            cardNumber = formatCardNumberUnderline(newValue)
+                        }
+
+                        // Expiry date
+                        UnderlineInputField(
+                            label: "Expiry date",
+                            text: $expiryDate,
+                            placeholder: "e.g. MM / YY",
+                            keyboardType: .numberPad,
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .expiry)
+                        .onChange(of: expiryDate) { _, newValue in
+                            expiryDate = formatExpiryDateUnderline(newValue)
+                        }
+
+                        // CVV
+                        UnderlineInputField(
+                            label: "CVV",
+                            text: $cvv,
+                            placeholder: "e.g. ***",
+                            keyboardType: .numberPad,
+                            isSecure: true,
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .cvv)
+                        .onChange(of: cvv) { _, newValue in
+                            cvv = String(newValue.prefix(4))
+                        }
+                    }
+                }
+
+                Spacer()
+
+                // Info text
+                Text("You may get a verification message to verify your Card and unlock benefits.")
+                    .font(Typography.bodySm)
+                    .foregroundColor(AppColors.textMuted)
+                    .padding(.bottom, Spacing.md)
+
+                // Save Card Button
+                PrimaryButton(
+                    title: "Save Card",
+                    isLoading: isAdding,
+                    isEnabled: isValid
+                ) {
+                    saveCard()
+                }
+            }
+            .padding(.horizontal, Spacing.xxxl)
+            .padding(.bottom, Spacing.xl)
+        }
+        .navigationBarHidden(true)
+    }
+
+    private func formatCardNumberUnderline(_ value: String) -> String {
+        let cleaned = value.replacingOccurrences(of: " ", with: "").filter { $0.isNumber }
+        let limited = String(cleaned.prefix(16))
+        var formatted = ""
+        for (index, char) in limited.enumerated() {
+            if index > 0 && index % 4 == 0 {
+                formatted += " "
+            }
+            formatted += String(char)
+        }
+        return formatted
+    }
+
+    private func formatExpiryDateUnderline(_ value: String) -> String {
+        let cleaned = value.replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "/", with: "")
+            .filter { $0.isNumber }
+        let limited = String(cleaned.prefix(4))
+        if limited.count > 2 {
+            return String(limited.prefix(2)) + " / " + String(limited.suffix(limited.count - 2))
+        }
+        return limited
+    }
+
+    private func saveCard() {
+        guard isValid else { return }
+        isAdding = true
+        HapticManager.shared.mediumImpact()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isAdding = false
+            HapticManager.shared.success()
+            onComplete()
+            dismiss()
+        }
+    }
+}
+
+// MARK: - Edit Credit Card View (Full Screen)
+
+/// Edit Credit Card - Full screen view matching Figma 41:8612
+struct EditCreditCardView: View {
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var focusedField: CardField?
+
+    @State private var cardholderName: String
+    @State private var cardNumber: String
+    @State private var expiryDate: String
+    @State private var cvv: String
+    @State private var isSaving = false
+
+    enum CardField: Hashable {
+        case name, number, expiry, cvv
+    }
+
+    let onSave: () -> Void
+
+    init(
+        cardholderName: String = "John Smith",
+        cardNumber: String = "1234 5678 9012 3456",
+        expiryDate: String = "01 / 27",
+        onSave: @escaping () -> Void
+    ) {
+        self._cardholderName = State(initialValue: cardholderName)
+        self._cardNumber = State(initialValue: cardNumber)
+        self._expiryDate = State(initialValue: expiryDate)
+        self._cvv = State(initialValue: "***")
+        self.onSave = onSave
+    }
+
+    var body: some View {
+        ZStack {
+            AppColors.backgroundPrimary
+                .ignoresSafeArea()
+
+            DottedGridPattern()
+                .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                // Back Button
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44, alignment: .leading)
+                }
+                .padding(.top, Spacing.lg)
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                // Title - "Edit your / Credit Card"
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Edit your")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.neutral500)
+                        .tracking(-2)
+
+                    Text("Credit Card")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.brand500)
+                        .tracking(-2)
+                }
+
+                Spacer()
+                    .frame(height: Spacing.xxl)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: Spacing.lg) {
+                        // Cardholder name
+                        UnderlineInputField(
+                            label: "Cardholder name",
+                            text: $cardholderName,
+                            placeholder: "e.g. John Smith",
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .name)
+
+                        // Card number
+                        UnderlineInputField(
+                            label: "Card number",
+                            text: $cardNumber,
+                            placeholder: "1234 5678 9012 3456",
+                            keyboardType: .numberPad,
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .number)
+
+                        // Expiry date
+                        UnderlineInputField(
+                            label: "Expiry date",
+                            text: $expiryDate,
+                            placeholder: "MM / YY",
+                            keyboardType: .numberPad,
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .expiry)
+
+                        // CVV
+                        UnderlineInputField(
+                            label: "CVV",
+                            text: $cvv,
+                            placeholder: "***",
+                            keyboardType: .numberPad,
+                            showEditLink: true
+                        )
+                        .focused($focusedField, equals: .cvv)
+                    }
+                }
+
+                Spacer()
+
+                // Save Changes Button
+                PrimaryButton(
+                    title: "Save Changes",
+                    isLoading: isSaving,
+                    isEnabled: true
+                ) {
+                    saveChanges()
+                }
+            }
+            .padding(.horizontal, Spacing.xxxl)
+            .padding(.bottom, Spacing.xl)
+        }
+        .navigationBarHidden(true)
+    }
+
+    private func saveChanges() {
+        isSaving = true
+        HapticManager.shared.mediumImpact()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isSaving = false
+            HapticManager.shared.success()
+            onSave()
+            dismiss()
+        }
+    }
+}
+
+// MARK: - Underline Input Field Component
+
+/// Underline-style input field matching Figma modal screens
+/// Figma: 41:8450, 41:8529, 41:8612
+/// - Label: 12px medium, neutral500, with optional "edit" link
+/// - Value: 20px regular, white text
+/// - Underline: 1px, neutral300
+struct UnderlineInputField: View {
+    let label: String
+    @Binding var text: String
+    var placeholder: String = ""
+    var keyboardType: UIKeyboardType = .default
+    var isSecure: Bool = false
+    var showEditLink: Bool = false
+
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            // Label row with optional "edit" link
+            HStack {
+                Text(label)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.neutral500)
+
+                Spacer()
+
+                if showEditLink {
+                    Button {
+                        isFocused = true
+                    } label: {
+                        Text("edit")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(AppColors.neutral500)
+                    }
+                }
+            }
+
+            // Input field
+            Group {
+                if isSecure {
+                    SecureField("", text: $text)
+                        .placeholder(when: text.isEmpty) {
+                            Text(placeholder)
+                                .foregroundColor(AppColors.black300)
+                        }
+                } else {
+                    TextField("", text: $text)
+                        .placeholder(when: text.isEmpty) {
+                            Text(placeholder)
+                                .foregroundColor(AppColors.black300)
+                        }
+                }
+            }
+            .font(.system(size: 20, weight: .regular))
+            .foregroundColor(.white)
+            .keyboardType(keyboardType)
+            .focused($isFocused)
+            .padding(.vertical, Spacing.xs)
+
+            // Underline
+            Rectangle()
+                .fill(isFocused ? AppColors.brand500 : AppColors.neutral300)
+                .frame(height: isFocused ? 2 : 1)
+        }
+        .animation(.easeInOut(duration: 0.2), value: isFocused)
+    }
+}
+
 // MARK: - Placeholder Modifier
 
 extension View {
@@ -935,5 +1584,32 @@ extension View {
             }
             .frame(height: 600)
         }
+    }
+}
+
+#Preview("Edit UPI Method (41:8450)") {
+    EditUPIMethodView(
+        accountHolderName: "John Smith",
+        upiId: "john@oksbi"
+    ) { name, upi in
+        print("Saved: \(name), \(upi)")
+    }
+}
+
+#Preview("Add UPI Full Screen (41:8369)") {
+    AddUPIMethodFullScreenView { name, upi in
+        print("Added: \(name), \(upi)")
+    }
+}
+
+#Preview("Add Credit Card Full Screen (41:8529)") {
+    AddCreditCardFullScreenView {
+        print("Card added")
+    }
+}
+
+#Preview("Edit Credit Card (41:8612)") {
+    EditCreditCardView {
+        print("Card saved")
     }
 }

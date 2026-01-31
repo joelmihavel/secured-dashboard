@@ -25,7 +25,8 @@ final class AgreementUploadViewModel {
         case uploading(progress: Double)
         case processing
         case processed(extractionId: String)
-        case error(String)
+        case manualReview(fileName: String)  // Figma: "Our team will review it manually..."
+        case error(UploadErrorType, String)
     }
 
     // MARK: - Properties
@@ -63,24 +64,18 @@ final class AgreementUploadViewModel {
     }
 
     var errorMessage: String? {
-        if case .error(let message) = state { return message }
+        if case .error(_, let message) = state { return message }
         return nil
     }
 
     var errorType: UploadErrorType {
-        guard case .error(let message) = state else { return .generic }
-
-        let lowercased = message.lowercased()
-        if lowercased.contains("too large") || lowercased.contains("maximum size") {
-            return .fileTooLarge
-        } else if lowercased.contains("expired") {
-            return .expired
-        } else if lowercased.contains("pdf") || lowercased.contains("format") {
-            return .invalidFormat
-        } else if lowercased.contains("network") || lowercased.contains("connection") || lowercased.contains("internet") {
-            return .networkError
-        }
+        if case .error(let type, _) = state { return type }
         return .generic
+    }
+
+    var isManualReview: Bool {
+        if case .manualReview = state { return true }
+        return false
     }
 
     var hasSelectedFile: Bool {
@@ -110,6 +105,8 @@ final class AgreementUploadViewModel {
             return "Processing document..."
         case .processed:
             return "Document processed successfully"
+        case .manualReview:
+            return "Our team will review it manually and get back to you within 24 hours."
         case .error:
             return "Upload failed"
         }
@@ -150,7 +147,7 @@ final class AgreementUploadViewModel {
 
         // Start accessing security-scoped resource
         guard url.startAccessingSecurityScopedResource() else {
-            state = .error("Cannot access the selected file")
+            state = .error(.generic, "Cannot access the selected file")
             return
         }
 
@@ -165,13 +162,13 @@ final class AgreementUploadViewModel {
 
             // Validate file size
             if fileSize > Self.maxFileSizeBytes {
-                state = .error("File is too large. Maximum size is \(Self.maxFileSizeMB)MB")
+                state = .error(.fileTooLarge, "This file is too large. Please upload a file under 10MB")
                 return
             }
 
             // Validate file type
             guard url.pathExtension.lowercased() == "pdf" else {
-                state = .error("Please select a PDF file")
+                state = .error(.invalidFormat, "Please select a PDF file")
                 return
             }
 
@@ -182,7 +179,7 @@ final class AgreementUploadViewModel {
             await uploadDocument(from: url)
 
         } catch {
-            state = .error("Failed to read file: \(error.localizedDescription)")
+            state = .error(.generic, "Failed to read file: \(error.localizedDescription)")
         }
     }
 
@@ -198,7 +195,7 @@ final class AgreementUploadViewModel {
         #endif
 
         guard url.startAccessingSecurityScopedResource() else {
-            state = .error("Cannot access the selected file")
+            state = .error(.generic, "Cannot access the selected file")
             return
         }
 
@@ -316,10 +313,10 @@ final class AgreementUploadViewModel {
 
         } catch let error as UploadError {
             print("[AgreementUploadViewModel] UploadError: \(error.localizedDescription)")
-            state = .error(error.localizedDescription)
+            state = .error(error.errorType, error.localizedDescription)
         } catch {
             print("[AgreementUploadViewModel] Unexpected error: \(error)")
-            state = .error("Upload failed: \(error.localizedDescription)")
+            state = .error(.generic, "Upload failed: \(error.localizedDescription)")
         }
     }
 
@@ -417,6 +414,8 @@ enum UploadError: LocalizedError {
     case uploadFailed
     case processingFailed
     case serverError(String)
+    case fileTooLarge
+    case invalidExpired
 
     var errorDescription: String? {
         switch self {
@@ -428,6 +427,21 @@ enum UploadError: LocalizedError {
             return "Failed to process document"
         case .serverError(let message):
             return message
+        case .fileTooLarge:
+            return "This file is too large. Please upload a file under 10MB"
+        case .invalidExpired:
+            return "The agreement is invalid or expired. Please upload a valid one."
+        }
+    }
+
+    var errorType: UploadErrorType {
+        switch self {
+        case .invalidURL, .uploadFailed, .processingFailed, .serverError:
+            return .generic
+        case .fileTooLarge:
+            return .fileTooLarge
+        case .invalidExpired:
+            return .expired
         }
     }
 }
@@ -462,7 +476,35 @@ extension AgreementUploadViewModel {
 
     static var previewError: AgreementUploadViewModel {
         let vm = AgreementUploadViewModel()
-        vm.state = .error("Upload failed. Please try again.")
+        vm.state = .error(.generic, "Upload failed. Please try again.")
+        return vm
+    }
+
+    static var previewFileTooLarge: AgreementUploadViewModel {
+        let vm = AgreementUploadViewModel()
+        vm.selectedFileName = "Joel_Ramesh-Agreement_Dec 2025.pdf"
+        vm.state = .error(.fileTooLarge, "This file is too large. Please upload a file under 10MB")
+        return vm
+    }
+
+    static var previewInvalidExpired: AgreementUploadViewModel {
+        let vm = AgreementUploadViewModel()
+        vm.selectedFileName = "Joel_Ramesh-Agreement_Dec 2025.pdf"
+        vm.state = .error(.expired, "The agreement is invalid or expired. Please upload a valid one.")
+        return vm
+    }
+
+    static var previewManualReview: AgreementUploadViewModel {
+        let vm = AgreementUploadViewModel()
+        vm.selectedFileName = "Joel_Ramesh-Agreement_Dec 2025.pdf"
+        vm.state = .manualReview(fileName: "Joel_Ramesh-Agreement_Dec 2025.pdf")
+        return vm
+    }
+
+    static var previewSuccess: AgreementUploadViewModel {
+        let vm = AgreementUploadViewModel()
+        vm.selectedFileName = "Joel_Ramesh-Agreement_Dec 2025.pdf"
+        vm.state = .processed(extractionId: "mock-id")
         return vm
     }
 }

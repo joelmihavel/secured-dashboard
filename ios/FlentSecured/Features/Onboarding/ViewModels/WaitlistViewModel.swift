@@ -31,7 +31,31 @@ final class WaitlistViewModel {
     private(set) var state: State = .loading
     private(set) var lastUpdated: Date?
 
-    private var pollingTimer: Timer?
+    /// User's full name for display
+    private(set) var userName: String = ""
+
+    /// Submission date for timeline
+    private(set) var submissionDate: Date?
+
+    /// Total members onboarded (for release gauge)
+    private(set) var membersOnboarded: Int = 18
+
+    /// Total member slots (for release gauge)
+    private(set) var totalMemberSlots: Int = 150
+
+    /// Estimated review time text
+    private(set) var reviewTimeText: String = "Approximately 24 hrs"
+
+    /// Rejection reasons list (for rejected state)
+    private(set) var rejectionReasons: [String] = []
+
+    /// Countdown seconds until next application window (rejected state)
+    private(set) var nextApplicationCountdown: Int = 0
+
+    /// Timer for countdown (nonisolated for deinit access)
+    nonisolated(unsafe) private var countdownTimer: Timer?
+
+    nonisolated(unsafe) private var pollingTimer: Timer?
     private let pollInterval: TimeInterval = 30 // Check every 30 seconds
 
     // MARK: - Computed Properties
@@ -124,12 +148,38 @@ final class WaitlistViewModel {
 
     // MARK: - Initialization
 
-    init(userService: UserServiceProtocol = AppEnvironment.shared.userService) {
+    init(userService: UserServiceProtocol = AppEnvironment.shared.userService, userName: String = "") {
         self.userService = userService
+        self.userName = userName
     }
 
     deinit {
+        countdownTimer?.invalidate()
         // Timer cleanup will happen automatically when the object is deallocated
+    }
+
+    // MARK: - Countdown Timer
+
+    func startCountdownTimer(seconds: Int) {
+        nextApplicationCountdown = seconds
+        countdownTimer?.invalidate()
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                if self.nextApplicationCountdown > 0 {
+                    self.nextApplicationCountdown -= 1
+                } else {
+                    self.countdownTimer?.invalidate()
+                }
+            }
+        }
+    }
+
+    var countdownText: String {
+        let hours = nextApplicationCountdown / 3600
+        let minutes = (nextApplicationCountdown % 3600) / 60
+        let seconds = nextApplicationCountdown % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
     // MARK: - Actions
@@ -140,15 +190,39 @@ final class WaitlistViewModel {
         state = .loading
 
         do {
+            // Fetch user profile for name
+            let profile = try await userService.getCurrentUser()
+            userName = profile.fullName.isEmpty ? "User" : profile.fullName
+
+            // Set submission date (use profile creation date or current date)
+            if let createdAt = profile.createdAt, let date = ISO8601DateFormatter().date(from: createdAt) {
+                submissionDate = date
+            } else {
+                submissionDate = Date()
+            }
+
             let status = try await userService.getWaitlistStatus()
             updateState(from: status)
             lastUpdated = Date()
+
+            // Update review time text based on state
+            if case .pendingLong = state {
+                reviewTimeText = "Approximately 24-48 hrs"
+            } else {
+                reviewTimeText = "Approximately 24 hrs"
+            }
 
             // Start polling if still pending
             if case .pending = state {
                 startPolling()
             } else if case .pendingLong = state {
                 startPolling()
+            }
+
+            // Start countdown for rejected state
+            if case .rejected = state {
+                // Start 24-hour countdown (mock: 28:24:24 = 102264 seconds)
+                startCountdownTimer(seconds: 102264)
             }
         } catch let error as UserServiceError {
             state = .error(error.errorDescription ?? "Failed to load status")
@@ -207,6 +281,12 @@ final class WaitlistViewModel {
             state = .approved
         case .rejected(let reason):
             state = .rejected(reason: reason)
+            // Set rejection reasons for UI
+            rejectionReasons = [
+                "You're renting outside Bangalore",
+                "You did not use an invite code.",
+                "Your rent agreement didn't qualify."
+            ]
         case .referralEntry, .referralInvalid:
             // Referral states are handled by the view directly, not via API response
             state = .pending(position: status.position, estimatedDays: status.estimatedWaitDays)

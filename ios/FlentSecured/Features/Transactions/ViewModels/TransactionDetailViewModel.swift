@@ -99,6 +99,37 @@ final class TransactionDetailViewModel {
         status == .success || status == .settled
     }
 
+    /// Formatted date in "d MMM yyyy" format (e.g., "4 Nov 2026")
+    var formattedShortDate: String {
+        guard let tx = transaction else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM yyyy"
+            return formatter.string(from: Date())
+        }
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateFormat = "d MMM yyyy"
+
+        if let date = isoFormatter.date(from: tx.createdAt) {
+            return displayFormatter.string(from: date)
+        }
+        return tx.createdAt
+    }
+
+    /// Cashback amount as Double
+    var cashbackAmount: Double {
+        guard let tx = transaction else { return 0 }
+        return Double(tx.cashbackAppliedPaise) / 100.0
+    }
+
+    /// Whether cashback was applied to this transaction
+    var hasCashbackApplied: Bool {
+        cashbackAmount > 0
+    }
+
     var hasReceipt: Bool {
         receiptData != nil
     }

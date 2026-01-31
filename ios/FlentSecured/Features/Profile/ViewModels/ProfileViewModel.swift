@@ -51,6 +51,35 @@ final class ProfileViewModel {
         userProfile?.fullName ?? "User"
     }
 
+    /// User name for avatar row - Figma: Shows first name + last name
+    var userName: String {
+        userProfile?.fullName ?? "User"
+    }
+
+    /// Last login timestamp - Figma: Shows "15th sept 9:40am" format
+    var lastLoginTime: String {
+        guard let createdAt = userProfile?.createdAt else { return "" }
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateFormat = "d MMM h:mma"
+
+        if let date = isoFormatter.date(from: createdAt) {
+            let day = Calendar.current.component(.day, from: date)
+            let suffix: String
+            switch day {
+            case 1, 21, 31: suffix = "st"
+            case 2, 22: suffix = "nd"
+            case 3, 23: suffix = "rd"
+            default: suffix = "th"
+            }
+            let dateString = displayFormatter.string(from: date).lowercased()
+            return "\(day)\(suffix) \(dateString)"
+        }
+        return ""
+    }
+
     var phone: String {
         guard let phone = userProfile?.phone else { return "" }
         // Format: +91 98765 43210
@@ -112,17 +141,15 @@ final class ProfileViewModel {
         paymentHistory.filter { !$0.isOnTime }.count
     }
 
-    /// Payment history data for chart
+    /// Payment history data for chart - Figma 41:8760 shows JAN-MAY
     var paymentHistory: [PaymentMonthData] {
-        // Sample data - would be loaded from backend in real implementation
+        // Sample data matching Figma design - JAN, FEB, MAR (current), APR, MAY
         [
-            PaymentMonthData(monthLabel: "Jun", percentage: 100, isOnTime: true),
-            PaymentMonthData(monthLabel: "Jul", percentage: 100, isOnTime: true),
-            PaymentMonthData(monthLabel: "Aug", percentage: 80, isOnTime: true),
-            PaymentMonthData(monthLabel: "Sep", percentage: 100, isOnTime: true),
-            PaymentMonthData(monthLabel: "Oct", percentage: 60, isOnTime: false),
-            PaymentMonthData(monthLabel: "Nov", percentage: 100, isOnTime: true),
-            PaymentMonthData(monthLabel: "Dec", percentage: 100, isOnTime: true)
+            PaymentMonthData(monthLabel: "Jan", percentage: 100, isOnTime: true),
+            PaymentMonthData(monthLabel: "Feb", percentage: 80, isOnTime: false),
+            PaymentMonthData(monthLabel: "Mar", percentage: 60, isOnTime: true), // Current month (highlighted)
+            PaymentMonthData(monthLabel: "Apr", percentage: 0, isOnTime: true, isPaid: false),
+            PaymentMonthData(monthLabel: "May", percentage: 0, isOnTime: true, isPaid: false)
         ]
     }
 

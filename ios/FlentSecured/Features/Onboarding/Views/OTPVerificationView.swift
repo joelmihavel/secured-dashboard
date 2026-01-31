@@ -1,5 +1,15 @@
 import SwiftUI
 
+/// OTP Verification View
+/// Figma Nodes: 1-31175 (empty), 1-31485 (wrong code), 1-31380 (too many attempts), 1-31277 (filled)
+///
+/// Key specs:
+/// - Bottom sheet with drag indicator
+/// - Title: "Let's verify your number" (H4/Regular 28px)
+/// - Subtitle: "We've sent a 6-digit code..." (12px Medium, #A9A9A9)
+/// - OTP: 6 boxes with dash separator (000-000)
+/// - Error: Red text centered below boxes
+/// - Button: "Proceed" with bar indicator when enabled
 struct OTPVerificationView: View {
     @Environment(AppCoordinator.self) private var coordinator
     @Environment(AppState.self) private var appState
@@ -17,59 +27,62 @@ struct OTPVerificationView: View {
         _viewModel = State(initialValue: OTPVerificationViewModel(phone: phone))
         self.name = name
     }
-    
+
     // MARK: - Body
     var body: some View {
         ZStack {
-            AppColors.black600 // #1A1A1A - Figma: Frame 1686557301
+            AppColors.black600 // #1A1A1A - Figma bottom sheet background
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
-                // Drag Indicator
+                // Drag Indicator - Figma: 48×4, gray (#4D4D4D), rounded-200
                 Capsule()
                     .fill(AppColors.black400)
                     .frame(width: 48, height: 4)
-                    .padding(.top, 16)
-                    .padding(.bottom, 32)
-                
+                    .padding(.top, 15) // Figma: pt-15.192
+                    .padding(.bottom, 24)
+
                 // Content
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 12) {
-                        Text("Let’s verify your number")
+                VStack(spacing: 30) { // Figma: gap-30.383px
+                    // Header - Figma: gap-10px, px-48
+                    VStack(alignment: .leading, spacing: 10) {
+                        // Title: H4/Regular 28px, tracking -1px
+                        Text("Let's verify your number")
                             .font(Typography.h4)
                             .foregroundColor(AppColors.textPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Text("We’ve sent a 6-digit code to your phone. It’ll auto-verify once entered")
-                            .font(Typography.bodyMd2) // 14px
-                            .foregroundColor(AppColors.textSecondary)
+
+                        // Subtitle: 12px Medium, #A9A9A9, tracking -0.132
+                        Text("We've sent a 6-digit code to your phone. It'll auto-verify once entered")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(AppColors.neutral500) // #A9A9A9
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .lineSpacing(4)
                     }
-                    
-                    // OTP Input Section
-                    VStack(spacing: 8) {
-                        // Input Fields
+                    .padding(.horizontal, Spacing.xxxl) // 48pt
+
+                    // OTP Input Section - Figma: gap-6px
+                    VStack(spacing: 6) {
+                        // Input Fields - Figma: gap-8px
                         HStack(spacing: 8) {
                             // First 3
-                            ForEach(0..<3) { index in
+                            ForEach(0..<3, id: \.self) { index in
                                 otpDigitBox(at: index)
                             }
-                            
-                            // Dash separator
+
+                            // Dash separator - Figma: 20px Medium, #CBCBCB
                             Text("-")
-                                .font(Typography.h4)
-                                .foregroundColor(AppColors.black400)
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(AppColors.neutral300)
                                 .padding(.horizontal, 4)
-                            
+
                             // Last 3
-                            ForEach(3..<6) { index in
+                            ForEach(3..<6, id: \.self) { index in
                                 otpDigitBox(at: index)
                             }
                         }
                         .background(
-                            // Hidden text field
+                            // Hidden text field for OTP input
                             TextField("", text: $otpInput)
                                 .keyboardType(.numberPad)
                                 .textContentType(.oneTimeCode)
@@ -81,41 +94,45 @@ struct OTPVerificationView: View {
                                     handleOTPChange(newValue)
                                 }
                         )
-                        
-                        // Error Text
+
+                        // Error Text - Figma: centered, 14px Medium, red
                         if let error = viewModel.errorMessage {
                             Text(error)
-                                .font(Typography.caption)
-                                .foregroundColor(AppColors.error)
-                                .frame(maxWidth: .infinity, alignment: .center) // Centered
-                                .padding(.top, 4)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(AppColors.error) // Red #FF8080
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.top, 8)
+                                .transition(.opacity)
                         }
                     }
-                    
-                    Spacer().frame(height: 16)
-                    
-                    // Proceed Button
-                    PrimaryButton(
-                        title: "Proceed",
-                        isLoading: viewModel.isVerifying,
-                        isEnabled: otpInput.count == 6 && !viewModel.isVerifying
-                    ) {
-                        submitOTP()
+
+                    // Button + Resend - Figma: gap-16px, px-48
+                    VStack(spacing: Spacing.md) { // 16pt
+                        // Proceed Button - show bar indicator when enabled (Figma 1-31277)
+                        PrimaryButton(
+                            title: "Proceed",
+                            isLoading: viewModel.isVerifying,
+                            isEnabled: otpInput.count == 6 && !viewModel.isVerifying,
+                            showBarIndicator: otpInput.count == 6 && !viewModel.isVerifying
+                        ) {
+                            submitOTP()
+                        }
+
+                        // Resend Link - Figma: 12px Regular, #A9A9A9, centered
+                        Button(action: {
+                            Task { await viewModel.resendOTP() }
+                        }) {
+                            Text(viewModel.canResend ? "Didn't receive the code? Resend" : "Resend available in \(viewModel.resendCountdown)s")
+                                .font(Typography.bodySm)
+                                .foregroundColor(viewModel.canResend ? AppColors.neutral500 : AppColors.textDisabled)
+                        }
+                        .disabled(!viewModel.canResend || viewModel.isVerifying)
                     }
-                    
-                    // Resend Link
-                    Button(action: {
-                        Task { await viewModel.resendOTP() }
-                    }) {
-                        Text(viewModel.canResend ? "Didn’t receive the code? Resend" : "Resend available in \(viewModel.resendCountdown)s")
-                            .font(Typography.bodySm)
-                            .foregroundColor(viewModel.canResend ? AppColors.textSecondary : AppColors.textDisabled)
-                    }
-                    .disabled(!viewModel.canResend || viewModel.isVerifying)
+                    .padding(.horizontal, Spacing.xxxl) // 48pt
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
-                
+                .padding(.top, Spacing.md) // 16pt
+                .padding(.bottom, Spacing.lg) // 24pt
+
                 Spacer()
             }
         }
@@ -127,10 +144,13 @@ struct OTPVerificationView: View {
             startCursorBlink()
             viewModel.startResendTimer()
         }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage)
     }
     
     // MARK: - Helper Views
-    
+
+    /// Creates an OTP digit box for the given index
+    /// Uses the OTPDigitBox component from DesignSystem
     private func otpDigitBox(at index: Int) -> some View {
         OTPDigitBox(
             digit: getDigit(at: index),
@@ -188,7 +208,12 @@ struct OTPVerificationView: View {
                     appState.pendingUserName = name
                 }
 
-                // Success - navigate based on user status
+                // Success - dismiss sheet then navigate
+                coordinator.dismiss()
+
+                // Small delay to allow sheet dismissal animation
+                try? await Task.sleep(for: .milliseconds(300))
+
                 if let route = viewModel.determineNextRoute() {
                     coordinator.navigate(to: route)
                 }

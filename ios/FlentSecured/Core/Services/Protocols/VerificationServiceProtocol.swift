@@ -166,6 +166,12 @@ struct VerificationStatus: Codable {
     let utilityVerificationDate: String?
     let landlordApprovalDate: String?
 
+    /// Landlord invite status: "pending", "declined", "approved", or nil if not sent
+    let landlordInviteStatus: String?
+
+    /// Days since landlord invite was sent (nil if not sent)
+    let landlordInviteDaysSinceSent: Int?
+
     enum CodingKeys: String, CodingKey {
         case tenancyId = "tenancy_id"
         case bankVerified = "bank_verified"
@@ -174,6 +180,8 @@ struct VerificationStatus: Codable {
         case bankVerificationDate = "bank_verification_date"
         case utilityVerificationDate = "utility_verification_date"
         case landlordApprovalDate = "landlord_approval_date"
+        case landlordInviteStatus = "landlord_invite_status"
+        case landlordInviteDaysSinceSent = "landlord_invite_days_since_sent"
     }
 
     var isComplete: Bool {

@@ -6,80 +6,31 @@
 /// - 41:11313 - Waitlist accepted
 /// - 41:11410 - Waitlist rejected
 /// - 41:11506 - Referral code entry
-/// - 41:11613 - Referral code invalid (variant 1)
-/// - 41:11720 - Referral code invalid (variant 2)
+/// - 41:11613 - Referral code invalid
+/// - 41:11720 - Referral code applied
 /// - 41:11825 - Waitlist > 24hrs (pendingLong)
 ///
 /// PIXEL PERFECT from Figma:
 /// - Background: #131313 with dotted grid pattern
-/// - Header: H1/Regular 400 (48px, tracking -2px)
-///   - State-specific two-color headlines
-/// - Horizontal padding: 48pt (sp-48)
-///
-/// States handled:
-/// - .loading: Fetching waitlist status
-/// - .pending: In queue, showing position
-/// - .pendingLong: >24 hours wait, different messaging
-/// - .approved: User qualified, proceed to setup
-/// - .rejected: User not eligible
-/// - .error: Error loading status
+/// - Header: "Welcome," (gray) + User Name (brand orange)
+/// - Status timeline card with colored dots
+/// - Release gauge showing members onboarded
+/// - Inline 4-character referral code input
+/// - Benefits section at bottom
 
 import SwiftUI
 
-// MARK: - Referral Error Type
-
-/// Types of referral code errors per Figma variants
-enum ReferralCodeError: Equatable {
-    /// Variant 1: General invalid errors (code not found, malformed, network)
-    case notFound
-    case malformed
-    case networkError
-
-    /// Variant 2: Specific errors requiring different messaging
-    case expired
-    case alreadyUsed
-    case limitReached
-    case selfReferral
-
-    var message: String {
-        switch self {
-        case .notFound:
-            return "This referral code doesn't exist. Please check and try again."
-        case .malformed:
-            return "Invalid code format. Referral codes are 6-8 characters."
-        case .networkError:
-            return "Couldn't verify code. Please check your connection and try again."
-        case .expired:
-            return "This referral code has expired. Ask your friend for a new one."
-        case .alreadyUsed:
-            return "You've already used a referral code on this account."
-        case .limitReached:
-            return "This referral code has reached its usage limit."
-        case .selfReferral:
-            return "You can't use your own referral code."
-        }
-    }
-
-    var isRecoverable: Bool {
-        switch self {
-        case .notFound, .malformed, .networkError, .expired, .limitReached, .selfReferral:
-            return true
-        case .alreadyUsed:
-            return false
-        }
-    }
-}
-
 struct WaitlistView: View {
     @Environment(AppCoordinator.self) private var coordinator
+    @Environment(AppState.self) private var appState
 
     @State private var viewModel = WaitlistViewModel()
-    @State private var showReferralSheet = false
-    @State private var referralCode = ""
+    @State private var referralCode: [String] = ["", "", "", ""]
+    @State private var referralError: String?
     @State private var isApplyingReferral = false
     @State private var showConfetti = false
-    @State private var referralError: ReferralCodeError?
-    @State private var shakeReferralField = false
+    @State private var referralApplied = false
+    @FocusState private var focusedReferralIndex: Int?
 
     var body: some View {
         ZStack {
@@ -89,23 +40,62 @@ struct WaitlistView: View {
             DottedGridPattern()
                 .ignoresSafeArea()
 
-            VStack(spacing: Spacing.xl) {
-                // Polling indicator
-                if viewModel.isPolling {
-                    pollingIndicator
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Logo
+                    HStack {
+                        Image("flent-logo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 32, height: 38)
+                        Spacer()
+                    }
+                    .padding(.top, Spacing.xl)
+
+                    Spacer().frame(height: Spacing.xl)
+
+                    // Header - State specific
+                    headerContent
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Spacer().frame(height: Spacing.xl)
+
+                    // Status Timeline Card
+                    statusTimelineCard
+
+                    Spacer().frame(height: Spacing.lg)
+
+                    // Release Gauge Card (pending states only)
+                    if case .pending = viewModel.state {
+                        releaseGaugeCard
+                        Spacer().frame(height: Spacing.lg)
+                    } else if case .pendingLong = viewModel.state {
+                        releaseGaugeCard
+                        Spacer().frame(height: Spacing.lg)
+                    }
+
+                    // Rejection Reasons (rejected state only)
+                    if case .rejected = viewModel.state {
+                        rejectionReasonsCard
+                        Spacer().frame(height: Spacing.lg)
+                    }
+
+                    // Benefits Section (accepted and pending states)
+                    if case .approved = viewModel.state {
+                        benefitsSection
+                    } else if case .pending = viewModel.state {
+                        benefitsSection
+                    } else if case .pendingLong = viewModel.state {
+                        benefitsSection
+                    }
+
+                    Spacer().frame(height: Spacing.xxxl)
+
+                    // Bottom Action
+                    bottomAction
                 }
-
-                Spacer()
-
-                // State-specific content
-                stateContent
-
-                Spacer()
-
-                // State-specific actions
-                stateActions
+                .padding(.horizontal, Spacing.xxxl)
             }
-            .padding(.horizontal, Spacing.xxxl) // 48pt horizontal (sp-48)
 
             // Confetti overlay for approval
             if showConfetti {
@@ -116,12 +106,21 @@ struct WaitlistView: View {
         }
         .navigationBarHidden(true)
         .task {
+            // Get user name from AppState
+            if let profile = appState.userProfile {
+                viewModel = WaitlistViewModel(
+                    userService: AppEnvironment.shared.userService,
+                    userName: profile.fullName
+                )
+            } else if let pendingName = appState.pendingUserName {
+                viewModel = WaitlistViewModel(
+                    userService: AppEnvironment.shared.userService,
+                    userName: pendingName
+                )
+            }
             await viewModel.loadStatus()
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.state)
-        .sheet(isPresented: $showReferralSheet) {
-            referralSheetContent
-        }
         .onDisappear {
             viewModel.stopPolling()
         }
@@ -132,26 +131,537 @@ struct WaitlistView: View {
         }
     }
 
-    // MARK: - Polling Indicator
+    // MARK: - Header Content
 
-    private var pollingIndicator: some View {
-        HStack(spacing: Spacing.xs) {
-            Circle()
-                .fill(AppColors.success)
-                .frame(width: 8, height: 8)
-                .opacity(viewModel.isPolling ? 1 : 0.3)
+    @ViewBuilder
+    private var headerContent: some View {
+        switch viewModel.state {
+        case .loading:
+            loadingHeader
 
-            Text("Auto-refreshing every 30s")
-                .font(Typography.caption)
-                .foregroundColor(AppColors.textMuted)
+        case .pending, .pendingLong:
+            pendingHeader
+
+        case .approved:
+            acceptedHeader
+
+        case .rejected:
+            rejectedHeader
+
+        case .error:
+            errorHeader
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.xs)
-        .background(AppColors.backgroundSecondary)
-        .cornerRadius(Radius.pill)
     }
 
-    // MARK: - Approval Celebration
+    private var loadingHeader: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentPrimary))
+            Text("Loading...")
+                .font(Typography.bodyMd)
+                .foregroundColor(AppColors.textSecondary)
+        }
+    }
+
+    private var pendingHeader: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Figma: "Welcome," + "[Name]" on separate lines
+            VStack(alignment: .leading, spacing: 0) {
+                if case .pendingLong = viewModel.state {
+                    Text("We're still")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.neutral500)
+                        .tracking(-2)
+                    Text("setting")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.brand500)
+                        .tracking(-2)
+                    Text("things up")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.brand500)
+                        .tracking(-2)
+                } else {
+                    Text("Welcome,")
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.neutral500)
+                        .tracking(-2)
+                    Text(viewModel.userName)
+                        .font(Typography.h1)
+                        .foregroundColor(AppColors.brand500)
+                        .tracking(-2)
+                }
+            }
+
+            Text("Your application is in review")
+                .font(Typography.bodyMd2)
+                .foregroundColor(AppColors.black200)
+        }
+    }
+
+    private var acceptedHeader: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Figma: "[Name]," + "you're all set."
+            VStack(alignment: .leading, spacing: 0) {
+                Text("\(viewModel.userName),")
+                    .font(Typography.h1)
+                    .foregroundColor(AppColors.neutral500)
+                    .tracking(-2)
+                Text("you're all set.")
+                    .font(Typography.h1)
+                    .foregroundColor(AppColors.brand500)
+                    .tracking(-2)
+            }
+
+            Text("Welcome to the right side of renting.")
+                .font(Typography.bodyMd2)
+                .foregroundColor(AppColors.black200)
+        }
+    }
+
+    private var rejectedHeader: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Figma: "We can't" + "approve you" + "right now"
+            VStack(alignment: .leading, spacing: 0) {
+                Text("We can't")
+                    .font(Typography.h1)
+                    .foregroundColor(AppColors.neutral500)
+                    .tracking(-2)
+                Text("approve you")
+                    .font(Typography.h1)
+                    .foregroundColor(AppColors.neutral500)
+                    .tracking(-2)
+                Text("right now")
+                    .font(Typography.h1)
+                    .foregroundColor(AppColors.brand500)
+                    .tracking(-2)
+            }
+
+            Text("We're opening access in batches. Stay tuned.")
+                .font(Typography.bodyMd2)
+                .foregroundColor(AppColors.black200)
+        }
+    }
+
+    private var errorHeader: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Something")
+                    .font(Typography.h1)
+                    .foregroundColor(AppColors.neutral500)
+                    .tracking(-2)
+                Text("went wrong")
+                    .font(Typography.h1)
+                    .foregroundColor(AppColors.error)
+                    .tracking(-2)
+            }
+
+            if case .error(let message) = viewModel.state {
+                Text(message)
+                    .font(Typography.bodyMd2)
+                    .foregroundColor(AppColors.black200)
+            }
+        }
+    }
+
+    // MARK: - Status Timeline Card
+
+    private var statusTimelineCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Application Sent
+            statusTimelineRow(
+                label: "Application Sent",
+                value: submissionDateText,
+                dotColor: AppColors.brand500,
+                isComplete: true
+            )
+
+            // In Review
+            statusTimelineRow(
+                label: "In Review",
+                value: viewModel.reviewTimeText,
+                dotColor: statusDotColor,
+                isComplete: false
+            )
+
+            // Account Status
+            statusTimelineRow(
+                label: "Account Status",
+                value: accountStatusText,
+                dotColor: accountStatusDotColor,
+                isComplete: isAccountStatusComplete,
+                isLast: true
+            )
+        }
+        .padding(Spacing.lg)
+        .background(AppColors.backgroundSecondary)
+        .cornerRadius(Radius.lg)
+    }
+
+    private func statusTimelineRow(
+        label: String,
+        value: String,
+        dotColor: Color,
+        isComplete: Bool,
+        isLast: Bool = false
+    ) -> some View {
+        HStack(alignment: .top, spacing: Spacing.md) {
+            // Dot and line
+            VStack(spacing: 0) {
+                Circle()
+                    .fill(dotColor)
+                    .frame(width: 8, height: 8)
+
+                if !isLast {
+                    Rectangle()
+                        .fill(AppColors.black400)
+                        .frame(width: 1, height: 32)
+                }
+            }
+
+            // Labels
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(Typography.caption)
+                    .foregroundColor(AppColors.textMuted)
+
+                Text(value)
+                    .font(Typography.bodySmMedium)
+                    .foregroundColor(AppColors.textPrimary)
+            }
+
+            Spacer()
+        }
+    }
+
+    private var submissionDateText: String {
+        guard let date = viewModel.submissionDate else {
+            return "Submitted on \(formattedDate(Date()))"
+        }
+        return "Submitted on \(formattedDate(date))"
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM yyyy"
+        return formatter.string(from: date)
+    }
+
+    private var statusDotColor: Color {
+        switch viewModel.state {
+        case .approved:
+            return AppColors.success
+        case .rejected:
+            return AppColors.error
+        default:
+            return AppColors.brand500
+        }
+    }
+
+    private var accountStatusText: String {
+        switch viewModel.state {
+        case .approved:
+            return "Accepted"
+        case .rejected:
+            return "Rejected"
+        default:
+            return "Pending"
+        }
+    }
+
+    private var accountStatusDotColor: Color {
+        switch viewModel.state {
+        case .approved:
+            return AppColors.success
+        case .rejected:
+            return AppColors.error
+        default:
+            return AppColors.black400
+        }
+    }
+
+    private var isAccountStatusComplete: Bool {
+        switch viewModel.state {
+        case .approved, .rejected:
+            return true
+        default:
+            return false
+        }
+    }
+
+    // MARK: - Release Gauge Card
+
+    private var releaseGaugeCard: some View {
+        VStack(spacing: Spacing.md) {
+            // "This release" label
+            HStack {
+                Text("This")
+                    .font(Typography.caption)
+                    .foregroundColor(AppColors.textMuted)
+                Spacer()
+            }
+            Text("release")
+                .font(Typography.caption)
+                .foregroundColor(AppColors.textMuted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Gauge visualization
+            WaitlistReleaseGaugeView(
+                current: viewModel.membersOnboarded,
+                total: viewModel.totalMemberSlots
+            )
+            .frame(height: 80)
+
+            // Member count
+            VStack(spacing: 2) {
+                Text("\(viewModel.membersOnboarded) / \(viewModel.totalMemberSlots)")
+                    .font(Typography.bodyMdMedium)
+                    .foregroundColor(AppColors.textPrimary)
+
+                Text("members onboarded")
+                    .font(Typography.caption)
+                    .foregroundColor(AppColors.brand500)
+            }
+
+            // Referral section (if not applied)
+            if !referralApplied {
+                referralInputSection
+            } else {
+                // Referral applied success
+                VStack(spacing: Spacing.sm) {
+                    SecondaryButton(title: "Be notified") {
+                        // Enable notifications
+                    }
+
+                    Text("Kudos. You're among Secured's first members")
+                        .font(Typography.caption)
+                        .foregroundColor(AppColors.textMuted)
+                        .multilineTextAlignment(.center)
+                }
+            }
+        }
+        .padding(Spacing.lg)
+        .background(AppColors.backgroundSecondary)
+        .cornerRadius(Radius.lg)
+    }
+
+    // MARK: - Referral Input Section
+
+    private var referralInputSection: some View {
+        VStack(spacing: Spacing.md) {
+            // Label
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Have an Invite Code?")
+                    .font(Typography.caption)
+                    .foregroundColor(AppColors.textMuted)
+
+                Text("Get priority access to the platform if you use a referral code")
+                    .font(Typography.caption)
+                    .foregroundColor(AppColors.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // 4-box input
+            HStack(spacing: Spacing.sm) {
+                ForEach(0..<4, id: \.self) { index in
+                    referralDigitBox(at: index)
+                }
+            }
+
+            // Error message
+            if let error = referralError {
+                Text(error)
+                    .font(Typography.caption)
+                    .foregroundColor(AppColors.error)
+            }
+
+            // Enter button
+            SecondaryButton(
+                title: "Enter Invite Code",
+                isLoading: isApplyingReferral,
+                isEnabled: referralCode.allSatisfy { !$0.isEmpty }
+            ) {
+                applyReferralCode()
+            }
+        }
+    }
+
+    private func referralDigitBox(at index: Int) -> some View {
+        TextField("", text: Binding(
+            get: { referralCode[index] },
+            set: { newValue in
+                let filtered = String(newValue.uppercased().filter { $0.isLetter || $0.isNumber }.prefix(1))
+                referralCode[index] = filtered
+                if !filtered.isEmpty && index < 3 {
+                    focusedReferralIndex = index + 1
+                }
+            }
+        ))
+        .font(.system(size: 24, weight: .semibold, design: .monospaced))
+        .foregroundColor(AppColors.textPrimary)
+        .multilineTextAlignment(.center)
+        .textInputAutocapitalization(.characters)
+        .autocorrectionDisabled()
+        .keyboardType(.asciiCapable)
+        .focused($focusedReferralIndex, equals: index)
+        .frame(width: 56, height: 64)
+        .background(AppColors.backgroundPrimary)
+        .cornerRadius(Radius.md)
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.md)
+                .stroke(
+                    referralError != nil ? AppColors.error : (focusedReferralIndex == index ? AppColors.brand500 : AppColors.black400),
+                    lineWidth: focusedReferralIndex == index || referralError != nil ? 2 : 1
+                )
+        )
+    }
+
+    // MARK: - Rejection Reasons Card
+
+    private var rejectionReasonsCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Why was I")
+                    .font(Typography.h5)
+                    .foregroundColor(AppColors.neutral500)
+                Text("Rejected?")
+                    .font(Typography.h5)
+                    .foregroundColor(AppColors.brand500)
+            }
+
+            // Reasons list
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                ForEach(viewModel.rejectionReasons, id: \.self) { reason in
+                    HStack(spacing: Spacing.sm) {
+                        Image("card_pattern") // Card icon
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 24, height: 24)
+                            .opacity(0.6)
+
+                        Text(reason)
+                            .font(Typography.bodySm)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+            }
+        }
+        .padding(Spacing.lg)
+        .background(AppColors.backgroundSecondary)
+        .cornerRadius(Radius.lg)
+    }
+
+    // MARK: - Benefits Section
+
+    private var benefitsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header
+            VStack(alignment: .leading, spacing: 0) {
+                Text("What do you get")
+                    .font(Typography.h5)
+                    .foregroundColor(AppColors.neutral500)
+                Text("with Flent Secured?")
+                    .font(Typography.h5)
+                    .foregroundColor(AppColors.brand500)
+            }
+
+            // Benefits list
+            VStack(spacing: Spacing.sm) {
+                benefitRow(icon: "card_pattern", text: "Earn 1% back for paying rent on time")
+                benefitRow(icon: "card_pattern", text: "Build a stronger rent history")
+                benefitRow(icon: "card_pattern", text: "Unlock exclusive renting benefits over time")
+            }
+        }
+        .padding(Spacing.lg)
+        .background(AppColors.backgroundSecondary)
+        .cornerRadius(Radius.lg)
+    }
+
+    private func benefitRow(icon: String, text: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(icon)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 32, height: 24)
+
+            Text(text)
+                .font(Typography.bodySm)
+                .foregroundColor(AppColors.textSecondary)
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Bottom Action
+
+    @ViewBuilder
+    private var bottomAction: some View {
+        switch viewModel.state {
+        case .loading:
+            EmptyView()
+
+        case .pending, .pendingLong:
+            EmptyView() // Referral is inline now
+
+        case .approved:
+            PrimaryButton(title: "Step Inside") {
+                if let route = viewModel.nextRoute() {
+                    coordinator.navigate(to: route)
+                }
+            }
+
+        case .rejected:
+            VStack(spacing: Spacing.md) {
+                SecondaryButton(title: "Contact support") {
+                    openSupport()
+                }
+
+                Text("Next applications open in \(viewModel.countdownText)")
+                    .font(Typography.caption)
+                    .foregroundColor(AppColors.textMuted)
+            }
+
+        case .error:
+            PrimaryButton(title: "Try Again") {
+                Task {
+                    await viewModel.refresh()
+                }
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func applyReferralCode() {
+        let code = referralCode.joined()
+        guard code.count == 4 else {
+            referralError = "Invalid Code"
+            return
+        }
+
+        isApplyingReferral = true
+        referralError = nil
+
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+
+            await MainActor.run {
+                isApplyingReferral = false
+
+                // Test: "FAIL" triggers error, anything else succeeds
+                if code.uppercased() == "FAIL" {
+                    referralError = "Invalid Code"
+                } else {
+                    referralApplied = true
+                    HapticManager.shared.success()
+                    Task {
+                        await viewModel.refresh()
+                    }
+                }
+            }
+        }
+    }
 
     private func triggerApprovalCelebration() {
         showConfetti = true
@@ -164,525 +674,7 @@ struct WaitlistView: View {
         }
     }
 
-    // MARK: - State Content
-
-    @ViewBuilder
-    private var stateContent: some View {
-        switch viewModel.state {
-        case .loading:
-            loadingContent
-
-        case .pending(let position, let days):
-            pendingContent(position: position, estimatedDays: days, isLongWait: false)
-
-        case .pendingLong(let days):
-            pendingContent(position: nil, estimatedDays: days, isLongWait: true)
-
-        case .approved:
-            acceptedContent
-
-        case .rejected(let reason):
-            rejectedContent(reason: reason)
-
-        case .error(let message):
-            errorContent(message: message)
-        }
-    }
-
-    // MARK: - Loading Content
-
-    private var loadingContent: some View {
-        VStack(spacing: Spacing.md) {
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentPrimary))
-                .scaleEffect(1.2)
-
-            Text("Loading your status...")
-                .font(Typography.bodyMd)
-                .foregroundColor(AppColors.textSecondary)
-        }
-    }
-
-    // MARK: - Pending Content
-
-    private func pendingContent(position: Int?, estimatedDays: Int?, isLongWait: Bool) -> some View {
-        VStack(spacing: Spacing.lg) {
-            // Animated Hourglass
-            WaitlistHourglassAnimation(isLongWait: isLongWait)
-                .frame(width: 120, height: 120)
-
-            // Header - Figma: H1/Regular 400 with two-color format
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("You're on the")
-                        .font(Typography.h1) // 48px Regular
-                        .foregroundColor(AppColors.neutral500) // #A9A9A9
-                        .tracking(-2)
-                        .lineSpacing(16)
-                    Text("waitlist!")
-                        .font(Typography.h1) // 48px Regular
-                        .foregroundColor(AppColors.brand500) // #FF9A6D
-                        .tracking(-2)
-                        .lineSpacing(16)
-                }
-
-                Text(isLongWait
-                     ? "Thanks for your patience. We're working to expand our service to your area."
-                     : "We're reviewing your application. This usually takes a few hours.")
-                    .font(Typography.bodyMd2) // 14px Regular
-                    .foregroundColor(AppColors.black200) // #A6A6A6
-                    .lineSpacing(6)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Status Card
-            VStack(spacing: Spacing.md) {
-                // Position indicator
-                if let position = position {
-                    HStack {
-                        HStack(spacing: Spacing.xs) {
-                            Image(systemName: "person.3.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.accentPrimary)
-                            Text("Position in queue")
-                                .font(Typography.bodySm)
-                                .foregroundColor(AppColors.textMuted)
-                        }
-
-                        Spacer()
-
-                        Text("#\(position)")
-                            .font(Typography.bodyMdMedium)
-                            .foregroundColor(AppColors.accentPrimary)
-                    }
-                }
-
-                // Estimated wait
-                if let days = estimatedDays, days > 0 {
-                    HStack {
-                        HStack(spacing: Spacing.xs) {
-                            Image(systemName: "clock.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.textMuted)
-                            Text("Estimated wait")
-                                .font(Typography.bodySm)
-                                .foregroundColor(AppColors.textMuted)
-                        }
-
-                        Spacer()
-
-                        Text(days == 1 ? "~1 day" : "~\(days) days")
-                            .font(Typography.bodySmMedium)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                }
-
-                // Verification checks
-                VStack(spacing: Spacing.xs) {
-                    verificationCheckRow(title: "Phone verified", isComplete: true)
-                    verificationCheckRow(title: "Name verified", isComplete: true)
-                    verificationCheckRow(title: "Agreement uploaded", isComplete: true)
-                    verificationCheckRow(title: "Account approval", isComplete: false, isPending: true)
-                }
-            }
-            .padding(Spacing.md)
-            .background(AppColors.backgroundSecondary)
-            .cornerRadius(Radius.md)
-
-            // Last updated
-            if let lastUpdated = viewModel.lastUpdated {
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 10))
-                        .foregroundColor(AppColors.textMuted)
-                    Text("Last checked: \(lastUpdated.formatted(.relative(presentation: .named)))")
-                        .font(Typography.caption)
-                        .foregroundColor(AppColors.textMuted)
-                }
-            }
-        }
-    }
-
-    private func verificationCheckRow(title: String, isComplete: Bool, isPending: Bool = false) -> some View {
-        HStack(spacing: Spacing.xs) {
-            if isComplete {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppColors.success)
-            } else if isPending {
-                ProgressView()
-                    .scaleEffect(0.6)
-                    .frame(width: 14, height: 14)
-            } else {
-                Image(systemName: "circle")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppColors.border)
-            }
-
-            Text(title)
-                .font(Typography.caption)
-                .foregroundColor(isComplete ? AppColors.textSecondary : AppColors.textMuted)
-
-            Spacer()
-        }
-    }
-
-    // MARK: - Accepted Content
-
-    private var acceptedContent: some View {
-        VStack(spacing: Spacing.lg) {
-            // Animated Success Badge
-            ZStack {
-                Circle()
-                    .fill(AppColors.success.opacity(0.1))
-                    .frame(width: 120, height: 120)
-
-                Circle()
-                    .fill(AppColors.success.opacity(0.2))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 64))
-                    .foregroundColor(AppColors.success)
-            }
-
-            // Header - Figma: H1/Regular 400 with two-color format
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("You're")
-                        .font(Typography.h1) // 48px Regular
-                        .foregroundColor(AppColors.neutral500) // #A9A9A9
-                        .tracking(-2)
-                        .lineSpacing(16)
-                    Text("in!")
-                        .font(Typography.h1) // 48px Regular
-                        .foregroundColor(AppColors.brand500) // #FF9A6D
-                        .tracking(-2)
-                        .lineSpacing(16)
-                }
-
-                Text("Complete your setup to start paying rent through Flent.")
-                    .font(Typography.bodyMd2) // 14px Regular
-                    .foregroundColor(AppColors.black200) // #A6A6A6
-                    .lineSpacing(6)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Next Steps Preview
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("Next steps")
-                    .font(Typography.label)
-                    .foregroundColor(AppColors.textMuted)
-
-                HStack(spacing: Spacing.md) {
-                    nextStepBadge(number: 1, title: "Add bank", icon: "building.columns.fill")
-                    nextStepBadge(number: 2, title: "Verify bill", icon: "bolt.fill")
-                    nextStepBadge(number: 3, title: "Invite owner", icon: "person.badge.plus")
-                }
-            }
-            .padding(Spacing.md)
-            .background(AppColors.backgroundSecondary)
-            .cornerRadius(Radius.md)
-        }
-    }
-
-    private func nextStepBadge(number: Int, title: String, icon: String) -> some View {
-        VStack(spacing: Spacing.xs) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.accentPrimary.opacity(0.1))
-                    .frame(width: 44, height: 44)
-
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(AppColors.accentPrimary)
-            }
-
-            Text(title)
-                .font(Typography.caption)
-                .foregroundColor(AppColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Rejected Content
-
-    private func rejectedContent(reason: String) -> some View {
-        VStack(spacing: Spacing.lg) {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(AppColors.error)
-
-            VStack(spacing: Spacing.sm) {
-                Text("Not eligible")
-                    .font(Typography.h4)
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text(reason)
-                    .font(Typography.bodyMd2)
-                    .foregroundColor(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-    }
-
-    // MARK: - Error Content
-
-    private func errorContent(message: String) -> some View {
-        VStack(spacing: Spacing.lg) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(AppColors.warning)
-
-            VStack(spacing: Spacing.sm) {
-                Text("Something went wrong")
-                    .font(Typography.h4)
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text(message)
-                    .font(Typography.bodyMd2)
-                    .foregroundColor(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-    }
-
-    // MARK: - State Actions
-
-    @ViewBuilder
-    private var stateActions: some View {
-        switch viewModel.state {
-        case .loading:
-            EmptyView()
-
-        case .pending, .pendingLong:
-            VStack(spacing: Spacing.md) {
-                TextButton(title: "Have a referral code?") {
-                    showReferralSheet = true
-                }
-
-                SecondaryButton(title: "Refresh Status") {
-                    Task {
-                        await viewModel.refresh()
-                    }
-                }
-            }
-
-        case .approved:
-            PrimaryButton(title: "Complete Setup") {
-                if let route = viewModel.nextRoute() {
-                    coordinator.navigate(to: route)
-                }
-            }
-
-        case .rejected:
-            VStack(spacing: Spacing.md) {
-                SecondaryButton(title: "Contact Support") {
-                    openSupport()
-                }
-
-                TextButton(title: "Sign out") {
-                    Task {
-                        // TODO: Sign out and return to phone entry
-                        coordinator.popToRoot()
-                    }
-                }
-            }
-
-        case .error:
-            VStack(spacing: Spacing.md) {
-                PrimaryButton(title: "Try Again") {
-                    Task {
-                        await viewModel.refresh()
-                    }
-                }
-
-                SecondaryButton(title: "Contact Support") {
-                    openSupport()
-                }
-            }
-        }
-    }
-
-    // MARK: - Referral Sheet
-
-    /// Referral code entry sheet with error states
-    /// Figma: 41:11506 (entry), 41:11613 (invalid v1), 41:11720 (invalid v2)
-    private var referralSheetContent: some View {
-        NavigationView {
-            ZStack {
-                AppColors.backgroundPrimary
-                    .ignoresSafeArea()
-
-                VStack(spacing: Spacing.xl) {
-                    // Header
-                    VStack(spacing: Spacing.sm) {
-                        Text("Enter referral code")
-                            .font(Typography.h4)
-                            .foregroundColor(AppColors.textPrimary)
-
-                        Text("A valid referral code can help you skip the queue")
-                            .font(Typography.bodyMd2)
-                            .foregroundColor(AppColors.textSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, Spacing.xl)
-
-                    // Input field with error state
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        TextField("", text: $referralCode)
-                            .font(Typography.bodyMd)
-                            .foregroundColor(AppColors.textPrimary)
-                            .multilineTextAlignment(.center)
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled()
-                            .keyboardType(.asciiCapable)
-                            .padding(Spacing.md)
-                            .background(AppColors.backgroundSecondary)
-                            .cornerRadius(Radius.input)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Radius.input)
-                                    .stroke(referralError != nil ? AppColors.error : AppColors.border, lineWidth: referralError != nil ? 2 : 1)
-                            )
-                            .shake(trigger: shakeReferralField)
-                            .onChange(of: referralCode) { _, newValue in
-                                // Clear error when user starts typing again
-                                if referralError != nil {
-                                    referralError = nil
-                                }
-                                // Limit to 8 characters and uppercase
-                                let filtered = String(newValue.uppercased().filter { $0.isLetter || $0.isNumber }.prefix(8))
-                                if filtered != referralCode {
-                                    referralCode = filtered
-                                }
-                            }
-
-                        // Error message
-                        if let error = referralError {
-                            HStack(spacing: Spacing.xs) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 12))
-                                Text(error.message)
-                                    .font(Typography.caption)
-                            }
-                            .foregroundColor(AppColors.error)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                            .padding(.top, Spacing.xxs)
-                        }
-                    }
-                    .padding(.horizontal, Spacing.xl)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: referralError)
-
-                    Spacer()
-
-                    // Apply button - disabled for non-recoverable errors
-                    PrimaryButton(
-                        title: "Apply Code",
-                        isLoading: isApplyingReferral,
-                        isEnabled: !referralCode.isEmpty && (referralError?.isRecoverable ?? true)
-                    ) {
-                        applyReferralCode()
-                    }
-                    .padding(.horizontal, Spacing.md)
-                    .padding(.bottom, Spacing.lg)
-                }
-                .screenPadding()
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
-                        // Reset state on dismiss
-                        referralCode = ""
-                        referralError = nil
-                        showReferralSheet = false
-                    }
-                    .foregroundColor(AppColors.textSecondary)
-                }
-            }
-        }
-        .presentationDetents([.medium])
-        .onDisappear {
-            // Reset state when sheet is dismissed
-            referralCode = ""
-            referralError = nil
-        }
-    }
-
-    // MARK: - Actions
-
-    private func applyReferralCode() {
-        // Validate code format first
-        guard referralCode.count >= 6 && referralCode.count <= 8 else {
-            triggerReferralError(.malformed)
-            return
-        }
-
-        isApplyingReferral = true
-
-        // Call referral code API
-        Task {
-            do {
-                // Simulate API call - replace with actual implementation
-                // let result = try await userService.applyReferralCode(referralCode)
-                try await Task.sleep(nanoseconds: 1_500_000_000)
-
-                // Simulate different error scenarios for testing
-                // In production, this would be determined by the API response
-                let testErrorCode = referralCode.uppercased()
-
-                await MainActor.run {
-                    isApplyingReferral = false
-
-                    // Handle test cases for development
-                    switch testErrorCode {
-                    case "EXPIRED1":
-                        triggerReferralError(.expired)
-                    case "USED1234":
-                        triggerReferralError(.alreadyUsed)
-                    case "LIMIT123":
-                        triggerReferralError(.limitReached)
-                    case "INVALID1":
-                        triggerReferralError(.notFound)
-                    case "SELF1234":
-                        triggerReferralError(.selfReferral)
-                    default:
-                        // Success case
-                        HapticManager.shared.success()
-                        showReferralSheet = false
-                        referralCode = ""
-                        referralError = nil
-
-                        // Refresh status after applying code
-                        Task {
-                            await viewModel.refresh()
-                        }
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    isApplyingReferral = false
-                    triggerReferralError(.networkError)
-                }
-            }
-        }
-    }
-
-    private func triggerReferralError(_ error: ReferralCodeError) {
-        referralError = error
-        HapticManager.shared.error()
-
-        // Trigger shake animation
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
-            shakeReferralField = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            shakeReferralField = false
-        }
-    }
-
     private func openSupport() {
-        // Open support email with prefilled content
         let subject = "Waitlist Application - Assistance Needed".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let body = "I need help with my application...".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
 
@@ -692,40 +684,53 @@ struct WaitlistView: View {
     }
 }
 
-// MARK: - Waitlist Hourglass Animation
+// MARK: - Release Gauge View
 
-struct WaitlistHourglassAnimation: View {
-    let isLongWait: Bool
+struct WaitlistReleaseGaugeView: View {
+    let current: Int
+    let total: Int
 
-    @State private var rotation: Double = 0
-    @State private var sandOffset: CGFloat = 0
+    private var progress: Double {
+        guard total > 0 else { return 0 }
+        return min(Double(current) / Double(total), 1.0)
+    }
 
     var body: some View {
-        ZStack {
-            // Background glow
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            (isLongWait ? AppColors.warning : AppColors.accentPrimary).opacity(0.2),
-                            Color.clear
-                        ],
-                        center: .center,
-                        startRadius: 30,
-                        endRadius: 60
-                    )
-                )
-                .frame(width: 120, height: 120)
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let height = geometry.size.height
 
-            // Hourglass icon
-            Image(systemName: isLongWait ? "hourglass.bottomhalf.filled" : "hourglass")
-                .font(.system(size: 56))
-                .foregroundColor(isLongWait ? AppColors.warning : AppColors.accentPrimary)
-                .rotationEffect(.degrees(rotation))
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                rotation = isLongWait ? 0 : 15
+            ZStack {
+                // Background arc
+                Path { path in
+                    path.addArc(
+                        center: CGPoint(x: width / 2, y: height),
+                        radius: height * 0.9,
+                        startAngle: .degrees(180),
+                        endAngle: .degrees(0),
+                        clockwise: false
+                    )
+                }
+                .stroke(AppColors.black400, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+
+                // Progress arc
+                Path { path in
+                    path.addArc(
+                        center: CGPoint(x: width / 2, y: height),
+                        radius: height * 0.9,
+                        startAngle: .degrees(180),
+                        endAngle: .degrees(180 - (180 * progress)),
+                        clockwise: true
+                    )
+                }
+                .stroke(
+                    LinearGradient(
+                        colors: [AppColors.brand400, AppColors.brand500],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                )
             }
         }
     }
@@ -799,24 +804,20 @@ private struct WaitlistConfettiPieceView: View {
     }
 }
 
-// Note: TextButton and SecondaryButton are defined in Core/DesignSystem/Components/PrimaryButton.swift
-
-#Preview("Loading") {
-    WaitlistView()
-        .environment(AppCoordinator())
-}
-
 #Preview("Pending") {
     WaitlistView()
         .environment(AppCoordinator())
+        .environment(AppState())
 }
 
-#Preview("Approved") {
+#Preview("Accepted") {
     WaitlistView()
         .environment(AppCoordinator())
+        .environment(AppState())
 }
 
 #Preview("Rejected") {
     WaitlistView()
         .environment(AppCoordinator())
+        .environment(AppState())
 }

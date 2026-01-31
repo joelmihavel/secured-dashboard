@@ -13,13 +13,20 @@ struct SplashView: View {
             // Background
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
-            
+
+            // Background Vector Image (from Figma)
+            Image("splash_background")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .opacity(0.3)
+                .ignoresSafeArea()
+
             // Dotted Pattern
+            // Note: DottedGridPattern has internal 0.4 opacity - do NOT add external .opacity()
             DottedGridPattern()
-                .opacity(0.4)
                 .mask(
                     LinearGradient(
-                        colors: [.black, .black.opacity(0.2), .clear],
+                        colors: [.black, .black.opacity(0.5), .clear],
                         startPoint: .top,
                         endPoint: .bottom
                     )

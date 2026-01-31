@@ -424,14 +424,16 @@ struct PaymentResultView: View {
     // MARK: - Action Buttons
 
     /// Bottom action buttons based on result state
+    /// Figma: Secondary button style (dark bg with orange border) for all main CTAs
     private var actionButtons: some View {
         VStack(spacing: Spacing.md) {
             switch resultState {
             case .successWithCashback, .successNoCashback:
-                // Share Receipt button - Primary CTA
+                // Download Receipt button - Figma 41:9563: Secondary style (dark with orange border)
                 PrimaryButton(
-                    title: "Share Receipt",
-                    isLoading: viewModel.isLoadingReceipt
+                    title: "Download Receipt",
+                    isLoading: viewModel.isLoadingReceipt,
+                    style: .secondary
                 ) {
                     Task {
                         await viewModel.generateReceipt()
@@ -439,67 +441,49 @@ struct PaymentResultView: View {
                     }
                 }
 
-                // Contact Support link
+                // Contact Support text link - Figma: neutral500 text
                 Button(action: { openSupport() }) {
                     Text("Contact Support")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(AppColors.neutral500)
                 }
 
-                // Back to home link
-                Button(action: { coordinator.popToRoot() }) {
-                    Text("Back to home")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(AppColors.brand500)
-                        .underline()
-                }
-
             case .failed:
-                // Try Again button - Primary CTA
-                PrimaryButton(title: "Try Again") {
-                    coordinator.pop()
-                    coordinator.pop()
+                // Contact Support button - Figma 41:9511: Secondary style
+                PrimaryButton(
+                    title: "Contact Support",
+                    style: .secondary
+                ) {
+                    openSupport()
                 }
 
-                // Use Different Method button
+                // Try Again text link - Figma: neutral500 text
                 Button(action: {
                     coordinator.pop()
                     coordinator.pop()
                 }) {
-                    Text("Use Different Method")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(AppColors.brand500)
-                }
-
-                // Contact Support link
-                Button(action: { openSupport() }) {
-                    Text("Contact Support")
+                    Text("Try Again")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(AppColors.neutral500)
                 }
 
             case .refunded:
-                // Contact Support button - Primary CTA
-                PrimaryButton(title: "Contact Support") {
+                // Contact Support button - Figma 41:9635: Secondary style
+                PrimaryButton(
+                    title: "Contact Support",
+                    style: .secondary
+                ) {
                     openSupport()
                 }
 
-                // Pay Again link
+                // Try Again text link - Figma: neutral500 text
                 Button(action: {
                     coordinator.popToRoot()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         coordinator.navigate(to: .payment)
                     }
                 }) {
-                    Text("Pay Again")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(AppColors.brand500)
-                        .underline()
-                }
-
-                // Back to home link
-                Button(action: { coordinator.popToRoot() }) {
-                    Text("Back to home")
+                    Text("Try Again")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(AppColors.neutral500)
                 }

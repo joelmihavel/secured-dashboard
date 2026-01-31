@@ -1,182 +1,210 @@
-/// PrimaryButton.swift
-/// Flent Secured v2 - Primary Button Component
-///
-/// The main CTA button used throughout the app
-/// Follows design system specifications from Figma
-///
-/// Figma: Components / Buttons / Primary
-/// - Outer Container: brand/600 (#CC7B57), rd-12
-/// - Inner Button: gradient brand/400→brand/500, rd-8
-/// - Height: 56pt total
-/// - Font: Body/md SemiBold (16px)
-/// - Text Color: white (#FFFFFF)
-
 import SwiftUI
 
 struct PrimaryButton: View {
     let title: String
-    var isLoading: Bool = false
-    var isEnabled: Bool = true
+    let icon: String?
+    let isLoading: Bool
+    let isEnabled: Bool
+    let style: ButtonStyle
+    let showBarIndicator: Bool
     let action: () -> Void
+
+    enum ButtonStyle {
+        case primary   // Orange gradient (for CTAs like "Pay Now")
+        case secondary // Dark gradient with orange border (Figma default for most buttons)
+    }
+
+    init(
+        title: String,
+        icon: String? = nil,
+        isLoading: Bool = false,
+        isEnabled: Bool = true,
+        style: ButtonStyle = .secondary, // Default to secondary (dark) per Figma
+        showBarIndicator: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.icon = icon
+        self.isLoading = isLoading
+        self.isEnabled = isEnabled
+        self.style = style
+        self.showBarIndicator = showBarIndicator
+        self.action = action
+    }
 
     var body: some View {
         Button(action: {
-            print("DEBUG: PrimaryButton tapped, isEnabled=\(isEnabled), isLoading=\(isLoading)")
-            if isEnabled && !isLoading {
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
-                action()
-            }
+            HapticManager.shared.mediumImpact()
+            action()
         }) {
-            HStack(spacing: Spacing.xs) {
-                if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: isEnabled ? .white : AppColors.textDisabled))
-                        .scaleEffect(0.8)
+            VStack(spacing: 12) { // 12pt gap per Figma visual analysis
+                // Optional bar indicator (for splash screen style)
+                // Figma: Very subtle gray capsule indicator above button
+                if showBarIndicator {
+                    Capsule()
+                        .fill(AppColors.black400.opacity(0.6)) // Subtle per Figma
+                        .frame(width: 32, height: 3) // Slightly wider/thicker for visibility per Figma
                 }
 
-                Text(title)
-                    .font(Typography.bodyMdMedium)
-                    .foregroundColor(isEnabled ? .white : AppColors.black300)
+                // Main button body
+                ZStack {
+                    // Background
+                    if style == .primary {
+                        // Orange gradient for primary
+                        if isEnabled {
+                            AppColors.buttonGradient
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        } else {
+                            AppColors.buttonGradientDisabled
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    } else {
+                        // Secondary: Dark gradient per Figma (#202020 → #0D0D0D @ 90%)
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: Color(hex: "202020"), location: 0),
+                                        .init(color: Color(hex: "0D0D0D"), location: 0.90179)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+
+                        // Inner shadow layer 1: dark edge effect
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.black, lineWidth: 1)
+                            .blur(radius: 0.5)
+                            .offset(x: -2, y: -4)
+                            .mask(RoundedRectangle(cornerRadius: 8))
+
+                        // Inner shadow layer 2: white glow for 3D depth
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.white.opacity(0.12), lineWidth: 2)
+                            .blur(radius: 4)
+                            .offset(x: 0, y: -3)
+                            .mask(RoundedRectangle(cornerRadius: 8))
+                    }
+
+                    // Content
+                    HStack(spacing: Spacing.xs) {
+                        if isLoading {
+                            ProgressView()
+                                .tint(style == .primary ? AppColors.white : AppColors.white)
+                        } else {
+                            if let icon = icon {
+                                Image(systemName: icon)
+                                    .foregroundColor(.white)
+                            }
+                            Text(title)
+                                .font(Typography.bodyMdMedium)
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    // Border - subtle orange for secondary
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(
+                            style == .secondary ? AppColors.brand500 : Color.clear,
+                            lineWidth: 0.5
+                        )
+                )
+                .shadow(
+                    // Warm shadow for secondary style
+                    color: style == .secondary
+                        ? Color(red: 0.60, green: 0.36, blue: 0.25).opacity(0.24)
+                        : Color.clear,
+                    radius: 6,
+                    y: 6
+                )
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(AppColors.black500)
-            .cornerRadius(Radius.md) // 12px
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(isEnabled ? AppColors.brand600 : AppColors.black500, lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2) // Outer shadow
-            // Inner shadows simulated with overlays
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                    .blur(radius: 2)
-                    .offset(y: -3)
-                    .mask(RoundedRectangle(cornerRadius: Radius.md).padding(2))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(Color.black, lineWidth: 1)
-                    .blur(radius: 2)
-                    .offset(x: -2, y: -4)
-                    .mask(RoundedRectangle(cornerRadius: Radius.md).padding(2))
-            )
         }
         .buttonStyle(PressableButtonStyle())
         .disabled(!isEnabled || isLoading)
-        .accessibilityIdentifier("primary_button")
-    }
-}
-
-// MARK: - Pressable Button Style
-
-struct PressableButtonStyle: ButtonStyle {
-    func makeBody(configuration: ButtonStyle.Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-
-// MARK: - Secondary Button
-
-struct SecondaryButton: View {
-    let title: String
-    var isLoading: Bool = false
-    var isEnabled: Bool = true
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: {
-            if isEnabled && !isLoading {
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
-
-                action()
-            }
-        }) {
-            HStack(spacing: Spacing.xs) {
-                if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentPrimary))
-                        .scaleEffect(0.8)
-                }
-
-                Text(title)
-                    .font(Typography.button)
-                    .foregroundColor(AppColors.accentPrimary)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(Color.clear)
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.button)
-                    .stroke(
-                        isEnabled ? AppColors.accentPrimary : AppColors.disabled,
-                        lineWidth: 2
-                    )
-            )
-        }
-        .buttonStyle(PressableButtonStyle())
-        .disabled(!isEnabled || isLoading)
-        .accessibilityIdentifier("secondary_button")
+        .opacity(isEnabled ? 1 : AppColors.Opacity.disabled)
     }
 }
 
 // MARK: - Text Button
 
+/// Simple text button with brand color - no background
 struct TextButton: View {
     let title: String
-    var isEnabled: Bool = true
     let action: () -> Void
 
+    init(title: String, action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+
     var body: some View {
-        Button(action: {
-            if isEnabled {
-                action()
-            }
-        }) {
+        Button(action: action) {
             Text(title)
-                .font(Typography.buttonSmall)
-                .foregroundColor(isEnabled ? AppColors.accentPrimary : AppColors.textMuted)
+                .font(Typography.bodyMd)
+                .foregroundColor(AppColors.brand500)
         }
-        .disabled(!isEnabled)
     }
 }
 
-// MARK: - Previews
+// MARK: - Secondary Button Alias
 
-#Preview("Primary Button") {
-    VStack(spacing: Spacing.md) {
-        PrimaryButton(title: "Continue") {
-            print("Tapped")
-        }
+/// Secondary button with dark background and orange border
+struct SecondaryButton: View {
+    let title: String
+    let icon: String?
+    let isLoading: Bool
+    let isEnabled: Bool
+    let action: () -> Void
 
-        PrimaryButton(title: "Loading...", isLoading: true) {
-            print("Tapped")
-        }
-
-        PrimaryButton(title: "Disabled", isEnabled: false) {
-            print("Tapped")
-        }
+    init(
+        title: String,
+        icon: String? = nil,
+        isLoading: Bool = false,
+        isEnabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.icon = icon
+        self.isLoading = isLoading
+        self.isEnabled = isEnabled
+        self.action = action
     }
-    .padding()
-    .background(AppColors.backgroundPrimary)
+
+    var body: some View {
+        PrimaryButton(
+            title: title,
+            icon: icon,
+            isLoading: isLoading,
+            isEnabled: isEnabled,
+            style: .secondary,
+            action: action
+        )
+    }
 }
 
-#Preview("Secondary Button") {
-    VStack(spacing: Spacing.md) {
-        SecondaryButton(title: "Cancel") {
-            print("Tapped")
-        }
+// MARK: - Pressable Button Style
 
-        SecondaryButton(title: "Disabled", isEnabled: false) {
-            print("Tapped")
-        }
+/// A button style that scales down slightly when pressed for tactile feedback
+struct PressableButtonStyle: SwiftUI.ButtonStyle {
+    func makeBody(configuration: SwiftUI.ButtonStyleConfiguration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: configuration.isPressed)
+    }
+}
+
+#Preview {
+    VStack(spacing: 20) {
+        PrimaryButton(title: "Get Started", showBarIndicator: true, action: {})
+        PrimaryButton(title: "Proceed", action: {})
+        PrimaryButton(title: "Pay Now", style: .primary, action: {})
+        PrimaryButton(title: "Disabled", isEnabled: false, action: {})
     }
     .padding()
-    .background(AppColors.backgroundPrimary)
+    .background(AppColors.black700)
 }

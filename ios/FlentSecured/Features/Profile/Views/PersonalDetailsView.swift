@@ -1,11 +1,16 @@
 /// PersonalDetailsView.swift
 /// Flent Secured v2 - Personal Details Screen
 ///
-/// Displays and allows editing of user's personal information
-/// - First name, Last name, Phone, Email
-/// - Edit capability for name/email
+/// Figma: 41:8880 - My Profile Edit Screen
 ///
-/// Figma: Profile > Personal Details
+/// Design Specifications from Figma:
+/// - Header: "My" (white) "Profile" (brand500), 48px light
+/// - Avatar: 80x80 with "Edit Picture" button (brand500 bg)
+/// - Fields: User name, Email, City, Phone Number
+/// - Field labels: 12px regular, neutral500
+/// - Field values: 16px regular, white (editable) or gray (read-only)
+/// - "edit" link on right side of editable fields
+/// - Save Changes button at bottom
 
 import SwiftUI
 
@@ -20,11 +25,7 @@ struct PersonalDetailsView: View {
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            // Dotted grid pattern
-            DottedGridPattern()
-                .ignoresSafeArea()
-
-            VStack(alignment: .leading, spacing: Spacing.xl) {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
                 // Header with back button
                 HStack {
                     Button {
@@ -33,27 +34,20 @@ struct PersonalDetailsView: View {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 20, weight: .medium))
                             .foregroundColor(.white)
+                            .frame(width: 24, height: 24)
                     }
 
                     Spacer()
-
-                    if viewModel.isEditing {
-                        Button("Cancel") {
-                            viewModel.cancelEditing()
-                        }
-                        .font(Typography.bodyMdMedium)
-                        .foregroundColor(AppColors.neutral500)
-                    }
                 }
                 .padding(.top, Spacing.md)
 
-                // Title - Split color
+                // Title - Figma: "My" "Profile" 48px light
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Personal")
-                        .font(.system(size: 32, weight: .light))
+                    Text("My")
+                        .font(.system(size: 48, weight: .light))
                         .foregroundColor(.white)
-                    Text("Details")
-                        .font(.system(size: 32, weight: .light))
+                    Text("Profile")
+                        .font(.system(size: 48, weight: .light))
                         .foregroundColor(AppColors.brand500)
                 }
 
@@ -64,92 +58,70 @@ struct PersonalDetailsView: View {
                         .frame(maxWidth: .infinity)
                     Spacer()
                 } else {
-                    ScrollView {
+                    ScrollView(showsIndicators: false) {
                         VStack(spacing: Spacing.lg) {
-                            // Personal Information Card
-                            VStack(alignment: .leading, spacing: Spacing.md) {
-                                Text("PERSONAL INFORMATION")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(AppColors.neutral500)
-                                    .padding(.leading, Spacing.xs)
+                            // Avatar Section - Figma: 80x80 avatar with Edit Picture button
+                            HStack(spacing: Spacing.lg) {
+                                // Avatar
+                                ZStack {
+                                    Circle()
+                                        .fill(AppColors.brand500.opacity(0.3))
+                                        .frame(width: 80, height: 80)
 
-                                VStack(spacing: 0) {
-                                    // First Name
-                                    PersonalDetailRow(
-                                        label: "First Name",
-                                        value: viewModel.isEditing ? nil : viewModel.firstName,
-                                        editableValue: viewModel.isEditing ? $viewModel.editFirstName : nil,
-                                        placeholder: "Enter first name",
-                                        isEditing: viewModel.isEditing
-                                    )
-
-                                    Divider()
-                                        .background(AppColors.black400)
-
-                                    // Last Name
-                                    PersonalDetailRow(
-                                        label: "Last Name",
-                                        value: viewModel.isEditing ? nil : viewModel.lastName,
-                                        editableValue: viewModel.isEditing ? $viewModel.editLastName : nil,
-                                        placeholder: "Enter last name",
-                                        isEditing: viewModel.isEditing
-                                    )
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 32))
+                                        .foregroundColor(AppColors.brand500)
                                 }
-                                .background(AppColors.black500)
-                                .cornerRadius(Radius.md)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: Radius.md)
-                                        .stroke(AppColors.black400, lineWidth: 1)
-                                )
-                            }
 
-                            // Contact Information Card
-                            VStack(alignment: .leading, spacing: Spacing.md) {
-                                Text("CONTACT INFORMATION")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(AppColors.neutral500)
-                                    .padding(.leading, Spacing.xs)
-
-                                VStack(spacing: 0) {
-                                    // Phone (read-only)
-                                    PersonalDetailRow(
-                                        label: "Phone Number",
-                                        value: viewModel.formattedPhone,
-                                        isEditing: false,
-                                        isReadOnly: true
-                                    )
-
-                                    Divider()
-                                        .background(AppColors.black400)
-
-                                    // Email
-                                    PersonalDetailRow(
-                                        label: "Email Address",
-                                        value: viewModel.isEditing ? nil : viewModel.email,
-                                        editableValue: viewModel.isEditing ? $viewModel.editEmail : nil,
-                                        placeholder: "Enter email address",
-                                        keyboardType: .emailAddress,
-                                        isEditing: viewModel.isEditing
-                                    )
+                                // Edit Picture Button - Figma: brand500 bg, white text
+                                Button {
+                                    // TODO: Implement photo picker
+                                } label: {
+                                    Text("Edit Picture")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, Spacing.md)
+                                        .padding(.vertical, Spacing.xs)
+                                        .background(AppColors.brand500)
+                                        .cornerRadius(Radius.md)
                                 }
-                                .background(AppColors.black500)
-                                .cornerRadius(Radius.md)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: Radius.md)
-                                        .stroke(AppColors.black400, lineWidth: 1)
-                                )
+
+                                Spacer()
+                            }
+                            .padding(.top, Spacing.md)
+
+                            // User name field - Figma: "User name" label with "edit" link
+                            ProfileEditField(
+                                label: "User name",
+                                value: viewModel.fullName,
+                                isEditable: true
+                            ) {
+                                viewModel.startEditing()
                             }
 
-                            // Phone number note
-                            HStack(spacing: Spacing.xs) {
-                                Image(systemName: "info.circle")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(AppColors.neutral500)
-                                Text("Phone number cannot be changed. Contact support if needed.")
-                                    .font(Typography.caption)
-                                    .foregroundColor(AppColors.neutral500)
+                            // Email field
+                            ProfileEditField(
+                                label: "Email",
+                                value: viewModel.email.isEmpty ? "-" : viewModel.email,
+                                isEditable: true
+                            ) {
+                                viewModel.startEditing()
                             }
-                            .padding(.top, Spacing.xs)
+
+                            // City field - Figma: Read-only, gray text
+                            ProfileEditField(
+                                label: "City",
+                                value: viewModel.city.isEmpty ? "Bangalore" : viewModel.city,
+                                isEditable: false
+                            )
+
+                            // Phone Number field - Figma: Read-only with country code
+                            ProfileEditField(
+                                label: "Phone Number",
+                                value: viewModel.formattedPhone,
+                                isEditable: false,
+                                showCountryCode: true
+                            )
 
                             // Error message
                             if let error = viewModel.errorMessage {
@@ -170,23 +142,14 @@ struct PersonalDetailsView: View {
 
                     Spacer()
 
-                    // Action Button
-                    if viewModel.isEditing {
-                        PrimaryButton(
-                            title: viewModel.isSaving ? "Saving..." : "Save Changes",
-                            isLoading: viewModel.isSaving,
-                            isEnabled: viewModel.hasChanges && !viewModel.isSaving
-                        ) {
-                            Task {
-                                let success = await viewModel.saveChanges()
-                                if success {
-                                    viewModel.isEditing = false
-                                }
-                            }
-                        }
-                    } else {
-                        SecondaryButton(title: "Edit Details") {
-                            viewModel.startEditing()
+                    // Save Changes Button - Figma: Dark button with orange border
+                    PrimaryButton(
+                        title: viewModel.isSaving ? "Saving..." : "Save Changes",
+                        isLoading: viewModel.isSaving,
+                        isEnabled: !viewModel.isSaving
+                    ) {
+                        Task {
+                            _ = await viewModel.saveChanges()
                         }
                     }
 
@@ -194,11 +157,61 @@ struct PersonalDetailsView: View {
                         .frame(height: Spacing.md)
                 }
             }
-            .padding(.horizontal, Spacing.screenHorizontalCompact)
+            .padding(.horizontal, Spacing.lg)
         }
         .navigationBarHidden(true)
         .task {
             await viewModel.loadProfile()
+        }
+    }
+}
+
+// MARK: - Profile Edit Field
+// Figma: Label above, value below, "edit" link on right
+
+struct ProfileEditField: View {
+    let label: String
+    let value: String
+    var isEditable: Bool = false
+    var showCountryCode: Bool = false
+    var onEdit: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            // Label row with edit link
+            HStack {
+                Text(label)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(AppColors.neutral500)
+
+                Spacer()
+
+                if isEditable, let onEdit = onEdit {
+                    Button(action: onEdit) {
+                        Text("edit")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(AppColors.neutral500)
+                    }
+                }
+            }
+
+            // Value row
+            HStack(spacing: Spacing.xs) {
+                if showCountryCode {
+                    HStack(spacing: 4) {
+                        Text("+91")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(AppColors.neutral500)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundColor(AppColors.neutral500)
+                    }
+                }
+
+                Text(value)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(isEditable ? .white : AppColors.neutral500)
+            }
         }
     }
 }
@@ -302,6 +315,13 @@ final class PersonalDetailsViewModel {
         }
         return phone
     }
+
+    var fullName: String {
+        let name = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
+        return name.isEmpty ? "-" : name
+    }
+
+    var city: String = ""
 
     var hasChanges: Bool {
         editFirstName != firstName ||

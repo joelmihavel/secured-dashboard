@@ -43,15 +43,26 @@ struct AddBankView: View {
                             .foregroundColor(AppColors.textPrimary)
                     }
 
-                    // Header
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        Text("Add landlord's bank account")
-                            .font(Typography.h4)
-                            .foregroundColor(AppColors.textPrimary)
+                    // Header - Figma: node_1-33737
+                    VStack(alignment: .leading, spacing: Spacing.md) {
+                        // Logo
+                        Image("flent-logo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 26.7, height: 32)
 
-                        Text("We'll verify this account before transferring rent")
-                            .font(Typography.bodyMd2)
-                            .foregroundColor(AppColors.textSecondary)
+                        // Title - H1 style
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Add your")
+                                .foregroundColor(AppColors.neutral500)
+                            Text("Landlord's")
+                                .foregroundColor(AppColors.neutral500)
+                            Text("Bank Details")
+                                .foregroundColor(AppColors.brand500)
+                        }
+                        .font(Typography.h1)
+                        .tracking(-2)
+                        .lineSpacing(16)
                     }
 
                     // Verified State

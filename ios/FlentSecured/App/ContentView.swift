@@ -117,9 +117,15 @@ struct ContentView: View {
         case .inviteLandlord:
             InviteLandlordView()
 
+        case .setupFlow(let state):
+            SetupFlowStateView(initialState: state)
+
         // Main App
         case .home(let state):
             HomeView(state: state)
+
+        case .homeZeroStateFigma:
+            HomeZeroStateFigmaView()
 
         case .payment:
             PaymentView()
@@ -132,6 +138,9 @@ struct ContentView: View {
 
         case .paymentMethods:
             PaymentMethodsView()
+
+        case .paymentMethodSelectionSheet:
+            PaymentMethodSelectionSheetWrapper()
 
         case .paymentSummary(let paymentId):
             PaymentSummaryView(paymentId: paymentId)
@@ -179,11 +188,64 @@ struct ContentView: View {
 
         case .agreementDetails:
             AgreementDetailsView()
+
+        case .editUPI:
+            ProfileEditUPIView()
+
+        case .editCreditCard:
+            ProfileEditCreditCardView()
         }
     }
 }
 
 // Note: LoadingView is defined in Core/DesignSystem/Components/LoadingView.swift
+
+// MARK: - Payment Method Selection Sheet Wrapper
+
+/// Wrapper for presenting PaymentMethodSelectionView as a bottom sheet modal
+/// Figma: 41:7005 - "Choose a Payment Method" bottom sheet
+/// Shows dark overlay with home screen dimmed behind, bottom sheet with rounded corners
+struct PaymentMethodSelectionSheetWrapper: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AppCoordinator.self) private var coordinator
+
+    @State private var selectedMethod: SavedPaymentMethod? = nil
+
+    var body: some View {
+        ZStack {
+            // Dark overlay background matching Figma
+            AppColors.black700.opacity(0.7)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    dismiss()
+                }
+
+            VStack {
+                Spacer()
+
+                // Bottom sheet content - setup mode (no saved methods)
+                PaymentMethodSelectionView(
+                    selectedMethod: $selectedMethod,
+                    savedMethods: [],  // Empty = setup mode with "Set it up" buttons
+                    rentAmountPaise: 3250000,  // Mock: Rs 32,500
+                    onMethodSelected: { method in
+                        dismiss()
+                        // Handle method selection
+                    },
+                    onSetupMethod: { methodType in
+                        dismiss()
+                        coordinator.navigate(to: .paymentMethods)
+                    },
+                    isVisualTestMode: true
+                )
+                .frame(maxHeight: UIScreen.main.bounds.height * 0.6)
+            }
+        }
+        .background(Color.clear)
+        .presentationBackground(.clear)
+        .presentationDragIndicator(.hidden)
+    }
+}
 
 // MARK: - Preview
 

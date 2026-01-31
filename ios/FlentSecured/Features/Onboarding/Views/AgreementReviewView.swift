@@ -13,14 +13,16 @@
 /// States handled:
 /// - .loading: Fetching extraction data
 /// - .extractionPending: Still processing document (AI reading)
-/// - .extractionComplete: Data ready for review with edit capability
+/// - .extractionComplete: Data ready for review (read-only confirmation)
+/// - .editing: User editing data
 /// - .confirming: User confirming data
 /// - .confirmed: Successfully confirmed
 /// - .error: Error state
 ///
 /// Features:
 /// - AI extraction progress display
-/// - Editable fields for correction
+/// - Read-only confirmation view matching Figma layout
+/// - "Enter Manually" option to edit fields
 /// - Validation with required field indicators
 /// - Smooth confirmation animation
 
@@ -32,6 +34,7 @@ struct AgreementReviewView: View {
     let extractionId: String
 
     @State private var viewModel: AgreementReviewViewModel
+    @State private var isEditing: Bool = false
 
     init(extractionId: String) {
         self.extractionId = extractionId
@@ -110,7 +113,8 @@ struct AgreementReviewView: View {
         case .loading, .extractionPending:
             return "Processing"
         case .extractionComplete, .confirming:
-            return "Review your"
+            // Figma: "Confirm" for read-only (node_1-30448), "Let's" for editing (node_1-30820)
+            return isEditing ? "Let's" : "Confirm"
         case .confirmed:
             return "All"
         case .error:
@@ -123,7 +127,8 @@ struct AgreementReviewView: View {
         case .loading, .extractionPending:
             return "document"
         case .extractionComplete, .confirming:
-            return "details"
+            // Figma: "your details" for read-only (node_1-30448), "fix the details" for editing (node_1-30820)
+            return isEditing ? "fix the details" : "your details"
         case .confirmed:
             return "set!"
         case .error:
@@ -140,10 +145,18 @@ struct AgreementReviewView: View {
             processingView
 
         case .extractionComplete:
-            reviewView
+            if isEditing {
+                reviewView
+            } else {
+                readOnlyConfirmationView
+            }
 
         case .confirming:
-            reviewView
+            if isEditing {
+                reviewView
+            } else {
+                readOnlyConfirmationView
+            }
 
         case .confirmed:
             confirmedView
@@ -151,6 +164,154 @@ struct AgreementReviewView: View {
         case .error(let message):
             errorView(message: message)
         }
+    }
+
+    // MARK: - Read-Only Confirmation View (Figma: node 1:30448)
+
+    private var readOnlyConfirmationView: some View {
+        VStack(spacing: Spacing.lg) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Agreement ID
+                    confirmationRow(
+                        icon: "number",
+                        label: "Agreement ID",
+                        value: viewModel.extractedInfo?.id.prefix(8).uppercased() ?? "—"
+                    )
+
+                    // Property
+                    confirmationRow(
+                        icon: "building.2",
+                        label: "Property",
+                        value: viewModel.propertyAddress.isEmpty ? "—" : viewModel.propertyAddress
+                    )
+
+                    // Tenant(s)
+                    confirmationRow(
+                        icon: "person",
+                        label: "Tenant(s)",
+                        value: viewModel.tenantName.isEmpty ? "—" : viewModel.tenantName
+                    )
+
+                    // Landlord(s)
+                    confirmationRow(
+                        icon: "person.2",
+                        label: "Landlord(s)",
+                        value: viewModel.landlordName.isEmpty ? "—" : viewModel.landlordName
+                    )
+
+                    // Monthly Rent
+                    confirmationRow(
+                        icon: "indianrupeesign",
+                        label: "Monthly Rent",
+                        value: viewModel.monthlyRent.isEmpty ? "—" : "₹ \(viewModel.monthlyRent)"
+                    )
+
+                    // One-Time Deposit
+                    confirmationRow(
+                        icon: "banknote",
+                        label: "One-Time Deposit",
+                        value: viewModel.securityDeposit.isEmpty ? "—" : "₹ \(viewModel.securityDeposit)"
+                    )
+
+                    // Rent Duration
+                    let duration = formatRentDuration()
+                    confirmationRow(
+                        icon: "calendar",
+                        label: "Rent Duration",
+                        value: duration.isEmpty ? "—" : duration
+                    )
+
+                    // Exit Date
+                    let exitDate = formatExitDate()
+                    confirmationRow(
+                        icon: "calendar.badge.clock",
+                        label: "Exit Date",
+                        value: exitDate.isEmpty ? "—" : exitDate
+                    )
+                }
+            }
+
+            // Enter Manually link
+            Button {
+                withAnimation {
+                    isEditing = true
+                }
+            } label: {
+                Text("Enter Manually")
+                    .font(Typography.bodyMdMedium)
+                    .foregroundColor(AppColors.brand500)
+            }
+            .padding(.bottom, Spacing.sm)
+
+            // Confirm Button
+            PrimaryButton(
+                title: "Proceed",
+                isLoading: viewModel.isLoading,
+                isEnabled: viewModel.canConfirm
+            ) {
+                confirmExtraction()
+            }
+        }
+    }
+
+    /// Confirmation row matching Figma node 1:30448
+    /// - Icon: 18px SF Symbol, brand500 color, 24x24 frame
+    /// - Label: 12px caption, textMuted (left aligned)
+    /// - Value: 16px bodyMd, textPrimary (right aligned)
+    /// - Divider: 1px, #4D4D4D (border color)
+    private func confirmationRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            // Icon - Figma: brand500, 18px
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(AppColors.brand500)
+                .frame(width: 24, height: 24)
+
+            // Label (left side)
+            Text(label)
+                .font(Typography.caption) // 12px
+                .foregroundColor(AppColors.textMuted)
+
+            Spacer()
+
+            // Value (right aligned per Figma 1:30448)
+            Text(value)
+                .font(Typography.bodyMd) // 16px
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, Spacing.md) // 16pt vertical padding
+        .overlay(
+            Rectangle()
+                .fill(AppColors.border) // #4D4D4D
+                .frame(height: 1),
+            alignment: .bottom
+        )
+    }
+
+    private func formatRentDuration() -> String {
+        guard let startDate = viewModel.leaseStartDate,
+              let endDate = viewModel.leaseEndDate else {
+            return ""
+        }
+
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.month], from: startDate, to: endDate)
+        if let months = components.month, months > 0 {
+            return "\(months) Months"
+        }
+        return ""
+    }
+
+    private func formatExitDate() -> String {
+        guard let endDate = viewModel.leaseEndDate else {
+            return ""
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM yyyy"
+        return formatter.string(from: endDate)
     }
 
     // MARK: - Processing View
@@ -311,9 +472,9 @@ struct AgreementReviewView: View {
                     .foregroundColor(AppColors.error)
             }
 
-            // Confirm Button
+            // Save Changes Button - Figma: node_1-30820 (edit mode)
             PrimaryButton(
-                title: "Confirm & Continue",
+                title: "Save Changes",
                 isLoading: viewModel.isLoading,
                 isEnabled: viewModel.canConfirm
             ) {

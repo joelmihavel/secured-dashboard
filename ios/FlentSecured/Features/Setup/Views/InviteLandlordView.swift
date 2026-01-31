@@ -88,16 +88,20 @@ struct InviteLandlordView: View {
 
     private var inviteFormContent: some View {
         VStack(alignment: .leading, spacing: Spacing.xl) {
-            // Header
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("Invite your")
-                    .font(.system(size: 28, weight: .light))
-                    .foregroundColor(.white)
-                + Text(" landlord")
-                    .font(.system(size: 28, weight: .light))
-                    .foregroundColor(AppColors.brand500)
+            // Header - Figma: node_1-34150
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Title - H1 style
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("One last step")
+                        .foregroundColor(AppColors.neutral500)
+                    Text("we promise")
+                        .foregroundColor(AppColors.brand500)
+                }
+                .font(Typography.h1)
+                .tracking(-2)
+                .lineSpacing(16)
 
-                Text("They'll receive a link to approve your tenancy")
+                Text("Invite your landlord to Secured to activate your cashback.")
                     .font(Typography.bodyMd2)
                     .foregroundColor(AppColors.textSecondary)
             }

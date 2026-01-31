@@ -34,13 +34,20 @@ struct AddUtilityView: View {
                             .foregroundColor(AppColors.textPrimary)
                     }
 
-                    // Header
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        Text("Verify utility bill")
-                            .font(Typography.h4)
-                            .foregroundColor(AppColors.textPrimary)
+                    // Header - Figma: node_1-34343
+                    VStack(alignment: .leading, spacing: Spacing.md) {
+                        // Title - H1 style
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Verify")
+                                .foregroundColor(AppColors.neutral500)
+                            Text("your address")
+                                .foregroundColor(AppColors.brand500)
+                        }
+                        .font(Typography.h1)
+                        .tracking(-2)
+                        .lineSpacing(16)
 
-                        Text("This confirms your landlord owns the property")
+                        Text("Your electricity bill helps us verify your residence.")
                             .font(Typography.bodyMd2)
                             .foregroundColor(AppColors.textSecondary)
                     }

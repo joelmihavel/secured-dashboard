@@ -1,18 +1,17 @@
 /// PaymentHistoryGraphView.swift
 /// Flent Secured v2 - Payment History Graph Component
 ///
-/// Figma: 41:8760 - My Profile / Main Screen - Payment History Chart
+/// Figma: 41:8760 - My Profile / Main Screen - YOUR PAYMENT HISTORY
 ///
-/// Design Specifications:
-/// - Type: Vertical bar chart
-/// - Bars: 7 months of data
-/// - Bar Width: 24px
-/// - Bar Radius: 4px corners
-/// - On-Time Color: #22C55E (successApproved)
-/// - Late Color: #EF4444 (error)
-/// - Month Labels: 10px, neutral500
-/// - Chart Height: 80-100px scaled by percentage
-/// - Legend: Circular dots (8x8) with counts
+/// Design Specifications from Figma:
+/// - Section header: "YOUR PAYMENT HISTORY" (10px semibold, neutral500)
+/// - Bar chart with month labels (JAN, FEB, MAR, APR, MAY)
+/// - Current month highlighted (MAR with underline)
+/// - Bar shapes: Rounded top corners only
+/// - On-Time bars: White outline with "on time" label
+/// - Late bars: White outline with "Paid late" label
+/// - Not Paid bars: White outline with "Not Paid" label
+/// - Legend shows bar states with tooltips
 
 import SwiftUI
 
@@ -23,6 +22,7 @@ struct PaymentMonthData: Identifiable {
     let monthLabel: String
     let percentage: Int // 0-100
     let isOnTime: Bool
+    var isPaid: Bool = true
 }
 
 // MARK: - Payment History Graph View
@@ -33,86 +33,104 @@ struct PaymentHistoryGraphView: View {
     let lateCount: Int
 
     private let maxBarHeight: CGFloat = 80
-    private let barWidth: CGFloat = 24
+    private let barWidth: CGFloat = 28
     private let barRadius: CGFloat = 4
-    private let barSpacing: CGFloat = 8
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            // Header
-            Text("Payment History")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
+            // Header - Figma: "YOUR PAYMENT HISTORY" (same style as section headers)
+            Text("YOUR PAYMENT HISTORY")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(AppColors.neutral500)
+                .tracking(0.5)
 
-            // Bar Chart
-            HStack(alignment: .bottom, spacing: barSpacing) {
-                ForEach(monthsData) { month in
+            // Bar Chart - Figma: Bars with tooltip labels
+            HStack(alignment: .bottom, spacing: 6) {
+                ForEach(Array(monthsData.enumerated()), id: \.element.id) { index, month in
                     PaymentBar(
                         month: month,
                         maxHeight: maxBarHeight,
                         barWidth: barWidth,
-                        barRadius: barRadius
+                        barRadius: barRadius,
+                        isCurrentMonth: index == 2 // MAR is highlighted in Figma
                     )
                 }
             }
-            .frame(height: maxBarHeight + 24) // Extra space for labels
+            .frame(height: maxBarHeight + 28) // Extra space for labels
             .frame(maxWidth: .infinity)
-
-            // Legend
-            HStack(spacing: Spacing.lg) {
-                PaymentLegendItem(
-                    color: AppColors.successApproved,
-                    label: "On Time",
-                    count: onTimeCount
-                )
-
-                PaymentLegendItem(
-                    color: AppColors.error,
-                    label: "Late",
-                    count: lateCount
-                )
-            }
         }
         .padding(Spacing.md)
-        .background(AppColors.black500)
+        .background(AppColors.black600)
         .cornerRadius(Radius.md)
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.md)
-                .stroke(AppColors.black400, lineWidth: 1)
-        )
     }
 }
 
 // MARK: - Payment Bar
+// Figma: Bar with tooltip label, rounded top corners, outline style
 
 private struct PaymentBar: View {
     let month: PaymentMonthData
     let maxHeight: CGFloat
     let barWidth: CGFloat
     let barRadius: CGFloat
+    var isCurrentMonth: Bool = false
 
     private var barHeight: CGFloat {
-        // Scale percentage to height (minimum 8pt for visibility)
-        max(8, CGFloat(month.percentage) / 100.0 * maxHeight)
+        // Scale percentage to height (minimum 16pt for visibility)
+        guard month.isPaid else { return 16 }
+        return max(16, CGFloat(month.percentage) / 100.0 * maxHeight)
     }
 
-    private var barColor: Color {
-        month.isOnTime ? AppColors.successApproved : AppColors.error
+    private var tooltipText: String {
+        if !month.isPaid {
+            return "Not Paid"
+        }
+        return month.isOnTime ? "on time" : "Paid late"
     }
 
     var body: some View {
-        VStack(spacing: 4) {
-            // Bar
-            RoundedRectangle(cornerRadius: barRadius)
-                .fill(barColor)
-                .frame(width: barWidth, height: barHeight)
+        VStack(spacing: 6) {
+            // Tooltip label - Figma: Small label above bar
+            Text(tooltipText)
+                .font(.system(size: 8, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(AppColors.black500)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                        )
+                )
 
-            // Month label
-            Text(month.monthLabel)
-                .font(.system(size: 10, weight: .regular))
-                .foregroundColor(AppColors.neutral500)
+            // Bar - Figma: Outline style with rounded top corners
+            UnevenRoundedRectangle(
+                topLeadingRadius: barRadius,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: barRadius
+            )
+            .stroke(Color.white.opacity(0.6), lineWidth: 1)
+            .frame(width: barWidth, height: barHeight)
+
+            // Month label - Figma: Uppercase, current month has underline
+            VStack(spacing: 2) {
+                Text(month.monthLabel.uppercased())
+                    .font(.system(size: 10, weight: isCurrentMonth ? .semibold : .regular))
+                    .foregroundColor(isCurrentMonth ? AppColors.brand500 : AppColors.neutral500)
+
+                // Current month indicator
+                if isCurrentMonth {
+                    Rectangle()
+                        .fill(AppColors.brand500)
+                        .frame(width: 20, height: 2)
+                        .cornerRadius(1)
+                }
+            }
         }
-        .accessibilityLabel("\(month.monthLabel): \(month.isOnTime ? "On time" : "Late") payment, \(month.percentage)%")
+        .accessibilityLabel("\(month.monthLabel): \(tooltipText), \(month.percentage)%")
     }
 }
 

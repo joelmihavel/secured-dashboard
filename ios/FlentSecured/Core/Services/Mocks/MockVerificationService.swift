@@ -131,7 +131,9 @@ final class MockVerificationService: VerificationServiceProtocol {
             landlordApproved: false,
             bankVerificationDate: ISO8601DateFormatter().string(from: Date()),
             utilityVerificationDate: ISO8601DateFormatter().string(from: Date()),
-            landlordApprovalDate: nil
+            landlordApprovalDate: nil,
+            landlordInviteStatus: nil,
+            landlordInviteDaysSinceSent: nil
         )
     }
 

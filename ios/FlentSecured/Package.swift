@@ -16,9 +16,8 @@ let package = Package(
         .package(url: "https://github.com/EmergeTools/Pow", from: "1.0.0"),
         .package(url: "https://github.com/simibac/ConfettiSwiftUI", from: "1.1.0"),
 
-        // Media
+        // Media (NukeUI is included in Nuke 12+)
         .package(url: "https://github.com/kean/Nuke", from: "12.0.0"),
-        .package(url: "https://github.com/kean/NukeUI", from: "0.8.0"),
 
         // UI Helpers
         .package(url: "https://github.com/markiv/SwiftUI-Shimmer", from: "1.4.0"),
@@ -31,8 +30,8 @@ let package = Package(
         .package(url: "https://github.com/PostHog/posthog-ios", from: "3.2.0"),
         .package(url: "https://github.com/getsentry/sentry-cocoa", from: "8.20.0"),
 
-        // Testing
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.15.0"),
+        // Testing (disabled - test target outside package root)
+        // .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.15.0"),
     ],
     targets: [
         .target(
@@ -43,7 +42,7 @@ let package = Package(
                 .product(name: "Pow", package: "Pow"),
                 .product(name: "ConfettiSwiftUI", package: "ConfettiSwiftUI"),
                 .product(name: "Nuke", package: "Nuke"),
-                .product(name: "NukeUI", package: "NukeUI"),
+                .product(name: "NukeUI", package: "Nuke"),
                 .product(name: "Shimmer", package: "SwiftUI-Shimmer"),
                 .product(name: "SwiftUIIntrospect", package: "swiftui-introspect"),
                 .product(name: "KeychainAccess", package: "KeychainAccess"),
@@ -58,13 +57,14 @@ let package = Package(
                 .process("Resources/Fonts"),
             ]
         ),
-        .testTarget(
-            name: "FlentSecuredTests",
-            dependencies: [
-                "FlentSecured",
-                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
-            ],
-            path: "../FlentSecuredTests"
-        ),
+        // Test target disabled - outside package root
+        // .testTarget(
+        //     name: "FlentSecuredTests",
+        //     dependencies: [
+        //         "FlentSecured",
+        //         .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+        //     ],
+        //     path: "../FlentSecuredTests"
+        // ),
     ]
 )

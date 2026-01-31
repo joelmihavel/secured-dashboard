@@ -226,7 +226,7 @@ final class OnboardingCoordinator {
             return .waitlist
         case .postApprovalStep1, .postApprovalStep2:
             return .postApproval
-        case .splash, .home, .payment, .paymentTransaction, .paymentMethods, .paymentProcessing, .paymentResult, .paymentSummary, .transactions, .transactionDetail, .profile, .personalDetails, .tenancyDetails, .paymentHistory, .helpFAQ, .settings, .pendingSteps, .addBank, .addUtility, .inviteLandlord, .referral, .linkedLandlord, .landlordBankAccount, .agreementDetails:
+        case .splash, .home, .payment, .paymentTransaction, .paymentMethods, .paymentMethodSelectionSheet, .paymentProcessing, .paymentResult, .paymentSummary, .transactions, .transactionDetail, .profile, .personalDetails, .tenancyDetails, .paymentHistory, .helpFAQ, .settings, .pendingSteps, .addBank, .addUtility, .inviteLandlord, .referral, .linkedLandlord, .landlordBankAccount, .agreementDetails, .homeZeroStateFigma, .setupFlow, .editUPI, .editCreditCard:
             return nil
         }
     }

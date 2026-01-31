@@ -188,9 +188,19 @@ extension PaymentData {
     var formattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencySymbol = "₹"
+        formatter.currencySymbol = "\u{20B9}"
         formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: totalAmount)) ?? "₹\(Int(totalAmount))"
+        return formatter.string(from: NSNumber(value: totalAmount)) ?? "\u{20B9}\(Int(totalAmount))"
+    }
+
+    /// Formatted amount with space after rupee symbol (Figma: "₹ 32,500")
+    var formattedAmountWithSpace: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        formatter.maximumFractionDigits = 0
+        let formattedNumber = formatter.string(from: NSNumber(value: totalAmount)) ?? "\(Int(totalAmount))"
+        return "\u{20B9} \(formattedNumber)"
     }
 
     var formattedDate: String {
@@ -206,6 +216,22 @@ extension PaymentData {
         return createdAt
     }
 
+    /// Formatted date+time for list items (Figma: "15 Sep, 9:40am")
+    var formattedDateTime: String {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateFormat = "d MMM, h:mma"
+        displayFormatter.amSymbol = "am"
+        displayFormatter.pmSymbol = "pm"
+
+        if let date = isoFormatter.date(from: createdAt) {
+            return displayFormatter.string(from: date)
+        }
+        return createdAt
+    }
+
     var monthName: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
@@ -214,6 +240,88 @@ extension PaymentData {
             return formatter.string(from: date)
         }
         return paymentMonth
+    }
+
+    /// Month name only (e.g., "September")
+    var monthNameOnly: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        if let date = formatter.date(from: paymentMonth) {
+            formatter.dateFormat = "MMMM"
+            return formatter.string(from: date)
+        }
+        return paymentMonth
+    }
+
+    /// Title for transaction list (Figma: "September rent")
+    var rentTitle: String {
+        "\(monthNameOnly) rent"
+    }
+}
+
+// MARK: - PaymentStatus Display Extension
+
+extension PaymentStatus {
+    /// Short display name for list items (Figma: "Paid", "Pending", "Failed")
+    var shortDisplayName: String {
+        switch self {
+        case .success, .settled: return "Paid"
+        case .processing, .initiated: return "Pending"
+        case .failed: return "Failed"
+        case .refunded: return "Refunded"
+        }
+    }
+}
+
+// MARK: - PaymentData Preview Helpers
+
+extension PaymentData {
+    static var previewSuccess: PaymentData {
+        PaymentData(
+            id: "preview-success",
+            tenancyId: "test-tenancy",
+            rentAmountPaise: 3250000,
+            pgFeePaise: 0,
+            cashbackAppliedPaise: 35000,
+            totalAmountPaise: 3250000,
+            status: "success",
+            paymentMethod: "upi",
+            paymentMonth: "2026-09",
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            completedAt: ISO8601DateFormatter().string(from: Date())
+        )
+    }
+
+    static var previewPending: PaymentData {
+        PaymentData(
+            id: "preview-pending",
+            tenancyId: "test-tenancy",
+            rentAmountPaise: 3250000,
+            pgFeePaise: 0,
+            cashbackAppliedPaise: 0,
+            totalAmountPaise: 3250000,
+            status: "processing",
+            paymentMethod: "upi",
+            paymentMonth: "2026-08",
+            createdAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 30)),
+            completedAt: nil
+        )
+    }
+
+    static var previewFailed: PaymentData {
+        PaymentData(
+            id: "preview-failed",
+            tenancyId: "test-tenancy",
+            rentAmountPaise: 3250000,
+            pgFeePaise: 0,
+            cashbackAppliedPaise: 0,
+            totalAmountPaise: 3250000,
+            status: "failed",
+            paymentMethod: "upi",
+            paymentMonth: "2026-07",
+            createdAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 60)),
+            completedAt: nil
+        )
     }
 }
 

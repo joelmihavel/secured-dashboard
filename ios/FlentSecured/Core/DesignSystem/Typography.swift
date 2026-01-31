@@ -83,6 +83,18 @@ enum Typography {
     /// Body Small (Medium weight)
     static let bodySmMedium = scaledFont(size: 12, weight: .medium, lineHeight: 20, tracking: 0)
 
+    /// Body Small (SemiBold weight)
+    /// 12px, SemiBold 600
+    static let bodySmSemiBold = scaledFont(size: 12, weight: .semibold, lineHeight: 20, tracking: 0)
+
+    /// Body Small (Bold weight)
+    /// 12px, Bold 700
+    static let bodySmBold = scaledFont(size: 12, weight: .bold, lineHeight: 20, tracking: 0)
+
+    /// Body Medium 2 (Medium weight)
+    /// 14px, Medium 500, line-height 20px
+    static let bodyMd2Medium = scaledFont(size: 14, weight: .medium, lineHeight: 20, tracking: 0)
+
     // MARK: - Labels & Captions
 
     /// Label - For form labels, small headers

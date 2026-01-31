@@ -167,13 +167,16 @@ enum Route: Hashable {
     case addBank
     case addUtility
     case inviteLandlord
+    case setupFlow(state: SetupFlowState)
 
     // MARK: - Main App
 
     case home(state: HomeState)
+    case homeZeroStateFigma  // DEBUG: Figma pixel-perfect implementation (41:4569)
     case payment
     case paymentTransaction(tenancyId: String, rentAmountPaise: Int)
     case paymentMethods
+    case paymentMethodSelectionSheet  // 41:7005 - Bottom sheet modal for choosing payment method
     case paymentSummary(paymentId: String)
     case paymentProcessing(paymentId: String)
     case paymentResult(paymentId: String, success: Bool, refunded: Bool = false)
@@ -195,6 +198,8 @@ enum Route: Hashable {
     case linkedLandlord
     case landlordBankAccount
     case agreementDetails
+    case editUPI
+    case editCreditCard
 }
 
 // MARK: - Screen States
@@ -305,6 +310,16 @@ enum LandlordInvitationUIState: Hashable {
     case accepted                           // Landlord accepted (transition to active)
 }
 
+/// Setup flow screen states
+/// Figma: 41:10712, 41:10859, 41:11006, 41:4969, 41:5587
+enum SetupFlowState: Hashable {
+    case step1BankDetails                   // 41:10712 - Add landlord bank details
+    case step2AddressProof                  // 41:10859 - Upload address proof
+    case step3InviteLandlord               // 41:11006 - Invite landlord to finish setup
+    case waitingForLandlord(daysSinceSent: Int, canResend: Bool)  // 41:4969 - Waiting for landlord response
+    case landlordDeclined                   // 41:5587 - Landlord declined
+}
+
 // Note: SettlementStatus is defined in Core/Services/Protocols/PaymentServiceProtocol.swift
 
 // MARK: - Route Extensions
@@ -325,10 +340,13 @@ extension Route: Identifiable {
         case .addBank: return "addBank"
         case .addUtility: return "addUtility"
         case .inviteLandlord: return "inviteLandlord"
+        case .setupFlow(let state): return "setupFlow-\(state)"
         case .home(let state): return "home-\(state)"
+        case .homeZeroStateFigma: return "homeZeroStateFigma"
         case .payment: return "payment"
         case .paymentTransaction(let tenancyId, _): return "paymentTransaction-\(tenancyId)"
         case .paymentMethods: return "paymentMethods"
+        case .paymentMethodSelectionSheet: return "paymentMethodSelectionSheet"
         case .paymentSummary(let id): return "paymentSummary-\(id)"
         case .paymentProcessing(let id): return "paymentProcessing-\(id)"
         case .paymentResult(let id, let success, let refunded): return "paymentResult-\(id)-\(success)-\(refunded)"
@@ -344,6 +362,8 @@ extension Route: Identifiable {
         case .linkedLandlord: return "linkedLandlord"
         case .landlordBankAccount: return "landlordBankAccount"
         case .agreementDetails: return "agreementDetails"
+        case .editUPI: return "editUPI"
+        case .editCreditCard: return "editCreditCard"
         }
     }
 }

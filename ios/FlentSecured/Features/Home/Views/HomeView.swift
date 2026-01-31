@@ -60,9 +60,8 @@ struct HomeView: View {
             AppColors.black700
                 .ignoresSafeArea()
 
-            // Optional dotted grid pattern
-            DottedGridPattern()
-                .opacity(0.3)
+            // Optional dotted grid pattern (30% opacity per design)
+            DottedGridPattern(dotOpacity: 0.3)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -2411,30 +2410,6 @@ struct HomeSkeletonPropertyCard: View {
             .padding(Spacing.md)
             .background(AppColors.black500)
             .cornerRadius(Radius.md)
-        }
-    }
-}
-
-// MARK: - Payment Method Type
-
-enum PaymentMethodType: String {
-    case upi = "UPI"
-    case netbanking = "Net Banking"
-    case creditCard = "Credit Card"
-
-    var icon: String {
-        switch self {
-        case .upi: return "indianrupeesign.circle.fill"
-        case .netbanking: return "building.columns.fill"
-        case .creditCard: return "creditcard.fill"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .upi: return "Instant payments with 1% cashback"
-        case .netbanking: return "Secure bank transfer with 1% cashback"
-        case .creditCard: return "Pay with credit card (1.2% fee applies)"
         }
     }
 }

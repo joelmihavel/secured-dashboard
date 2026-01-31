@@ -98,6 +98,47 @@ struct HomeTabBar: View {
     }
 }
 
+// MARK: - Payments/Cashbacks Tab Bar
+/// Used in Home active states for "Recent Payments" | "Cashbacks" selection
+/// Figma: 41:6385, 41:3267, 41:3472
+
+struct PaymentsCashbacksTabBar: View {
+    @Binding var selectedTab: PaymentsCashbacksTab
+
+    enum PaymentsCashbacksTab: String, CaseIterable {
+        case recentPayments = "Recent Payments"
+        case cashbacks = "Cashbacks"
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(PaymentsCashbacksTab.allCases, id: \.self) { tab in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedTab = tab
+                    }
+                }) {
+                    Text(tab.rawValue)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(selectedTab == tab ? .white : AppColors.neutral500)
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.xs)
+                        .background(
+                            selectedTab == tab ?
+                            AnyView(
+                                Capsule()
+                                    .fill(AppColors.black500)
+                            ) :
+                            AnyView(Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+    }
+}
+
 // MARK: - Preview
 
 #Preview("Tab Bar Pill") {
@@ -106,6 +147,11 @@ struct HomeTabBar: View {
         HomeTabBar(selectedTab: .constant(.home))
 
         HomeTabBar(selectedTab: .constant(.transactions))
+
+        // Payments/Cashbacks tab bar
+        PaymentsCashbacksTabBar(selectedTab: .constant(.recentPayments))
+
+        PaymentsCashbacksTabBar(selectedTab: .constant(.cashbacks))
 
         // Generic tab bar
         TabBarPill(

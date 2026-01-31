@@ -2,22 +2,24 @@
 /// Flent Secured v2 - Profile Screen
 ///
 /// Figma Node IDs:
+/// - 41:8760 - My Profile / Main Screen
 /// - 41:8450 - My Profile / Payment --UPI
-/// - 1:34492 - Base profile structure
+/// - 41:8880 - My Profile / Secured Account Section
 ///
-/// PIXEL PERFECT from Figma:
-/// - Background: #131313 with dotted grid pattern
-/// - Header: H1/Regular 400 (48px, tracking -2px)
-///   - "My" - Gray (#A9A9A9)
+/// PIXEL PERFECT from Figma (41:8760):
+/// - Background: #131313 (no dotted grid on profile)
+/// - Header: 48px light weight
+///   - "My" - White (#FFFFFF)
 ///   - "Profile" - Brand (#FF9A6D)
-/// - Horizontal padding: 48pt (sp-48)
-/// - Payment history bar chart section
-/// - Sections: SECURED ACCOUNT, PAYMENT INFORMATION, SUPPORT, APP
-/// - Menu items: Icon (brand500) + Title + Chevron (brand500)
-/// - Section headers: 12px medium, neutral500
-/// - Cards: black500 background, black400 border, rd-12
-/// - Delete Account: error color text
-/// - Log Out: neutral500 color text
+/// - Horizontal padding: 24pt (sp-24) for main app screens
+/// - Section: YOUR PAYMENT HISTORY with bar chart
+/// - Section: SECURED ACCOUNT with avatar row
+/// - Section: PAYMENT INFORMATION
+/// - Section: SUPPORT
+/// - Section: APP with Sign Out and Delete Account
+/// - Section headers: 10px semibold, neutral500, letter-spacing 0.5
+/// - Cards: black600 background (#1A1A1A), no border
+/// - Menu items: Icon (brand500) + Title (white) + Chevron (brand500)
 
 import SwiftUI
 
@@ -34,19 +36,15 @@ struct ProfileView: View {
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            // Dotted grid pattern
-            DottedGridPattern()
-                .ignoresSafeArea()
-
             if viewModel.isLoading {
                 LoadingContent()
             } else {
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: Spacing.xl) {
+                    VStack(alignment: .leading, spacing: Spacing.lg) {
                         // Header with back button
                         headerSection
 
-                        // Payment History Chart (Figma: 41:8760)
+                        // Payment History Chart (Figma: 41:8760 - YOUR PAYMENT HISTORY)
                         PaymentHistoryGraphView(
                             monthsData: viewModel.paymentHistory,
                             onTimeCount: viewModel.onTimePayments,
@@ -56,7 +54,7 @@ struct ProfileView: View {
                         // SECURED ACCOUNT Section (Figma: 41:8880)
                         securedAccountSection
 
-                        // PAYMENT INFORMATION Section (Figma: 41:8450, 41:8612, 41:9307)
+                        // PAYMENT INFORMATION Section
                         paymentInformationSection
 
                         // SUPPORT Section
@@ -65,19 +63,13 @@ struct ProfileView: View {
                         // APP Section
                         appSection
 
-                        // Log Out Button
-                        logoutButton
-
-                        // Delete Account Button
-                        deleteAccountButton
-
                         // Version Footer
                         versionFooter
 
                         Spacer()
                             .frame(height: Spacing.xl)
                     }
-                    .padding(.horizontal, Spacing.xxxl) // 48pt horizontal (sp-48)
+                    .padding(.horizontal, Spacing.lg) // 24pt horizontal (sp-24) per Figma
                 }
             }
         }
@@ -106,40 +98,39 @@ struct ProfileView: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.lg) {
-            // Back Button
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Back Button - Figma: 24x24 arrow
             Button {
                 coordinator.pop()
             } label: {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.white)
+                    .frame(width: 24, height: 24)
             }
             .padding(.top, Spacing.md)
 
-            // Title - Figma: H1/Regular 400 with two-color format
+            // Title - Figma: 48px light weight, two-color format
             VStack(alignment: .leading, spacing: 0) {
                 Text("My")
-                    .font(Typography.h1) // 48px Regular
-                    .foregroundColor(AppColors.neutral500) // #A9A9A9
-                    .tracking(-2)
-                    .lineSpacing(16)
+                    .font(.system(size: 48, weight: .light))
+                    .foregroundColor(.white)
                 Text("Profile")
-                    .font(Typography.h1) // 48px Regular
+                    .font(.system(size: 48, weight: .light))
                     .foregroundColor(AppColors.brand500) // #FF9A6D
-                    .tracking(-2)
-                    .lineSpacing(16)
             }
         }
     }
 
     // MARK: - Secured Account Section
+    // Figma 41:8760: Shows avatar row with name + timestamp, then View Agreement
 
     private var securedAccountSection: some View {
         ProfileMenuSection(title: "SECURED ACCOUNT") {
-            ProfileMenuItem(
-                icon: "person.fill",
-                title: "Personal Details"
+            // Avatar Row - Figma: Shows user avatar, name, and timestamp
+            ProfileAvatarRow(
+                name: viewModel.userName,
+                timestamp: viewModel.lastLoginTime
             ) {
                 coordinator.navigate(to: .personalDetails)
             }
@@ -147,26 +138,8 @@ struct ProfileView: View {
             ProfileMenuDivider()
 
             ProfileMenuItem(
-                icon: "house.fill",
-                title: "Tenancy Details"
-            ) {
-                coordinator.navigate(to: .tenancyDetails)
-            }
-
-            ProfileMenuDivider()
-
-            ProfileMenuItem(
-                icon: "person.2.fill",
-                title: "Linked Landlord"
-            ) {
-                coordinator.navigate(to: .linkedLandlord)
-            }
-
-            ProfileMenuDivider()
-
-            ProfileMenuItem(
                 icon: "doc.text.fill",
-                title: "Rental Agreement"
+                title: "View Agreement"
             ) {
                 coordinator.navigate(to: .agreementDetails)
             }
@@ -174,67 +147,47 @@ struct ProfileView: View {
     }
 
     // MARK: - Payment Information Section
+    // Figma 41:8760: Edit UPI Method, Edit Credit Card, Edit Bank Account
 
     private var paymentInformationSection: some View {
         ProfileMenuSection(title: "PAYMENT INFORMATION") {
             ProfileMenuItem(
-                icon: "building.columns.fill",
-                title: "Landlord Bank Account"
+                icon: "indianrupeesign.circle.fill",
+                title: "Edit UPI Method"
             ) {
-                coordinator.navigate(to: .landlordBankAccount)
+                coordinator.navigate(to: .editUPI)
             }
 
             ProfileMenuDivider()
 
             ProfileMenuItem(
                 icon: "creditcard.fill",
-                title: "Payment History"
+                title: "Edit Credit Card"
             ) {
-                coordinator.navigate(to: .paymentHistory)
+                coordinator.navigate(to: .editCreditCard)
+            }
+
+            ProfileMenuDivider()
+
+            ProfileMenuItem(
+                icon: "building.columns.fill",
+                title: "Edit Bank Account"
+            ) {
+                coordinator.navigate(to: .landlordBankAccount)
             }
         }
     }
 
     // MARK: - Support Section
+    // Figma 41:8760: Contact Support, Rate the App
 
     private var supportSection: some View {
         ProfileMenuSection(title: "SUPPORT") {
             ProfileMenuItem(
-                icon: "questionmark.circle.fill",
-                title: "Help & FAQ"
-            ) {
-                coordinator.navigate(to: .helpFAQ)
-            }
-
-            ProfileMenuDivider()
-
-            ProfileMenuItem(
-                icon: "bubble.left.fill",
+                icon: "envelope.fill",
                 title: "Contact Support"
             ) {
                 openSupportEmail()
-            }
-        }
-    }
-
-    // MARK: - App Section
-
-    private var appSection: some View {
-        ProfileMenuSection(title: "APP") {
-            ProfileMenuItem(
-                icon: "doc.text.fill",
-                title: "Terms & Conditions"
-            ) {
-                openTerms()
-            }
-
-            ProfileMenuDivider()
-
-            ProfileMenuItem(
-                icon: "lock.shield.fill",
-                title: "Privacy Policy"
-            ) {
-                openPrivacyPolicy()
             }
 
             ProfileMenuDivider()
@@ -245,83 +198,47 @@ struct ProfileView: View {
             ) {
                 openAppStoreReview()
             }
+        }
+    }
+
+    // MARK: - App Section
+    // Figma 41:8760: Sign Out and Delete Account are in APP section
+
+    private var appSection: some View {
+        ProfileMenuSection(title: "APP") {
+            // Sign Out - Figma: icon + "Sign Out" + arrow, neutral text
+            ProfileMenuItem(
+                icon: "rectangle.portrait.and.arrow.right",
+                title: "Sign Out",
+                iconColor: AppColors.brand500,
+                textColor: .white
+            ) {
+                showLogoutConfirmation = true
+            }
 
             ProfileMenuDivider()
 
+            // Delete Account - Figma: icon + "Delete Account" + arrow, brand colored
             ProfileMenuItem(
-                icon: "gift.fill",
-                title: "Refer a Friend"
+                icon: "trash.fill",
+                title: "Delete Account",
+                iconColor: AppColors.brand500,
+                textColor: .white
             ) {
-                coordinator.navigate(to: .referral)
+                showDeleteConfirmation = true
             }
-        }
-    }
-
-    // MARK: - Logout Button
-
-    private var logoutButton: some View {
-        Button(action: {
-            showLogoutConfirmation = true
-        }) {
-            HStack(spacing: Spacing.md) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 20))
-                    .foregroundColor(AppColors.neutral500)
-                    .frame(width: 24)
-
-                Text(viewModel.isLoggingOut ? "Logging out..." : "Log Out")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(AppColors.neutral500)
-
-                Spacer()
-            }
-            .padding(Spacing.md)
-            .background(AppColors.backgroundSecondary)
-            .cornerRadius(Radius.md)
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(AppColors.black400, lineWidth: 1)
-            )
-        }
-        .disabled(viewModel.isLoggingOut)
-    }
-
-    // MARK: - Delete Account Button
-
-    private var deleteAccountButton: some View {
-        Button(action: {
-            showDeleteConfirmation = true
-        }) {
-            HStack(spacing: Spacing.md) {
-                Image(systemName: "trash.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(AppColors.error)
-                    .frame(width: 24)
-
-                Text("Delete Account")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(AppColors.error)
-
-                Spacer()
-            }
-            .padding(Spacing.md)
-            .background(AppColors.error.opacity(0.05))
-            .cornerRadius(Radius.md)
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(AppColors.error.opacity(0.3), lineWidth: 1)
-            )
         }
     }
 
     // MARK: - Version Footer
+    // Figma: Centered version text at bottom
 
     private var versionFooter: some View {
         Text(viewModel.appVersion)
             .font(.system(size: 12, weight: .regular))
             .foregroundColor(AppColors.neutral500)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.md)
+            .padding(.top, Spacing.lg)
     }
 
     // MARK: - Loading Content
@@ -373,85 +290,69 @@ struct ProfileView: View {
 }
 
 // MARK: - Profile Menu Section
+// Figma: Section header is 10px semibold, neutral500, letter-spacing 0.5
 
 struct ProfileMenuSection<Content: View>: View {
     let title: String
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Section Header
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            // Section Header - Figma: 10px semibold, uppercase, neutral500
             Text(title)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(AppColors.neutral500)
                 .tracking(0.5)
-                .padding(.leading, Spacing.xs)
 
-            // Section Card
+            // Section Card - Figma: black600 (#1A1A1A) background, no border
             VStack(spacing: 0) {
                 content()
             }
-            .background(AppColors.black500)
+            .background(AppColors.black600)
             .cornerRadius(Radius.md)
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.md)
-                    .stroke(AppColors.black400, lineWidth: 1)
-            )
         }
     }
 }
 
-// MARK: - Profile Menu Item
+// MARK: - Profile Avatar Row
+// Figma 41:8760: Avatar (40x40), Name, Timestamp, Chevron
 
-struct ProfileMenuItem: View {
-    let icon: String
-    let title: String
-    var subtitle: String? = nil
-    var showBadge: Bool = false
-    var badgeText: String? = nil
+struct ProfileAvatarRow: View {
+    let name: String
+    let timestamp: String
     let action: () -> Void
 
     var body: some View {
         Button(action: {
-            // Haptic feedback
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
+            HapticManager.shared.lightImpact()
             action()
         }) {
-            HStack(spacing: Spacing.md) {
-                // Icon
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(AppColors.brand500)
-                    .frame(width: 24)
+            HStack(spacing: Spacing.sm) {
+                // Avatar - Figma: 40x40 circular avatar
+                ZStack {
+                    Circle()
+                        .fill(AppColors.brand500.opacity(0.2))
+                        .frame(width: 40, height: 40)
 
-                // Title and subtitle
-                VStack(alignment: .leading, spacing: Spacing.xxxs) {
-                    Text(title)
-                        .font(.system(size: 16, weight: .regular))
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(AppColors.brand500)
+                }
+
+                // Name and timestamp
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white)
 
-                    if let subtitle = subtitle {
-                        Text(subtitle)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(AppColors.textSecondary)
-                    }
+                    Text(timestamp)
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(AppColors.neutral500)
                 }
 
                 Spacer()
 
-                // Optional badge
-                if showBadge, let badgeText = badgeText {
-                    Text(badgeText)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, Spacing.xs)
-                        .padding(.vertical, Spacing.xxxs)
-                        .background(AppColors.brand500)
-                        .cornerRadius(Radius.pill)
-                }
-
-                // Chevron
+                // Chevron - Figma: brand500 color
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(AppColors.brand500)
@@ -463,14 +364,79 @@ struct ProfileMenuItem: View {
     }
 }
 
+// MARK: - Profile Menu Item
+// Figma: Icon (brand500) + Title (white, 14px regular) + Chevron (brand500)
+
+struct ProfileMenuItem: View {
+    let icon: String
+    let title: String
+    var subtitle: String? = nil
+    var iconColor: Color = AppColors.brand500
+    var textColor: Color = .white
+    var showBadge: Bool = false
+    var badgeText: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            HapticManager.shared.lightImpact()
+            action()
+        }) {
+            HStack(spacing: Spacing.sm) {
+                // Icon - Figma: 20pt, brand500
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(iconColor)
+                    .frame(width: 24, height: 24)
+
+                // Title and subtitle
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(textColor)
+
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(AppColors.neutral500)
+                    }
+                }
+
+                Spacer()
+
+                // Optional badge
+                if showBadge, let badgeText = badgeText {
+                    Text(badgeText)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, 2)
+                        .background(AppColors.brand500)
+                        .cornerRadius(Radius.pill)
+                }
+
+                // Chevron - Figma: 14pt, brand500
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(AppColors.brand500)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, 14) // Figma: ~14pt vertical padding
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 // MARK: - Profile Menu Divider
+// Figma: Thin divider line, full width within card
 
 struct ProfileMenuDivider: View {
     var body: some View {
         Rectangle()
-            .fill(AppColors.black400)
+            .fill(AppColors.black400.opacity(0.5))
             .frame(height: 1)
-            .padding(.leading, 56) // Aligns with text after icon
+            .padding(.leading, 52) // Aligns with text after icon (24 icon + 12 spacing + 16 padding)
     }
 }
 

@@ -147,7 +147,7 @@ struct ErrorStateView: View {
 
             // Retry Button
             if let action = retryAction {
-                SecondaryButton(title: "Try Again", action: action)
+                PrimaryButton(title: "Try Again", style: .secondary, action: action)
                     .padding(.horizontal, Spacing.xl)
             }
 

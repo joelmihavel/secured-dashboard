@@ -27,10 +27,17 @@ import SwiftUI
 struct PostApprovalView: View {
     @Environment(AppCoordinator.self) private var coordinator
 
-    @State private var currentPage: Int = 0
+    let initialPage: Int
+
+    @State private var currentPage: Int
     @State private var showContent = false
 
     private let totalPages = 3
+
+    init(initialPage: Int = 0) {
+        self.initialPage = initialPage
+        self._currentPage = State(initialValue: initialPage)
+    }
 
     var body: some View {
         ZStack {
@@ -510,7 +517,7 @@ struct PostApprovalStep2View: View {
     @Environment(AppCoordinator.self) private var coordinator
 
     var body: some View {
-        PostApprovalView()
+        PostApprovalView(initialPage: 1)
             .environment(coordinator)
     }
 }
