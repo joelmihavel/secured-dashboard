@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   tabTextInactive: {
     fontWeight: '500', // Figma: fontWeight 500 for inactive
-    color: '#878787', // Figma: #878787 (muted) for inactive - provides contrast
+    color: '#656565', // Figma: #656565 for inactive tab text per home-active JSON
   },
 });
 

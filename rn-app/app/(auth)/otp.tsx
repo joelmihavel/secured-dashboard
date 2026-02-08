@@ -391,7 +391,10 @@ const styles = StyleSheet.create({
   },
   secureCodeLabel: {
     // Figma: node I31:2866;50:317 - "Secure code" label
-    // Figma: Inter 14px fontWeight 500, lineHeight 20, color #DDDDDD, textAlign LEFT
+    // Figma specifies Inter 14px fontWeight 500, lineHeight 20, color #DDDDDD, textAlign LEFT
+    // INTENTIONAL DEVIATION: Using PlusJakartaSans-Medium instead of Inter-Medium because
+    // Inter-Medium is not loaded in the app (only Inter-Regular is available in _layout.tsx).
+    // The app consistently uses PlusJakartaSans everywhere else. Visual impact is minimal.
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
     fontWeight: '500',

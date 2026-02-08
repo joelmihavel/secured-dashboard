@@ -224,13 +224,14 @@ export default function CarouselScreen() {
       {/* Each carousel slide has a unique Background Shape (silhouette) */}
       <DottedPattern backgroundShape={currentBackgroundShape} />
 
-      {/* Progress Bar - FIXED at top, outside FlatList per Figma layout */}
-      {/* Figma: Rectangle 4 (bg) + Rectangle 5 (fill), positioned at y=483 (after status bar) */}
-      <View style={styles.progressBarContainer}>
+      {/* Progress Bar - Hidden to match Figma: progress bar frame has visible: false in all 3 slides */}
+      {/* Figma: Rectangle 4 (bg) + Rectangle 5 (fill) exist in design but frame is hidden */}
+      {/* Keeping the code commented out in case product decides to re-enable */}
+      {/* <View style={styles.progressBarContainer}>
         <View style={styles.progressBarBackground}>
           <View style={[styles.progressBarFill, { width: progressFillWidth }]} />
         </View>
-      </View>
+      </View> */}
 
       <FlatList
         ref={flatListRef}

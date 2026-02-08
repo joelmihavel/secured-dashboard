@@ -440,14 +440,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 32,    // bodyLg lineHeight
     color: FIGMA_COLORS.titleWhite,
-    textAlign: 'center',           // Figma: textAlignHorizontal: CENTER
+    // Figma raw node shows LEFT textAlign, but parent frame has counterAxisAlignItems: CENTER.
+    // The text is single-line and narrower than the card, so parent centering handles alignment.
+    // Using 'center' for consistency with the centered layout - visually identical to 'left'.
+    textAlign: 'center',
   },
   titleSuccess: {
     fontFamily: 'PlusJakartaSans-Regular',  // bodyLg per Figma - weight 400
     fontSize: 20,
     lineHeight: 32,
     color: FIGMA_COLORS.titleSuccess,
-    textAlign: 'center',           // Figma: textAlignHorizontal: CENTER
+    // Same as titleWhite - parent centering makes textAlign cosmetic for single-line text
+    textAlign: 'center',
   },
   receiptDetails: {
     gap: 16,                       // Figma: Frame 2095586361 itemSpacing: 16

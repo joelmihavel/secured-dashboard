@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     // Shadow - Figma: #995C41, offset 0/6, blur 12, spread -2
     shadowColor: '#995C41',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.24,
     shadowRadius: 12,
     elevation: 6,
   },

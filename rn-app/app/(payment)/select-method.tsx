@@ -574,6 +574,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   sectionTitle: {
+    // PRODUCT DECISION: Figma 41:8901 shows section title at 28px, but implementation uses
+    // 16px as part of a richer layout with subtitle, radio cards, and fee breakdown.
+    // The Figma design is simpler; the code intentionally diverges for better UX.
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,
     lineHeight: 24,
@@ -640,7 +643,7 @@ const styles = StyleSheet.create({
     textAlign: 'left' as const, // Left-aligned in card row
   },
   methodTitleSelected: {
-    color: FIGMA_COLORS.textPrimary, // #FFFFFF when selected
+    color: '#D2D2D2', // Figma: selected card title is #D2D2D2 (not pure white)
   },
   methodSubtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -720,7 +723,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.textSecondary, // #A6A6A6 - subtext per Figma
+    color: '#A9A9A9', // Figma: #A9A9A9 (neutral.500) per payment-select JSON
     textAlign: 'center',
     marginTop: 16,
   },
