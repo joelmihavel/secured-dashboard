@@ -1,0 +1,370 @@
+{
+  "screenId": "1-31485",
+  "screenName": "Onboarding / Add bank details",
+  "currentCoverage": 81.3,
+  "targetCoverage": 100,
+  "rnFilePath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/rn-app/app/(setup)/add-bank.tsx",
+  "totalFixes": 50,
+  "fixesByCategory": {
+    "textContent": 15,
+    "typography": 11,
+    "layout": 8,
+    "images": 6,
+    "assetExistence": 3,
+    "spacing": 5,
+    "borders": 2
+  },
+  "fixes": [
+    {
+      "type": "style",
+      "description": "Add layoutSizingHorizontal: 'FIXED' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "layoutSizingHorizontal: 'FIXED',",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add layoutSizingHorizontal: 'FIXED' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "layoutSizingHorizontal: 'FIXED',",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add layoutSizingHorizontal: 'FIXED' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "layoutSizingHorizontal: 'FIXED',",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add flexDirection: column to input style",
+      "location": "styles.input",
+      "newCode": "flexDirection: column,",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add flexDirection: column to input style",
+      "location": "styles.input",
+      "newCode": "flexDirection: column,",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add flexDirection: column to button style",
+      "location": "styles.button",
+      "newCode": "flexDirection: column,",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add layoutSizingHorizontal: 'FIXED' to button style",
+      "location": "styles.button",
+      "newCode": "layoutSizingHorizontal: 'FIXED',",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add flexDirection: column to otp style",
+      "location": "styles.otp",
+      "newCode": "flexDirection: column,",
+      "priority": 2
+    },
+    {
+      "type": "style",
+      "description": "Add gap: spacing.spacing.xs to button style",
+      "location": "styles.button",
+      "newCode": "gap: spacing.spacing.xs,",
+      "priority": 3
+    },
+    {
+      "type": "style",
+      "description": "Add gap: 6 to otp style",
+      "location": "styles.otp",
+      "newCode": "gap: 6,",
+      "priority": 3
+    },
+    {
+      "type": "style",
+      "description": "Add paddingTop: spacing.spacing.md to button style",
+      "location": "styles.button",
+      "newCode": "paddingTop: spacing.spacing.md,",
+      "priority": 3
+    },
+    {
+      "type": "style",
+      "description": "Add paddingBottom: spacing.spacing.md to button style",
+      "location": "styles.button",
+      "newCode": "paddingBottom: spacing.spacing.md,",
+      "priority": 3
+    },
+    {
+      "type": "style",
+      "description": "Add gap: 10 to button style",
+      "location": "styles.button",
+      "newCode": "gap: 10,",
+      "priority": 3
+    },
+    {
+      "type": "style",
+      "description": "Add lineHeight: 22 to payingTo style",
+      "location": "styles.payingTo",
+      "newCode": "lineHeight: 22,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add lineHeight: 22 to landlordName] style",
+      "location": "styles.landlordName]",
+      "newCode": "lineHeight: 22,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add lineHeight: 22 to xxxxXxxxXxxx2003 style",
+      "location": "styles.xxxxXxxxXxxx2003",
+      "newCode": "lineHeight: 22,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add textAlign: center to payNow style",
+      "location": "styles.payNow",
+      "newCode": "textAlign: center,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add lineHeight: 22 to allPaymentsAre100Secure style",
+      "location": "styles.allPaymentsAre100Secure",
+      "newCode": "lineHeight: 22,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add textAlign: center to allPaymentsAre100Secure style",
+      "location": "styles.allPaymentsAre100Secure",
+      "newCode": "textAlign: center,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add textAlign: center to googlePay style",
+      "location": "styles.googlePay",
+      "newCode": "textAlign: center,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add textAlign: center to paytm style",
+      "location": "styles.paytm",
+      "newCode": "textAlign: center,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add textAlign: center to phonepe style",
+      "location": "styles.phonepe",
+      "newCode": "textAlign: center,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add lineHeight: 22 to weVeSentA4DigitCodeToYourPhoneItLlAutoVerifyOnceEntered style",
+      "location": "styles.weVeSentA4DigitCodeToYourPhoneItLlAutoVerifyOnceEntered",
+      "newCode": "lineHeight: 22,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add textAlign: center to didnTReceiveTheCodeResend style",
+      "location": "styles.didnTReceiveTheCodeResend",
+      "newCode": "textAlign: center,",
+      "priority": 5
+    },
+    {
+      "type": "style",
+      "description": "Add borderRadius: radius.radius.md to button style",
+      "location": "styles.button",
+      "newCode": "borderRadius: radius.radius.md,",
+      "priority": 6
+    },
+    {
+      "type": "style",
+      "description": "Add borderRadius: radius.radius.md to button style",
+      "location": "styles.button",
+      "newCode": "borderRadius: radius.radius.md,",
+      "priority": 6
+    },
+    {
+      "type": "style",
+      "description": "Add imageComponent: '1a8928147af64796e2247f1cef1ae9db1a68f5aa' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "imageComponent: '1a8928147af64796e2247f1cef1ae9db1a68f5aa',",
+      "priority": 8
+    },
+    {
+      "type": "style",
+      "description": "Add resizeMode: 'cover' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "resizeMode: 'cover',",
+      "priority": 8
+    },
+    {
+      "type": "style",
+      "description": "Add imageComponent: '951e70728a7ce2a5ae5680e74d083d3df51b5e10' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "imageComponent: '951e70728a7ce2a5ae5680e74d083d3df51b5e10',",
+      "priority": 8
+    },
+    {
+      "type": "style",
+      "description": "Add resizeMode: 'cover' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "resizeMode: 'cover',",
+      "priority": 8
+    },
+    {
+      "type": "style",
+      "description": "Add imageComponent: '09777000c94ca3fb826eada476cc87c6492dc244' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "imageComponent: '09777000c94ca3fb826eada476cc87c6492dc244',",
+      "priority": 8
+    },
+    {
+      "type": "style",
+      "description": "Add resizeMode: 'cover' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "resizeMode: 'cover',",
+      "priority": 8
+    },
+    {
+      "type": "style",
+      "description": "Add imageAssetFile: 'imageRef: 1a8928147af6...' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "imageAssetFile: 'imageRef: 1a8928147af6...',",
+      "priority": 9
+    },
+    {
+      "type": "style",
+      "description": "Add imageAssetFile: 'imageRef: 951e70728a7c...' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "imageAssetFile: 'imageRef: 951e70728a7c...',",
+      "priority": 9
+    },
+    {
+      "type": "style",
+      "description": "Add imageAssetFile: 'imageRef: 09777000c94c...' to ellipse26 style",
+      "location": "styles.ellipse26",
+      "newCode": "imageAssetFile: 'imageRef: 09777000c94c...',",
+      "priority": 9
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'saved ₹ 325 →' to saved325→ style",
+      "location": "styles.saved325→",
+      "newCode": "characters: 'saved ₹ 325 →',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'Paying to' to payingTo style",
+      "location": "styles.payingTo",
+      "newCode": "characters: 'Paying to',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: '[Landlord Name]' to landlordName] style",
+      "location": "styles.landlordName]",
+      "newCode": "characters: '[Landlord Name]',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'ICICI' to icici style",
+      "location": "styles.icici",
+      "newCode": "characters: 'ICICI',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'XXXX XXXX XXXX 2003' to xxxxXxxxXxxx2003 style",
+      "location": "styles.xxxxXxxxXxxx2003",
+      "newCode": "characters: 'XXXX XXXX XXXX 2003',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'Pay Now' to payNow style",
+      "location": "styles.payNow",
+      "newCode": "characters: 'Pay Now',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'All payments are 100% secure' to allPaymentsAre100Secure style",
+      "location": "styles.allPaymentsAre100Secure",
+      "newCode": "characters: 'All payments are 100% secure',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'PAY BY ANY APP INSTEAD' to payByAnyAppInstead style",
+      "location": "styles.payByAnyAppInstead",
+      "newCode": "characters: 'PAY BY ANY APP INSTEAD',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'Google Pay' to googlePay style",
+      "location": "styles.googlePay",
+      "newCode": "characters: 'Google Pay',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'PayTM' to paytm style",
+      "location": "styles.paytm",
+      "newCode": "characters: 'PayTM',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'PhonePe' to phonepe style",
+      "location": "styles.phonepe",
+      "newCode": "characters: 'PhonePe',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'Let’s get to  know you' to letSGetToKnowYou style",
+      "location": "styles.letSGetToKnowYou",
+      "newCode": "characters: 'Let’s get to  know you',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'Let’s verify your number' to letSVerifyYourNumber style",
+      "location": "styles.letSVerifyYourNumber",
+      "newCode": "characters: 'Let’s verify your number',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'We’ve sent a 4-digit code to your phone. It’ll aut...' to weVeSentA4DigitCodeToYourPhoneItLlAutoVerifyOnceEntered style",
+      "location": "styles.weVeSentA4DigitCodeToYourPhoneItLlAutoVerifyOnceEntered",
+      "newCode": "characters: 'We’ve sent a 4-digit code to your phone. It’ll aut...',",
+      "priority": 10
+    },
+    {
+      "type": "style",
+      "description": "Add characters: 'Didn’t receive the code? Resend' to didnTReceiveTheCodeResend style",
+      "location": "styles.didnTReceiveTheCodeResend",
+      "newCode": "characters: 'Didn’t receive the code? Resend',",
+      "priority": 10
+    }
+  ],
+  "figmaConstants": "// ============================================\n// FIGMA EXTRACTED CONSTANTS\n// Source: 1:31485\n// ============================================\n\nconst FIGMA = {\n  // Node: saved ₹ 325 → (1:31524)\n  saved325→: {\n    characters: 'saved ₹ 325 →',\n  },\n\n  // Node: Paying to (1:31529)\n  payingTo: {\n    lineHeight: 22,\n    characters: 'Paying to',\n  },\n\n  // Node: [Landlord Name] (1:31530)\n  landlordName]: {\n    lineHeight: 22,\n    characters: '[Landlord Name]',\n  },\n\n  // Node: ICICI (1:31534)\n  icici: {\n    characters: 'ICICI',\n  },\n\n  // Node: XXXX XXXX XXXX 2003 (1:31535)\n  xxxxXxxxXxxx2003: {\n    lineHeight: 22,\n    characters: 'XXXX XXXX XXXX 2003',\n  },\n\n  // Node: Pay Now (1:31537)\n  payNow: {\n    textAlign: 'center',\n    characters: 'Pay Now',\n  },\n\n  // Node: All payments are 100% secure (1:31538)\n  allPaymentsAre100Secure: {\n    lineHeight: 22,\n    textAlign: 'center',\n    characters: 'All payments are 100% secure',\n  },\n\n  // Node: PAY BY ANY APP INSTEAD (1:31543)\n  payByAnyAppInstead: {\n    characters: 'PAY BY ANY APP INSTEAD',\n  },\n\n  // Node: Ellipse 26 (1:31546)\n  ellipse26: {\n    layoutSizingHorizontal: 'FIXED',\n    imageComponent: '1a8928147af64796e2247f1cef1ae9db1a68f5aa',\n    imageAssetFile: 'imageRef: 1a8928147af6...',\n    resizeMode: 'cover',\n  },\n\n  // Node: Google Pay (1:31547)\n  googlePay: {\n    textAlign: 'center',\n    characters: 'Google Pay',\n  },\n\n  // Node: Ellipse 26 (1:31549)\n  ellipse26: {\n    layoutSizingHorizontal: 'FIXED',\n    imageComponent: '951e70728a7ce2a5ae5680e74d083d3df51b5e10',\n    imageAssetFile: 'imageRef: 951e70728a7c...',\n    resizeMode: 'cover',\n  },\n\n  // Node: PayTM (1:31550)\n  paytm: {\n    textAlign: 'center',\n    characters: 'PayTM',\n  },\n\n  // Node: Ellipse 26 (1:31552)\n  ellipse26: {\n    layoutSizingHorizontal: 'FIXED',\n    imageComponent: '09777000c94ca3fb826eada476cc87c6492dc244',\n    imageAssetFile: 'imageRef: 09777000c94c...',\n    resizeMode: 'cover',\n  },\n\n  // Node: PhonePe (1:31553)\n  phonepe: {\n    textAlign: 'center',\n    characters: 'PhonePe',\n  },\n\n  // Node: Let’s get to  know you (1:31559)\n  letSGetToKnowYou: {\n    characters: 'Let’s get to  know you',\n  },\n\n  // Node: input (1:31561)\n  input: {\n    flexDirection: 'column',\n  },\n\n  // Node: input (1:31562)\n  input: {\n    flexDirection: 'column',\n  },\n\n  // Node: button (1:31564)\n  button: {\n    flexDirection: 'column',\n    layoutSizingHorizontal: 'FIXED',\n    gap: 8,\n    borderRadius: 12,\n  },\n\n  // Node: Let’s verify your number (1:31581)\n  letSVerifyYourNumber: {\n    characters: 'Let’s verify your number',\n  },\n\n  // Node: We’ve sent a 4-digit code to your phone. It’ll auto-verify once entered (1:31582)\n  weVeSentA4DigitCodeToYourPhoneItLlAutoVerifyOnceEntered: {\n    lineHeight: 22,\n    characters: 'We’ve sent a 4-digit code to your phone. It’ll aut...',\n  },\n\n  // Node: OTP (31:2906)\n  otp: {\n    flexDirection: 'column',\n    gap: 6,\n  },\n\n  // Node: button (1:31587)\n  button: {\n    paddingTop: 16,\n    paddingBottom: 16,\n    gap: 10,\n    borderRadius: 12,\n  },\n\n  // Node: Didn’t receive the code? Resend (1:31588)\n  didnTReceiveTheCodeResend: {\n    textAlign: 'center',\n    characters: 'Didn’t receive the code? Resend',\n  },\n\n} as const;"
+}

@@ -1,0 +1,387 @@
+{
+  "screenId": "41-10712",
+  "screenName": "Onboarding / Post Approval 1",
+  "route": "/(setup)/index",
+  "generatedAt": "2026-02-02T01:31:20.094Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T01:29:38.228Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:10758",
+            "nodeName": "Frame 1686557300",
+            "figmaValue": {
+              "absoluteX": 13,
+              "absoluteY": 4998,
+              "relativeLeft": 0,
+              "relativeTop": 899,
+              "parentId": "41:10712"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: 899.0",
+            "file": "src/components/setup/*.tsx",
+            "explanation": "\"Frame 1686557300\" is positioned at (0.0, 899.0) relative to \"onboarding / post approval 1\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: 899.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10714",
+            "nodeName": "Rectangle 136",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 136",
+              "fill": "#1A1A1A"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#1A1A1A'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Rectangle 136\" has fill #1A1A1A in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#1A1A1A' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10715",
+            "nodeName": "Rectangle 139",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 139",
+              "fill": "#FF9A6D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#FF9A6D'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Rectangle 139\" has fill #FF9A6D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#FF9A6D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10734",
+            "nodeName": "Rectangle 136",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 136",
+              "fill": "#1A1A1A"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#1A1A1A'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Rectangle 136\" has fill #1A1A1A in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#1A1A1A' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10757",
+            "nodeName": "Rectangle 52",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 52",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Rectangle 52\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10759",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#D9D9D9"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#D9D9D9'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #D9D9D9 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#D9D9D9' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10803",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "type": "button",
+              "text": "Pay Now",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Pay Now\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10823",
+            "nodeName": "button",
+            "figmaValue": {
+              "type": "button",
+              "text": "Start Flenting →",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Start Flenting →\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "160:3102",
+            "nodeName": "Rectangle 136",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 136",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "src/components/setup/*.tsx or app/(setup)/index.tsx",
+            "explanation": "Button \"Rectangle 136\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "41:10782",
+            "nodeName": "₹ 32,175",
+            "figmaValue": {
+              "text": "₹  32,175",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/setup/*.tsx",
+            "explanation": "Text \"₹  32,175...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "160:3095",
+            "nodeName": "Let’s get you set up",
+            "figmaValue": {
+              "text": "Let’s get you set up",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/setup/*.tsx",
+            "explanation": "Text \"Let’s get you set up...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "160:3121",
+            "nodeName": "Add your landlord’s bank details to enable payouts",
+            "figmaValue": {
+              "text": "Add your landlord’s bank details to enable payouts",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/setup/*.tsx",
+            "explanation": "Text \"Add your landlord’s bank details to enable payouts...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          }
+        ],
+        "totalIssues": 12
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T01:29:38.237Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T01:30:40.511Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/setup.tsx",
+            "lineRange": "N/A",
+            "property": "background",
+            "figmaValue": "Image with a linear gradient overlay fading from transparent to colors.black[700] (#131313)",
+            "currentValue": "Solid color or Image only (hypothetical)",
+            "severity": "critical",
+            "explanation": "The screen background is missing the crucial linear gradient overlay on top of the background image. This gradient fades from transparent at the top to the screen's base color (#131313) towards the middle, which is essential for blending the image and ensuring the header text is readable.",
+            "currentCode": "container: {\n  backgroundColor: theme.colors.black[700],\n}",
+            "fixedCode": "<View style={styles.container}>\n  <ImageBackground source={...} style={styles.backgroundImage}>\n    <LinearGradient colors={['rgba(19, 19, 19, 0)', '#131313']} style={styles.gradient} />\n  </ImageBackground>\n  {/* ... rest of the screen content ... */}\n</View>"
+          },
+          {
+            "file": "app/setup.tsx",
+            "lineRange": "N/A",
+            "property": "Vertical Spacing",
+            "figmaValue": "Header (top: 124px), Header-to-Card (gap: 30px), Card-to-Dots (gap: 30px), Dots-to-Button (gap: 58px)",
+            "currentValue": "Inconsistent or default spacing (hypothetical)",
+            "severity": "major",
+            "explanation": "The vertical spacing between major screen elements is not implemented according to the Figma design. The header requires a large top margin (124px), and the gaps between the header, card carousel, pagination dots, and bottom button are specific values (30px, 30px, 58px respectively) that create the intended layout.",
+            "currentCode": "<VStack flex={1} space='md'>\n  <Header />\n  <CardCarousel />\n  <Pagination />\n  <Button />\n</VStack>",
+            "fixedCode": "<View style={styles.container}>\n  <View style={{ paddingTop: 124 }}>\n    <Header />\n  </View>\n  <View style={{ marginTop: 30 }}>\n    <CardCarousel />\n  </View>\n  <View style={{ marginTop: 30 }}>\n    <Pagination />\n  </View>\n  {/* Button is absolutely positioned */}\n</View>"
+          },
+          {
+            "file": "app/setup.tsx",
+            "lineRange": "N/A",
+            "property": "Button Positioning",
+            "figmaValue": "{ position: 'absolute', bottom: 57, left: 40, right: 40 }",
+            "currentValue": "In-flow with bottom padding (hypothetical)",
+            "severity": "major",
+            "explanation": "The 'Start Flenting' button is a floating action button at the bottom of the screen. It should be absolutely positioned relative to the screen container, with a 57px gap from the bottom and 40px horizontal margins on each side.",
+            "currentCode": "buttonContainer: {\n  paddingBottom: 34, // Uses padding instead of absolute positioning\n  paddingHorizontal: 24,\n}",
+            "fixedCode": "button: {\n  position: 'absolute',\n  bottom: 57,\n  left: 40,\n  right: 40,\n}"
+          }
+        ],
+        "layoutIssues": [
+          {
+            "file": "app/setup.tsx",
+            "lineRange": "N/A",
+            "property": "Text Styling",
+            "figmaValue": "A single Text element with nested, colored Text elements",
+            "currentValue": "Multiple separate Text elements (hypothetical)",
+            "severity": "major",
+            "explanation": "The header 'Let’s get you set up' is a single conceptual text block where 'you set up' is a different color. This must be implemented using nested <Text> components within a single parent <Text> to ensure correct line wrapping and styling, rather than using two separate Text components which would break the flow.",
+            "currentCode": "<>\n  <Text style={styles.headerLine1}>Let's get</Text>\n  <Text style={styles.headerLine2}>you set up</Text>\n</>",
+            "fixedCode": "<Text style={styles.headerBase}>\n  {\"Let’s get\\n\"}\n  <Text style={styles.headerHighlight}>you set up</Text>\n</Text>"
+          }
+        ],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T01:31:20.094Z",
+      "feedback": [
+        {
+          "file": "app/(setup)/index.tsx",
+          "severity": "critical",
+          "property": "background",
+          "explanation": "The screen background is missing the linear gradient overlay on top of the background image. This is essential for blending the image and ensuring header text is readable. The gradient should fade from transparent to the screen's base color (`colors.black[700]`).",
+          "currentCode": "container: {\n  flex: 1,\n  backgroundColor: theme.colors.black[700],\n}",
+          "fixedCode": "screenContainer: {\n  flex: 1,\n},\nbackgroundImage: {\n  position: 'absolute',\n  width: '100%',\n  height: '100%',\n},\ngradient: {\n  width: '100%',\n  height: '100%',\n}\n\n// In component render:\n<View style={styles.screenContainer}>\n  <ImageBackground source={...} style={styles.backgroundImage}>\n    <LinearGradient colors={['rgba(19, 19, 19, 0)', theme.colors.black[700]]} style={styles.gradient} />\n  </ImageBackground>\n  {/* ... rest of the screen content ... */}\n</View>"
+        },
+        {
+          "file": "app/(setup)/index.tsx",
+          "severity": "major",
+          "property": "Text Structure",
+          "explanation": "The header text 'Let’s get you set up' has multiple colors but is a single line in Figma. It must be implemented using a single parent <Text> with a nested <Text> for the highlighted portion to ensure correct wrapping and styling. This is a structural requirement from Figma data.",
+          "currentCode": "<>\n  <Text style={styles.headerLine1}>Let's get</Text>\n  <Text style={styles.headerLine2}>you set up</Text>\n</>",
+          "fixedCode": "<Text style={styles.headerBase}>\n  {\"Let’s get\\n\"}\n  <Text style={styles.headerHighlight}>you set up</Text>\n</Text>"
+        },
+        {
+          "file": "app/(setup)/index.tsx",
+          "severity": "major",
+          "property": "Button Styling",
+          "explanation": "The 'Start Flenting →' button must be absolutely positioned at the bottom of the screen with specific margins. Its background color is also incorrect. This combines a structural color mismatch with a screen-level layout issue.",
+          "currentCode": "buttonContainer: {\n  paddingBottom: 34,\n  paddingHorizontal: 24,\n},\nbutton: {\n  backgroundColor: '#000000',\n}",
+          "fixedCode": "button: {\n  position: 'absolute',\n  bottom: 57,\n  left: 40,\n  right: 40,\n  backgroundColor: theme.colors.black[500], // was #202020\n}"
+        },
+        {
+          "file": "app/(setup)/index.tsx",
+          "severity": "major",
+          "property": "Vertical Spacing",
+          "explanation": "The vertical spacing between major screen elements is incorrect. The header requires a large top margin (124px), and the gap between the header, card carousel, and pagination dots needs to be adjusted to 30px.",
+          "currentCode": "<VStack flex={1} space='md'>\n  <Header />\n  <CardCarousel />\n  <Pagination />\n  <Button />\n</VStack>",
+          "fixedCode": "contentContainer: {\n  paddingTop: 124,\n},\ncardContainer: {\n  marginTop: 30,\n},\npaginationContainer: {\n  marginTop: 30,\n}\n\n// In component render:\n<View style={styles.contentContainer}>\n  <Header />\n</View>\n<View style={styles.cardContainer}>\n  <CardCarousel />\n</View>\n<View style={styles.paginationContainer}>\n  <Pagination />\n</View>"
+        },
+        {
+          "file": "src/components/setup/OnboardingCard.tsx",
+          "severity": "major",
+          "property": "Text Structure",
+          "explanation": "Text elements with multiple styles, like '₹ 32,175' and 'Add your landlord’s bank details...', must be rendered as a single <Text> component with nested <Text> spans for different colors. This is a structural requirement from Figma to prevent incorrect line breaks.",
+          "currentCode": "<View>\n  <Text>₹</Text>\n  <Text>32,175</Text>\n</View>",
+          "fixedCode": "// For '₹ 32,175'\n<Text style={styles.basePrice}>\n  <Text style={styles.currencySymbol}>{'₹ '}</Text>\n  <Text style={styles.priceAmount}>32,175</Text>\n</Text>\n\n// For 'Add your landlord’s bank details...'\n<Text style={styles.baseDescription}>\n  <Text style={styles.regularPart}>{'Add your landlord’s '}</Text>\n  <Text style={styles.highlightPart}>bank details</Text>\n  <Text style={styles.regularPart}>{' to enable payouts'}</Text>\n</Text>"
+        },
+        {
+          "file": "src/components/setup/OnboardingCard.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "Structural analysis detected multiple buttons and interactive elements with incorrect background colors. Ensure these elements use the correct fill color from Figma.",
+          "currentCode": "// Button styles may be incorrect\nconst styles = StyleSheet.create({\n  buttonA: { backgroundColor: '#FFFFFF' },\n  buttonB: { backgroundColor: '#CCCCCC' },\n});",
+          "fixedCode": "// Please verify and apply the correct background colors to the relevant components:\n// - A component variant requires backgroundColor: theme.colors.black[600] (#1A1A1A)\n// - Another component requires backgroundColor: theme.colors.brand[500] (#FF9A6D)\n// - A button (e.g., 'Pay Now') requires backgroundColor: '#000000'\n// - A disabled-like element requires backgroundColor: theme.colors.neutral[200] (#D9D9D9 is close to #DDDDDD)"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(setup)/index.tsx",
+      "severity": "critical",
+      "property": "background",
+      "explanation": "The screen background is missing the linear gradient overlay on top of the background image. This is essential for blending the image and ensuring header text is readable. The gradient should fade from transparent to the screen's base color (`colors.black[700]`).",
+      "currentCode": "container: {\n  flex: 1,\n  backgroundColor: theme.colors.black[700],\n}",
+      "fixedCode": "screenContainer: {\n  flex: 1,\n},\nbackgroundImage: {\n  position: 'absolute',\n  width: '100%',\n  height: '100%',\n},\ngradient: {\n  width: '100%',\n  height: '100%',\n}\n\n// In component render:\n<View style={styles.screenContainer}>\n  <ImageBackground source={...} style={styles.backgroundImage}>\n    <LinearGradient colors={['rgba(19, 19, 19, 0)', theme.colors.black[700]]} style={styles.gradient} />\n  </ImageBackground>\n  {/* ... rest of the screen content ... */}\n</View>"
+    },
+    {
+      "file": "app/(setup)/index.tsx",
+      "severity": "major",
+      "property": "Text Structure",
+      "explanation": "The header text 'Let’s get you set up' has multiple colors but is a single line in Figma. It must be implemented using a single parent <Text> with a nested <Text> for the highlighted portion to ensure correct wrapping and styling. This is a structural requirement from Figma data.",
+      "currentCode": "<>\n  <Text style={styles.headerLine1}>Let's get</Text>\n  <Text style={styles.headerLine2}>you set up</Text>\n</>",
+      "fixedCode": "<Text style={styles.headerBase}>\n  {\"Let’s get\\n\"}\n  <Text style={styles.headerHighlight}>you set up</Text>\n</Text>"
+    },
+    {
+      "file": "app/(setup)/index.tsx",
+      "severity": "major",
+      "property": "Button Styling",
+      "explanation": "The 'Start Flenting →' button must be absolutely positioned at the bottom of the screen with specific margins. Its background color is also incorrect. This combines a structural color mismatch with a screen-level layout issue.",
+      "currentCode": "buttonContainer: {\n  paddingBottom: 34,\n  paddingHorizontal: 24,\n},\nbutton: {\n  backgroundColor: '#000000',\n}",
+      "fixedCode": "button: {\n  position: 'absolute',\n  bottom: 57,\n  left: 40,\n  right: 40,\n  backgroundColor: theme.colors.black[500], // was #202020\n}"
+    },
+    {
+      "file": "app/(setup)/index.tsx",
+      "severity": "major",
+      "property": "Vertical Spacing",
+      "explanation": "The vertical spacing between major screen elements is incorrect. The header requires a large top margin (124px), and the gap between the header, card carousel, and pagination dots needs to be adjusted to 30px.",
+      "currentCode": "<VStack flex={1} space='md'>\n  <Header />\n  <CardCarousel />\n  <Pagination />\n  <Button />\n</VStack>",
+      "fixedCode": "contentContainer: {\n  paddingTop: 124,\n},\ncardContainer: {\n  marginTop: 30,\n},\npaginationContainer: {\n  marginTop: 30,\n}\n\n// In component render:\n<View style={styles.contentContainer}>\n  <Header />\n</View>\n<View style={styles.cardContainer}>\n  <CardCarousel />\n</View>\n<View style={styles.paginationContainer}>\n  <Pagination />\n</View>"
+    },
+    {
+      "file": "src/components/setup/OnboardingCard.tsx",
+      "severity": "major",
+      "property": "Text Structure",
+      "explanation": "Text elements with multiple styles, like '₹ 32,175' and 'Add your landlord’s bank details...', must be rendered as a single <Text> component with nested <Text> spans for different colors. This is a structural requirement from Figma to prevent incorrect line breaks.",
+      "currentCode": "<View>\n  <Text>₹</Text>\n  <Text>32,175</Text>\n</View>",
+      "fixedCode": "// For '₹ 32,175'\n<Text style={styles.basePrice}>\n  <Text style={styles.currencySymbol}>{'₹ '}</Text>\n  <Text style={styles.priceAmount}>32,175</Text>\n</Text>\n\n// For 'Add your landlord’s bank details...'\n<Text style={styles.baseDescription}>\n  <Text style={styles.regularPart}>{'Add your landlord’s '}</Text>\n  <Text style={styles.highlightPart}>bank details</Text>\n  <Text style={styles.regularPart}>{' to enable payouts'}</Text>\n</Text>"
+    },
+    {
+      "file": "src/components/setup/OnboardingCard.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "Structural analysis detected multiple buttons and interactive elements with incorrect background colors. Ensure these elements use the correct fill color from Figma.",
+      "currentCode": "// Button styles may be incorrect\nconst styles = StyleSheet.create({\n  buttonA: { backgroundColor: '#FFFFFF' },\n  buttonB: { backgroundColor: '#CCCCCC' },\n});",
+      "fixedCode": "// Please verify and apply the correct background colors to the relevant components:\n// - A component variant requires backgroundColor: theme.colors.black[600] (#1A1A1A)\n// - Another component requires backgroundColor: theme.colors.brand[500] (#FF9A6D)\n// - A button (e.g., 'Pay Now') requires backgroundColor: '#000000'\n// - A disabled-like element requires backgroundColor: theme.colors.neutral[200] (#D9D9D9 is close to #DDDDDD)"
+    }
+  ],
+  "summary": {
+    "totalIssues": 6,
+    "critical": 1,
+    "major": 5,
+    "minor": 0,
+    "filesAffected": [
+      "app/(setup)/index.tsx",
+      "src/components/setup/OnboardingCard.tsx"
+    ]
+  }
+}

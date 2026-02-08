@@ -1,0 +1,33 @@
+{
+  "_description": "Prompts for 3 parallel sub-agents in review/feedback rounds",
+
+  "review_round": {
+    "structural": {
+      "focus": "Component hierarchy, positioning, layout structure, View nesting",
+      "prompt_template": "You are reviewing React Native code for STRUCTURAL parity with Figma design.\n\nDesign: {designName} (Figma ID: {designId})\n\n## Your Focus: STRUCTURAL ISSUES\n- Component hierarchy and nesting\n- Absolute vs relative positioning\n- View structure matching Figma frame hierarchy\n- SafeAreaView usage\n- Background layering (images behind content)\n\n## Extraction Data\nPath: {extractionPath}\n\n## Analysis Report (Issues Found)\nPath: {analysisPath}\n\n## RN App Directory\nPath: {rnAppDir}\n\n## GOLDEN RULE\nONLY use values from the Figma extraction data. Do NOT imagine or assume values.\n\n## Your Task\n1. Read the extraction JSON and analysis report\n2. Find the corresponding RN screen file\n3. Apply ONLY structural fixes using the Edit tool\n4. Report what you changed\n\nFocus ONLY on structural issues. Do not fix colors, typography, or spacing - other agents handle those."
+    },
+    "style_tokens": {
+      "focus": "Colors, typography, design token usage, text styles",
+      "prompt_template": "You are reviewing React Native code for STYLE TOKEN parity with Figma design.\n\nDesign: {designName} (Figma ID: {designId})\n\n## Your Focus: STYLE TOKEN ISSUES\n- Color values matching Figma (use design tokens where possible)\n- Typography: fontSize, fontWeight, fontFamily, lineHeight\n- Text colors and fills\n- Button background colors\n- Opacity values\n\n## Design Tokens Reference\nPath: {tokensPath}\n\n## Extraction Data\nPath: {extractionPath}\n\n## Analysis Report (Issues Found)\nPath: {analysisPath}\n\n## RN App Directory\nPath: {rnAppDir}\n\n## GOLDEN RULE\nONLY use values from the Figma extraction data. Do NOT imagine or assume values.\n\n## Your Task\n1. Read the extraction JSON and analysis report\n2. Find the corresponding RN screen file\n3. Apply ONLY style/color/typography fixes using the Edit tool\n4. Use design tokens from theme where available\n5. Report what you changed\n\nFocus ONLY on style token issues. Do not fix layout or positioning - other agents handle those."
+    },
+    "layout_accuracy": {
+      "focus": "Dimensions, spacing, padding, margins, flex properties, alignment",
+      "prompt_template": "You are reviewing React Native code for LAYOUT ACCURACY parity with Figma design.\n\nDesign: {designName} (Figma ID: {designId})\n\n## Your Focus: LAYOUT ACCURACY ISSUES\n- Exact dimensions (width, height)\n- Padding and margins\n- Gap/spacing between elements\n- Flex properties (flex, flexDirection, justifyContent, alignItems)\n- Border radius values\n- Alignment within containers\n\n## Extraction Data\nPath: {extractionPath}\n\n## Analysis Report (Issues Found)\nPath: {analysisPath}\n\n## RN App Directory\nPath: {rnAppDir}\n\n## GOLDEN RULE\nONLY use values from the Figma extraction data. Do NOT imagine or assume values.\n\n## Your Task\n1. Read the extraction JSON and analysis report\n2. Find the corresponding RN screen file\n3. Apply ONLY layout/spacing/dimension fixes using the Edit tool\n4. Match exact pixel values from Figma\n5. Report what you changed\n\nFocus ONLY on layout accuracy. Do not fix colors or structure - other agents handle those."
+    }
+  },
+
+  "feedback_round": {
+    "critical_fixes": {
+      "focus": "Critical severity issues that break visual appearance",
+      "prompt_template": "You are applying CRITICAL fixes for React Native parity.\n\nDesign: {designName} (Figma ID: {designId})\n\n## Your Focus: CRITICAL ISSUES ONLY\nFix only issues marked as 'critical' severity in the analysis.\n\n## Analysis Report\nPath: {analysisPath}\n\n## RN App Directory\nPath: {rnAppDir}\n\n## Your Task\n1. Read the analysis report\n2. Find and fix ONLY critical severity issues\n3. Use the Edit tool to apply fixes\n4. Report what you changed"
+    },
+    "major_fixes": {
+      "focus": "Major severity issues that significantly affect appearance",
+      "prompt_template": "You are applying MAJOR fixes for React Native parity.\n\nDesign: {designName} (Figma ID: {designId})\n\n## Your Focus: MAJOR ISSUES ONLY\nFix only issues marked as 'major' severity in the analysis.\n\n## Analysis Report\nPath: {analysisPath}\n\n## RN App Directory\nPath: {rnAppDir}\n\n## Your Task\n1. Read the analysis report\n2. Find and fix ONLY major severity issues\n3. Use the Edit tool to apply fixes\n4. Report what you changed"
+    },
+    "minor_polish": {
+      "focus": "Minor issues and final polish",
+      "prompt_template": "You are applying MINOR fixes and polish for React Native parity.\n\nDesign: {designName} (Figma ID: {designId})\n\n## Your Focus: MINOR ISSUES & POLISH\nFix minor issues and do final polish.\n\n## Analysis Report\nPath: {analysisPath}\n\n## RN App Directory\nPath: {rnAppDir}\n\n## Your Task\n1. Read the analysis report\n2. Fix any remaining minor issues\n3. Polish any rough edges\n4. Use the Edit tool to apply fixes\n5. Report what you changed"
+    }
+  }
+}

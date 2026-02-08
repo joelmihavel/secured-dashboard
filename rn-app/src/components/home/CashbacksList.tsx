@@ -23,7 +23,6 @@ import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 import { Text } from '@/src/components/ui';
-import { colors } from '@/src/theme';
 
 export type CashbackStatus = 'paid' | 'delayed' | 'missed' | 'pending';
 
@@ -140,6 +139,7 @@ const styles = StyleSheet.create({
     gap: 8, // Figma: gap between label and amount
   },
   balanceLabel: {
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12, // Figma: fontSize 12
     fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
@@ -151,23 +151,26 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   rupeeSymbol: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16, // Figma: fontSize 16
     fontWeight: '600', // Figma: fontWeight 600
     lineHeight: 22.56, // Figma: lineHeight ~22.56
     letterSpacing: -0.64, // Figma: letterSpacing -0.64
-    color: colors.white,
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
   balanceAmount: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16, // Figma: fontSize 16
     fontWeight: '600', // Figma: fontWeight 600
     lineHeight: 22.56, // Figma: lineHeight ~22.56
     letterSpacing: -0.64, // Figma: letterSpacing -0.64
-    color: colors.white, // Figma: #FFFFFF
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
   balanceDecimal: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
   // Stats section - Figma layout
   statsSection: {
@@ -180,17 +183,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
     fontWeight: '400',
     color: '#DDDDDD', // Figma: #DDDDDD (neutral[200])
-    textAlign: 'center', // Figma 243:6462, 243:6466: textAlignHorizontal CENTER
+    textAlign: 'left', // Figma: left-aligned stat label in space-between row
   },
   statValueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   statRupee: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 28, // Figma: fontSize 28
     lineHeight: 40, // Figma: lineHeight 40
     letterSpacing: -1, // Figma: letterSpacing -1
@@ -198,6 +203,7 @@ const styles = StyleSheet.create({
     color: '#BABABA', // Figma: #BABABA (neutral[400])
   },
   statValue: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 28, // Figma: fontSize 28
     lineHeight: 40, // Figma: lineHeight 40
     letterSpacing: -1, // Figma: letterSpacing -1
@@ -205,10 +211,12 @@ const styles = StyleSheet.create({
     color: '#BABABA', // Figma: #BABABA (neutral[400])
   },
   statDecimal: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     color: '#BABABA',
   },
   rateValue: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 28, // Figma: fontSize 28
     lineHeight: 40, // Figma: lineHeight 40
     letterSpacing: -1, // Figma: letterSpacing -1
@@ -216,6 +224,7 @@ const styles = StyleSheet.create({
     color: '#BABABA', // Figma: same as other values
   },
   rateAvg: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     color: '#BABABA',
   },
@@ -239,11 +248,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   historyTitle: {
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14, // Figma: fontSize 14
     fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 19.74, // Figma: lineHeight ~19.74
     letterSpacing: -0.56, // Figma: letterSpacing -0.56
-    color: colors.white, // Figma: #FFFFFF
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
   historyStatusRow: {
     flexDirection: 'row',
@@ -256,6 +266,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   historyStatus: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12, // Figma: fontSize 12
     lineHeight: 16.92, // Figma: lineHeight ~16.92
     letterSpacing: -0.24, // Figma: letterSpacing -0.24
@@ -266,26 +277,29 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   historyRupee: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16, // Figma: fontSize 16
     fontWeight: '600', // Figma: fontWeight 600
     lineHeight: 22.56, // Figma: lineHeight ~22.56
     letterSpacing: -0.64, // Figma: letterSpacing -0.64
-    color: colors.white,
+    color: '#FFFFFF', // Figma: #FFFFFF
     marginRight: 2,
   },
   historyAmount: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16, // Figma: fontSize 16
     fontWeight: '600', // Figma: fontWeight 600
     lineHeight: 22.56, // Figma: lineHeight ~22.56
     letterSpacing: -0.64, // Figma: letterSpacing -0.64
-    color: colors.white,
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
   historyNA: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 12, // Figma: fontSize 12
     fontWeight: '600', // Figma: fontWeight 600
     lineHeight: 16.92, // Figma: lineHeight ~16.92
     letterSpacing: -0.48, // Figma: letterSpacing -0.48
-    color: colors.white, // Figma: #FFFFFF
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
 });
 

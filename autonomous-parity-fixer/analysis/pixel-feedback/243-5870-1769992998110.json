@@ -1,0 +1,462 @@
+{
+  "screenId": "243-5870",
+  "screenName": "Pay Rent / Transaction Page --without cashback",
+  "route": "/(transactions)/index",
+  "generatedAt": "2026-02-02T00:43:18.110Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T00:41:15.377Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I243:6014;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-5870/*.tsx or app/(243-5870)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I243:6066;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-5870/*.tsx or app/(243-5870)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I243:6072;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-5870/*.tsx or app/(243-5870)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5873",
+            "nodeName": "Your rent is due in 10 days",
+            "figmaValue": {
+              "text": "Your rent is due in 10 days",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"Your rent is due in 10 days...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5886",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "text": "•••• 2341",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"•••• 2341...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5888",
+            "nodeName": "EXPIRY 06/26",
+            "figmaValue": {
+              "text": "EXPIRY 06/26",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"EXPIRY 06/26...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5889",
+            "nodeName": "CVV •••",
+            "figmaValue": {
+              "text": "CVV •••",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"CVV •••...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5971",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "text": "•••• 2341",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"•••• 2341...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5973",
+            "nodeName": "ICICI a/c - xxx23",
+            "figmaValue": {
+              "text": "ICICI a/c -  xxx23",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"ICICI a/c -  xxx23...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5974",
+            "nodeName": "rishabh@•••",
+            "figmaValue": {
+              "text": "rishabh@•••",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"rishabh@•••...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5993",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "text": "•••• 2341",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"•••• 2341...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5995",
+            "nodeName": "EXPIRY 06/26",
+            "figmaValue": {
+              "text": "EXPIRY 06/26",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"EXPIRY 06/26...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:5996",
+            "nodeName": "ICICI a/c - xxx23",
+            "figmaValue": {
+              "text": "ICICI a/c -  xxx23",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"ICICI a/c -  xxx23...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6033",
+            "nodeName": "₹ 325.00",
+            "figmaValue": {
+              "text": "₹  325.00",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 4
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"₹  325.00...\" is ONE LINE in Figma with 4 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6037",
+            "nodeName": "₹ 3,256.00",
+            "figmaValue": {
+              "text": "₹  3,256.00",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 4
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"₹  3,256.00...\" is ONE LINE in Figma with 4 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6041",
+            "nodeName": "0.8% Avg",
+            "figmaValue": {
+              "text": "0.8% Avg",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"0.8% Avg...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6045",
+            "nodeName": "Complete setup in 28:12:12 to  unlock Cashbacks",
+            "figmaValue": {
+              "text": "Complete setup in 28:12:12 to  unlock Cashbacks",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"Complete setup in 28:12:12 to  unlock Cashbacks...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6071",
+            "nodeName": "₹ 32,500",
+            "figmaValue": {
+              "text": "₹  32,500",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-5870/*.tsx",
+            "explanation": "Text \"₹  32,500...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          }
+        ],
+        "totalIssues": 18
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T00:41:15.386Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T00:42:47.519Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/243-5870.tsx",
+            "lineRange": "N/A",
+            "property": "Screen Layout Structure",
+            "figmaValue": "Fixed Header, Scrollable Body, Fixed Footer",
+            "currentValue": "N/A (Code not provided)",
+            "severity": "critical",
+            "explanation": "The screen requires a specific three-part layout. The header should be static at the top. The main content must be within a ScrollView. The footer must be fixed to the bottom of the screen, overlaying the ScrollView. The ScrollView's content container needs bottom padding equal to the footer's height to prevent content from being hidden.",
+            "currentCode": "/* N/A */",
+            "fixedCode": "/*\n  The main screen component should be structured like this to handle the fixed header and footer correctly.\n  SafeAreaView is crucial for handling notches and the home indicator.\n*/\nimport { SafeAreaView } from 'react-native-safe-area-context';\n\nconst ScreenComponent = () => (\n  <SafeAreaView style={{ flex: 1, backgroundColor: _designTokens.colors.black[700] }}>\n    <View style={{ flex: 1 }}>\n      <HeaderComponent />\n      <ScrollView \n        contentContainerStyle={{ \n          paddingBottom: 118, // Height of the footer\n        }}\n      >\n        {/* ... All scrollable screen content ... */}\n      </ScrollView>\n      <FooterComponent style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1 }} />\n    </View>\n  </SafeAreaView>\n);"
+          }
+        ],
+        "layoutIssues": [
+          {
+            "file": "app/243-5870.tsx",
+            "lineRange": "N/A",
+            "property": "Vertical Spacing",
+            "figmaValue": "24px between major sections",
+            "currentValue": "N/A (Code not provided)",
+            "severity": "major",
+            "explanation": "There is a consistent vertical gap of 24px between the main sections within the ScrollView (e.g., between the 'Your rent is due' text, the payment cards carousel, the separator line, and the cashback details section). This should be implemented using a `gap` on the ScrollView's content container.",
+            "currentCode": "/* N/A */",
+            "fixedCode": "<ScrollView\n  contentContainerStyle={{\n    gap: _designTokens.spacing[6], // 24px\n    // ... other styles\n  }}\n>\n  {/* ... */}\n</ScrollView>"
+          },
+          {
+            "file": "app/243-5870.tsx",
+            "lineRange": "N/A",
+            "property": "Horizontal Padding",
+            "figmaValue": "Varies by section (e.g., 64px, 32px)",
+            "currentValue": "N/A (Code not provided)",
+            "severity": "major",
+            "explanation": "The screen does not have a uniform horizontal padding. The 'Your rent is due' text block and the payment card carousel have a `paddingLeft` of 64px, while other sections like the cashback details and footer have a `paddingHorizontal` of 32px. Applying a single padding to the entire screen content will not match the design.",
+            "currentCode": "/* N/A */",
+            "fixedCode": "// Example for the 'Your rent is due' section (243:5872)\n<View style={{ paddingHorizontal: _designTokens.spacing[16] /* 64px */ }}>\n  {/* ... */}\n</View>\n\n// Example for the cashback section (243:6025)\n<View style={{ paddingHorizontal: _designTokens.spacing[8] /* 32px */ }}>\n  {/* ... */}\n</View>"
+          }
+        ],
+        "scrollIssues": [
+          {
+            "file": "app/243-5870.tsx",
+            "lineRange": "N/A",
+            "property": "Horizontal ScrollView Padding",
+            "figmaValue": "paddingLeft: 64, paddingRight: 32",
+            "currentValue": "N/A (Code not provided)",
+            "severity": "critical",
+            "explanation": "The horizontal payment card carousel (node 243:5877) requires a `paddingLeft` of 64px to create the initial offset where the first card is not flush with the edge. This padding must be applied to the `contentContainerStyle` of the horizontal ScrollView, not the `style` prop, to ensure it's part of the scrollable area.",
+            "currentCode": "/* N/A */",
+            "fixedCode": "<ScrollView\n  horizontal\n  showsHorizontalScrollIndicator={false}\n  contentContainerStyle={{\n    paddingLeft: _designTokens.spacing[16], // 64px\n    paddingRight: _designTokens.spacing[8], // 32px\n    gap: _designTokens.spacing.lg // 16px\n  }}\n>\n  {/* Payment Method Cards */}\n</ScrollView>"
+          }
+        ],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T00:43:18.110Z",
+      "feedback": [
+        {
+          "file": "app/(243-5870)/index.tsx",
+          "severity": "critical",
+          "property": "Screen Layout Structure",
+          "explanation": "The screen requires a fixed header, a scrollable body, and a fixed footer. The current implementation may be causing the header and footer to scroll with the content. The correct structure involves a main View with flex: 1, containing the Header, a ScrollView for the body, and an absolutely positioned Footer. The ScrollView needs bottom padding equal to the footer's height to prevent content from being obscured.",
+          "fixedCode": "/*\n  The main screen component should be structured like this to handle the fixed header and footer correctly.\n  SafeAreaView is crucial for handling notches and the home indicator.\n*/\nimport { SafeAreaView } from 'react-native-safe-area-context';\n\nconst PayRentScreen = () => (\n  <SafeAreaView style={{ flex: 1, backgroundColor: _designTokens.colors.black[700] }}>\n    <View style={{ flex: 1 }}>\n      <HeaderComponent />\n      <ScrollView \n        contentContainerStyle={{ \n          paddingBottom: 118, // Approximate height of the footer\n          gap: _designTokens.spacing.lg // 24px, addresses vertical spacing issue\n        }}\n      >\n        {/* ... All scrollable screen content ... */}\n      </ScrollView>\n      <FooterComponent style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1 }} />\n    </View>\n  </SafeAreaView>\n);"
+        },
+        {
+          "file": "app/(243-5870)/index.tsx",
+          "severity": "critical",
+          "property": "Horizontal ScrollView Padding",
+          "explanation": "The horizontal payment card carousel (node 243:5877) requires a `paddingLeft` of 64px to create the initial offset and `paddingRight` of 32px. This padding must be applied to the `contentContainerStyle` of the horizontal ScrollView, not the `style` prop, to ensure it's part of the scrollable area.",
+          "fixedCode": "<ScrollView\n  horizontal\n  showsHorizontalScrollIndicator={false}\n  contentContainerStyle={{\n    paddingLeft: _designTokens.spacing.huge, // 64px\n    paddingRight: _designTokens.spacing.xl, // 32px\n    gap: _designTokens.spacing.md // 16px\n  }}\n>\n  {/* Payment Method Cards */}\n</ScrollView>"
+        },
+        {
+          "file": "src/components/shared/MultiStyleText.tsx",
+          "severity": "major",
+          "property": "Text Structure",
+          "explanation": "Multiple text elements on this screen have mixed styling (e.g., different colors) within a single line in Figma. These must be rendered as a single `<Text>` component with nested `<Text>` components for each style segment, not as separate text components on different lines. This issue applies to the following texts: 'Your rent is due in 10 days', '•••• 2341', 'EXPIRY 06/26', 'CVV •••', 'ICICI a/c - xxx23', 'rishabh@•••', '₹ 325.00', '₹ 3,256.00', '0.8% Avg', 'Complete setup in 28:12:12...', and '₹ 32,500'.",
+          "fixedCode": "// Example for 'Your rent is due in 10 days'\n// Apply this nested pattern for all multi-styled text instances.\n\n// BEFORE (Incorrect)\n<View>\n  <Text style={styles.grayText}>Your rent is due in</Text>\n  <Text style={styles.orangeText}>10 days</Text>\n</View>\n\n// AFTER (Correct)\n<Text style={styles.baseText}>\n  <Text style={{ color: _designTokens.colors.neutral[500] }}>Your rent is due in </Text>\n  <Text style={{ color: _designTokens.colors.brand[500] }}>10 days</Text>\n</Text>"
+        },
+        {
+          "file": "src/components/shared/IconButton.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "The small, circular icon buttons (identified as 'Rectangle 140' in Figma) have a fill color of #4D4D4D. The corresponding React Native component should have its `backgroundColor` set to this value, using the `colors.black[400]` design token.",
+          "fixedCode": "const styles = StyleSheet.create({\n  button: {\n    // ... other styles\n    backgroundColor: _designTokens.colors.black[400], // Was likely incorrect or missing\n  }\n});"
+        },
+        {
+          "file": "app/(243-5870)/index.tsx",
+          "severity": "major",
+          "property": "Horizontal Padding",
+          "explanation": "The screen does not have uniform horizontal padding. Different sections require different padding values. For example, the 'Your rent is due' text block and payment card carousel have a `paddingLeft` of 64px, while other sections like the cashback details and footer have a `paddingHorizontal` of 32px. Ensure each section wrapper has the correct padding instead of applying a single padding value to the entire screen.",
+          "fixedCode": "// Example for the 'Your rent is due' section (node 243:5872)\n<View style={{ paddingLeft: _designTokens.spacing.huge /* 64px */ }}>\n  {/* ... */}\n</View>\n\n// Example for the cashback section (node 243:6025)\n<View style={{ paddingHorizontal: _designTokens.spacing.xl /* 32px */ }}>\n  {/* ... */}\n</View>"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(243-5870)/index.tsx",
+      "severity": "critical",
+      "property": "Screen Layout Structure",
+      "explanation": "The screen requires a fixed header, a scrollable body, and a fixed footer. The current implementation may be causing the header and footer to scroll with the content. The correct structure involves a main View with flex: 1, containing the Header, a ScrollView for the body, and an absolutely positioned Footer. The ScrollView needs bottom padding equal to the footer's height to prevent content from being obscured.",
+      "fixedCode": "/*\n  The main screen component should be structured like this to handle the fixed header and footer correctly.\n  SafeAreaView is crucial for handling notches and the home indicator.\n*/\nimport { SafeAreaView } from 'react-native-safe-area-context';\n\nconst PayRentScreen = () => (\n  <SafeAreaView style={{ flex: 1, backgroundColor: _designTokens.colors.black[700] }}>\n    <View style={{ flex: 1 }}>\n      <HeaderComponent />\n      <ScrollView \n        contentContainerStyle={{ \n          paddingBottom: 118, // Approximate height of the footer\n          gap: _designTokens.spacing.lg // 24px, addresses vertical spacing issue\n        }}\n      >\n        {/* ... All scrollable screen content ... */}\n      </ScrollView>\n      <FooterComponent style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1 }} />\n    </View>\n  </SafeAreaView>\n);"
+    },
+    {
+      "file": "app/(243-5870)/index.tsx",
+      "severity": "critical",
+      "property": "Horizontal ScrollView Padding",
+      "explanation": "The horizontal payment card carousel (node 243:5877) requires a `paddingLeft` of 64px to create the initial offset and `paddingRight` of 32px. This padding must be applied to the `contentContainerStyle` of the horizontal ScrollView, not the `style` prop, to ensure it's part of the scrollable area.",
+      "fixedCode": "<ScrollView\n  horizontal\n  showsHorizontalScrollIndicator={false}\n  contentContainerStyle={{\n    paddingLeft: _designTokens.spacing.huge, // 64px\n    paddingRight: _designTokens.spacing.xl, // 32px\n    gap: _designTokens.spacing.md // 16px\n  }}\n>\n  {/* Payment Method Cards */}\n</ScrollView>"
+    },
+    {
+      "file": "src/components/shared/MultiStyleText.tsx",
+      "severity": "major",
+      "property": "Text Structure",
+      "explanation": "Multiple text elements on this screen have mixed styling (e.g., different colors) within a single line in Figma. These must be rendered as a single `<Text>` component with nested `<Text>` components for each style segment, not as separate text components on different lines. This issue applies to the following texts: 'Your rent is due in 10 days', '•••• 2341', 'EXPIRY 06/26', 'CVV •••', 'ICICI a/c - xxx23', 'rishabh@•••', '₹ 325.00', '₹ 3,256.00', '0.8% Avg', 'Complete setup in 28:12:12...', and '₹ 32,500'.",
+      "fixedCode": "// Example for 'Your rent is due in 10 days'\n// Apply this nested pattern for all multi-styled text instances.\n\n// BEFORE (Incorrect)\n<View>\n  <Text style={styles.grayText}>Your rent is due in</Text>\n  <Text style={styles.orangeText}>10 days</Text>\n</View>\n\n// AFTER (Correct)\n<Text style={styles.baseText}>\n  <Text style={{ color: _designTokens.colors.neutral[500] }}>Your rent is due in </Text>\n  <Text style={{ color: _designTokens.colors.brand[500] }}>10 days</Text>\n</Text>"
+    },
+    {
+      "file": "src/components/shared/IconButton.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "The small, circular icon buttons (identified as 'Rectangle 140' in Figma) have a fill color of #4D4D4D. The corresponding React Native component should have its `backgroundColor` set to this value, using the `colors.black[400]` design token.",
+      "fixedCode": "const styles = StyleSheet.create({\n  button: {\n    // ... other styles\n    backgroundColor: _designTokens.colors.black[400], // Was likely incorrect or missing\n  }\n});"
+    },
+    {
+      "file": "app/(243-5870)/index.tsx",
+      "severity": "major",
+      "property": "Horizontal Padding",
+      "explanation": "The screen does not have uniform horizontal padding. Different sections require different padding values. For example, the 'Your rent is due' text block and payment card carousel have a `paddingLeft` of 64px, while other sections like the cashback details and footer have a `paddingHorizontal` of 32px. Ensure each section wrapper has the correct padding instead of applying a single padding value to the entire screen.",
+      "fixedCode": "// Example for the 'Your rent is due' section (node 243:5872)\n<View style={{ paddingLeft: _designTokens.spacing.huge /* 64px */ }}>\n  {/* ... */}\n</View>\n\n// Example for the cashback section (node 243:6025)\n<View style={{ paddingHorizontal: _designTokens.spacing.xl /* 32px */ }}>\n  {/* ... */}\n</View>"
+    }
+  ],
+  "summary": {
+    "totalIssues": 5,
+    "critical": 2,
+    "major": 3,
+    "minor": 0,
+    "filesAffected": [
+      "app/(243-5870)/index.tsx",
+      "src/components/shared/MultiStyleText.tsx",
+      "src/components/shared/IconButton.tsx"
+    ]
+  }
+}

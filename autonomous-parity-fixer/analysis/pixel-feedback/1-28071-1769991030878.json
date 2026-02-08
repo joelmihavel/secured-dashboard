@@ -1,0 +1,97 @@
+{
+  "screenId": "1-28071",
+  "screenName": "Splash / get-started --animation",
+  "route": "/(auth)/splash",
+  "generatedAt": "2026-02-02T00:10:30.877Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T00:09:56.899Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "233:2671",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": -462.9999804766044,
+              "absoluteY": -397.0000576553158,
+              "relativeLeft": -462.9999804766044,
+              "relativeTop": -747.0000576553158,
+              "parentId": "1:28071"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "src/components/1-28071/*.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"Splash / get-started --animation\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          }
+        ],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 1
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T00:09:56.906Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T00:10:19.100Z",
+      "feedback": {
+        "screenLevelIssues": [],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 0,
+        "notes": "The React Native screen code file was not provided. A comparison between the Figma design and the implementation cannot be performed. The analysis is therefore empty."
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T00:10:30.877Z",
+      "feedback": [
+        {
+          "file": "src/components/1-28071/*.tsx",
+          "lineRange": null,
+          "property": "position",
+          "figmaValue": "position: 'absolute', left: -463.0, top: -747.0",
+          "currentValue": "Implicit (likely static or relative)",
+          "severity": "major",
+          "explanation": "The component 'image 149' is positioned incorrectly. In Figma, it has a specific offset of (-463, -747) from its parent, which requires absolute positioning to match the design.",
+          "currentCode": "const styles = StyleSheet.create({\n  image149: {\n    // Current styles for image 149\n  }\n});",
+          "fixedCode": "const styles = StyleSheet.create({\n  image149: {\n    position: 'absolute',\n    left: -463,\n    top: -747,\n  }\n});"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/1-28071/*.tsx",
+      "lineRange": null,
+      "property": "position",
+      "figmaValue": "position: 'absolute', left: -463.0, top: -747.0",
+      "currentValue": "Implicit (likely static or relative)",
+      "severity": "major",
+      "explanation": "The component 'image 149' is positioned incorrectly. In Figma, it has a specific offset of (-463, -747) from its parent, which requires absolute positioning to match the design.",
+      "currentCode": "const styles = StyleSheet.create({\n  image149: {\n    // Current styles for image 149\n  }\n});",
+      "fixedCode": "const styles = StyleSheet.create({\n  image149: {\n    position: 'absolute',\n    left: -463,\n    top: -747,\n  }\n});"
+    }
+  ],
+  "summary": {
+    "totalIssues": 1,
+    "critical": 0,
+    "major": 1,
+    "minor": 0,
+    "filesAffected": [
+      "src/components/1-28071/*.tsx"
+    ]
+  }
+}

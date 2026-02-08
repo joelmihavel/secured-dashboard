@@ -1,0 +1,116 @@
+{
+  "screen": {
+    "name": "screen",
+    "category": "layout",
+    "values": {
+      "width": 393,
+      "height": 1384,
+      "backgroundColor": "#131313"
+    }
+  },
+  "colors": {
+    "name": "colors",
+    "category": "colors",
+    "values": {
+      "background": "#131313",
+      "cardBackground": "#1A1A1A",
+      "accent": "#FF9A6D",
+      "textSecondary": "#BABABA",
+      "textSubtle": "#A6A6A6",
+      "cardSurface": "#202020",
+      "white": "#FFFFFF",
+      "textDisabled": "#4D4D4D",
+      "textTertiary": "#CBCBCB",
+      "color000000": "#000000",
+      "color27803B": "#27803B",
+      "colorE9661C": "#E9661C",
+      "colorF06321": "#F06321",
+      "colorAE282E": "#AE282E",
+      "textMuted": "#878787",
+      "color4CAF50": "#4CAF50",
+      "colorFFB020": "#FFB020",
+      "colorE5484D": "#E5484D",
+      "colorA9A9A9": "#A9A9A9",
+      "colorEEEEEE": "#EEEEEE",
+      "colorFFCC8A": "#FFCC8A"
+    }
+  },
+  "typography": {
+    "name": "typography",
+    "category": "typography",
+    "values": {
+      "12_400": {
+        "fontSize": 12,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "28_400": {
+        "fontSize": 28,
+        "fontWeight": "400",
+        "lineHeight": 40,
+        "letterSpacing": -1
+      },
+      "14_400": {
+        "fontSize": 14,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "20_400": {
+        "fontSize": 20,
+        "fontWeight": "400",
+        "lineHeight": 32
+      },
+      "16_400": {
+        "fontSize": 16,
+        "fontWeight": "400",
+        "lineHeight": 24
+      },
+      "14_500": {
+        "fontSize": 14,
+        "fontWeight": "500",
+        "lineHeight": 20
+      },
+      "14_600": {
+        "fontSize": 14,
+        "fontWeight": "600",
+        "lineHeight": 20
+      },
+      "16_600": {
+        "fontSize": 16,
+        "fontWeight": "600",
+        "lineHeight": 22.56,
+        "letterSpacing": -0.64
+      },
+      "12_600": {
+        "fontSize": 12,
+        "fontWeight": "600",
+        "lineHeight": 16.92,
+        "letterSpacing": -0.48
+      },
+      "17_590": {
+        "fontSize": 17,
+        "fontWeight": "590",
+        "lineHeight": 20.29
+      }
+    }
+  },
+  "spacing": {
+    "name": "spacing",
+    "category": "spacing",
+    "values": {
+      "space1": 4,
+      "space2": 8,
+      "space3": 10,
+      "space4": 12,
+      "space5": 16,
+      "space6": 24,
+      "space7": 28,
+      "space8": 32,
+      "space9": 40,
+      "space10": 48,
+      "space11": 64,
+      "space12": 120,
+      "space13": 130
+    }
+  }
+}

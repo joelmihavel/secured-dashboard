@@ -1,0 +1,385 @@
+{
+  "screenId": "41-10859",
+  "iteration": 1,
+  "coverage": 86.8,
+  "threshold": 95,
+  "fixesNeeded": [
+    {
+      "type": "style",
+      "target": "saved ₹ 325 →",
+      "property": "backgroundColor",
+      "figmaValue": "#70BF73",
+      "currentValue": "FIGMA.buttonBackgroundColor",
+      "fix": "Add backgroundColor: '#70BF73' (or colors.success[default])"
+    },
+    {
+      "type": "style",
+      "target": "saved ₹ 325 →",
+      "property": "characters",
+      "figmaValue": "saved ₹ 325 →",
+      "currentValue": null,
+      "fix": "Add text content: \"saved ₹ 325 →\""
+    },
+    {
+      "type": "style",
+      "target": "Paying to",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "currentValue": "delegated",
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "type": "style",
+      "target": "Paying to",
+      "property": "characters",
+      "figmaValue": "Paying to",
+      "currentValue": null,
+      "fix": "Add text content: \"Paying to\""
+    },
+    {
+      "type": "style",
+      "target": "[Landlord Name]",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "currentValue": "delegated",
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "type": "style",
+      "target": "[Landlord Name]",
+      "property": "characters",
+      "figmaValue": "[Landlord Name]",
+      "currentValue": null,
+      "fix": "Add text content: \"[Landlord Name]\""
+    },
+    {
+      "type": "style",
+      "target": "ICICI",
+      "property": "characters",
+      "figmaValue": "ICICI",
+      "currentValue": null,
+      "fix": "Add text content: \"ICICI\""
+    },
+    {
+      "type": "style",
+      "target": "XXXX XXXX XXXX 2003",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "currentValue": "delegated",
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "type": "style",
+      "target": "XXXX XXXX XXXX 2003",
+      "property": "characters",
+      "figmaValue": "XXXX XXXX XXXX 2003",
+      "currentValue": null,
+      "fix": "Add text content: \"XXXX XXXX XXXX 2003\""
+    },
+    {
+      "type": "style",
+      "target": "Pay Now",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "FIGMA.buttonBackgroundColor",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "Pay Now",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "Pay Now",
+      "property": "characters",
+      "figmaValue": "Pay Now",
+      "currentValue": null,
+      "fix": "Add text content: \"Pay Now\""
+    },
+    {
+      "type": "style",
+      "target": "All payments are 100% secure",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "currentValue": "delegated",
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "type": "style",
+      "target": "All payments are 100% secure",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "All payments are 100% secure",
+      "property": "characters",
+      "figmaValue": "All payments are 100% secure",
+      "currentValue": null,
+      "fix": "Add text content: \"All payments are 100% secure\""
+    },
+    {
+      "type": "style",
+      "target": "PAY BY ANY APP INSTEAD",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "FIGMA.buttonBackgroundColor",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "PAY BY ANY APP INSTEAD",
+      "property": "characters",
+      "figmaValue": "PAY BY ANY APP INSTEAD",
+      "currentValue": null,
+      "fix": "Add text content: \"PAY BY ANY APP INSTEAD\""
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 26",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 26",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit height value"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 26",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 1a8928147af6...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "type": "style",
+      "target": "Google Pay",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "Google Pay",
+      "property": "characters",
+      "figmaValue": "Google Pay",
+      "currentValue": null,
+      "fix": "Add text content: \"Google Pay\""
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 26",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 26",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit height value"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 26",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 951e70728a7c...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "type": "style",
+      "target": "PayTM",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "PayTM",
+      "property": "characters",
+      "figmaValue": "PayTM",
+      "currentValue": null,
+      "fix": "Add text content: \"PayTM\""
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 26",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 26",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit height value"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 26",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 09777000c94c...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "type": "style",
+      "target": "PhonePe",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "PhonePe",
+      "property": "characters",
+      "figmaValue": "PhonePe",
+      "currentValue": null,
+      "fix": "Add text content: \"PhonePe\""
+    },
+    {
+      "type": "prop",
+      "target": "button",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "prop",
+      "target": "button",
+      "property": "overflow",
+      "figmaValue": "visible",
+      "currentValue": "hidden",
+      "fix": "Add overflow: 'visible'"
+    },
+    {
+      "type": "style",
+      "target": "button",
+      "property": "paddingRight",
+      "figmaValue": 16,
+      "currentValue": 40,
+      "fix": "Add paddingRight: 16 (or spacing.md)"
+    },
+    {
+      "type": "style",
+      "target": "button",
+      "property": "paddingLeft",
+      "figmaValue": 16,
+      "currentValue": 40,
+      "fix": "Add paddingLeft: 16 (or spacing.md)"
+    },
+    {
+      "type": "style",
+      "target": "button",
+      "property": "gap",
+      "figmaValue": 10,
+      "currentValue": "FIGMA.dotGap",
+      "fix": "Add gap: 10 (or token)"
+    },
+    {
+      "type": "style",
+      "target": "button",
+      "property": "borderRadius",
+      "figmaValue": 12,
+      "currentValue": "FIGMA.buttonActiveBorderRadius",
+      "fix": "Add borderRadius: 12 (or radius.md)"
+    },
+    {
+      "type": "style",
+      "target": "Let’s get you set up",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "FIGMA.buttonBackgroundColor",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "Let’s get you set up",
+      "property": "lineHeight",
+      "figmaValue": 48,
+      "currentValue": "delegated",
+      "fix": "Add lineHeight: 48"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 21885",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 21885",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit height value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 21886",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 21886",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit height value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 21887",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "prop",
+      "target": "Ellipse 21887",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "currentValue": "100%",
+      "fix": "Add explicit height value"
+    },
+    {
+      "type": "style",
+      "target": "Upload  address proof  to verify your tenancy",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "FIGMA.buttonBackgroundColor",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    }
+  ],
+  "generatedAt": "2026-02-03T10:30:56.998Z"
+}

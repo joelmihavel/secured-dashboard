@@ -1,0 +1,20 @@
+[
+  {
+    "nodeId": "1:31756",
+    "nodeName": "Vector 44",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector44",
+    "rnStyles": {
+      "width": 482.5,
+      "height": 0,
+      "borderColor": "#000000",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 7049,
+      "y": 748,
+      "width": 482.5,
+      "height": 0
+    }
+  }
+]

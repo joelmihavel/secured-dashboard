@@ -45,6 +45,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
+import { Ionicons } from '@expo/vector-icons';
 import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
 import {
   HomeHeader,
@@ -200,23 +201,41 @@ export default function HomeScreen() {
     );
   }, [dashboardState]);
 
-  // Determine empty state variant
+  // Determine empty state variant based on dashboard state
   const emptyStateVariant: EmptyStateVariant = useMemo(() => {
+    const verificationStatus = tenancy?.verification_status;
+
+    // No payment methods at all — base empty state
     if (paymentMethods.length === 0) {
+      // If setup is in progress (tenancy exists but no payment methods)
+      if (tenancy && !verificationStatus?.bank_verified) {
+        return 'setup_payment';
+      }
       return 'empty_base';
     }
 
-    const verificationStatus = tenancy?.verification_status;
+    // Payment methods exist but landlord not yet approved
     if (!verificationStatus?.landlord_approved) {
+      // TODO: When API supports invitation_status field, map to:
+      // 'invitation_resent_recent' — invitation was recently resent (< 24h)
+      // 'invitation_resent_old' — invitation was resent long ago (> 7 days)
+      // 'invitation_failed' — invitation delivery failed
+      // 'invitation_declined' — landlord explicitly declined
+      // For now, default to 'invitation_sent' until backend provides granular status
       return 'invitation_sent';
     }
 
+    // Landlord approved, check remaining verification steps
     if (!verificationStatus?.bank_verified || !verificationStatus?.utility_verified) {
+      // Cashback setup available when payment methods exist but verification incomplete
+      if (cashback && cashback.pending_balance === 0 && cashback.total_earned === 0) {
+        return 'setup_cashback';
+      }
       return 'empty_with_upi';
     }
 
     return 'empty_with_upi_payments';
-  }, [paymentMethods.length, tenancy?.verification_status]);
+  }, [paymentMethods.length, tenancy, cashback]);
 
   // Setup completion check
   const verificationStatus = tenancy?.verification_status;
@@ -415,7 +434,7 @@ export default function HomeScreen() {
       {showBottomFooter && (
         <View style={styles.bottomFooterContainer}>
           <BottomFooter
-            dueInDays={Math.abs(daysUntilDue)}
+            dueInDays={daysUntilDue}
             amount={rentAmount}
             buttonLabel="Review & pay"
             onPress={handlePayNow}
@@ -598,7 +617,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
         <View style={styles.contentContainer}>
           <View style={styles.successContainer}>
             <View style={styles.successIcon}>
-              <Text style={styles.successEmoji}>Check</Text>
+              <Ionicons name="checkmark-circle" size={40} color="#70BF73" />
             </View>
             <Text variant="h5" color="primary" align="center">
               Payment Complete!
@@ -744,9 +763,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  successEmoji: {
-    fontSize: 40,
-  },
+  // successEmoji style removed — replaced with Ionicons checkmark-circle
   successText: {
     marginTop: 8,
     textAlign: 'center', // Figma: textAlignHorizontal CENTER

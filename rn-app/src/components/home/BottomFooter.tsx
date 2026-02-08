@@ -23,7 +23,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/ui';
-import { colors } from '@/src/theme';
 
 export interface BottomFooterProps {
   dueInDays: number;
@@ -61,7 +60,9 @@ function BottomFooterComponent({
       <View style={styles.content}>
         {/* Left side - Due info */}
         <View style={styles.leftContent}>
-          <Text style={styles.dueLabel}>Due in {dueInDays} Days</Text>
+          <Text style={styles.dueLabel}>
+            {dueInDays < 0 ? `${Math.abs(dueInDays)} Days Overdue` : `Due in ${dueInDays} Days`}
+          </Text>
           {/* Figma 243-6490 node 243:6506: "₹ 32,500" uses single Text with nested spans
               - Style override 5: Rs symbol (fontSize 12)
               - Style override 6: numeric value (fontSize 16)
@@ -126,16 +127,18 @@ const styles = StyleSheet.create({
   dueLabel: {
     // Figma 243-3378: Due label text
     // Figma nodes: 243:2954, 243:6477 "Due in X Days"
+    fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 12, // Figma: fontSize 12
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
+    fontWeight: '700', // Figma: fontWeight 700 (Bold)
     color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
-    textAlign: 'center', // Figma 243:2954, 243:6477: textAlignHorizontal CENTER
+    textAlign: 'left', // Figma: left-aligned label in left content block
   },
   // Amount text: "₹ 32,500" - Figma: single Text with nested spans for different sizes
   // Uses nested <Text> to keep on single line with mixed font sizes
   amountBase: {
     // Base styles inherited by children
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontWeight: '600', // Figma: fontWeight 600
     letterSpacing: -0.48, // Figma: letterSpacing -0.48
     color: '#EEEEEE', // Figma: #EEEEEE (neutral[100])
@@ -172,10 +175,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
   buttonText: {
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14, // Figma: fontSize 14
     fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
-    color: colors.white, // Figma: #FFFFFF
+    color: '#FFFFFF', // Figma: #FFFFFF
     textAlign: 'center',
   },
   buttonTextDisabled: {

@@ -1,0 +1,616 @@
+{
+  "fileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+  "captureDate": "2026-02-01",
+  "totalScreens": 25,
+  "screens": [
+    {
+      "id": 1,
+      "nodeId": "1-28071",
+      "name": "Splash - Beta Launch",
+      "category": "Onboarding",
+      "status": "captured",
+      "components": {
+        "logo": "Flent logo (centered)",
+        "badge": "BETA LAUNCH badge (coral/salmon color)",
+        "background": "Solid black (#000000)"
+      },
+      "interactiveElements": [],
+      "designNotes": "Minimalist splash screen with centered branding. Beta launch indicator prominently displayed."
+    },
+    {
+      "id": 2,
+      "nodeId": "246-8586",
+      "name": "Component/Element (Arrow)",
+      "category": "Components",
+      "status": "captured",
+      "components": {
+        "element": "Horizontal arrow line element"
+      },
+      "interactiveElements": [],
+      "designNotes": "Simple UI component - horizontal arrow. May be used for navigation or flow indication."
+    },
+    {
+      "id": 3,
+      "nodeId": "1-31754",
+      "name": "Component/Element (Arrow Line)",
+      "category": "Components",
+      "status": "captured",
+      "components": {
+        "element": "Thin horizontal arrow line"
+      },
+      "interactiveElements": [],
+      "designNotes": "UI component for navigation or flow indication. Thinner variant."
+    },
+    {
+      "id": 4,
+      "nodeId": "243-6296",
+      "name": "Home - Rent Due with UPI Card",
+      "category": "Home",
+      "status": "captured",
+      "components": {
+        "header": "Hi, Rishabh greeting with avatar",
+        "rentStatus": "Your rent is due in 10 days (coral highlight)",
+        "paymentCard": "UPI payment card with ICICI details, SELECTED badge",
+        "tabs": "Recent Payments | Cashbacks toggle",
+        "cashbackSection": "Cashback accrued: Rs 0.00, All-time Total, Cashback Rate 0.8%",
+        "landlordCard": "Lorem Ipsum Dolor Et (placeholder)",
+        "footer": "Due in 28 Days | Rs 32,500 | Review button"
+      },
+      "interactiveElements": [
+        "Payment card carousel (swipeable)",
+        "Recent Payments / Cashbacks tabs",
+        "Review button",
+        "Avatar/Profile icon"
+      ],
+      "designNotes": "Main home screen with UPI payment method selected. Shows rent due countdown, payment cards carousel, and cashback information."
+    },
+    {
+      "id": 5,
+      "nodeId": "1-30090",
+      "name": "Agreement Upload - With File",
+      "category": "Agreement",
+      "status": "captured",
+      "components": {
+        "header": "One More Step (title)",
+        "subtext": "Your rental agreement helps us confirm your eligibility...",
+        "uploadArea": "File uploaded: Joel_Ramesh-Agreement_Dec 2025.pdf",
+        "deleteIcon": "Red trash icon for file removal",
+        "button": "Proceed button (enabled, coral/gradient)"
+      },
+      "interactiveElements": [
+        "Delete file button (trash icon)",
+        "Proceed button"
+      ],
+      "designNotes": "Agreement upload screen with a file already attached. User can delete and re-upload or proceed."
+    },
+    {
+      "id": 6,
+      "nodeId": "1-30178",
+      "name": "Agreement Upload - Invalid/Expired Error",
+      "category": "Agreement",
+      "status": "captured",
+      "components": {
+        "header": "One More Step (title)",
+        "uploadArea": "File shown with error state border (red/coral)",
+        "errorMessage": "The agreement is invalid or expired. Please upload a valid one.",
+        "button": "Upload Again button"
+      },
+      "interactiveElements": [
+        "Delete file button",
+        "Upload Again button"
+      ],
+      "designNotes": "Error state for invalid/expired agreement. Shows coral/red error styling and prompts re-upload."
+    },
+    {
+      "id": 7,
+      "nodeId": "1-29025",
+      "name": "Carousel - Cashback Benefits",
+      "category": "Onboarding",
+      "status": "captured",
+      "components": {
+        "headline": "More than just cashback",
+        "subtext": "Keep paying via Secured to unlock exclusive renting benefits over time",
+        "navigation": "Skip -> link",
+        "pagination": "2 dots indicator (page 2 of carousel)"
+      },
+      "interactiveElements": [
+        "Skip button",
+        "Carousel swipe",
+        "Pagination dots"
+      ],
+      "designNotes": "Second carousel slide highlighting ongoing benefits. Dark background with subtle image overlay."
+    },
+    {
+      "id": 8,
+      "nodeId": "243-6490",
+      "name": "Home - Payment Method Selection Modal",
+      "category": "Home",
+      "status": "captured",
+      "components": {
+        "backgroundScreen": "Dimmed home screen behind modal",
+        "modalHeader": "Choose a Payment Method",
+        "options": [
+          "UPI (selected, coral radio)",
+          "Net Banking",
+          "Credit Card"
+        ],
+        "setupButtons": "Set it up buttons for each option",
+        "footer": "Set up UPI primary button"
+      },
+      "interactiveElements": [
+        "Radio buttons for payment selection",
+        "Set it up links",
+        "Set up UPI button",
+        "Modal dismiss"
+      ],
+      "designNotes": "Bottom sheet modal for payment method selection. UPI pre-selected. Semi-transparent background."
+    },
+    {
+      "id": 9,
+      "nodeId": "41-8880",
+      "name": "Profile - Edit Details",
+      "category": "Profile",
+      "status": "captured",
+      "components": {
+        "header": "My Profile (title)",
+        "avatar": "User avatar with Edit Picture button (coral)",
+        "fields": [
+          "User name: John Smith (editable)",
+          "Email: john@email.com (editable)",
+          "City: Bangalore (read-only style)",
+          "Phone Number: +91 98765 43210"
+        ],
+        "button": "Save Changes button"
+      },
+      "interactiveElements": [
+        "Back arrow",
+        "Edit Picture button",
+        "Edit links for name/email",
+        "Save Changes button"
+      ],
+      "designNotes": "Profile editing screen with editable fields. Coral accent on edit button."
+    },
+    {
+      "id": 10,
+      "nodeId": "41-8760",
+      "name": "Profile - Full View with Payment History",
+      "category": "Profile",
+      "status": "captured",
+      "components": {
+        "header": "My Profile",
+        "paymentHistory": {
+          "chart": "Bar chart showing JAN-MAY with labels",
+          "status": "on time, Paid late, Not Paid indicators"
+        },
+        "securedAccount": "Rohan Joshi account card with View Agreement link",
+        "paymentInfo": [
+          "Edit UPI Method",
+          "Edit Credit Card",
+          "Edit Bank Account"
+        ],
+        "support": [
+          "Contact Support",
+          "Rate the App"
+        ],
+        "appSection": [
+          "Sign Out",
+          "Delete Account"
+        ]
+      },
+      "interactiveElements": [
+        "Back arrow",
+        "View Agreement link",
+        "All menu items (arrows indicate navigation)",
+        "Sign Out",
+        "Delete Account"
+      ],
+      "designNotes": "Comprehensive profile view with payment history visualization, account management, and settings."
+    },
+    {
+      "id": 11,
+      "nodeId": "1-29065",
+      "name": "Carousel - Landlord Benefits",
+      "category": "Onboarding",
+      "status": "captured",
+      "components": {
+        "headline": "Your landlord benefits too",
+        "subtext": "3 months of rent payments unlock a free vacancy cover for your landlord",
+        "navigation": "Skip -> link",
+        "pagination": "3 dots indicator (page 3)"
+      },
+      "interactiveElements": [
+        "Skip button",
+        "Carousel swipe"
+      ],
+      "designNotes": "Third carousel slide focusing on landlord benefits. Highlights vacancy cover feature."
+    },
+    {
+      "id": 12,
+      "nodeId": "1-31175",
+      "name": "Auth - OTP Verification Modal (Empty)",
+      "category": "Authentication",
+      "status": "captured",
+      "components": {
+        "backgroundScreen": "Let's get to know you form dimmed",
+        "modalHeader": "Let's verify your number",
+        "instruction": "We've sent a 6-digit code to your phone. It'll auto-verify once entered",
+        "otpFields": "6 digit input fields (000-000 format)",
+        "button": "Proceed button (disabled state)",
+        "resend": "Didn't receive the code? Resend"
+      },
+      "interactiveElements": [
+        "OTP input fields",
+        "Proceed button",
+        "Resend link",
+        "Modal dismiss"
+      ],
+      "designNotes": "OTP verification modal with empty state. 6-digit format with hyphen separator."
+    },
+    {
+      "id": 13,
+      "nodeId": "41-11206",
+      "name": "Waitlist - Application Review",
+      "category": "Waitlist",
+      "status": "captured",
+      "components": {
+        "greeting": "Welcome, Rishabh Agnihotri",
+        "status": "Your application is in review",
+        "timeline": {
+          "applicationSent": "Submitted on 27 Jan 2026",
+          "inReview": "Approximately 24 hrs",
+          "accountStatus": "Pending"
+        },
+        "progressMeter": "18/150 members onboarded (gauge visual)",
+        "referralSection": {
+          "header": "Have an Invite Code?",
+          "subtext": "Get priority access to the platform if you use a referral code",
+          "input": "4-digit code input",
+          "button": "Enter Invite Code"
+        },
+        "benefits": [
+          "Earn 1% back for paying rent on time",
+          "Build a stronger rent history",
+          "Unlock exclusive renting benefits over time"
+        ]
+      },
+      "interactiveElements": [
+        "Invite code input",
+        "Enter Invite Code button",
+        "Benefits cards"
+      ],
+      "designNotes": "Waitlist screen for users awaiting approval. Shows progress meter with onboarding count and referral code option."
+    },
+    {
+      "id": 14,
+      "nodeId": "41-8693",
+      "name": "Component - Pay Rent Button",
+      "category": "Components",
+      "status": "captured",
+      "components": {
+        "element": "Pay Rent text element"
+      },
+      "interactiveElements": [],
+      "designNotes": "Simple text component for payment button."
+    },
+    {
+      "id": 15,
+      "nodeId": "1-29914",
+      "name": "Agreement Upload - Empty State",
+      "category": "Agreement",
+      "status": "captured",
+      "components": {
+        "header": "One More Step",
+        "subtext": "Your rental agreement helps us confirm your eligibility...",
+        "uploadArea": {
+          "icon": "Upload icon",
+          "text": "Upload Rental Agreement",
+          "fileTypes": "File types: PDF, DOCX, Max size: 10MB"
+        },
+        "button": "Proceed button (disabled)"
+      },
+      "interactiveElements": [
+        "Upload area (tap to upload)",
+        "Proceed button (disabled until file uploaded)"
+      ],
+      "designNotes": "Initial state for agreement upload. Clear file type and size requirements shown."
+    },
+    {
+      "id": 16,
+      "nodeId": "243-7185",
+      "name": "Home - Credit Card Payment with Cashbacks",
+      "category": "Home",
+      "status": "captured",
+      "components": {
+        "header": "Hi, Rishabh with avatar",
+        "rentStatus": "Your rent is due in 10 days",
+        "paymentCard": {
+          "type": "VISA Credit Card",
+          "number": "****2341",
+          "expiry": "06/26",
+          "cvv": "***",
+          "selected": true
+        },
+        "tabs": "Recent Payments | Cashbacks (Cashbacks selected)",
+        "cashbackBalance": "Rs 325.00",
+        "cashbackDetails": {
+          "allTimeTotal": "Rs 3,256.00",
+          "rate": "0.8% Avg"
+        },
+        "cashbackHistory": [
+          "September Cashback: Rs 325 (Paid - On Time)",
+          "August Cashback: NA (Paid - Delayed)",
+          "August Cashback: NA (Missed - No Payment)"
+        ],
+        "footer": "Due in 10 Days | Rs 32,500 | Review & pay"
+      },
+      "interactiveElements": [
+        "Payment card carousel",
+        "Recent Payments / Cashbacks tabs",
+        "Review & pay button",
+        "Profile avatar"
+      ],
+      "designNotes": "Home screen variant showing credit card selected and cashbacks tab active. Shows cashback history with status indicators."
+    },
+    {
+      "id": 17,
+      "nodeId": "1-31073",
+      "name": "Sign Up - Form Filled",
+      "category": "Authentication",
+      "status": "captured",
+      "components": {
+        "header": "Let's get to know you",
+        "form": {
+          "phone": "+91 98765 43210",
+          "name": "Rishabh Agnihotri"
+        },
+        "button": "Get Started (enabled, coral gradient)",
+        "consent": {
+          "toggle": "Consent toggle (on)",
+          "text": "I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree"
+        }
+      },
+      "interactiveElements": [
+        "Phone input field",
+        "Name input field",
+        "Consent toggle",
+        "Get Started button",
+        "Cashfree link"
+      ],
+      "designNotes": "Sign up form with all fields filled and consent given. Ready to submit state."
+    },
+    {
+      "id": 18,
+      "nodeId": "1-31590",
+      "name": "Sign Up - Validation Error",
+      "category": "Authentication",
+      "status": "captured",
+      "components": {
+        "header": "Let's get to know you",
+        "form": {
+          "phone": "+91 98765 43210 (error state - coral text)",
+          "phoneError": "Enter valid number",
+          "name": "Rishabh Agnihotri"
+        },
+        "button": "Get Started (disabled)",
+        "consent": {
+          "toggle": "Consent toggle (off)",
+          "text": "Verification consent text with Cashfree link"
+        }
+      },
+      "interactiveElements": [
+        "Phone input (error state)",
+        "Name input",
+        "Consent toggle",
+        "Get Started button (disabled)"
+      ],
+      "designNotes": "Sign up form showing validation error state. Phone number highlighted in coral with error message."
+    },
+    {
+      "id": 19,
+      "nodeId": "243-3838",
+      "name": "Component - UPI Payment Card",
+      "category": "Components",
+      "status": "captured",
+      "components": {
+        "card": {
+          "logo": "UPI logo",
+          "badge": "SELECTED badge (coral)",
+          "accountInfo": "ICICI a/c - xxx23",
+          "email": "rishabh@... (masked)",
+          "editIcon": "UPI edit pencil icon",
+          "brandLogo": "Flent logo"
+        }
+      },
+      "interactiveElements": [
+        "Edit UPI link"
+      ],
+      "designNotes": "UPI payment card component with account details. Shows selected state with coral badge."
+    },
+    {
+      "id": 20,
+      "nodeId": "1-28053",
+      "name": "Component - Text Label",
+      "category": "Components",
+      "status": "captured",
+      "components": {
+        "element": "Flent Onboarding Flow text"
+      },
+      "interactiveElements": [],
+      "designNotes": "Text component/label for onboarding flow."
+    },
+    {
+      "id": 21,
+      "nodeId": "41-9563",
+      "name": "Payment Success Receipt",
+      "category": "Payment",
+      "status": "captured",
+      "components": {
+        "header": "Back arrow",
+        "receipt": {
+          "paperclip": "Decorative paperclip icon",
+          "badge": "PAID stamp (green/teal)",
+          "title": "Payment Successful"
+        },
+        "details": {
+          "amountPaid": "Rs 32,500",
+          "date": "4 Nov 2026",
+          "method": "UPI (joel@oksbi)",
+          "transactionId": "SEC12345678",
+          "cashbackNote": "Pay by the 7th to earn cashback",
+          "payableRent": "Rs 32,500"
+        },
+        "actions": [
+          "Download Receipt button",
+          "Contact Support link"
+        ]
+      },
+      "interactiveElements": [
+        "Back arrow",
+        "Download Receipt button",
+        "Contact Support link"
+      ],
+      "designNotes": "Payment success screen with receipt design. Paper/ticket style with torn edge effect. Green PAID badge."
+    },
+    {
+      "id": 22,
+      "nodeId": "243-2762",
+      "name": "Home - Recent Payments Tab",
+      "category": "Home",
+      "status": "captured",
+      "components": {
+        "header": "Hi, Rishabh greeting",
+        "rentStatus": "Your rent is due in 10 days",
+        "paymentCard": "UPI card selected",
+        "tabs": "Recent Payments (selected) | Cashbacks",
+        "paymentHistory": [
+          "September rent: Rs 32,500 (Paid - green dot)",
+          "August rent: Rs 32,500 (Pending - yellow dot)",
+          "July rent: Rs 32,500 (Failed - red dot)"
+        ],
+        "footer": "Due in 10 Days | Rs 32,500 | Review & pay"
+      },
+      "interactiveElements": [
+        "Payment card carousel",
+        "Tab switcher",
+        "Payment history items",
+        "Review & pay button"
+      ],
+      "designNotes": "Home screen with Recent Payments tab active. Shows payment history with status indicators."
+    },
+    {
+      "id": 23,
+      "nodeId": "246-8416",
+      "name": "Address Verification - BESCOM",
+      "category": "Verification",
+      "status": "captured",
+      "components": {
+        "header": "Back arrow",
+        "title": "Verify your address",
+        "subtext": "Your electricity bill helps us verify your residence.",
+        "form": {
+          "label": "Enter BESCOM Account Number",
+          "placeholder": "e.g. 1234567890",
+          "editLink": "edit"
+        },
+        "button": "Proceed (disabled)"
+      },
+      "interactiveElements": [
+        "Back arrow",
+        "Account number input",
+        "Edit link",
+        "Proceed button"
+      ],
+      "designNotes": "Address verification via electricity bill (BESCOM). Part of KYC/verification flow."
+    },
+    {
+      "id": 24,
+      "nodeId": "1-31380",
+      "name": "Auth - OTP Error State",
+      "category": "Authentication",
+      "status": "captured",
+      "components": {
+        "backgroundScreen": "Dimmed sign up form",
+        "modalHeader": "Let's verify your number",
+        "instruction": "We've sent a 4-digit code to your phone...",
+        "otpFields": "6 digit fields showing 000-000 with red border (error state)",
+        "errorMessage": "Too many Attempts (coral text)",
+        "button": "Proceed (disabled)",
+        "resend": "Didn't receive the code? Resend"
+      },
+      "interactiveElements": [
+        "OTP input fields (error state)",
+        "Resend link"
+      ],
+      "designNotes": "OTP verification error state showing too many attempts. Red/coral border on inputs and error message. Note: Instruction mentions 4-digit but shows 6 fields - potential inconsistency."
+    },
+    {
+      "id": 25,
+      "nodeId": "1-28985",
+      "name": "Carousel - Earn 1% Back",
+      "category": "Onboarding",
+      "status": "captured",
+      "components": {
+        "headline": "Earn 1% back",
+        "subheadline": "on your rent",
+        "subtext": "For every timely payment made via UPI, netbanking or credit cards",
+        "navigation": "Skip -> link",
+        "pagination": "3 dots indicator (page 1)"
+      },
+      "interactiveElements": [
+        "Skip button",
+        "Carousel swipe"
+      ],
+      "designNotes": "First carousel slide highlighting the 1% cashback value proposition. Dark theme with coral accent text."
+    }
+  ],
+  "summary": {
+    "byCategory": {
+      "Onboarding": 4,
+      "Authentication": 4,
+      "Home": 4,
+      "Profile": 2,
+      "Agreement": 3,
+      "Payment": 1,
+      "Verification": 1,
+      "Waitlist": 1,
+      "Components": 5
+    },
+    "keyChangesFromPreviousAnalysis": [
+      "Node 246-8586 and 1-31754 appear to be isolated UI components (arrows) rather than full screens",
+      "Node 41-8693 is a simple 'Pay Rent' text component",
+      "Node 1-28053 is a text label component for onboarding flow",
+      "Node 243-3838 is an isolated UPI payment card component",
+      "OTP verification shows inconsistency - mentions 4-digit code but displays 6 input fields",
+      "Payment receipt screen has a decorative paper/ticket design with torn edge effect",
+      "Waitlist screen includes a visual gauge meter showing onboarding progress (18/150)"
+    ],
+    "designSystem": {
+      "primaryAccentColor": "Coral/Salmon (#FF7A5C approximate)",
+      "backgroundColor": "Black (#000000)",
+      "textColors": {
+        "primary": "White",
+        "secondary": "Gray",
+        "accent": "Coral",
+        "error": "Coral/Red"
+      },
+      "buttonStyles": {
+        "primary": "Coral gradient, rounded corners",
+        "disabled": "Gray/dark, reduced opacity"
+      },
+      "cardStyles": "Dark gray with subtle borders, rounded corners",
+      "statusIndicators": {
+        "success": "Green dot",
+        "pending": "Yellow/orange dot",
+        "failed": "Red dot",
+        "selected": "Coral SELECTED badge"
+      }
+    },
+    "interactionPatterns": [
+      "Bottom sheet modals for selections (payment method, OTP)",
+      "Card carousel for payment methods",
+      "Tab switching for content sections",
+      "Toggle switches for consent/settings",
+      "Back arrow navigation on detail screens"
+    ]
+  }
+}

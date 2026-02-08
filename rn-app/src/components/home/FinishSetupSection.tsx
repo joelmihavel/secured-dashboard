@@ -10,7 +10,6 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/ui';
 import { LandlordStatusCard, LandlordStatus } from './LandlordStatusCard';
 import { SetupChecklist } from './SetupChecklist';
-import { colors, spacing } from '@/src/theme';
 
 export interface FinishSetupSectionProps {
   landlordStatus: LandlordStatus;
@@ -53,14 +52,17 @@ function FinishSetupSectionComponent({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
+    paddingHorizontal: 32, // Figma: paddingHorizontal 32
+    gap: 16, // Figma: gap 16
   },
   sectionLabel: {
-    fontSize: 12,
-    color: colors.neutral[500],
-    letterSpacing: 0.5,
-    marginBottom: spacing.xxs,
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 12, // Figma: fontSize 12
+    fontWeight: '500', // Figma: fontWeight 500
+    lineHeight: 20, // Figma: lineHeight 20
+    color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
+    letterSpacing: 0.5, // Figma: letterSpacing 0.5
+    marginBottom: 4, // Figma: small gap before card
   },
 });
 

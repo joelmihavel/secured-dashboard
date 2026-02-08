@@ -1,0 +1,99 @@
+{
+  "screenId": "1:28985",
+  "screenName": "Splash / get-started --carousel 4",
+  "generatedAt": "2026-02-03T07:07:11.240Z",
+  "summary": {
+    "overallCoverage": 100,
+    "propertiesCovered": 61,
+    "propertiesTotal": 61,
+    "propertiesMissing": 0,
+    "nodesCovered": 7,
+    "nodesPartial": 0,
+    "nodesTotal": 7,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 14,
+      "total": 14,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 18,
+      "total": 18,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 7,
+      "total": 7,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 3,
+      "total": 3,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 9,
+      "total": 9,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "multiStyleText": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

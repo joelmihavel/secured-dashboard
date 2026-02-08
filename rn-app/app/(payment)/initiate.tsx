@@ -390,6 +390,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.labelText,
+    textAlign: 'left',
   },
   switch: {
     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
@@ -399,6 +400,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.successText,
+    textAlign: 'right',
   },
   totalRow: {
     flexDirection: 'row',
@@ -411,12 +413,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.titleWhite,
+    textAlign: 'left',
   },
   totalValue: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 20,
     lineHeight: 28,
     color: FIGMA_COLORS.titleWhite,
+    textAlign: 'right',
   },
   spacer: {
     flex: 1,

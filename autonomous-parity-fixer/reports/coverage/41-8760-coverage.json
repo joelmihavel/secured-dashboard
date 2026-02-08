@@ -1,0 +1,826 @@
+{
+  "screenId": "41:8760",
+  "screenName": "My Profile / Main Screen",
+  "generatedAt": "2026-02-03T10:56:40.883Z",
+  "summary": {
+    "overallCoverage": 85.3,
+    "propertiesCovered": 382,
+    "propertiesTotal": 448,
+    "propertiesMissing": 66,
+    "nodesCovered": 10,
+    "nodesPartial": 35,
+    "nodesTotal": 45,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 88,
+      "total": 88,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 97,
+      "total": 97,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 1,
+      "total": 32,
+      "percentage": 3.1
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 2,
+      "percentage": 0
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 147,
+      "total": 162,
+      "percentage": 90.7
+    },
+    "textContent": {
+      "covered": 16,
+      "total": 32,
+      "percentage": 50
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 32,
+      "total": 34,
+      "percentage": 94.1
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:8760",
+      "nodeName": "My Profile / Main Screen",
+      "nodeType": "FRAME",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#131313",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#131313' (or colors.black[700])"
+    },
+    {
+      "nodeId": "41:8764",
+      "nodeName": "My  Profile",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "nodeId": "41:8767",
+      "nodeName": "Your payment history",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8773",
+      "nodeName": "JAN",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8773",
+      "nodeName": "JAN",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8773",
+      "nodeName": "JAN",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "JAN",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"JAN\""
+    },
+    {
+      "nodeId": "41:8775",
+      "nodeName": "on time",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:8775",
+      "nodeName": "on time",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8779",
+      "nodeName": "FEB",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8779",
+      "nodeName": "FEB",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8779",
+      "nodeName": "FEB",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "FEB",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"FEB\""
+    },
+    {
+      "nodeId": "41:8781",
+      "nodeName": "Paid late",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:8781",
+      "nodeName": "Paid late",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8785",
+      "nodeName": "MAR",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8785",
+      "nodeName": "MAR",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "MAR",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"MAR\""
+    },
+    {
+      "nodeId": "41:8787",
+      "nodeName": "Not Paid",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:8787",
+      "nodeName": "Not Paid",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8791",
+      "nodeName": "APR",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8791",
+      "nodeName": "APR",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8791",
+      "nodeName": "APR",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "APR",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"APR\""
+    },
+    {
+      "nodeId": "41:8795",
+      "nodeName": "MAY",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8795",
+      "nodeName": "MAY",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8795",
+      "nodeName": "MAY",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "MAY",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"MAY\""
+    },
+    {
+      "nodeId": "41:8799",
+      "nodeName": "JUN",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8799",
+      "nodeName": "JUN",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8799",
+      "nodeName": "JUN",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "JUN",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"JUN\""
+    },
+    {
+      "nodeId": "41:8803",
+      "nodeName": "JUL",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8803",
+      "nodeName": "JUL",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8803",
+      "nodeName": "JUL",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "JUL",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"JUL\""
+    },
+    {
+      "nodeId": "41:8807",
+      "nodeName": "AUG",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8807",
+      "nodeName": "AUG",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8807",
+      "nodeName": "AUG",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "AUG",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"AUG\""
+    },
+    {
+      "nodeId": "41:8811",
+      "nodeName": "SEP",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8811",
+      "nodeName": "SEP",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8811",
+      "nodeName": "SEP",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "SEP",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"SEP\""
+    },
+    {
+      "nodeId": "41:8815",
+      "nodeName": "OCT",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8815",
+      "nodeName": "OCT",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8815",
+      "nodeName": "OCT",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "OCT",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"OCT\""
+    },
+    {
+      "nodeId": "41:8819",
+      "nodeName": "NOV",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8819",
+      "nodeName": "NOV",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8819",
+      "nodeName": "NOV",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "NOV",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"NOV\""
+    },
+    {
+      "nodeId": "41:8823",
+      "nodeName": "DEC",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8823",
+      "nodeName": "DEC",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:8823",
+      "nodeName": "DEC",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "DEC",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"DEC\""
+    },
+    {
+      "nodeId": "41:8829",
+      "nodeName": "Secured Account",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8832",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "6d93b82e0916dab9a12fe22c604ddce60dfd2dfb",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:8832",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "nodeId": "41:8832",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "resizeMode",
+      "figmaValue": "cover",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add resizeMode: 'cover'"
+    },
+    {
+      "nodeId": "41:8834",
+      "nodeName": "Rohan Joshi",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "nodeId": "41:8834",
+      "nodeName": "Rohan Joshi",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Rohan Joshi",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Rohan Joshi\""
+    },
+    {
+      "nodeId": "41:8836",
+      "nodeName": "15th sept 9:40am",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8836",
+      "nodeName": "15th sept 9:40am",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "15th sept 9:40am",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"15th sept 9:40am\""
+    },
+    {
+      "nodeId": "41:8837",
+      "nodeName": "Credit Card XX25",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Credit Card XX25",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Credit Card XX25\""
+    },
+    {
+      "nodeId": "41:8840",
+      "nodeName": "View Agreement",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:8843",
+      "nodeName": "Payment Information",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8846",
+      "nodeName": "Edit UPI Method",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:8850",
+      "nodeName": "Edit Credit Card",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:8854",
+      "nodeName": "Edit Bank Account",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:8857",
+      "nodeName": "support",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8860",
+      "nodeName": "Contact Support",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:8864",
+      "nodeName": "Rate the App",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:8867",
+      "nodeName": "App",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:8870",
+      "nodeName": "Sign Out",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:8870",
+      "nodeName": "Sign Out",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Sign Out",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Sign Out\""
+    },
+    {
+      "nodeId": "41:8874",
+      "nodeName": "Delete Account",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "PROFILE_COLORS.cardBackground",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "file:main",
+      "nodeName": "index.tsx",
+      "nodeType": "FILE",
+      "category": "assetExistence",
+      "property": "placeholderDetected",
+      "figmaValue": "Found 1 placeholder(s): {/* Avatar placeholder - could be actual image */}...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Replace placeholder pattern with actual image asset"
+    }
+  ],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

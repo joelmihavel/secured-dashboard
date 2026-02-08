@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 8, // Figma: paddingVertical 8
-    paddingHorizontal: 16, // Adjusted for fit
+    paddingHorizontal: 24, // Figma: paddingHorizontal 24
   },
   tabActive: {
     // Active tab is visibly lighter than container

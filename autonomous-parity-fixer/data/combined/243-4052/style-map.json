@@ -1,0 +1,240 @@
+[
+  {
+    "nodeId": "243:4052",
+    "nodeName": "Add More Card",
+    "nodeType": "FRAME",
+    "rnStyleName": "addMoreCard",
+    "rnStyles": {
+      "width": 270,
+      "height": 408,
+      "flexDirection": "column",
+      "alignItems": "center"
+    },
+    "geometry": {
+      "x": 1868,
+      "y": 6059,
+      "width": 270,
+      "height": 408
+    }
+  },
+  {
+    "nodeId": "243:4053",
+    "nodeName": "Frame 2095586440",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586440",
+    "rnStyles": {
+      "width": 270,
+      "height": 344,
+      "backgroundColor": "#202020",
+      "flexDirection": "column",
+      "gap": 120,
+      "paddingTop": 24,
+      "paddingRight": 32,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 1868,
+      "y": 6059,
+      "width": 270,
+      "height": 344
+    }
+  },
+  {
+    "nodeId": "243:4054",
+    "nodeName": "Frame 2095586442",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586442",
+    "rnStyles": {
+      "width": 206,
+      "height": 296,
+      "flexDirection": "column",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 24
+    },
+    "geometry": {
+      "x": 1900,
+      "y": 6083,
+      "width": 206,
+      "height": 296
+    }
+  },
+  {
+    "nodeId": "243:4055",
+    "nodeName": "Frame 2095586403",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586403",
+    "rnStyles": {
+      "width": 206,
+      "height": 128,
+      "flexDirection": "column",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 1900,
+      "y": 6167,
+      "width": 206,
+      "height": 128
+    }
+  },
+  {
+    "nodeId": "243:4056",
+    "nodeName": "+  Setup your payment method to start",
+    "nodeType": "TEXT",
+    "rnStyleName": "SetupYourPaymentMethodToStart",
+    "rnStyles": {
+      "width": 206,
+      "height": 128,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "center"
+    },
+    "textContent": "+  Setup your payment method to start",
+    "geometry": {
+      "x": 1900,
+      "y": 6167,
+      "width": 206,
+      "height": 128
+    }
+  },
+  {
+    "nodeId": "243:4057",
+    "nodeName": "Frame 2095586341",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586341",
+    "rnStyles": {
+      "width": 270,
+      "height": 64,
+      "backgroundColor": "#1A1A1A",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingRight": 32,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 1868,
+      "y": 6403,
+      "width": 270,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "243:4058",
+    "nodeName": "Frame 2095586441",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586441",
+    "rnStyles": {
+      "width": 169.97,
+      "height": 20,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 1900,
+      "y": 6421,
+      "width": 169.97494506835938,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4059",
+    "nodeName": "+ NEW PAYMENT",
+    "nodeType": "TEXT",
+    "rnStyleName": "NewPayment",
+    "rnStyles": {
+      "width": 109,
+      "height": 20,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "+ NEW PAYMENT",
+    "geometry": {
+      "x": 1900,
+      "y": 6421,
+      "width": 109,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4060",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary",
+    "rnStyles": {
+      "width": 16,
+      "height": 16,
+      "opacity": 0
+    },
+    "geometry": {
+      "x": 2013,
+      "y": 6423,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "I243:4060;19:94999",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector",
+    "rnStyles": {
+      "width": 10.22,
+      "height": 10.22,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 1.33
+    },
+    "geometry": {
+      "x": 2015.6666259765625,
+      "y": 6426.1142578125,
+      "width": 10.218951225280762,
+      "height": 10.218952178955078
+    }
+  },
+  {
+    "nodeId": "I243:4060;19:95000",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector2",
+    "rnStyles": {
+      "width": 2.67,
+      "height": 2.67,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 1.33
+    },
+    "geometry": {
+      "x": 2022,
+      "y": 6427.33349609375,
+      "width": 2.6666667461395264,
+      "height": 2.6666667461395264
+    }
+  },
+  {
+    "nodeId": "243:4061",
+    "nodeName": "Vector 1",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector1",
+    "rnStyles": {
+      "width": 20.03,
+      "height": 24,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 2085.974853515625,
+      "y": 6419,
+      "width": 20.02505874633789,
+      "height": 24
+    }
+  }
+]

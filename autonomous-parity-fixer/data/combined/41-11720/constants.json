@@ -1,0 +1,91 @@
+{
+  "screen": {
+    "name": "screen",
+    "category": "layout",
+    "values": {
+      "width": 393,
+      "height": 1634,
+      "backgroundColor": "#131313"
+    }
+  },
+  "colors": {
+    "name": "colors",
+    "category": "colors",
+    "values": {
+      "background": "#131313",
+      "color000000": "#000000",
+      "white": "#FFFFFF",
+      "textSubtle": "#A6A6A6",
+      "cardSurface": "#202020",
+      "accent": "#FF9A6D",
+      "textMuted": "#878787",
+      "textTertiary": "#CBCBCB",
+      "cardBackground": "#1A1A1A",
+      "colorCC7B57": "#CC7B57",
+      "color797979": "#797979",
+      "textDisabled": "#4D4D4D",
+      "colorA9A9A9": "#A9A9A9",
+      "colorEEEEEE": "#EEEEEE"
+    }
+  },
+  "typography": {
+    "name": "typography",
+    "category": "typography",
+    "values": {
+      "17_590": {
+        "fontSize": 17,
+        "fontWeight": "590",
+        "lineHeight": 20.29
+      },
+      "48_400": {
+        "fontSize": 48,
+        "fontWeight": "400",
+        "lineHeight": 64,
+        "letterSpacing": -2
+      },
+      "14_400": {
+        "fontSize": 14,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "12_400": {
+        "fontSize": 12,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "16_500": {
+        "fontSize": 16,
+        "fontWeight": "500",
+        "lineHeight": 24
+      },
+      "28_400": {
+        "fontSize": 28,
+        "fontWeight": "400",
+        "lineHeight": 40,
+        "letterSpacing": -1
+      }
+    }
+  },
+  "spacing": {
+    "name": "spacing",
+    "category": "spacing",
+    "values": {
+      "space1": 3.8,
+      "space2": 4,
+      "space3": 5.09,
+      "space4": 8,
+      "space5": 8.14,
+      "space6": 10,
+      "space7": 15,
+      "space8": 15.19,
+      "space9": 16,
+      "space10": 24,
+      "space11": 30,
+      "space12": 30.38,
+      "space13": 32,
+      "space14": 40,
+      "space15": 48,
+      "space16": 64
+    }
+  }
+}

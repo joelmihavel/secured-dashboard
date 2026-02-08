@@ -1,0 +1,482 @@
+{
+  "verificationDate": "2026-02-01",
+  "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+  "totalScreens": 25,
+  "screens": [
+    {
+      "id": 1,
+      "nodeId": "243-3816",
+      "screenName": "Transaction Pending - Credit Card",
+      "category": "Payment",
+      "keyComponents": [
+        "VISA card display",
+        "Masked card number (****2341)",
+        "Expiry date (06/26)",
+        "CVV field (masked)",
+        "Credit Card label with edit icon",
+        "Secured logo"
+      ],
+      "interactiveElements": ["Card edit action"],
+      "colorScheme": "Dark theme with orange accents",
+      "status": "verified"
+    },
+    {
+      "id": 2,
+      "nodeId": "243-5689",
+      "screenName": "Profile - Home Dashboard",
+      "category": "Dashboard",
+      "keyComponents": [
+        "Header with 'Hi, Rishabh' greeting",
+        "Profile avatar",
+        "Rent due notification (10 days)",
+        "UPI payment card (SELECTED)",
+        "ICICI account masked (xxx23)",
+        "Recent Payments tab",
+        "Cashbacks tab",
+        "Bottom bar showing 'Due in 28 Days' and amount (32,500)",
+        "Review button"
+      ],
+      "interactiveElements": ["UPI card selection", "Recent Payments tab", "Cashbacks tab", "Review button"],
+      "colorScheme": "Dark theme with orange accents",
+      "status": "verified"
+    },
+    {
+      "id": 3,
+      "nodeId": "1-31485",
+      "screenName": "Auth - OTP Verification (Wrong Code)",
+      "category": "Authentication",
+      "keyComponents": [
+        "Title: Let's verify your number",
+        "Subtitle: 4-digit code auto-verify message",
+        "6-digit OTP input fields (3-3 format with dash)",
+        "Wrong Code error message (red)",
+        "Disabled Proceed button",
+        "Resend code link"
+      ],
+      "interactiveElements": ["OTP input fields", "Proceed button", "Resend link"],
+      "colorScheme": "Dark theme with red error state",
+      "status": "verified"
+    },
+    {
+      "id": 4,
+      "nodeId": "1-31757",
+      "screenName": "Flow - Arrow Element",
+      "category": "UI Element",
+      "keyComponents": [
+        "Simple arrow indicator"
+      ],
+      "interactiveElements": [],
+      "colorScheme": "Minimal",
+      "status": "verified",
+      "note": "This appears to be a UI flow connector element, not a full screen"
+    },
+    {
+      "id": 5,
+      "nodeId": "1-30358",
+      "screenName": "Agreement - One More Step (Upload Complete)",
+      "category": "Onboarding",
+      "keyComponents": [
+        "Secured logo",
+        "Title: One More Step",
+        "Subtitle about rental agreement verification",
+        "Document upload card with paperclip icon",
+        "Uploaded file: Joel_Ramesh-Agreement_Dec 2025.pdf",
+        "Delete icon on document",
+        "Manual review notice (24 hours)",
+        "Get Notified button"
+      ],
+      "interactiveElements": ["Delete document", "Get Notified button"],
+      "colorScheme": "Dark theme with orange gradient background",
+      "status": "verified"
+    },
+    {
+      "id": 6,
+      "nodeId": "1-31671",
+      "screenName": "Auth Error - Phone Already Exists",
+      "category": "Authentication",
+      "keyComponents": [
+        "Secured logo",
+        "Title: Let's get to know you",
+        "Phone input field with error (This number already exists)",
+        "Pre-filled phone: 98765 43210",
+        "Country code selector (+91)",
+        "Name field: Rishabh Agnihotri",
+        "Disabled Get Started button",
+        "Cashfree verification consent toggle"
+      ],
+      "interactiveElements": ["Phone input", "Name input", "Country selector", "Consent toggle", "Get Started button"],
+      "colorScheme": "Dark theme with orange error text",
+      "status": "verified"
+    },
+    {
+      "id": 7,
+      "nodeId": "243-3794",
+      "screenName": "Transaction Detail - Card Selected",
+      "category": "Payment",
+      "keyComponents": [
+        "VISA card with SELECTED badge",
+        "Masked card number (****2341)",
+        "Expiry date (06/26)",
+        "CVV (masked)",
+        "Credit Card label with edit icon",
+        "Secured logo"
+      ],
+      "interactiveElements": ["Card selection", "Edit action"],
+      "colorScheme": "Dark theme with orange accents and teal selected badge",
+      "status": "verified"
+    },
+    {
+      "id": 8,
+      "nodeId": "243-4258",
+      "screenName": "Payment Success - Home with Setup Tasks",
+      "category": "Dashboard",
+      "keyComponents": [
+        "Header: Hi, Rishabh with avatar",
+        "Rent due notification (10 days)",
+        "UPI card (SELECTED)",
+        "ICICI account details",
+        "FINISH SETUP section",
+        "Landlord invitation sent status",
+        "Waiting for Landlord's approval",
+        "Add landlord's bank details (orange indicator)",
+        "Upload address proof (orange indicator)",
+        "Review & Pay button",
+        "Bottom bar: Due in 28 Days, 32,500"
+      ],
+      "interactiveElements": ["UPI card", "Setup task items", "Review & Pay button"],
+      "colorScheme": "Dark theme with orange accents",
+      "status": "verified"
+    },
+    {
+      "id": 9,
+      "nodeId": "1-28055",
+      "screenName": "Splash - Get Started",
+      "category": "Onboarding",
+      "keyComponents": [
+        "Secured logo",
+        "Tagline: Make your rent work for you",
+        "Arrow icon after tagline",
+        "Description: India's first rent payment app",
+        "Get Started button",
+        "Already a user? Log in link"
+      ],
+      "interactiveElements": ["Get Started button", "Log in link"],
+      "colorScheme": "Dark theme with orange gradient and dot pattern background",
+      "status": "verified"
+    },
+    {
+      "id": 10,
+      "nodeId": "243-4030",
+      "screenName": "Card Validation - Net Banking",
+      "category": "Payment",
+      "keyComponents": [
+        "ICICI bank logo",
+        "Account number masked (xxx23)",
+        "NET BANKING label with edit icon",
+        "Secured logo"
+      ],
+      "interactiveElements": ["Edit action"],
+      "colorScheme": "Dark theme",
+      "status": "verified"
+    },
+    {
+      "id": 11,
+      "nodeId": "1-31752",
+      "screenName": "Waitlist - Arrow Element",
+      "category": "UI Element",
+      "keyComponents": [
+        "Simple arrow indicator"
+      ],
+      "interactiveElements": [],
+      "colorScheme": "Minimal",
+      "status": "verified",
+      "note": "This appears to be a UI flow connector element, not a full screen"
+    },
+    {
+      "id": 12,
+      "nodeId": "1-30448",
+      "screenName": "Agreement - Confirm Your Details",
+      "category": "Onboarding",
+      "keyComponents": [
+        "Secured logo",
+        "Title: Confirm your details",
+        "Agreement ID: KIA 123456789",
+        "Property Name: Prestige Pinestripe, Bommanahalli, Bengaluru 560037",
+        "Tenant(s): Rahul Joshi, Ashish Shakya, Gursimran Khamba",
+        "Landlord(s): Tanmay Bhatt, Kaneez Surkha",
+        "Monthly Rent: 40,000",
+        "One-Time Deposit: 1,30,000",
+        "Rent Duration: 11 Months",
+        "Exit Date: 31 Dec, 2027",
+        "Proceed button",
+        "Enter Manually link"
+      ],
+      "interactiveElements": ["Proceed button", "Enter Manually link"],
+      "colorScheme": "Dark theme with orange gradient",
+      "status": "verified"
+    },
+    {
+      "id": 13,
+      "nodeId": "243-7463",
+      "screenName": "Payment - Rent Breakdown",
+      "category": "Payment",
+      "keyComponents": [
+        "Back arrow",
+        "Setup completion banner (1% cashback unlock)",
+        "350 available to unlock badge (orange)",
+        "Rent breakdown: Base rent 30,000",
+        "Maintenance: 2,500",
+        "Total Rent: 32,500",
+        "Cashback (locked): -325",
+        "Payable Rent: 32,500",
+        "Pay button with amount",
+        "Timer for setup completion (28:12:12)"
+      ],
+      "interactiveElements": ["Back button", "Pay button"],
+      "colorScheme": "Light card on dark background, orange accents",
+      "status": "verified"
+    },
+    {
+      "id": 14,
+      "nodeId": "1-31277",
+      "screenName": "Auth - OTP Verification (Valid)",
+      "category": "Authentication",
+      "keyComponents": [
+        "Title: Let's verify your number",
+        "Subtitle: 6-digit code message",
+        "6-digit OTP input fields (3-3 format)",
+        "Active Proceed button (orange gradient)",
+        "Resend code link"
+      ],
+      "interactiveElements": ["OTP input fields", "Proceed button", "Resend link"],
+      "colorScheme": "Dark theme with orange button",
+      "status": "verified"
+    },
+    {
+      "id": 15,
+      "nodeId": "1-30820",
+      "screenName": "Agreement - Fix the Details (Edit Mode)",
+      "category": "Onboarding",
+      "keyComponents": [
+        "Secured logo",
+        "Title: Let's fix the details",
+        "Editable fields with Edit buttons",
+        "Agreement ID placeholder",
+        "Property Name: Prestow Glasglow",
+        "Tenant(s): John Appleseed with Edit",
+        "Landlord(s): Lisa Appleseed with Edit",
+        "Monthly Rent: 40,000 with Edit",
+        "One-Time Deposit: 1,30,000 with Edit",
+        "Rent Duration: 11 Months with Edit",
+        "Exit Date: 31 Dec 2027 with Edit",
+        "Save Changes button"
+      ],
+      "interactiveElements": ["All Edit buttons", "Input fields", "Save Changes button"],
+      "colorScheme": "Dark theme with orange edit labels",
+      "status": "verified"
+    },
+    {
+      "id": 16,
+      "nodeId": "243-4062",
+      "screenName": "Processing - Setup Payment Method",
+      "category": "Dashboard",
+      "keyComponents": [
+        "Header: Hi, Rishabh",
+        "Rent due notification (10 days)",
+        "Setup your payment method card",
+        "Instruction to add UPI, card, or bank",
+        "NEW PAYMENT action",
+        "Secured logo",
+        "Complete setup timer (28:12:12)",
+        "Setup checklist: Add landlord's bank details (orange)",
+        "Upload address proof",
+        "Invite your landlord",
+        "Review button"
+      ],
+      "interactiveElements": ["NEW PAYMENT action", "Setup checklist items", "Review button"],
+      "colorScheme": "Dark theme with orange accents",
+      "status": "verified"
+    },
+    {
+      "id": 17,
+      "nodeId": "1-31753",
+      "screenName": "Waitlist - Arrow Element",
+      "category": "UI Element",
+      "keyComponents": [
+        "Simple arrow indicator"
+      ],
+      "interactiveElements": [],
+      "colorScheme": "Minimal",
+      "status": "verified",
+      "note": "This appears to be a UI flow connector element, not a full screen"
+    },
+    {
+      "id": 18,
+      "nodeId": "1-30001",
+      "screenName": "Agreement Review - Upload Progress",
+      "category": "Onboarding",
+      "keyComponents": [
+        "Secured logo",
+        "Title: One More Step",
+        "Subtitle about rental agreement",
+        "Upload progress indicator (30%)",
+        "Progress bar (orange)",
+        "Paperclip icon",
+        "Disabled Proceed button"
+      ],
+      "interactiveElements": ["Cancel upload (implicit)"],
+      "colorScheme": "Dark theme with orange gradient and progress bar",
+      "status": "verified"
+    },
+    {
+      "id": 19,
+      "nodeId": "1-34150",
+      "screenName": "Feedback - Invite Landlord",
+      "category": "Onboarding",
+      "keyComponents": [
+        "Back arrow",
+        "Title: One last step we promise",
+        "Subtitle about landlord invitation for cashback",
+        "Phone input section",
+        "Country code (+91)",
+        "Enter Number placeholder",
+        "Save & Invite button (disabled)",
+        "Skip link"
+      ],
+      "interactiveElements": ["Back button", "Phone input", "Country selector", "Save & Invite button", "Skip link"],
+      "colorScheme": "Dark theme with orange title accent",
+      "status": "verified"
+    },
+    {
+      "id": 20,
+      "nodeId": "243-4008",
+      "screenName": "Card Entry - Net Banking Selected",
+      "category": "Payment",
+      "keyComponents": [
+        "ICICI bank logo",
+        "SELECTED badge (teal)",
+        "Account number masked (xxx23)",
+        "NET BANKING label with edit icon",
+        "Secured logo"
+      ],
+      "interactiveElements": ["Selection state", "Edit action"],
+      "colorScheme": "Dark theme with teal selected badge",
+      "status": "verified"
+    },
+    {
+      "id": 21,
+      "nodeId": "243-2681",
+      "screenName": "Home Dashboard - Add UPI Method",
+      "category": "Payment Setup",
+      "keyComponents": [
+        "Back arrow",
+        "Title: Add your UPI Method",
+        "Account holder name field with edit",
+        "Placeholder: e.g. John Smith",
+        "UPI ID field with edit",
+        "Placeholder: e.g. john@oksbi",
+        "Disabled Proceed button",
+        "Info text about rent payments and cashback"
+      ],
+      "interactiveElements": ["Back button", "Account holder input", "UPI ID input", "Edit buttons", "Proceed button"],
+      "colorScheme": "Dark theme with orange accents",
+      "status": "verified"
+    },
+    {
+      "id": 22,
+      "nodeId": "1-31756",
+      "screenName": "Flow Step 1 - Arrow Element",
+      "category": "UI Element",
+      "keyComponents": [
+        "Simple arrow indicator"
+      ],
+      "interactiveElements": [],
+      "colorScheme": "Minimal",
+      "status": "verified",
+      "note": "This appears to be a UI flow connector element, not a full screen"
+    },
+    {
+      "id": 23,
+      "nodeId": "1-31758",
+      "screenName": "Flow Step 3 - Post Approval Setup",
+      "category": "UI Element",
+      "keyComponents": [
+        "Text label: Post Approval Setup"
+      ],
+      "interactiveElements": [],
+      "colorScheme": "Dark with white text",
+      "status": "verified",
+      "note": "This appears to be a section header or label element"
+    },
+    {
+      "id": 24,
+      "nodeId": "1-29108",
+      "screenName": "Sign Up Empty",
+      "category": "Authentication",
+      "keyComponents": [
+        "Secured logo",
+        "Title: Let's get to know you",
+        "Phone input field with placeholder",
+        "Country code selector (+91)",
+        "Name field with placeholder (e.g. John Appleseed)",
+        "Disabled Get Started button",
+        "Cashfree verification consent toggle",
+        "Consent text with Cashfree link"
+      ],
+      "interactiveElements": ["Phone input", "Name input", "Country selector", "Consent toggle", "Get Started button", "Cashfree link"],
+      "colorScheme": "Dark theme with orange gradient background",
+      "status": "verified"
+    },
+    {
+      "id": 25,
+      "nodeId": "243-6731",
+      "screenName": "Setup Sheet - Earn Cashback",
+      "category": "Dashboard",
+      "keyComponents": [
+        "Bottom sheet modal",
+        "Title: Set up to earn cashback on this payment",
+        "Setup checklist:",
+        "- Add landlord's bank details (orange indicator, enables secure payouts)",
+        "- Upload address proof (for verification)",
+        "- Invite your landlord (needed for cashback eligibility)",
+        "Finish Setup button (orange gradient)",
+        "I'll do it later link"
+      ],
+      "interactiveElements": ["Checklist items", "Finish Setup button", "I'll do it later link"],
+      "colorScheme": "Dark theme with orange accents, bottom sheet style",
+      "status": "verified"
+    }
+  ],
+  "summary": {
+    "categoryCounts": {
+      "Authentication": 4,
+      "Dashboard": 3,
+      "Payment": 5,
+      "Payment Setup": 1,
+      "Onboarding": 5,
+      "UI Element": 5
+    },
+    "designPatterns": {
+      "colorScheme": "Dark theme with orange/coral accents throughout",
+      "typography": "Sans-serif, mix of thin and bold weights",
+      "interactionPatterns": [
+        "Bottom sheet modals",
+        "Card-based payment methods",
+        "Stepped onboarding flows",
+        "Toggle consents",
+        "Edit inline actions"
+      ],
+      "brandElements": [
+        "Secured logo (lock icon)",
+        "Orange gradient backgrounds",
+        "Dot pattern decorations",
+        "Teal selected states"
+      ]
+    },
+    "observations": {
+      "fullScreens": 20,
+      "uiElements": 5,
+      "note": "5 node IDs returned minimal UI elements (arrows/labels) rather than full screens - these appear to be flow connectors in the Figma design"
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "screenId": "1:28071",
+  "screenName": "Splash / get-started --animation 2",
+  "generatedAt": "2026-02-03T06:57:32.489Z",
+  "summary": {
+    "overallCoverage": 100,
+    "propertiesCovered": 17,
+    "propertiesTotal": 17,
+    "propertiesMissing": 0,
+    "nodesCovered": 2,
+    "nodesPartial": 0,
+    "nodesTotal": 2,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 4,
+      "total": 4,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 3,
+      "total": 3,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 6,
+      "total": 6,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "multiStyleText": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

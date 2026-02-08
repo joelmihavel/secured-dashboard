@@ -8,7 +8,6 @@ import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 import { Text } from '@/src/components/ui';
-import { colors, spacing, radius, typography } from '@/src/theme';
 
 export interface SetupChecklistProps {
   bankDetailsComplete?: boolean;
@@ -33,14 +32,14 @@ function ChecklistItem({ title, subtitle, isComplete, isLast = false }: Checklis
         <View
           style={[
             styles.indicator,
-            { backgroundColor: isComplete ? colors.brand[500] : colors.black[400] },
+            { backgroundColor: isComplete ? '#FF9A6D' : '#1A1A1A' }, // Figma: #FF9A6D active, #1A1A1A inactive
           ]}
         />
         {!isLast && (
           <View
             style={[
               styles.connectingLine,
-              { backgroundColor: isComplete ? `${colors.brand[500]}80` : colors.black[400] },
+              { backgroundColor: isComplete ? 'rgba(255, 154, 109, 0.5)' : '#A6A6A6' }, // Figma: brand[500] 50% active, #A6A6A6 inactive
             ]}
           />
         )}
@@ -102,50 +101,56 @@ function SetupChecklistComponent({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.black[600],
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    gap: spacing.md,
+    backgroundColor: '#1A1A1A', // Figma: #1A1A1A (black[600])
+    borderRadius: 12, // Figma: borderRadius 12
+    padding: 24, // Figma: padding 24
+    gap: 16, // Figma: gap 16
   },
   header: {
-    fontSize: 14,
-    color: colors.neutral[300],
-    fontFamily: typography.bodyMd2.fontFamily,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14, // Figma: fontSize 14
+    fontWeight: '400', // Figma: fontWeight 400
+    lineHeight: 20, // Figma: lineHeight 20
+    color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   checklistContainer: {
-    gap: spacing.md,
+    gap: 16, // Figma: gap 16
   },
   itemRow: {
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: 12, // Figma: gap 12 between indicator and text
   },
   indicatorColumn: {
     alignItems: 'center',
     width: 20,
   },
   indicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 12, // Figma: width 12
+    height: 12, // Figma: height 12
+    borderRadius: 6, // Figma: fully rounded
   },
   connectingLine: {
-    width: 2,
-    height: 32,
+    width: 1, // Figma: borderWidth 1
+    height: 47, // Figma: height 47
     marginTop: 4,
   },
   itemTextContainer: {
     flex: 1,
-    gap: 2,
+    gap: 4, // Figma: gap 4 between title and subtitle
   },
   itemTitle: {
-    fontSize: 14,
-    color: colors.neutral[300],
-    fontFamily: typography.bodyMd2.fontFamily,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14, // Figma: fontSize 14
+    fontWeight: '400', // Figma: fontWeight 400
+    lineHeight: 20, // Figma: lineHeight 20
+    color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   itemSubtitle: {
-    fontSize: 12,
-    color: colors.neutral[600],
-    fontFamily: typography.bodySm.fontFamily,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12, // Figma: fontSize 12
+    fontWeight: '400', // Figma: fontWeight 400
+    lineHeight: 20, // Figma: lineHeight 20
+    color: '#878787', // Figma: #878787 (neutral[600])
   },
 });
 

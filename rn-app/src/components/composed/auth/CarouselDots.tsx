@@ -2,23 +2,23 @@
  * Carousel Dots Component
  * Page indicator dots for onboarding carousel
  *
- * EXACT Figma Values (from extracted data 2026-02-05):
- * - Active dot: 8x8px, #FF9A6D (brand/500)
- * - Inactive dot: 8x8px, #4D4D4D (black/400)
+ * EXACT Figma Values (verified from extraction 1-28985):
+ * - Active dot: 8x8px, #FF9A6D (brand/500) - Ellipse 21885
+ * - Inactive dot: 8x8px, #202020 (black/500) - Ellipse 21886, 21887
  * - Gap between dots: 4px (Frame 2095586316 layout.gap)
  */
 
 import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 
-// EXACT Figma values from extracted data (2026-02-05)
-// Figma Frame 160:2678 (1-28985): gap: 4, 8x8 ellipses
-// Active: #FF9A6D (Ellipse 21885), Inactive: #4D4D4D (Ellipse 21886, 21887)
+// EXACT Figma values from extraction 1-28985 (carousel slide 1)
+// Figma Frame 160:2678: gap: 4, 8x8 ellipses
+// Active: #FF9A6D (Ellipse 21885), Inactive: #202020 (Ellipse 21886, 21887)
 const FIGMA_DOTS = {
   size: 8,
   gap: 4,                     // Figma layout.gap: 4 from Frame 2095586316
-  activeColor: '#FF9A6D',     // brand/500 - exact hex from Figma
-  inactiveColor: '#4D4D4D',   // black/400 - exact hex from Figma
+  activeColor: '#FF9A6D',     // brand/500 - Figma: Ellipse 21885
+  inactiveColor: '#202020',   // black/500 - Figma: Ellipse 21886, 21887 (was #4D4D4D)
 } as const;
 
 export interface CarouselDotsProps {

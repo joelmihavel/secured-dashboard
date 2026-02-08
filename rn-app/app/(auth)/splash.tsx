@@ -37,7 +37,7 @@ const FIGMA_COLORS = {
   buttonBorder: colors.brand[500],     // #FF9A6D
   buttonShadow: '#995C41',             // Figma exact
   textWhite: colors.white,             // #FFFFFF
-  loginText: colors.white,             // Fresh Figma MCP shows white, not #797979
+  loginText: colors.black[300],         // #797979 - Figma node 1:28070 base color
 } as const;
 
 // Figma dimensions that need responsive scaling (not covered by tokens)
@@ -197,16 +197,20 @@ const styles = StyleSheet.create({
     // width: scaledWidth(FIGMA_DIMENSIONS.contentWidth),
   },
   loginText: {
-    // Figma node 1:28070 base style: fontSize 12, lineHeight 20, textAlign CENTER
-    // styleOverrideTable shows 14px for actual characters - using visual override (Gemini fix)
-    ...typography.bodyMd2,           // 14/20/400 per Figma visual override
-    color: FIGMA_COLORS.loginText,   // white per Figma
+    // Figma node 1:28070: base fontSize 12 / #797979, but styleOverrideTable[16] overrides ALL
+    // characters to fontSize 14, color #FFFFFF. Use override values since they apply to full text.
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,                                           // Figma: styleOverrideTable[16] = 14
+    lineHeight: 20,
+    color: FIGMA_COLORS.textWhite,                          // Figma: styleOverrideTable[16] = #FFFFFF
     textAlign: 'center',             // Figma: textAlignHorizontal: CENTER
   },
   loginLink: {
-    // "Log in" is a link - underlined per Figma styleOverrideTable[17]
-    ...typography.bodyMd2,           // 14/20/400 matching parent
-    color: FIGMA_COLORS.loginText,   // white per Figma
+    // Figma styleOverrideTable[17]: fontSize 14, color #FFFFFF, underline
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,                                           // Figma: 14 (was 12)
+    lineHeight: 20,
+    color: FIGMA_COLORS.textWhite,                          // Figma: #FFFFFF (was #797979)
     textDecorationLine: 'underline',
   },
 });

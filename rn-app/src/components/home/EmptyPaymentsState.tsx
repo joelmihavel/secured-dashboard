@@ -15,7 +15,6 @@ import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 import { Text } from '@/src/components/ui';
-import { colors, spacing, typography } from '@/src/theme';
 
 export interface EmptyPaymentsStateProps {
   title?: string;

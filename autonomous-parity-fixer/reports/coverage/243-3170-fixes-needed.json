@@ -1,0 +1,689 @@
+{
+  "screenId": "243-3170",
+  "iteration": 1,
+  "coverage": 82,
+  "threshold": 95,
+  "fixesNeeded": [
+    {
+      "type": "style",
+      "target": "Your rent is overdue by 10 days",
+      "property": "backgroundColor",
+      "figmaValue": "#BABABA",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#BABABA' (or colors.neutral[400])"
+    },
+    {
+      "type": "style",
+      "target": "Paying with:",
+      "property": "backgroundColor",
+      "figmaValue": "#A6A6A6",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#A6A6A6' (or colors.black[200])"
+    },
+    {
+      "type": "style",
+      "target": "Visa",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "characters",
+      "figmaValue": "SELECTED",
+      "currentValue": null,
+      "fix": "Add text content: \"SELECTED\""
+    },
+    {
+      "type": "style",
+      "target": "•••• 2341",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
+    },
+    {
+      "type": "style",
+      "target": "•••• 2341",
+      "property": "characters",
+      "figmaValue": "•••• 2341",
+      "currentValue": null,
+      "fix": "Add text content: \"•••• 2341\""
+    },
+    {
+      "type": "style",
+      "target": "EXPIRY 06/26",
+      "property": "backgroundColor",
+      "figmaValue": "#4D4D4D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
+    },
+    {
+      "type": "style",
+      "target": "EXPIRY 06/26",
+      "property": "characters",
+      "figmaValue": "EXPIRY 06/26",
+      "currentValue": null,
+      "fix": "Add text content: \"EXPIRY 06/26\""
+    },
+    {
+      "type": "style",
+      "target": "CVV •••",
+      "property": "backgroundColor",
+      "figmaValue": "#4D4D4D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
+    },
+    {
+      "type": "style",
+      "target": "CVV •••",
+      "property": "characters",
+      "figmaValue": "CVV •••",
+      "currentValue": null,
+      "fix": "Add text content: \"CVV •••\""
+    },
+    {
+      "type": "style",
+      "target": "CREDIT CARD",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "CREDIT CARD",
+      "property": "characters",
+      "figmaValue": "CREDIT CARD",
+      "currentValue": null,
+      "fix": "Add text content: \"CREDIT CARD\""
+    },
+    {
+      "type": "style",
+      "target": "path26",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "type": "style",
+      "target": "path128",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "path132",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "path136",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "path140",
+      "property": "backgroundColor",
+      "figmaValue": "#27803B",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#27803B' (or colors.success[dark])"
+    },
+    {
+      "type": "style",
+      "target": "path144",
+      "property": "backgroundColor",
+      "figmaValue": "#E9661C",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#E9661C' (or colors.brand[800])"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "characters",
+      "figmaValue": "SELECTED",
+      "currentValue": null,
+      "fix": "Add text content: \"SELECTED\""
+    },
+    {
+      "type": "style",
+      "target": "ICICI a/c - xxx23",
+      "property": "backgroundColor",
+      "figmaValue": "#4D4D4D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
+    },
+    {
+      "type": "style",
+      "target": "ICICI a/c - xxx23",
+      "property": "characters",
+      "figmaValue": "ICICI a/c -  xxx23",
+      "currentValue": null,
+      "fix": "Add text content: \"ICICI a/c -  xxx23\""
+    },
+    {
+      "type": "style",
+      "target": "rishabh@•••",
+      "property": "backgroundColor",
+      "figmaValue": "#4D4D4D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
+    },
+    {
+      "type": "style",
+      "target": "rishabh@•••",
+      "property": "characters",
+      "figmaValue": "rishabh@•••",
+      "currentValue": null,
+      "fix": "Add text content: \"rishabh@•••\""
+    },
+    {
+      "type": "style",
+      "target": "UPI",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "UPI",
+      "property": "characters",
+      "figmaValue": "UPI",
+      "currentValue": null,
+      "fix": "Add text content: \"UPI\""
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "SELECTED",
+      "property": "characters",
+      "figmaValue": "SELECTED",
+      "currentValue": null,
+      "fix": "Add text content: \"SELECTED\""
+    },
+    {
+      "type": "style",
+      "target": "ICICI a/c - xxx23",
+      "property": "backgroundColor",
+      "figmaValue": "#4D4D4D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
+    },
+    {
+      "type": "style",
+      "target": "ICICI a/c - xxx23",
+      "property": "characters",
+      "figmaValue": "ICICI a/c -  xxx23",
+      "currentValue": null,
+      "fix": "Add text content: \"ICICI a/c -  xxx23\""
+    },
+    {
+      "type": "style",
+      "target": "NET BANKING",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "NET BANKING",
+      "property": "characters",
+      "figmaValue": "NET BANKING",
+      "currentValue": null,
+      "fix": "Add text content: \"NET BANKING\""
+    },
+    {
+      "type": "style",
+      "target": "Setup your payment method to start",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "Setup your payment method to start",
+      "property": "characters",
+      "figmaValue": "Setup your payment method to start",
+      "currentValue": null,
+      "fix": "Add text content: \"Setup your payment method to start\""
+    },
+    {
+      "type": "style",
+      "target": "Add UPI, card, or bank to start earning rewards",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Add UPI, card, or bank to start earning rewards",
+      "property": "characters",
+      "figmaValue": "Add UPI, card, or bank to start earning rewards",
+      "currentValue": null,
+      "fix": "Add text content: \"Add UPI, card, or bank to start earning rewards\""
+    },
+    {
+      "type": "style",
+      "target": "NEW PAYMENT",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "NEW PAYMENT",
+      "property": "characters",
+      "figmaValue": "NEW PAYMENT",
+      "currentValue": null,
+      "fix": "Add text content: \"NEW PAYMENT\""
+    },
+    {
+      "type": "style",
+      "target": "Ellipse 21885",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
+    },
+    {
+      "type": "style",
+      "target": "Ellipse 21886",
+      "property": "backgroundColor",
+      "figmaValue": "#202020",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#202020' (or colors.black[500])"
+    },
+    {
+      "type": "style",
+      "target": "Ellipse 21887",
+      "property": "backgroundColor",
+      "figmaValue": "#202020",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#202020' (or colors.black[500])"
+    },
+    {
+      "type": "prop",
+      "target": "Toggle",
+      "property": "flexDirection",
+      "figmaValue": "row",
+      "currentValue": null,
+      "fix": "Add flexDirection: 'row'"
+    },
+    {
+      "type": "style",
+      "target": "Toggle",
+      "property": "paddingTop",
+      "figmaValue": 4,
+      "currentValue": null,
+      "fix": "Add paddingTop: 4 (or spacing.xxs)"
+    },
+    {
+      "type": "style",
+      "target": "Toggle",
+      "property": "paddingRight",
+      "figmaValue": 4,
+      "currentValue": 32,
+      "fix": "Add paddingRight: 4 (or spacing.xxs)"
+    },
+    {
+      "type": "style",
+      "target": "Toggle",
+      "property": "paddingBottom",
+      "figmaValue": 4,
+      "currentValue": 118,
+      "fix": "Add paddingBottom: 4 (or spacing.xxs)"
+    },
+    {
+      "type": "style",
+      "target": "Toggle",
+      "property": "paddingLeft",
+      "figmaValue": 4,
+      "currentValue": 32,
+      "fix": "Add paddingLeft: 4 (or spacing.xxs)"
+    },
+    {
+      "type": "style",
+      "target": "Toggle",
+      "property": "borderColor",
+      "figmaValue": "#202020",
+      "currentValue": null,
+      "fix": "Add borderColor: '#202020'"
+    },
+    {
+      "type": "prop",
+      "target": "toggle",
+      "property": "flexDirection",
+      "figmaValue": "row",
+      "currentValue": null,
+      "fix": "Add flexDirection: 'row'"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingTop",
+      "figmaValue": 8,
+      "currentValue": null,
+      "fix": "Add paddingTop: 8 (or spacing.xs)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingRight",
+      "figmaValue": 24,
+      "currentValue": 32,
+      "fix": "Add paddingRight: 24 (or spacing.lg)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingBottom",
+      "figmaValue": 8,
+      "currentValue": 118,
+      "fix": "Add paddingBottom: 8 (or spacing.xs)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingLeft",
+      "figmaValue": 24,
+      "currentValue": 32,
+      "fix": "Add paddingLeft: 24 (or spacing.lg)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "gap",
+      "figmaValue": 10,
+      "currentValue": 8,
+      "fix": "Add gap: 10 (or token)"
+    },
+    {
+      "type": "prop",
+      "target": "toggle",
+      "property": "flexDirection",
+      "figmaValue": "row",
+      "currentValue": null,
+      "fix": "Add flexDirection: 'row'"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingTop",
+      "figmaValue": 8,
+      "currentValue": null,
+      "fix": "Add paddingTop: 8 (or spacing.xs)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingRight",
+      "figmaValue": 24,
+      "currentValue": 32,
+      "fix": "Add paddingRight: 24 (or spacing.lg)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingBottom",
+      "figmaValue": 8,
+      "currentValue": 118,
+      "fix": "Add paddingBottom: 8 (or spacing.xs)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "paddingLeft",
+      "figmaValue": 24,
+      "currentValue": 32,
+      "fix": "Add paddingLeft: 24 (or spacing.lg)"
+    },
+    {
+      "type": "style",
+      "target": "toggle",
+      "property": "gap",
+      "figmaValue": 10,
+      "currentValue": 8,
+      "fix": "Add gap: 10 (or token)"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 8",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "type": "style",
+      "target": "September rent",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "September rent",
+      "property": "characters",
+      "figmaValue": "September rent",
+      "currentValue": null,
+      "fix": "Add text content: \"September rent\""
+    },
+    {
+      "type": "style",
+      "target": "Paid · 15 Sep, 9:40am",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Paid · 15 Sep, 9:40am",
+      "property": "characters",
+      "figmaValue": "Paid · 15 Sep, 9:40am",
+      "currentValue": null,
+      "fix": "Add text content: \"Paid · 15 Sep, 9:40am\""
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 8",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "type": "style",
+      "target": "August rent",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "August rent",
+      "property": "characters",
+      "figmaValue": "August rent",
+      "currentValue": null,
+      "fix": "Add text content: \"August rent\""
+    },
+    {
+      "type": "style",
+      "target": "Pending · 15 Sep, 9:40am",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Pending · 15 Sep, 9:40am",
+      "property": "characters",
+      "figmaValue": "Pending · 15 Sep, 9:40am",
+      "currentValue": null,
+      "fix": "Add text content: \"Pending · 15 Sep, 9:40am\""
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 8",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "type": "style",
+      "target": "July rent",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "July rent",
+      "property": "characters",
+      "figmaValue": "July rent",
+      "currentValue": null,
+      "fix": "Add text content: \"July rent\""
+    },
+    {
+      "type": "style",
+      "target": "Failed · 15 Sep, 9:40am",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Failed · 15 Sep, 9:40am",
+      "property": "characters",
+      "figmaValue": "Failed · 15 Sep, 9:40am",
+      "currentValue": null,
+      "fix": "Add text content: \"Failed · 15 Sep, 9:40am\""
+    },
+    {
+      "type": "style",
+      "target": "Due in 10 Days",
+      "property": "backgroundColor",
+      "figmaValue": "#A9A9A9",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#A9A9A9' (or colors.neutral[500])"
+    },
+    {
+      "type": "style",
+      "target": "Due in 10 Days",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "Due in 10 Days",
+      "property": "characters",
+      "figmaValue": "Due in 10 Days",
+      "currentValue": null,
+      "fix": "Add text content: \"Due in 10 Days\""
+    },
+    {
+      "type": "style",
+      "target": "Hi, Rishabh",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "Hi, Rishabh",
+      "property": "characters",
+      "figmaValue": "Hi, Rishabh",
+      "currentValue": null,
+      "fix": "Add text content: \"Hi, Rishabh\""
+    },
+    {
+      "type": "style",
+      "target": "Ellipse 8",
+      "property": "backgroundColor",
+      "figmaValue": "#FFCC8A",
+      "currentValue": "#1A1A1A",
+      "fix": "Add backgroundColor: '#FFCC8A' (or colors.brand[300])"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 8",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    }
+  ],
+  "generatedAt": "2026-02-03T10:32:25.349Z"
+}

@@ -256,7 +256,23 @@ export default function SelectPaymentMethodScreen() {
   const rentAmount = tenancy?.monthly_rent ?? 32500;
   const cashbackAvailable = cashback?.available_balance ?? 325;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
+  const isOverdue = upcomingPayment?.is_overdue ?? false;
   const rentMonth = upcomingPayment?.rent_month ?? 'December 2025';
+  const rentDueDay = tenancy?.rent_due_day ?? 1;
+
+  // Date variant: before-7th (early month) vs after-7th (late month)
+  const isAfter7th = rentDueDay > 7;
+
+  // Build the due label based on overdue status and date variant
+  const getDueLabel = () => {
+    if (isOverdue) {
+      return `Rent ${Math.abs(daysUntilDue)} days overdue`;
+    }
+    if (isAfter7th) {
+      return `Rent due on ${rentDueDay}th — ${daysUntilDue} days left`;
+    }
+    return `Rent due in ${daysUntilDue} days`;
+  };
 
   // Payment methods with proper data
   const paymentMethods: PaymentMethod[] = [
@@ -346,7 +362,7 @@ export default function SelectPaymentMethodScreen() {
           {/* Rent Summary Card */}
           <View style={styles.rentSummaryCard}>
             <View style={styles.rentSummaryRow}>
-              <Text style={styles.rentLabel}>Rent due in {daysUntilDue} days</Text>
+              <Text style={[styles.rentLabel, isOverdue && { color: '#FF8080' }]}>{getDueLabel()}</Text>
               <Text style={styles.rentMonth}>{rentMonth}</Text>
             </View>
 
@@ -494,16 +510,18 @@ const styles = StyleSheet.create({
   rentLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    lineHeight: 20,
+    lineHeight: 17,   // Figma: lineHeightPx 16.92
+    letterSpacing: -0.24,  // Figma: letterSpacing -0.24
     color: FIGMA_COLORS.labelText, // #878787
-    textAlign: 'center' as const, // Figma 41:9030 textAlignHorizontal CENTER
+    textAlign: 'left' as const, // Left-aligned in row layout
   },
   rentMonth: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA_COLORS.textSecondary, // #A6A6A6 - subtext per Figma
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    fontSize: 14,     // Figma: 14px (was 12)
+    lineHeight: 20,   // Figma: ~19.74 ≈ 20
+    letterSpacing: -0.56,  // Figma: letterSpacing -0.56
+    color: '#CBCBCB', // Figma: #CBCBCB (was #A6A6A6)
+    textAlign: 'right' as const, // Right side of row
   },
   rentAmountRow: {
     flexDirection: 'row',
@@ -515,7 +533,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.labelText, // #878787
-    textAlign: 'center' as const, // Figma 41:9052 "Payable Rent" textAlignHorizontal CENTER
+    textAlign: 'left' as const, // Left side of row
   },
   rentAmountValue: {
     fontFamily: 'PlusJakartaSans-Bold',
@@ -523,7 +541,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     letterSpacing: -0.5,
     color: FIGMA_COLORS.textPrimary,
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    textAlign: 'right' as const, // Right side of row
   },
   cashbackRow: {
     alignItems: 'flex-start',
@@ -541,7 +559,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     color: FIGMA_COLORS.accent,
-    textAlign: 'center' as const, // Figma 41:9057 textAlignHorizontal CENTER
+    textAlign: 'center' as const, // Centered in pill
   },
 
   // Section Divider
@@ -615,11 +633,11 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   methodTitle: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Regular',  // Figma: fontWeight 400 (was Medium/500)
+    fontSize: 12,     // Figma: 12px (was 14)
     lineHeight: 20,
     color: FIGMA_COLORS.valueText, // #CBCBCB
-    textAlign: 'center' as const, // Figma 41:9085/9094/9103 textAlignHorizontal CENTER
+    textAlign: 'left' as const, // Left-aligned in card row
   },
   methodTitleSelected: {
     color: FIGMA_COLORS.textPrimary, // #FFFFFF when selected
@@ -629,14 +647,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     color: FIGMA_COLORS.textSecondary, // #A6A6A6 - subtext per Figma
-    textAlign: 'center' as const, // Figma 41:9086/9095/9104 textAlignHorizontal CENTER
+    textAlign: 'left' as const, // Left-aligned in card row
   },
   methodFee: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
+    fontFamily: 'PlusJakartaSans-Regular',  // Figma: fontWeight 400 (was Medium/500)
+    fontSize: 14,     // Figma: 14px (was 12)
     lineHeight: 20,
-    color: FIGMA_COLORS.textSecondary, // Default, overridden in component
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    color: '#CBCBCB', // Figma: #CBCBCB (was #A6A6A6)
+    textAlign: 'right' as const, // Right-aligned fee label
   },
 
   // Fee Breakdown
@@ -657,14 +675,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.labelText, // #878787
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    textAlign: 'left' as const, // Left side of row
   },
   feeValue: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.valueText, // #CBCBCB
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    textAlign: 'right' as const, // Right side of row
   },
   feeDivider: {
     height: 1,
@@ -676,14 +694,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.textPrimary,
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    textAlign: 'left' as const, // Left side of row
   },
   feeTotalValue: {
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 16,
     lineHeight: 24,
     color: FIGMA_COLORS.textPrimary,
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    textAlign: 'right' as const, // Right side of row
   },
 
   // Spacer
@@ -718,6 +736,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     color: FIGMA_COLORS.textSecondary, // #A6A6A6 - subtext per Figma
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
+    textAlign: 'center' as const, // Centered with lock icon
   },
 });

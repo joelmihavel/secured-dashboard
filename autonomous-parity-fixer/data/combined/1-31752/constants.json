@@ -1,0 +1,17 @@
+{
+  "colors": {
+    "name": "colors",
+    "category": "colors",
+    "values": {}
+  },
+  "typography": {
+    "name": "typography",
+    "category": "typography",
+    "values": {}
+  },
+  "spacing": {
+    "name": "spacing",
+    "category": "spacing",
+    "values": {}
+  }
+}

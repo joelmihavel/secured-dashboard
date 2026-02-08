@@ -1,0 +1,489 @@
+{
+  "screenId": "1-29108",
+  "screenName": "auth / sign up --enter phone number",
+  "route": "/(auth)/sign-up",
+  "generatedAt": "2026-02-02T00:15:00.914Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T00:13:19.334Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "237:2735",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": 1922.0000195233956,
+              "absoluteY": -397.0000576553158,
+              "relativeLeft": -462.9999804766044,
+              "relativeTop": -747.0000576553158,
+              "parentId": "1:29108"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "src/components/1-29108/*.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"auth / sign up --enter phone number\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:29115",
+            "nodeName": "Frame 1686557300",
+            "figmaValue": {
+              "absoluteX": 2385,
+              "absoluteY": 1249,
+              "relativeLeft": 0,
+              "relativeTop": 899,
+              "parentId": "1:29108"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: 899.0",
+            "file": "src/components/1-29108/*.tsx",
+            "explanation": "\"Frame 1686557300\" is positioned at (0.0, 899.0) relative to \"auth / sign up --enter phone number\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: 899.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:29114",
+            "nodeName": "Rectangle 52",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 52",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/1-29108/*.tsx or app/(1-29108)/index.tsx",
+            "explanation": "Button \"Rectangle 52\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:29116",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#D9D9D9"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#D9D9D9'",
+            "file": "src/components/1-29108/*.tsx or app/(1-29108)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #D9D9D9 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#D9D9D9' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:29160",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "type": "button",
+              "text": "Pay Now",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/1-29108/*.tsx or app/(1-29108)/index.tsx",
+            "explanation": "Button \"Pay Now\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:29186",
+            "nodeName": "button",
+            "figmaValue": {
+              "type": "button",
+              "text": "Get Started",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "src/components/1-29108/*.tsx or app/(1-29108)/index.tsx",
+            "explanation": "Button \"Get Started\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I1:29188;124:6249",
+            "nodeName": "Rectangle 1",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 1",
+              "fill": "#131313"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#131313'",
+            "file": "src/components/1-29108/*.tsx or app/(1-29108)/index.tsx",
+            "explanation": "Button \"Rectangle 1\" has fill #131313 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#131313' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I1:29188;124:6257",
+            "nodeName": "Rectangle 5",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 5",
+              "fill": "#141618"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#141618'",
+            "file": "src/components/1-29108/*.tsx or app/(1-29108)/index.tsx",
+            "explanation": "Button \"Rectangle 5\" has fill #141618 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#141618' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:29139",
+            "nodeName": "₹ 32,175",
+            "figmaValue": {
+              "text": "₹  32,175",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-29108/*.tsx",
+            "explanation": "Text \"₹  32,175...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:29183",
+            "nodeName": "Let’s get to  know you",
+            "figmaValue": {
+              "text": "Let’s get to  know you",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 4
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-29108/*.tsx",
+            "explanation": "Text \"Let’s get to  know you...\" is ONE LINE in Figma with 4 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:29189",
+            "nodeName": "I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree",
+            "figmaValue": {
+              "text": "I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-29108/*.tsx",
+            "explanation": "Text \"I consent to a one-time verification to confirm my...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          }
+        ],
+        "totalIssues": 11
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T00:13:19.340Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T00:14:19.497Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "issueId": "screen-padding-and-offset",
+            "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+            "lineRange": null,
+            "property": "padding",
+            "figmaValue": "{ paddingTop: 101, paddingHorizontal: 48 }",
+            "currentValue": "Likely default padding (e.g., 24) and only SafeAreaView inset for top spacing.",
+            "severity": "major",
+            "explanation": "The main content block is incorrectly positioned. It requires a 101px offset from the top of the screen and 48px of horizontal padding on both sides to match the Figma layout.",
+            "currentCode": "const styles = StyleSheet.create({\n  container: {\n    flex: 1,\n    paddingHorizontal: 24, // Incorrect padding\n  },\n});",
+            "fixedCode": "const styles = StyleSheet.create({\n  container: {\n    flex: 1,\n    paddingTop: 101, // Add correct top offset\n    paddingHorizontal: _designTokens.spacing[12], // Use token for 48px\n  },\n});"
+          },
+          {
+            "issueId": "background-composition",
+            "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+            "lineRange": null,
+            "property": "background",
+            "figmaValue": "Multi-layered background with base color, texture image (opacity 8%), and a top gradient.",
+            "currentValue": "Likely a single solid background color.",
+            "severity": "major",
+            "explanation": "The screen background is complex and not a solid color. It's composed of a base color (#131313), a full-screen texture image with 8% opacity, and a linear gradient from transparent to the base color at the top. These layers must be stacked correctly using absolute positioning.",
+            "currentCode": "<View style={{ flex: 1, backgroundColor: '#131313' }}>\n  {/* Screen Content */}\n</View>",
+            "fixedCode": "<View style={styles.container}>\n  <Image\n    source={require('path/to/texture-image.png')}\n    style={styles.textureImage}\n  />\n  <LinearGradient\n    colors={['rgba(19, 19, 19, 0)', '#131313']}\n    style={styles.gradientOverlay}\n  />\n  {/* Screen Content */}\n</View>\n\nconst styles = StyleSheet.create({\n  container: {\n    flex: 1,\n    backgroundColor: '#131313',\n  },\n  textureImage: {\n    ...StyleSheet.absoluteFillObject,\n    opacity: 0.08,\n  },\n  gradientOverlay: {\n    position: 'absolute',\n    top: 0,\n    left: 0,\n    right: 0,\n    height: 405, // Height from Figma\n  },\n});"
+          },
+          {
+            "issueId": "keyboard-avoiding-view",
+            "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+            "lineRange": null,
+            "property": "keyboard-handling",
+            "figmaValue": "N/A (Functional Requirement)",
+            "currentValue": "Likely missing KeyboardAvoidingView or ScrollView.",
+            "severity": "medium",
+            "explanation": "This is a form with text inputs. When the keyboard appears, it will likely cover the input fields or the 'Get Started' button. The entire content area should be wrapped in a ScrollView and KeyboardAvoidingView to ensure a good user experience.",
+            "currentCode": "<SafeAreaView style={styles.container}>\n  <View style={styles.content}>\n    {/* ...form elements... */}\n  </View>\n</SafeAreaView>",
+            "fixedCode": "<SafeAreaView style={styles.container}>\n  <KeyboardAvoidingView \n    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}\n    style={{flex: 1}}\n  >\n    <ScrollView contentContainerStyle={styles.scrollContent}>\n      {/* ...form elements... */}\n    </ScrollView>\n  </KeyboardAvoidingView>\n</SafeAreaView>"
+          }
+        ],
+        "layoutIssues": [
+          {
+            "issueId": "vertical-spacing-between-sections",
+            "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+            "lineRange": null,
+            "property": "gap",
+            "figmaValue": "48px",
+            "currentValue": "Likely an inconsistent or incorrect value (e.g., 24px or 32px).",
+            "severity": "major",
+            "explanation": "The vertical spacing between the main content blocks (Logo, Title, Inputs container, and Actions container) is a consistent 48px. This should be implemented using a `gap` property on their wrapping container.",
+            "currentCode": "<View style={{ gap: 24 }}>\n  <Logo />\n  <Title />\n  <Inputs />\n  <Actions />\n</View>",
+            "fixedCode": "<View style={{ gap: _designTokens.spacing[12] }}>\n  <Logo />\n  <Title />\n  <Inputs />\n  <Actions />\n</View>"
+          }
+        ],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T00:15:00.914Z",
+      "feedback": [
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "critical",
+          "property": "text-structure",
+          "explanation": "The heading 'Let’s get to know you' is a single line in Figma with multiple colors. It must be rendered using a single <Text> component with nested <Text> spans for each style, not as separate text elements which would break the layout.",
+          "currentCode": "/* Likely implemented as multiple <Text> components or a single one with incorrect styling */\n<Text>Let’s get to</Text>\n<Text>know you</Text>",
+          "fixedCode": "<Text style={styles.titleBase}>\n  Let’s get to{\"\\n\"}\n  <Text style={styles.titleHighlight}>know you</Text>\n</Text>"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "critical",
+          "property": "text-structure",
+          "explanation": "The consent text 'I consent to a one-time verification...' is a single line in Figma with multiple colors/styles. It must be rendered using a single <Text> component with nested <Text> spans to ensure correct wrapping and styling.",
+          "currentCode": "/* Likely implemented as multiple <Text> components */\n<Text>I consent to a one-time verification to confirm my profile details.</Text>\n<Text>Verification is securely handled via Cashfree</Text>",
+          "fixedCode": "<Text style={styles.consentBase}>\n  I consent to a one-time verification to confirm my profile details.{\" \"}\n  <Text style={styles.consentHighlight}>Verification is securely handled via Cashfree</Text>\n</Text>"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "critical",
+          "property": "text-structure",
+          "explanation": "The text '₹ 32,175' found on the screen is a single line in Figma with multiple colors. It must be rendered using a single <Text> component with nested <Text> spans for each style.",
+          "currentCode": "/* Likely implemented as two separate <Text> components */\n<Text>₹</Text>\n<Text>32,175</Text>",
+          "fixedCode": "<Text style={styles.amountBase}>\n  <Text style={styles.currencySymbol}>₹</Text>\n  <Text style={styles.amountValue}> 32,175</Text>\n</Text>"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "background",
+          "explanation": "The screen background is not a solid color. It's a composite of a base color, a texture image with 8% opacity, and a top gradient. These layers must be added to the root view.",
+          "currentCode": "<View style={{ flex: 1, backgroundColor: '#131313' }}>\n  {/* Screen Content */}\n</View>",
+          "fixedCode": "<View style={styles.screenContainer}>\n  <Image\n    source={require('path/to/texture-image.png')}\n    style={styles.textureImage}\n  />\n  <LinearGradient\n    colors={['rgba(19, 19, 19, 0)', _designTokens.colors.black[700]]}\n    style={styles.gradientOverlay}\n  />\n  {/* Screen Content */}\n</View>\n\nconst styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    backgroundColor: _designTokens.colors.black[700], // #131313\n  },\n  textureImage: {\n    ...StyleSheet.absoluteFillObject,\n    opacity: 0.08,\n  },\n  gradientOverlay: {\n    position: 'absolute',\n    top: 0,\n    left: 0,\n    right: 0,\n    height: 405, // Height from Figma\n  },\n});"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "padding",
+          "explanation": "The main content container has incorrect padding. It requires a 101px top offset and 48px horizontal padding to match the design.",
+          "currentCode": "container: {\n  flex: 1,\n  paddingHorizontal: 24,\n}",
+          "fixedCode": "container: {\n  flex: 1,\n  paddingTop: 101,\n  paddingHorizontal: _designTokens.spacing.xxxl, // 48px\n}"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "gap",
+          "explanation": "The vertical spacing between the main content blocks (Logo, Title, Inputs, Actions) should be a consistent 48px.",
+          "currentCode": "contentWrapper: {\n  gap: 24, // Or some other incorrect value\n}",
+          "fixedCode": "contentWrapper: {\n  gap: _designTokens.spacing.xxxl, // 48px\n}"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "keyboard-handling",
+          "explanation": "The screen contains input fields and will be obscured by the keyboard. The content should be wrapped in KeyboardAvoidingView and ScrollView for a better user experience.",
+          "currentCode": "<SafeAreaView style={styles.container}>\n  {/* ...form elements... */}\n</SafeAreaView>",
+          "fixedCode": "<SafeAreaView style={styles.container}>\n  <KeyboardAvoidingView \n    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}\n    style={{flex: 1}}\n  >\n    <ScrollView contentContainerStyle={styles.scrollContent}>\n      {/* ...form elements... */}\n    </ScrollView>\n  </KeyboardAvoidingView>\n</SafeAreaView>"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "position",
+          "explanation": "An image element named 'image 149' is positioned incorrectly. It requires absolute positioning to be placed at (-463, -747) relative to its parent.",
+          "currentCode": "/* style for 'image 149' */",
+          "fixedCode": "image149: {\n  position: 'absolute',\n  left: -463,\n  top: -747,\n}"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "position",
+          "explanation": "A view named 'Frame 1686557300' is positioned incorrectly. It requires absolute positioning to be placed at (0, 899) relative to its parent.",
+          "currentCode": "/* style for 'Frame 1686557300' */",
+          "fixedCode": "frame1686557300: {\n  position: 'absolute',\n  left: 0,\n  top: 899,\n}"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "The 'Get Started' button's background color is incorrect. It should be #202020.",
+          "currentCode": "backgroundColor: 'some-other-color',",
+          "fixedCode": "backgroundColor: _designTokens.colors.black[500], // #202020"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "The phone number input container background color is incorrect. It should be #131313.",
+          "currentCode": "backgroundColor: 'some-other-color',",
+          "fixedCode": "backgroundColor: _designTokens.colors.black[700], // #131313"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "A button or view on the screen has an incorrect background color. Figma specifies #D9D9D9.",
+          "currentCode": "backgroundColor: 'some-other-color',",
+          "fixedCode": "backgroundColor: _designTokens.colors.neutral[200], // #DDDDDD (closest token to #D9D9D9)"
+        },
+        {
+          "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "Multiple buttons or views on the screen have an incorrect background color. Figma specifies #000000 for elements named 'Rectangle 52' and 'Pay Now'.",
+          "currentCode": "backgroundColor: 'some-other-color',",
+          "fixedCode": "backgroundColor: '#000000',"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "critical",
+      "property": "text-structure",
+      "explanation": "The heading 'Let’s get to know you' is a single line in Figma with multiple colors. It must be rendered using a single <Text> component with nested <Text> spans for each style, not as separate text elements which would break the layout.",
+      "currentCode": "/* Likely implemented as multiple <Text> components or a single one with incorrect styling */\n<Text>Let’s get to</Text>\n<Text>know you</Text>",
+      "fixedCode": "<Text style={styles.titleBase}>\n  Let’s get to{\"\\n\"}\n  <Text style={styles.titleHighlight}>know you</Text>\n</Text>"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "critical",
+      "property": "text-structure",
+      "explanation": "The consent text 'I consent to a one-time verification...' is a single line in Figma with multiple colors/styles. It must be rendered using a single <Text> component with nested <Text> spans to ensure correct wrapping and styling.",
+      "currentCode": "/* Likely implemented as multiple <Text> components */\n<Text>I consent to a one-time verification to confirm my profile details.</Text>\n<Text>Verification is securely handled via Cashfree</Text>",
+      "fixedCode": "<Text style={styles.consentBase}>\n  I consent to a one-time verification to confirm my profile details.{\" \"}\n  <Text style={styles.consentHighlight}>Verification is securely handled via Cashfree</Text>\n</Text>"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "critical",
+      "property": "text-structure",
+      "explanation": "The text '₹ 32,175' found on the screen is a single line in Figma with multiple colors. It must be rendered using a single <Text> component with nested <Text> spans for each style.",
+      "currentCode": "/* Likely implemented as two separate <Text> components */\n<Text>₹</Text>\n<Text>32,175</Text>",
+      "fixedCode": "<Text style={styles.amountBase}>\n  <Text style={styles.currencySymbol}>₹</Text>\n  <Text style={styles.amountValue}> 32,175</Text>\n</Text>"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "background",
+      "explanation": "The screen background is not a solid color. It's a composite of a base color, a texture image with 8% opacity, and a top gradient. These layers must be added to the root view.",
+      "currentCode": "<View style={{ flex: 1, backgroundColor: '#131313' }}>\n  {/* Screen Content */}\n</View>",
+      "fixedCode": "<View style={styles.screenContainer}>\n  <Image\n    source={require('path/to/texture-image.png')}\n    style={styles.textureImage}\n  />\n  <LinearGradient\n    colors={['rgba(19, 19, 19, 0)', _designTokens.colors.black[700]]}\n    style={styles.gradientOverlay}\n  />\n  {/* Screen Content */}\n</View>\n\nconst styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    backgroundColor: _designTokens.colors.black[700], // #131313\n  },\n  textureImage: {\n    ...StyleSheet.absoluteFillObject,\n    opacity: 0.08,\n  },\n  gradientOverlay: {\n    position: 'absolute',\n    top: 0,\n    left: 0,\n    right: 0,\n    height: 405, // Height from Figma\n  },\n});"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "padding",
+      "explanation": "The main content container has incorrect padding. It requires a 101px top offset and 48px horizontal padding to match the design.",
+      "currentCode": "container: {\n  flex: 1,\n  paddingHorizontal: 24,\n}",
+      "fixedCode": "container: {\n  flex: 1,\n  paddingTop: 101,\n  paddingHorizontal: _designTokens.spacing.xxxl, // 48px\n}"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "gap",
+      "explanation": "The vertical spacing between the main content blocks (Logo, Title, Inputs, Actions) should be a consistent 48px.",
+      "currentCode": "contentWrapper: {\n  gap: 24, // Or some other incorrect value\n}",
+      "fixedCode": "contentWrapper: {\n  gap: _designTokens.spacing.xxxl, // 48px\n}"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "keyboard-handling",
+      "explanation": "The screen contains input fields and will be obscured by the keyboard. The content should be wrapped in KeyboardAvoidingView and ScrollView for a better user experience.",
+      "currentCode": "<SafeAreaView style={styles.container}>\n  {/* ...form elements... */}\n</SafeAreaView>",
+      "fixedCode": "<SafeAreaView style={styles.container}>\n  <KeyboardAvoidingView \n    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}\n    style={{flex: 1}}\n  >\n    <ScrollView contentContainerStyle={styles.scrollContent}>\n      {/* ...form elements... */}\n    </ScrollView>\n  </KeyboardAvoidingView>\n</SafeAreaView>"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "position",
+      "explanation": "An image element named 'image 149' is positioned incorrectly. It requires absolute positioning to be placed at (-463, -747) relative to its parent.",
+      "currentCode": "/* style for 'image 149' */",
+      "fixedCode": "image149: {\n  position: 'absolute',\n  left: -463,\n  top: -747,\n}"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "position",
+      "explanation": "A view named 'Frame 1686557300' is positioned incorrectly. It requires absolute positioning to be placed at (0, 899) relative to its parent.",
+      "currentCode": "/* style for 'Frame 1686557300' */",
+      "fixedCode": "frame1686557300: {\n  position: 'absolute',\n  left: 0,\n  top: 899,\n}"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "The 'Get Started' button's background color is incorrect. It should be #202020.",
+      "currentCode": "backgroundColor: 'some-other-color',",
+      "fixedCode": "backgroundColor: _designTokens.colors.black[500], // #202020"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "The phone number input container background color is incorrect. It should be #131313.",
+      "currentCode": "backgroundColor: 'some-other-color',",
+      "fixedCode": "backgroundColor: _designTokens.colors.black[700], // #131313"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "A button or view on the screen has an incorrect background color. Figma specifies #D9D9D9.",
+      "currentCode": "backgroundColor: 'some-other-color',",
+      "fixedCode": "backgroundColor: _designTokens.colors.neutral[200], // #DDDDDD (closest token to #D9D9D9)"
+    },
+    {
+      "file": "app/auth/SignUpEnterPhoneNumber.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "Multiple buttons or views on the screen have an incorrect background color. Figma specifies #000000 for elements named 'Rectangle 52' and 'Pay Now'.",
+      "currentCode": "backgroundColor: 'some-other-color',",
+      "fixedCode": "backgroundColor: '#000000',"
+    }
+  ],
+  "summary": {
+    "totalIssues": 13,
+    "critical": 3,
+    "major": 10,
+    "minor": 0,
+    "filesAffected": [
+      "app/auth/SignUpEnterPhoneNumber.tsx"
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+[
+  {
+    "nodeId": "41:3184",
+    "nodeName": "Frame 2095586314",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586314",
+    "rnStyles": {
+      "width": 7651,
+      "height": 154,
+      "backgroundColor": "#000000",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 48,
+      "paddingRight": 64,
+      "paddingBottom": 48,
+      "paddingLeft": 64
+    },
+    "geometry": {
+      "x": 13,
+      "y": 5591,
+      "width": 7651,
+      "height": 154
+    }
+  },
+  {
+    "nodeId": "41:3185",
+    "nodeName": "Home Page → Transactions",
+    "nodeType": "TEXT",
+    "rnStyleName": "homePageTransactions",
+    "rnStyles": {
+      "width": 626,
+      "height": 58,
+      "color": "#FFFFFF",
+      "fontFamily": "Inter",
+      "fontSize": 48,
+      "fontWeight": "400",
+      "lineHeight": 58.09,
+      "textAlign": "left"
+    },
+    "textContent": "Home Page → Transactions",
+    "geometry": {
+      "x": 77,
+      "y": 5639,
+      "width": 626,
+      "height": 58
+    }
+  }
+]

@@ -71,7 +71,7 @@ const FIGMA = {
     heroTitle: {
       fontSize: 48,
       fontWeight: '400' as const,
-      lineHeight: 57.6,
+      lineHeight: 64,
       letterSpacing: -2,
     },
     title: {
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.title.fontWeight, // 400
     lineHeight: FIGMA.typography.title.lineHeight, // 39.48
     letterSpacing: FIGMA.typography.title.letterSpacing, // -0.56
-    color: FIGMA.colors.textBlack, // #444444
+    color: '#000000', // Figma: #000000 black for "Pay Rent" title on white sheet
     textAlign: 'left',
   },
 
@@ -681,14 +681,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  // Figma 41:8557 "Total payable rent" — textAlignHorizontal: CENTER
+  // Figma 41:8557 "Total payable rent" — textTransform UPPERCASE
   summaryLabel: {
     fontFamily: fontFamily.primary.medium,
     fontSize: FIGMA.typography.labelMd.fontSize, // 12
     fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
     lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
     color: FIGMA.colors.textGray, // #A9A9A9
-    textAlign: 'center',
+    textAlign: 'left', // Left-aligned label in summary row
     textTransform: 'uppercase',
   },
   summaryAmount: {
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.amountSm.fontWeight, // 600
     lineHeight: FIGMA.typography.amountSm.lineHeight, // 16.92
     letterSpacing: FIGMA.typography.amountSm.letterSpacing, // -0.48
-    color: FIGMA.colors.textBlack, // #444444
+    color: '#000000', // Figma: #000000 for amounts on white sheet
     textAlign: 'left',
   },
   summaryDivider: {
@@ -722,14 +722,14 @@ const styles = StyleSheet.create({
     color: FIGMA.colors.successGreen, // #70BF73
     textAlign: 'left',
   },
-  // Figma 41:8568 "using flent cashback" — textAlignHorizontal: CENTER
+  // Figma 41:8568 "using flent cashback"
   cashbackLabel: {
     fontFamily: fontFamily.primary.medium,
     fontSize: FIGMA.typography.labelMd.fontSize, // 12
     fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
     lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
     color: FIGMA.colors.textGray, // #A9A9A9
-    textAlign: 'center',
+    textAlign: 'left', // Left-aligned in cashback text column
   },
 
   // Card Input Section — Figma: borders #4D4D4D, borderRadius: 12
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
     lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
     letterSpacing: -0.13,
-    color: FIGMA.colors.textBlack, // #444444
+    color: '#000000', // Figma: #000000 for "Paying to" on white sheet
     textAlign: 'left',
   },
   payingToValue: {
@@ -807,7 +807,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
     lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
     letterSpacing: -0.13,
-    color: FIGMA.colors.textBlack, // #444444
+    color: '#000000', // Figma: #000000 for landlord name on white sheet
     textAlign: 'right',
   },
   cardDetailsRow: {
@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.bodyMd.fontWeight, // 500
     lineHeight: FIGMA.typography.bodyMd.lineHeight, // 28.8
     letterSpacing: FIGMA.typography.bodyMd.letterSpacing, // -0.18
-    color: FIGMA.colors.textBlack, // #444444
+    color: '#000000', // Figma: #000000 for bank name on white sheet
     textAlign: 'left',
   },
   cardNumber: {
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
   altPaymentLabel: {
     fontFamily: fontFamily.primary.medium,
     fontSize: FIGMA.typography.sectionLabel.fontSize, // 12
-    fontWeight: FIGMA.typography.sectionLabel.fontWeight, // 500
+    fontWeight: '500', // Figma: 500 (Medium) - matches fontFamily.primary.medium
     lineHeight: FIGMA.typography.sectionLabel.lineHeight, // 20
     letterSpacing: FIGMA.typography.sectionLabel.letterSpacing, // 0.5
     color: FIGMA.colors.textMuted, // #878787
@@ -948,7 +948,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.primary.semibold,
     fontSize: 14,
     fontWeight: '600',
-    color: FIGMA.colors.textBlack, // #444444
+    color: '#000000', // Figma: #000000 for UPI icon text on white sheet
     textAlign: 'center',
   },
   // Figma 41:8590 "Google Pay", 41:8593 "PayTM", 41:8596 "PhonePe" — textAlignHorizontal: CENTER
@@ -957,7 +957,7 @@ const styles = StyleSheet.create({
     fontSize: FIGMA.typography.appLabel.fontSize, // 12
     fontWeight: FIGMA.typography.appLabel.fontWeight, // 400
     lineHeight: FIGMA.typography.appLabel.lineHeight, // 20
-    color: FIGMA.colors.textBlack, // #444444
+    color: '#000000', // Figma: #000000 for app names on white sheet
     textAlign: 'center',
   },
 

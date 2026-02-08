@@ -9,7 +9,7 @@
  * - Container padding: 48px horizontal
  * - Logo: 32x38.4px (Figma: vector_1)
  * - Heading: Plus Jakarta Sans Regular, 48px, line-height 64px, tracking -2px
- * - Heading text: "Let's get to" (#FFFFFF white), "know you" (#FF9A6D orange accent)
+ * - Heading text: "Let's get to" (#A9A9A9 gray), "know you" (#FF9A6D orange accent)
  * - Label: Plus Jakarta Sans Regular, 12px, line-height 20px, #A9A9A9 (neutral.500)
  * - Hint text (edit): Plus Jakarta Sans Regular, 14px, line-height 20px, #878787 (neutral.600)
  * - Input: 193px width (phone), 297px full width, 64px height
@@ -34,7 +34,7 @@ import { colors } from '@/src/theme';
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
   background: colors.black[700],       // #131313
-  headingWhite: colors.white,          // #FFFFFF - "Let's get to" text
+  headingGray: '#A9A9A9',              // Figma 1:29183: "Let's get to" text in gray
   headingAccent: colors.brand[500],    // #FF9A6D - "know you" text (orange accent per Figma screenshot)
   label: colors.neutral[500],          // #A9A9A9
   hintText: colors.neutral[600],       // #878787
@@ -187,8 +187,8 @@ export default function SignUpScreen() {
               {/* Logo - Figma: 32x38.4 (Frame 1686557264) */}
               <Logo size={38} />
 
-              {/* Title - Figma shows "Let's get to" in white, "know you" in orange accent */}
-              <Text style={styles.headingWhite}>
+              {/* Title - Figma 1:29183: "Let's get to " in #A9A9A9, "know you" in #FF9A6D */}
+              <Text style={styles.headingGray}>
                 Let's get to{'\n'}
                 <Text style={styles.headingAccent}>know you</Text>
               </Text>
@@ -270,12 +270,12 @@ const styles = StyleSheet.create({
     gap: FIGMA_GAPS.innerStackGap,        // 48px per Figma
     width: FIGMA_DIMENSIONS.contentWidth, // 297px per Figma
   },
-  headingWhite: {
+  headingGray: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,
     lineHeight: 64,
     letterSpacing: -2,
-    color: FIGMA_COLORS.headingWhite,     // #FFFFFF - "Let's get to" text
+    color: FIGMA_COLORS.headingGray,      // #A9A9A9 - "Let's get to" text (Figma 1:29183)
     width: FIGMA_DIMENSIONS.headingWidth, // 297px per Figma
   },
   headingAccent: {

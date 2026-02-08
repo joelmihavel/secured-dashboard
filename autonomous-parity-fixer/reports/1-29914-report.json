@@ -1,0 +1,46 @@
+{
+  "screenId": "1-29914",
+  "screenName": "Onboarding / Agreement --upload",
+  "generatedAt": "2026-02-03T21:06:56.606Z",
+  "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+  "figmaNodeId": "1:29914",
+  "stats": {
+    "totalNodes": 109,
+    "stylesGenerated": 109,
+    "textNodes": 20,
+    "frameNodes": 39
+  },
+  "outputPaths": {
+    "styleMap": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/1-29914/style-map.json",
+    "constants": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/1-29914/constants.json",
+    "component": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/output/components/1-29914.tsx",
+    "implementationGuide": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/1-29914/implementation-guide.md"
+  },
+  "steps": [
+    {
+      "name": "verify_extraction",
+      "status": "completed",
+      "duration": 0.002
+    },
+    {
+      "name": "universal_converter",
+      "status": "completed",
+      "duration": 0.655
+    },
+    {
+      "name": "generate_prompt",
+      "status": "completed",
+      "duration": 0.002
+    },
+    {
+      "name": "setup_component",
+      "status": "completed",
+      "duration": 0
+    },
+    {
+      "name": "generate_report",
+      "status": "running",
+      "duration": 0
+    }
+  ]
+}

@@ -321,7 +321,7 @@ export default function SetupIndexScreen() {
                 locations={[0, 0.9]}
                 style={styles.buttonActiveGradient}
               >
-                <Text style={styles.buttonActiveText}>Start Flenting \u2192</Text>
+                <Text style={styles.buttonActiveText}>Start Flenting →</Text>
               </LinearGradient>
             </TouchableOpacity>
           ) : (
@@ -330,7 +330,7 @@ export default function SetupIndexScreen() {
               style={styles.buttonInactive}
               testID="start-flenting-button"
             >
-              <Text style={styles.buttonInactiveText}>Start Flenting \u2192</Text>
+              <Text style={styles.buttonInactiveText}>Start Flenting →</Text>
             </TouchableOpacity>
           )}
         </View>

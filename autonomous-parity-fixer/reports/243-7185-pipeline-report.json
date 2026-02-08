@@ -1,0 +1,83 @@
+{
+  "screenId": "243-7185",
+  "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+  "figmaNodeId": "243:7185",
+  "generatedAt": "2026-02-03T22:05:06.180Z",
+  "iterations": 4,
+  "finalParityScore": 65,
+  "parityAchieved": false,
+  "steps": [
+    {
+      "name": "generate_template",
+      "phase": "preparation",
+      "status": "completed",
+      "duration": 0
+    },
+    {
+      "name": "implementation_prompt",
+      "phase": "implementation",
+      "status": "completed",
+      "duration": 0.002
+    },
+    {
+      "name": "capture_screenshot_1",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 0.399
+    },
+    {
+      "name": "gemini_feedback_1",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 113.736
+    },
+    {
+      "name": "generate_fixes_1",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 0.001
+    },
+    {
+      "name": "capture_screenshot_2",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 0.36
+    },
+    {
+      "name": "gemini_feedback_2",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 95.74
+    },
+    {
+      "name": "generate_fixes_2",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 0.001
+    },
+    {
+      "name": "capture_screenshot_3",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 0.407
+    },
+    {
+      "name": "gemini_feedback_3",
+      "phase": "verification",
+      "status": "completed",
+      "duration": 100.655
+    },
+    {
+      "name": "final_report",
+      "phase": "verification",
+      "status": "running"
+    }
+  ],
+  "outputPaths": {
+    "styleMap": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/243-7185/style-map.json",
+    "constants": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/243-7185/constants.json",
+    "component": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/output/components/243-7185.tsx",
+    "screenshots": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/output/screenshots/243-7185",
+    "feedback": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/analysis/pixel-feedback/243-7185.json"
+  }
+}

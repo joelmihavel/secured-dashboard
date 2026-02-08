@@ -1,0 +1,99 @@
+{
+  "screenId": "41:11206",
+  "screenName": "Waitlist",
+  "generatedAt": "2026-02-03T10:34:26.373Z",
+  "summary": {
+    "overallCoverage": 100,
+    "propertiesCovered": 186,
+    "propertiesTotal": 186,
+    "propertiesMissing": 0,
+    "nodesCovered": 18,
+    "nodesPartial": 0,
+    "nodesTotal": 18,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 36,
+      "total": 36,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 33,
+      "total": 33,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 17,
+      "total": 17,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 66,
+      "total": 66,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 15,
+      "total": 15,
+      "percentage": 100
+    },
+    "multiStyleText": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 15,
+      "total": 15,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

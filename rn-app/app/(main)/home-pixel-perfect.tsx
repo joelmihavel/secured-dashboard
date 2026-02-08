@@ -380,7 +380,7 @@ export default function HomePixelPerfectScreen() {
       {/* Fixed Bottom Footer */}
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
-          <Text style={styles.footerLabel}>Due in {daysUntilDue} Days</Text>
+          <Text style={styles.footerLabel}>Due in <Text style={styles.footerLabelBold}>{daysUntilDue}</Text> Days</Text>
           <Text style={styles.footerAmount}>
             <Text style={styles.footerAmountSymbol}>{'\u20B9'}  </Text>
             <Text style={styles.footerAmountValue}>{formatAmount(rentAmount)}</Text>
@@ -772,8 +772,12 @@ const styles = StyleSheet.create({
   footerLabel: {
     color: FIGMA.footerLabel.color,
     fontSize: FIGMA.footerLabel.fontSize,
-    fontWeight: FIGMA.footerLabel.fontWeight as any,
+    fontWeight: '400' as any,                               // Figma: base is Regular (400)
     lineHeight: FIGMA.footerLabel.lineHeight,
+    fontFamily: 'PlusJakartaSans-Regular',                  // Figma: base text is Regular
+  },
+  footerLabelBold: {
+    fontWeight: '700' as any,                               // Figma: number only is Bold (700)
     fontFamily: 'PlusJakartaSans-Bold',
   },
   footerAmount: {
@@ -807,9 +811,9 @@ const styles = StyleSheet.create({
   },
   footerButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,                                           // Figma: 14 (was 16)
     fontWeight: '500',
     fontFamily: 'PlusJakartaSans-Medium',
-    lineHeight: 24,
+    lineHeight: 20,                                         // Figma: 20 (was 24)
   },
 });

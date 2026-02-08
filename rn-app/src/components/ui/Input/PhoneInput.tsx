@@ -23,8 +23,8 @@
  * - line-height: 32px
  * - color: #444444 (placeholder), #dddddd (filled)
  *
- * Label:
- * - font: Plus Jakarta Sans Medium
+ * Label (VERIFIED via Figma MCP get_design_context 2026-02-08):
+ * - font: Plus Jakarta Sans Medium (500)
  * - size: 12px
  * - line-height: 20px
  * - color: #a9a9a9 (normal), #ff8080 (error)
@@ -47,24 +47,27 @@ import { Text } from '../Typography';
 import { colors } from '@/src/theme';
 
 // Exact Figma color values mapped to theme tokens
+// Verified from Figma extraction 1-29108 (sign-up empty state)
 const COLORS = {
   label: colors.neutral[500],          // #a9a9a9
   labelError: '#ff8080',
   hintText: '#878787',                 // Figma hint text color (neutral/600)
-  countryCode: colors.neutral[200],    // #dddddd - SAME as filled text per Figma
-  placeholder: '#222222',              // Updated per parity analysis (was #444444)
+  countryCodeEmpty: '#444444',         // Figma: I1:29184;48:714 - #444444 in empty state
+  countryCodeFilled: colors.neutral[200], // #dddddd - filled state per Figma 1-31073
+  placeholder: '#444444',              // Figma: #444444
   textFilled: colors.neutral[200],     // #dddddd
   textError: colors.brand[500],        // #ff9a6d
-  border: '#2a2a2a',
-  borderFocus: colors.brand[500],      // #ff9a6d
-  borderError: '#ff8080',
+  inputBorder: colors.black[400],      // #4D4D4D - Figma: I1:29184;48:712 borderColor
+  inputBorderFocus: colors.brand[500], // #ff9a6d
+  inputBorderError: '#ff8080',
 } as const;
 
 // Exact Figma spacing values
 const SPACING = {
-  labelGap: 6,        // Gap between label and input
-  inputPadding: 16,   // Vertical padding in input container
-  countryCodeGap: 16, // Gap between +91 and input field
+  labelGap: 6,        // Gap between label and input - Figma: I1:29184;48:606 gap:6
+  inputPaddingV: 16,  // Vertical padding in input container - Figma: py-[16px]
+  countryCodeGap: 16, // Gap between +91 and input field - Figma: I1:29184;48:712 gap:16
+  inputBorderRadius: 12, // Figma: I1:29184;48:712 borderRadius:12
 } as const;
 
 export interface PhoneInputProps {
@@ -125,10 +128,13 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
     const hasValue = value.length > 0;
 
     const getBorderColor = () => {
-      if (hasError) return COLORS.borderError;
-      if (isFocused) return COLORS.borderFocus;
-      return COLORS.border;
+      if (hasError) return COLORS.inputBorderError;
+      if (isFocused) return COLORS.inputBorderFocus;
+      return COLORS.inputBorder;
     };
+
+    // Country code color: #444444 when empty, #dddddd when filled
+    const countryCodeColor = hasValue ? COLORS.countryCodeFilled : COLORS.countryCodeEmpty;
 
     return (
       <View style={styles.container}>
@@ -144,11 +150,11 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
           ) : null}
         </View>
 
-        {/* Input Container - Figma: gap-16 items-center py-16 */}
-        <View style={[styles.inputContainer, { borderBottomColor: getBorderColor() }]}>
+        {/* Input Container - Figma: I1:29184;48:712 - full border box, gap-16, items-center, py-16, radius-12 */}
+        <View style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
           {/* Country Code - wrapped in container to match Figma Dropdown structure */}
           <View style={styles.countryCodeContainer}>
-            <RNText style={styles.countryCode}>{countryCode}</RNText>
+            <RNText style={[styles.countryCode, { color: countryCodeColor }]}>{countryCode}</RNText>
           </View>
 
           {/* Input Field - Figma: Plus Jakarta Sans Regular 20px, line-height 32px */}
@@ -189,7 +195,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.labelGap,
   },
-  // Label - Figma: Plus Jakarta Sans Medium, 12px, line-height 20px, #a9a9a9
+  // Label - Figma: Plus Jakarta Sans Medium (fontWeight 500), 12px, line-height 20px, #A9A9A9
+  // Verified from Figma MCP get_design_context 1:29108 node I1:29184;48:608: font-medium
   label: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
@@ -200,7 +207,7 @@ const styles = StyleSheet.create({
     color: COLORS.labelError,
   },
   errorText: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: COLORS.labelError,
@@ -212,14 +219,16 @@ const styles = StyleSheet.create({
     textAlign: 'right',  // Figma: textAlignHorizontal: RIGHT
     color: COLORS.hintText,
   },
-  // Input container - Figma: gap-16 items-center py-16
+  // Input container - Figma: I1:29184;48:712 - full border box, gap-16, items-center, py-16, radius-12
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center', // Figma: items-center
     gap: SPACING.countryCodeGap, // Figma: gap-[16px]
-    paddingVertical: SPACING.inputPadding, // Figma: py-[16px]
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingVertical: SPACING.inputPaddingV, // Figma: py-[16px]
+    borderWidth: 1,
+    borderColor: COLORS.inputBorder, // Figma: #4D4D4D
+    borderRadius: SPACING.inputBorderRadius, // Figma: 12px
+    paddingHorizontal: 16, // Figma: implicit from Dropdown x-position within Input box
   },
   // Country code container - matches Figma "Dropdown" container (I90:3005;48:724)
   // Figma: flex items-center, height determined by content (32px line-height)
@@ -227,11 +236,12 @@ const styles = StyleSheet.create({
     height: 32, // Match line-height for consistent alignment
     justifyContent: 'center', // Vertically center the text
   },
-  // Country code text - Figma: Plus Jakarta Sans Regular 20px, line-height 32px, #dddddd
+  // Country code text - Figma: Plus Jakarta Sans Regular 20px, line-height 32px
+  // Color is dynamic: #444444 empty, #dddddd filled (set inline)
   countryCode: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    color: COLORS.countryCode, // #dddddd
+    lineHeight: 32, // Figma: line-height 32px
     includeFontPadding: false, // Remove Android extra font padding
   },
   // Input field - Figma: Plus Jakarta Sans 20px, line-height 32px

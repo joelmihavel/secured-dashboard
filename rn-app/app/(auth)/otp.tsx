@@ -8,10 +8,10 @@
  * - Sheet width: 393px (full width)
  * - Sheet height: 409.96px (OTP filled state)
  * - Sheet border radius: 22.79px top (Figma: borderRadius)
- * - Handle: 48px width, 4px height, #4D4D4D (black.400), radius 200px
+ * - Handle: 28px width, 4px height, #D9D9D9 (light gray), radius 200px
  * - Handle top padding: 15.19px
  * - Container padding: 48px horizontal (per content width 297px)
- * - Title: Plus Jakarta Sans Regular, 28px, line-height 40px, tracking -1px, #FFFFFF
+ * - Title: Plus Jakarta Sans Regular, 28px, line-height 39.48px, tracking -0.56px, #FFFFFF
  *   Text: "Let's verify your number"
  * - Subtitle: Plus Jakarta Sans Medium, 12px, line-height 21.6px (1.8), tracking -0.132px, #A9A9A9
  *   Text: "We've sent a 6-digit code to your phone. It'll auto-verify once entered"
@@ -46,9 +46,9 @@ import { useAuth } from '@/src/hooks';
 
 // Exact Figma color values mapped to theme tokens (verified from 1-31277 extraction)
 const FIGMA_COLORS = {
-  overlay: 'rgba(0,0,0,0.16)',         // Figma: rectangle_54 opacity 0.16 (per Gemini feedback)
+  overlay: 'rgba(0,0,0,0.6)',          // Figma: rgba(0,0,0,0.6) = 60% opacity
   sheetBackground: colors.black[600], // #1A1A1A - Frame 1686557301
-  handle: '#4D4D4D',                   // Figma: node 1:31361 Rectangle 53 - dark gray handle
+  handle: '#D9D9D9',                   // Figma: node 1:31361 Rectangle 53 - light gray handle
   titleText: colors.white,            // #FFFFFF
   subtitleText: colors.neutral[500],  // #A9A9A9
   otpBoxBg: colors.neutral[900],      // #222222
@@ -65,7 +65,7 @@ const FIGMA_DIMENSIONS = {
   sheetWidth: 393,                     // Figma: full width
   sheetHeight: 409.96,                 // Figma: frame_1686557301 height (filled)
   sheetBorderRadius: 22.79,            // Figma: exact radius (24 for cleaner value)
-  handleWidth: 48,                     // Figma: rectangle_53 width (node 1:31361)
+  handleWidth: 28,                     // Figma: rectangle_53 width (node 1:31361)
   handleHeight: 4,                     // Figma: rectangle_53 height
   handleRadius: 200,                   // Figma: rectangle_53 borderRadius
   handleToSheetGap: 15,                // Figma: Frame 2095586317 gap between handle and sheet
@@ -232,7 +232,7 @@ export default function OTPScreen() {
   }));
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value * 0.16, // Figma: 0.16 opacity per Gemini feedback
+    opacity: overlayOpacity.value, // Figma: overlay color already has 0.6 opacity
   }));
 
   return (
@@ -373,18 +373,18 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 28,
-    lineHeight: 40,
-    letterSpacing: -1,
+    lineHeight: 40,                                        // Figma: lineHeightPx 40.0
+    letterSpacing: -1.0,                                    // Figma: letterSpacing -1.0
     color: FIGMA_COLORS.titleText,
     width: FIGMA_DIMENSIONS.titleWidth,                   // Figma: 297px
     textAlign: 'left',                                    // Figma: left-aligned per pixel-feedback
   },
   subtitle: {
-    // EXACT Figma: fontSize 12, fontWeight 500, lineHeight 21.6, letterSpacing -0.132
+    // EXACT Figma: node 1:31271 - fontSize 12, fontWeight 500, lineHeight 21.6, letterSpacing -0.13
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 21.6,
-    letterSpacing: -0.132,
+    letterSpacing: -0.132,                                  // Figma: exact -0.132
     color: FIGMA_COLORS.subtitleText,                     // #A9A9A9
     width: FIGMA_DIMENSIONS.subtitleWidth,                // Figma: 297px
     textAlign: 'left',                                    // Figma: left-aligned per pixel-feedback
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   secureCodeLabel: {
     // Figma: node I31:2866;50:317 - "Secure code" label
     // Figma: Inter 14px fontWeight 500, lineHeight 20, color #DDDDDD, textAlign LEFT
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,

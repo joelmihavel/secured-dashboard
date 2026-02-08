@@ -1,0 +1,366 @@
+{
+  "screenId": "243-2762",
+  "screenName": "Home --active --Bank / UPI only",
+  "route": "/(main)/index",
+  "generatedAt": "2026-02-03T21:59:54.863Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-03T21:58:04.702Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2776",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2861",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2883",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2906;100:1565",
+            "nodeName": "Text",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2954",
+            "nodeName": "Due in 10 Days",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2956;100:1565",
+            "nodeName": "Text",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2959;125:209",
+            "nodeName": "Time",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          }
+        ],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 7
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-03T21:58:04.702Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-03T21:59:21.529Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "backgroundColor",
+            "figmaValue": "#131313",
+            "currentValue": "Missing",
+            "severity": "critical",
+            "explanation": "Screen implementation file is missing. Root container must have the correct dark background color.",
+            "currentCode": "// Screen file not found",
+            "fixedCode": "<View style={{ flex: 1, backgroundColor: '#131313' }}>"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "Bottom Bar Layout",
+            "figmaValue": "Absolute Bottom, Height 118px",
+            "currentValue": "Missing",
+            "severity": "major",
+            "explanation": "The 'Review & pay' bottom bar is fixed at the bottom of the screen with specific dimensions and padding.",
+            "currentCode": "Missing",
+            "fixedCode": "position: 'absolute', bottom: 0, left: 0, right: 0, height: 118, backgroundColor: '#202020', paddingHorizontal: 32, paddingBottom: 40, paddingTop: 16"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "ScrollView Content Inset",
+            "figmaValue": "Bottom Padding > 118px",
+            "currentValue": "Missing",
+            "severity": "major",
+            "explanation": "Main ScrollView requires bottom padding to ensure content is not hidden behind the absolute bottom bar.",
+            "currentCode": "Missing",
+            "fixedCode": "contentContainerStyle={{ paddingBottom: 142 }} // 118 (bar) + 24 (gap)"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "Horizontal Cards List",
+            "figmaValue": "Padding Left 64px, Gap 16px",
+            "currentValue": "Missing",
+            "severity": "major",
+            "explanation": "The horizontal payment cards list has a specific left offset and gap.",
+            "currentCode": "Missing",
+            "fixedCode": "<ScrollView horizontal contentContainerStyle={{ paddingLeft: 64, paddingRight: 32, gap: 16 }}>"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "Header Layout",
+            "figmaValue": "Height 157px (approx)",
+            "currentValue": "Missing",
+            "severity": "major",
+            "explanation": "Custom header containing 'Hi, Rishabh' and profile image must be positioned at the top, handling safe area.",
+            "currentCode": "Missing",
+            "fixedCode": "<SafeAreaView edges={['top']} style={{ backgroundColor: '#131313' }}>"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 100
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-03T21:59:54.863Z",
+      "feedback": [
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "1-1",
+          "property": "backgroundColor",
+          "figmaValue": "#131313 (colors.black[700])",
+          "currentValue": "Missing",
+          "severity": "critical",
+          "explanation": "Root container requires the correct dark background color from design tokens.",
+          "currentCode": "backgroundColor: '...'",
+          "fixedCode": "backgroundColor: colors.black[700], // #131313"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "textAlign",
+          "figmaValue": "CENTER",
+          "currentValue": "undefined",
+          "severity": "major",
+          "explanation": "Text element 'SELECTED' has center alignment in Figma but is missing it in code.",
+          "currentCode": "<Text>SELECTED</Text>",
+          "fixedCode": "<Text style={{ textAlign: 'center' }}>SELECTED</Text>"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "textAlign",
+          "figmaValue": "CENTER",
+          "currentValue": "undefined",
+          "severity": "major",
+          "explanation": "Text element 'Due in 10 Days' has center alignment in Figma but is missing it in code.",
+          "currentCode": "<Text>Due in 10 Days</Text>",
+          "fixedCode": "<Text style={{ textAlign: 'center' }}>Due in 10 Days</Text>"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "textAlign",
+          "figmaValue": "CENTER",
+          "currentValue": "undefined",
+          "severity": "major",
+          "explanation": "Text element 'Time' has center alignment in Figma but is missing it in code.",
+          "currentCode": "<Text>Time</Text>",
+          "fixedCode": "<Text style={{ textAlign: 'center' }}>Time</Text>"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "bottomBarLayout",
+          "figmaValue": "Height 118px, Bg #202020",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "The 'Review & pay' bottom bar needs absolute positioning and specific styling.",
+          "currentCode": "Missing",
+          "fixedCode": "position: 'absolute', bottom: 0, left: 0, right: 0, height: 118, backgroundColor: colors.black[500], paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.md"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "contentContainerStyle",
+          "figmaValue": "Padding Bottom 142px",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "Main ScrollView needs bottom padding (118px bar + 24px gap) to prevent content occlusion.",
+          "currentCode": "contentContainerStyle={{ ... }}",
+          "fixedCode": "contentContainerStyle={{ paddingBottom: 142 }}"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "horizontalListLayout",
+          "figmaValue": "Padding Left 64px, Gap 16px",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "Horizontal payment cards list requires specific left offset and gap.",
+          "currentCode": "<ScrollView horizontal ...>",
+          "fixedCode": "<ScrollView horizontal contentContainerStyle={{ paddingLeft: spacing.huge, paddingRight: spacing.xl, gap: spacing.md }}>"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "headerLayout",
+          "figmaValue": "SafeArea Top",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "Header requires SafeAreaView with top edges and correct background.",
+          "currentCode": "<View ...>",
+          "fixedCode": "<SafeAreaView edges={['top']} style={{ backgroundColor: colors.black[700] }}>"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "1-1",
+      "property": "backgroundColor",
+      "figmaValue": "#131313 (colors.black[700])",
+      "currentValue": "Missing",
+      "severity": "critical",
+      "explanation": "Root container requires the correct dark background color from design tokens.",
+      "currentCode": "backgroundColor: '...'",
+      "fixedCode": "backgroundColor: colors.black[700], // #131313"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "textAlign",
+      "figmaValue": "CENTER",
+      "currentValue": "undefined",
+      "severity": "major",
+      "explanation": "Text element 'SELECTED' has center alignment in Figma but is missing it in code.",
+      "currentCode": "<Text>SELECTED</Text>",
+      "fixedCode": "<Text style={{ textAlign: 'center' }}>SELECTED</Text>"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "textAlign",
+      "figmaValue": "CENTER",
+      "currentValue": "undefined",
+      "severity": "major",
+      "explanation": "Text element 'Due in 10 Days' has center alignment in Figma but is missing it in code.",
+      "currentCode": "<Text>Due in 10 Days</Text>",
+      "fixedCode": "<Text style={{ textAlign: 'center' }}>Due in 10 Days</Text>"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "textAlign",
+      "figmaValue": "CENTER",
+      "currentValue": "undefined",
+      "severity": "major",
+      "explanation": "Text element 'Time' has center alignment in Figma but is missing it in code.",
+      "currentCode": "<Text>Time</Text>",
+      "fixedCode": "<Text style={{ textAlign: 'center' }}>Time</Text>"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "bottomBarLayout",
+      "figmaValue": "Height 118px, Bg #202020",
+      "currentValue": "Missing",
+      "severity": "major",
+      "explanation": "The 'Review & pay' bottom bar needs absolute positioning and specific styling.",
+      "currentCode": "Missing",
+      "fixedCode": "position: 'absolute', bottom: 0, left: 0, right: 0, height: 118, backgroundColor: colors.black[500], paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.md"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "contentContainerStyle",
+      "figmaValue": "Padding Bottom 142px",
+      "currentValue": "Missing",
+      "severity": "major",
+      "explanation": "Main ScrollView needs bottom padding (118px bar + 24px gap) to prevent content occlusion.",
+      "currentCode": "contentContainerStyle={{ ... }}",
+      "fixedCode": "contentContainerStyle={{ paddingBottom: 142 }}"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "horizontalListLayout",
+      "figmaValue": "Padding Left 64px, Gap 16px",
+      "currentValue": "Missing",
+      "severity": "major",
+      "explanation": "Horizontal payment cards list requires specific left offset and gap.",
+      "currentCode": "<ScrollView horizontal ...>",
+      "fixedCode": "<ScrollView horizontal contentContainerStyle={{ paddingLeft: spacing.huge, paddingRight: spacing.xl, gap: spacing.md }}>"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "headerLayout",
+      "figmaValue": "SafeArea Top",
+      "currentValue": "Missing",
+      "severity": "major",
+      "explanation": "Header requires SafeAreaView with top edges and correct background.",
+      "currentCode": "<View ...>",
+      "fixedCode": "<SafeAreaView edges={['top']} style={{ backgroundColor: colors.black[700] }}>"
+    }
+  ],
+  "summary": {
+    "totalIssues": 8,
+    "critical": 1,
+    "major": 7,
+    "minor": 0,
+    "filesAffected": [
+      "app/(home-active)/index.tsx"
+    ]
+  }
+}

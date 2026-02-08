@@ -1,0 +1,49 @@
+[
+  {
+    "nodeId": "1:31758",
+    "nodeName": "Frame 2095586313",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586313",
+    "rnStyles": {
+      "width": 2765,
+      "height": 154,
+      "backgroundColor": "#000000",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 48,
+      "paddingRight": 64,
+      "paddingBottom": 48,
+      "paddingLeft": 64
+    },
+    "geometry": {
+      "x": 13,
+      "y": 3797,
+      "width": 2765,
+      "height": 154
+    }
+  },
+  {
+    "nodeId": "1:31759",
+    "nodeName": "Post Approval Setup",
+    "nodeType": "TEXT",
+    "rnStyleName": "postApprovalSetup",
+    "rnStyles": {
+      "width": 462,
+      "height": 58,
+      "color": "#FFFFFF",
+      "fontFamily": "Inter",
+      "fontSize": 48,
+      "fontWeight": "400",
+      "lineHeight": 58.09,
+      "textAlign": "left"
+    },
+    "textContent": "Post Approval Setup",
+    "geometry": {
+      "x": 77,
+      "y": 3845,
+      "width": 462,
+      "height": 58
+    }
+  }
+]

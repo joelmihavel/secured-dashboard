@@ -27,7 +27,7 @@ import {
 import { Text } from '@/src/components/ui';
 import { PaymentMethodCard, PaymentMethod } from './PaymentMethodCard';
 import { PaymentSetupCard } from './PaymentSetupCard';
-import { colors, spacing } from '@/src/theme';
+// Theme imports removed - all values use exact Figma hex codes
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = 270; // Figma: 270px (243:5878)
@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 64, // Figma: paddingHorizontal 64 (aligned with 243:5872)
   },
   label: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
     fontWeight: '400', // Figma: fontWeight 400

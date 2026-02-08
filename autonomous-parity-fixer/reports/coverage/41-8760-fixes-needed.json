@@ -1,0 +1,537 @@
+{
+  "screenId": "41-8760",
+  "iteration": 1,
+  "coverage": 85.3,
+  "threshold": 95,
+  "fixesNeeded": [
+    {
+      "type": "style",
+      "target": "My Profile / Main Screen",
+      "property": "backgroundColor",
+      "figmaValue": "#131313",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#131313' (or colors.black[700])"
+    },
+    {
+      "type": "style",
+      "target": "My  Profile",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "Your payment history",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "JAN",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "JAN",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "JAN",
+      "property": "characters",
+      "figmaValue": "JAN",
+      "currentValue": null,
+      "fix": "Add text content: \"JAN\""
+    },
+    {
+      "type": "style",
+      "target": "on time",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "type": "style",
+      "target": "on time",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "FEB",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "FEB",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "FEB",
+      "property": "characters",
+      "figmaValue": "FEB",
+      "currentValue": null,
+      "fix": "Add text content: \"FEB\""
+    },
+    {
+      "type": "style",
+      "target": "Paid late",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "type": "style",
+      "target": "Paid late",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "MAR",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "MAR",
+      "property": "characters",
+      "figmaValue": "MAR",
+      "currentValue": null,
+      "fix": "Add text content: \"MAR\""
+    },
+    {
+      "type": "style",
+      "target": "Not Paid",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "type": "style",
+      "target": "Not Paid",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "APR",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "APR",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "APR",
+      "property": "characters",
+      "figmaValue": "APR",
+      "currentValue": null,
+      "fix": "Add text content: \"APR\""
+    },
+    {
+      "type": "style",
+      "target": "MAY",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "MAY",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "MAY",
+      "property": "characters",
+      "figmaValue": "MAY",
+      "currentValue": null,
+      "fix": "Add text content: \"MAY\""
+    },
+    {
+      "type": "style",
+      "target": "JUN",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "JUN",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "JUN",
+      "property": "characters",
+      "figmaValue": "JUN",
+      "currentValue": null,
+      "fix": "Add text content: \"JUN\""
+    },
+    {
+      "type": "style",
+      "target": "JUL",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "JUL",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "JUL",
+      "property": "characters",
+      "figmaValue": "JUL",
+      "currentValue": null,
+      "fix": "Add text content: \"JUL\""
+    },
+    {
+      "type": "style",
+      "target": "AUG",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "AUG",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "AUG",
+      "property": "characters",
+      "figmaValue": "AUG",
+      "currentValue": null,
+      "fix": "Add text content: \"AUG\""
+    },
+    {
+      "type": "style",
+      "target": "SEP",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "SEP",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "SEP",
+      "property": "characters",
+      "figmaValue": "SEP",
+      "currentValue": null,
+      "fix": "Add text content: \"SEP\""
+    },
+    {
+      "type": "style",
+      "target": "OCT",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "OCT",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "OCT",
+      "property": "characters",
+      "figmaValue": "OCT",
+      "currentValue": null,
+      "fix": "Add text content: \"OCT\""
+    },
+    {
+      "type": "style",
+      "target": "NOV",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "NOV",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "NOV",
+      "property": "characters",
+      "figmaValue": "NOV",
+      "currentValue": null,
+      "fix": "Add text content: \"NOV\""
+    },
+    {
+      "type": "style",
+      "target": "DEC",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "DEC",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "delegated",
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "type": "style",
+      "target": "DEC",
+      "property": "characters",
+      "figmaValue": "DEC",
+      "currentValue": null,
+      "fix": "Add text content: \"DEC\""
+    },
+    {
+      "type": "style",
+      "target": "Secured Account",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 8",
+      "property": "imageComponent",
+      "figmaValue": "6d93b82e0916dab9a12fe22c604ddce60dfd2dfb",
+      "currentValue": null,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 8",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "currentValue": null,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "type": "asset",
+      "target": "Ellipse 8",
+      "property": "resizeMode",
+      "figmaValue": "cover",
+      "currentValue": null,
+      "fix": "Add resizeMode: 'cover'"
+    },
+    {
+      "type": "style",
+      "target": "Rohan Joshi",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "type": "style",
+      "target": "Rohan Joshi",
+      "property": "characters",
+      "figmaValue": "Rohan Joshi",
+      "currentValue": null,
+      "fix": "Add text content: \"Rohan Joshi\""
+    },
+    {
+      "type": "style",
+      "target": "15th sept 9:40am",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "15th sept 9:40am",
+      "property": "characters",
+      "figmaValue": "15th sept 9:40am",
+      "currentValue": null,
+      "fix": "Add text content: \"15th sept 9:40am\""
+    },
+    {
+      "type": "style",
+      "target": "Credit Card XX25",
+      "property": "characters",
+      "figmaValue": "Credit Card XX25",
+      "currentValue": null,
+      "fix": "Add text content: \"Credit Card XX25\""
+    },
+    {
+      "type": "style",
+      "target": "View Agreement",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "Payment Information",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Edit UPI Method",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "Edit Credit Card",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "Edit Bank Account",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "support",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Contact Support",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "Rate the App",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "App",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Sign Out",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "Sign Out",
+      "property": "characters",
+      "figmaValue": "Sign Out",
+      "currentValue": null,
+      "fix": "Add text content: \"Sign Out\""
+    },
+    {
+      "type": "style",
+      "target": "Delete Account",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "PROFILE_COLORS.cardBackground",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "asset",
+      "target": "index.tsx",
+      "property": "placeholderDetected",
+      "figmaValue": "Found 1 placeholder(s): {/* Avatar placeholder - could be actual image */}...",
+      "currentValue": null,
+      "fix": "Replace placeholder pattern with actual image asset"
+    }
+  ],
+  "generatedAt": "2026-02-03T10:34:27.716Z"
+}

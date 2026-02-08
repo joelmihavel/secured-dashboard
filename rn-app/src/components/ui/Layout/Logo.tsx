@@ -15,9 +15,10 @@ export interface LogoProps {
 }
 
 function LogoComponent({ size = 48, color = colors.white }: LogoProps) {
-  // Figma exact: Logo Container (176:2750) is 33.375 x 40px
-  const FIGMA_WIDTH = 33.375;
-  const FIGMA_HEIGHT = 40;
+  // Figma exact: Logo is 32w x 38.4h — aspect ratio 0.8333
+  const FIGMA_WIDTH = 32;
+  const FIGMA_HEIGHT = 38.4;
+  const VIEWBOX_HEIGHT = 40; // SVG viewBox is 40 units tall
   const scale = size / FIGMA_HEIGHT;
   const width = FIGMA_WIDTH * scale;
   const height = FIGMA_HEIGHT * scale;

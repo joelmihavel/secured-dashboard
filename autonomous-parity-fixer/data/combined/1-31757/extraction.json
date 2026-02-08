@@ -1,0 +1,40 @@
+{
+  "screenId": "1-31757",
+  "screenName": "Screen 1-31757",
+  "module": "app",
+  "extractedAt": "2026-02-01T10:26:44.257Z",
+  "nodeCount": 1,
+  "nodes": [
+    {
+      "nodeId": "1:31757",
+      "name": "Vector 45",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 8587,
+        "y": 748,
+        "width": 482.5,
+        "height": 0
+      },
+      "fills": [],
+      "strokes": [
+        {
+          "hex": "#000000",
+          "weight": 2,
+          "align": "CENTER"
+        }
+      ],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 482.5,
+        "height": 0,
+        "borderColor": "#000000",
+        "borderWidth": 2
+      }
+    }
+  ]
+}

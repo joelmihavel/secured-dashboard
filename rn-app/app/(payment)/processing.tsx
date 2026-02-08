@@ -5,7 +5,7 @@
  * Pixel-perfect implementation:
  * - Receipt-style card with notch cutouts and top perforations (14 holes, 14x14px)
  * - Card width: fixed 270px
- * - PENDING stamp badge (rotated -15deg), color #C7C9D9
+ * - PENDING stamp badge (rotated -15deg), color #A9A9A9
  * - Title "Payment" - fontSize 20, lineHeight 32, color #FFFFFF
  * - "Processing" - fontSize 20, lineHeight 32, color #FFFFFF (titleAccent)
  * - Info rows with credit card icons
@@ -19,6 +19,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Linking,
+  Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,15 +31,21 @@ import { Screen, Text, PrimaryButton } from '@/src/components';
 import { verifyPaymentStatus } from '@/src/services/payment';
 import { colors, spacing } from '@/src/theme';
 
-const CARD_WIDTH = 270; // Fixed 270px per Figma 41-9460
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const FIGMA_SCREEN_WIDTH = 393;
+const FIGMA_CARD_WIDTH = 270;
+const FIGMA_BUTTON_WIDTH = 313;
+const SCALE = SCREEN_WIDTH / FIGMA_SCREEN_WIDTH;
+const CARD_WIDTH = Math.round(FIGMA_CARD_WIDTH * SCALE);
+const BUTTON_WIDTH = Math.round(FIGMA_BUTTON_WIDTH * SCALE);
 
 // Exact Figma colors - from 41-9460 analysis
 const FIGMA_COLORS = {
   background: '#131313',           // black.700
   cardBackground: '#202020',       // black.500 - Rectangle 136
   titleWhite: '#FFFFFF',           // white - Payment Processing
-  titleAccent: '#FFFFFF',           // Figma 41-9460: white for "Processing" title accent
-  stampColor: '#C7C9D9',           // Figma 41-9460: shimmer/stamp color
+  titleAccent: '#FF9A6D',           // Figma 41-9460 node 41:9485: #ff9a6d (brand.500 orange)
+  stampColor: '#A9A9A9',           // Figma: pending stamp color (matches PaymentStamp component)
   infoText: '#A9A9A9',             // neutral.500 - We've received your payment
   iconColor: '#4D4D4D',            // black.400 - Vector icons
   paperclipColor: '#4D4D4D',       // black.400 - Vector
@@ -312,21 +319,18 @@ const styles = StyleSheet.create({
   },
   notch: {
     position: 'absolute',
-    width: 20,
-    height: 40,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: FIGMA_COLORS.background,
     top: '50%',
-    marginTop: -20,
+    marginTop: -7,
   },
   notchLeft: {
-    left: -10,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
+    left: -7,
   },
   notchRight: {
-    right: -10,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
+    right: -7,
   },
   stampPosition: {
     position: 'absolute',
@@ -411,6 +415,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonInner: {
-    width: 313, // Figma 41-9460: fixed 313px button container
+    width: BUTTON_WIDTH, // Figma 41-9460: scaled from 313px
   },
 });

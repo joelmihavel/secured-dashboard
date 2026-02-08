@@ -1,0 +1,110 @@
+{
+  "screen": {
+    "name": "screen",
+    "category": "layout",
+    "values": {
+      "width": 393,
+      "height": 853,
+      "backgroundColor": "#131313"
+    }
+  },
+  "colors": {
+    "name": "colors",
+    "category": "colors",
+    "values": {
+      "background": "#131313",
+      "white": "#FFFFFF",
+      "color000000": "#000000",
+      "textTertiary": "#CBCBCB",
+      "colorFFCC8A": "#FFCC8A",
+      "cardSurface": "#202020",
+      "colorA9A9A9": "#A9A9A9",
+      "colorEEEEEE": "#EEEEEE",
+      "textDisabled": "#4D4D4D",
+      "textSecondary": "#BABABA",
+      "textSubtle": "#A6A6A6",
+      "cardBackground": "#1A1A1A",
+      "accent": "#FF9A6D",
+      "color27803B": "#27803B",
+      "colorE9661C": "#E9661C",
+      "colorF06321": "#F06321",
+      "colorAE282E": "#AE282E",
+      "textMuted": "#878787",
+      "colorD2D2D2": "#D2D2D2",
+      "colorDDDDDD": "#DDDDDD"
+    }
+  },
+  "typography": {
+    "name": "typography",
+    "category": "typography",
+    "values": {
+      "17_590": {
+        "fontSize": 17,
+        "fontWeight": "590",
+        "lineHeight": 20.29
+      },
+      "14_400": {
+        "fontSize": 14,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "12_400": {
+        "fontSize": 12,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "12_600": {
+        "fontSize": 12,
+        "fontWeight": "600",
+        "lineHeight": 16.92,
+        "letterSpacing": -0.48
+      },
+      "14_500": {
+        "fontSize": 14,
+        "fontWeight": "500",
+        "lineHeight": 20
+      },
+      "28_400": {
+        "fontSize": 28,
+        "fontWeight": "400",
+        "lineHeight": 40,
+        "letterSpacing": -1
+      },
+      "20_400": {
+        "fontSize": 20,
+        "fontWeight": "400",
+        "lineHeight": 32
+      },
+      "16_400": {
+        "fontSize": 16,
+        "fontWeight": "400",
+        "lineHeight": 24
+      }
+    }
+  },
+  "spacing": {
+    "name": "spacing",
+    "category": "spacing",
+    "values": {
+      "space1": 3.8,
+      "space2": 4,
+      "space3": 5.09,
+      "space4": 8,
+      "space5": 8.14,
+      "space6": 10,
+      "space7": 12,
+      "space8": 15,
+      "space9": 15.19,
+      "space10": 16,
+      "space11": 24,
+      "space12": 28,
+      "space13": 30.38,
+      "space14": 32,
+      "space15": 40,
+      "space16": 48,
+      "space17": 64,
+      "space18": 120,
+      "space19": 130
+    }
+  }
+}

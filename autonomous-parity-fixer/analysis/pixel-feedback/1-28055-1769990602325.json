@@ -1,0 +1,253 @@
+{
+  "screenId": "1-28055",
+  "screenName": "Splash / get-started --animation",
+  "route": "/(auth)/splash",
+  "generatedAt": "2026-02-02T00:03:22.325Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T00:01:50.201Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "237:2727",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": -29.999980476604378,
+              "absoluteY": -397.0000576553158,
+              "relativeLeft": -462.9999804766044,
+              "relativeTop": -747.0000576553158,
+              "parentId": "1:28055"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "src/components/1-28055/*.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"Splash / get-started\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I1:28069;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/1-28055/*.tsx or app/(1-28055)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:28066",
+            "nodeName": "Main Heading",
+            "figmaValue": {
+              "text": "Make  your rent  work for you→",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 4
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-28055/*.tsx",
+            "explanation": "Text \"Make  your rent  work for you→...\" is ONE LINE in Figma with 4 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:28070",
+            "nodeName": "Login Text",
+            "figmaValue": {
+              "text": "Already a user? Log in",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-28055/*.tsx",
+            "explanation": "Text \"Already a user? Log in...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          }
+        ],
+        "totalIssues": 4
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T00:01:50.210Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T00:02:51.638Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(auth)/get-started.tsx",
+            "lineRange": "N/A",
+            "property": "Vertical Layout",
+            "figmaValue": "Main content container positioned with marginTop: 205, marginBottom: 34, and using justifyContent: 'space-between' internally.",
+            "currentValue": "N/A (Code not provided)",
+            "severity": "critical",
+            "explanation": "The screen's vertical structure is defined by a main content container that is precisely positioned with a large top margin (205px) and a bottom margin (34px) to accommodate the home indicator. Inside this container, `justifyContent: 'space-between'` is used to push the text block to the top and the button block to the bottom. A common implementation error would be to use incorrect margins or to use `gap` instead of `space-between`, which would not adapt correctly to different screen heights.",
+            "currentCode": "// Code not provided, but a likely incorrect implementation might look like this:\n<SafeAreaView style={styles.container}>\n  <View style={{ gap: 100 }}>\n    {/* ... content ... */}\n  </View>\n</SafeAreaView>",
+            "fixedCode": "const styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    backgroundColor: _designTokens.colors.black[700],\n  },\n  contentContainer: {\n    flex: 1,\n    marginTop: 205,\n    marginBottom: 34,\n    justifyContent: 'space-between',\n    paddingBottom: _designTokens.spacing[16], // 64px\n  }\n});\n\n// Usage:\n<View style={styles.screenContainer}>\n  {/* Backgrounds go here */}\n  <SafeAreaView style={{flex: 1}}>\n    <View style={styles.contentContainer}>\n      {/* Top Text Block */}\n      {/* Bottom Button Block */}\n    </View>\n  </SafeAreaView>\n</View>"
+          },
+          {
+            "file": "app/(auth)/get-started.tsx",
+            "lineRange": "N/A",
+            "property": "paddingHorizontal",
+            "figmaValue": "48px (_designTokens.spacing[12])",
+            "currentValue": "N/A (Code not provided)",
+            "severity": "major",
+            "explanation": "The main content blocks (the top section with the logo and text, and the bottom section with the button) have a horizontal padding of 48px on each side. This creates the wide, spacious margins visible in the design. Using a smaller, more common padding value would make the content appear too close to the screen edges.",
+            "currentCode": "// Code not provided, but a likely incorrect implementation might use a smaller token:\nconst styles = StyleSheet.create({\n  textBlock: {\n    paddingHorizontal: _designTokens.spacing.lg, // 24px\n  },\n  buttonBlock: {\n    paddingHorizontal: _designTokens.spacing.lg, // 24px\n  }\n});",
+            "fixedCode": "// This padding should be applied to the containers of the text and button sections.\nconst styles = StyleSheet.create({\n  textBlock: {\n    paddingHorizontal: _designTokens.spacing[12], // 48px\n  },\n  buttonBlock: {\n    paddingHorizontal: _designTokens.spacing[12], // 48px\n  }\n});"
+          },
+          {
+            "file": "app/(auth)/get-started.tsx",
+            "lineRange": "N/A",
+            "property": "Background Layers",
+            "figmaValue": "A composite background with 3 layers: base color, a texture image with 8% opacity, and a top gradient overlay image.",
+            "currentValue": "N/A (Code not provided)",
+            "severity": "major",
+            "explanation": "The screen background is not a single element. It's composed of three layers that must be stacked correctly: 1) The base background color `#131313` (`colors.black[700]`). 2) A full-screen texture image (`image 149`) with an opacity of 8%. 3) A gradient overlay image (`Background Shape`) positioned at the top and centered horizontally. These background elements must be absolutely positioned to sit behind the main content without affecting the layout.",
+            "currentCode": "// Code not provided, but a likely incorrect implementation might be missing layers or have incorrect styles:\n<View style={{ flex: 1, backgroundColor: _designTokens.colors.black[700] }}>\n  {/* Content... */}\n</View>",
+            "fixedCode": "<View style={styles.screenContainer}>\n  <Image\n    source={require('path/to/texture_image.png')}\n    style={[StyleSheet.absoluteFillObject, { opacity: 0.08 }]}\n  />\n  <Image\n    source={require('path/to/gradient_overlay.png')}\n    style={styles.gradientOverlay}\n  />\n  {/* ... rest of screen content ... */}\n</View>\n\nconst styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    backgroundColor: _designTokens.colors.black[700],\n  },\n  gradientOverlay: {\n    position: 'absolute',\n    top: 0,\n    width: 481,\n    height: 405,\n    alignSelf: 'center',\n  }\n});"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T00:03:22.325Z",
+      "feedback": [
+        {
+          "file": "app/(auth)/get-started.tsx",
+          "severity": "critical",
+          "property": "Vertical Layout",
+          "explanation": "The screen's vertical structure is incorrect. The main content container must be positioned with a large top margin (205px) and a bottom margin (34px). Crucially, it must use `justifyContent: 'space-between'` to push the text block to the top and the button block to the bottom, ensuring it adapts correctly to different screen heights.",
+          "currentCode": "<SafeAreaView style={styles.container}>\n  <View style={{ gap: 100 }}>\n    {/* ... content ... */}\n  </View>\n</SafeAreaView>",
+          "fixedCode": "const styles = StyleSheet.create({\n  contentContainer: {\n    flex: 1,\n    marginTop: 205,\n    marginBottom: 34,\n    justifyContent: 'space-between',\n  }\n});\n\n// Usage:\n<SafeAreaView style={{flex: 1}}>\n  <View style={styles.contentContainer}>\n    {/* Top Text Block */}\n    {/* Bottom Button Block */}\n  </View>\n</SafeAreaView>"
+        },
+        {
+          "file": "app/(auth)/get-started.tsx",
+          "severity": "major",
+          "property": "Text Structure",
+          "explanation": "The main heading \"Make your rent work for you→\" is a single line in Figma with multiple colors. It must be implemented as a single `<Text>` component with nested `<Text>` spans to ensure correct line wrapping, styling, and accessibility, instead of using multiple separate Text components.",
+          "currentCode": "<Text>Make your rent</Text>\n<Text>work for you→</Text>",
+          "fixedCode": "<Text style={styles.headingBase}>\n  Make your rent work for you\n  <Text style={styles.headingArrow}>→</Text>\n</Text>"
+        },
+        {
+          "file": "app/(auth)/get-started.tsx",
+          "severity": "major",
+          "property": "Text Structure",
+          "explanation": "The login prompt \"Already a user? Log in\" is a single line in Figma with two different text styles. It must be implemented as a single `<Text>` component with a nested `<Text>` span for the \"Log in\" part to handle styling and press events correctly.",
+          "currentCode": "<View style={{flexDirection: 'row'}}>\n  <Text>Already a user? </Text>\n  <Text>Log in</Text>\n</View>",
+          "fixedCode": "<Text style={styles.loginTextBase}>\n  Already a user?{' '}\n  <Text style={styles.loginTextLink}>Log in</Text>\n</Text>"
+        },
+        {
+          "file": "app/(auth)/get-started.tsx",
+          "severity": "major",
+          "property": "Background Layers",
+          "explanation": "The screen background is a composite of three layers that are missing or incorrectly stacked. It requires: 1) A base background color of `colors.black[700]`. 2) A full-screen texture image (`image 149`) with an opacity of 8%. 3) A gradient overlay image at the top. This addresses the structural finding for `image 149`'s position by providing a more robust implementation.",
+          "currentCode": "<View style={{ flex: 1, backgroundColor: _designTokens.colors.black[700] }}>\n  {/* Content... */}\n</View>",
+          "fixedCode": "<View style={styles.screenContainer}>\n  <Image\n    source={require('path/to/texture_image_149.png')}\n    style={[StyleSheet.absoluteFillObject, { opacity: 0.08 }]}\n  />\n  <Image\n    source={require('path/to/gradient_overlay.png')}\n    style={styles.gradientOverlay}\n  />\n  {/* ... rest of screen content ... */}\n</View>\n\nconst styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    backgroundColor: _designTokens.colors.black[700],\n  },\n  gradientOverlay: {\n    position: 'absolute',\n    top: 0,\n    width: '100%',\n    height: 405, // Adjust height as needed\n    resizeMode: 'cover',\n  }\n});"
+        },
+        {
+          "file": "app/(auth)/get-started.tsx",
+          "severity": "major",
+          "property": "paddingHorizontal",
+          "explanation": "The main content blocks (top text section and bottom button section) are missing the required horizontal padding of 48px. This causes the content to appear too close to the screen edges.",
+          "currentCode": "textBlock: {\n  paddingHorizontal: 16, // or some other value\n},\nbuttonBlock: {\n  paddingHorizontal: 16, // or some other value\n}",
+          "fixedCode": "textBlock: {\n  paddingHorizontal: _designTokens.spacing.xxxl, // 48px\n},\nbuttonBlock: {\n  paddingHorizontal: _designTokens.spacing.xxxl, // 48px\n}"
+        },
+        {
+          "file": "app/(auth)/get-started.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "The 'Get Started' button (named \"Rectangle 140\" in Figma) has an incorrect background color. The Figma design specifies a fill of #4D4D4D.",
+          "currentCode": "backgroundColor: _designTokens.colors.brand[500]",
+          "fixedCode": "backgroundColor: _designTokens.colors.black[400] // #4D4D4D"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(auth)/get-started.tsx",
+      "severity": "critical",
+      "property": "Vertical Layout",
+      "explanation": "The screen's vertical structure is incorrect. The main content container must be positioned with a large top margin (205px) and a bottom margin (34px). Crucially, it must use `justifyContent: 'space-between'` to push the text block to the top and the button block to the bottom, ensuring it adapts correctly to different screen heights.",
+      "currentCode": "<SafeAreaView style={styles.container}>\n  <View style={{ gap: 100 }}>\n    {/* ... content ... */}\n  </View>\n</SafeAreaView>",
+      "fixedCode": "const styles = StyleSheet.create({\n  contentContainer: {\n    flex: 1,\n    marginTop: 205,\n    marginBottom: 34,\n    justifyContent: 'space-between',\n  }\n});\n\n// Usage:\n<SafeAreaView style={{flex: 1}}>\n  <View style={styles.contentContainer}>\n    {/* Top Text Block */}\n    {/* Bottom Button Block */}\n  </View>\n</SafeAreaView>"
+    },
+    {
+      "file": "app/(auth)/get-started.tsx",
+      "severity": "major",
+      "property": "Text Structure",
+      "explanation": "The main heading \"Make your rent work for you→\" is a single line in Figma with multiple colors. It must be implemented as a single `<Text>` component with nested `<Text>` spans to ensure correct line wrapping, styling, and accessibility, instead of using multiple separate Text components.",
+      "currentCode": "<Text>Make your rent</Text>\n<Text>work for you→</Text>",
+      "fixedCode": "<Text style={styles.headingBase}>\n  Make your rent work for you\n  <Text style={styles.headingArrow}>→</Text>\n</Text>"
+    },
+    {
+      "file": "app/(auth)/get-started.tsx",
+      "severity": "major",
+      "property": "Text Structure",
+      "explanation": "The login prompt \"Already a user? Log in\" is a single line in Figma with two different text styles. It must be implemented as a single `<Text>` component with a nested `<Text>` span for the \"Log in\" part to handle styling and press events correctly.",
+      "currentCode": "<View style={{flexDirection: 'row'}}>\n  <Text>Already a user? </Text>\n  <Text>Log in</Text>\n</View>",
+      "fixedCode": "<Text style={styles.loginTextBase}>\n  Already a user?{' '}\n  <Text style={styles.loginTextLink}>Log in</Text>\n</Text>"
+    },
+    {
+      "file": "app/(auth)/get-started.tsx",
+      "severity": "major",
+      "property": "Background Layers",
+      "explanation": "The screen background is a composite of three layers that are missing or incorrectly stacked. It requires: 1) A base background color of `colors.black[700]`. 2) A full-screen texture image (`image 149`) with an opacity of 8%. 3) A gradient overlay image at the top. This addresses the structural finding for `image 149`'s position by providing a more robust implementation.",
+      "currentCode": "<View style={{ flex: 1, backgroundColor: _designTokens.colors.black[700] }}>\n  {/* Content... */}\n</View>",
+      "fixedCode": "<View style={styles.screenContainer}>\n  <Image\n    source={require('path/to/texture_image_149.png')}\n    style={[StyleSheet.absoluteFillObject, { opacity: 0.08 }]}\n  />\n  <Image\n    source={require('path/to/gradient_overlay.png')}\n    style={styles.gradientOverlay}\n  />\n  {/* ... rest of screen content ... */}\n</View>\n\nconst styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    backgroundColor: _designTokens.colors.black[700],\n  },\n  gradientOverlay: {\n    position: 'absolute',\n    top: 0,\n    width: '100%',\n    height: 405, // Adjust height as needed\n    resizeMode: 'cover',\n  }\n});"
+    },
+    {
+      "file": "app/(auth)/get-started.tsx",
+      "severity": "major",
+      "property": "paddingHorizontal",
+      "explanation": "The main content blocks (top text section and bottom button section) are missing the required horizontal padding of 48px. This causes the content to appear too close to the screen edges.",
+      "currentCode": "textBlock: {\n  paddingHorizontal: 16, // or some other value\n},\nbuttonBlock: {\n  paddingHorizontal: 16, // or some other value\n}",
+      "fixedCode": "textBlock: {\n  paddingHorizontal: _designTokens.spacing.xxxl, // 48px\n},\nbuttonBlock: {\n  paddingHorizontal: _designTokens.spacing.xxxl, // 48px\n}"
+    },
+    {
+      "file": "app/(auth)/get-started.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "The 'Get Started' button (named \"Rectangle 140\" in Figma) has an incorrect background color. The Figma design specifies a fill of #4D4D4D.",
+      "currentCode": "backgroundColor: _designTokens.colors.brand[500]",
+      "fixedCode": "backgroundColor: _designTokens.colors.black[400] // #4D4D4D"
+    }
+  ],
+  "summary": {
+    "totalIssues": 6,
+    "critical": 1,
+    "major": 5,
+    "minor": 0,
+    "filesAffected": [
+      "app/(auth)/get-started.tsx"
+    ]
+  }
+}

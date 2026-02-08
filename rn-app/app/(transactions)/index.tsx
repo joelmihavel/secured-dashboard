@@ -480,22 +480,20 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 40,
     letterSpacing: -1,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   rentDueTextSecondary: {
     color: FIGMA_COLORS.textSecondary, // #BABABA neutral.400
-    textAlign: 'center',
   },
   rentDueTextAccent: {
     color: FIGMA_COLORS.textAccent, // #FF9A6D brand.500
-    textAlign: 'center',
   },
   payingWithText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.textMuted, // #A6A6A6 black.200
-    textAlign: 'center',
+    textAlign: 'left',
   },
 
   // Payment Cards Carousel - Critical fix: Horizontal ScrollView Padding
@@ -551,7 +549,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     color: FIGMA_COLORS.cashbackLabel, // #A9A9A9 neutral.500
-    textAlign: 'center',
+    textAlign: 'left',
   },
 
   // Toggle
@@ -590,51 +588,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md, // 16px per Figma transactionRow spec
+    // marginBottom removed - parent cashbackSection already has gap: spacing.md
   },
   cashbackStatLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: FIGMA_COLORS.cashbackLabel, // #A9A9A9
-    textAlign: 'center',
+    textAlign: 'left',
   },
   cashbackStatValue: {
-    textAlign: 'center',
+    textAlign: 'right',
   },
   // Multi-styled text for currency values
   currencySymbol: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     color: FIGMA_COLORS.cashbackLabel, // #A9A9A9
-    textAlign: 'center',
   },
   cashbackValueMain: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,
     lineHeight: 24,
     color: FIGMA_COLORS.cashbackValue, // #DDDDDD neutral.200
-    textAlign: 'center',
   },
   cashbackAvailableMain: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,
     lineHeight: 24,
     color: FIGMA_COLORS.cashbackAccent, // #FF9A6D brand.500
-    textAlign: 'center',
   },
   cashbackRateAccent: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,
     lineHeight: 24,
     color: FIGMA_COLORS.cashbackAccent, // #FF9A6D
-    textAlign: 'center',
   },
   cashbackRateSuffix: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     color: FIGMA_COLORS.cashbackLabel, // #A9A9A9
-    textAlign: 'center',
   },
 
   // Setup Message

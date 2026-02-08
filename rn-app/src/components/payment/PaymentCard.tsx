@@ -231,7 +231,6 @@ const styles = StyleSheet.create({
     borderRadius: 200,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    opacity: 0,
   },
   selectedText: {
     fontFamily: 'PlusJakartaSans-Regular',

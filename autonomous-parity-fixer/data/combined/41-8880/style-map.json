@@ -1,0 +1,1807 @@
+[
+  {
+    "nodeId": "41:8880",
+    "nodeName": "My Profile / Secured Account --My Profile",
+    "nodeType": "FRAME",
+    "rnStyleName": "myProfileSecuredAccountMyProfile",
+    "rnStyles": {
+      "width": 393,
+      "height": 1069,
+      "backgroundColor": "#131313"
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 3857,
+      "width": 393,
+      "height": 1069
+    }
+  },
+  {
+    "nodeId": "41:8881",
+    "nodeName": "Frame 2095586343",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586343",
+    "rnStyles": {
+      "width": 393,
+      "height": 892,
+      "flexDirection": "column",
+      "gap": 40,
+      "paddingBottom": 48
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 3968,
+      "width": 393,
+      "height": 892
+    }
+  },
+  {
+    "nodeId": "41:8882",
+    "nodeName": "Frame 2095586345",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586345",
+    "rnStyles": {
+      "width": 393,
+      "height": 184,
+      "flexDirection": "column",
+      "gap": 24,
+      "paddingRight": 40,
+      "paddingLeft": 40
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 3968,
+      "width": 393,
+      "height": 184
+    }
+  },
+  {
+    "nodeId": "41:8883",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary",
+    "rnStyles": {
+      "width": 32,
+      "height": 32
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 3968,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8883;19:108400",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector",
+    "rnStyles": {
+      "width": 18.67,
+      "height": 0,
+      "borderColor": "#FFFFFF",
+      "borderWidth": 2.67
+    },
+    "geometry": {
+      "x": 9838.666339874268,
+      "y": 3984,
+      "width": 18.666667938232422,
+      "height": 0
+    }
+  },
+  {
+    "nodeId": "I41:8883;19:108401",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector2",
+    "rnStyles": {
+      "width": 8,
+      "height": 8,
+      "borderColor": "#FFFFFF",
+      "borderWidth": 2.67
+    },
+    "geometry": {
+      "x": 9838.6669921875,
+      "y": 3984,
+      "width": 8,
+      "height": 8
+    }
+  },
+  {
+    "nodeId": "I41:8883;19:108402",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector3",
+    "rnStyles": {
+      "width": 8,
+      "height": 8,
+      "borderColor": "#FFFFFF",
+      "borderWidth": 2.67
+    },
+    "geometry": {
+      "x": 9838.6669921875,
+      "y": 3976,
+      "width": 8,
+      "height": 8
+    }
+  },
+  {
+    "nodeId": "41:8884",
+    "nodeName": "My  Profile",
+    "nodeType": "TEXT",
+    "rnStyleName": "myProfile",
+    "rnStyles": {
+      "width": 313,
+      "height": 128,
+      "color": "#FFFFFF",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 48,
+      "fontWeight": "400",
+      "lineHeight": 64,
+      "letterSpacing": -2,
+      "textAlign": "left"
+    },
+    "textContent": "My  Profile",
+    "geometry": {
+      "x": 9832,
+      "y": 4024,
+      "width": 313,
+      "height": 128
+    }
+  },
+  {
+    "nodeId": "41:8885",
+    "nodeName": "Frame 2095586371",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586371",
+    "rnStyles": {
+      "width": 393,
+      "height": 80,
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingRight": 40,
+      "paddingLeft": 40
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 4192,
+      "width": 393,
+      "height": 80
+    }
+  },
+  {
+    "nodeId": "41:8886",
+    "nodeName": "Ellipse 8",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse8",
+    "rnStyles": {
+      "width": 80,
+      "height": 80,
+      "backgroundColor": "#FFCC8A"
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4192,
+      "width": 80,
+      "height": 80
+    }
+  },
+  {
+    "nodeId": "41:8887",
+    "nodeName": "button",
+    "nodeType": "FRAME",
+    "rnStyleName": "button",
+    "rnStyles": {
+      "width": 107,
+      "height": 36,
+      "backgroundColor": "#CC7B57",
+      "borderRadius": 12,
+      "flexDirection": "column",
+      "gap": 10,
+      "paddingTop": 4,
+      "paddingRight": 4,
+      "paddingBottom": 4,
+      "paddingLeft": 4
+    },
+    "geometry": {
+      "x": 10038,
+      "y": 4214,
+      "width": 107,
+      "height": 36
+    }
+  },
+  {
+    "nodeId": "41:8888",
+    "nodeName": "Frame 2095586312",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586312",
+    "rnStyles": {
+      "width": 99,
+      "height": 28,
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 4,
+      "paddingRight": 16,
+      "paddingBottom": 4,
+      "paddingLeft": 16,
+      "shadowColor": "#995C41",
+      "shadowOffset": {
+        "width": 0,
+        "height": 4
+      },
+      "shadowRadius": 4,
+      "shadowOpacity": 1
+    },
+    "geometry": {
+      "x": 10042,
+      "y": 4218,
+      "width": 99,
+      "height": 28
+    }
+  },
+  {
+    "nodeId": "41:8889",
+    "nodeName": "Label",
+    "nodeType": "TEXT",
+    "rnStyleName": "label",
+    "rnStyles": {
+      "width": 67,
+      "height": 20,
+      "color": "#FFFFFF",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Edit Picture",
+    "geometry": {
+      "x": 10058,
+      "y": 4222,
+      "width": 67,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "41:8890",
+    "nodeName": "Frame 2095586311",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586311",
+    "rnStyles": {
+      "width": 393,
+      "height": 408,
+      "flexDirection": "column",
+      "gap": 16,
+      "paddingRight": 40,
+      "paddingLeft": 40
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 4312,
+      "width": 393,
+      "height": 408
+    }
+  },
+  {
+    "nodeId": "41:8891",
+    "nodeName": "input",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "input",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column"
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4312,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5579",
+    "nodeName": "_Input field base",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputFieldBase",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4312,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5580",
+    "nodeName": "Input with label",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputWithLabel",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4312,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8891;99:1466",
+    "nodeName": "Frame 2",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2",
+    "rnStyles": {
+      "width": 313,
+      "height": 20,
+      "flexDirection": "row",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4312,
+      "width": 313,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5581",
+    "nodeName": "Label",
+    "nodeType": "TEXT",
+    "rnStyleName": "label2",
+    "rnStyles": {
+      "width": 280,
+      "height": 20,
+      "color": "#A9A9A9",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "User name",
+    "geometry": {
+      "x": 9832,
+      "y": 4312,
+      "width": 280,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8891;99:1464",
+    "nodeName": "Hint text",
+    "nodeType": "TEXT",
+    "rnStyleName": "hintText",
+    "rnStyles": {
+      "width": 27,
+      "height": 20,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "right"
+    },
+    "textContent": "edit",
+    "geometry": {
+      "x": 10118,
+      "y": 4312,
+      "width": 27,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5582",
+    "nodeName": "Input",
+    "nodeType": "FRAME",
+    "rnStyleName": "input2",
+    "rnStyles": {
+      "width": 313,
+      "height": 64,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 1,
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingBottom": 16
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4338,
+      "width": 313,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5583",
+    "nodeName": "Content",
+    "nodeType": "FRAME",
+    "rnStyleName": "content",
+    "rnStyles": {
+      "width": 313,
+      "height": 32,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4354,
+      "width": 313,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5584",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary2",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4360,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5584;19:94221",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector4",
+    "rnStyles": {
+      "width": 15.01,
+      "height": 13.34,
+      "borderColor": "#DDDDDD",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 9834.4892578125,
+      "y": 4363.32373046875,
+      "width": 15.007772445678711,
+      "height": 13.342838287353516
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5585",
+    "nodeName": "Text",
+    "nodeType": "TEXT",
+    "rnStyleName": "text",
+    "rnStyles": {
+      "width": 313,
+      "height": 32,
+      "color": "#DDDDDD",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left"
+    },
+    "textContent": "John Smith",
+    "geometry": {
+      "x": 9832,
+      "y": 4354,
+      "width": 313,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5586",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary3",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 10082,
+      "y": 4360,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8891;47:5586;19:94221",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector5",
+    "rnStyles": {
+      "width": 15.01,
+      "height": 13.34,
+      "borderColor": "#DDDDDD",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 10084.4892578125,
+      "y": 4363.32373046875,
+      "width": 15.007772445678711,
+      "height": 13.342838287353516
+    }
+  },
+  {
+    "nodeId": "41:8892",
+    "nodeName": "input",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "input3",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column"
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4418,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5579",
+    "nodeName": "_Input field base",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputFieldBase2",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4418,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5580",
+    "nodeName": "Input with label",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputWithLabel2",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4418,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8892;99:1466",
+    "nodeName": "Frame 2",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame22",
+    "rnStyles": {
+      "width": 313,
+      "height": 20,
+      "flexDirection": "row",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4418,
+      "width": 313,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5581",
+    "nodeName": "Label",
+    "nodeType": "TEXT",
+    "rnStyleName": "label3",
+    "rnStyles": {
+      "width": 280,
+      "height": 20,
+      "color": "#A9A9A9",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Email",
+    "geometry": {
+      "x": 9832,
+      "y": 4418,
+      "width": 280,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8892;99:1464",
+    "nodeName": "Hint text",
+    "nodeType": "TEXT",
+    "rnStyleName": "hintText2",
+    "rnStyles": {
+      "width": 27,
+      "height": 20,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "right"
+    },
+    "textContent": "edit",
+    "geometry": {
+      "x": 10118,
+      "y": 4418,
+      "width": 27,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5582",
+    "nodeName": "Input",
+    "nodeType": "FRAME",
+    "rnStyleName": "input4",
+    "rnStyles": {
+      "width": 313,
+      "height": 64,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 1,
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingBottom": 16
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4444,
+      "width": 313,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5583",
+    "nodeName": "Content",
+    "nodeType": "FRAME",
+    "rnStyleName": "content2",
+    "rnStyles": {
+      "width": 313,
+      "height": 32,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4460,
+      "width": 313,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5584",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary4",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4466,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5584;19:94221",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector6",
+    "rnStyles": {
+      "width": 15.01,
+      "height": 13.34,
+      "borderColor": "#DDDDDD",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 9834.4892578125,
+      "y": 4469.32373046875,
+      "width": 15.007772445678711,
+      "height": 13.342838287353516
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5585",
+    "nodeName": "Text",
+    "nodeType": "TEXT",
+    "rnStyleName": "text2",
+    "rnStyles": {
+      "width": 313,
+      "height": 32,
+      "color": "#DDDDDD",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left"
+    },
+    "textContent": "john@email.com",
+    "geometry": {
+      "x": 9832,
+      "y": 4460,
+      "width": 313,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5586",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary5",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 10082,
+      "y": 4466,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8892;47:5586;19:94221",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector7",
+    "rnStyles": {
+      "width": 15.01,
+      "height": 13.34,
+      "borderColor": "#DDDDDD",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 10084.4892578125,
+      "y": 4469.32373046875,
+      "width": 15.007772445678711,
+      "height": 13.342838287353516
+    }
+  },
+  {
+    "nodeId": "41:8893",
+    "nodeName": "input",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "input5",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column"
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4524,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5603",
+    "nodeName": "_Input field base",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputFieldBase3",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4524,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5604",
+    "nodeName": "Input with label",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputWithLabel3",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4524,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8893;99:1482",
+    "nodeName": "Frame 4",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame4",
+    "rnStyles": {
+      "width": 313,
+      "height": 20,
+      "flexDirection": "row",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4524,
+      "width": 313,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5605",
+    "nodeName": "Label",
+    "nodeType": "TEXT",
+    "rnStyleName": "label4",
+    "rnStyles": {
+      "width": 313,
+      "height": 20,
+      "color": "#A9A9A9",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "City",
+    "geometry": {
+      "x": 9832,
+      "y": 4524,
+      "width": 313,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8893;99:1480",
+    "nodeName": "Hint text",
+    "nodeType": "TEXT",
+    "rnStyleName": "hintText3",
+    "rnStyles": {
+      "width": 187,
+      "height": 20,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "right"
+    },
+    "textContent": "This is a hint text to help user.",
+    "geometry": {
+      "x": 9915,
+      "y": 4524,
+      "width": 187,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5606",
+    "nodeName": "Input",
+    "nodeType": "FRAME",
+    "rnStyleName": "input6",
+    "rnStyles": {
+      "width": 313,
+      "height": 64,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 1,
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingBottom": 16
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4550,
+      "width": 313,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5607",
+    "nodeName": "Content",
+    "nodeType": "FRAME",
+    "rnStyleName": "content3",
+    "rnStyles": {
+      "width": 313,
+      "height": 32,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4566,
+      "width": 313,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5608",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary6",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4572,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5608;19:94221",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector8",
+    "rnStyles": {
+      "width": 15.01,
+      "height": 13.34,
+      "borderColor": "#222222",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 9834.4892578125,
+      "y": 4575.32373046875,
+      "width": 15.007772445678711,
+      "height": 13.342838287353516
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5609",
+    "nodeName": "Text",
+    "nodeType": "TEXT",
+    "rnStyleName": "text3",
+    "rnStyles": {
+      "width": 313,
+      "height": 32,
+      "color": "#222222",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left"
+    },
+    "textContent": "Bangalore",
+    "geometry": {
+      "x": 9832,
+      "y": 4566,
+      "width": 313,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5610",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary7",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 10082,
+      "y": 4572,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8893;47:5610;19:94221",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector9",
+    "rnStyles": {
+      "width": 15.01,
+      "height": 13.34,
+      "borderColor": "#222222",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 10084.4892578125,
+      "y": 4575.32373046875,
+      "width": 15.007772445678711,
+      "height": 13.342838287353516
+    }
+  },
+  {
+    "nodeId": "41:8894",
+    "nodeName": "input",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "input7",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column"
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4630,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:666",
+    "nodeName": "_Input field base",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputFieldBase4",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4630,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:667",
+    "nodeName": "Input with label",
+    "nodeType": "FRAME",
+    "rnStyleName": "inputWithLabel4",
+    "rnStyles": {
+      "width": 313,
+      "height": 90,
+      "flexDirection": "column",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4630,
+      "width": 313,
+      "height": 90
+    }
+  },
+  {
+    "nodeId": "I41:8894;99:1519",
+    "nodeName": "Frame 10",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame10",
+    "rnStyles": {
+      "width": 313,
+      "height": 20,
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "gap": 6
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4630,
+      "width": 313,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8894;99:1520",
+    "nodeName": "Label",
+    "nodeType": "TEXT",
+    "rnStyleName": "label5",
+    "rnStyles": {
+      "width": 313,
+      "height": 20,
+      "color": "#A9A9A9",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Phone Number",
+    "geometry": {
+      "x": 9832,
+      "y": 4630,
+      "width": 313,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8894;99:1521",
+    "nodeName": "Hint text",
+    "nodeType": "TEXT",
+    "rnStyleName": "hintText4",
+    "rnStyles": {
+      "width": 136,
+      "height": 20,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "right"
+    },
+    "textContent": "hint text to help user.",
+    "geometry": {
+      "x": 9909,
+      "y": 4630,
+      "width": 136,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:745",
+    "nodeName": "Input",
+    "nodeType": "FRAME",
+    "rnStyleName": "input8",
+    "rnStyles": {
+      "width": 313,
+      "height": 64,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 1,
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingBottom": 16
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4656,
+      "width": 313,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:746",
+    "nodeName": "Dropdown",
+    "nodeType": "FRAME",
+    "rnStyleName": "dropdown",
+    "rnStyles": {
+      "width": 52,
+      "height": 32,
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "alignItems": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4672,
+      "width": 52,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:747",
+    "nodeName": "Dropdown text",
+    "nodeType": "TEXT",
+    "rnStyleName": "dropdownText",
+    "rnStyles": {
+      "width": 32,
+      "height": 32,
+      "color": "#222222",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left"
+    },
+    "textContent": "+91",
+    "geometry": {
+      "x": 9832,
+      "y": 4672,
+      "width": 32,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:748",
+    "nodeName": "chevron-down",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "chevrondown",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 9864,
+      "y": 4678,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:748;1027:6770",
+    "nodeName": "Icon",
+    "nodeType": "VECTOR",
+    "rnStyleName": "icon",
+    "rnStyles": {
+      "width": 10,
+      "height": 5,
+      "borderColor": "#222222",
+      "borderWidth": 1.67
+    },
+    "geometry": {
+      "x": 9869,
+      "y": 4685.5,
+      "width": 10,
+      "height": 5
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:749",
+    "nodeName": "Text input",
+    "nodeType": "FRAME",
+    "rnStyleName": "textInput",
+    "rnStyles": {
+      "width": 156,
+      "height": 32,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 9900,
+      "y": 4672,
+      "width": 156,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:750",
+    "nodeName": "Text",
+    "nodeType": "TEXT",
+    "rnStyleName": "text4",
+    "rnStyles": {
+      "width": 156,
+      "height": 32,
+      "color": "#222222",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left"
+    },
+    "textContent": "+91 98765 43210",
+    "geometry": {
+      "x": 9900,
+      "y": 4672,
+      "width": 156,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:971",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary8",
+    "rnStyles": {
+      "width": 16,
+      "height": 16
+    },
+    "geometry": {
+      "x": 10029,
+      "y": 4680,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:971;19:92964",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector10",
+    "rnStyles": {
+      "width": 5.34,
+      "height": 6.67,
+      "borderColor": "#222222",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 10034.3330078125,
+      "y": 4683.33349609375,
+      "width": 5.336543560028076,
+      "height": 6.666666507720947
+    }
+  },
+  {
+    "nodeId": "I41:8894;48:971;19:92965",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector11",
+    "rnStyles": {
+      "width": 0,
+      "height": 0.01,
+      "borderColor": "#222222",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 10037,
+      "y": 4692.66650390625,
+      "width": 0,
+      "height": 0.0066668190993368626
+    }
+  },
+  {
+    "nodeId": "41:8895",
+    "nodeName": "Frame 2095586363",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586363",
+    "rnStyles": {
+      "width": 393,
+      "height": 52,
+      "flexDirection": "column",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingRight": 40,
+      "paddingLeft": 40
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 4760,
+      "width": 393,
+      "height": 52
+    }
+  },
+  {
+    "nodeId": "41:8896",
+    "nodeName": "button",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "button2",
+    "rnStyles": {
+      "width": 313,
+      "height": 52,
+      "borderRadius": 12,
+      "flexDirection": "column",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4760,
+      "width": 313,
+      "height": 52
+    }
+  },
+  {
+    "nodeId": "I41:8896;137:37",
+    "nodeName": "Rectangle 140",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "rectangle140",
+    "rnStyles": {
+      "width": 24,
+      "height": 2,
+      "backgroundColor": "#4D4D4D",
+      "borderRadius": 200
+    },
+    "geometry": {
+      "x": 9976.5,
+      "y": 4760,
+      "width": 24,
+      "height": 2
+    }
+  },
+  {
+    "nodeId": "I41:8896;100:1564",
+    "nodeName": "Frame 2095586312",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863122",
+    "rnStyles": {
+      "width": 313,
+      "height": 52,
+      "borderColor": "#FF9A6D",
+      "borderWidth": 0.1,
+      "borderRadius": 8,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 16,
+      "paddingRight": 16,
+      "paddingBottom": 16,
+      "paddingLeft": 16,
+      "shadowColor": "#995C41",
+      "shadowOffset": {
+        "width": 0,
+        "height": 6
+      },
+      "shadowRadius": 12,
+      "shadowOpacity": 1
+    },
+    "geometry": {
+      "x": 9832,
+      "y": 4770,
+      "width": 313,
+      "height": 52
+    }
+  },
+  {
+    "nodeId": "I41:8896;100:1565",
+    "nodeName": "Text",
+    "nodeType": "TEXT",
+    "rnStyleName": "text5",
+    "rnStyles": {
+      "width": 96,
+      "height": 20,
+      "color": "#FFFFFF",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "Save Changes",
+    "geometry": {
+      "x": 9940.5,
+      "y": 4786,
+      "width": 96,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "41:8897",
+    "nodeName": "Home Indicator",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "homeIndicator",
+    "rnStyles": {
+      "width": 393,
+      "height": 34
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 4892,
+      "width": 393,
+      "height": 34
+    }
+  },
+  {
+    "nodeId": "I41:8897;2:181",
+    "nodeName": "Home Indicator",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "homeIndicator2",
+    "rnStyles": {
+      "width": 152,
+      "height": 5,
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 100
+    },
+    "geometry": {
+      "x": 9913,
+      "y": 4913,
+      "width": 152,
+      "height": 5
+    }
+  },
+  {
+    "nodeId": "41:8898",
+    "nodeName": "HW Cutout Safezone",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "hwCutoutSafezone",
+    "rnStyles": {
+      "width": 108,
+      "height": 31.8,
+      "backgroundColor": "#000000",
+      "borderRadius": 60
+    },
+    "geometry": {
+      "x": 9933,
+      "y": 3869.938720703125,
+      "width": 108,
+      "height": 31.803680419921875
+    }
+  },
+  {
+    "nodeId": "41:8899",
+    "nodeName": "Frame 2095586357",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586357",
+    "rnStyles": {
+      "width": 393,
+      "height": 77,
+      "backgroundColor": "#131313",
+      "flexDirection": "column",
+      "paddingBottom": 24
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 3857,
+      "width": 393,
+      "height": 77
+    }
+  },
+  {
+    "nodeId": "41:8900",
+    "nodeName": "Status Bar",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "statusBar",
+    "rnStyles": {
+      "width": 393,
+      "height": 53
+    },
+    "geometry": {
+      "x": 9792,
+      "y": 3857,
+      "width": 393,
+      "height": 53
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:196",
+    "nodeName": "Battery",
+    "nodeType": "GROUP",
+    "rnStyleName": "battery",
+    "rnStyles": {
+      "width": 27.23,
+      "height": 13
+    },
+    "geometry": {
+      "x": 10125.2001953125,
+      "y": 3879.60009765625,
+      "width": 27.228038787841797,
+      "height": 13
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:197",
+    "nodeName": "Border",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "border",
+    "rnStyles": {
+      "width": 25,
+      "height": 13,
+      "borderColor": "#FFFFFF",
+      "borderWidth": 1,
+      "borderRadius": 4.3,
+      "opacity": 0.35
+    },
+    "geometry": {
+      "x": 10125.2001953125,
+      "y": 3879.60009765625,
+      "width": 25,
+      "height": 13
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:198",
+    "nodeName": "Cap",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cap",
+    "rnStyles": {
+      "width": 1.33,
+      "height": 4,
+      "backgroundColor": "#FFFFFF",
+      "opacity": 0.4
+    },
+    "geometry": {
+      "x": 10151.1005859375,
+      "y": 3884.266845703125,
+      "width": 1.328037977218628,
+      "height": 4
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:199",
+    "nodeName": "Capacity",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "capacity",
+    "rnStyles": {
+      "width": 21,
+      "height": 9,
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 2.5
+    },
+    "geometry": {
+      "x": 10127.2001953125,
+      "y": 3881.60009765625,
+      "width": 21,
+      "height": 9
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:200",
+    "nodeName": "Wifi",
+    "nodeType": "BOOLEAN_OPERATION",
+    "rnStyleName": "wifi",
+    "rnStyles": {
+      "width": 17.14,
+      "height": 12.1,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 10100.7001953125,
+      "y": 3880.199951171875,
+      "width": 17.141611099243164,
+      "height": 12.10004997253418
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:201",
+    "nodeName": "Wifi-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "wifipath",
+    "rnStyles": {
+      "width": 17.14,
+      "height": 5.04,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 10100.7001953125,
+      "y": 3880.199951171875,
+      "width": 17.141666412353516,
+      "height": 5.041666507720947
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:202",
+    "nodeName": "Wifi-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "wifipath2",
+    "rnStyles": {
+      "width": 11.09,
+      "height": 4.03,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 10103.7255859375,
+      "y": 3884.2333984375,
+      "width": 11.091666221618652,
+      "height": 4.0333333015441895
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:203",
+    "nodeName": "Wifi-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "wifipath3",
+    "rnStyles": {
+      "width": 5.04,
+      "height": 4.03,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 10106.75,
+      "y": 3888.2666015625,
+      "width": 5.041666507720947,
+      "height": 4.0333333015441895
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:204",
+    "nodeName": "Cellular Connection",
+    "nodeType": "BOOLEAN_OPERATION",
+    "rnStyleName": "cellularConnection",
+    "rnStyles": {
+      "width": 19.2,
+      "height": 12,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 10074,
+      "y": 3880.10009765625,
+      "width": 19.200000762939453,
+      "height": 12
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:205",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 4.6,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 10074,
+      "y": 3887.5,
+      "width": 3.200000047683716,
+      "height": 4.599999904632568
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:206",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath2",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 7,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 10079.2998046875,
+      "y": 3885.10009765625,
+      "width": 3.200000047683716,
+      "height": 7
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:207",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath3",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 9.6,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 10084.7001953125,
+      "y": 3882.5,
+      "width": 3.200000047683716,
+      "height": 9.600000381469727
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:208",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath4",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 12,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 10090,
+      "y": 3880.10009765625,
+      "width": 3.200000047683716,
+      "height": 12
+    }
+  },
+  {
+    "nodeId": "I41:8900;125:209",
+    "nodeName": "Time",
+    "nodeType": "TEXT",
+    "rnStyleName": "time",
+    "rnStyles": {
+      "width": 45,
+      "height": 20,
+      "color": "#FFFFFF",
+      "fontFamily": "SF Pro",
+      "fontSize": 17,
+      "fontWeight": "590",
+      "lineHeight": 20.29,
+      "textAlign": "center"
+    },
+    "textContent": "13:13",
+    "geometry": {
+      "x": 9839.5,
+      "y": 3876.5,
+      "width": 45,
+      "height": 20
+    }
+  }
+]

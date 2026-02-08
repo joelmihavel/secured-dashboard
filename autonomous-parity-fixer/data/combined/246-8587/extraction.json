@@ -1,0 +1,40 @@
+{
+  "screenId": "246-8587",
+  "screenName": "Screen 246-8587",
+  "module": "app",
+  "extractedAt": "2026-02-01T10:37:42.030Z",
+  "nodeCount": 1,
+  "nodes": [
+    {
+      "nodeId": "246:8587",
+      "name": "Vector 66",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 2174,
+        "y": 8510,
+        "width": 935,
+        "height": 697
+      },
+      "fills": [],
+      "strokes": [
+        {
+          "hex": "#000000",
+          "weight": 2,
+          "align": "CENTER"
+        }
+      ],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 935,
+        "height": 697,
+        "borderColor": "#000000",
+        "borderWidth": 2
+      }
+    }
+  ]
+}

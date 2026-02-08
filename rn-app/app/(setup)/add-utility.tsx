@@ -318,12 +318,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: scaledSpacing(FIGMA.gaps.labelToInput), // 6px
   },
-  // Label - Figma: 12px, line-height 20px, #A9A9A9
+  // Label - Figma: 12px, line-height 20px, #A9A9A9, fontWeight 500
   label: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: scaledFont(12),
     lineHeight: scaledFont(20),
     color: FIGMA.colors.label, // #A9A9A9
+    textAlign: 'left',
   },
   // Edit link - Figma: 14px, line-height 20px, #878787
   editLink: {

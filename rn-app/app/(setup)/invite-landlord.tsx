@@ -340,8 +340,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: FIGMA.colors.inputBorder, // #4D4D4D
     borderRadius: scaled(FIGMA.dimensions.inputRadius), // 12px
-    paddingTop: scaledSpacing(16),
-    paddingBottom: scaledSpacing(16),
+    paddingVertical: scaledSpacing(16),
+    paddingHorizontal: scaledSpacing(16),
     gap: scaledSpacing(16),
     flexDirection: 'row' as const,
     alignItems: 'center' as const,

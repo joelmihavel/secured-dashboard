@@ -1,0 +1,80 @@
+{
+  "screen": {
+    "name": "screen",
+    "category": "layout",
+    "values": {
+      "width": 393,
+      "height": 852,
+      "backgroundColor": "#131313"
+    }
+  },
+  "colors": {
+    "name": "colors",
+    "category": "colors",
+    "values": {
+      "background": "#131313",
+      "cardSurface": "#202020",
+      "textSubtle": "#A6A6A6",
+      "textMuted": "#878787",
+      "textTertiary": "#CBCBCB",
+      "cardBackground": "#1A1A1A",
+      "colorDDDDDD": "#DDDDDD",
+      "textDisabled": "#4D4D4D",
+      "color06C270": "#06C270",
+      "white": "#FFFFFF",
+      "colorA9A9A9": "#A9A9A9",
+      "color000000": "#000000"
+    }
+  },
+  "typography": {
+    "name": "typography",
+    "category": "typography",
+    "values": {
+      "12_400": {
+        "fontSize": 12,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "14_600": {
+        "fontSize": 14,
+        "fontWeight": "600",
+        "lineHeight": 20
+      },
+      "13.51_800": {
+        "fontSize": 13.51,
+        "fontWeight": "800",
+        "lineHeight": 16.35
+      },
+      "20_400": {
+        "fontSize": 20,
+        "fontWeight": "400",
+        "lineHeight": 32
+      },
+      "14_500": {
+        "fontSize": 14,
+        "fontWeight": "500",
+        "lineHeight": 20
+      },
+      "17_590": {
+        "fontSize": 17,
+        "fontWeight": "590",
+        "lineHeight": 20.29
+      }
+    }
+  },
+  "spacing": {
+    "name": "spacing",
+    "category": "spacing",
+    "values": {
+      "space1": 4,
+      "space2": 8,
+      "space3": 10,
+      "space4": 12,
+      "space5": 16,
+      "space6": 23,
+      "space7": 24,
+      "space8": 40,
+      "space9": 48
+    }
+  }
+}

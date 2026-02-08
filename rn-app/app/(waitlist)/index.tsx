@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: FIGMA.layout.containerPadding,
-    gap: FIGMA.layout.contentGap, // 40px (spacing.xxl) per Figma
+    gap: FIGMA.layout.sectionGap, // 48px (spacing.xxxl) per Figma
   },
 
   // Header section - Frame 2095586325 (node 41:11214)
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   inviteTextBlock: {
     width: '100%',
     alignItems: 'center',
-    gap: spacing.xs, // 4px between label and description (line 3564)
+    gap: spacing.xxs, // 4px between label and description (line 3564)
   },
 
   // Invite label - "Have an Invite Code?"

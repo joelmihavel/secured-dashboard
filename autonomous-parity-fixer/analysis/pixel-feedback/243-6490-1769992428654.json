@@ -1,0 +1,564 @@
+{
+  "screenId": "243-6490",
+  "screenName": "Home --Empty State --setup payment",
+  "route": "/(main)/index",
+  "generatedAt": "2026-02-02T00:33:48.653Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T00:31:43.309Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:6512",
+            "nodeName": "Paying with:",
+            "figmaValue": {
+              "absoluteX": 3390,
+              "absoluteY": 7880,
+              "relativeLeft": 64,
+              "relativeTop": 90,
+              "parentId": "243:6510"
+            },
+            "expectedRNValue": "position: 'absolute', left: 64.0, top: 90.0",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "\"Paying with:\" is positioned at (64.0, 90.0) relative to \"Frame 2095586453\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 64.0,\ntop: 90.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:6657",
+            "nodeName": "Frame 2095586316",
+            "figmaValue": {
+              "absoluteX": 3506.5,
+              "absoluteY": 8326,
+              "relativeLeft": 180.5,
+              "relativeTop": 432,
+              "parentId": "243:6513"
+            },
+            "expectedRNValue": "position: 'absolute', left: 180.5, top: 432.0",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "\"Frame 2095586316\" is positioned at (180.5, 432.0) relative to \"Frame 2095586452\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 180.5,\ntop: 432.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I243:6507;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-6490/*.tsx or app/(243-6490)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I243:6651;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-6490/*.tsx or app/(243-6490)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I243:6686;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-6490/*.tsx or app/(243-6490)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "243:6687",
+            "nodeName": "Rectangle 54",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 54",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/243-6490/*.tsx or app/(243-6490)/index.tsx",
+            "explanation": "Button \"Rectangle 54\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "243:6689",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-6490/*.tsx or app/(243-6490)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I243:6727;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "src/components/243-6490/*.tsx or app/(243-6490)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6506",
+            "nodeName": "₹ 32,500",
+            "figmaValue": {
+              "text": "₹  32,500",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"₹  32,500...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6511",
+            "nodeName": "Your rent is due in 10 days",
+            "figmaValue": {
+              "text": "Your rent is due in 10 days",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"Your rent is due in 10 days...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6523",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "text": "•••• 2341",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"•••• 2341...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6525",
+            "nodeName": "EXPIRY 06/26",
+            "figmaValue": {
+              "text": "EXPIRY 06/26",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"EXPIRY 06/26...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6526",
+            "nodeName": "CVV •••",
+            "figmaValue": {
+              "text": "CVV •••",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"CVV •••...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6608",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "text": "•••• 2341",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"•••• 2341...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6610",
+            "nodeName": "ICICI a/c - xxx23",
+            "figmaValue": {
+              "text": "ICICI a/c -  xxx23",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"ICICI a/c -  xxx23...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6611",
+            "nodeName": "rishabh@•••",
+            "figmaValue": {
+              "text": "rishabh@•••",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"rishabh@•••...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6630",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "text": "•••• 2341",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"•••• 2341...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6632",
+            "nodeName": "EXPIRY 06/26",
+            "figmaValue": {
+              "text": "EXPIRY 06/26",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"EXPIRY 06/26...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6633",
+            "nodeName": "ICICI a/c - xxx23",
+            "figmaValue": {
+              "text": "ICICI a/c -  xxx23",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"ICICI a/c -  xxx23...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "243:6701",
+            "nodeName": "Choose a  Payment Method",
+            "figmaValue": {
+              "text": "Choose a   Payment Method",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/243-6490/*.tsx",
+            "explanation": "Text \"Choose a   Payment Method...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          }
+        ],
+        "totalIssues": 20
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T00:31:43.319Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T00:33:11.236Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "issueId": "modal-presentation-layering-blur",
+            "severity": "critical",
+            "explanation": "The screen displays a bottom sheet modal which requires a specific layering of components and a background blur effect. The implementation must ensure: 1) A blur overlay (`Rectangle 54`) is rendered above the main content but below the sheet. 2) The z-index of all layers (content, floating bar, overlay, sheet) is correct. 3) The blur effect has a radius of 8. A common mistake is to only use a semi-transparent color without the blur, or to have incorrect stacking order.",
+            "details": {
+              "file": "app/screens/HomeEmptyState.tsx",
+              "property": "Modal Presentation (Layering & Blur)",
+              "figmaValue": "Correct z-index stack (Base -> Bar -> Overlay -> Sheet) with a blur(8) overlay.",
+              "currentValue": "Likely incorrect layering and missing blur effect.",
+              "code": {
+                "currentCode": "/* Likely sequential rendering without absolute positioning and zIndex, and a simple View for the overlay */\n<View style={{flex: 1}}>\n  <MainContent />\n  <FloatingBar />\n  {isModalVisible && <View style={styles.overlay} />}\n  {isModalVisible && <BottomSheet />}\n</View>",
+                "fixedCode": "/* Use absolute positioning, zIndex, and a BlurView component for the overlay */\nimport { BlurView } from '@react-native-community/blur';\n\n<View style={{flex: 1}}>\n  <MainContent />\n  <FloatingBar style={{ position: 'absolute', bottom: 0, zIndex: 5 }} />\n  {isModalVisible && (\n    <>\n      <BlurView \n        style={{ ...StyleSheet.absoluteFillObject, zIndex: 10 }}\n        blurType=\"dark\"\n        blurAmount={8} // Corresponds to Figma's radius\n      />\n      <BottomSheet style={{ zIndex: 20 }} />\n    </>\n  )}\n</View>"
+              }
+            }
+          }
+        ],
+        "layoutIssues": [
+          {
+            "issueId": "bottom-sheet-styling",
+            "severity": "medium",
+            "explanation": "The bottom sheet component has incorrect styling. The main container (`Frame 1686557301`) is missing rounded top corners, which are clearly visible in the design. Additionally, the inner content list (`Frame 2095586364`) requires a horizontal padding of 48px to correctly space the payment options from the edges of the sheet.",
+            "details": {
+              "file": "app/components/home/PaymentBottomSheet.tsx",
+              "property": "paddingHorizontal & borderTopRadius",
+              "figmaValue": "paddingHorizontal: 48px (_designTokens.spacing[12]), borderTopRadius: ~24px",
+              "currentValue": "Likely missing border radius and using smaller default padding.",
+              "code": {
+                "currentCode": "/* Sheet container style */\n{\n  backgroundColor: _designTokens.colors.black[600],\n}\n/* Content list style */\n{\n  paddingHorizontal: _designTokens.spacing.lg, // 24px\n}",
+                "fixedCode": "/* Sheet container style */\n{\n  backgroundColor: _designTokens.colors.black[600],\n  borderTopLeftRadius: 24, // Use a token like radius.xxl\n  borderTopRightRadius: 24, // Use a token like radius.xxl\n}\n/* Content list style */\n{\n  paddingHorizontal: _designTokens.spacing[12], // 48px\n}"
+              }
+            }
+          }
+        ],
+        "scrollIssues": [
+          {
+            "issueId": "scrollview-content-obscured",
+            "severity": "major",
+            "explanation": "The main content area is scrollable, but a floating bottom bar (`Frame 1686557229`) with a height of 118px is positioned at the bottom of the screen. The ScrollView's content will be cut off by this bar unless appropriate bottom padding is applied to its content container. The last items in the scroll view are not accessible.",
+            "details": {
+              "file": "app/screens/HomeEmptyState.tsx",
+              "property": "ScrollView.contentContainerStyle.paddingBottom",
+              "figmaValue": "118px (height of floating bar `243:6503`)",
+              "currentValue": "Not specified, likely 0 or an insufficient value.",
+              "code": {
+                "currentCode": "<ScrollView>\n  {/* ... content ... */}\n</ScrollView>",
+                "fixedCode": "<ScrollView contentContainerStyle={{ paddingBottom: 118 }}>\n  {/* ... content ... */}\n</ScrollView>"
+              }
+            }
+          }
+        ],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T00:33:48.653Z",
+      "feedback": [
+        {
+          "file": "app/screens/HomeEmptyState.tsx",
+          "severity": "critical",
+          "property": "Modal Presentation (Layering & Blur)",
+          "explanation": "The bottom sheet modal requires a blurred overlay with correct z-index layering to match the design. The current implementation likely renders components sequentially, missing the blur effect and proper stacking order, which breaks the intended user experience.",
+          "figmaValue": "Correct z-index stack (Base -> Bar -> Overlay -> Sheet) with a blur(8) overlay.",
+          "currentValue": "Likely incorrect layering and missing blur effect.",
+          "currentCode": "/* Likely sequential rendering without absolute positioning and zIndex, and a simple View for the overlay */\n<View style={{flex: 1}}>\n  <MainContent />\n  <FloatingBar />\n  {isModalVisible && <View style={styles.overlay} />}\n  {isModalVisible && <BottomSheet />}\n</View>",
+          "fixedCode": "/* Use absolute positioning, zIndex, and a BlurView component for the overlay */\nimport { BlurView } from '@react-native-community/blur'; // or equivalent library\n\n<View style={{flex: 1}}>\n  <MainContent />\n  {/* Floating bar needs to be above content but below overlay */}\n  <FloatingBar style={{ position: 'absolute', bottom: 0, zIndex: 5 }} />\n  {isModalVisible && (\n    <>\n      <BlurView \n        style={{ ...StyleSheet.absoluteFillObject, zIndex: 10 }}\n        blurType=\"dark\"\n        blurAmount={8} // Corresponds to Figma's radius\n      />\n      {/* Bottom sheet must have the highest zIndex */}\n      <BottomSheet style={{ zIndex: 20 }} />\n    </>\n  )}\n</View>"
+        },
+        {
+          "file": "src/components/243-6490/PaymentSheet.tsx",
+          "severity": "major",
+          "property": "Text Structure",
+          "explanation": "Multiple text elements in the design use different styles (e.g., colors) within a single line. These must be rendered using a single parent `<Text>` component with nested `<Text>` children for each style segment. Implementing them as separate `<Text>` components or using line breaks will cause incorrect layout and wrapping.",
+          "figmaValue": "Single line text with multiple style segments.",
+          "currentValue": "Likely implemented as multiple <Text> components, causing incorrect line breaks.",
+          "currentCode": "/* Example for 'Your rent is due in 10 days' */\n<Text style={styles.textPart1}>Your rent is due</Text>\n<Text style={styles.textPart2}>in 10 days</Text>",
+          "fixedCode": "/* Correct implementation for 'Your rent is due in 10 days' */\n<Text style={styles.baseText}>\n  <Text style={{color: colors.neutral[100]}}>Your rent is due{\"\\n\"}</Text>\n  <Text style={{color: colors.brand[500]}}>in 10 days</Text>\n</Text>\n\n/* Apply this pattern to all multi-styled text instances, such as:\n- \"₹ 32,500\"\n- \"•••• 2341\"\n- \"EXPIRY 06/26\"\n- \"CVV •••\"\n- \"ICICI a/c - xxx23\"\n- \"rishabh@•••\"\n- \"Choose a Payment Method\" */"
+        },
+        {
+          "file": "app/screens/HomeEmptyState.tsx",
+          "severity": "major",
+          "property": "ScrollView.contentContainerStyle.paddingBottom",
+          "explanation": "The main scrollable content is obscured by a floating bottom bar of height 118px. To ensure all content is accessible, the ScrollView's content container needs a bottom padding equal to the height of the bar.",
+          "figmaValue": "118px",
+          "currentValue": "Not specified, likely 0.",
+          "currentCode": "<ScrollView>\n  {/* ... content ... */}\n</ScrollView>",
+          "fixedCode": "<ScrollView contentContainerStyle={{ paddingBottom: 118 }}>\n  {/* ... content ... */}\n</ScrollView>"
+        },
+        {
+          "file": "src/components/243-6490/PaymentSheet.tsx",
+          "severity": "major",
+          "property": "Button.backgroundColor",
+          "explanation": "Multiple buttons within the payment sheet have incorrect background colors. The design specifies `#4D4D4D` for secondary/inactive states and `#000000` for primary actions.",
+          "figmaValue": "backgroundColor: '#4D4D4D' or '#000000'",
+          "currentValue": "Likely using an incorrect theme color or default value.",
+          "currentCode": "/* Example for a secondary button */\n<TouchableOpacity style={{ backgroundColor: colors.neutral[800] }}>\n  {/* ... */}\n</TouchableOpacity>",
+          "fixedCode": "/* Ensure buttons use the correct background colors from the design tokens */\n\n/* For buttons with #4D4D4D fill */\n<TouchableOpacity style={{ backgroundColor: colors.black[400] }}>\n  {/* ... */}\n</TouchableOpacity>\n\n/* For buttons with #000000 fill */\n<TouchableOpacity style={{ backgroundColor: '#000000' }}>\n  {/* ... */}\n</TouchableOpacity>"
+        },
+        {
+          "file": "app/screens/HomeEmptyState.tsx",
+          "severity": "major",
+          "property": "position",
+          "explanation": "The text element \"Paying with:\" is positioned relative to its parent container using specific offsets. This requires absolute positioning to match the Figma design.",
+          "figmaValue": "left: 64, top: 90",
+          "currentValue": "Likely positioned via flexbox layout (e.g., margin, padding).",
+          "currentCode": "style={{ marginLeft: 64, marginTop: 90 }} // Or similar flexbox positioning",
+          "fixedCode": "style={{ position: 'absolute', left: 64, top: 90 }}"
+        },
+        {
+          "file": "app/screens/HomeEmptyState.tsx",
+          "severity": "major",
+          "property": "position",
+          "explanation": "A container element (Figma: \"Frame 2095586316\") is positioned with specific offsets relative to its parent. This requires absolute positioning to match the design.",
+          "figmaValue": "left: 180.5, top: 432",
+          "currentValue": "Likely positioned via flexbox layout.",
+          "currentCode": "style={{ marginLeft: 180.5, marginTop: 432 }} // Or similar flexbox positioning",
+          "fixedCode": "style={{ position: 'absolute', left: 180.5, top: 432 }}"
+        },
+        {
+          "file": "src/components/243-6490/PaymentSheet.tsx",
+          "severity": "medium",
+          "property": "borderTopRadius & paddingHorizontal",
+          "explanation": "The bottom sheet container is missing rounded top corners, and its content list has insufficient horizontal padding. This makes the component appear sharp-edged and cramped compared to the design.",
+          "figmaValue": "borderTopRadius: 24px, paddingHorizontal: 48px",
+          "currentValue": "Likely missing border radius and using smaller padding.",
+          "currentCode": "/* Sheet container style */\n{\n  backgroundColor: colors.black[600],\n}\n/* Content list style */\n{\n  paddingHorizontal: spacing.lg, // 24px\n}",
+          "fixedCode": "/* Sheet container style */\n{\n  backgroundColor: colors.black[600],\n  borderTopLeftRadius: radius.xl, // 24px\n  borderTopRightRadius: radius.xl, // 24px\n}\n/* Content list style */\n{\n  paddingHorizontal: spacing.xxxl, // 48px\n}"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/screens/HomeEmptyState.tsx",
+      "severity": "critical",
+      "property": "Modal Presentation (Layering & Blur)",
+      "explanation": "The bottom sheet modal requires a blurred overlay with correct z-index layering to match the design. The current implementation likely renders components sequentially, missing the blur effect and proper stacking order, which breaks the intended user experience.",
+      "figmaValue": "Correct z-index stack (Base -> Bar -> Overlay -> Sheet) with a blur(8) overlay.",
+      "currentValue": "Likely incorrect layering and missing blur effect.",
+      "currentCode": "/* Likely sequential rendering without absolute positioning and zIndex, and a simple View for the overlay */\n<View style={{flex: 1}}>\n  <MainContent />\n  <FloatingBar />\n  {isModalVisible && <View style={styles.overlay} />}\n  {isModalVisible && <BottomSheet />}\n</View>",
+      "fixedCode": "/* Use absolute positioning, zIndex, and a BlurView component for the overlay */\nimport { BlurView } from '@react-native-community/blur'; // or equivalent library\n\n<View style={{flex: 1}}>\n  <MainContent />\n  {/* Floating bar needs to be above content but below overlay */}\n  <FloatingBar style={{ position: 'absolute', bottom: 0, zIndex: 5 }} />\n  {isModalVisible && (\n    <>\n      <BlurView \n        style={{ ...StyleSheet.absoluteFillObject, zIndex: 10 }}\n        blurType=\"dark\"\n        blurAmount={8} // Corresponds to Figma's radius\n      />\n      {/* Bottom sheet must have the highest zIndex */}\n      <BottomSheet style={{ zIndex: 20 }} />\n    </>\n  )}\n</View>"
+    },
+    {
+      "file": "src/components/243-6490/PaymentSheet.tsx",
+      "severity": "major",
+      "property": "Text Structure",
+      "explanation": "Multiple text elements in the design use different styles (e.g., colors) within a single line. These must be rendered using a single parent `<Text>` component with nested `<Text>` children for each style segment. Implementing them as separate `<Text>` components or using line breaks will cause incorrect layout and wrapping.",
+      "figmaValue": "Single line text with multiple style segments.",
+      "currentValue": "Likely implemented as multiple <Text> components, causing incorrect line breaks.",
+      "currentCode": "/* Example for 'Your rent is due in 10 days' */\n<Text style={styles.textPart1}>Your rent is due</Text>\n<Text style={styles.textPart2}>in 10 days</Text>",
+      "fixedCode": "/* Correct implementation for 'Your rent is due in 10 days' */\n<Text style={styles.baseText}>\n  <Text style={{color: colors.neutral[100]}}>Your rent is due{\"\\n\"}</Text>\n  <Text style={{color: colors.brand[500]}}>in 10 days</Text>\n</Text>\n\n/* Apply this pattern to all multi-styled text instances, such as:\n- \"₹ 32,500\"\n- \"•••• 2341\"\n- \"EXPIRY 06/26\"\n- \"CVV •••\"\n- \"ICICI a/c - xxx23\"\n- \"rishabh@•••\"\n- \"Choose a Payment Method\" */"
+    },
+    {
+      "file": "app/screens/HomeEmptyState.tsx",
+      "severity": "major",
+      "property": "ScrollView.contentContainerStyle.paddingBottom",
+      "explanation": "The main scrollable content is obscured by a floating bottom bar of height 118px. To ensure all content is accessible, the ScrollView's content container needs a bottom padding equal to the height of the bar.",
+      "figmaValue": "118px",
+      "currentValue": "Not specified, likely 0.",
+      "currentCode": "<ScrollView>\n  {/* ... content ... */}\n</ScrollView>",
+      "fixedCode": "<ScrollView contentContainerStyle={{ paddingBottom: 118 }}>\n  {/* ... content ... */}\n</ScrollView>"
+    },
+    {
+      "file": "src/components/243-6490/PaymentSheet.tsx",
+      "severity": "major",
+      "property": "Button.backgroundColor",
+      "explanation": "Multiple buttons within the payment sheet have incorrect background colors. The design specifies `#4D4D4D` for secondary/inactive states and `#000000` for primary actions.",
+      "figmaValue": "backgroundColor: '#4D4D4D' or '#000000'",
+      "currentValue": "Likely using an incorrect theme color or default value.",
+      "currentCode": "/* Example for a secondary button */\n<TouchableOpacity style={{ backgroundColor: colors.neutral[800] }}>\n  {/* ... */}\n</TouchableOpacity>",
+      "fixedCode": "/* Ensure buttons use the correct background colors from the design tokens */\n\n/* For buttons with #4D4D4D fill */\n<TouchableOpacity style={{ backgroundColor: colors.black[400] }}>\n  {/* ... */}\n</TouchableOpacity>\n\n/* For buttons with #000000 fill */\n<TouchableOpacity style={{ backgroundColor: '#000000' }}>\n  {/* ... */}\n</TouchableOpacity>"
+    },
+    {
+      "file": "app/screens/HomeEmptyState.tsx",
+      "severity": "major",
+      "property": "position",
+      "explanation": "The text element \"Paying with:\" is positioned relative to its parent container using specific offsets. This requires absolute positioning to match the Figma design.",
+      "figmaValue": "left: 64, top: 90",
+      "currentValue": "Likely positioned via flexbox layout (e.g., margin, padding).",
+      "currentCode": "style={{ marginLeft: 64, marginTop: 90 }} // Or similar flexbox positioning",
+      "fixedCode": "style={{ position: 'absolute', left: 64, top: 90 }}"
+    },
+    {
+      "file": "app/screens/HomeEmptyState.tsx",
+      "severity": "major",
+      "property": "position",
+      "explanation": "A container element (Figma: \"Frame 2095586316\") is positioned with specific offsets relative to its parent. This requires absolute positioning to match the design.",
+      "figmaValue": "left: 180.5, top: 432",
+      "currentValue": "Likely positioned via flexbox layout.",
+      "currentCode": "style={{ marginLeft: 180.5, marginTop: 432 }} // Or similar flexbox positioning",
+      "fixedCode": "style={{ position: 'absolute', left: 180.5, top: 432 }}"
+    },
+    {
+      "file": "src/components/243-6490/PaymentSheet.tsx",
+      "severity": "medium",
+      "property": "borderTopRadius & paddingHorizontal",
+      "explanation": "The bottom sheet container is missing rounded top corners, and its content list has insufficient horizontal padding. This makes the component appear sharp-edged and cramped compared to the design.",
+      "figmaValue": "borderTopRadius: 24px, paddingHorizontal: 48px",
+      "currentValue": "Likely missing border radius and using smaller padding.",
+      "currentCode": "/* Sheet container style */\n{\n  backgroundColor: colors.black[600],\n}\n/* Content list style */\n{\n  paddingHorizontal: spacing.lg, // 24px\n}",
+      "fixedCode": "/* Sheet container style */\n{\n  backgroundColor: colors.black[600],\n  borderTopLeftRadius: radius.xl, // 24px\n  borderTopRightRadius: radius.xl, // 24px\n}\n/* Content list style */\n{\n  paddingHorizontal: spacing.xxxl, // 48px\n}"
+    }
+  ],
+  "summary": {
+    "totalIssues": 7,
+    "critical": 1,
+    "major": 5,
+    "minor": 0,
+    "filesAffected": [
+      "app/screens/HomeEmptyState.tsx",
+      "src/components/243-6490/PaymentSheet.tsx"
+    ]
+  }
+}

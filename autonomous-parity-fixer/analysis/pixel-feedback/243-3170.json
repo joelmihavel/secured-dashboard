@@ -1,0 +1,300 @@
+{
+  "screenId": "243-2762",
+  "screenName": "Home --active --Bank / UPI only",
+  "route": "/(main)/index",
+  "generatedAt": "2026-02-03T21:54:50.877Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-03T21:53:02.243Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2776",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2861",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2883",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2906;100:1565",
+            "nodeName": "Text",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2954",
+            "nodeName": "Due in 10 Days",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2956;100:1565",
+            "nodeName": "Text",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2959;125:209",
+            "nodeName": "Time",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          }
+        ],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 7
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-03T21:53:02.244Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-03T21:54:20.831Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1",
+            "property": "File Existence",
+            "figmaValue": "Exists",
+            "currentValue": "Missing",
+            "severity": "critical",
+            "explanation": "The React Native screen code file is missing from the provided input. Cannot analyze existing implementation against Figma.",
+            "currentCode": "N/A",
+            "fixedCode": "// Please provide the content of app/home-active.tsx"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1",
+            "property": "backgroundColor",
+            "figmaValue": "#131313",
+            "currentValue": "N/A",
+            "severity": "major",
+            "explanation": "Root screen background color must be #131313 as per Figma root frame (Node 243:2762).",
+            "currentCode": "N/A",
+            "fixedCode": "backgroundColor: '#131313'"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1",
+            "property": "layout structure / padding",
+            "figmaValue": "Variable Padding",
+            "currentValue": "N/A",
+            "severity": "major",
+            "explanation": "The main content column (Frame 2095586343) must NOT have global horizontal padding. Section paddings vary: Header Text (64px), Cards (0px container, 64px content inset), Transactions (32px).",
+            "currentCode": "N/A",
+            "fixedCode": "// Remove global paddingHorizontal from ScrollView container\n// Apply paddingHorizontal: 64 to Header Text section\n// Apply paddingHorizontal: 32 to Transactions section"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1",
+            "property": "Bottom Bar Position",
+            "figmaValue": "Absolute Bottom",
+            "currentValue": "N/A",
+            "severity": "major",
+            "explanation": "The 'Review & pay' bottom bar (Frame 1686557229) must be absolutely positioned at the bottom of the screen with height 118px and background #202020, overlaying the scroll content.",
+            "currentCode": "N/A",
+            "fixedCode": "position: 'absolute', bottom: 0, width: '100%', height: 118, backgroundColor: '#202020'"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1",
+            "property": "Horizontal Scroll Padding",
+            "figmaValue": "Left: 64px, Right: 32px",
+            "currentValue": "N/A",
+            "severity": "major",
+            "explanation": "The horizontal card list (Frame 2095586448) requires specific content insets to match the design: paddingLeft 64px and paddingRight 32px.",
+            "currentCode": "N/A",
+            "fixedCode": "contentContainerStyle={{ paddingLeft: 64, paddingRight: 32 }}"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 100
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-03T21:54:50.877Z",
+      "feedback": [
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "1",
+          "property": "backgroundColor",
+          "figmaValue": "#131313",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Set the root screen background color to match Figma.",
+          "currentCode": "N/A",
+          "fixedCode": "backgroundColor: colors.black[700] // #131313"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "1",
+          "property": "layout structure",
+          "figmaValue": "Section-specific padding",
+          "currentValue": "Global padding (likely)",
+          "severity": "major",
+          "explanation": "Remove global horizontal padding from the main ScrollView/Container. Apply specific padding to sections: Header (64px), Transactions (32px).",
+          "currentCode": "paddingHorizontal: ...",
+          "fixedCode": "// Container: remove paddingHorizontal\n// Header Text: paddingHorizontal: spacing.huge // 64\n// Transactions: paddingHorizontal: spacing.xl // 32"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "1",
+          "property": "Horizontal Scroll Padding",
+          "figmaValue": "Left: 64px, Right: 32px",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "The horizontal card list requires specific content insets.",
+          "currentCode": "contentContainerStyle={{ ... }}",
+          "fixedCode": "contentContainerStyle={{ paddingLeft: spacing.huge, paddingRight: spacing.xl }}"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "1",
+          "property": "Bottom Bar",
+          "figmaValue": "Absolute Bottom, H:118, #202020",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Position the 'Review & pay' bar absolutely at the bottom.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nbottom: 0,\nwidth: '100%',\nheight: 118,\nbackgroundColor: colors.black[500] // #202020"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "1",
+          "property": "textAlign",
+          "figmaValue": "CENTER",
+          "currentValue": "Left (default)",
+          "severity": "major",
+          "explanation": "Structural analysis detected missing 'textAlign: center' on multiple text elements including 'SELECTED', 'Due in 10 Days', and 'Time'.",
+          "currentCode": "N/A",
+          "fixedCode": "textAlign: 'center'"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "1",
+      "property": "backgroundColor",
+      "figmaValue": "#131313",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Set the root screen background color to match Figma.",
+      "currentCode": "N/A",
+      "fixedCode": "backgroundColor: colors.black[700] // #131313"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "1",
+      "property": "layout structure",
+      "figmaValue": "Section-specific padding",
+      "currentValue": "Global padding (likely)",
+      "severity": "major",
+      "explanation": "Remove global horizontal padding from the main ScrollView/Container. Apply specific padding to sections: Header (64px), Transactions (32px).",
+      "currentCode": "paddingHorizontal: ...",
+      "fixedCode": "// Container: remove paddingHorizontal\n// Header Text: paddingHorizontal: spacing.huge // 64\n// Transactions: paddingHorizontal: spacing.xl // 32"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "1",
+      "property": "Horizontal Scroll Padding",
+      "figmaValue": "Left: 64px, Right: 32px",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "The horizontal card list requires specific content insets.",
+      "currentCode": "contentContainerStyle={{ ... }}",
+      "fixedCode": "contentContainerStyle={{ paddingLeft: spacing.huge, paddingRight: spacing.xl }}"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "1",
+      "property": "Bottom Bar",
+      "figmaValue": "Absolute Bottom, H:118, #202020",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Position the 'Review & pay' bar absolutely at the bottom.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nbottom: 0,\nwidth: '100%',\nheight: 118,\nbackgroundColor: colors.black[500] // #202020"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "1",
+      "property": "textAlign",
+      "figmaValue": "CENTER",
+      "currentValue": "Left (default)",
+      "severity": "major",
+      "explanation": "Structural analysis detected missing 'textAlign: center' on multiple text elements including 'SELECTED', 'Due in 10 Days', and 'Time'.",
+      "currentCode": "N/A",
+      "fixedCode": "textAlign: 'center'"
+    }
+  ],
+  "summary": {
+    "totalIssues": 5,
+    "critical": 0,
+    "major": 5,
+    "minor": 0,
+    "filesAffected": [
+      "app/(home-active)/index.tsx"
+    ]
+  }
+}

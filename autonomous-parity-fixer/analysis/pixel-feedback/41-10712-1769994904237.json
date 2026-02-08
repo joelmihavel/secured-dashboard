@@ -1,0 +1,501 @@
+{
+  "screenId": "41-10712",
+  "screenName": "Onboarding / Post Approval 1",
+  "route": "/(setup)/index",
+  "generatedAt": "2026-02-02T01:15:04.237Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T01:13:20.441Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:10758",
+            "nodeName": "Frame 1686557300",
+            "figmaValue": {
+              "absoluteX": 13,
+              "absoluteY": 4998,
+              "relativeLeft": 0,
+              "relativeTop": 899,
+              "parentId": "41:10712"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: 899.0",
+            "file": "src/components/41-10712/*.tsx",
+            "explanation": "\"Frame 1686557300\" is positioned at (0.0, 899.0) relative to \"onboarding / post approval 1\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: 899.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10714",
+            "nodeName": "Rectangle 136",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 136",
+              "fill": "#1A1A1A"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#1A1A1A'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Rectangle 136\" has fill #1A1A1A in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#1A1A1A' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10715",
+            "nodeName": "Rectangle 139",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 139",
+              "fill": "#FF9A6D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#FF9A6D'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Rectangle 139\" has fill #FF9A6D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#FF9A6D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10734",
+            "nodeName": "Rectangle 136",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 136",
+              "fill": "#1A1A1A"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#1A1A1A'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Rectangle 136\" has fill #1A1A1A in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#1A1A1A' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10757",
+            "nodeName": "Rectangle 52",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 52",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Rectangle 52\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10759",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#D9D9D9"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#D9D9D9'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #D9D9D9 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#D9D9D9' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10803",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "type": "button",
+              "text": "Pay Now",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Pay Now\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:10823",
+            "nodeName": "button",
+            "figmaValue": {
+              "type": "button",
+              "text": "Start Flenting →",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Start Flenting →\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "160:3102",
+            "nodeName": "Rectangle 136",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 136",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "src/components/41-10712/*.tsx or app/(41-10712)/index.tsx",
+            "explanation": "Button \"Rectangle 136\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "41:10782",
+            "nodeName": "₹ 32,175",
+            "figmaValue": {
+              "text": "₹  32,175",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/41-10712/*.tsx",
+            "explanation": "Text \"₹  32,175...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "160:3095",
+            "nodeName": "Let’s get you set up",
+            "figmaValue": {
+              "text": "Let’s get you set up",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/41-10712/*.tsx",
+            "explanation": "Text \"Let’s get you set up...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "160:3121",
+            "nodeName": "Add your landlord’s bank details to enable payouts",
+            "figmaValue": {
+              "text": "Add your landlord’s bank details to enable payouts",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 3
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/41-10712/*.tsx",
+            "explanation": "Text \"Add your landlord’s bank details to enable payouts...\" is ONE LINE in Figma with 3 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          }
+        ],
+        "totalIssues": 12
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T01:13:20.453Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T01:14:17.678Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "issueId": "screen-layout-and-spacing",
+            "file": "app/screens/OnboardingPostApproval1.tsx",
+            "lineRange": null,
+            "severity": "critical",
+            "description": "The screen has a precise static vertical layout. The vertical spacing between the header, central card, pagination, and bottom button must be implemented with exact margins/gaps. The horizontal alignment is also inconsistent between elements and must be handled specifically rather than with a single screen-wide padding.",
+            "details": [
+              {
+                "type": "vertical-spacing",
+                "context": "Top margin for the header block",
+                "figmaNodeId": "41:10824",
+                "expected": "71px from the top of the safe area (below the status bar).",
+                "suggestion": "The main content container should have a `paddingTop` or the header component should have a `marginTop` of 71."
+              },
+              {
+                "type": "vertical-spacing",
+                "context": "Gap between Header and Card",
+                "figmaNodeId": "160:3101",
+                "expected": "30px.",
+                "suggestion": "Ensure a `marginTop` of 30 is applied to the central card component."
+              },
+              {
+                "type": "vertical-spacing",
+                "context": "Gap between Card and Pagination Dots",
+                "figmaNodeId": "41:10855",
+                "expected": "30px.",
+                "suggestion": "Ensure a `marginTop` of 30 is applied to the pagination component."
+              },
+              {
+                "type": "vertical-spacing",
+                "context": "Gap between Pagination Dots and Button",
+                "figmaNodeId": "41:10823",
+                "expected": "58px.",
+                "suggestion": "Ensure a `marginTop` of 58 is applied to the 'Start Flenting' button."
+              },
+              {
+                "type": "vertical-spacing",
+                "context": "Bottom margin for the button",
+                "figmaNodeId": "41:10823",
+                "expected": "23px from the bottom of the safe area (above the home indicator).",
+                "suggestion": "The main content container should have a `paddingBottom` of 23, or the button should have a `marginBottom`."
+              },
+              {
+                "type": "horizontal-alignment",
+                "context": "Header block alignment",
+                "figmaNodeId": "41:10824",
+                "expected": "Left-aligned with a 48px margin from the screen edge.",
+                "suggestion": "Apply `marginLeft: 48` to the header container, do not center it."
+              },
+              {
+                "type": "horizontal-alignment",
+                "context": "Card and Pagination alignment",
+                "figmaNodeId": "160:3101",
+                "expected": "Horizontally centered within the screen.",
+                "suggestion": "Wrap the card and pagination dots in a container with `alignItems: 'center'`."
+              },
+              {
+                "type": "horizontal-alignment",
+                "context": "Button alignment",
+                "figmaNodeId": "41:10823",
+                "expected": "Centered with 40px horizontal margin on each side.",
+                "suggestion": "The button should stretch to fill its container, and the container should have `paddingHorizontal: 40`."
+              }
+            ]
+          },
+          {
+            "issueId": "background-layering",
+            "file": "app/screens/OnboardingPostApproval1.tsx",
+            "lineRange": null,
+            "severity": "major",
+            "description": "The screen background is multi-layered, consisting of a solid base color, a semi-transparent background image, and a gradient overlay. This requires absolute positioning and correct z-indexing to appear behind the main content.",
+            "details": [
+              {
+                "type": "layering",
+                "context": "Base background color",
+                "figmaNodeId": "41:10712",
+                "expected": "The root view of the screen should have a `backgroundColor` of `_designTokens.backgroundColor` which is `colors.black[700]` (#131313).",
+                "suggestion": "Set the `backgroundColor` on the main `SafeAreaView` or container `View`."
+              },
+              {
+                "type": "layering",
+                "context": "Top background image",
+                "figmaNodeId": "41:10754",
+                "expected": "An image component should be absolutely positioned at the top of the screen (`top: 0`). It should have a `height` of 405 and an `opacity` of 0.4.",
+                "suggestion": "Use an `<Image>` component with `position: 'absolute'`, `top: 0`, `height: 405`, `opacity: 0.4`, and a negative `zIndex` if necessary."
+              },
+              {
+                "type": "layering",
+                "context": "Gradient overlay",
+                "figmaNodeId": "41:10754",
+                "expected": "A linear gradient must be applied over the background image. The gradient starts as transparent at the top (`rgba(0,0,0,0)` at 50% position) and fades to the screen's background color (`colors.black[700]`) at the bottom (100% position).",
+                "suggestion": "Use a library like `react-native-linear-gradient` and overlay it on top of the background image, with the same absolute positioning and dimensions."
+              }
+            ]
+          }
+        ],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T01:15:04.237Z",
+      "feedback": [
+        {
+          "fixId": "OnboardingPostApproval1-Layout",
+          "file": "app/screens/OnboardingPostApproval1.tsx",
+          "severity": "critical",
+          "description": "The screen's vertical and horizontal layout is implemented incorrectly. Spacing between key elements (header, card, pagination, button) and their alignment must be adjusted to match the design's precise specifications.",
+          "suggestion": "Restructure the screen layout using a main container with appropriate padding and apply specific margins to child components to achieve the correct spacing and alignment. The header should be left-aligned, while the card, pagination, and button require different centering strategies.",
+          "code": {
+            "language": "javascript",
+            "snippet": "const styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    paddingTop: 71, // Added\n    paddingBottom: 23, // Added\n    backgroundColor: colors.black[700],\n  },\n  headerContainer: {\n    marginLeft: 48, // Added for left alignment\n    // Remove any centering styles\n  },\n  cardContainer: {\n    marginTop: 30, // Added gap\n    alignItems: 'center', // Added for centering\n  },\n  paginationContainer: {\n    marginTop: 30, // Added gap\n    alignItems: 'center', // Added for centering\n  },\n  buttonContainer: {\n    marginTop: 58, // Added gap\n    paddingHorizontal: 40, // Added for correct width\n  }\n});"
+          }
+        },
+        {
+          "fixId": "OnboardingPostApproval1-Button-Color",
+          "file": "app/screens/OnboardingPostApproval1.tsx",
+          "severity": "critical",
+          "description": "The primary 'Start Flenting →' button has an incorrect background color. This is a critical structural mismatch from the Figma design.",
+          "suggestion": "Update the button's background color to use the correct design token `colors.black[500]` which corresponds to `#202020`.",
+          "code": {
+            "language": "javascript",
+            "before": "backgroundColor: '#someOtherColor',",
+            "after": "backgroundColor: colors.black[500], // Figma specifies #202020"
+          }
+        },
+        {
+          "fixId": "OnboardingPostApproval1-HeaderText-Structure",
+          "file": "app/screens/OnboardingPostApproval1.tsx",
+          "severity": "critical",
+          "description": "The header text 'Let’s get you set up' is a single line in Figma with multiple colors. Rendering it as separate <Text> components can cause incorrect line breaks. It must be a single component with nested spans.",
+          "suggestion": "Combine the text into a single parent <Text> component, with nested <Text> components for each color style. This ensures it reflows correctly as a single unit.",
+          "code": {
+            "language": "javascript",
+            "before": "<Text style={styles.textPart1}>Let’s get</Text>\n<Text style={styles.textPart2}>you set up</Text>",
+            "after": "<Text style={styles.baseText}>\n  <Text style={styles.whiteText}>Let’s get </Text>\n  <Text style={styles.orangeText}>you set up</Text>\n</Text>"
+          }
+        },
+        {
+          "fixId": "OnboardingPostApproval1-Background",
+          "file": "app/screens/OnboardingPostApproval1.tsx",
+          "severity": "major",
+          "description": "The screen's background is a multi-layered composition of a base color, a semi-transparent image, and a gradient overlay, which appears to be missing or implemented incorrectly.",
+          "suggestion": "Implement the background using absolute positioning. The main container should have the base color. Then, add an <Image> component and a <LinearGradient> component positioned absolutely behind the main content.",
+          "code": {
+            "language": "javascript",
+            "snippet": "const styles = StyleSheet.create({\n  backgroundContainer: {\n    ...StyleSheet.absoluteFillObject,\n    zIndex: -1,\n  },\n  backgroundImage: {\n    position: 'absolute',\n    top: 0,\n    left: 0,\n    right: 0,\n    height: 405,\n    opacity: 0.4,\n  },\n  gradient: {\n    position: 'absolute',\n    top: 0,\n    left: 0,\n    right: 0,\n    height: 405, // Match image height\n  }\n});\n\n// In component render:\n<View style={styles.backgroundContainer}>\n  <Image source={...} style={styles.backgroundImage} />\n  <LinearGradient colors={['rgba(19, 19, 19, 0)', colors.black[700]]} locations={[0.5, 1]} style={styles.gradient} />\n</View>"
+          }
+        },
+        {
+          "fixId": "OnboardingPostApproval1-Component-Colors",
+          "file": "app/screens/OnboardingPostApproval1.tsx",
+          "severity": "major",
+          "description": "Multiple components identified as buttons have background color mismatches compared to the Figma design.",
+          "suggestion": "Update the `backgroundColor` for the following components to match their specified design tokens:\n- A component with color `#1A1A1A` should use `colors.black[600]`.\n- A component with color `#FF9A6D` should use `colors.brand[500]`.\n- Components with color `#000000` should use `colors.black[700]`.\n- A component with color `#D9D9D9` should use `colors.neutral[200]`.",
+          "code": {
+            "language": "text",
+            "snippet": "File: app/screens/OnboardingPostApproval1.tsx or related components\n\n- Button 'Rectangle 136' (41:10714): Expected backgroundColor: colors.black[600] (#1A1A1A)\n- Button 'Rectangle 139' (41:10715): Expected backgroundColor: colors.brand[500] (#FF9A6D)\n- Button 'Rectangle 52' (41:10757): Expected backgroundColor: colors.black[700] (closest to #000000)\n- Button 'Rectangle 53' (41:10759): Expected backgroundColor: colors.neutral[200] (closest to #D9D9D9)\n- Button 'Pay Now' (41:10803): Expected backgroundColor: colors.black[700] (closest to #000000)"
+          }
+        },
+        {
+          "fixId": "OnboardingCard-Text-Structure",
+          "file": "src/components/onboarding/PostApprovalCard.tsx",
+          "severity": "major",
+          "description": "Text elements within the card, such as '₹ 32,175' and 'Add your landlord’s bank details...', use multiple styles on a single line in Figma. They must be rendered using nested <Text> components to avoid incorrect line breaks.",
+          "suggestion": "For each multi-styled text block, use a single parent <Text> component and nest styled <Text> components inside for the different parts. This ensures they are treated as a single text entity.",
+          "code": {
+            "language": "javascript",
+            "before": "<View style={{flexDirection: 'row'}}>\n  <Text>₹</Text>\n  <Text>32,175</Text>\n</View>",
+            "after": "<Text style={styles.basePriceText}>\n  <Text style={styles.currencySymbol}>₹ </Text>\n  <Text style={styles.amount}>32,175</Text>\n</Text>"
+          }
+        },
+        {
+          "fixId": "OnboardingCard-Absolute-Position",
+          "file": "src/components/onboarding/PostApprovalCard.tsx",
+          "severity": "major",
+          "description": "A frame within the component ('Frame 1686557300') is designed with a specific offset from its parent, which requires absolute positioning.",
+          "suggestion": "Apply `position: 'absolute'` to the component corresponding to 'Frame 1686557300' and set its `left` and `top` properties to match the Figma design.",
+          "code": {
+            "language": "javascript",
+            "before": "// Missing or incorrect positioning",
+            "after": "style={{ position: 'absolute', left: 0, top: 899 }}"
+          }
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "fixId": "OnboardingPostApproval1-Layout",
+      "file": "app/screens/OnboardingPostApproval1.tsx",
+      "severity": "critical",
+      "description": "The screen's vertical and horizontal layout is implemented incorrectly. Spacing between key elements (header, card, pagination, button) and their alignment must be adjusted to match the design's precise specifications.",
+      "suggestion": "Restructure the screen layout using a main container with appropriate padding and apply specific margins to child components to achieve the correct spacing and alignment. The header should be left-aligned, while the card, pagination, and button require different centering strategies.",
+      "code": {
+        "language": "javascript",
+        "snippet": "const styles = StyleSheet.create({\n  screenContainer: {\n    flex: 1,\n    paddingTop: 71, // Added\n    paddingBottom: 23, // Added\n    backgroundColor: colors.black[700],\n  },\n  headerContainer: {\n    marginLeft: 48, // Added for left alignment\n    // Remove any centering styles\n  },\n  cardContainer: {\n    marginTop: 30, // Added gap\n    alignItems: 'center', // Added for centering\n  },\n  paginationContainer: {\n    marginTop: 30, // Added gap\n    alignItems: 'center', // Added for centering\n  },\n  buttonContainer: {\n    marginTop: 58, // Added gap\n    paddingHorizontal: 40, // Added for correct width\n  }\n});"
+      }
+    },
+    {
+      "fixId": "OnboardingPostApproval1-Button-Color",
+      "file": "app/screens/OnboardingPostApproval1.tsx",
+      "severity": "critical",
+      "description": "The primary 'Start Flenting →' button has an incorrect background color. This is a critical structural mismatch from the Figma design.",
+      "suggestion": "Update the button's background color to use the correct design token `colors.black[500]` which corresponds to `#202020`.",
+      "code": {
+        "language": "javascript",
+        "before": "backgroundColor: '#someOtherColor',",
+        "after": "backgroundColor: colors.black[500], // Figma specifies #202020"
+      }
+    },
+    {
+      "fixId": "OnboardingPostApproval1-HeaderText-Structure",
+      "file": "app/screens/OnboardingPostApproval1.tsx",
+      "severity": "critical",
+      "description": "The header text 'Let’s get you set up' is a single line in Figma with multiple colors. Rendering it as separate <Text> components can cause incorrect line breaks. It must be a single component with nested spans.",
+      "suggestion": "Combine the text into a single parent <Text> component, with nested <Text> components for each color style. This ensures it reflows correctly as a single unit.",
+      "code": {
+        "language": "javascript",
+        "before": "<Text style={styles.textPart1}>Let’s get</Text>\n<Text style={styles.textPart2}>you set up</Text>",
+        "after": "<Text style={styles.baseText}>\n  <Text style={styles.whiteText}>Let’s get </Text>\n  <Text style={styles.orangeText}>you set up</Text>\n</Text>"
+      }
+    },
+    {
+      "fixId": "OnboardingPostApproval1-Background",
+      "file": "app/screens/OnboardingPostApproval1.tsx",
+      "severity": "major",
+      "description": "The screen's background is a multi-layered composition of a base color, a semi-transparent image, and a gradient overlay, which appears to be missing or implemented incorrectly.",
+      "suggestion": "Implement the background using absolute positioning. The main container should have the base color. Then, add an <Image> component and a <LinearGradient> component positioned absolutely behind the main content.",
+      "code": {
+        "language": "javascript",
+        "snippet": "const styles = StyleSheet.create({\n  backgroundContainer: {\n    ...StyleSheet.absoluteFillObject,\n    zIndex: -1,\n  },\n  backgroundImage: {\n    position: 'absolute',\n    top: 0,\n    left: 0,\n    right: 0,\n    height: 405,\n    opacity: 0.4,\n  },\n  gradient: {\n    position: 'absolute',\n    top: 0,\n    left: 0,\n    right: 0,\n    height: 405, // Match image height\n  }\n});\n\n// In component render:\n<View style={styles.backgroundContainer}>\n  <Image source={...} style={styles.backgroundImage} />\n  <LinearGradient colors={['rgba(19, 19, 19, 0)', colors.black[700]]} locations={[0.5, 1]} style={styles.gradient} />\n</View>"
+      }
+    },
+    {
+      "fixId": "OnboardingPostApproval1-Component-Colors",
+      "file": "app/screens/OnboardingPostApproval1.tsx",
+      "severity": "major",
+      "description": "Multiple components identified as buttons have background color mismatches compared to the Figma design.",
+      "suggestion": "Update the `backgroundColor` for the following components to match their specified design tokens:\n- A component with color `#1A1A1A` should use `colors.black[600]`.\n- A component with color `#FF9A6D` should use `colors.brand[500]`.\n- Components with color `#000000` should use `colors.black[700]`.\n- A component with color `#D9D9D9` should use `colors.neutral[200]`.",
+      "code": {
+        "language": "text",
+        "snippet": "File: app/screens/OnboardingPostApproval1.tsx or related components\n\n- Button 'Rectangle 136' (41:10714): Expected backgroundColor: colors.black[600] (#1A1A1A)\n- Button 'Rectangle 139' (41:10715): Expected backgroundColor: colors.brand[500] (#FF9A6D)\n- Button 'Rectangle 52' (41:10757): Expected backgroundColor: colors.black[700] (closest to #000000)\n- Button 'Rectangle 53' (41:10759): Expected backgroundColor: colors.neutral[200] (closest to #D9D9D9)\n- Button 'Pay Now' (41:10803): Expected backgroundColor: colors.black[700] (closest to #000000)"
+      }
+    },
+    {
+      "fixId": "OnboardingCard-Text-Structure",
+      "file": "src/components/onboarding/PostApprovalCard.tsx",
+      "severity": "major",
+      "description": "Text elements within the card, such as '₹ 32,175' and 'Add your landlord’s bank details...', use multiple styles on a single line in Figma. They must be rendered using nested <Text> components to avoid incorrect line breaks.",
+      "suggestion": "For each multi-styled text block, use a single parent <Text> component and nest styled <Text> components inside for the different parts. This ensures they are treated as a single text entity.",
+      "code": {
+        "language": "javascript",
+        "before": "<View style={{flexDirection: 'row'}}>\n  <Text>₹</Text>\n  <Text>32,175</Text>\n</View>",
+        "after": "<Text style={styles.basePriceText}>\n  <Text style={styles.currencySymbol}>₹ </Text>\n  <Text style={styles.amount}>32,175</Text>\n</Text>"
+      }
+    },
+    {
+      "fixId": "OnboardingCard-Absolute-Position",
+      "file": "src/components/onboarding/PostApprovalCard.tsx",
+      "severity": "major",
+      "description": "A frame within the component ('Frame 1686557300') is designed with a specific offset from its parent, which requires absolute positioning.",
+      "suggestion": "Apply `position: 'absolute'` to the component corresponding to 'Frame 1686557300' and set its `left` and `top` properties to match the Figma design.",
+      "code": {
+        "language": "javascript",
+        "before": "// Missing or incorrect positioning",
+        "after": "style={{ position: 'absolute', left: 0, top: 899 }}"
+      }
+    }
+  ],
+  "summary": {
+    "totalIssues": 7,
+    "critical": 3,
+    "major": 4,
+    "minor": 0,
+    "filesAffected": [
+      "app/screens/OnboardingPostApproval1.tsx",
+      "src/components/onboarding/PostApprovalCard.tsx"
+    ]
+  }
+}

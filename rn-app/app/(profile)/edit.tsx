@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,       // Figma: h1 = 48px (was 40)
     lineHeight: 64,     // Figma: h1 lineHeight = 64 (was 52)
-    color: EDIT_COLORS.textPrimary,
+    color: '#A9A9A9',  // Figma: "My" in gray to match Profile Main screen pattern
     letterSpacing: -2,  // Figma: h1 letterSpacing = -2 (was -1)
   },
   titleProfile: {

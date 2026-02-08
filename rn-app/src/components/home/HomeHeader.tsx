@@ -17,7 +17,7 @@ import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Text, Logo } from '@/src/components/ui';
-import { colors, spacing } from '@/src/theme';
+import { colors } from '@/src/theme';
 
 export interface HomeHeaderProps {
   userName: string;
@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
     gap: 12, // Figma: gap 12px
   },
   greeting: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
     fontWeight: '400', // Figma: fontWeight 400
@@ -117,6 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     fontSize: 14, // Figma: fontSize 14
     fontWeight: '600', // Figma: fontWeight 600
     color: colors.white,

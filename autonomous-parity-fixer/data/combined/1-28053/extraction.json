@@ -1,0 +1,97 @@
+{
+  "screenId": "1-28053",
+  "screenName": "Screen 1-28053",
+  "module": "app",
+  "extractedAt": "2026-02-01T10:24:39.743Z",
+  "nodeCount": 2,
+  "nodes": [
+    {
+      "nodeId": "1:28053",
+      "name": "Frame 1686557069",
+      "type": "FRAME",
+      "geometry": {
+        "x": 0,
+        "y": 0,
+        "width": 13872,
+        "height": 154
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": {
+        "mode": "HORIZONTAL",
+        "counterAlign": "CENTER",
+        "paddingTop": 48,
+        "paddingRight": 64,
+        "paddingBottom": 48,
+        "paddingLeft": 64,
+        "gap": 10
+      },
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 13872,
+        "height": 154,
+        "backgroundColor": "#000000",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "gap": 10,
+        "paddingTop": 48,
+        "paddingRight": 64,
+        "paddingBottom": 48,
+        "paddingLeft": 64
+      }
+    },
+    {
+      "nodeId": "1:28054",
+      "name": "Tenant Onboarding Flow",
+      "type": "TEXT",
+      "geometry": {
+        "x": 64,
+        "y": 48,
+        "width": 555,
+        "height": 58
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": {
+        "fontFamily": "Inter",
+        "fontSize": 48,
+        "fontWeight": 400,
+        "lineHeight": 58.09090805053711,
+        "letterSpacing": 0,
+        "textAlign": "LEFT",
+        "text": "Tenant Onboarding Flow"
+      },
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 555,
+        "height": 58,
+        "backgroundColor": "#FFFFFF",
+        "fontFamily": "Inter",
+        "fontSize": 48,
+        "fontWeight": "400",
+        "lineHeight": 58.09090805053711,
+        "textAlign": "left"
+      }
+    }
+  ]
+}

@@ -19,7 +19,6 @@ import React, { memo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { Text } from '@/src/components/ui';
-import { colors } from '@/src/theme';
 
 export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'processing';
 
@@ -81,11 +80,11 @@ function RecentPaymentsListComponent({ payments, onPaymentPress }: RecentPayment
               </View>
             </View>
 
-            {/* Amount - Figma format */}
-            <View style={styles.amountContainer}>
-              <Text style={styles.rupeeSymbol}>Rs. </Text>
+            {/* Amount - Figma format: single Text with nested spans for inline display */}
+            <Text style={styles.amountBase}>
+              <Text style={styles.rupeeSymbol}>{'₹ '}</Text>
               <Text style={styles.amount}>{payment.amount.toLocaleString('en-IN')}</Text>
-            </View>
+            </Text>
           </TouchableOpacity>
 
           {/* Divider line between rows */}
@@ -124,9 +123,10 @@ const styles = StyleSheet.create({
     marginRight: 12, // Figma: gap between avatar and content
   },
   avatarText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
   // Content
   content: {
@@ -134,11 +134,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14, // Figma: fontSize 14
     fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 19.74, // Figma: lineHeight ~19.74
     letterSpacing: -0.56, // Figma: letterSpacing -0.56
-    color: colors.white, // Figma: #FFFFFF
+    color: '#FFFFFF', // Figma: #FFFFFF
   },
   statusRow: {
     flexDirection: 'row',
@@ -151,6 +152,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12, // Figma: fontSize 12
     lineHeight: 16.92, // Figma: lineHeight ~16.92
     letterSpacing: -0.24, // Figma: letterSpacing -0.24
@@ -166,23 +168,19 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24, // Figma: letterSpacing -0.24
     color: '#878787', // Figma: #878787 (neutral[600])
   },
-  // Amount
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  rupeeSymbol: {
-    fontSize: 12, // Figma: fontSize 12
+  // Amount - Figma: single Text with nested spans for mixed font sizes
+  amountBase: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontWeight: '600', // Figma: fontWeight 600
-    color: '#EEEEEE', // Figma: #EEEEEE (neutral[100])
-    marginRight: 2,
-  },
-  amount: {
-    fontSize: 12, // Figma: fontSize 12 in some variants, 16 in others
-    fontWeight: '600', // Figma: fontWeight 600
-    lineHeight: 16.92, // Figma: lineHeight ~16.92
     letterSpacing: -0.48, // Figma: letterSpacing -0.48
     color: '#EEEEEE', // Figma: #EEEEEE (neutral[100])
+  },
+  rupeeSymbol: {
+    fontSize: 12, // Figma: fontSize 12 (style override for Rs symbol)
+  },
+  amount: {
+    fontSize: 16, // Figma: fontSize 16 (numeric portion)
+    lineHeight: 16.92, // Figma: lineHeight ~16.92
   },
 });
 

@@ -1,0 +1,25 @@
+{
+  "screenId": "1-31175",
+  "iteration": 1,
+  "coverage": 97.7,
+  "threshold": 100,
+  "fixesNeeded": [
+    {
+      "type": "style",
+      "target": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
+      "property": "characters",
+      "figmaValue": "You may get a verification message from Cashfree t...",
+      "currentValue": null,
+      "fix": "Add text content: \"You may get a verification message from Cashfree to verify your profile and unlock benefits.\""
+    },
+    {
+      "type": "style",
+      "target": "OTP",
+      "property": "gap",
+      "figmaValue": 6,
+      "currentValue": 16,
+      "fix": "Add gap: 6 (or token)"
+    }
+  ],
+  "generatedAt": "2026-02-03T10:31:13.376Z"
+}

@@ -1,0 +1,4466 @@
+[
+  {
+    "nodeId": "243:4666",
+    "nodeName": "Home --Resent Invitation >24hrs",
+    "nodeType": "FRAME",
+    "rnStyleName": "homeResentInvitation24hrs",
+    "rnStyles": {
+      "width": 393,
+      "height": 1166,
+      "backgroundColor": "#131313"
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10169,
+      "width": 393,
+      "height": 1166
+    }
+  },
+  {
+    "nodeId": "243:4667",
+    "nodeName": "Frame 2095586343",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586343",
+    "rnStyles": {
+      "width": 393,
+      "height": 914,
+      "flexDirection": "column",
+      "alignItems": "center",
+      "gap": 24,
+      "paddingBottom": 48
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10326,
+      "width": 393,
+      "height": 914
+    }
+  },
+  {
+    "nodeId": "243:4668",
+    "nodeName": "Frame 2095586453",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586453",
+    "rnStyles": {
+      "width": 393,
+      "height": 80,
+      "flexDirection": "column",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingRight": 64,
+      "paddingLeft": 64
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10326,
+      "width": 393,
+      "height": 80
+    }
+  },
+  {
+    "nodeId": "243:4669",
+    "nodeName": "Your rent is due in 10 days",
+    "nodeType": "TEXT",
+    "rnStyleName": "yourRentIsDueIn10Days",
+    "rnStyles": {
+      "width": 265,
+      "height": 80,
+      "color": "#BABABA",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 28,
+      "fontWeight": "400",
+      "lineHeight": 40,
+      "letterSpacing": -1,
+      "textAlign": "left"
+    },
+    "textContent": "Your rent is due in 10 days",
+    "geometry": {
+      "x": 943,
+      "y": 10326,
+      "width": 265,
+      "height": 80
+    }
+  },
+  {
+    "nodeId": "243:4670",
+    "nodeName": "Paying with:",
+    "nodeType": "TEXT",
+    "rnStyleName": "payingWith",
+    "rnStyles": {
+      "width": 265,
+      "height": 20,
+      "color": "#A6A6A6",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Paying with:",
+    "geometry": {
+      "x": 943,
+      "y": 10416,
+      "width": 265,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4671",
+    "nodeName": "Frame 2095586466",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586466",
+    "rnStyles": {
+      "width": 393,
+      "height": 264,
+      "flexDirection": "column",
+      "alignItems": "center",
+      "gap": 24
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10430,
+      "width": 393,
+      "height": 264
+    }
+  },
+  {
+    "nodeId": "243:4672",
+    "nodeName": "Vector 45",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector45",
+    "rnStyles": {
+      "width": 369,
+      "height": 234.54,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 891,
+      "y": 10431,
+      "width": 369,
+      "height": 234.5441131591797
+    }
+  },
+  {
+    "nodeId": "243:4673",
+    "nodeName": "Frame 2095586448",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586448",
+    "rnStyles": {
+      "width": 393,
+      "height": 264,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingRight": 32,
+      "paddingLeft": 64
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10430,
+      "width": 393,
+      "height": 264
+    }
+  },
+  {
+    "nodeId": "243:4674",
+    "nodeName": "Frame 2095586449",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586449",
+    "rnStyles": {
+      "width": 297,
+      "height": 264,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16
+    },
+    "geometry": {
+      "x": 943,
+      "y": 10430,
+      "width": 297,
+      "height": 264
+    }
+  },
+  {
+    "nodeId": "243:4675",
+    "nodeName": "Credit Card",
+    "nodeType": "FRAME",
+    "rnStyleName": "creditCard",
+    "rnStyles": {
+      "width": 270,
+      "height": 400,
+      "borderRadius": 12,
+      "flexDirection": "column",
+      "alignItems": "center"
+    },
+    "geometry": {
+      "x": 943,
+      "y": 10434,
+      "width": 270,
+      "height": 400
+    }
+  },
+  {
+    "nodeId": "243:4676",
+    "nodeName": "Frame 2095586440",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586440",
+    "rnStyles": {
+      "width": 270,
+      "height": 336,
+      "backgroundColor": "#202020",
+      "flexDirection": "column",
+      "gap": 120,
+      "paddingTop": 24,
+      "paddingRight": 16,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 943,
+      "y": 10434,
+      "width": 270,
+      "height": 336
+    }
+  },
+  {
+    "nodeId": "243:4677",
+    "nodeName": "Frame 2095586437",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586437",
+    "rnStyles": {
+      "width": 222,
+      "height": 36,
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "alignItems": "center",
+      "gap": 130
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10458,
+      "width": 222,
+      "height": 36
+    }
+  },
+  {
+    "nodeId": "243:4678",
+    "nodeName": "Visa",
+    "nodeType": "VECTOR",
+    "rnStyleName": "visa",
+    "rnStyles": {
+      "width": 49.54,
+      "height": 16,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10468,
+      "width": 49.54228973388672,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "243:4679",
+    "nodeName": "Frame 2095586454",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586454",
+    "rnStyles": {
+      "width": 85,
+      "height": 36,
+      "backgroundColor": "#1A1A1A",
+      "borderRadius": 200,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 8,
+      "paddingRight": 12,
+      "paddingBottom": 8,
+      "paddingLeft": 12
+    },
+    "geometry": {
+      "x": 1112,
+      "y": 10458,
+      "width": 85,
+      "height": 36
+    }
+  },
+  {
+    "nodeId": "243:4680",
+    "nodeName": "SELECTED",
+    "nodeType": "TEXT",
+    "rnStyleName": "selected",
+    "rnStyles": {
+      "width": 61,
+      "height": 20,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "SELECTED",
+    "geometry": {
+      "x": 1124,
+      "y": 10466,
+      "width": 61,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4681",
+    "nodeName": "Frame 2095586439",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586439",
+    "rnStyles": {
+      "width": 130,
+      "height": 132,
+      "flexDirection": "column",
+      "gap": 28
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10614,
+      "width": 130,
+      "height": 132
+    }
+  },
+  {
+    "nodeId": "243:4682",
+    "nodeName": "•••• 2341",
+    "nodeType": "TEXT",
+    "rnStyleName": "2341",
+    "rnStyles": {
+      "width": 130,
+      "height": 32,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left"
+    },
+    "textContent": "•••• 2341",
+    "geometry": {
+      "x": 975,
+      "y": 10614,
+      "width": 130,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "243:4683",
+    "nodeName": "Frame 2095586438",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586438",
+    "rnStyles": {
+      "width": 130,
+      "height": 72,
+      "flexDirection": "column",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10674,
+      "width": 130,
+      "height": 72
+    }
+  },
+  {
+    "nodeId": "243:4684",
+    "nodeName": "EXPIRY 06/26",
+    "nodeType": "TEXT",
+    "rnStyleName": "expiry0626",
+    "rnStyles": {
+      "width": 130,
+      "height": 24,
+      "color": "#4D4D4D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "fontWeight": "400",
+      "lineHeight": 24,
+      "textAlign": "left"
+    },
+    "textContent": "EXPIRY 06/26",
+    "geometry": {
+      "x": 975,
+      "y": 10674,
+      "width": 130,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4685",
+    "nodeName": "CVV •••",
+    "nodeType": "TEXT",
+    "rnStyleName": "cvv",
+    "rnStyles": {
+      "width": 130,
+      "height": 24,
+      "color": "#4D4D4D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "fontWeight": "400",
+      "lineHeight": 24,
+      "textAlign": "left"
+    },
+    "textContent": "CVV •••",
+    "geometry": {
+      "x": 975,
+      "y": 10706,
+      "width": 130,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4686",
+    "nodeName": "Group 58",
+    "nodeType": "GROUP",
+    "rnStyleName": "group58",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 35
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10559,
+      "width": 20.5,
+      "height": 35
+    }
+  },
+  {
+    "nodeId": "243:4687",
+    "nodeName": "Vector 57",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector57",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10559,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4688",
+    "nodeName": "Vector 58",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector58",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10573.5,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4689",
+    "nodeName": "Group 59",
+    "nodeType": "GROUP",
+    "rnStyleName": "group59",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 35
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10720,
+      "width": 20.5,
+      "height": 35
+    }
+  },
+  {
+    "nodeId": "243:4690",
+    "nodeName": "Vector 57",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector572",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10720,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4691",
+    "nodeName": "Vector 58",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector582",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10734.5,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4692",
+    "nodeName": "Frame 2095586341",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586341",
+    "rnStyles": {
+      "width": 270,
+      "height": 64,
+      "backgroundColor": "#1A1A1A",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingRight": 32,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 943,
+      "y": 10770,
+      "width": 270,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "243:4693",
+    "nodeName": "Frame 2095586441",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586441",
+    "rnStyles": {
+      "width": 169.97,
+      "height": 20,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10788,
+      "width": 169.97494506835938,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4694",
+    "nodeName": "CREDIT CARD",
+    "nodeType": "TEXT",
+    "rnStyleName": "creditCard2",
+    "rnStyles": {
+      "width": 92,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "CREDIT CARD",
+    "geometry": {
+      "x": 975,
+      "y": 10788,
+      "width": 92,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4695",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary",
+    "rnStyles": {
+      "width": 16,
+      "height": 16
+    },
+    "geometry": {
+      "x": 1071,
+      "y": 10790,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "I243:4695;19:94999",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector",
+    "rnStyles": {
+      "width": 15.33,
+      "height": 15.33,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 1075,
+      "y": 10794.671875,
+      "width": 15.328426361083984,
+      "height": 15.3284273147583
+    }
+  },
+  {
+    "nodeId": "I243:4695;19:95000",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector2",
+    "rnStyles": {
+      "width": 4,
+      "height": 4,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 1084.5,
+      "y": 10796.5,
+      "width": 4,
+      "height": 4
+    }
+  },
+  {
+    "nodeId": "243:4696",
+    "nodeName": "Vector 1",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector1",
+    "rnStyles": {
+      "width": 20.03,
+      "height": 24,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1160.9749755859375,
+      "y": 10786,
+      "width": 20.02505874633789,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4697",
+    "nodeName": "UPI Card",
+    "nodeType": "FRAME",
+    "rnStyleName": "upiCard",
+    "rnStyles": {
+      "width": 270,
+      "height": 400,
+      "flexDirection": "column",
+      "alignItems": "center"
+    },
+    "geometry": {
+      "x": 1229,
+      "y": 10434,
+      "width": 270,
+      "height": 400
+    }
+  },
+  {
+    "nodeId": "243:4698",
+    "nodeName": "Frame 2095586440",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864402",
+    "rnStyles": {
+      "width": 270,
+      "height": 336,
+      "backgroundColor": "#202020",
+      "flexDirection": "column",
+      "gap": 120,
+      "paddingTop": 24,
+      "paddingRight": 16,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 1229,
+      "y": 10434,
+      "width": 270,
+      "height": 336
+    }
+  },
+  {
+    "nodeId": "243:4699",
+    "nodeName": "Frame 2095586441",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864412",
+    "rnStyles": {
+      "width": 222,
+      "height": 36,
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "alignItems": "center",
+      "gap": 130
+    },
+    "geometry": {
+      "x": 1261,
+      "y": 10458,
+      "width": 222,
+      "height": 36
+    }
+  },
+  {
+    "nodeId": "243:4700",
+    "nodeName": "UPI-Logo-vector 1",
+    "nodeType": "FRAME",
+    "rnStyleName": "upilogovector1",
+    "rnStyles": {
+      "width": 45.29,
+      "height": 16
+    },
+    "geometry": {
+      "x": 1261,
+      "y": 10468,
+      "width": 45.289039611816406,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "243:4701",
+    "nodeName": "g22",
+    "nodeType": "GROUP",
+    "rnStyleName": "g22",
+    "rnStyles": {
+      "width": 52.87,
+      "height": 26.44
+    },
+    "geometry": {
+      "x": 1257.209228515625,
+      "y": 10462.781242370605,
+      "width": 52.87306213378906,
+      "height": 26.43653106689453
+    }
+  },
+  {
+    "nodeId": "243:4702",
+    "nodeName": "Clip path group",
+    "nodeType": "GROUP",
+    "rnStyleName": "clipPathGroup",
+    "rnStyles": {
+      "width": 52.87,
+      "height": 26.44
+    },
+    "geometry": {
+      "x": 1257.209228515625,
+      "y": 10462.781242370605,
+      "width": 52.87306213378906,
+      "height": 26.43653106689453
+    }
+  },
+  {
+    "nodeId": "243:4703",
+    "nodeName": "clipPath28",
+    "nodeType": "GROUP",
+    "rnStyleName": "clippath28",
+    "rnStyles": {
+      "width": 52.87,
+      "height": 26.44
+    },
+    "geometry": {
+      "x": 1257.209228515625,
+      "y": 10462.781242370605,
+      "width": 52.87306213378906,
+      "height": 26.43653106689453
+    }
+  },
+  {
+    "nodeId": "243:4704",
+    "nodeName": "path26",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path26",
+    "rnStyles": {
+      "width": 52.87,
+      "height": 26.44,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1257.209228515625,
+      "y": 10462.781242370605,
+      "width": 52.87306213378906,
+      "height": 26.43653106689453
+    }
+  },
+  {
+    "nodeId": "243:4705",
+    "nodeName": "g24",
+    "nodeType": "GROUP",
+    "rnStyleName": "g24",
+    "rnStyles": {
+      "width": 45.28,
+      "height": 16
+    },
+    "geometry": {
+      "x": 1261.0032958984375,
+      "y": 10468.001254081726,
+      "width": 45.284786224365234,
+      "height": 15.996792793273926
+    }
+  },
+  {
+    "nodeId": "243:4706",
+    "nodeName": "g30",
+    "nodeType": "GROUP",
+    "rnStyleName": "g30",
+    "rnStyles": {
+      "width": 2.1,
+      "height": 2.22
+    },
+    "geometry": {
+      "x": 1261.0032958984375,
+      "y": 10481.743310928345,
+      "width": 2.0984606742858887,
+      "height": 2.2244625091552734
+    }
+  },
+  {
+    "nodeId": "243:4707",
+    "nodeName": "path32",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path32",
+    "rnStyles": {
+      "width": 2.1,
+      "height": 2.22,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1261.0032958984375,
+      "y": 10481.743310928345,
+      "width": 2.0984606742858887,
+      "height": 2.2244625091552734
+    }
+  },
+  {
+    "nodeId": "243:4708",
+    "nodeName": "g34",
+    "nodeType": "GROUP",
+    "rnStyleName": "g34",
+    "rnStyles": {
+      "width": 2.41,
+      "height": 2.34
+    },
+    "geometry": {
+      "x": 1263.05615234375,
+      "y": 10481.657444953918,
+      "width": 2.4071927070617676,
+      "height": 2.336695671081543
+    }
+  },
+  {
+    "nodeId": "243:4709",
+    "nodeName": "path36",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path36",
+    "rnStyles": {
+      "width": 2.41,
+      "height": 2.34,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1263.05615234375,
+      "y": 10481.657444953918,
+      "width": 2.4071927070617676,
+      "height": 2.336695671081543
+    }
+  },
+  {
+    "nodeId": "243:4710",
+    "nodeName": "g38",
+    "nodeType": "GROUP",
+    "rnStyleName": "g38",
+    "rnStyles": {
+      "width": 0.86,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1265.435302734375,
+      "y": 10481.743339776993,
+      "width": 0.861879825592041,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4711",
+    "nodeName": "path40",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path40",
+    "rnStyles": {
+      "width": 0.86,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1265.435302734375,
+      "y": 10481.743339776993,
+      "width": 0.861879825592041,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4712",
+    "nodeName": "g42",
+    "nodeType": "GROUP",
+    "rnStyleName": "g42",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1266.2720947265625,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4713",
+    "nodeName": "path44",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path44",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1266.2720947265625,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4714",
+    "nodeName": "g46",
+    "nodeType": "GROUP",
+    "rnStyleName": "g46",
+    "rnStyles": {
+      "width": 0.86,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1267.828857421875,
+      "y": 10481.743339776993,
+      "width": 0.861879825592041,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4715",
+    "nodeName": "path48",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path48",
+    "rnStyles": {
+      "width": 0.86,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1267.828857421875,
+      "y": 10481.743339776993,
+      "width": 0.861879825592041,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4716",
+    "nodeName": "g50",
+    "nodeType": "GROUP",
+    "rnStyleName": "g50",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1268.6656494140625,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4717",
+    "nodeName": "path52",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path52",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1268.6656494140625,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4718",
+    "nodeName": "g54",
+    "nodeType": "GROUP",
+    "rnStyleName": "g54",
+    "rnStyles": {
+      "width": 2.1,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1270.23828125,
+      "y": 10481.74321770668,
+      "width": 2.0956532955169678,
+      "height": 2.166938543319702
+    }
+  },
+  {
+    "nodeId": "243:4719",
+    "nodeName": "path56",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path56",
+    "rnStyles": {
+      "width": 2.1,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1270.23828125,
+      "y": 10481.74321770668,
+      "width": 2.0956532955169678,
+      "height": 2.166938543319702
+    }
+  },
+  {
+    "nodeId": "243:4720",
+    "nodeName": "g58",
+    "nodeType": "GROUP",
+    "rnStyleName": "g58",
+    "rnStyles": {
+      "width": 1.66,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1273.31689453125,
+      "y": 10481.743339776993,
+      "width": 1.6584852933883667,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4721",
+    "nodeName": "path60",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path60",
+    "rnStyles": {
+      "width": 1.66,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1273.31689453125,
+      "y": 10481.743339776993,
+      "width": 1.6584852933883667,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4722",
+    "nodeName": "g62",
+    "nodeType": "GROUP",
+    "rnStyleName": "g62",
+    "rnStyles": {
+      "width": 2.04,
+      "height": 2.25
+    },
+    "geometry": {
+      "x": 1274.4410400390625,
+      "y": 10481.65754365921,
+      "width": 2.044180154800415,
+      "height": 2.252612590789795
+    }
+  },
+  {
+    "nodeId": "243:4723",
+    "nodeName": "path64",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path64",
+    "rnStyles": {
+      "width": 2.04,
+      "height": 2.25,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1274.4410400390625,
+      "y": 10481.65754365921,
+      "width": 2.044180154800415,
+      "height": 2.252612590789795
+    }
+  },
+  {
+    "nodeId": "243:4724",
+    "nodeName": "g66",
+    "nodeType": "GROUP",
+    "rnStyleName": "g66",
+    "rnStyles": {
+      "width": 1.78,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1276.78466796875,
+      "y": 10481.743339776993,
+      "width": 1.7788357734680176,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4725",
+    "nodeName": "path68",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path68",
+    "rnStyles": {
+      "width": 1.78,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1276.78466796875,
+      "y": 10481.743339776993,
+      "width": 1.7788357734680176,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4726",
+    "nodeName": "g70",
+    "nodeType": "GROUP",
+    "rnStyleName": "g70",
+    "rnStyles": {
+      "width": 2.51,
+      "height": 2.35
+    },
+    "geometry": {
+      "x": 1278.0709228515625,
+      "y": 10481.651927232742,
+      "width": 2.508533000946045,
+      "height": 2.3461196422576904
+    }
+  },
+  {
+    "nodeId": "243:4727",
+    "nodeName": "path72",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path72",
+    "rnStyles": {
+      "width": 2.51,
+      "height": 2.35,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1278.0709228515625,
+      "y": 10481.651927232742,
+      "width": 2.508533000946045,
+      "height": 2.3461196422576904
+    }
+  },
+  {
+    "nodeId": "243:4728",
+    "nodeName": "g74",
+    "nodeType": "GROUP",
+    "rnStyleName": "g74",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1280.8236083984375,
+      "y": 10481.743339776993,
+      "width": 1.6974456310272217,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4729",
+    "nodeName": "path76",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path76",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1280.8236083984375,
+      "y": 10481.743339776993,
+      "width": 1.6974456310272217,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4730",
+    "nodeName": "g78",
+    "nodeType": "GROUP",
+    "rnStyleName": "g78",
+    "rnStyles": {
+      "width": 2.41,
+      "height": 2.34
+    },
+    "geometry": {
+      "x": 1282.3961181640625,
+      "y": 10481.657444953918,
+      "width": 2.407315254211426,
+      "height": 2.336695671081543
+    }
+  },
+  {
+    "nodeId": "243:4731",
+    "nodeName": "path80",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path80",
+    "rnStyles": {
+      "width": 2.41,
+      "height": 2.34,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1282.3961181640625,
+      "y": 10481.657444953918,
+      "width": 2.407315254211426,
+      "height": 2.336695671081543
+    }
+  },
+  {
+    "nodeId": "243:4732",
+    "nodeName": "g82",
+    "nodeType": "GROUP",
+    "rnStyleName": "g82",
+    "rnStyles": {
+      "width": 1.53,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1284.9942626953125,
+      "y": 10481.743339776993,
+      "width": 1.5344202518463135,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4733",
+    "nodeName": "path84",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path84",
+    "rnStyles": {
+      "width": 1.53,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1284.9942626953125,
+      "y": 10481.743339776993,
+      "width": 1.5344202518463135,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4734",
+    "nodeName": "g86",
+    "nodeType": "GROUP",
+    "rnStyleName": "g86",
+    "rnStyles": {
+      "width": 1.64,
+      "height": 2.27
+    },
+    "geometry": {
+      "x": 1286.255126953125,
+      "y": 10481.695330619812,
+      "width": 1.6436684131622314,
+      "height": 2.2734193801879883
+    }
+  },
+  {
+    "nodeId": "243:4735",
+    "nodeName": "path88",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path88",
+    "rnStyles": {
+      "width": 1.64,
+      "height": 2.27,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1286.255126953125,
+      "y": 10481.695330619812,
+      "width": 1.6436684131622314,
+      "height": 2.2734193801879883
+    }
+  },
+  {
+    "nodeId": "243:4736",
+    "nodeName": "g90",
+    "nodeType": "GROUP",
+    "rnStyleName": "g90",
+    "rnStyles": {
+      "width": 0.86,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1288.791748046875,
+      "y": 10481.743339776993,
+      "width": 0.8620022535324097,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4737",
+    "nodeName": "path92",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path92",
+    "rnStyles": {
+      "width": 0.86,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1288.791748046875,
+      "y": 10481.743339776993,
+      "width": 0.8620022535324097,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4738",
+    "nodeName": "g94",
+    "nodeType": "GROUP",
+    "rnStyleName": "g94",
+    "rnStyles": {
+      "width": 2.41,
+      "height": 2.34
+    },
+    "geometry": {
+      "x": 1289.6285400390625,
+      "y": 10481.657444953918,
+      "width": 2.4071927070617676,
+      "height": 2.336695671081543
+    }
+  },
+  {
+    "nodeId": "243:4739",
+    "nodeName": "path96",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path96",
+    "rnStyles": {
+      "width": 2.41,
+      "height": 2.34,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1289.6285400390625,
+      "y": 10481.657444953918,
+      "width": 2.4071927070617676,
+      "height": 2.336695671081543
+    }
+  },
+  {
+    "nodeId": "243:4740",
+    "nodeName": "g98",
+    "nodeType": "GROUP",
+    "rnStyleName": "g98",
+    "rnStyles": {
+      "width": 1.53,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1292.2266845703125,
+      "y": 10481.743339776993,
+      "width": 1.5344202518463135,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4741",
+    "nodeName": "path100",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path100",
+    "rnStyles": {
+      "width": 1.53,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1292.2266845703125,
+      "y": 10481.743339776993,
+      "width": 1.5344202518463135,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4742",
+    "nodeName": "g102",
+    "nodeType": "GROUP",
+    "rnStyleName": "g102",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1293.5050048828125,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4743",
+    "nodeName": "path104",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path104",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1293.5050048828125,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4744",
+    "nodeName": "g106",
+    "nodeType": "GROUP",
+    "rnStyleName": "g106",
+    "rnStyles": {
+      "width": 1.61,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1295.07763671875,
+      "y": 10481.743339776993,
+      "width": 1.6061010360717773,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4745",
+    "nodeName": "path108",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path108",
+    "rnStyles": {
+      "width": 1.61,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1295.07763671875,
+      "y": 10481.743339776993,
+      "width": 1.6061010360717773,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4746",
+    "nodeName": "g110",
+    "nodeType": "GROUP",
+    "rnStyleName": "g110",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1296.732421875,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4747",
+    "nodeName": "path112",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path112",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1296.732421875,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4748",
+    "nodeName": "g114",
+    "nodeType": "GROUP",
+    "rnStyleName": "g114",
+    "rnStyles": {
+      "width": 2.04,
+      "height": 2.25
+    },
+    "geometry": {
+      "x": 1297.89111328125,
+      "y": 10481.65754365921,
+      "width": 2.0443027019500732,
+      "height": 2.252612590789795
+    }
+  },
+  {
+    "nodeId": "243:4749",
+    "nodeName": "path116",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path116",
+    "rnStyles": {
+      "width": 2.04,
+      "height": 2.25,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1297.89111328125,
+      "y": 10481.65754365921,
+      "width": 2.0443027019500732,
+      "height": 2.252612590789795
+    }
+  },
+  {
+    "nodeId": "243:4750",
+    "nodeName": "g118",
+    "nodeType": "GROUP",
+    "rnStyleName": "g118",
+    "rnStyles": {
+      "width": 2.06,
+      "height": 2.28
+    },
+    "geometry": {
+      "x": 1300.2122802734375,
+      "y": 10481.691416740417,
+      "width": 2.0620601177215576,
+      "height": 2.2763566970825195
+    }
+  },
+  {
+    "nodeId": "243:4751",
+    "nodeName": "path120",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path120",
+    "rnStyles": {
+      "width": 2.06,
+      "height": 2.28,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1300.2122802734375,
+      "y": 10481.691416740417,
+      "width": 2.0620601177215576,
+      "height": 2.2763566970825195
+    }
+  },
+  {
+    "nodeId": "243:4752",
+    "nodeName": "g122",
+    "nodeType": "GROUP",
+    "rnStyleName": "g122",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17
+    },
+    "geometry": {
+      "x": 1302.2034912109375,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4753",
+    "nodeName": "path124",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path124",
+    "rnStyles": {
+      "width": 1.7,
+      "height": 2.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1302.2034912109375,
+      "y": 10481.743339776993,
+      "width": 1.6973230838775635,
+      "height": 2.166816473007202
+    }
+  },
+  {
+    "nodeId": "243:4754",
+    "nodeName": "g126",
+    "nodeType": "GROUP",
+    "rnStyleName": "g126",
+    "rnStyles": {
+      "width": 5.64,
+      "height": 11.85
+    },
+    "geometry": {
+      "x": 1293.5814208984375,
+      "y": 10468.001254081726,
+      "width": 5.642486095428467,
+      "height": 11.854214668273926
+    }
+  },
+  {
+    "nodeId": "243:4755",
+    "nodeName": "path128",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path128",
+    "rnStyles": {
+      "width": 5.64,
+      "height": 11.85,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1293.5814208984375,
+      "y": 10468.001254081726,
+      "width": 5.642486095428467,
+      "height": 11.854214668273926
+    }
+  },
+  {
+    "nodeId": "243:4756",
+    "nodeName": "g130",
+    "nodeType": "GROUP",
+    "rnStyleName": "g130",
+    "rnStyles": {
+      "width": 17.18,
+      "height": 11.87
+    },
+    "geometry": {
+      "x": 1277.6920166015625,
+      "y": 10468.036249160767,
+      "width": 17.176666259765625,
+      "height": 11.869024276733398
+    }
+  },
+  {
+    "nodeId": "243:4757",
+    "nodeName": "path132",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path132",
+    "rnStyles": {
+      "width": 17.18,
+      "height": 11.87,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1277.6920166015625,
+      "y": 10468.036249160767,
+      "width": 17.176666259765625,
+      "height": 11.869024276733398
+    }
+  },
+  {
+    "nodeId": "243:4758",
+    "nodeName": "g134",
+    "nodeType": "GROUP",
+    "rnStyleName": "g134",
+    "rnStyles": {
+      "width": 17.2,
+      "height": 11.87
+    },
+    "geometry": {
+      "x": 1262.19970703125,
+      "y": 10468.0355052948,
+      "width": 17.19511604309082,
+      "height": 11.873674392700195
+    }
+  },
+  {
+    "nodeId": "243:4759",
+    "nodeName": "path136",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path136",
+    "rnStyles": {
+      "width": 17.2,
+      "height": 11.87,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1262.19970703125,
+      "y": 10468.0355052948,
+      "width": 17.19511604309082,
+      "height": 11.873674392700195
+    }
+  },
+  {
+    "nodeId": "243:4760",
+    "nodeName": "g138",
+    "nodeType": "GROUP",
+    "rnStyleName": "g138",
+    "rnStyles": {
+      "width": 6.28,
+      "height": 11.88
+    },
+    "geometry": {
+      "x": 1300.0067138671875,
+      "y": 10468.02388381958,
+      "width": 6.281368732452393,
+      "height": 11.883342742919922
+    }
+  },
+  {
+    "nodeId": "243:4761",
+    "nodeName": "path140",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path140",
+    "rnStyles": {
+      "width": 6.28,
+      "height": 11.88,
+      "backgroundColor": "#27803B"
+    },
+    "geometry": {
+      "x": 1300.0067138671875,
+      "y": 10468.02388381958,
+      "width": 6.281368732452393,
+      "height": 11.883342742919922
+    }
+  },
+  {
+    "nodeId": "243:4762",
+    "nodeName": "g142",
+    "nodeType": "GROUP",
+    "rnStyleName": "g142",
+    "rnStyles": {
+      "width": 6.28,
+      "height": 11.88
+    },
+    "geometry": {
+      "x": 1297.9072265625,
+      "y": 10468.02388381958,
+      "width": 6.283938407897949,
+      "height": 11.883342742919922
+    }
+  },
+  {
+    "nodeId": "243:4763",
+    "nodeName": "path144",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path144",
+    "rnStyles": {
+      "width": 6.28,
+      "height": 11.88,
+      "backgroundColor": "#E9661C"
+    },
+    "geometry": {
+      "x": 1297.9072265625,
+      "y": 10468.02388381958,
+      "width": 6.283938407897949,
+      "height": 11.883342742919922
+    }
+  },
+  {
+    "nodeId": "243:4764",
+    "nodeName": "Frame 2095586454",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864542",
+    "rnStyles": {
+      "width": 85,
+      "height": 36,
+      "backgroundColor": "#1A1A1A",
+      "borderRadius": 200,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 8,
+      "paddingRight": 12,
+      "paddingBottom": 8,
+      "paddingLeft": 12,
+      "opacity": 0
+    },
+    "geometry": {
+      "x": 1398,
+      "y": 10458,
+      "width": 85,
+      "height": 36
+    }
+  },
+  {
+    "nodeId": "243:4765",
+    "nodeName": "SELECTED",
+    "nodeType": "TEXT",
+    "rnStyleName": "selected2",
+    "rnStyles": {
+      "width": 61,
+      "height": 20,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "SELECTED",
+    "geometry": {
+      "x": 1410,
+      "y": 10466,
+      "width": 61,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4766",
+    "nodeName": "Frame 2095586440",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864403",
+    "rnStyles": {
+      "width": 130,
+      "height": 132,
+      "flexDirection": "column",
+      "gap": 28
+    },
+    "geometry": {
+      "x": 1261,
+      "y": 10614,
+      "width": 130,
+      "height": 132
+    }
+  },
+  {
+    "nodeId": "243:4767",
+    "nodeName": "•••• 2341",
+    "nodeType": "TEXT",
+    "rnStyleName": "23412",
+    "rnStyles": {
+      "width": 130,
+      "height": 32,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left",
+      "opacity": 0
+    },
+    "textContent": "•••• 2341",
+    "geometry": {
+      "x": 1261,
+      "y": 10614,
+      "width": 130,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "243:4768",
+    "nodeName": "Frame 2095586438",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864382",
+    "rnStyles": {
+      "width": 130,
+      "height": 72,
+      "flexDirection": "column",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 1261,
+      "y": 10674,
+      "width": 130,
+      "height": 72
+    }
+  },
+  {
+    "nodeId": "243:4769",
+    "nodeName": "ICICI a/c - xxx23",
+    "nodeType": "TEXT",
+    "rnStyleName": "iciciAcXxx23",
+    "rnStyles": {
+      "width": 130,
+      "height": 24,
+      "color": "#4D4D4D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "fontWeight": "400",
+      "lineHeight": 24,
+      "textAlign": "left"
+    },
+    "textContent": "ICICI a/c -  xxx23",
+    "geometry": {
+      "x": 1261,
+      "y": 10674,
+      "width": 130,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4770",
+    "nodeName": "rishabh@•••",
+    "nodeType": "TEXT",
+    "rnStyleName": "rishabh",
+    "rnStyles": {
+      "width": 130,
+      "height": 24,
+      "color": "#4D4D4D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "fontWeight": "400",
+      "lineHeight": 24,
+      "textAlign": "left"
+    },
+    "textContent": "rishabh@•••",
+    "geometry": {
+      "x": 1261,
+      "y": 10706,
+      "width": 130,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4771",
+    "nodeName": "Group 58",
+    "nodeType": "GROUP",
+    "rnStyleName": "group582",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 35
+    },
+    "geometry": {
+      "x": 1447,
+      "y": 10559,
+      "width": 20.5,
+      "height": 35
+    }
+  },
+  {
+    "nodeId": "243:4772",
+    "nodeName": "Vector 57",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector573",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1447,
+      "y": 10559,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4773",
+    "nodeName": "Vector 58",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector583",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1447,
+      "y": 10573.5,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4774",
+    "nodeName": "Group 59",
+    "nodeType": "GROUP",
+    "rnStyleName": "group592",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 35
+    },
+    "geometry": {
+      "x": 1447,
+      "y": 10720,
+      "width": 20.5,
+      "height": 35
+    }
+  },
+  {
+    "nodeId": "243:4775",
+    "nodeName": "Vector 57",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector574",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1447,
+      "y": 10720,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4776",
+    "nodeName": "Vector 58",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector584",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1447,
+      "y": 10734.5,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4777",
+    "nodeName": "Frame 2095586341",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863412",
+    "rnStyles": {
+      "width": 270,
+      "height": 64,
+      "backgroundColor": "#1A1A1A",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingRight": 32,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 1229,
+      "y": 10770,
+      "width": 270,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "243:4778",
+    "nodeName": "Frame 2095586441",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864413",
+    "rnStyles": {
+      "width": 169.97,
+      "height": 20,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 1261,
+      "y": 10788,
+      "width": 169.97494506835938,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4779",
+    "nodeName": "UPI",
+    "nodeType": "TEXT",
+    "rnStyleName": "upi",
+    "rnStyles": {
+      "width": 23,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "UPI",
+    "geometry": {
+      "x": 1261,
+      "y": 10788,
+      "width": 23,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4780",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary2",
+    "rnStyles": {
+      "width": 16,
+      "height": 16
+    },
+    "geometry": {
+      "x": 1288,
+      "y": 10790,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "I243:4780;19:94999",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector3",
+    "rnStyles": {
+      "width": 15.33,
+      "height": 15.33,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 1292,
+      "y": 10794.671875,
+      "width": 15.328426361083984,
+      "height": 15.3284273147583
+    }
+  },
+  {
+    "nodeId": "I243:4780;19:95000",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector4",
+    "rnStyles": {
+      "width": 4,
+      "height": 4,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 1301.5,
+      "y": 10796.5,
+      "width": 4,
+      "height": 4
+    }
+  },
+  {
+    "nodeId": "243:4781",
+    "nodeName": "Vector 1",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector12",
+    "rnStyles": {
+      "width": 20.03,
+      "height": 24,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1446.9749755859375,
+      "y": 10786,
+      "width": 20.02505874633789,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4782",
+    "nodeName": "Netbanking Card",
+    "nodeType": "FRAME",
+    "rnStyleName": "netbankingCard",
+    "rnStyles": {
+      "width": 270,
+      "height": 400,
+      "flexDirection": "column",
+      "alignItems": "center"
+    },
+    "geometry": {
+      "x": 1515,
+      "y": 10434,
+      "width": 270,
+      "height": 400
+    }
+  },
+  {
+    "nodeId": "243:4783",
+    "nodeName": "Frame 2095586440",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864404",
+    "rnStyles": {
+      "width": 270,
+      "height": 336,
+      "backgroundColor": "#202020",
+      "flexDirection": "column",
+      "gap": 120,
+      "paddingTop": 24,
+      "paddingRight": 16,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 1515,
+      "y": 10434,
+      "width": 270,
+      "height": 336
+    }
+  },
+  {
+    "nodeId": "243:4784",
+    "nodeName": "Frame 2095586441",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864414",
+    "rnStyles": {
+      "width": 222,
+      "height": 36,
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "alignItems": "center",
+      "gap": 130
+    },
+    "geometry": {
+      "x": 1547,
+      "y": 10458,
+      "width": 222,
+      "height": 36
+    }
+  },
+  {
+    "nodeId": "243:4785",
+    "nodeName": "Bank Logos (Small)",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "bankLogosSmall",
+    "rnStyles": {
+      "width": 24,
+      "height": 24
+    },
+    "geometry": {
+      "x": 1547,
+      "y": 10464,
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "I243:4785;132:21499",
+    "nodeName": "Logo",
+    "nodeType": "GROUP",
+    "rnStyleName": "logo",
+    "rnStyles": {
+      "width": 22.16,
+      "height": 24
+    },
+    "geometry": {
+      "x": 1547.91943359375,
+      "y": 10464,
+      "width": 22.161251068115234,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "I243:4785;132:21500",
+    "nodeName": "path160",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path160",
+    "rnStyles": {
+      "width": 22.16,
+      "height": 23.95,
+      "backgroundColor": "#F06321"
+    },
+    "geometry": {
+      "x": 1547.91943359375,
+      "y": 10464,
+      "width": 22.161251068115234,
+      "height": 23.951749801635742
+    }
+  },
+  {
+    "nodeId": "I243:4785;132:21501",
+    "nodeName": "path162",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path162",
+    "rnStyles": {
+      "width": 19.48,
+      "height": 20.21,
+      "backgroundColor": "#AE282E"
+    },
+    "geometry": {
+      "x": 1550.57275390625,
+      "y": 10464.009765625,
+      "width": 19.476613998413086,
+      "height": 20.21021842956543
+    }
+  },
+  {
+    "nodeId": "I243:4785;132:21502",
+    "nodeName": "path164",
+    "nodeType": "VECTOR",
+    "rnStyleName": "path164",
+    "rnStyles": {
+      "width": 12.01,
+      "height": 22.17,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1552.7410888671875,
+      "y": 10465.830078125,
+      "width": 12.007993698120117,
+      "height": 22.16956329345703
+    }
+  },
+  {
+    "nodeId": "243:4786",
+    "nodeName": "Frame 2095586454",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864543",
+    "rnStyles": {
+      "width": 85,
+      "height": 36,
+      "backgroundColor": "#1A1A1A",
+      "borderRadius": 200,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 8,
+      "paddingRight": 12,
+      "paddingBottom": 8,
+      "paddingLeft": 12,
+      "opacity": 0
+    },
+    "geometry": {
+      "x": 1684,
+      "y": 10458,
+      "width": 85,
+      "height": 36
+    }
+  },
+  {
+    "nodeId": "243:4787",
+    "nodeName": "SELECTED",
+    "nodeType": "TEXT",
+    "rnStyleName": "selected3",
+    "rnStyles": {
+      "width": 61,
+      "height": 20,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "SELECTED",
+    "geometry": {
+      "x": 1696,
+      "y": 10466,
+      "width": 61,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4788",
+    "nodeName": "Frame 2095586440",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864405",
+    "rnStyles": {
+      "width": 130,
+      "height": 132,
+      "flexDirection": "column",
+      "gap": 28
+    },
+    "geometry": {
+      "x": 1547,
+      "y": 10614,
+      "width": 130,
+      "height": 132
+    }
+  },
+  {
+    "nodeId": "243:4789",
+    "nodeName": "•••• 2341",
+    "nodeType": "TEXT",
+    "rnStyleName": "23413",
+    "rnStyles": {
+      "width": 130,
+      "height": 32,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left",
+      "opacity": 0
+    },
+    "textContent": "•••• 2341",
+    "geometry": {
+      "x": 1547,
+      "y": 10614,
+      "width": 130,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "243:4790",
+    "nodeName": "Frame 2095586438",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864383",
+    "rnStyles": {
+      "width": 130,
+      "height": 72,
+      "flexDirection": "column",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 1547,
+      "y": 10674,
+      "width": 130,
+      "height": 72
+    }
+  },
+  {
+    "nodeId": "243:4791",
+    "nodeName": "EXPIRY 06/26",
+    "nodeType": "TEXT",
+    "rnStyleName": "expiry06262",
+    "rnStyles": {
+      "width": 130,
+      "height": 24,
+      "color": "#4D4D4D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "fontWeight": "400",
+      "lineHeight": 24,
+      "textAlign": "left",
+      "opacity": 0
+    },
+    "textContent": "EXPIRY 06/26",
+    "geometry": {
+      "x": 1547,
+      "y": 10674,
+      "width": 130,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4792",
+    "nodeName": "ICICI a/c - xxx23",
+    "nodeType": "TEXT",
+    "rnStyleName": "iciciAcXxx232",
+    "rnStyles": {
+      "width": 130,
+      "height": 24,
+      "color": "#4D4D4D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "fontWeight": "400",
+      "lineHeight": 24,
+      "textAlign": "left"
+    },
+    "textContent": "ICICI a/c -  xxx23",
+    "geometry": {
+      "x": 1547,
+      "y": 10706,
+      "width": 130,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4793",
+    "nodeName": "Group 58",
+    "nodeType": "GROUP",
+    "rnStyleName": "group583",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 35
+    },
+    "geometry": {
+      "x": 1733,
+      "y": 10559,
+      "width": 20.5,
+      "height": 35
+    }
+  },
+  {
+    "nodeId": "243:4794",
+    "nodeName": "Vector 57",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector575",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1733,
+      "y": 10559,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4795",
+    "nodeName": "Vector 58",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector585",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1733,
+      "y": 10573.5,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4796",
+    "nodeName": "Group 59",
+    "nodeType": "GROUP",
+    "rnStyleName": "group593",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 35
+    },
+    "geometry": {
+      "x": 1733,
+      "y": 10720,
+      "width": 20.5,
+      "height": 35
+    }
+  },
+  {
+    "nodeId": "243:4797",
+    "nodeName": "Vector 57",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector576",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1733,
+      "y": 10720,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4798",
+    "nodeName": "Vector 58",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector586",
+    "rnStyles": {
+      "width": 20.5,
+      "height": 20.5,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.3
+    },
+    "geometry": {
+      "x": 1733,
+      "y": 10734.5,
+      "width": 20.5,
+      "height": 20.5
+    }
+  },
+  {
+    "nodeId": "243:4799",
+    "nodeName": "Frame 2095586341",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863413",
+    "rnStyles": {
+      "width": 270,
+      "height": 64,
+      "backgroundColor": "#1A1A1A",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingRight": 32,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 1515,
+      "y": 10770,
+      "width": 270,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "243:4800",
+    "nodeName": "Frame 2095586441",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864415",
+    "rnStyles": {
+      "width": 169.97,
+      "height": 20,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 1547,
+      "y": 10788,
+      "width": 169.97494506835938,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4801",
+    "nodeName": "NET BANKING",
+    "nodeType": "TEXT",
+    "rnStyleName": "netBanking",
+    "rnStyles": {
+      "width": 93,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "NET BANKING",
+    "geometry": {
+      "x": 1547,
+      "y": 10788,
+      "width": 93,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4802",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary3",
+    "rnStyles": {
+      "width": 16,
+      "height": 16
+    },
+    "geometry": {
+      "x": 1644,
+      "y": 10790,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "I243:4802;19:94999",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector5",
+    "rnStyles": {
+      "width": 15.33,
+      "height": 15.33,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 1648,
+      "y": 10794.671875,
+      "width": 15.328426361083984,
+      "height": 15.3284273147583
+    }
+  },
+  {
+    "nodeId": "I243:4802;19:95000",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector6",
+    "rnStyles": {
+      "width": 4,
+      "height": 4,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 1657.5,
+      "y": 10796.5,
+      "width": 4,
+      "height": 4
+    }
+  },
+  {
+    "nodeId": "243:4803",
+    "nodeName": "Vector 1",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector13",
+    "rnStyles": {
+      "width": 20.03,
+      "height": 24,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1732.9749755859375,
+      "y": 10786,
+      "width": 20.02505874633789,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4804",
+    "nodeName": "Add More Card",
+    "nodeType": "FRAME",
+    "rnStyleName": "addMoreCard",
+    "rnStyles": {
+      "width": 270,
+      "height": 264,
+      "flexDirection": "column",
+      "alignItems": "center"
+    },
+    "geometry": {
+      "x": 943,
+      "y": 10430,
+      "width": 270,
+      "height": 264
+    }
+  },
+  {
+    "nodeId": "243:4805",
+    "nodeName": "Frame 2095586440",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864406",
+    "rnStyles": {
+      "width": 270,
+      "height": 200,
+      "backgroundColor": "#202020",
+      "flexDirection": "column",
+      "gap": 64,
+      "paddingTop": 24,
+      "paddingRight": 32,
+      "paddingBottom": 64,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 943,
+      "y": 10430,
+      "width": 270,
+      "height": 200
+    }
+  },
+  {
+    "nodeId": "243:4806",
+    "nodeName": "Frame 2095586442",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586442",
+    "rnStyles": {
+      "width": 206,
+      "height": 112,
+      "flexDirection": "column",
+      "gap": 24
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10454,
+      "width": 206,
+      "height": 112
+    }
+  },
+  {
+    "nodeId": "243:4807",
+    "nodeName": "Frame 2095586403",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586403",
+    "rnStyles": {
+      "width": 206,
+      "height": 112,
+      "flexDirection": "column",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10454,
+      "width": 206,
+      "height": 112
+    }
+  },
+  {
+    "nodeId": "243:4808",
+    "nodeName": "Setup your payment method to start",
+    "nodeType": "TEXT",
+    "rnStyleName": "setupYourPaymentMethodToStart",
+    "rnStyles": {
+      "width": 206,
+      "height": 64,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "fontWeight": "400",
+      "lineHeight": 32,
+      "textAlign": "left"
+    },
+    "textContent": "Setup your payment method to start",
+    "geometry": {
+      "x": 975,
+      "y": 10454,
+      "width": 206,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "243:4809",
+    "nodeName": "Add UPI, card, or bank to start earning rewards",
+    "nodeType": "TEXT",
+    "rnStyleName": "addUpiCardOrBankToStartEarningRewards",
+    "rnStyles": {
+      "width": 206,
+      "height": 40,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Add UPI, card, or bank to start earning rewards",
+    "geometry": {
+      "x": 975,
+      "y": 10526,
+      "width": 206,
+      "height": 40
+    }
+  },
+  {
+    "nodeId": "243:4810",
+    "nodeName": "button",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "button",
+    "rnStyles": {
+      "width": 206,
+      "height": 62,
+      "borderRadius": 12,
+      "flexDirection": "column",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10590,
+      "width": 206,
+      "height": 62
+    }
+  },
+  {
+    "nodeId": "I243:4810;137:37",
+    "nodeName": "Rectangle 140",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "rectangle140",
+    "rnStyles": {
+      "width": 24,
+      "height": 2,
+      "backgroundColor": "#4D4D4D",
+      "borderRadius": 200
+    },
+    "geometry": {
+      "x": 1111.5,
+      "y": 10590,
+      "width": 24,
+      "height": 2
+    }
+  },
+  {
+    "nodeId": "I243:4810;100:1564",
+    "nodeName": "Frame 2095586312",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586312",
+    "rnStyles": {
+      "width": 297,
+      "height": 56,
+      "borderColor": "#FF9A6D",
+      "borderWidth": 0.1,
+      "borderRadius": 8,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 16,
+      "paddingRight": 16,
+      "paddingBottom": 16,
+      "paddingLeft": 16,
+      "shadowColor": "#995C41",
+      "shadowOffset": {
+        "width": 0,
+        "height": 6
+      },
+      "shadowRadius": 12,
+      "shadowOpacity": 1
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10600,
+      "width": 297,
+      "height": 56
+    }
+  },
+  {
+    "nodeId": "I243:4810;100:1565",
+    "nodeName": "Text",
+    "nodeType": "TEXT",
+    "rnStyleName": "text",
+    "rnStyles": {
+      "width": 101,
+      "height": 20,
+      "color": "#FFFFFF",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "+ Add Payment ",
+    "geometry": {
+      "x": 1027.5,
+      "y": 10616,
+      "width": 101,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4811",
+    "nodeName": "Frame 2095586341",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863414",
+    "rnStyles": {
+      "width": 270,
+      "height": 64,
+      "backgroundColor": "#1A1A1A",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingRight": 32,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 943,
+      "y": 10630,
+      "width": 270,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "243:4812",
+    "nodeName": "Frame 2095586441",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955864416",
+    "rnStyles": {
+      "width": 169.97,
+      "height": 20,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 975,
+      "y": 10648,
+      "width": 169.97494506835938,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4813",
+    "nodeName": "NEW PAYMENT",
+    "nodeType": "TEXT",
+    "rnStyleName": "newPayment",
+    "rnStyles": {
+      "width": 98,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "NEW PAYMENT",
+    "geometry": {
+      "x": 975,
+      "y": 10648,
+      "width": 98,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4814",
+    "nodeName": "Outline Icon Library",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "outlineIconLibrary4",
+    "rnStyles": {
+      "width": 16,
+      "height": 16,
+      "opacity": 0
+    },
+    "geometry": {
+      "x": 1077,
+      "y": 10650,
+      "width": 16,
+      "height": 16
+    }
+  },
+  {
+    "nodeId": "I243:4814;19:94999",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector7",
+    "rnStyles": {
+      "width": 10.22,
+      "height": 10.22,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 1.33
+    },
+    "geometry": {
+      "x": 1079.6666259765625,
+      "y": 10653.1142578125,
+      "width": 10.218951225280762,
+      "height": 10.218952178955078
+    }
+  },
+  {
+    "nodeId": "I243:4814;19:95000",
+    "nodeName": "Vector",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector8",
+    "rnStyles": {
+      "width": 2.67,
+      "height": 2.67,
+      "borderColor": "#CBCBCB",
+      "borderWidth": 1.33
+    },
+    "geometry": {
+      "x": 1086,
+      "y": 10654.3330078125,
+      "width": 2.6666667461395264,
+      "height": 2.6666667461395264
+    }
+  },
+  {
+    "nodeId": "243:4815",
+    "nodeName": "Vector 1",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector14",
+    "rnStyles": {
+      "width": 20.03,
+      "height": 24,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1160.9749755859375,
+      "y": 10646,
+      "width": 20.02505874633789,
+      "height": 24
+    }
+  },
+  {
+    "nodeId": "243:4816",
+    "nodeName": "Frame 2095586316",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586316",
+    "rnStyles": {
+      "width": 32,
+      "height": 8,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 1059.5,
+      "y": 10862,
+      "width": 32,
+      "height": 8
+    }
+  },
+  {
+    "nodeId": "243:4817",
+    "nodeName": "Ellipse 21885",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse21885",
+    "rnStyles": {
+      "width": 8,
+      "height": 8,
+      "backgroundColor": "#FF9A6D"
+    },
+    "geometry": {
+      "x": 1059.5,
+      "y": 10862,
+      "width": 8,
+      "height": 8
+    }
+  },
+  {
+    "nodeId": "243:4818",
+    "nodeName": "Ellipse 21886",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse21886",
+    "rnStyles": {
+      "width": 8,
+      "height": 8,
+      "backgroundColor": "#202020"
+    },
+    "geometry": {
+      "x": 1071.5,
+      "y": 10862,
+      "width": 8,
+      "height": 8
+    }
+  },
+  {
+    "nodeId": "243:4819",
+    "nodeName": "Ellipse 21887",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse21887",
+    "rnStyles": {
+      "width": 8,
+      "height": 8,
+      "backgroundColor": "#202020"
+    },
+    "geometry": {
+      "x": 1083.5,
+      "y": 10862,
+      "width": 8,
+      "height": 8
+    }
+  },
+  {
+    "nodeId": "243:4820",
+    "nodeName": "Vector 21",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector21",
+    "rnStyles": {
+      "width": 393,
+      "height": 0,
+      "borderColor": "#4D4D4D",
+      "borderWidth": 0.25
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10718,
+      "width": 393,
+      "height": 0
+    }
+  },
+  {
+    "nodeId": "243:4821",
+    "nodeName": "Frame 2095586465",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586465",
+    "rnStyles": {
+      "width": 393,
+      "height": 450,
+      "flexDirection": "column",
+      "gap": 10,
+      "paddingRight": 32,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10742,
+      "width": 393,
+      "height": 450
+    }
+  },
+  {
+    "nodeId": "243:4822",
+    "nodeName": "Frame 2095586355",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586355",
+    "rnStyles": {
+      "width": 329,
+      "height": 168,
+      "flexDirection": "column",
+      "gap": 16
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10742,
+      "width": 329,
+      "height": 168
+    }
+  },
+  {
+    "nodeId": "243:4823",
+    "nodeName": "Frame 2095586346",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586346",
+    "rnStyles": {
+      "width": 329,
+      "height": 20,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10742,
+      "width": 329,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4824",
+    "nodeName": "Label",
+    "nodeType": "TEXT",
+    "rnStyleName": "label",
+    "rnStyles": {
+      "width": 329,
+      "height": 20,
+      "color": "#A9A9A9",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "FINISH SETUP",
+    "geometry": {
+      "x": 911,
+      "y": 10742,
+      "width": 329,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4825",
+    "nodeName": "Frame 2095586353",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586353",
+    "rnStyles": {
+      "width": 329,
+      "height": 132,
+      "flexDirection": "row",
+      "gap": 16
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10778,
+      "width": 329,
+      "height": 132
+    }
+  },
+  {
+    "nodeId": "243:4826",
+    "nodeName": "Frame 1686557239",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame1686557239",
+    "rnStyles": {
+      "width": 329,
+      "height": 132,
+      "backgroundColor": "#202020",
+      "borderRadius": 12,
+      "flexDirection": "column",
+      "gap": 16,
+      "paddingTop": 16,
+      "paddingRight": 16,
+      "paddingBottom": 16,
+      "paddingLeft": 16
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10778,
+      "width": 329,
+      "height": 132
+    }
+  },
+  {
+    "nodeId": "243:4827",
+    "nodeName": "Frame 1686557237",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame1686557237",
+    "rnStyles": {
+      "width": 297,
+      "height": 64,
+      "flexDirection": "column",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 927,
+      "y": 10794,
+      "width": 297,
+      "height": 64
+    }
+  },
+  {
+    "nodeId": "243:4828",
+    "nodeName": "Still pending with your landlord",
+    "nodeType": "TEXT",
+    "rnStyleName": "stillPendingWithYourLandlord",
+    "rnStyles": {
+      "width": 297,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Still pending with your landlord",
+    "geometry": {
+      "x": 927,
+      "y": 10794,
+      "width": 297,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4829",
+    "nodeName": "If they haven’t seen the invite yet, a personal message often helps.",
+    "nodeType": "TEXT",
+    "rnStyleName": "ifTheyHaventSeenTheInviteYetAPersonalMes",
+    "rnStyles": {
+      "width": 297,
+      "height": 40,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "If they haven’t seen the invite yet, a personal message often helps.",
+    "geometry": {
+      "x": 927,
+      "y": 10818,
+      "width": 297,
+      "height": 40
+    }
+  },
+  {
+    "nodeId": "243:4830",
+    "nodeName": "Label",
+    "nodeType": "TEXT",
+    "rnStyleName": "label2",
+    "rnStyles": {
+      "width": 88,
+      "height": 20,
+      "color": "#FF9A6D",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "600",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Send Reminder",
+    "geometry": {
+      "x": 927,
+      "y": 10874,
+      "width": 88,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4831",
+    "nodeName": "Frame 2095586394",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586394",
+    "rnStyles": {
+      "width": 329,
+      "height": 272,
+      "flexDirection": "column",
+      "gap": 16
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10920,
+      "width": 329,
+      "height": 272
+    }
+  },
+  {
+    "nodeId": "243:4832",
+    "nodeName": "Frame 2095586388",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586388",
+    "rnStyles": {
+      "width": 329,
+      "height": 272,
+      "backgroundColor": "#202020",
+      "borderRadius": 12,
+      "flexDirection": "column",
+      "gap": 24,
+      "paddingTop": 24,
+      "paddingRight": 16,
+      "paddingBottom": 24,
+      "paddingLeft": 16
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10920,
+      "width": 329,
+      "height": 272
+    }
+  },
+  {
+    "nodeId": "243:4833",
+    "nodeName": "Waiting for Landlord’s approval",
+    "nodeType": "TEXT",
+    "rnStyleName": "waitingForLandlordsApproval",
+    "rnStyles": {
+      "width": 297,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Waiting for Landlord’s approval",
+    "geometry": {
+      "x": 927,
+      "y": 10944,
+      "width": 297,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4834",
+    "nodeName": "Frame 2095586385",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586385",
+    "rnStyles": {
+      "width": 297,
+      "height": 44,
+      "flexDirection": "row",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 927,
+      "y": 10988,
+      "width": 297,
+      "height": 44
+    }
+  },
+  {
+    "nodeId": "243:4835",
+    "nodeName": "Frame 2095586386",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586386",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 927,
+      "y": 10988,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4836",
+    "nodeName": "Ellipse 21906",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse21906",
+    "rnStyles": {
+      "width": 12,
+      "height": 12,
+      "backgroundColor": "#FF9A6D"
+    },
+    "geometry": {
+      "x": 931,
+      "y": 10991.599609375,
+      "width": 12,
+      "height": 12
+    }
+  },
+  {
+    "nodeId": "243:4837",
+    "nodeName": "Vector 59",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector59",
+    "rnStyles": {
+      "width": 0,
+      "height": 47,
+      "borderColor": "#FFAE8A",
+      "borderWidth": 0.5
+    },
+    "geometry": {
+      "x": 937,
+      "y": 11007.599609375,
+      "width": 0,
+      "height": 47
+    }
+  },
+  {
+    "nodeId": "243:4838",
+    "nodeName": "Frame 1686557332",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame1686557332",
+    "rnStyles": {
+      "width": 269,
+      "height": 44,
+      "flexDirection": "column",
+      "justifyContent": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 955,
+      "y": 10988,
+      "width": 269,
+      "height": 44
+    }
+  },
+  {
+    "nodeId": "243:4839",
+    "nodeName": "Add landlord’s bank details",
+    "nodeType": "TEXT",
+    "rnStyleName": "addLandlordsBankDetails",
+    "rnStyles": {
+      "width": 269,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Add landlord’s bank details",
+    "geometry": {
+      "x": 955,
+      "y": 10988,
+      "width": 269,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4840",
+    "nodeName": "enables secure payouts",
+    "nodeType": "TEXT",
+    "rnStyleName": "enablesSecurePayouts",
+    "rnStyles": {
+      "width": 136,
+      "height": 20,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "enables secure payouts",
+    "geometry": {
+      "x": 955,
+      "y": 11012,
+      "width": 136,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4841",
+    "nodeName": "Frame 2095586386",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863862",
+    "rnStyles": {
+      "width": 297,
+      "height": 44,
+      "flexDirection": "row",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 927,
+      "y": 11056,
+      "width": 297,
+      "height": 44
+    }
+  },
+  {
+    "nodeId": "243:4842",
+    "nodeName": "Frame 2095586386",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863863",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 927,
+      "y": 11056,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4843",
+    "nodeName": "Ellipse 21906",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse219062",
+    "rnStyles": {
+      "width": 12,
+      "height": 12,
+      "backgroundColor": "#1A1A1A"
+    },
+    "geometry": {
+      "x": 931,
+      "y": 11059.599609375,
+      "width": 12,
+      "height": 12
+    }
+  },
+  {
+    "nodeId": "243:4844",
+    "nodeName": "Vector 59",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector592",
+    "rnStyles": {
+      "width": 0,
+      "height": 47,
+      "borderColor": "#A6A6A6",
+      "borderWidth": 0.5
+    },
+    "geometry": {
+      "x": 937,
+      "y": 11075.599609375,
+      "width": 0,
+      "height": 47
+    }
+  },
+  {
+    "nodeId": "243:4845",
+    "nodeName": "Frame 1686557332",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame16865573322",
+    "rnStyles": {
+      "width": 269,
+      "height": 44,
+      "flexDirection": "column",
+      "justifyContent": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 955,
+      "y": 11056,
+      "width": 269,
+      "height": 44
+    }
+  },
+  {
+    "nodeId": "243:4846",
+    "nodeName": "Upload address proof",
+    "nodeType": "TEXT",
+    "rnStyleName": "uploadAddressProof",
+    "rnStyles": {
+      "width": 269,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Upload address proof",
+    "geometry": {
+      "x": 955,
+      "y": 11056,
+      "width": 269,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4847",
+    "nodeName": "for verification",
+    "nodeType": "TEXT",
+    "rnStyleName": "forVerification",
+    "rnStyles": {
+      "width": 82,
+      "height": 20,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "for verification",
+    "geometry": {
+      "x": 955,
+      "y": 11080,
+      "width": 82,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4848",
+    "nodeName": "Frame 2095586387",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586387",
+    "rnStyles": {
+      "width": 297,
+      "height": 44,
+      "flexDirection": "row",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 927,
+      "y": 11124,
+      "width": 297,
+      "height": 44
+    }
+  },
+  {
+    "nodeId": "243:4849",
+    "nodeName": "Frame 2095586386",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863864",
+    "rnStyles": {
+      "width": 20,
+      "height": 20
+    },
+    "geometry": {
+      "x": 927,
+      "y": 11124,
+      "width": 20,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4850",
+    "nodeName": "Ellipse 21906",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse219063",
+    "rnStyles": {
+      "width": 12,
+      "height": 12,
+      "backgroundColor": "#1A1A1A"
+    },
+    "geometry": {
+      "x": 931,
+      "y": 11127.599609375,
+      "width": 12,
+      "height": 12
+    }
+  },
+  {
+    "nodeId": "243:4851",
+    "nodeName": "Frame 1686557332",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame16865573323",
+    "rnStyles": {
+      "width": 269,
+      "height": 44,
+      "flexDirection": "column",
+      "justifyContent": "center",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 955,
+      "y": 11124,
+      "width": 269,
+      "height": 44
+    }
+  },
+  {
+    "nodeId": "243:4852",
+    "nodeName": "Invite your landlord",
+    "nodeType": "TEXT",
+    "rnStyleName": "inviteYourLandlord",
+    "rnStyles": {
+      "width": 269,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Invite your landlord",
+    "geometry": {
+      "x": 955,
+      "y": 11124,
+      "width": 269,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4853",
+    "nodeName": "needed for cashback eligibility",
+    "nodeType": "TEXT",
+    "rnStyleName": "neededForCashbackEligibility",
+    "rnStyles": {
+      "width": 174,
+      "height": 20,
+      "color": "#878787",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "needed for cashback eligibility",
+    "geometry": {
+      "x": 955,
+      "y": 11148,
+      "width": 174,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4854",
+    "nodeName": "HW Cutout Safezone",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "hwCutoutSafezone",
+    "rnStyles": {
+      "width": 108,
+      "height": 31.8,
+      "backgroundColor": "#000000",
+      "borderRadius": 60
+    },
+    "geometry": {
+      "x": 1020,
+      "y": 10181.9384765625,
+      "width": 108,
+      "height": 31.803680419921875
+    }
+  },
+  {
+    "nodeId": "243:4855",
+    "nodeName": "Frame 1686557229",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame1686557229",
+    "rnStyles": {
+      "width": 393,
+      "height": 118,
+      "backgroundColor": "#202020",
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "alignItems": "center",
+      "gap": 24,
+      "paddingTop": 16,
+      "paddingRight": 32,
+      "paddingBottom": 40,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 879,
+      "y": 11217,
+      "width": 393,
+      "height": 118
+    }
+  },
+  {
+    "nodeId": "243:4856",
+    "nodeName": "Frame 1686557294",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame1686557294",
+    "rnStyles": {
+      "width": 164.5,
+      "height": 47,
+      "flexDirection": "column",
+      "gap": 4
+    },
+    "geometry": {
+      "x": 911,
+      "y": 11240.5,
+      "width": 164.5,
+      "height": 47
+    }
+  },
+  {
+    "nodeId": "243:4857",
+    "nodeName": "Due in 28 Days",
+    "nodeType": "TEXT",
+    "rnStyleName": "dueIn28Days",
+    "rnStyles": {
+      "width": 84,
+      "height": 20,
+      "color": "#A9A9A9",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "Due in 28 Days",
+    "geometry": {
+      "x": 911,
+      "y": 11240.5,
+      "width": 84,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4858",
+    "nodeName": "₹ 32,500",
+    "nodeType": "TEXT",
+    "rnStyleName": "32500",
+    "rnStyles": {
+      "width": 66,
+      "height": 23,
+      "color": "#EEEEEE",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "fontWeight": "600",
+      "lineHeight": 16.92,
+      "letterSpacing": -0.48,
+      "textAlign": "left"
+    },
+    "textContent": "₹  32,500",
+    "geometry": {
+      "x": 911,
+      "y": 11264.5,
+      "width": 66,
+      "height": 23
+    }
+  },
+  {
+    "nodeId": "243:4859",
+    "nodeName": "button",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "button2",
+    "rnStyles": {
+      "width": 164.5,
+      "height": 62,
+      "borderRadius": 12,
+      "flexDirection": "column",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 1075.5,
+      "y": 11233,
+      "width": 164.5,
+      "height": 62
+    }
+  },
+  {
+    "nodeId": "I243:4859;137:37",
+    "nodeName": "Rectangle 140",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "rectangle1402",
+    "rnStyles": {
+      "width": 24,
+      "height": 2,
+      "backgroundColor": "#4D4D4D",
+      "borderRadius": 200
+    },
+    "geometry": {
+      "x": 1145.75,
+      "y": 11233,
+      "width": 24,
+      "height": 2
+    }
+  },
+  {
+    "nodeId": "I243:4859;100:1564",
+    "nodeName": "Frame 2095586312",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863122",
+    "rnStyles": {
+      "width": 164.5,
+      "height": 52,
+      "borderColor": "#FF9A6D",
+      "borderWidth": 0.1,
+      "borderRadius": 8,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 10,
+      "paddingTop": 16,
+      "paddingRight": 16,
+      "paddingBottom": 16,
+      "paddingLeft": 16,
+      "shadowColor": "#995C41",
+      "shadowOffset": {
+        "width": 0,
+        "height": 6
+      },
+      "shadowRadius": 12,
+      "shadowOpacity": 1
+    },
+    "geometry": {
+      "x": 1075.5,
+      "y": 11243,
+      "width": 164.5,
+      "height": 52
+    }
+  },
+  {
+    "nodeId": "I243:4859;100:1565",
+    "nodeName": "Text",
+    "nodeType": "TEXT",
+    "rnStyleName": "text2",
+    "rnStyles": {
+      "width": 88,
+      "height": 20,
+      "color": "#FFFFFF",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "500",
+      "lineHeight": 20,
+      "textAlign": "center"
+    },
+    "textContent": "Review & Pay",
+    "geometry": {
+      "x": 1113.75,
+      "y": 11259,
+      "width": 88,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4860",
+    "nodeName": "Home Indicator",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "homeIndicator",
+    "rnStyles": {
+      "width": 393,
+      "height": 34
+    },
+    "geometry": {
+      "x": 879,
+      "y": 11301,
+      "width": 393,
+      "height": 34
+    }
+  },
+  {
+    "nodeId": "I243:4860;2:181",
+    "nodeName": "Home Indicator",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "homeIndicator2",
+    "rnStyles": {
+      "width": 152,
+      "height": 5,
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 100
+    },
+    "geometry": {
+      "x": 1000,
+      "y": 11322,
+      "width": 152,
+      "height": 5
+    }
+  },
+  {
+    "nodeId": "243:4861",
+    "nodeName": "Frame 2095586357",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586357",
+    "rnStyles": {
+      "width": 393,
+      "height": 157,
+      "backgroundColor": "#131313",
+      "flexDirection": "column",
+      "paddingBottom": 24
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10169,
+      "width": 393,
+      "height": 157
+    }
+  },
+  {
+    "nodeId": "243:4862",
+    "nodeName": "Status Bar",
+    "nodeType": "INSTANCE",
+    "rnStyleName": "statusBar",
+    "rnStyles": {
+      "width": 393,
+      "height": 53
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10169,
+      "width": 393,
+      "height": 53
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:196",
+    "nodeName": "Battery",
+    "nodeType": "GROUP",
+    "rnStyleName": "battery",
+    "rnStyles": {
+      "width": 27.23,
+      "height": 13
+    },
+    "geometry": {
+      "x": 1212.199951171875,
+      "y": 10191.599609375,
+      "width": 27.228038787841797,
+      "height": 13
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:197",
+    "nodeName": "Border",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "border",
+    "rnStyles": {
+      "width": 25,
+      "height": 13,
+      "borderColor": "#FFFFFF",
+      "borderWidth": 1,
+      "borderRadius": 4.3,
+      "opacity": 0.35
+    },
+    "geometry": {
+      "x": 1212.199951171875,
+      "y": 10191.599609375,
+      "width": 25,
+      "height": 13
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:198",
+    "nodeName": "Cap",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cap",
+    "rnStyles": {
+      "width": 1.33,
+      "height": 4,
+      "backgroundColor": "#FFFFFF",
+      "opacity": 0.4
+    },
+    "geometry": {
+      "x": 1238.0999755859375,
+      "y": 10196.2666015625,
+      "width": 1.328037977218628,
+      "height": 4
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:199",
+    "nodeName": "Capacity",
+    "nodeType": "RECTANGLE",
+    "rnStyleName": "capacity",
+    "rnStyles": {
+      "width": 21,
+      "height": 9,
+      "backgroundColor": "#FFFFFF",
+      "borderRadius": 2.5
+    },
+    "geometry": {
+      "x": 1214.199951171875,
+      "y": 10193.599609375,
+      "width": 21,
+      "height": 9
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:200",
+    "nodeName": "Wifi",
+    "nodeType": "BOOLEAN_OPERATION",
+    "rnStyleName": "wifi",
+    "rnStyles": {
+      "width": 17.14,
+      "height": 12.1,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1187.699951171875,
+      "y": 10192.2001953125,
+      "width": 17.141611099243164,
+      "height": 12.10004997253418
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:201",
+    "nodeName": "Wifi-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "wifipath",
+    "rnStyles": {
+      "width": 17.14,
+      "height": 5.04,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1187.7000732421875,
+      "y": 10192.2001953125,
+      "width": 17.141666412353516,
+      "height": 5.041666507720947
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:202",
+    "nodeName": "Wifi-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "wifipath2",
+    "rnStyles": {
+      "width": 11.09,
+      "height": 4.03,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1190.7249755859375,
+      "y": 10196.2333984375,
+      "width": 11.091666221618652,
+      "height": 4.0333333015441895
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:203",
+    "nodeName": "Wifi-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "wifipath3",
+    "rnStyles": {
+      "width": 5.04,
+      "height": 4.03,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1193.75,
+      "y": 10200.2666015625,
+      "width": 5.041666507720947,
+      "height": 4.0333333015441895
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:204",
+    "nodeName": "Cellular Connection",
+    "nodeType": "BOOLEAN_OPERATION",
+    "rnStyleName": "cellularConnection",
+    "rnStyles": {
+      "width": 19.2,
+      "height": 12,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10192.099609375,
+      "width": 19.200000762939453,
+      "height": 12
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:205",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 4.6,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1161,
+      "y": 10199.5,
+      "width": 3.200000047683716,
+      "height": 4.599999904632568
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:206",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath2",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 7,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1166.300048828125,
+      "y": 10197.099609375,
+      "width": 3.200000047683716,
+      "height": 7
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:207",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath3",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 9.6,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1171.699951171875,
+      "y": 10194.5,
+      "width": 3.200000047683716,
+      "height": 9.600000381469727
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:208",
+    "nodeName": "Cellular-Connection-path",
+    "nodeType": "VECTOR",
+    "rnStyleName": "cellularconnectionpath4",
+    "rnStyles": {
+      "width": 3.2,
+      "height": 12,
+      "backgroundColor": "#000000"
+    },
+    "geometry": {
+      "x": 1177,
+      "y": 10192.099609375,
+      "width": 3.200000047683716,
+      "height": 12
+    }
+  },
+  {
+    "nodeId": "I243:4862;125:209",
+    "nodeName": "Time",
+    "nodeType": "TEXT",
+    "rnStyleName": "time",
+    "rnStyles": {
+      "width": 45,
+      "height": 20,
+      "color": "#FFFFFF",
+      "fontFamily": "SF Pro",
+      "fontSize": 17,
+      "fontWeight": "590",
+      "lineHeight": 20.29,
+      "textAlign": "center"
+    },
+    "textContent": "13:13",
+    "geometry": {
+      "x": 926.5,
+      "y": 10188.5,
+      "width": 45,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4863",
+    "nodeName": "Frame 2095586349",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame2095586349",
+    "rnStyles": {
+      "width": 393,
+      "height": 80,
+      "flexDirection": "column",
+      "gap": 16
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10222,
+      "width": 393,
+      "height": 80
+    }
+  },
+  {
+    "nodeId": "243:4864",
+    "nodeName": "Frame 1410081070",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame1410081070",
+    "rnStyles": {
+      "width": 393,
+      "height": 80,
+      "flexDirection": "column",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "gap": 24,
+      "paddingTop": 24,
+      "paddingRight": 32,
+      "paddingBottom": 24,
+      "paddingLeft": 32
+    },
+    "geometry": {
+      "x": 879,
+      "y": 10222,
+      "width": 393,
+      "height": 80
+    }
+  },
+  {
+    "nodeId": "243:4865",
+    "nodeName": "Frame 1686557045",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame1686557045",
+    "rnStyles": {
+      "width": 329,
+      "height": 32,
+      "flexDirection": "row",
+      "justifyContent": "space-between",
+      "alignItems": "center",
+      "gap": 8
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10246,
+      "width": 329,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "243:4866",
+    "nodeName": "Frame 2095586341",
+    "nodeType": "FRAME",
+    "rnStyleName": "frame20955863415",
+    "rnStyles": {
+      "width": 115.7,
+      "height": 32,
+      "flexDirection": "row",
+      "alignItems": "center",
+      "gap": 16
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10246,
+      "width": 115.70008087158203,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "243:4867",
+    "nodeName": "Vector 1",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector15",
+    "rnStyles": {
+      "width": 26.7,
+      "height": 32,
+      "backgroundColor": "#FFFFFF"
+    },
+    "geometry": {
+      "x": 911,
+      "y": 10246,
+      "width": 26.7000789642334,
+      "height": 32
+    }
+  },
+  {
+    "nodeId": "243:4868",
+    "nodeName": "Hi, Rishabh",
+    "nodeType": "TEXT",
+    "rnStyleName": "hiRishabh",
+    "rnStyles": {
+      "width": 73,
+      "height": 20,
+      "color": "#CBCBCB",
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "fontWeight": "400",
+      "lineHeight": 20,
+      "textAlign": "left"
+    },
+    "textContent": "Hi, Rishabh",
+    "geometry": {
+      "x": 953.7000732421875,
+      "y": 10252,
+      "width": 73,
+      "height": 20
+    }
+  },
+  {
+    "nodeId": "243:4869",
+    "nodeName": "Ellipse 8",
+    "nodeType": "ELLIPSE",
+    "rnStyleName": "ellipse8",
+    "rnStyles": {
+      "width": 32,
+      "height": 32,
+      "backgroundColor": "#FFCC8A"
+    },
+    "geometry": {
+      "x": 1208,
+      "y": 10246,
+      "width": 32,
+      "height": 32
+    }
+  }
+]

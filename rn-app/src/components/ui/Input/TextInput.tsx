@@ -3,7 +3,7 @@
  * Figma: Form input with label
  *
  * EXACT Figma Values (Dark theme):
- * - Label: Plus Jakarta Sans Regular, 12px, line-height 20px, #a9a9a9
+ * - Label: Plus Jakarta Sans Medium (500), 12px, line-height 20px, #a9a9a9
  * - Label to input gap: 6px
  * - Input text: Plus Jakarta Sans Regular, 20px, line-height 32px
  * - Placeholder color: #444444 (neutral/800)
@@ -34,14 +34,15 @@ import { Text } from '../Typography';
 import { duration } from '@/src/theme';
 
 // Exact Figma color values - Dark theme
+// Verified from Figma extraction 1-29108: Name input node I90:2897;47:5569
 const INPUT_COLORS_DARK = {
   label: '#a9a9a9',
   labelError: '#ff8080',
-  placeholder: '#222222',          // Updated per parity analysis (was #444444)
+  placeholder: '#444444',          // Figma: #444444 (neutral/800) - placeholder color
   hintText: '#878787',             // Figma hint text color (neutral/600)
   textFilled: '#dddddd',
   textError: '#ff9a6d',
-  border: '#2a2a2a',
+  border: '#4D4D4D',              // Figma: I90:2897;47:5566 borderColor #4D4D4D (full border box)
   borderFocus: '#ff9a6d',
   borderError: '#ff8080',
 } as const;
@@ -127,7 +128,7 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
           </View>
         ) : null}
 
-        <View style={[styles.inputContainer, { borderBottomColor: getBorderColor() }]}>
+        <View style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
           <RNTextInput
             ref={ref}
             value={value}
@@ -165,8 +166,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: INPUT_SPACING.labelInputGap,
   },
+  // Figma: I90:2897;47:5565 - Plus Jakarta Sans Medium, 12px, lineHeight:20
+  // Verified from Figma MCP get_design_context 1:29108: font-medium (500 weight)
   label: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 20,
     // Color applied dynamically via dynamicStyles
@@ -187,8 +190,11 @@ const styles = StyleSheet.create({
     textAlign: 'right',  // Figma: textAlignHorizontal: RIGHT
     // Color applied inline
   },
+  // Figma: I90:2897;47:5566 - full border box, borderWidth 1, borderRadius 12, borderColor #4D4D4D
   inputContainer: {
-    borderBottomWidth: 1,
+    borderWidth: 1,
+    borderRadius: 12,    // Figma: borderRadius 12
+    paddingHorizontal: 16, // Figma: implicit from content x-position within Input box
     // Border color applied dynamically via getBorderColor()
   },
   input: {

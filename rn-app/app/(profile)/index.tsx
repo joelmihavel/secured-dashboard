@@ -259,9 +259,9 @@ export default function ProfileScreen() {
           <Ionicons name="arrow-back" size={24} color={PROFILE_COLORS.textPrimary} />
         </TouchableOpacity>
 
-        {/* Title */}
+        {/* Title - Figma 41:8764: "My" #A9A9A9 + line break + "Profile" #FF9A6D */}
         <View style={styles.titleContainer}>
-          <Text style={styles.titleMy}>My</Text>
+          <Text style={styles.titleMy}>My </Text>
           <Text style={styles.titleProfile}>Profile</Text>
         </View>
 
@@ -391,14 +391,14 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,
     lineHeight: 64,
-    color: PROFILE_COLORS.titleGray,  // #A9A9A9 - Figma: "My" text is gray
+    color: '#A9A9A9',  // Figma 41:8764: "My" in gray
     letterSpacing: -2,
   },
   titleProfile: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,
     lineHeight: 64,
-    color: PROFILE_COLORS.accentOrange,
+    color: '#FF9A6D',  // Figma 41:8764: "Profile" in brand orange
     letterSpacing: -2,
   },
   section: {
@@ -411,6 +411,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     color: PROFILE_COLORS.sectionTitle,  // #878787 - Figma verified
     textTransform: 'uppercase',
+    textAlign: 'left',
     marginBottom: spacing.lg,  // 24px gap to content per Figma
   },
   menuStack: {
@@ -564,7 +565,8 @@ const styles = StyleSheet.create({
     color: PROFILE_COLORS.menuItemText,  // #CBCBCB - Figma verified
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
-    lineHeight: 19.74,  // Figma: 19.74
-    letterSpacing: -0.56,  // Figma: -0.56
+    lineHeight: 20,                      // Figma: "View Agreement" node lineHeightPx 20.0
+    letterSpacing: 0,                    // Figma: "View Agreement" node letterSpacing 0.0
+    textAlign: 'left',
   },
 });

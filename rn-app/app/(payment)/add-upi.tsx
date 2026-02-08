@@ -364,7 +364,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.bodySmMedium.fontWeight, // 500
     color: FIGMA.colors.labelText,                 // #A9A9A9
     textAlign: 'left' as const,                    // Figma: LEFT alignment
-    textTransform: 'uppercase',
   },
 
   // Edit link: bodySm (12px/20px)
@@ -419,7 +418,7 @@ const styles = StyleSheet.create({
     minHeight: spacing.xxl, // Minimum 40px
   },
 
-  // Footer text: bodySm (12px/20px), centered - Figma: #A9A9A9
+  // Footer text: bodySm (12px/20px), left-aligned - Figma: #A9A9A9
   footerText: {
     fontFamily: typography.bodySm.fontFamily,
     fontSize: typography.bodySm.fontSize,           // 12px (Figma: 12px/20px footer text)
@@ -428,6 +427,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.bodySm.fontWeight,       // 400
     color: FIGMA.colors.footerText,                // #A9A9A9
     marginTop: spacing.md,
-    textAlign: 'center' as const,                  // Figma: CENTER alignment (41:8421)
+    textAlign: 'left' as const,                    // Figma: LEFT alignment (fresh JSON extraction)
   },
 });

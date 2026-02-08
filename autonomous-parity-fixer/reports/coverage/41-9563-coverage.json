@@ -1,0 +1,254 @@
+{
+  "screenId": "41:9563",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Failed",
+  "generatedAt": "2026-02-03T10:56:48.943Z",
+  "summary": {
+    "overallCoverage": 91.4,
+    "propertiesCovered": 149,
+    "propertiesTotal": 163,
+    "propertiesMissing": 14,
+    "nodesCovered": 20,
+    "nodesPartial": 8,
+    "nodesTotal": 28,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 56,
+      "total": 56,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 20,
+      "total": 21,
+      "percentage": 95.2
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 19,
+      "total": 26,
+      "percentage": 73.1
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 41,
+      "total": 41,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 3,
+      "total": 9,
+      "percentage": 33.3
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 9,
+      "total": 9,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:9566",
+      "nodeName": "Outline Icon Library",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "BUTTON_CONTAINER_WIDTH",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:9578",
+      "nodeName": "Amount paid",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:9578",
+      "nodeName": "Amount paid",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Amount paid",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Amount paid\""
+    },
+    {
+      "nodeId": "41:9585",
+      "nodeName": "Date",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:9585",
+      "nodeName": "Date",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Date",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Date\""
+    },
+    {
+      "nodeId": "41:9586",
+      "nodeName": "4 Nov 2026",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:9592",
+      "nodeName": "Method",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:9592",
+      "nodeName": "Method",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Method",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Method\""
+    },
+    {
+      "nodeId": "41:9593",
+      "nodeName": "UPI (joel@oksbi)",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:9593",
+      "nodeName": "UPI (joel@oksbi)",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "UPI (joel@oksbi)",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"UPI (joel@oksbi)\""
+    },
+    {
+      "nodeId": "41:9600",
+      "nodeName": "SEC12345678",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "nodeId": "41:9600",
+      "nodeName": "SEC12345678",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "SEC12345678",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"SEC12345678\""
+    },
+    {
+      "nodeId": "41:9609",
+      "nodeName": "Payable Rent",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:9609",
+      "nodeName": "Payable Rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Payable Rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Payable Rent\""
+    }
+  ],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

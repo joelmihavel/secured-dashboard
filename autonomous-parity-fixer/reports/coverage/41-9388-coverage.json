@@ -1,0 +1,99 @@
+{
+  "screenId": "41:9388",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Successful",
+  "generatedAt": "2026-02-03T10:49:01.967Z",
+  "summary": {
+    "overallCoverage": 100,
+    "propertiesCovered": 163,
+    "propertiesTotal": 163,
+    "propertiesMissing": 0,
+    "nodesCovered": 28,
+    "nodesPartial": 0,
+    "nodesTotal": 28,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 56,
+      "total": 56,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 21,
+      "total": 21,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 26,
+      "total": 26,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 41,
+      "total": 41,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 9,
+      "total": 9,
+      "percentage": 100
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 9,
+      "total": 9,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

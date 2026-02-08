@@ -8,7 +8,7 @@
  * - Perforated top: 14 ellipses, 14x14px each, spaced evenly
  * - Side notches: 14x14px at vertical center
  * - PAID stamp: 85.42x80, rotated -15deg, color #06C270, Inter ExtraBold 13.51px
- * - Title: "Payment" (white #FFFFFF) + "Succesful" (green #06C270), fontSize 20, lineHeight 32
+ * - Title: "Payment" (white #FFFFFF) + "Succesful" (orange #FF9A6D), fontSize 20, lineHeight 32
  * - Receipt rows: 222px wide, gap 16px, icon 16x16, labels #878787, values #CBCBCB
  * - Payable Rent value: fontSize 14, fontWeight 600, color #DDDDDD
  * - Cashback pill: 222x28, bg #1A1A1A, borderRadius 40, text #DDDDDD
@@ -56,7 +56,7 @@ const FIGMA_COLORS = {
   cardBackground: '#202020',       // black.500 - Rectangle 136
   frameBackground: '#1A1A1A',      // black.600 - Frame 1686557297
   titleWhite: '#FFFFFF',           // white - "Payment" text
-  titleSuccess: '#06C270',         // success.approved - "Succesful" text (green per Figma 41-9388)
+  titleSuccess: '#FF9A6D',         // brand.500 - "Succesful" text (Figma 41:9452 styleOverrideTable[2])
   stampColor: '#06C270',           // success.approved - PAID stamp
   labelText: '#878787',            // neutral.600 - row labels
   valueText: '#CBCBCB',            // neutral.300 - row values
@@ -477,14 +477,14 @@ const styles = StyleSheet.create({
     fontSize: 12,     // bodyXs per Figma analysis
     lineHeight: 20,
     color: FIGMA_COLORS.labelText,  // neutral.600 #878787
-    textAlign: 'center',            // Figma: textAlignHorizontal: CENTER
+    textAlign: 'left',              // Left-aligned label in receipt row
   },
   valueText: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400 for amount values
     fontSize: 12,                  // Figma: fontSize: 12
     lineHeight: 20,                // Figma: lineHeightPx: 20
     color: FIGMA_COLORS.valueText, // neutral.300 #CBCBCB
-    textAlign: 'center',           // Figma: textAlignHorizontal: CENTER
+    textAlign: 'right',            // Right-aligned value in receipt row
   },
   divider: {
     width: FIGMA_CARD_INNER_WIDTH, // Figma: Vector 49 width: 222
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     fontSize: 14,                  // Figma 41:9435: fontSize: 14
     lineHeight: 20,                // Figma 41:9435: lineHeightPx: 20
     color: FIGMA_COLORS.payableRentValue, // neutral.200 #DDDDDD
-    textAlign: 'center',           // Figma: textAlignHorizontal: CENTER
+    textAlign: 'right',            // Right-aligned value in receipt row
   },
   cashbackPill: {
     width: FIGMA_CARD_INNER_WIDTH, // Figma: Frame 1686557297 width: 222

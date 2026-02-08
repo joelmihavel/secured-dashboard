@@ -1,0 +1,245 @@
+{
+  "screenId": "243-2762",
+  "screenName": "Home --active --Bank / UPI only",
+  "route": "/(main)/index",
+  "generatedAt": "2026-02-03T21:49:51.755Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-03T21:47:59.759Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2776",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2861",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2883",
+            "nodeName": "SELECTED",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2906;100:1565",
+            "nodeName": "Text",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "243:2954",
+            "nodeName": "Due in 10 Days",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2956;100:1565",
+            "nodeName": "Text",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          },
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I243:2959;125:209",
+            "nodeName": "Time",
+            "figmaValue": "CENTER",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(home-active)/index.tsx",
+            "explanation": "Text \"...\" has textAlignHorizontal: CENTER in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          }
+        ],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 7
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-03T21:47:59.760Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-03T21:49:12.692Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "fileExistence",
+            "figmaValue": "Exists",
+            "currentValue": "Missing",
+            "severity": "critical",
+            "explanation": "The screen file 'app/home-active.tsx' is missing. It must be created to match the Figma design 'Home --active --Bank / UPI only'.",
+            "currentCode": "N/A",
+            "fixedCode": "// Create file implementing: Root View (#131313), Absolute Header (h:157), Absolute BottomBar (h:118), ScrollView (pt:157, pb:118)"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "layoutStructure",
+            "figmaValue": "Z-layered Layout",
+            "currentValue": "N/A",
+            "severity": "major",
+            "explanation": "Figma design uses a fixed Header (Frame 2095586357) and fixed Bottom Action Bar (Frame 1686557229) with scrollable content underneath. Implementation requires absolute positioning for header/footer and corresponding content padding on the ScrollView.",
+            "currentCode": "N/A",
+            "fixedCode": "<View style={{flex:1, backgroundColor:'#131313'}}>\n  <Header style={{position:'absolute', top:0, width:'100%', height:157, zIndex:10}} />\n  <ScrollView contentContainerStyle={{paddingTop:157, paddingBottom:118}}>\n    {/* Main Content */}\n  </ScrollView>\n  <BottomBar style={{position:'absolute', bottom:0, width:'100%', height:118, zIndex:5}} />\n</View>"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "horizontalScroll",
+            "figmaValue": "Cards Carousel",
+            "currentValue": "N/A",
+            "severity": "major",
+            "explanation": "The 'Payment Cards' section (Frame 2095586448) requires a horizontal ScrollView with specific content insets to match the design (Left padding 64px, Right padding 32px, Gap 16px).",
+            "currentCode": "N/A",
+            "fixedCode": "<ScrollView horizontal contentContainerStyle={{paddingLeft: 64, paddingRight: 32, gap: 16}} showsHorizontalScrollIndicator={false}>\n  {/* Cards */}\n</ScrollView>"
+          },
+          {
+            "file": "app/home-active.tsx",
+            "lineRange": "1-1",
+            "property": "safeArea",
+            "figmaValue": "Header Padding",
+            "currentValue": "N/A",
+            "severity": "major",
+            "explanation": "The Header (Frame 2095586357) overlaps with the Status Bar/HW Cutout area in Figma. Implementation must apply top padding equal to the system safe area inset to prevent content overlap.",
+            "currentCode": "N/A",
+            "fixedCode": "const insets = useSafeAreaInsets();\n// In Header style:\npaddingTop: insets.top"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 100
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-03T21:49:51.755Z",
+      "feedback": [
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "1-1",
+          "property": "layoutStructure",
+          "figmaValue": "Z-layered Layout (Header: 157px, Footer: 118px)",
+          "currentValue": "Missing/Incorrect",
+          "severity": "critical",
+          "explanation": "The screen requires a Z-layered layout with a fixed absolute Header and BottomBar, and a ScrollView with corresponding content padding. The file may need to be created.",
+          "currentCode": "N/A",
+          "fixedCode": "import { View, ScrollView } from 'react-native';\nimport { useSafeAreaInsets } from 'react-native-safe-area-context';\nimport { colors } from '@/constants/tokens';\n\nexport default function HomeActive() {\n  const insets = useSafeAreaInsets();\n  return (\n    <View style={{flex: 1, backgroundColor: colors.black[700]}}>\n      <View style={{position: 'absolute', top: 0, width: '100%', height: 157, zIndex: 10, paddingTop: insets.top}}>\n        {/* Header Content */}\n      </View>\n      <ScrollView contentContainerStyle={{paddingTop: 157, paddingBottom: 118}}>\n        {/* Main Content */}\n      </ScrollView>\n      <View style={{position: 'absolute', bottom: 0, width: '100%', height: 118, zIndex: 5}}>\n        {/* Bottom Bar Content */}\n      </View>\n    </View>\n  );\n}"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "horizontalScroll",
+          "figmaValue": "PL: 64px, PR: 32px, Gap: 16px",
+          "currentValue": "N/A",
+          "severity": "major",
+          "explanation": "The 'Payment Cards' section requires a horizontal ScrollView with specific spacing tokens matching Figma (Left: 64, Right: 32, Gap: 16).",
+          "currentCode": "N/A",
+          "fixedCode": "<ScrollView \n  horizontal \n  showsHorizontalScrollIndicator={false}\n  contentContainerStyle={{\n    paddingLeft: 64, // spacing.huge\n    paddingRight: 32, // spacing.xl\n    gap: 16 // spacing.md\n  }}\n>\n  {/* Cards */}\n</ScrollView>"
+        },
+        {
+          "file": "app/(home-active)/index.tsx",
+          "lineRange": "N/A",
+          "property": "textAlign",
+          "figmaValue": "CENTER",
+          "currentValue": "undefined",
+          "severity": "major",
+          "explanation": "Multiple text elements (including 'SELECTED', 'Due in 10 Days', 'Time') are centered in Figma but missing 'textAlign: center' in code. This is a structural mismatch.",
+          "currentCode": "style={{ ... }}",
+          "fixedCode": "style={{ ..., textAlign: 'center' }}"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "1-1",
+      "property": "layoutStructure",
+      "figmaValue": "Z-layered Layout (Header: 157px, Footer: 118px)",
+      "currentValue": "Missing/Incorrect",
+      "severity": "critical",
+      "explanation": "The screen requires a Z-layered layout with a fixed absolute Header and BottomBar, and a ScrollView with corresponding content padding. The file may need to be created.",
+      "currentCode": "N/A",
+      "fixedCode": "import { View, ScrollView } from 'react-native';\nimport { useSafeAreaInsets } from 'react-native-safe-area-context';\nimport { colors } from '@/constants/tokens';\n\nexport default function HomeActive() {\n  const insets = useSafeAreaInsets();\n  return (\n    <View style={{flex: 1, backgroundColor: colors.black[700]}}>\n      <View style={{position: 'absolute', top: 0, width: '100%', height: 157, zIndex: 10, paddingTop: insets.top}}>\n        {/* Header Content */}\n      </View>\n      <ScrollView contentContainerStyle={{paddingTop: 157, paddingBottom: 118}}>\n        {/* Main Content */}\n      </ScrollView>\n      <View style={{position: 'absolute', bottom: 0, width: '100%', height: 118, zIndex: 5}}>\n        {/* Bottom Bar Content */}\n      </View>\n    </View>\n  );\n}"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "horizontalScroll",
+      "figmaValue": "PL: 64px, PR: 32px, Gap: 16px",
+      "currentValue": "N/A",
+      "severity": "major",
+      "explanation": "The 'Payment Cards' section requires a horizontal ScrollView with specific spacing tokens matching Figma (Left: 64, Right: 32, Gap: 16).",
+      "currentCode": "N/A",
+      "fixedCode": "<ScrollView \n  horizontal \n  showsHorizontalScrollIndicator={false}\n  contentContainerStyle={{\n    paddingLeft: 64, // spacing.huge\n    paddingRight: 32, // spacing.xl\n    gap: 16 // spacing.md\n  }}\n>\n  {/* Cards */}\n</ScrollView>"
+    },
+    {
+      "file": "app/(home-active)/index.tsx",
+      "lineRange": "N/A",
+      "property": "textAlign",
+      "figmaValue": "CENTER",
+      "currentValue": "undefined",
+      "severity": "major",
+      "explanation": "Multiple text elements (including 'SELECTED', 'Due in 10 Days', 'Time') are centered in Figma but missing 'textAlign: center' in code. This is a structural mismatch.",
+      "currentCode": "style={{ ... }}",
+      "fixedCode": "style={{ ..., textAlign: 'center' }}"
+    }
+  ],
+  "summary": {
+    "totalIssues": 3,
+    "critical": 1,
+    "major": 2,
+    "minor": 0,
+    "filesAffected": [
+      "app/(home-active)/index.tsx"
+    ]
+  }
+}

@@ -17,7 +17,7 @@
  * - Slide 3: White heading (#FFFFFF), accent line 2
  * - Body: 14px, line-height 20px, color varies (#A6A6A6 or #A9A9A9)
  * - Skip text: 14px, line-height 20px, white, "Skip ->"
- * - Dots: 8x8px each, 4px gap, active #FF9A6D, inactive #4D4D4D
+ * - Dots: 8x8px each, 4px gap, active #FF9A6D, inactive #202020
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -44,7 +44,7 @@ const FIGMA_COLORS = {
   bodyTextAlt: colors.neutral[500],    // #A9A9A9
   skipText: colors.white,              // #FFFFFF
   dotActive: colors.brand[500],        // #FF9A6D
-  dotInactive: colors.black[400],      // #4D4D4D (Figma inactive dot)
+  dotInactive: colors.black[500],      // #202020 (Figma: Ellipse 21886/21887 backgroundColor)
 } as const;
 
 // Exact Figma dimensions
@@ -67,11 +67,11 @@ const FIGMA_DIMENSIONS = {
 
 // Exact Figma spacing gaps - CORRECTED from fresh Figma MCP (2026-02-01)
 const FIGMA_GAPS = {
-  progressToLogo: 40,                  // Progress bar to logo gap
+  progressToLogo: 48,                  // Figma: outer Container (160:2668) gap=48 between progress bar and inner container
   logoToHeading: 40,                   // Logo to heading gap
   headingToBody: 16,                   // Heading to body gap
-  bodyToSkip: 24,                      // Body to skip gap
-  skipToDots: 24,                      // Skip to dots gap - increased from 16 per Gemini analysis
+  bodyToSkip: 40,                      // Body to skip gap - Figma: body ends y=739, skip at y=779 (40px gap)
+  skipToDots: 40,                      // Skip to dots gap - Figma: skip ends y=799, dots at y=839 (40px gap)
   bottomPadding: 64,                   // Bottom padding
 } as const;
 
@@ -88,40 +88,40 @@ interface Slide {
 
 // Exact content from Figma screenshots with correct colors
 // Each slide has a unique background shape (silhouette image) from Figma
-// CORRECTED FROM FIGMA EXTRACTED DATA (2026-02-05):
-// Figma node 160:2676 (1-28985): Single text node with fill #A9A9A9
-// Figma node 160:2691 (1-29025): Single text node with fill #A9A9A9
-// Figma node 160:2706 (1-29065): Single text node with fill #FFFFFF
+// VERIFIED FROM FIGMA MCP SCREENSHOTS + get_design_context (2026-02-08):
+// Slide 1 (1-28985): "Earn 1% back " = #FF9A6D (orange), "on your rent" = #A9A9A9 (gray)
+// Slide 2 (1-29025): "More than " = #A9A9A9 (gray), "just cashback" = #FF9A6D (orange)
+// Slide 3 (1-29065): "Your landlord" = #A9A9A9 (gray), "benefits too" = #FF9A6D (orange)
 const slides: Slide[] = [
   {
     id: '1',
     titleLine1: 'Earn 1% back ',   // Note trailing space per Figma
     titleLine2: 'on your rent',
-    titleLine1Color: FIGMA_COLORS.headingGray,   // #A9A9A9 - BOTH lines gray per Figma
-    titleLine2Color: FIGMA_COLORS.headingGray,   // #A9A9A9 - Figma shows single color block
+    titleLine1Color: FIGMA_COLORS.headingAccent,  // #FF9A6D - orange per Figma MCP screenshot
+    titleLine2Color: FIGMA_COLORS.headingGray,    // #A9A9A9 - gray per Figma MCP screenshot
     description: 'For every timely payment made via UPI, netbanking or credit cards.',
-    descriptionColor: FIGMA_COLORS.bodyText,     // #A6A6A6
-    backgroundShape: 'carousel1',                // Figma node 1-28985
+    descriptionColor: FIGMA_COLORS.bodyText,      // #A6A6A6
+    backgroundShape: 'carousel1',                 // Figma node 1-28985
   },
   {
     id: '2',
     titleLine1: 'More than ',      // Note trailing space per Figma
     titleLine2: 'just cashback',
-    titleLine1Color: FIGMA_COLORS.headingGray,   // #A9A9A9 - BOTH lines gray per Figma
-    titleLine2Color: FIGMA_COLORS.headingGray,   // #A9A9A9 - Figma shows single color block
+    titleLine1Color: FIGMA_COLORS.headingGray,    // #A9A9A9 - gray per Figma MCP screenshot
+    titleLine2Color: FIGMA_COLORS.headingAccent,  // #FF9A6D - orange per Figma MCP screenshot
     description: 'Keep paying via Secured to unlock exclusive renting benefits over time',
-    descriptionColor: FIGMA_COLORS.bodyTextAlt,  // #A9A9A9
-    backgroundShape: 'carousel2',                // Figma node 1-29025
+    descriptionColor: FIGMA_COLORS.bodyTextAlt,   // #A9A9A9
+    backgroundShape: 'carousel2',                 // Figma node 1-29025
   },
   {
     id: '3',
     titleLine1: 'Your landlord',
     titleLine2: 'benefits too',
-    titleLine1Color: FIGMA_COLORS.headingWhite,  // #FFFFFF - BOTH lines white per Figma
-    titleLine2Color: FIGMA_COLORS.headingWhite,  // #FFFFFF - Figma node 160:2706 fill: #FFFFFF
+    titleLine1Color: FIGMA_COLORS.headingGray,    // #A9A9A9 - gray per Figma MCP screenshot
+    titleLine2Color: FIGMA_COLORS.headingAccent,  // #FF9A6D - orange per Figma MCP screenshot
     description: '3 months of rent payments unlock a free vacancy cover for your landlord',
-    descriptionColor: FIGMA_COLORS.bodyTextAlt,  // #A9A9A9
-    backgroundShape: 'carousel3',                // Figma node 1-29065
+    descriptionColor: FIGMA_COLORS.bodyTextAlt,   // #A9A9A9
+    backgroundShape: 'carousel3',                 // Figma node 1-29065
   },
 ];
 

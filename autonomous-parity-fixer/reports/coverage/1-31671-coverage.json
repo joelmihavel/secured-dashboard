@@ -1,0 +1,601 @@
+{
+  "screenId": "1:31671",
+  "screenName": "Onboarding / Invite Landlord",
+  "generatedAt": "2026-02-03T06:36:24.801Z",
+  "summary": {
+    "overallCoverage": 80.5,
+    "propertiesCovered": 186,
+    "propertiesTotal": 231,
+    "propertiesMissing": 45,
+    "nodesCovered": 1,
+    "nodesPartial": 22,
+    "nodesTotal": 23,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 46,
+      "total": 46,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 46,
+      "total": 50,
+      "percentage": 92
+    },
+    "spacing": {
+      "covered": 2,
+      "total": 5,
+      "percentage": 40
+    },
+    "colors": {
+      "covered": 15,
+      "total": 15,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 4,
+      "percentage": 0
+    },
+    "images": {
+      "covered": 0,
+      "total": 10,
+      "percentage": 0
+    },
+    "borders": {
+      "covered": 1,
+      "total": 2,
+      "percentage": 50
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 59,
+      "total": 68,
+      "percentage": 86.8
+    },
+    "textContent": {
+      "covered": 2,
+      "total": 13,
+      "percentage": 15.4
+    },
+    "multiStyleText": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 13,
+      "total": 16,
+      "percentage": 81.3
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "160:2927",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "9e57526355dcd17aefece12c6308a90258055bb8",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "160:2927",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "images",
+      "property": "resizeMode",
+      "figmaValue": "cover",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add resizeMode: 'cover'"
+    },
+    {
+      "nodeId": "160:2927",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "gradients",
+      "property": "gradientComponent",
+      "figmaValue": "GRADIENT_LINEAR",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <LinearGradient> component"
+    },
+    {
+      "nodeId": "160:2927",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "gradients",
+      "property": "gradientColors",
+      "figmaValue": [
+        "#000000",
+        "#131313"
+      ],
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add gradient colors: [\"#000000\",\"#131313\"]"
+    },
+    {
+      "nodeId": "174:2672",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "c4b36a697ff7992e9b38f3209fa792165f891df9",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "174:2672",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "images",
+      "property": "resizeMode",
+      "figmaValue": "stretch",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add resizeMode: 'stretch'"
+    },
+    {
+      "nodeId": "174:2672",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "gradients",
+      "property": "gradientComponent",
+      "figmaValue": "GRADIENT_LINEAR",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <LinearGradient> component"
+    },
+    {
+      "nodeId": "174:2672",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "category": "gradients",
+      "property": "gradientColors",
+      "figmaValue": [
+        "#000000",
+        "#131313"
+      ],
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add gradient colors: [\"#000000\",\"#131313\"]"
+    },
+    {
+      "nodeId": "1:31710",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "saved ₹ 325 →",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"saved ₹ 325 →\""
+    },
+    {
+      "nodeId": "1:31715",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "1:31715",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Paying to",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Paying to\""
+    },
+    {
+      "nodeId": "1:31716",
+      "nodeName": "[Landlord Name]",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "1:31720",
+      "nodeName": "ICICI",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI\""
+    },
+    {
+      "nodeId": "1:31721",
+      "nodeName": "XXXX XXXX XXXX 2003",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "1:31721",
+      "nodeName": "XXXX XXXX XXXX 2003",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "XXXX XXXX XXXX 2003",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"XXXX XXXX XXXX 2003\""
+    },
+    {
+      "nodeId": "1:31723",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "1:31723",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Pay Now",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Pay Now\""
+    },
+    {
+      "nodeId": "1:31724",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "1:31724",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "1:31724",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "All payments are 100% secure",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"All payments are 100% secure\""
+    },
+    {
+      "nodeId": "1:31729",
+      "nodeName": "PAY BY ANY APP INSTEAD",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PAY BY ANY APP INSTEAD",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PAY BY ANY APP INSTEAD\""
+    },
+    {
+      "nodeId": "1:31732",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "1a8928147af64796e2247f1cef1ae9db1a68f5aa",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "1:31732",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 1a8928147af6...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:31732",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "resizeMode",
+      "figmaValue": "cover",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add resizeMode: 'cover'"
+    },
+    {
+      "nodeId": "1:31733",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "1:31733",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Google Pay",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Google Pay\""
+    },
+    {
+      "nodeId": "1:31735",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "951e70728a7ce2a5ae5680e74d083d3df51b5e10",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "1:31735",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 951e70728a7c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:31735",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "resizeMode",
+      "figmaValue": "cover",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add resizeMode: 'cover'"
+    },
+    {
+      "nodeId": "1:31736",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "1:31736",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PayTM",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PayTM\""
+    },
+    {
+      "nodeId": "1:31738",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "09777000c94ca3fb826eada476cc87c6492dc244",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "1:31738",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 09777000c94c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:31738",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "resizeMode",
+      "figmaValue": "cover",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add resizeMode: 'cover'"
+    },
+    {
+      "nodeId": "1:31739",
+      "nodeName": "PhonePe",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "1:31745",
+      "nodeName": "Let’s get to  know you",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Let’s get to  know you",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Let’s get to  know you\""
+    },
+    {
+      "nodeId": "90:3114",
+      "nodeName": "input",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row as const",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "90:3076",
+      "nodeName": "input",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row as const",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "1:31748",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "row",
+      "rnValue": "row as const",
+      "covered": false,
+      "fix": "Add flexDirection: 'row'"
+    },
+    {
+      "nodeId": "1:31748",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "spacing",
+      "property": "paddingRight",
+      "figmaValue": 16,
+      "rnValue": "scaledSpacing(16)",
+      "covered": false,
+      "fix": "Add paddingRight: 16 (or spacing.md)"
+    },
+    {
+      "nodeId": "1:31748",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "spacing",
+      "property": "paddingLeft",
+      "figmaValue": 16,
+      "rnValue": "scaledSpacing(16)",
+      "covered": false,
+      "fix": "Add paddingLeft: 16 (or spacing.md)"
+    },
+    {
+      "nodeId": "1:31748",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "spacing",
+      "property": "gap",
+      "figmaValue": 10,
+      "rnValue": "scaledSpacing(16)",
+      "covered": false,
+      "fix": "Add gap: 10 (or token)"
+    },
+    {
+      "nodeId": "1:31748",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "borders",
+      "property": "borderRadius",
+      "figmaValue": 12,
+      "rnValue": "scaled(FIGMA.dimensions.buttonRadius)",
+      "covered": false,
+      "fix": "Add borderRadius: 12 (or radius.md)"
+    },
+    {
+      "nodeId": "1:31750",
+      "nodeName": "Switch Toggle",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "overflow",
+      "figmaValue": "hidden",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add overflow: 'hidden'"
+    },
+    {
+      "nodeId": "1:31751",
+      "nodeName": "I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "I consent to a one-time verification to confirm my...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree\""
+    }
+  ],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

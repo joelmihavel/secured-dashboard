@@ -315,12 +315,14 @@ const styles = StyleSheet.create({
 
   // Label text
   // Node 41:11226: fontSize 12, lineHeight 20, color #878787
+  // Figma: textAlignHorizontal CENTER
   labelText: {
     fontFamily: FIGMA.typography.label.fontFamily,
     fontSize: FIGMA.typography.label.fontSize,
     lineHeight: FIGMA.typography.label.lineHeight,
     fontWeight: FIGMA.typography.label.fontWeight,
     color: FIGMA.colors.textLabel,
+    textAlign: 'left',
   },
 
   // Value text
@@ -331,6 +333,7 @@ const styles = StyleSheet.create({
     lineHeight: FIGMA.typography.value.lineHeight,
     fontWeight: FIGMA.typography.value.fontWeight,
     color: FIGMA.colors.textValue,
+    textAlign: 'left',
   },
 });
 

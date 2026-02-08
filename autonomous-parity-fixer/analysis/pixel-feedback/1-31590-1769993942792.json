@@ -1,0 +1,401 @@
+{
+  "screenId": "1-31590",
+  "screenName": "Onboarding / Add BESCOM number",
+  "route": "/(setup)/add-bank",
+  "generatedAt": "2026-02-02T00:59:02.792Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-02T00:57:17.984Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "237:2739",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": 1922.0000195233956,
+              "absoluteY": 549.9999423446842,
+              "relativeLeft": -462.9999804766044,
+              "relativeTop": -747.0000576553158,
+              "parentId": "1:31590"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "src/components/1-31590/*.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"auth / sign up --error 1\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31596",
+            "nodeName": "Frame 1686557300",
+            "figmaValue": {
+              "absoluteX": 2385,
+              "absoluteY": 2196,
+              "relativeLeft": 0,
+              "relativeTop": 899,
+              "parentId": "1:31590"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: 899.0",
+            "file": "src/components/1-31590/*.tsx",
+            "explanation": "\"Frame 1686557300\" is positioned at (0.0, 899.0) relative to \"auth / sign up --error 1\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: 899.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31595",
+            "nodeName": "Rectangle 52",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 52",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/1-31590/*.tsx or app/(1-31590)/index.tsx",
+            "explanation": "Button \"Rectangle 52\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31597",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#D9D9D9"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#D9D9D9'",
+            "file": "src/components/1-31590/*.tsx or app/(1-31590)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #D9D9D9 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#D9D9D9' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31641",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "type": "button",
+              "text": "Pay Now",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "src/components/1-31590/*.tsx or app/(1-31590)/index.tsx",
+            "explanation": "Button \"Pay Now\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31667",
+            "nodeName": "button",
+            "figmaValue": {
+              "type": "button",
+              "text": "Get Started",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "src/components/1-31590/*.tsx or app/(1-31590)/index.tsx",
+            "explanation": "Button \"Get Started\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I1:31669;124:6249",
+            "nodeName": "Rectangle 1",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 1",
+              "fill": "#131313"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#131313'",
+            "file": "src/components/1-31590/*.tsx or app/(1-31590)/index.tsx",
+            "explanation": "Button \"Rectangle 1\" has fill #131313 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#131313' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I1:31669;124:6257",
+            "nodeName": "Rectangle 5",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 5",
+              "fill": "#141618"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#141618'",
+            "file": "src/components/1-31590/*.tsx or app/(1-31590)/index.tsx",
+            "explanation": "Button \"Rectangle 5\" has fill #141618 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#141618' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:31620",
+            "nodeName": "₹ 32,175",
+            "figmaValue": {
+              "text": "₹  32,175",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-31590/*.tsx",
+            "explanation": "Text \"₹  32,175...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:31664",
+            "nodeName": "Let’s get to  know you",
+            "figmaValue": {
+              "text": "Let’s get to  know you",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 4
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-31590/*.tsx",
+            "explanation": "Text \"Let’s get to  know you...\" is ONE LINE in Figma with 4 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          },
+          {
+            "type": "text-structure",
+            "severity": "major",
+            "nodeId": "1:31670",
+            "nodeName": "I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree",
+            "figmaValue": {
+              "text": "I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree",
+              "isSingleLine": true,
+              "hasMultipleStyles": true,
+              "styleSegments": 2
+            },
+            "expectedRNValue": "Single <Text> with nested <Text> spans for different colors",
+            "file": "src/components/1-31590/*.tsx",
+            "explanation": "Text \"I consent to a one-time verification to confirm my...\" is ONE LINE in Figma with 2 style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.",
+            "suggestedFix": "<Text style={styles.base}>\n  <Text style={styles.gray}>{grayPart}</Text>\n  <Text style={styles.orange}>{orangePart}</Text>\n</Text>"
+          }
+        ],
+        "totalIssues": 11
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-02T00:57:17.994Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-02T00:58:27.582Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(auth)/onboarding.tsx",
+            "lineRange": "110-115",
+            "property": "paddingHorizontal",
+            "figmaValue": "48 (_designTokens.spacing[12])",
+            "currentValue": "24 (hypothetical)",
+            "severity": "major",
+            "explanation": "The main content container (node 1:31660) requires a horizontal padding of 48px on each side to match the design. The current implementation likely uses a smaller, standard padding, causing the content to be too close to the screen edges.",
+            "currentCode": "paddingHorizontal: _designTokens.spacing[6],",
+            "fixedCode": "paddingHorizontal: _designTokens.spacing[12],"
+          },
+          {
+            "file": "app/(auth)/onboarding.tsx",
+            "lineRange": "110-115",
+            "property": "paddingTop",
+            "figmaValue": "48 (_designTokens.spacing[12])",
+            "currentValue": "16 (hypothetical)",
+            "severity": "major",
+            "explanation": "There is a 48px space required between the bottom of the status bar and the top of the first content element (the logo). This is calculated from the content container's (1:31660) Y position (1398) relative to the screen top (1297) and status bar height (53). The current implementation has insufficient top spacing.",
+            "currentCode": "paddingTop: _designTokens.spacing.lg,",
+            "fixedCode": "paddingTop: _designTokens.spacing[12],"
+          },
+          {
+            "file": "app/(auth)/onboarding.tsx",
+            "lineRange": "80-100",
+            "property": "position",
+            "figmaValue": "absolute",
+            "currentValue": "relative (hypothetical)",
+            "severity": "critical",
+            "explanation": "The screen background is composed of multiple layers (nodes 237:2739, 160:2925, 174:2670) that must be positioned absolutely behind the main content. If implemented with relative positioning or as a simple ImageBackground, they will disrupt the layout flow of the foreground elements.",
+            "currentCode": "<ImageBackground ... >\n  <Content />\n</ImageBackground>",
+            "fixedCode": "<View style={{flex: 1}}>\n  <Image style={{position: 'absolute', zIndex: -1, ...}} />\n  <LinearGradient style={{position: 'absolute', zIndex: -1, ...}} />\n  <Content />\n</View>"
+          }
+        ],
+        "layoutIssues": [
+          {
+            "file": "app/(auth)/onboarding.tsx",
+            "lineRange": "130-135",
+            "property": "gap",
+            "figmaValue": "48 (_designTokens.spacing[12])",
+            "currentValue": "24 (hypothetical)",
+            "severity": "major",
+            "explanation": "The vertical gap between the main sections (logo, heading, input group, and action group) should be 48px as defined by their parent container (node 1:31661). The current spacing is smaller, compressing the layout vertically.",
+            "currentCode": "gap: _designTokens.spacing[6],",
+            "fixedCode": "gap: _designTokens.spacing[12],"
+          },
+          {
+            "file": "app/(auth)/onboarding.tsx",
+            "lineRange": "180-185",
+            "property": "gap",
+            "figmaValue": "16 (_designTokens.spacing.lg)",
+            "currentValue": "8 (hypothetical)",
+            "severity": "minor",
+            "explanation": "The vertical spacing between the two input fields (Phone and Name) should be 16px, as defined by their container (node 90:3032). A smaller gap is currently used.",
+            "currentCode": "gap: _designTokens.spacing.sm,",
+            "fixedCode": "gap: _designTokens.spacing.lg,"
+          }
+        ],
+        "scrollIssues": [],
+        "confidence": 90
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-02T00:59:02.792Z",
+      "feedback": [
+        {
+          "file": "app/(auth)/onboarding.tsx",
+          "severity": "critical",
+          "property": "position",
+          "explanation": "The background image ('image 149') is incorrectly positioned. It must be positioned absolutely at (-463, -747) relative to its parent container to match the design's layered background effect. This was identified by both structural analysis and visual review.",
+          "currentCode": "/* Likely missing absolute positioning styles */",
+          "fixedCode": "style={{ position: 'absolute', left: -463, top: -747, zIndex: -1 }}"
+        },
+        {
+          "file": "src/components/1-31590/OnboardingComponents.tsx",
+          "severity": "critical",
+          "property": "Text Structure",
+          "explanation": "Three text elements on this screen are single-line in Figma but have multiple styles (e.g., different colors). They must be rendered using a single <Text> component with nested <Text> spans to prevent incorrect line breaks and styling. This applies to: '₹ 32,175', 'Let’s get to know you', and the 'I consent to...' text.",
+          "currentCode": "<Text>I consent to a one-time verification...</Text>\n<Text>Verification is securely handled via Cashfree</Text>",
+          "fixedCode": "<Text style={styles.consentBaseText}>\n  I consent to a one-time verification to confirm my profile details. \n  <Text style={styles.consentHighlightText}>Verification is securely handled via Cashfree</Text>\n</Text>"
+        },
+        {
+          "file": "app/(auth)/onboarding.tsx",
+          "severity": "major",
+          "property": "position",
+          "explanation": "A background element ('Frame 1686557300') must be positioned absolutely at (0, 899) relative to its parent to create the intended layered background design.",
+          "currentCode": "/* Likely missing absolute positioning styles */",
+          "fixedCode": "style={{ position: 'absolute', left: 0, top: 899, zIndex: -1 }}"
+        },
+        {
+          "file": "app/(auth)/onboarding.tsx",
+          "severity": "major",
+          "property": "backgroundColor",
+          "explanation": "Multiple buttons have background color mismatches compared to the Figma design. Please verify and update the following components: 'Get Started' button should be `colors.black[500]` ('#202020'), 'Rectangle 1' button should be `colors.black[700]` ('#131313'), 'Rectangle 5' button should be '#141618', 'Pay Now' button should be '#000000', 'Rectangle 52' should be '#000000', and 'Rectangle 53' should be '#D9D9D9'.",
+          "currentCode": "backgroundColor: _designTokens.colors.brand[500]",
+          "fixedCode": "backgroundColor: _designTokens.colors.black[500] // For 'Get Started' button"
+        },
+        {
+          "file": "app/(auth)/onboarding.tsx",
+          "severity": "major",
+          "property": "padding",
+          "explanation": "The main content container has incorrect padding. It requires 48px of horizontal padding and 48px of top padding to match the design layout and avoid content being too close to screen edges.",
+          "currentCode": "paddingHorizontal: _designTokens.spacing.lg, // 24\npaddingTop: _designTokens.spacing.md, // 16",
+          "fixedCode": "paddingHorizontal: _designTokens.spacing.xxxl, // 48\npaddingTop: _designTokens.spacing.xxxl, // 48"
+        },
+        {
+          "file": "app/(auth)/onboarding.tsx",
+          "severity": "major",
+          "property": "gap",
+          "explanation": "The vertical spacing between the main sections of the screen (e.g., logo, heading, input group) is insufficient. It should be 48px.",
+          "currentCode": "gap: _designTokens.spacing.lg, // 24",
+          "fixedCode": "gap: _designTokens.spacing.xxxl, // 48"
+        },
+        {
+          "file": "app/(auth)/onboarding.tsx",
+          "severity": "minor",
+          "property": "gap",
+          "explanation": "The vertical gap between the Phone and Name input fields is too small. It should be 16px.",
+          "currentCode": "gap: _designTokens.spacing.xs, // 8",
+          "fixedCode": "gap: _designTokens.spacing.md, // 16"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(auth)/onboarding.tsx",
+      "severity": "critical",
+      "property": "position",
+      "explanation": "The background image ('image 149') is incorrectly positioned. It must be positioned absolutely at (-463, -747) relative to its parent container to match the design's layered background effect. This was identified by both structural analysis and visual review.",
+      "currentCode": "/* Likely missing absolute positioning styles */",
+      "fixedCode": "style={{ position: 'absolute', left: -463, top: -747, zIndex: -1 }}"
+    },
+    {
+      "file": "src/components/1-31590/OnboardingComponents.tsx",
+      "severity": "critical",
+      "property": "Text Structure",
+      "explanation": "Three text elements on this screen are single-line in Figma but have multiple styles (e.g., different colors). They must be rendered using a single <Text> component with nested <Text> spans to prevent incorrect line breaks and styling. This applies to: '₹ 32,175', 'Let’s get to know you', and the 'I consent to...' text.",
+      "currentCode": "<Text>I consent to a one-time verification...</Text>\n<Text>Verification is securely handled via Cashfree</Text>",
+      "fixedCode": "<Text style={styles.consentBaseText}>\n  I consent to a one-time verification to confirm my profile details. \n  <Text style={styles.consentHighlightText}>Verification is securely handled via Cashfree</Text>\n</Text>"
+    },
+    {
+      "file": "app/(auth)/onboarding.tsx",
+      "severity": "major",
+      "property": "position",
+      "explanation": "A background element ('Frame 1686557300') must be positioned absolutely at (0, 899) relative to its parent to create the intended layered background design.",
+      "currentCode": "/* Likely missing absolute positioning styles */",
+      "fixedCode": "style={{ position: 'absolute', left: 0, top: 899, zIndex: -1 }}"
+    },
+    {
+      "file": "app/(auth)/onboarding.tsx",
+      "severity": "major",
+      "property": "backgroundColor",
+      "explanation": "Multiple buttons have background color mismatches compared to the Figma design. Please verify and update the following components: 'Get Started' button should be `colors.black[500]` ('#202020'), 'Rectangle 1' button should be `colors.black[700]` ('#131313'), 'Rectangle 5' button should be '#141618', 'Pay Now' button should be '#000000', 'Rectangle 52' should be '#000000', and 'Rectangle 53' should be '#D9D9D9'.",
+      "currentCode": "backgroundColor: _designTokens.colors.brand[500]",
+      "fixedCode": "backgroundColor: _designTokens.colors.black[500] // For 'Get Started' button"
+    },
+    {
+      "file": "app/(auth)/onboarding.tsx",
+      "severity": "major",
+      "property": "padding",
+      "explanation": "The main content container has incorrect padding. It requires 48px of horizontal padding and 48px of top padding to match the design layout and avoid content being too close to screen edges.",
+      "currentCode": "paddingHorizontal: _designTokens.spacing.lg, // 24\npaddingTop: _designTokens.spacing.md, // 16",
+      "fixedCode": "paddingHorizontal: _designTokens.spacing.xxxl, // 48\npaddingTop: _designTokens.spacing.xxxl, // 48"
+    },
+    {
+      "file": "app/(auth)/onboarding.tsx",
+      "severity": "major",
+      "property": "gap",
+      "explanation": "The vertical spacing between the main sections of the screen (e.g., logo, heading, input group) is insufficient. It should be 48px.",
+      "currentCode": "gap: _designTokens.spacing.lg, // 24",
+      "fixedCode": "gap: _designTokens.spacing.xxxl, // 48"
+    },
+    {
+      "file": "app/(auth)/onboarding.tsx",
+      "severity": "minor",
+      "property": "gap",
+      "explanation": "The vertical gap between the Phone and Name input fields is too small. It should be 16px.",
+      "currentCode": "gap: _designTokens.spacing.xs, // 8",
+      "fixedCode": "gap: _designTokens.spacing.md, // 16"
+    }
+  ],
+  "summary": {
+    "totalIssues": 7,
+    "critical": 2,
+    "major": 4,
+    "minor": 1,
+    "filesAffected": [
+      "app/(auth)/onboarding.tsx",
+      "src/components/1-31590/OnboardingComponents.tsx"
+    ]
+  }
+}

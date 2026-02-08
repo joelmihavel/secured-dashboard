@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 48, // Figma: 48px horizontal padding (same as add-upi)
   },
   backButton: {
     width: 40,
@@ -583,13 +583,13 @@ const styles = StyleSheet.create({
     color: FIGMA_COLORS.titleAccent,
   },
   fieldContainer: {
-    marginBottom: 24,
+    marginBottom: 16, // Figma: 16px gap between form fields
   },
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8, // Figma: 8px gap between label and input
   },
   // Figma: Label - bodyXsMedium, 12px, fontWeight 500, #A9A9A9, textAlign LEFT
   label: {
@@ -638,9 +638,9 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
+    fontSize: 12, // Figma: 12px footer text (consistent with add-upi)
     lineHeight: 20,
-    color: FIGMA_COLORS.footerText,
+    color: '#A9A9A9', // Figma: #A9A9A9 (neutral.500) - consistent with add-upi footer
     marginTop: 16,
     textAlign: 'center',
   },
@@ -703,13 +703,13 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  // Figma: "Total payable rent" (41:8478) - 12px, 500, #A9A9A9, textAlign CENTER, textTransform UPPER
+  // Figma: "Total payable rent" (41:8478) - 12px, 500, #A9A9A9, textTransform UPPER
   totalPayableLabel: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 22,
     color: FIGMA_COLORS.sheetLabelText,
-    textAlign: 'center',
+    textAlign: 'left', // Left-aligned label in summary row
     textTransform: 'uppercase',
   },
   // Figma: "Rs 32,175" (41:8479) - 12px, 600, #000000, letterSpacing -0.48
@@ -746,13 +746,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.48,
     color: FIGMA_COLORS.successText,
   },
-  // Figma: "using flent cashback" (41:8489) - 12px, 500, #A9A9A9, textAlign CENTER
+  // Figma: "using flent cashback" (41:8489) - 12px, 500, #A9A9A9
   cashbackDescText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 22,
     color: FIGMA_COLORS.sheetLabelText,
-    textAlign: 'center',
+    textAlign: 'left', // Left-aligned in cashback text column
   },
 
   // Sheet divider

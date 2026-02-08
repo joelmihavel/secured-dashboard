@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-02-03T21:07:50.897Z",
+  "totalScreens": 3,
+  "successful": 3,
+  "failed": 0,
+  "screens": [
+    {
+      "screenId": "1-28055",
+      "screenName": "Screen 1-28055",
+      "success": true,
+      "duration": 0.641,
+      "outputPaths": {
+        "styleMap": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/1-28055/style-map.json",
+        "constants": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/1-28055/constants.json",
+        "component": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/output/components/1-28055.tsx",
+        "report": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/reports/1-28055-report.json"
+      }
+    },
+    {
+      "screenId": "1-31073",
+      "screenName": "Screen 1-31073",
+      "success": true,
+      "duration": 0.724,
+      "outputPaths": {
+        "styleMap": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/1-31073/style-map.json",
+        "constants": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/1-31073/constants.json",
+        "component": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/output/components/1-31073.tsx",
+        "report": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/reports/1-31073-report.json"
+      }
+    },
+    {
+      "screenId": "243-2762",
+      "screenName": "Screen 243-2762",
+      "success": true,
+      "duration": 1.029,
+      "outputPaths": {
+        "styleMap": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/243-2762/style-map.json",
+        "constants": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/combined/243-2762/constants.json",
+        "component": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/output/components/243-2762.tsx",
+        "report": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/reports/243-2762-report.json"
+      }
+    }
+  ]
+}

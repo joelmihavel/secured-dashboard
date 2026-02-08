@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: scaledFont(21.6),
     letterSpacing: -0.13,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   payeeValue: {
     color: FIGMA.colors.primaryText,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: scaledFont(21.6),
     letterSpacing: -0.13,
-    textAlign: 'center',
+    textAlign: 'right',
   },
   bankRow: {
     flexDirection: 'row',
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.bankName.fontWeight,
     lineHeight: scaledFont(FIGMA.typography.bankName.lineHeight),
     letterSpacing: FIGMA.typography.bankName.letterSpacing,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   accountNumber: {
     color: FIGMA.colors.primaryText,
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: scaledFont(21.6),
     letterSpacing: -0.13,
-    textAlign: 'center',
+    textAlign: 'left',
   },
 
   // Pay Button
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.verifyTitle.fontWeight,
     lineHeight: scaledFont(FIGMA.typography.verifyTitle.lineHeight),
     letterSpacing: FIGMA.typography.verifyTitle.letterSpacing,
-    textAlign: 'center',
+    textAlign: 'left',
   },
 
   // Agreement Details Section
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.detailLabel.fontWeight,
     lineHeight: scaledFont(FIGMA.typography.detailLabel.lineHeight),
     letterSpacing: FIGMA.typography.detailLabel.letterSpacing,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   detailValue: {
     color: FIGMA.colors.detailValue,           // #CBCBCB
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     fontWeight: FIGMA.typography.detailValue.fontWeight,
     lineHeight: scaledFont(FIGMA.typography.detailValue.lineHeight),
     letterSpacing: FIGMA.typography.detailValue.letterSpacing,
-    textAlign: 'center',
+    textAlign: 'right',
   },
 
   // Enter Manually Link

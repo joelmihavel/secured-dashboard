@@ -1,0 +1,762 @@
+{
+  "screenId": "1-28071",
+  "screenName": "Screen 1-28071",
+  "module": "app",
+  "extractedAt": "2026-02-01T10:19:44.313Z",
+  "nodeCount": 24,
+  "nodes": [
+    {
+      "nodeId": "1:28071",
+      "name": "Splash / get-started --animation",
+      "type": "FRAME",
+      "geometry": {
+        "x": 0,
+        "y": 350,
+        "width": 393,
+        "height": 852
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#131313",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 393,
+        "height": 852,
+        "backgroundColor": "#131313"
+      }
+    },
+    {
+      "nodeId": "233:2671",
+      "name": "image 149",
+      "type": "RECTANGLE",
+      "geometry": {
+        "x": -462.9999804766044,
+        "y": -397.0000576553158,
+        "width": 1318.9999804766044,
+        "height": 2346.0000576553157
+      },
+      "fills": [
+        {
+          "type": "IMAGE"
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 1318.9999804766044,
+        "height": 2346.0000576553157
+      }
+    },
+    {
+      "nodeId": "1:28073",
+      "name": "HW Cutout Safezone",
+      "type": "RECTANGLE",
+      "geometry": {
+        "x": 141,
+        "y": 362.93865966796875,
+        "width": 108,
+        "height": 31.803680419921875
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {
+        "all": 60
+      },
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 108,
+        "height": 31.803680419921875,
+        "backgroundColor": "#000000",
+        "borderRadius": 60
+      }
+    },
+    {
+      "nodeId": "1:28074",
+      "name": "Status Bar",
+      "type": "INSTANCE",
+      "geometry": {
+        "x": 0,
+        "y": 350,
+        "width": 393,
+        "height": 53
+      },
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 393,
+        "height": 53
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:196",
+      "name": "Battery",
+      "type": "GROUP",
+      "geometry": {
+        "x": 333.20001220703125,
+        "y": 372.6000061035156,
+        "width": 27.228038787841797,
+        "height": 13
+      },
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 27.228038787841797,
+        "height": 13
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:197",
+      "name": "Border",
+      "type": "RECTANGLE",
+      "geometry": {
+        "x": 333.20001220703125,
+        "y": 372.6000061035156,
+        "width": 25,
+        "height": 13
+      },
+      "fills": [],
+      "strokes": [
+        {
+          "hex": "#FFFFFF",
+          "weight": 1,
+          "align": "INSIDE"
+        }
+      ],
+      "effects": [],
+      "cornerRadius": {
+        "all": 4.300000190734863
+      },
+      "layout": null,
+      "typography": null,
+      "opacity": 0.3499999940395355,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 25,
+        "height": 13,
+        "borderColor": "#FFFFFF",
+        "borderWidth": 1,
+        "borderRadius": 4.300000190734863,
+        "opacity": 0.3499999940395355
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:198",
+      "name": "Cap",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 359.1000061035156,
+        "y": 377.26666259765625,
+        "width": 1.328037977218628,
+        "height": 4
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "opacity": 0.4000000059604645,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 1.328037977218628,
+        "height": 4,
+        "backgroundColor": "#FFFFFF",
+        "opacity": 0.4000000059604645
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:199",
+      "name": "Capacity",
+      "type": "RECTANGLE",
+      "geometry": {
+        "x": 335.20001220703125,
+        "y": 374.6000061035156,
+        "width": 21,
+        "height": 9
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {
+        "all": 2.5
+      },
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 21,
+        "height": 9,
+        "backgroundColor": "#FFFFFF",
+        "borderRadius": 2.5
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:200",
+      "name": "Wifi",
+      "type": "BOOLEAN_OPERATION",
+      "geometry": {
+        "x": 308.70001220703125,
+        "y": 373.199951171875,
+        "width": 17.141611099243164,
+        "height": 12.10004997253418
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 17.141611099243164,
+        "height": 12.10004997253418,
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:201",
+      "name": "Wifi-path",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 308.7000732421875,
+        "y": 373.20001220703125,
+        "width": 17.141666412353516,
+        "height": 5.041666507720947
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 17.141666412353516,
+        "height": 5.041666507720947,
+        "backgroundColor": "#000000"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:202",
+      "name": "Wifi-path",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 311.7250671386719,
+        "y": 377.23333740234375,
+        "width": 11.091666221618652,
+        "height": 4.0333333015441895
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 11.091666221618652,
+        "height": 4.0333333015441895,
+        "backgroundColor": "#000000"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:203",
+      "name": "Wifi-path",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 314.75006103515625,
+        "y": 381.26666259765625,
+        "width": 5.041666507720947,
+        "height": 4.0333333015441895
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 5.041666507720947,
+        "height": 4.0333333015441895,
+        "backgroundColor": "#000000"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:204",
+      "name": "Cellular Connection",
+      "type": "BOOLEAN_OPERATION",
+      "geometry": {
+        "x": 282,
+        "y": 373.1000061035156,
+        "width": 19.200000762939453,
+        "height": 12
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 19.200000762939453,
+        "height": 12,
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:205",
+      "name": "Cellular-Connection-path",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 282,
+        "y": 380.5,
+        "width": 3.200000047683716,
+        "height": 4.599999904632568
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 3.200000047683716,
+        "height": 4.599999904632568,
+        "backgroundColor": "#000000"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:206",
+      "name": "Cellular-Connection-path",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 287.29998779296875,
+        "y": 378.1000061035156,
+        "width": 3.200000047683716,
+        "height": 7
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 3.200000047683716,
+        "height": 7,
+        "backgroundColor": "#000000"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:207",
+      "name": "Cellular-Connection-path",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 292.70001220703125,
+        "y": 375.5,
+        "width": 3.200000047683716,
+        "height": 9.600000381469727
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 3.200000047683716,
+        "height": 9.600000381469727,
+        "backgroundColor": "#000000"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:208",
+      "name": "Cellular-Connection-path",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 298,
+        "y": 373.1000061035156,
+        "width": 3.200000047683716,
+        "height": 12
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 3.200000047683716,
+        "height": 12,
+        "backgroundColor": "#000000"
+      }
+    },
+    {
+      "nodeId": "I1:28074;125:209",
+      "name": "Time",
+      "type": "TEXT",
+      "geometry": {
+        "x": 47.5,
+        "y": 369.5,
+        "width": 45,
+        "height": 20
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": {
+        "fontFamily": "SF Pro",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "lineHeight": 20.287109375,
+        "letterSpacing": 0,
+        "textAlign": "CENTER",
+        "text": "13:13"
+      },
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 45,
+        "height": 20,
+        "backgroundColor": "#FFFFFF",
+        "fontFamily": "SF Pro",
+        "fontSize": 17,
+        "fontWeight": "590",
+        "lineHeight": 20.287109375,
+        "textAlign": "center"
+      }
+    },
+    {
+      "nodeId": "1:28075",
+      "name": "Home Indicator",
+      "type": "INSTANCE",
+      "geometry": {
+        "x": 0,
+        "y": 1168,
+        "width": 393,
+        "height": 34
+      },
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 393,
+        "height": 34
+      }
+    },
+    {
+      "nodeId": "I1:28075;2:181",
+      "name": "Home Indicator",
+      "type": "RECTANGLE",
+      "geometry": {
+        "x": 121,
+        "y": 1189,
+        "width": 152,
+        "height": 5
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {
+        "all": 100
+      },
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 152,
+        "height": 5,
+        "backgroundColor": "#FFFFFF",
+        "borderRadius": 100
+      }
+    },
+    {
+      "nodeId": "176:2750",
+      "name": "Logo Container",
+      "type": "FRAME",
+      "geometry": {
+        "x": 180,
+        "y": 756,
+        "width": 33.375099182128906,
+        "height": 40
+      },
+      "fills": [],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 33.375099182128906,
+        "height": 40
+      }
+    },
+    {
+      "nodeId": "176:2751",
+      "name": "Vector 1",
+      "type": "VECTOR",
+      "geometry": {
+        "x": 179.99998474121094,
+        "y": 756,
+        "width": 33.375099182128906,
+        "height": 40
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FFFFFF",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 33.375099182128906,
+        "height": 40,
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "nodeId": "176:2752",
+      "name": "Frame 1686557110",
+      "type": "FRAME",
+      "geometry": {
+        "x": 150,
+        "y": 809,
+        "width": 96,
+        "height": 28
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#FF9A6D",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {
+        "all": 4
+      },
+      "layout": {
+        "mode": "HORIZONTAL",
+        "primaryAlign": "CENTER",
+        "counterAlign": "CENTER",
+        "paddingTop": 4,
+        "paddingRight": 8,
+        "paddingBottom": 4,
+        "paddingLeft": 8,
+        "gap": 10
+      },
+      "typography": null,
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 96,
+        "height": 28,
+        "backgroundColor": "#FF9A6D",
+        "borderRadius": 4,
+        "flexDirection": "row",
+        "justifyContent": "center",
+        "alignItems": "center",
+        "gap": 10,
+        "paddingTop": 4,
+        "paddingRight": 8,
+        "paddingBottom": 4,
+        "paddingLeft": 8
+      }
+    },
+    {
+      "nodeId": "176:2753",
+      "name": "Login Prompt",
+      "type": "TEXT",
+      "geometry": {
+        "x": 158,
+        "y": 813,
+        "width": 80,
+        "height": 20
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "hex": "#000000",
+          "opacity": 1
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "cornerRadius": {},
+      "layout": null,
+      "typography": {
+        "fontFamily": "Plus Jakarta Sans",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "lineHeight": 20,
+        "letterSpacing": -0.20000000298023224,
+        "textAlign": "CENTER",
+        "text": "BETA LAUNCH"
+      },
+      "scroll": null,
+      "interactions": [],
+      "rnStyles": {
+        "width": 80,
+        "height": 20,
+        "backgroundColor": "#000000",
+        "fontFamily": "Plus Jakarta Sans",
+        "fontSize": 12,
+        "fontWeight": "500",
+        "lineHeight": 20,
+        "letterSpacing": -0.20000000298023224,
+        "textAlign": "center"
+      }
+    }
+  ]
+}

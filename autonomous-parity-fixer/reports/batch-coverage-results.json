@@ -1,0 +1,148 @@
+{
+  "generatedAt": "2026-02-03T06:36:33.059Z",
+  "summary": {
+    "passed": 6,
+    "failed": 11,
+    "noRNCode": 0,
+    "errors": 0,
+    "total": 17
+  },
+  "results": [
+    {
+      "figmaId": "1-28055",
+      "screenName": "Splash / get-started --animation",
+      "route": "/(auth)/splash",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-28071",
+      "screenName": "Splash / get-started --animation 2",
+      "route": "/(auth)/beta-splash",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-29108",
+      "screenName": "auth / sign up --enter phone number",
+      "route": "/(auth)/sign-up",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-31175",
+      "screenName": "auth / sign up --enter OTP",
+      "route": "/(auth)/otp",
+      "hasRNCode": true,
+      "coverage": 95.3,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-31485",
+      "screenName": "Onboarding / Add bank details",
+      "route": "/(setup)/add-bank",
+      "hasRNCode": true,
+      "coverage": 81.3,
+      "status": "fail"
+    },
+    {
+      "figmaId": "1-31590",
+      "screenName": "Onboarding / Add BESCOM number",
+      "route": "/(setup)/add-bank",
+      "hasRNCode": true,
+      "coverage": 78.4,
+      "status": "fail"
+    },
+    {
+      "figmaId": "1-31671",
+      "screenName": "Onboarding / Invite Landlord",
+      "route": "/(setup)/invite-landlord",
+      "hasRNCode": true,
+      "coverage": 80.5,
+      "status": "fail"
+    },
+    {
+      "figmaId": "243-3170",
+      "screenName": "Home --active --late payment",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 82,
+      "status": "fail"
+    },
+    {
+      "figmaId": "243-5870",
+      "screenName": "Pay Rent / Transaction Page --without cashback",
+      "route": "/(transactions)/index",
+      "hasRNCode": true,
+      "coverage": 84.3,
+      "status": "fail"
+    },
+    {
+      "figmaId": "243-6490",
+      "screenName": "Home --Empty State --setup payment",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 82,
+      "status": "fail"
+    },
+    {
+      "figmaId": "41-10712",
+      "screenName": "Onboarding / Post Approval 1",
+      "route": "/(setup)/index",
+      "hasRNCode": true,
+      "coverage": 87,
+      "status": "fail"
+    },
+    {
+      "figmaId": "41-10859",
+      "screenName": "Onboarding / Post Approval 2",
+      "route": "/(setup)/index",
+      "hasRNCode": true,
+      "coverage": 87,
+      "status": "fail"
+    },
+    {
+      "figmaId": "41-11006",
+      "screenName": "Onboarding / Post Approval 3",
+      "route": "/(setup)/index",
+      "hasRNCode": true,
+      "coverage": 87.3,
+      "status": "fail"
+    },
+    {
+      "figmaId": "41-11206",
+      "screenName": "Onboarding / Waitlist Screen",
+      "route": "/(waitlist)/index",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-8760",
+      "screenName": "My Profile / Main Screen",
+      "route": "/(profile)/index",
+      "hasRNCode": true,
+      "coverage": 85.3,
+      "status": "fail"
+    },
+    {
+      "figmaId": "41-9388",
+      "screenName": "Pay Rent / Payment Summary Page --Payment Successful",
+      "route": "/(payment)/success",
+      "hasRNCode": true,
+      "coverage": 99.4,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9563",
+      "screenName": "Pay Rent / Payment Summary Page --Payment Failed",
+      "route": "/(payment)/failed",
+      "hasRNCode": true,
+      "coverage": 90.8,
+      "status": "fail"
+    }
+  ]
+}

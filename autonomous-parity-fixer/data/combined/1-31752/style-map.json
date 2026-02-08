@@ -1,0 +1,20 @@
+[
+  {
+    "nodeId": "1:31752",
+    "nodeName": "Vector 41",
+    "nodeType": "VECTOR",
+    "rnStyleName": "vector41",
+    "rnStyles": {
+      "width": 172,
+      "height": 0,
+      "borderColor": "#000000",
+      "borderWidth": 2
+    },
+    "geometry": {
+      "x": 2173,
+      "y": 747.9999849632812,
+      "width": 172,
+      "height": 0.000015036718764349644
+    }
+  }
+]

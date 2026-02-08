@@ -41,9 +41,9 @@ const RECEIPT_COLORS = {
   accentOrange: '#FF9A6D',               // brand.500 - SELECTED
   textPrimary: '#FFFFFF',                // white
   textSecondary: '#CBCBCB',              // neutral.300 - Hi, Rishabh
-  textMuted: '#4D4D4D',                  // black.400 - Rectangle 140
-  labelText: '#A9A9A9',                  // neutral.500 - Due in days
-  amountText: '#EEEEEE',                 // neutral.100 - amount
+  textMuted: '#DDDDDD',                  // neutral.200 - Figma cashback note text
+  labelText: '#878787',                  // neutral.600 - Figma receipt labels (Amount paid, Date, etc.)
+  amountText: '#CBCBCB',                 // neutral.300 - Figma receipt values (₹ 32,500, dates, etc.)
   hintText: '#BABABA',                   // neutral.400 - due notice
   payingWith: '#A6A6A6',                 // black.200 - Paying with
   success: '#70BF73',                    // success.default
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   },
   receiptCard: {
     backgroundColor: RECEIPT_COLORS.cardBackground,
-    borderRadius: radius.lg,
+    borderRadius: 12,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
@@ -443,17 +443,17 @@ const styles = StyleSheet.create({
   },
   paymentLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28,     // h4 per Figma analysis
-    lineHeight: 40,
+    fontSize: 20,     // Figma: "Payment Succesful" = 20px (was 28)
+    lineHeight: 32,   // Figma: lineHeightPx = 32 (was 40)
     color: RECEIPT_COLORS.textPrimary,
-    letterSpacing: -1,
+    letterSpacing: 0,  // Figma: letterSpacing = 0 (was -1)
   },
   successText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28,     // h4 per Figma analysis
-    lineHeight: 40,
-    color: RECEIPT_COLORS.success,
-    letterSpacing: -1,
+    fontSize: 20,     // Figma: 20px (was 28)
+    lineHeight: 32,   // Figma: 32 (was 40)
+    color: RECEIPT_COLORS.textPrimary,  // Figma: base fill #FFFFFF, no override applied (was green)
+    letterSpacing: 0,  // Figma: 0 (was -1)
   },
   stampContainer: {
     marginTop: -8,
@@ -484,15 +484,16 @@ const styles = StyleSheet.create({
     color: RECEIPT_COLORS.labelText,  // neutral.500 #A9A9A9
   },
   receiptValue: {
-    fontFamily: 'PlusJakartaSans-SemiBold',  // bodyXsSemibold per Figma
+    fontFamily: 'PlusJakartaSans-Regular',  // Figma: fontWeight 400 (Regular)
     fontSize: 12,
     lineHeight: 20,
-    color: RECEIPT_COLORS.amountText,  // neutral.100 #EEEEEE
+    color: RECEIPT_COLORS.amountText,  // neutral.300 #CBCBCB per Figma
   },
   receiptValueBold: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 14,     // Figma: Payable Rent value = 14px (was 16)
+    lineHeight: 20,   // Figma: lineHeight 20
+    color: '#DDDDDD', // Figma: Payable Rent value = #DDDDDD
   },
   cashbackNote: {
     marginTop: spacing.lg,
@@ -532,9 +533,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   downloadButtonText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    lineHeight: 24,
+    fontFamily: 'PlusJakartaSans-Medium',  // Figma: fontWeight 500 (was SemiBold/600)
+    fontSize: 14,     // Figma: 14 (was 16)
+    lineHeight: 20,   // Figma: 20 (was 24)
     color: RECEIPT_COLORS.textPrimary,
   },
   supportLink: {
@@ -544,8 +545,8 @@ const styles = StyleSheet.create({
   },
   supportLinkText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
+    fontSize: 12,     // Figma: Contact Support = 12px (was 14)
     lineHeight: 20,
-    color: RECEIPT_COLORS.textSecondary,
+    color: '#A9A9A9',  // Figma: Contact Support = #A9A9A9 (was #CBCBCB)
   },
 });

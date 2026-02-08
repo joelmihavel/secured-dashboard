@@ -1,0 +1,16 @@
+# Environment variables (contains API tokens)
+.env
+
+# Processing output (can be large)
+processing/
+logs/
+output/
+
+# State files (can be regenerated)
+state/checkpoints/
+
+# OS files
+.DS_Store
+
+# Node modules (if added later)
+node_modules/

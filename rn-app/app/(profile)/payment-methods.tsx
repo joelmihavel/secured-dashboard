@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     color: PAYMENT_COLORS.textSecondary,
     textTransform: 'uppercase',
-    textAlign: 'center' as const,
+    textAlign: 'left' as const,
     marginBottom: spacing.sm,
   },
   sectionCard: {
@@ -453,14 +453,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: PAYMENT_COLORS.textValues,
-    textAlign: 'center' as const,
+    textAlign: 'left' as const,
   },
   methodDetailText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: PAYMENT_COLORS.textSecondary,
-    textAlign: 'center' as const,
+    textAlign: 'left' as const,
   },
   methodActions: {
     flexDirection: 'row',
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     color: PAYMENT_COLORS.checkGreen,
-    textAlign: 'center' as const,
+    textAlign: 'left' as const,
   },
   methodDivider: {
     height: StyleSheet.hairlineWidth,

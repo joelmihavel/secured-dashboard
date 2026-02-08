@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
   tabSection: {
     // Figma 243-5689: container gap handles 24px between sections
     // No extra marginTop needed -- parent gap: 24 provides the spacing
+    paddingHorizontal: 32, // Figma: paddingHorizontal 32 (matches active state tabContainer)
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER for tab switcher
     paddingTop: 8, // Figma 243:3327: paddingTop 8 (matches active state tabContainer)
   },

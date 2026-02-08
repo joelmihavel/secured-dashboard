@@ -1,0 +1,129 @@
+{
+  "screenId": "41-9563",
+  "iteration": 1,
+  "coverage": 90.8,
+  "threshold": 95,
+  "fixesNeeded": [
+    {
+      "type": "prop",
+      "target": "Outline Icon Library",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "currentValue": "BUTTON_CONTAINER_WIDTH",
+      "fix": "Add explicit width value"
+    },
+    {
+      "type": "style",
+      "target": "Amount paid",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#131313",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Amount paid",
+      "property": "characters",
+      "figmaValue": "Amount paid",
+      "currentValue": null,
+      "fix": "Add text content: \"Amount paid\""
+    },
+    {
+      "type": "style",
+      "target": "Date",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#131313",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Date",
+      "property": "characters",
+      "figmaValue": "Date",
+      "currentValue": null,
+      "fix": "Add text content: \"Date\""
+    },
+    {
+      "type": "style",
+      "target": "4 Nov 2026",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#131313",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "4 Nov 2026",
+      "property": "characters",
+      "figmaValue": "4 Nov 2026",
+      "currentValue": null,
+      "fix": "Add text content: \"4 Nov 2026\""
+    },
+    {
+      "type": "style",
+      "target": "Method",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#131313",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Method",
+      "property": "characters",
+      "figmaValue": "Method",
+      "currentValue": null,
+      "fix": "Add text content: \"Method\""
+    },
+    {
+      "type": "style",
+      "target": "UPI (joel@oksbi)",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#131313",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "UPI (joel@oksbi)",
+      "property": "characters",
+      "figmaValue": "UPI (joel@oksbi)",
+      "currentValue": null,
+      "fix": "Add text content: \"UPI (joel@oksbi)\""
+    },
+    {
+      "type": "style",
+      "target": "SEC12345678",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "currentValue": "#131313",
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    },
+    {
+      "type": "style",
+      "target": "SEC12345678",
+      "property": "characters",
+      "figmaValue": "SEC12345678",
+      "currentValue": null,
+      "fix": "Add text content: \"SEC12345678\""
+    },
+    {
+      "type": "style",
+      "target": "Payable Rent",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "currentValue": "#131313",
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "type": "style",
+      "target": "Payable Rent",
+      "property": "characters",
+      "figmaValue": "Payable Rent",
+      "currentValue": null,
+      "fix": "Add text content: \"Payable Rent\""
+    }
+  ],
+  "generatedAt": "2026-02-03T10:34:39.741Z"
+}

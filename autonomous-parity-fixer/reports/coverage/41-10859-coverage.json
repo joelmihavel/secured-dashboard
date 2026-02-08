@@ -1,0 +1,584 @@
+{
+  "screenId": "41:10859",
+  "screenName": "Onboarding / Post Approval 2",
+  "generatedAt": "2026-02-03T10:56:35.968Z",
+  "summary": {
+    "overallCoverage": 87.6,
+    "propertiesCovered": 311,
+    "propertiesTotal": 355,
+    "propertiesMissing": 44,
+    "nodesCovered": 47,
+    "nodesPartial": 20,
+    "nodesTotal": 67,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 134,
+      "total": 134,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 31,
+      "total": 45,
+      "percentage": 68.9
+    },
+    "spacing": {
+      "covered": 3,
+      "total": 5,
+      "percentage": 60
+    },
+    "colors": {
+      "covered": 59,
+      "total": 64,
+      "percentage": 92.2
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 6,
+      "total": 6,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 1,
+      "total": 2,
+      "percentage": 50
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 58,
+      "total": 68,
+      "percentage": 85.3
+    },
+    "textContent": {
+      "covered": 4,
+      "total": 13,
+      "percentage": 30.8
+    },
+    "multiStyleText": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 13,
+      "total": 16,
+      "percentage": 81.3
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:10897",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#70BF73",
+      "rnValue": "FIGMA.buttonBackgroundColor",
+      "covered": false,
+      "fix": "Add backgroundColor: '#70BF73' (or colors.success[default])"
+    },
+    {
+      "nodeId": "41:10897",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "saved ₹ 325 →",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"saved ₹ 325 →\""
+    },
+    {
+      "nodeId": "41:10902",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "41:10902",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Paying to",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Paying to\""
+    },
+    {
+      "nodeId": "41:10903",
+      "nodeName": "[Landlord Name]",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "41:10907",
+      "nodeName": "ICICI",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI\""
+    },
+    {
+      "nodeId": "41:10908",
+      "nodeName": "XXXX XXXX XXXX 2003",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "41:10910",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "FIGMA.buttonBackgroundColor",
+      "covered": false,
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "nodeId": "41:10910",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:10910",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Pay Now",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Pay Now\""
+    },
+    {
+      "nodeId": "41:10911",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 22,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 22"
+    },
+    {
+      "nodeId": "41:10911",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:10911",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "All payments are 100% secure",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"All payments are 100% secure\""
+    },
+    {
+      "nodeId": "41:10916",
+      "nodeName": "PAY BY ANY APP INSTEAD",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#878787",
+      "rnValue": "FIGMA.buttonBackgroundColor",
+      "covered": false,
+      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+    },
+    {
+      "nodeId": "41:10916",
+      "nodeName": "PAY BY ANY APP INSTEAD",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PAY BY ANY APP INSTEAD",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PAY BY ANY APP INSTEAD\""
+    },
+    {
+      "nodeId": "41:10919",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:10919",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit height value"
+    },
+    {
+      "nodeId": "41:10919",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 1a8928147af6...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "41:10920",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:10920",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Google Pay",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Google Pay\""
+    },
+    {
+      "nodeId": "41:10922",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:10922",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit height value"
+    },
+    {
+      "nodeId": "41:10922",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 951e70728a7c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "41:10923",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:10923",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PayTM",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PayTM\""
+    },
+    {
+      "nodeId": "41:10925",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:10925",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit height value"
+    },
+    {
+      "nodeId": "41:10925",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 09777000c94c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "41:10926",
+      "nodeName": "PhonePe",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add textAlign: 'center'"
+    },
+    {
+      "nodeId": "41:10926",
+      "nodeName": "PhonePe",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PhonePe",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PhonePe\""
+    },
+    {
+      "nodeId": "41:10929",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:10929",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "overflow",
+      "figmaValue": "visible",
+      "rnValue": "hidden",
+      "covered": false,
+      "fix": "Add overflow: 'visible'"
+    },
+    {
+      "nodeId": "41:10929",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "spacing",
+      "property": "paddingRight",
+      "figmaValue": 16,
+      "rnValue": 40,
+      "covered": false,
+      "fix": "Add paddingRight: 16 (or spacing.md)"
+    },
+    {
+      "nodeId": "41:10929",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "spacing",
+      "property": "paddingLeft",
+      "figmaValue": 16,
+      "rnValue": 40,
+      "covered": false,
+      "fix": "Add paddingLeft: 16 (or spacing.md)"
+    },
+    {
+      "nodeId": "41:10929",
+      "nodeName": "button",
+      "nodeType": "INSTANCE",
+      "category": "borders",
+      "property": "borderRadius",
+      "figmaValue": 12,
+      "rnValue": "FIGMA.buttonActiveBorderRadius",
+      "covered": false,
+      "fix": "Add borderRadius: 12 (or radius.md)"
+    },
+    {
+      "nodeId": "160:3097",
+      "nodeName": "Let’s get you set up",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "FIGMA.buttonBackgroundColor",
+      "covered": false,
+      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
+    },
+    {
+      "nodeId": "160:3097",
+      "nodeName": "Let’s get you set up",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 48,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 48"
+    },
+    {
+      "nodeId": "41:10935",
+      "nodeName": "Ellipse 21885",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:10935",
+      "nodeName": "Ellipse 21885",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit height value"
+    },
+    {
+      "nodeId": "41:10936",
+      "nodeName": "Ellipse 21886",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:10936",
+      "nodeName": "Ellipse 21886",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit height value"
+    },
+    {
+      "nodeId": "41:10937",
+      "nodeName": "Ellipse 21887",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit width value"
+    },
+    {
+      "nodeId": "41:10937",
+      "nodeName": "Ellipse 21887",
+      "nodeType": "ELLIPSE",
+      "category": "layout",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "rnValue": "100%",
+      "covered": false,
+      "fix": "Add explicit height value"
+    },
+    {
+      "nodeId": "160:3149",
+      "nodeName": "Upload  address proof  to verify your tenancy",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#CBCBCB",
+      "rnValue": "FIGMA.buttonBackgroundColor",
+      "covered": false,
+      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+    }
+  ],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

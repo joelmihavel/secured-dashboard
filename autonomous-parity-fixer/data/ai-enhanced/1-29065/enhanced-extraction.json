@@ -1,0 +1,4157 @@
+{
+  "screenId": "1:29065",
+  "screenName": "Splash / get-started --carousel 6",
+  "module": "app",
+  "extractedAt": "2026-02-03T07:10:41.044Z",
+  "version": "3.2",
+  "pipelineVersion": "3.0-ai-enhanced",
+  "baseDesign": {
+    "width": 393,
+    "height": 852
+  },
+  "fullScreenshot": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_1_29065.png",
+  "fullScreenAnalysis": {
+    "type": "Container",
+    "position": "relative",
+    "parentId": null,
+    "overflowBehavior": "hidden",
+    "zIndex": 0,
+    "explicitWidth": null,
+    "notes": "Root container. Needs dark background color (colors.black[700])."
+  },
+  "componentTree": {
+    "nodeId": "1:29065",
+    "nodeName": "Splash / get-started --carousel 6",
+    "nodeType": "FRAME",
+    "figmaData": {
+      "id": "1:29065",
+      "name": "Splash / get-started --carousel 6",
+      "type": "FRAME",
+      "visible": true,
+      "geometry": {
+        "x": 1730,
+        "y": 350,
+        "width": 393,
+        "height": 852
+      },
+      "constraints": {
+        "vertical": "TOP",
+        "horizontal": "LEFT"
+      },
+      "fills": [
+        {
+          "blendMode": "NORMAL",
+          "type": "SOLID",
+          "color": {
+            "r": 0.07450980693101883,
+            "g": 0.07450980693101883,
+            "b": 0.07450980693101883,
+            "a": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:b68dbac75b766af96ea05be0f99c98d5ce07c915/12:94"
+            }
+          }
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "blendMode": "PASS_THROUGH",
+      "clipsContent": true
+    },
+    "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_1_29065.png",
+    "aiAnalysis": {
+      "type": "Container",
+      "position": "relative",
+      "parentId": null,
+      "overflowBehavior": "hidden",
+      "zIndex": 0,
+      "explicitWidth": null,
+      "notes": "Root container. Needs dark background color (colors.black[700])."
+    },
+    "aiConfidence": 0.85,
+    "computedStyles": {
+      "width": 393,
+      "height": 852,
+      "backgroundColor": "#131313",
+      "_designTokens": {
+        "backgroundColor": "colors.black[700]"
+      }
+    },
+    "children": [
+      {
+        "nodeId": "237:2733",
+        "nodeName": "image 149",
+        "nodeType": "RECTANGLE",
+        "figmaData": {
+          "id": "237:2733",
+          "name": "image 149",
+          "type": "RECTANGLE",
+          "visible": true,
+          "geometry": {
+            "x": 1267.0000195233956,
+            "y": -397.0000576553158,
+            "width": 1318.9999804766044,
+            "height": 2346.0000576553157
+          },
+          "constraints": {
+            "vertical": "CENTER",
+            "horizontal": "CENTER"
+          },
+          "fills": [
+            {
+              "opacity": 0.07999999821186066,
+              "blendMode": "NORMAL",
+              "type": "IMAGE",
+              "scaleMode": "FILL",
+              "imageRef": "3fc15bf2e66131c93d54c9ad31461a4a869b576d"
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "blendMode": "PASS_THROUGH"
+        },
+        "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_237_2733.png",
+        "aiAnalysis": {
+          "type": "Image",
+          "position": "absolute",
+          "parentId": "1:29065",
+          "overflowBehavior": "visible",
+          "zIndex": -2,
+          "explicitWidth": null,
+          "notes": "Large background pattern. Center in parent. Opacity 0.08. Dimensions are much larger than screen (1319x2346), use resizeMode='cover' or center alignment."
+        },
+        "aiConfidence": 0.85,
+        "computedStyles": {
+          "width": 1318.9999804766044,
+          "height": 2346.0000576553157
+        }
+      },
+      {
+        "nodeId": "1:29067",
+        "nodeName": "Background Shape",
+        "nodeType": "RECTANGLE",
+        "figmaData": {
+          "id": "1:29067",
+          "name": "Background Shape",
+          "type": "RECTANGLE",
+          "visible": true,
+          "geometry": {
+            "x": 1686,
+            "y": 350,
+            "width": 481,
+            "height": 405
+          },
+          "constraints": {
+            "vertical": "TOP",
+            "horizontal": "CENTER"
+          },
+          "fills": [
+            {
+              "opacity": 0.4000000059604645,
+              "blendMode": "NORMAL",
+              "type": "IMAGE",
+              "scaleMode": "FILL",
+              "imageRef": "80b82f0b567db5030928f0bab900ae5b2bb73be5"
+            },
+            {
+              "blendMode": "NORMAL",
+              "type": "GRADIENT_LINEAR",
+              "gradientHandlePositions": [
+                {
+                  "x": 0.5,
+                  "y": -3.0618303766555234e-17
+                },
+                {
+                  "x": 0.5,
+                  "y": 0.7938271448387278
+                },
+                {
+                  "x": 0.10308642758063602,
+                  "y": -2.0651622905964347e-14
+                }
+              ],
+              "gradientStops": [
+                {
+                  "color": {
+                    "r": 0,
+                    "g": 0,
+                    "b": 0,
+                    "a": 0
+                  },
+                  "position": 0.5
+                },
+                {
+                  "color": {
+                    "r": 0.07450980693101883,
+                    "g": 0.07450980693101883,
+                    "b": 0.07450980693101883,
+                    "a": 1
+                  },
+                  "position": 1,
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:b68dbac75b766af96ea05be0f99c98d5ce07c915/12:94"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "blendMode": "PASS_THROUGH"
+        },
+        "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_1_29067.png",
+        "aiAnalysis": {
+          "type": "Image",
+          "position": "absolute",
+          "parentId": "1:29065",
+          "overflowBehavior": "visible",
+          "zIndex": -1,
+          "explicitWidth": 481,
+          "notes": "Top gradient overlay. Position top-center. Opacity 0.4."
+        },
+        "aiConfidence": 0.85,
+        "computedStyles": {
+          "width": 481,
+          "height": 405
+        }
+      },
+      {
+        "nodeId": "1:29068",
+        "nodeName": "HW Cutout Safezone",
+        "nodeType": "RECTANGLE",
+        "figmaData": {
+          "id": "1:29068",
+          "name": "HW Cutout Safezone",
+          "type": "RECTANGLE",
+          "visible": true,
+          "geometry": {
+            "x": 1871,
+            "y": 362.93865966796875,
+            "width": 108,
+            "height": 31.803680419921875
+          },
+          "constraints": {
+            "vertical": "TOP",
+            "horizontal": "LEFT"
+          },
+          "fills": [
+            {
+              "blendMode": "NORMAL",
+              "type": "SOLID",
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 1
+              },
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:a75264641f4508937163a095939cf74e977e9bb7/12:342"
+                }
+              }
+            }
+          ],
+          "strokes": [],
+          "effects": [],
+          "cornerRadius": 60,
+          "blendMode": "PASS_THROUGH"
+        },
+        "computedStyles": {
+          "width": 108,
+          "height": 31.803680419921875,
+          "borderRadius": 60,
+          "backgroundColor": "#000000",
+          "_designTokens": {
+            "backgroundColor": "colors.neutral[black]"
+          }
+        }
+      },
+      {
+        "nodeId": "1:29069",
+        "nodeName": "Status Bar",
+        "nodeType": "INSTANCE",
+        "figmaData": {
+          "id": "1:29069",
+          "name": "Status Bar",
+          "type": "INSTANCE",
+          "visible": true,
+          "geometry": {
+            "x": 1730,
+            "y": 350,
+            "width": 393,
+            "height": 53
+          },
+          "constraints": {
+            "vertical": "TOP",
+            "horizontal": "LEFT_RIGHT"
+          },
+          "fills": [],
+          "strokes": [],
+          "effects": [],
+          "blendMode": "PASS_THROUGH",
+          "clipsContent": false
+        },
+        "computedStyles": {
+          "width": 393,
+          "height": 53
+        },
+        "children": [
+          {
+            "nodeId": "I1:29069;125:196",
+            "nodeName": "Battery",
+            "nodeType": "GROUP",
+            "figmaData": {
+              "id": "I1:29069;125:196",
+              "name": "Battery",
+              "type": "GROUP",
+              "visible": true,
+              "geometry": {
+                "x": 2063.199951171875,
+                "y": 372.6000061035156,
+                "width": 27.228038787841797,
+                "height": 13
+              },
+              "constraints": {
+                "vertical": "TOP",
+                "horizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "blendMode": "NORMAL",
+                  "visible": false,
+                  "type": "SOLID",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "blendMode": "PASS_THROUGH",
+              "clipsContent": false
+            },
+            "computedStyles": {
+              "width": 27.228038787841797,
+              "height": 13
+            },
+            "children": [
+              {
+                "nodeId": "I1:29069;125:197",
+                "nodeName": "Border",
+                "nodeType": "RECTANGLE",
+                "figmaData": {
+                  "id": "I1:29069;125:197",
+                  "name": "Border",
+                  "type": "RECTANGLE",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2063.199951171875,
+                    "y": 372.6000061035156,
+                    "width": 25,
+                    "height": 13
+                  },
+                  "constraints": {
+                    "vertical": "CENTER",
+                    "horizontal": "RIGHT"
+                  },
+                  "fills": [],
+                  "strokes": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 1,
+                        "g": 1,
+                        "b": 1,
+                        "a": 1
+                      },
+                      "boundVariables": {
+                        "color": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                        }
+                      }
+                    }
+                  ],
+                  "effects": [],
+                  "cornerRadius": 4.300000190734863,
+                  "opacity": 0.3499999940395355,
+                  "blendMode": "NORMAL"
+                },
+                "computedStyles": {
+                  "width": 25,
+                  "height": 13,
+                  "borderRadius": 4.300000190734863,
+                  "opacity": 0.3499999940395355
+                }
+              },
+              {
+                "nodeId": "I1:29069;125:198",
+                "nodeName": "Cap",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:198",
+                  "name": "Cap",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2089.099853515625,
+                    "y": 377.26666259765625,
+                    "width": 1.328037977218628,
+                    "height": 4
+                  },
+                  "constraints": {
+                    "vertical": "CENTER",
+                    "horizontal": "RIGHT"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 1,
+                        "g": 1,
+                        "b": 1,
+                        "a": 1
+                      },
+                      "boundVariables": {
+                        "color": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                        }
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "opacity": 0.4000000059604645,
+                  "blendMode": "NORMAL"
+                },
+                "computedStyles": {
+                  "width": 1.328037977218628,
+                  "height": 4,
+                  "opacity": 0.4000000059604645,
+                  "backgroundColor": "#FFFFFF",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[white]"
+                  }
+                }
+              },
+              {
+                "nodeId": "I1:29069;125:199",
+                "nodeName": "Capacity",
+                "nodeType": "RECTANGLE",
+                "figmaData": {
+                  "id": "I1:29069;125:199",
+                  "name": "Capacity",
+                  "type": "RECTANGLE",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2065.199951171875,
+                    "y": 374.6000061035156,
+                    "width": 21,
+                    "height": 9
+                  },
+                  "constraints": {
+                    "vertical": "CENTER",
+                    "horizontal": "RIGHT"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 1,
+                        "g": 1,
+                        "b": 1,
+                        "a": 1
+                      },
+                      "boundVariables": {
+                        "color": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                        }
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "cornerRadius": 2.5,
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 21,
+                  "height": 9,
+                  "borderRadius": 2.5,
+                  "backgroundColor": "#FFFFFF",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[white]"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "nodeId": "I1:29069;125:200",
+            "nodeName": "Wifi",
+            "nodeType": "BOOLEAN_OPERATION",
+            "figmaData": {
+              "id": "I1:29069;125:200",
+              "name": "Wifi",
+              "type": "BOOLEAN_OPERATION",
+              "visible": true,
+              "geometry": {
+                "x": 2038.699951171875,
+                "y": 373.199951171875,
+                "width": 17.141611099243164,
+                "height": 12.10004997253418
+              },
+              "constraints": {
+                "vertical": "TOP",
+                "horizontal": "RIGHT"
+              },
+              "fills": [
+                {
+                  "blendMode": "NORMAL",
+                  "type": "SOLID",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                    }
+                  }
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "blendMode": "PASS_THROUGH"
+            },
+            "computedStyles": {
+              "width": 17.141611099243164,
+              "height": 12.10004997253418,
+              "backgroundColor": "#FFFFFF",
+              "_designTokens": {
+                "backgroundColor": "colors.neutral[white]"
+              }
+            },
+            "children": [
+              {
+                "nodeId": "I1:29069;125:201",
+                "nodeName": "Wifi-path",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:201",
+                  "name": "Wifi-path",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2038.7000732421875,
+                    "y": 373.20001220703125,
+                    "width": 17.141666412353516,
+                    "height": 5.041666507720947
+                  },
+                  "constraints": {
+                    "vertical": "SCALE",
+                    "horizontal": "SCALE"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 1
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 17.141666412353516,
+                  "height": 5.041666507720947,
+                  "backgroundColor": "#000000",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[black]"
+                  }
+                }
+              },
+              {
+                "nodeId": "I1:29069;125:202",
+                "nodeName": "Wifi-path",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:202",
+                  "name": "Wifi-path",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2041.7249755859375,
+                    "y": 377.23333740234375,
+                    "width": 11.091666221618652,
+                    "height": 4.0333333015441895
+                  },
+                  "constraints": {
+                    "vertical": "SCALE",
+                    "horizontal": "SCALE"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 1
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 11.091666221618652,
+                  "height": 4.0333333015441895,
+                  "backgroundColor": "#000000",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[black]"
+                  }
+                }
+              },
+              {
+                "nodeId": "I1:29069;125:203",
+                "nodeName": "Wifi-path",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:203",
+                  "name": "Wifi-path",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2044.75,
+                    "y": 381.26666259765625,
+                    "width": 5.041666507720947,
+                    "height": 4.0333333015441895
+                  },
+                  "constraints": {
+                    "vertical": "SCALE",
+                    "horizontal": "SCALE"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 1
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 5.041666507720947,
+                  "height": 4.0333333015441895,
+                  "backgroundColor": "#000000",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[black]"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "nodeId": "I1:29069;125:204",
+            "nodeName": "Cellular Connection",
+            "nodeType": "BOOLEAN_OPERATION",
+            "figmaData": {
+              "id": "I1:29069;125:204",
+              "name": "Cellular Connection",
+              "type": "BOOLEAN_OPERATION",
+              "visible": true,
+              "geometry": {
+                "x": 2012,
+                "y": 373.1000061035156,
+                "width": 19.200000762939453,
+                "height": 12
+              },
+              "constraints": {
+                "vertical": "TOP",
+                "horizontal": "RIGHT"
+              },
+              "fills": [
+                {
+                  "blendMode": "NORMAL",
+                  "type": "SOLID",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                    }
+                  }
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "blendMode": "PASS_THROUGH"
+            },
+            "computedStyles": {
+              "width": 19.200000762939453,
+              "height": 12,
+              "backgroundColor": "#FFFFFF",
+              "_designTokens": {
+                "backgroundColor": "colors.neutral[white]"
+              }
+            },
+            "children": [
+              {
+                "nodeId": "I1:29069;125:205",
+                "nodeName": "Cellular-Connection-path",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:205",
+                  "name": "Cellular-Connection-path",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2012,
+                    "y": 380.5,
+                    "width": 3.200000047683716,
+                    "height": 4.599999904632568
+                  },
+                  "constraints": {
+                    "vertical": "SCALE",
+                    "horizontal": "SCALE"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 1
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 3.200000047683716,
+                  "height": 4.599999904632568,
+                  "backgroundColor": "#000000",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[black]"
+                  }
+                }
+              },
+              {
+                "nodeId": "I1:29069;125:206",
+                "nodeName": "Cellular-Connection-path",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:206",
+                  "name": "Cellular-Connection-path",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2017.300048828125,
+                    "y": 378.1000061035156,
+                    "width": 3.200000047683716,
+                    "height": 7
+                  },
+                  "constraints": {
+                    "vertical": "SCALE",
+                    "horizontal": "SCALE"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 1
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 3.200000047683716,
+                  "height": 7,
+                  "backgroundColor": "#000000",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[black]"
+                  }
+                }
+              },
+              {
+                "nodeId": "I1:29069;125:207",
+                "nodeName": "Cellular-Connection-path",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:207",
+                  "name": "Cellular-Connection-path",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2022.699951171875,
+                    "y": 375.5,
+                    "width": 3.200000047683716,
+                    "height": 9.600000381469727
+                  },
+                  "constraints": {
+                    "vertical": "SCALE",
+                    "horizontal": "SCALE"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 1
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 3.200000047683716,
+                  "height": 9.600000381469727,
+                  "backgroundColor": "#000000",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[black]"
+                  }
+                }
+              },
+              {
+                "nodeId": "I1:29069;125:208",
+                "nodeName": "Cellular-Connection-path",
+                "nodeType": "VECTOR",
+                "figmaData": {
+                  "id": "I1:29069;125:208",
+                  "name": "Cellular-Connection-path",
+                  "type": "VECTOR",
+                  "visible": true,
+                  "geometry": {
+                    "x": 2028,
+                    "y": 373.1000061035156,
+                    "width": 3.200000047683716,
+                    "height": 12
+                  },
+                  "constraints": {
+                    "vertical": "SCALE",
+                    "horizontal": "SCALE"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 1
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH"
+                },
+                "computedStyles": {
+                  "width": 3.200000047683716,
+                  "height": 12,
+                  "backgroundColor": "#000000",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[black]"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "nodeId": "I1:29069;125:209",
+            "nodeName": "Time",
+            "nodeType": "TEXT",
+            "figmaData": {
+              "id": "I1:29069;125:209",
+              "name": "Time",
+              "type": "TEXT",
+              "visible": true,
+              "geometry": {
+                "x": 1777.5,
+                "y": 369.5,
+                "width": 45,
+                "height": 20
+              },
+              "constraints": {
+                "vertical": "CENTER",
+                "horizontal": "LEFT"
+              },
+              "fills": [
+                {
+                  "blendMode": "NORMAL",
+                  "type": "SOLID",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                    }
+                  }
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "blendMode": "PASS_THROUGH",
+              "style": {
+                "fontFamily": "SF Pro",
+                "fontPostScriptName": "SFPro-Semibold",
+                "fontStyle": "Semibold",
+                "fontWeight": 590,
+                "textAutoResize": "WIDTH_AND_HEIGHT",
+                "fontSize": 17,
+                "textAlignHorizontal": "CENTER",
+                "textAlignVertical": "CENTER",
+                "letterSpacing": 0,
+                "lineHeightPx": 20.287109375,
+                "lineHeightPercent": 100,
+                "lineHeightUnit": "INTRINSIC_%"
+              },
+              "characters": "13:13",
+              "characterStyleOverrides": [],
+              "styleOverrideTable": {},
+              "textAlignHorizontal": "CENTER",
+              "textAlignVertical": "CENTER",
+              "textAutoResize": "WIDTH_AND_HEIGHT"
+            },
+            "computedStyles": {
+              "width": 45,
+              "height": 20,
+              "backgroundColor": "#FFFFFF",
+              "_designTokens": {
+                "backgroundColor": "colors.neutral[white]"
+              },
+              "_textStyles": {
+                "fontSize": 17,
+                "lineHeight": 20.287109375,
+                "fontWeight": 590,
+                "fontFamily": "SFPro-Semibold",
+                "letterSpacing": 0,
+                "color": "#FFFFFF",
+                "_colorToken": "colors.neutral[white]",
+                "textAlign": "center",
+                "textAlignVertical": "center",
+                "text": "13:13"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "nodeId": "1:29070",
+        "nodeName": "Home Indicator",
+        "nodeType": "INSTANCE",
+        "figmaData": {
+          "id": "1:29070",
+          "name": "Home Indicator",
+          "type": "INSTANCE",
+          "visible": true,
+          "geometry": {
+            "x": 1730,
+            "y": 1168,
+            "width": 393,
+            "height": 34
+          },
+          "constraints": {
+            "vertical": "BOTTOM",
+            "horizontal": "LEFT_RIGHT"
+          },
+          "fills": [],
+          "strokes": [],
+          "effects": [],
+          "blendMode": "PASS_THROUGH",
+          "clipsContent": false
+        },
+        "computedStyles": {
+          "width": 393,
+          "height": 34
+        },
+        "children": [
+          {
+            "nodeId": "I1:29070;2:181",
+            "nodeName": "Home Indicator",
+            "nodeType": "RECTANGLE",
+            "figmaData": {
+              "id": "I1:29070;2:181",
+              "name": "Home Indicator",
+              "type": "RECTANGLE",
+              "visible": true,
+              "geometry": {
+                "x": 1851,
+                "y": 1189,
+                "width": 152,
+                "height": 5
+              },
+              "constraints": {
+                "vertical": "BOTTOM",
+                "horizontal": "CENTER"
+              },
+              "fills": [
+                {
+                  "blendMode": "NORMAL",
+                  "type": "SOLID",
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "boundVariables": {
+                    "color": {
+                      "type": "VARIABLE_ALIAS",
+                      "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                    }
+                  }
+                }
+              ],
+              "strokes": [],
+              "effects": [],
+              "cornerRadius": 100,
+              "blendMode": "PASS_THROUGH"
+            },
+            "computedStyles": {
+              "width": 152,
+              "height": 5,
+              "borderRadius": 100,
+              "backgroundColor": "#FFFFFF",
+              "_designTokens": {
+                "backgroundColor": "colors.neutral[white]"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "nodeId": "160:2698",
+        "nodeName": "Container",
+        "nodeType": "FRAME",
+        "figmaData": {
+          "id": "160:2698",
+          "name": "Container",
+          "type": "FRAME",
+          "visible": true,
+          "geometry": {
+            "x": 1730,
+            "y": 403,
+            "width": 393,
+            "height": 765
+          },
+          "constraints": {
+            "vertical": "CENTER",
+            "horizontal": "LEFT"
+          },
+          "fills": [],
+          "strokes": [],
+          "effects": [],
+          "layoutMode": "VERTICAL",
+          "paddingTop": 80,
+          "paddingBottom": 64,
+          "itemSpacing": 48,
+          "blendMode": "PASS_THROUGH",
+          "layoutSizingHorizontal": "FIXED",
+          "layoutSizingVertical": "FIXED",
+          "clipsContent": false
+        },
+        "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_160_2698.png",
+        "aiAnalysis": {
+          "type": "Container",
+          "position": "relative",
+          "parentId": "1:29065",
+          "overflowBehavior": "visible",
+          "zIndex": 1,
+          "explicitWidth": null,
+          "notes": "Main content wrapper. Padding Top 80, Bottom 64. Contains inner stack."
+        },
+        "aiConfidence": 0.85,
+        "computedStyles": {
+          "width": 393,
+          "height": 765,
+          "flexDirection": "column",
+          "paddingTop": 80,
+          "paddingBottom": 64,
+          "gap": 48,
+          "_designTokens": {
+            "paddingBottom": "spacing.huge",
+            "gap": "spacing.xxxl"
+          }
+        },
+        "children": [
+          {
+            "nodeId": "160:2699",
+            "nodeName": "Container",
+            "nodeType": "FRAME",
+            "figmaData": {
+              "id": "160:2699",
+              "name": "Container",
+              "type": "FRAME",
+              "visible": true,
+              "geometry": {
+                "x": 1730,
+                "y": 483,
+                "width": 393,
+                "height": 621
+              },
+              "constraints": {
+                "vertical": "TOP",
+                "horizontal": "LEFT"
+              },
+              "fills": [],
+              "strokes": [],
+              "effects": [],
+              "layoutMode": "VERTICAL",
+              "paddingRight": 48,
+              "paddingLeft": 48,
+              "itemSpacing": 40,
+              "blendMode": "PASS_THROUGH",
+              "layoutSizingHorizontal": "FILL",
+              "layoutSizingVertical": "FILL",
+              "clipsContent": false
+            },
+            "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_160_2699.png",
+            "aiAnalysis": {
+              "type": "Container",
+              "position": "relative",
+              "parentId": "160:2698",
+              "overflowBehavior": "visible",
+              "zIndex": null,
+              "explicitWidth": null,
+              "notes": "Inner content stack. Padding Horizontal 48. Gap 40."
+            },
+            "aiConfidence": 0.85,
+            "computedStyles": {
+              "width": 393,
+              "height": 621,
+              "flexDirection": "column",
+              "paddingRight": 48,
+              "paddingLeft": 48,
+              "gap": 40,
+              "_designTokens": {
+                "paddingRight": "spacing.xxxl",
+                "paddingLeft": "spacing.xxxl",
+                "gap": "spacing.xxl"
+              }
+            },
+            "children": [
+              {
+                "nodeId": "160:2700",
+                "nodeName": "Frame 1686557270",
+                "nodeType": "FRAME",
+                "figmaData": {
+                  "id": "160:2700",
+                  "name": "Frame 1686557270",
+                  "type": "FRAME",
+                  "visible": false,
+                  "geometry": {
+                    "x": 1778,
+                    "y": 483,
+                    "width": 393,
+                    "height": 2
+                  },
+                  "constraints": {
+                    "vertical": "TOP",
+                    "horizontal": "LEFT"
+                  },
+                  "fills": [],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH",
+                  "layoutSizingHorizontal": "FIXED",
+                  "layoutSizingVertical": "FIXED",
+                  "clipsContent": true
+                },
+                "computedStyles": {
+                  "width": 393,
+                  "height": 2
+                },
+                "children": [
+                  {
+                    "nodeId": "160:2701",
+                    "nodeName": "Rectangle 4",
+                    "nodeType": "RECTANGLE",
+                    "figmaData": {
+                      "id": "160:2701",
+                      "name": "Rectangle 4",
+                      "type": "RECTANGLE",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1778,
+                        "y": 483,
+                        "width": 393,
+                        "height": 12
+                      },
+                      "constraints": {
+                        "vertical": "TOP",
+                        "horizontal": "LEFT"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 0.3019607961177826,
+                            "g": 0.3019607961177826,
+                            "b": 0.3019607961177826,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:d0771a90f71f9f9162cc0656f42874451acc6ae7/12:91"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH"
+                    },
+                    "computedStyles": {
+                      "width": 393,
+                      "height": 12,
+                      "backgroundColor": "#4D4D4D",
+                      "_designTokens": {
+                        "backgroundColor": "colors.black[400]"
+                      }
+                    }
+                  },
+                  {
+                    "nodeId": "160:2702",
+                    "nodeName": "Rectangle 5",
+                    "nodeType": "RECTANGLE",
+                    "figmaData": {
+                      "id": "160:2702",
+                      "name": "Rectangle 5",
+                      "type": "RECTANGLE",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1778,
+                        "y": 483,
+                        "width": 262,
+                        "height": 12
+                      },
+                      "constraints": {
+                        "vertical": "TOP",
+                        "horizontal": "LEFT"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 1,
+                            "g": 1,
+                            "b": 1,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:2b0826615c3eb1aff0c91720cc82d80495065b28/21:54"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH"
+                    },
+                    "computedStyles": {
+                      "width": 262,
+                      "height": 12,
+                      "backgroundColor": "#FFFFFF",
+                      "_designTokens": {
+                        "backgroundColor": "colors.neutral[white]"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "nodeId": "160:2703",
+                "nodeName": "Logo Container",
+                "nodeType": "FRAME",
+                "figmaData": {
+                  "id": "160:2703",
+                  "name": "Logo Container",
+                  "type": "FRAME",
+                  "visible": true,
+                  "geometry": {
+                    "x": 1778,
+                    "y": 483,
+                    "width": 26.7000789642334,
+                    "height": 32
+                  },
+                  "constraints": {
+                    "vertical": "TOP",
+                    "horizontal": "LEFT"
+                  },
+                  "fills": [],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH",
+                  "layoutSizingHorizontal": "FIXED",
+                  "layoutSizingVertical": "FIXED",
+                  "clipsContent": false
+                },
+                "computedStyles": {
+                  "width": 26.7000789642334,
+                  "height": 32
+                },
+                "children": [
+                  {
+                    "nodeId": "160:2704",
+                    "nodeName": "Vector 1",
+                    "nodeType": "VECTOR",
+                    "figmaData": {
+                      "id": "160:2704",
+                      "name": "Vector 1",
+                      "type": "VECTOR",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1777.9996337890625,
+                        "y": 483,
+                        "width": 26.7000789642334,
+                        "height": 32
+                      },
+                      "constraints": {
+                        "vertical": "CENTER",
+                        "horizontal": "CENTER"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 1,
+                            "g": 1,
+                            "b": 1,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:7b6c2ec8706e73ec1a8d406ce15c18dc86b52293/12:335"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH"
+                    },
+                    "computedStyles": {
+                      "width": 26.7000789642334,
+                      "height": 32,
+                      "backgroundColor": "#FFFFFF",
+                      "_designTokens": {
+                        "backgroundColor": "colors.neutral[white]"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "nodeId": "160:2705",
+                "nodeName": "Text Container",
+                "nodeType": "FRAME",
+                "figmaData": {
+                  "id": "160:2705",
+                  "name": "Text Container",
+                  "type": "FRAME",
+                  "visible": true,
+                  "geometry": {
+                    "x": 1778,
+                    "y": 555,
+                    "width": 297,
+                    "height": 184
+                  },
+                  "constraints": {
+                    "vertical": "TOP",
+                    "horizontal": "LEFT"
+                  },
+                  "fills": [],
+                  "strokes": [],
+                  "effects": [],
+                  "layoutMode": "VERTICAL",
+                  "itemSpacing": 16,
+                  "blendMode": "PASS_THROUGH",
+                  "layoutSizingHorizontal": "FILL",
+                  "layoutSizingVertical": "HUG",
+                  "clipsContent": false
+                },
+                "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_160_2705.png",
+                "computedStyles": {
+                  "width": 297,
+                  "height": 184,
+                  "flexDirection": "column",
+                  "gap": 16,
+                  "_designTokens": {
+                    "gap": "spacing.md"
+                  }
+                },
+                "children": [
+                  {
+                    "nodeId": "160:2706",
+                    "nodeName": "Your landlord benefits too",
+                    "nodeType": "TEXT",
+                    "figmaData": {
+                      "id": "160:2706",
+                      "name": "Your landlord benefits too",
+                      "type": "TEXT",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1778,
+                        "y": 555,
+                        "width": 297,
+                        "height": 128
+                      },
+                      "constraints": {
+                        "vertical": "TOP",
+                        "horizontal": "LEFT"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 1,
+                            "g": 1,
+                            "b": 1,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH",
+                      "style": {
+                        "fontFamily": "Plus Jakarta Sans",
+                        "fontPostScriptName": "PlusJakartaSans-Regular",
+                        "fontStyle": "Regular",
+                        "fontWeight": 400,
+                        "textAutoResize": "HEIGHT",
+                        "fontSize": 48,
+                        "textAlignHorizontal": "LEFT",
+                        "textAlignVertical": "CENTER",
+                        "letterSpacing": -2,
+                        "lineHeightPx": 64,
+                        "lineHeightPercent": 105.82010650634766,
+                        "lineHeightPercentFontSize": 133.3333282470703,
+                        "lineHeightUnit": "PIXELS"
+                      },
+                      "characters": "Your landlord benefits too",
+                      "characterStyleOverrides": [
+                        60,
+                        60,
+                        60,
+                        60,
+                        0,
+                        60,
+                        60,
+                        60,
+                        60,
+                        60,
+                        60,
+                        60,
+                        60,
+                        0,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45,
+                        45
+                      ],
+                      "styleOverrideTable": {
+                        "45": {
+                          "fontSize": 48,
+                          "letterSpacing": -2,
+                          "fills": [
+                            {
+                              "blendMode": "NORMAL",
+                              "type": "SOLID",
+                              "color": {
+                                "r": 1,
+                                "g": 0.6039215922355652,
+                                "b": 0.4274509847164154,
+                                "a": 1
+                              },
+                              "boundVariables": {
+                                "color": {
+                                  "type": "VARIABLE_ALIAS",
+                                  "id": "VariableID:e24126eab8468adae09616b40efaa5e79c21d182/12:53"
+                                }
+                              }
+                            }
+                          ],
+                          "lineHeightPx": 64,
+                          "lineHeightPercent": 113.77777862548828,
+                          "lineHeightPercentFontSize": 133.3333282470703,
+                          "lineHeightUnit": "PIXELS"
+                        },
+                        "60": {
+                          "fontSize": 48,
+                          "letterSpacing": -2,
+                          "fills": [
+                            {
+                              "blendMode": "NORMAL",
+                              "type": "SOLID",
+                              "color": {
+                                "r": 0.6627451181411743,
+                                "g": 0.6627451181411743,
+                                "b": 0.6627451181411743,
+                                "a": 1
+                              },
+                              "boundVariables": {
+                                "color": {
+                                  "type": "VARIABLE_ALIAS",
+                                  "id": "VariableID:a30255c279da5be0e3281358b6555fa3fed99370/12:328"
+                                }
+                              }
+                            }
+                          ],
+                          "lineHeightPx": 64,
+                          "lineHeightPercent": 113.77777862548828,
+                          "lineHeightPercentFontSize": 133.3333282470703,
+                          "lineHeightUnit": "PIXELS"
+                        }
+                      },
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "CENTER",
+                      "textAutoResize": "HEIGHT",
+                      "layoutSizingHorizontal": "FILL",
+                      "layoutSizingVertical": "HUG"
+                    },
+                    "aiAnalysis": {
+                      "type": "Text",
+                      "position": "relative",
+                      "parentId": "160:2705",
+                      "overflowBehavior": "visible",
+                      "zIndex": null,
+                      "explicitWidth": null,
+                      "notes": "Nested text styling required. 'Your landlord' is white/grey, 'benefits too' is orange."
+                    },
+                    "aiConfidence": 0.85,
+                    "computedStyles": {
+                      "width": 297,
+                      "height": 128,
+                      "backgroundColor": "#FFFFFF",
+                      "_designTokens": {
+                        "backgroundColor": "colors.neutral[white]"
+                      },
+                      "_textStyles": {
+                        "fontSize": 48,
+                        "lineHeight": 64,
+                        "fontWeight": 400,
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "letterSpacing": -2,
+                        "_designToken": "typography.h1",
+                        "_useToken": true,
+                        "color": "#FFFFFF",
+                        "_colorToken": "colors.neutral[white]",
+                        "textAlign": "left",
+                        "textAlignVertical": "center",
+                        "text": "Your landlord benefits too"
+                      }
+                    }
+                  },
+                  {
+                    "nodeId": "160:2707",
+                    "nodeName": "3 months of rent payments unlock a free vacancy cover for your landlord",
+                    "nodeType": "TEXT",
+                    "figmaData": {
+                      "id": "160:2707",
+                      "name": "3 months of rent payments unlock a free vacancy cover for your landlord",
+                      "type": "TEXT",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1778,
+                        "y": 699,
+                        "width": 297,
+                        "height": 40
+                      },
+                      "constraints": {
+                        "vertical": "TOP",
+                        "horizontal": "LEFT"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 0.6627451181411743,
+                            "g": 0.6627451181411743,
+                            "b": 0.6627451181411743,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:a30255c279da5be0e3281358b6555fa3fed99370/12:328"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH",
+                      "style": {
+                        "fontFamily": "Plus Jakarta Sans",
+                        "fontPostScriptName": "PlusJakartaSans-Regular",
+                        "fontStyle": "Regular",
+                        "fontWeight": 400,
+                        "textAutoResize": "HEIGHT",
+                        "fontSize": 14,
+                        "textAlignHorizontal": "LEFT",
+                        "textAlignVertical": "CENTER",
+                        "letterSpacing": 0,
+                        "lineHeightPx": 20,
+                        "lineHeightPercent": 113.37869262695312,
+                        "lineHeightPercentFontSize": 142.85714721679688,
+                        "lineHeightUnit": "PIXELS"
+                      },
+                      "characters": "3 months of rent payments unlock a free vacancy cover for your landlord",
+                      "characterStyleOverrides": [],
+                      "styleOverrideTable": {},
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "CENTER",
+                      "textAutoResize": "HEIGHT",
+                      "layoutSizingHorizontal": "FILL",
+                      "layoutSizingVertical": "HUG"
+                    },
+                    "computedStyles": {
+                      "width": 297,
+                      "height": 40,
+                      "backgroundColor": "#A9A9A9",
+                      "_designTokens": {
+                        "backgroundColor": "colors.neutral[500]"
+                      },
+                      "_textStyles": {
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                        "fontWeight": 400,
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "letterSpacing": 0,
+                        "_designToken": "typography.bodyMd2",
+                        "_useToken": true,
+                        "color": "#A9A9A9",
+                        "_colorToken": "colors.neutral[500]",
+                        "textAlign": "left",
+                        "textAlignVertical": "center",
+                        "text": "3 months of rent payments unlock a free vacancy cover for your landlord"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "nodeId": "169:3206",
+                "nodeName": "Login Text",
+                "nodeType": "TEXT",
+                "figmaData": {
+                  "id": "169:3206",
+                  "name": "Login Text",
+                  "type": "TEXT",
+                  "visible": true,
+                  "geometry": {
+                    "x": 1778,
+                    "y": 779,
+                    "width": 297,
+                    "height": 20
+                  },
+                  "constraints": {
+                    "vertical": "TOP",
+                    "horizontal": "LEFT"
+                  },
+                  "fills": [
+                    {
+                      "blendMode": "NORMAL",
+                      "type": "SOLID",
+                      "color": {
+                        "r": 1,
+                        "g": 1,
+                        "b": 1,
+                        "a": 1
+                      },
+                      "boundVariables": {
+                        "color": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:7b6c2ec8706e73ec1a8d406ce15c18dc86b52293/12:335"
+                        }
+                      }
+                    }
+                  ],
+                  "strokes": [],
+                  "effects": [],
+                  "blendMode": "PASS_THROUGH",
+                  "style": {
+                    "fontFamily": "Plus Jakarta Sans",
+                    "fontPostScriptName": "PlusJakartaSans-Regular",
+                    "fontStyle": "Regular",
+                    "fontWeight": 400,
+                    "textAutoResize": "HEIGHT",
+                    "fontSize": 14,
+                    "textAlignHorizontal": "LEFT",
+                    "textAlignVertical": "CENTER",
+                    "letterSpacing": 0,
+                    "lineHeightPx": 20,
+                    "lineHeightPercent": 113.37869262695312,
+                    "lineHeightPercentFontSize": 142.85714721679688,
+                    "lineHeightUnit": "PIXELS"
+                  },
+                  "characters": "Skip →",
+                  "characterStyleOverrides": [
+                    18,
+                    18,
+                    18,
+                    18
+                  ],
+                  "styleOverrideTable": {
+                    "18": {
+                      "fontFamily": "Plus Jakarta Sans",
+                      "fontPostScriptName": "PlusJakartaSans-Regular",
+                      "fontStyle": "Regular",
+                      "fontWeight": 400,
+                      "textAutoResize": "WIDTH_AND_HEIGHT",
+                      "textDecoration": "UNDERLINE",
+                      "isOverrideOverTextStyle": true,
+                      "fontSize": 14,
+                      "letterSpacing": 0,
+                      "lineHeightPx": 20,
+                      "lineHeightPercent": 113.37869262695312,
+                      "lineHeightPercentFontSize": 142.85714721679688,
+                      "lineHeightUnit": "PIXELS",
+                      "inheritTextStyleId": "1:90",
+                      "boundVariables": {
+                        "lineHeight": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:636fd7bbcab71d41700413942fdc475e269aa963/22:501"
+                        },
+                        "letterSpacing": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:3abc8efbf5aca6f68acf49e90d780e828558ce67/22:528"
+                        },
+                        "fontSize": {
+                          "type": "VARIABLE_ALIAS",
+                          "id": "VariableID:af3daded242dc56297b130f4e9af657ef2ed903a/17:989"
+                        }
+                      }
+                    }
+                  },
+                  "textAlignHorizontal": "LEFT",
+                  "textAlignVertical": "CENTER",
+                  "textAutoResize": "HEIGHT",
+                  "layoutSizingHorizontal": "FILL",
+                  "layoutSizingVertical": "HUG"
+                },
+                "computedStyles": {
+                  "width": 297,
+                  "height": 20,
+                  "backgroundColor": "#FFFFFF",
+                  "_designTokens": {
+                    "backgroundColor": "colors.neutral[white]"
+                  },
+                  "_textStyles": {
+                    "fontSize": 14,
+                    "lineHeight": 20,
+                    "fontWeight": 400,
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "letterSpacing": 0,
+                    "_designToken": "typography.bodyMd2",
+                    "_useToken": true,
+                    "color": "#FFFFFF",
+                    "_colorToken": "colors.neutral[white]",
+                    "textAlign": "left",
+                    "textAlignVertical": "center",
+                    "text": "Skip →"
+                  }
+                }
+              },
+              {
+                "nodeId": "160:2708",
+                "nodeName": "Frame 2095586316",
+                "nodeType": "FRAME",
+                "figmaData": {
+                  "id": "160:2708",
+                  "name": "Frame 2095586316",
+                  "type": "FRAME",
+                  "visible": true,
+                  "geometry": {
+                    "x": 1778,
+                    "y": 839,
+                    "width": 32,
+                    "height": 8
+                  },
+                  "constraints": {
+                    "vertical": "TOP",
+                    "horizontal": "LEFT"
+                  },
+                  "fills": [],
+                  "strokes": [],
+                  "effects": [],
+                  "layoutMode": "HORIZONTAL",
+                  "counterAxisAlignItems": "CENTER",
+                  "itemSpacing": 4,
+                  "blendMode": "PASS_THROUGH",
+                  "layoutSizingHorizontal": "HUG",
+                  "layoutSizingVertical": "HUG",
+                  "clipsContent": false
+                },
+                "aiAnalysis": {
+                  "type": "Container",
+                  "position": "relative",
+                  "parentId": "160:2699",
+                  "overflowBehavior": "visible",
+                  "zIndex": null,
+                  "explicitWidth": null,
+                  "notes": "Pagination dots container. Flex row, gap 4."
+                },
+                "aiConfidence": 0.85,
+                "computedStyles": {
+                  "width": 32,
+                  "height": 8,
+                  "flexDirection": "row",
+                  "alignItems": "center",
+                  "_childrenNeedExplicitWidth": true,
+                  "gap": 4,
+                  "_designTokens": {
+                    "gap": "spacing.xxs"
+                  }
+                },
+                "children": [
+                  {
+                    "nodeId": "160:2709",
+                    "nodeName": "Ellipse 21885",
+                    "nodeType": "ELLIPSE",
+                    "figmaData": {
+                      "id": "160:2709",
+                      "name": "Ellipse 21885",
+                      "type": "ELLIPSE",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1778,
+                        "y": 839,
+                        "width": 8,
+                        "height": 8
+                      },
+                      "constraints": {
+                        "vertical": "TOP",
+                        "horizontal": "LEFT"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 0.125490203499794,
+                            "g": 0.125490203499794,
+                            "b": 0.125490203499794,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:e3cb66c05a62a8680357c6bba79620d8a57e6f10/12:92"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH",
+                      "layoutSizingHorizontal": "FIXED",
+                      "layoutSizingVertical": "FIXED"
+                    },
+                    "computedStyles": {
+                      "width": 8,
+                      "height": 8,
+                      "backgroundColor": "#202020",
+                      "_designTokens": {
+                        "backgroundColor": "colors.black[500]"
+                      }
+                    }
+                  },
+                  {
+                    "nodeId": "160:2710",
+                    "nodeName": "Ellipse 21886",
+                    "nodeType": "ELLIPSE",
+                    "figmaData": {
+                      "id": "160:2710",
+                      "name": "Ellipse 21886",
+                      "type": "ELLIPSE",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1790,
+                        "y": 839,
+                        "width": 8,
+                        "height": 8
+                      },
+                      "constraints": {
+                        "vertical": "TOP",
+                        "horizontal": "LEFT"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 0.125490203499794,
+                            "g": 0.125490203499794,
+                            "b": 0.125490203499794,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:e3cb66c05a62a8680357c6bba79620d8a57e6f10/12:92"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH",
+                      "layoutSizingHorizontal": "FIXED",
+                      "layoutSizingVertical": "FIXED"
+                    },
+                    "computedStyles": {
+                      "width": 8,
+                      "height": 8,
+                      "backgroundColor": "#202020",
+                      "_designTokens": {
+                        "backgroundColor": "colors.black[500]"
+                      }
+                    }
+                  },
+                  {
+                    "nodeId": "160:2711",
+                    "nodeName": "Ellipse 21887",
+                    "nodeType": "ELLIPSE",
+                    "figmaData": {
+                      "id": "160:2711",
+                      "name": "Ellipse 21887",
+                      "type": "ELLIPSE",
+                      "visible": true,
+                      "geometry": {
+                        "x": 1802,
+                        "y": 839,
+                        "width": 8,
+                        "height": 8
+                      },
+                      "constraints": {
+                        "vertical": "TOP",
+                        "horizontal": "LEFT"
+                      },
+                      "fills": [
+                        {
+                          "blendMode": "NORMAL",
+                          "type": "SOLID",
+                          "color": {
+                            "r": 1,
+                            "g": 0.6039215922355652,
+                            "b": 0.4274509847164154,
+                            "a": 1
+                          },
+                          "boundVariables": {
+                            "color": {
+                              "type": "VARIABLE_ALIAS",
+                              "id": "VariableID:e24126eab8468adae09616b40efaa5e79c21d182/12:53"
+                            }
+                          }
+                        }
+                      ],
+                      "strokes": [],
+                      "effects": [],
+                      "blendMode": "PASS_THROUGH",
+                      "layoutSizingHorizontal": "FIXED",
+                      "layoutSizingVertical": "FIXED"
+                    },
+                    "computedStyles": {
+                      "width": 8,
+                      "height": 8,
+                      "backgroundColor": "#FF9A6D",
+                      "_designTokens": {
+                        "backgroundColor": "colors.brand[500]"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "nodeId": "1:29065",
+      "nodeName": "Splash / get-started --carousel 6",
+      "nodeType": "FRAME",
+      "figmaData": {
+        "id": "1:29065",
+        "name": "Splash / get-started --carousel 6",
+        "type": "FRAME",
+        "visible": true,
+        "geometry": {
+          "x": 1730,
+          "y": 350,
+          "width": 393,
+          "height": 852
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0.07450980693101883,
+              "g": 0.07450980693101883,
+              "b": 0.07450980693101883,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:b68dbac75b766af96ea05be0f99c98d5ce07c915/12:94"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "clipsContent": true
+      },
+      "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_1_29065.png",
+      "aiAnalysis": {
+        "type": "Container",
+        "position": "relative",
+        "parentId": null,
+        "overflowBehavior": "hidden",
+        "zIndex": 0,
+        "explicitWidth": null,
+        "notes": "Root container. Needs dark background color (colors.black[700])."
+      },
+      "aiConfidence": 0.85,
+      "computedStyles": {
+        "width": 393,
+        "height": 852,
+        "backgroundColor": "#131313",
+        "_designTokens": {
+          "backgroundColor": "colors.black[700]"
+        }
+      }
+    },
+    {
+      "nodeId": "237:2733",
+      "nodeName": "image 149",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "237:2733",
+        "name": "image 149",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 1267.0000195233956,
+          "y": -397.0000576553158,
+          "width": 1318.9999804766044,
+          "height": 2346.0000576553157
+        },
+        "constraints": {
+          "vertical": "CENTER",
+          "horizontal": "CENTER"
+        },
+        "fills": [
+          {
+            "opacity": 0.07999999821186066,
+            "blendMode": "NORMAL",
+            "type": "IMAGE",
+            "scaleMode": "FILL",
+            "imageRef": "3fc15bf2e66131c93d54c9ad31461a4a869b576d"
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_237_2733.png",
+      "aiAnalysis": {
+        "type": "Image",
+        "position": "absolute",
+        "parentId": "1:29065",
+        "overflowBehavior": "visible",
+        "zIndex": -2,
+        "explicitWidth": null,
+        "notes": "Large background pattern. Center in parent. Opacity 0.08. Dimensions are much larger than screen (1319x2346), use resizeMode='cover' or center alignment."
+      },
+      "aiConfidence": 0.85,
+      "computedStyles": {
+        "width": 1318.9999804766044,
+        "height": 2346.0000576553157
+      }
+    },
+    {
+      "nodeId": "1:29067",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "1:29067",
+        "name": "Background Shape",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 1686,
+          "y": 350,
+          "width": 481,
+          "height": 405
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "CENTER"
+        },
+        "fills": [
+          {
+            "opacity": 0.4000000059604645,
+            "blendMode": "NORMAL",
+            "type": "IMAGE",
+            "scaleMode": "FILL",
+            "imageRef": "80b82f0b567db5030928f0bab900ae5b2bb73be5"
+          },
+          {
+            "blendMode": "NORMAL",
+            "type": "GRADIENT_LINEAR",
+            "gradientHandlePositions": [
+              {
+                "x": 0.5,
+                "y": -3.0618303766555234e-17
+              },
+              {
+                "x": 0.5,
+                "y": 0.7938271448387278
+              },
+              {
+                "x": 0.10308642758063602,
+                "y": -2.0651622905964347e-14
+              }
+            ],
+            "gradientStops": [
+              {
+                "color": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 0
+                },
+                "position": 0.5
+              },
+              {
+                "color": {
+                  "r": 0.07450980693101883,
+                  "g": 0.07450980693101883,
+                  "b": 0.07450980693101883,
+                  "a": 1
+                },
+                "position": 1,
+                "boundVariables": {
+                  "color": {
+                    "type": "VARIABLE_ALIAS",
+                    "id": "VariableID:b68dbac75b766af96ea05be0f99c98d5ce07c915/12:94"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_1_29067.png",
+      "aiAnalysis": {
+        "type": "Image",
+        "position": "absolute",
+        "parentId": "1:29065",
+        "overflowBehavior": "visible",
+        "zIndex": -1,
+        "explicitWidth": 481,
+        "notes": "Top gradient overlay. Position top-center. Opacity 0.4."
+      },
+      "aiConfidence": 0.85,
+      "computedStyles": {
+        "width": 481,
+        "height": 405
+      }
+    },
+    {
+      "nodeId": "1:29068",
+      "nodeName": "HW Cutout Safezone",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "1:29068",
+        "name": "HW Cutout Safezone",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 1871,
+          "y": 362.93865966796875,
+          "width": 108,
+          "height": 31.803680419921875
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:a75264641f4508937163a095939cf74e977e9bb7/12:342"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "cornerRadius": 60,
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 108,
+        "height": 31.803680419921875,
+        "borderRadius": 60,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "1:29069",
+      "nodeName": "Status Bar",
+      "nodeType": "INSTANCE",
+      "figmaData": {
+        "id": "1:29069",
+        "name": "Status Bar",
+        "type": "INSTANCE",
+        "visible": true,
+        "geometry": {
+          "x": 1730,
+          "y": 350,
+          "width": 393,
+          "height": 53
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT_RIGHT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "clipsContent": false
+      },
+      "computedStyles": {
+        "width": 393,
+        "height": 53
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:196",
+      "nodeName": "Battery",
+      "nodeType": "GROUP",
+      "figmaData": {
+        "id": "I1:29069;125:196",
+        "name": "Battery",
+        "type": "GROUP",
+        "visible": true,
+        "geometry": {
+          "x": 2063.199951171875,
+          "y": 372.6000061035156,
+          "width": 27.228038787841797,
+          "height": 13
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "visible": false,
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "clipsContent": false
+      },
+      "computedStyles": {
+        "width": 27.228038787841797,
+        "height": 13
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:197",
+      "nodeName": "Border",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "I1:29069;125:197",
+        "name": "Border",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 2063.199951171875,
+          "y": 372.6000061035156,
+          "width": 25,
+          "height": 13
+        },
+        "constraints": {
+          "vertical": "CENTER",
+          "horizontal": "RIGHT"
+        },
+        "fills": [],
+        "strokes": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "effects": [],
+        "cornerRadius": 4.300000190734863,
+        "opacity": 0.3499999940395355,
+        "blendMode": "NORMAL"
+      },
+      "computedStyles": {
+        "width": 25,
+        "height": 13,
+        "borderRadius": 4.300000190734863,
+        "opacity": 0.3499999940395355
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:198",
+      "nodeName": "Cap",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:198",
+        "name": "Cap",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2089.099853515625,
+          "y": 377.26666259765625,
+          "width": 1.328037977218628,
+          "height": 4
+        },
+        "constraints": {
+          "vertical": "CENTER",
+          "horizontal": "RIGHT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "opacity": 0.4000000059604645,
+        "blendMode": "NORMAL"
+      },
+      "computedStyles": {
+        "width": 1.328037977218628,
+        "height": 4,
+        "opacity": 0.4000000059604645,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:199",
+      "nodeName": "Capacity",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "I1:29069;125:199",
+        "name": "Capacity",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 2065.199951171875,
+          "y": 374.6000061035156,
+          "width": 21,
+          "height": 9
+        },
+        "constraints": {
+          "vertical": "CENTER",
+          "horizontal": "RIGHT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "cornerRadius": 2.5,
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 21,
+        "height": 9,
+        "borderRadius": 2.5,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:200",
+      "nodeName": "Wifi",
+      "nodeType": "BOOLEAN_OPERATION",
+      "figmaData": {
+        "id": "I1:29069;125:200",
+        "name": "Wifi",
+        "type": "BOOLEAN_OPERATION",
+        "visible": true,
+        "geometry": {
+          "x": 2038.699951171875,
+          "y": 373.199951171875,
+          "width": 17.141611099243164,
+          "height": 12.10004997253418
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "RIGHT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 17.141611099243164,
+        "height": 12.10004997253418,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:201",
+      "nodeName": "Wifi-path",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:201",
+        "name": "Wifi-path",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2038.7000732421875,
+          "y": 373.20001220703125,
+          "width": 17.141666412353516,
+          "height": 5.041666507720947
+        },
+        "constraints": {
+          "vertical": "SCALE",
+          "horizontal": "SCALE"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 17.141666412353516,
+        "height": 5.041666507720947,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:202",
+      "nodeName": "Wifi-path",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:202",
+        "name": "Wifi-path",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2041.7249755859375,
+          "y": 377.23333740234375,
+          "width": 11.091666221618652,
+          "height": 4.0333333015441895
+        },
+        "constraints": {
+          "vertical": "SCALE",
+          "horizontal": "SCALE"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 11.091666221618652,
+        "height": 4.0333333015441895,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:203",
+      "nodeName": "Wifi-path",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:203",
+        "name": "Wifi-path",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2044.75,
+          "y": 381.26666259765625,
+          "width": 5.041666507720947,
+          "height": 4.0333333015441895
+        },
+        "constraints": {
+          "vertical": "SCALE",
+          "horizontal": "SCALE"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 5.041666507720947,
+        "height": 4.0333333015441895,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:204",
+      "nodeName": "Cellular Connection",
+      "nodeType": "BOOLEAN_OPERATION",
+      "figmaData": {
+        "id": "I1:29069;125:204",
+        "name": "Cellular Connection",
+        "type": "BOOLEAN_OPERATION",
+        "visible": true,
+        "geometry": {
+          "x": 2012,
+          "y": 373.1000061035156,
+          "width": 19.200000762939453,
+          "height": 12
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "RIGHT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 19.200000762939453,
+        "height": 12,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:205",
+      "nodeName": "Cellular-Connection-path",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:205",
+        "name": "Cellular-Connection-path",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2012,
+          "y": 380.5,
+          "width": 3.200000047683716,
+          "height": 4.599999904632568
+        },
+        "constraints": {
+          "vertical": "SCALE",
+          "horizontal": "SCALE"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 3.200000047683716,
+        "height": 4.599999904632568,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:206",
+      "nodeName": "Cellular-Connection-path",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:206",
+        "name": "Cellular-Connection-path",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2017.300048828125,
+          "y": 378.1000061035156,
+          "width": 3.200000047683716,
+          "height": 7
+        },
+        "constraints": {
+          "vertical": "SCALE",
+          "horizontal": "SCALE"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 3.200000047683716,
+        "height": 7,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:207",
+      "nodeName": "Cellular-Connection-path",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:207",
+        "name": "Cellular-Connection-path",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2022.699951171875,
+          "y": 375.5,
+          "width": 3.200000047683716,
+          "height": 9.600000381469727
+        },
+        "constraints": {
+          "vertical": "SCALE",
+          "horizontal": "SCALE"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 3.200000047683716,
+        "height": 9.600000381469727,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:208",
+      "nodeName": "Cellular-Connection-path",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "I1:29069;125:208",
+        "name": "Cellular-Connection-path",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 2028,
+          "y": 373.1000061035156,
+          "width": 3.200000047683716,
+          "height": 12
+        },
+        "constraints": {
+          "vertical": "SCALE",
+          "horizontal": "SCALE"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 3.200000047683716,
+        "height": 12,
+        "backgroundColor": "#000000",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[black]"
+        }
+      }
+    },
+    {
+      "nodeId": "I1:29069;125:209",
+      "nodeName": "Time",
+      "nodeType": "TEXT",
+      "figmaData": {
+        "id": "I1:29069;125:209",
+        "name": "Time",
+        "type": "TEXT",
+        "visible": true,
+        "geometry": {
+          "x": 1777.5,
+          "y": 369.5,
+          "width": 45,
+          "height": 20
+        },
+        "constraints": {
+          "vertical": "CENTER",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "style": {
+          "fontFamily": "SF Pro",
+          "fontPostScriptName": "SFPro-Semibold",
+          "fontStyle": "Semibold",
+          "fontWeight": 590,
+          "textAutoResize": "WIDTH_AND_HEIGHT",
+          "fontSize": 17,
+          "textAlignHorizontal": "CENTER",
+          "textAlignVertical": "CENTER",
+          "letterSpacing": 0,
+          "lineHeightPx": 20.287109375,
+          "lineHeightPercent": 100,
+          "lineHeightUnit": "INTRINSIC_%"
+        },
+        "characters": "13:13",
+        "characterStyleOverrides": [],
+        "styleOverrideTable": {},
+        "textAlignHorizontal": "CENTER",
+        "textAlignVertical": "CENTER",
+        "textAutoResize": "WIDTH_AND_HEIGHT"
+      },
+      "computedStyles": {
+        "width": 45,
+        "height": 20,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        },
+        "_textStyles": {
+          "fontSize": 17,
+          "lineHeight": 20.287109375,
+          "fontWeight": 590,
+          "fontFamily": "SFPro-Semibold",
+          "letterSpacing": 0,
+          "color": "#FFFFFF",
+          "_colorToken": "colors.neutral[white]",
+          "textAlign": "center",
+          "textAlignVertical": "center",
+          "text": "13:13"
+        }
+      }
+    },
+    {
+      "nodeId": "1:29070",
+      "nodeName": "Home Indicator",
+      "nodeType": "INSTANCE",
+      "figmaData": {
+        "id": "1:29070",
+        "name": "Home Indicator",
+        "type": "INSTANCE",
+        "visible": true,
+        "geometry": {
+          "x": 1730,
+          "y": 1168,
+          "width": 393,
+          "height": 34
+        },
+        "constraints": {
+          "vertical": "BOTTOM",
+          "horizontal": "LEFT_RIGHT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "clipsContent": false
+      },
+      "computedStyles": {
+        "width": 393,
+        "height": 34
+      }
+    },
+    {
+      "nodeId": "I1:29070;2:181",
+      "nodeName": "Home Indicator",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "I1:29070;2:181",
+        "name": "Home Indicator",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 1851,
+          "y": 1189,
+          "width": 152,
+          "height": 5
+        },
+        "constraints": {
+          "vertical": "BOTTOM",
+          "horizontal": "CENTER"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "cornerRadius": 100,
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 152,
+        "height": 5,
+        "borderRadius": 100,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2698",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "figmaData": {
+        "id": "160:2698",
+        "name": "Container",
+        "type": "FRAME",
+        "visible": true,
+        "geometry": {
+          "x": 1730,
+          "y": 403,
+          "width": 393,
+          "height": 765
+        },
+        "constraints": {
+          "vertical": "CENTER",
+          "horizontal": "LEFT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "layoutMode": "VERTICAL",
+        "paddingTop": 80,
+        "paddingBottom": 64,
+        "itemSpacing": 48,
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FIXED",
+        "layoutSizingVertical": "FIXED",
+        "clipsContent": false
+      },
+      "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_160_2698.png",
+      "aiAnalysis": {
+        "type": "Container",
+        "position": "relative",
+        "parentId": "1:29065",
+        "overflowBehavior": "visible",
+        "zIndex": 1,
+        "explicitWidth": null,
+        "notes": "Main content wrapper. Padding Top 80, Bottom 64. Contains inner stack."
+      },
+      "aiConfidence": 0.85,
+      "computedStyles": {
+        "width": 393,
+        "height": 765,
+        "flexDirection": "column",
+        "paddingTop": 80,
+        "paddingBottom": 64,
+        "gap": 48,
+        "_designTokens": {
+          "paddingBottom": "spacing.huge",
+          "gap": "spacing.xxxl"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2699",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "figmaData": {
+        "id": "160:2699",
+        "name": "Container",
+        "type": "FRAME",
+        "visible": true,
+        "geometry": {
+          "x": 1730,
+          "y": 483,
+          "width": 393,
+          "height": 621
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "layoutMode": "VERTICAL",
+        "paddingRight": 48,
+        "paddingLeft": 48,
+        "itemSpacing": 40,
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FILL",
+        "layoutSizingVertical": "FILL",
+        "clipsContent": false
+      },
+      "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_160_2699.png",
+      "aiAnalysis": {
+        "type": "Container",
+        "position": "relative",
+        "parentId": "160:2698",
+        "overflowBehavior": "visible",
+        "zIndex": null,
+        "explicitWidth": null,
+        "notes": "Inner content stack. Padding Horizontal 48. Gap 40."
+      },
+      "aiConfidence": 0.85,
+      "computedStyles": {
+        "width": 393,
+        "height": 621,
+        "flexDirection": "column",
+        "paddingRight": 48,
+        "paddingLeft": 48,
+        "gap": 40,
+        "_designTokens": {
+          "paddingRight": "spacing.xxxl",
+          "paddingLeft": "spacing.xxxl",
+          "gap": "spacing.xxl"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2700",
+      "nodeName": "Frame 1686557270",
+      "nodeType": "FRAME",
+      "figmaData": {
+        "id": "160:2700",
+        "name": "Frame 1686557270",
+        "type": "FRAME",
+        "visible": false,
+        "geometry": {
+          "x": 1778,
+          "y": 483,
+          "width": 393,
+          "height": 2
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FIXED",
+        "layoutSizingVertical": "FIXED",
+        "clipsContent": true
+      },
+      "computedStyles": {
+        "width": 393,
+        "height": 2
+      }
+    },
+    {
+      "nodeId": "160:2701",
+      "nodeName": "Rectangle 4",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "160:2701",
+        "name": "Rectangle 4",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 483,
+          "width": 393,
+          "height": 12
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0.3019607961177826,
+              "g": 0.3019607961177826,
+              "b": 0.3019607961177826,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:d0771a90f71f9f9162cc0656f42874451acc6ae7/12:91"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 393,
+        "height": 12,
+        "backgroundColor": "#4D4D4D",
+        "_designTokens": {
+          "backgroundColor": "colors.black[400]"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2702",
+      "nodeName": "Rectangle 5",
+      "nodeType": "RECTANGLE",
+      "figmaData": {
+        "id": "160:2702",
+        "name": "Rectangle 5",
+        "type": "RECTANGLE",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 483,
+          "width": 262,
+          "height": 12
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:2b0826615c3eb1aff0c91720cc82d80495065b28/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 262,
+        "height": 12,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2703",
+      "nodeName": "Logo Container",
+      "nodeType": "FRAME",
+      "figmaData": {
+        "id": "160:2703",
+        "name": "Logo Container",
+        "type": "FRAME",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 483,
+          "width": 26.7000789642334,
+          "height": 32
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FIXED",
+        "layoutSizingVertical": "FIXED",
+        "clipsContent": false
+      },
+      "computedStyles": {
+        "width": 26.7000789642334,
+        "height": 32
+      }
+    },
+    {
+      "nodeId": "160:2704",
+      "nodeName": "Vector 1",
+      "nodeType": "VECTOR",
+      "figmaData": {
+        "id": "160:2704",
+        "name": "Vector 1",
+        "type": "VECTOR",
+        "visible": true,
+        "geometry": {
+          "x": 1777.9996337890625,
+          "y": 483,
+          "width": 26.7000789642334,
+          "height": 32
+        },
+        "constraints": {
+          "vertical": "CENTER",
+          "horizontal": "CENTER"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:7b6c2ec8706e73ec1a8d406ce15c18dc86b52293/12:335"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH"
+      },
+      "computedStyles": {
+        "width": 26.7000789642334,
+        "height": 32,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2705",
+      "nodeName": "Text Container",
+      "nodeType": "FRAME",
+      "figmaData": {
+        "id": "160:2705",
+        "name": "Text Container",
+        "type": "FRAME",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 555,
+          "width": 297,
+          "height": 184
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "layoutMode": "VERTICAL",
+        "itemSpacing": 16,
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FILL",
+        "layoutSizingVertical": "HUG",
+        "clipsContent": false
+      },
+      "screenshotPath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/screenshots/node_160_2705.png",
+      "computedStyles": {
+        "width": 297,
+        "height": 184,
+        "flexDirection": "column",
+        "gap": 16,
+        "_designTokens": {
+          "gap": "spacing.md"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2706",
+      "nodeName": "Your landlord benefits too",
+      "nodeType": "TEXT",
+      "figmaData": {
+        "id": "160:2706",
+        "name": "Your landlord benefits too",
+        "type": "TEXT",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 555,
+          "width": 297,
+          "height": 128
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:67ab9f884cb33d08efa9215d39be05a171d62b59/21:54"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "style": {
+          "fontFamily": "Plus Jakarta Sans",
+          "fontPostScriptName": "PlusJakartaSans-Regular",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "textAutoResize": "HEIGHT",
+          "fontSize": 48,
+          "textAlignHorizontal": "LEFT",
+          "textAlignVertical": "CENTER",
+          "letterSpacing": -2,
+          "lineHeightPx": 64,
+          "lineHeightPercent": 105.82010650634766,
+          "lineHeightPercentFontSize": 133.3333282470703,
+          "lineHeightUnit": "PIXELS"
+        },
+        "characters": "Your landlord benefits too",
+        "characterStyleOverrides": [
+          60,
+          60,
+          60,
+          60,
+          0,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          60,
+          0,
+          45,
+          45,
+          45,
+          45,
+          45,
+          45,
+          45,
+          45,
+          45,
+          45,
+          45,
+          45
+        ],
+        "styleOverrideTable": {
+          "45": {
+            "fontSize": 48,
+            "letterSpacing": -2,
+            "fills": [
+              {
+                "blendMode": "NORMAL",
+                "type": "SOLID",
+                "color": {
+                  "r": 1,
+                  "g": 0.6039215922355652,
+                  "b": 0.4274509847164154,
+                  "a": 1
+                },
+                "boundVariables": {
+                  "color": {
+                    "type": "VARIABLE_ALIAS",
+                    "id": "VariableID:e24126eab8468adae09616b40efaa5e79c21d182/12:53"
+                  }
+                }
+              }
+            ],
+            "lineHeightPx": 64,
+            "lineHeightPercent": 113.77777862548828,
+            "lineHeightPercentFontSize": 133.3333282470703,
+            "lineHeightUnit": "PIXELS"
+          },
+          "60": {
+            "fontSize": 48,
+            "letterSpacing": -2,
+            "fills": [
+              {
+                "blendMode": "NORMAL",
+                "type": "SOLID",
+                "color": {
+                  "r": 0.6627451181411743,
+                  "g": 0.6627451181411743,
+                  "b": 0.6627451181411743,
+                  "a": 1
+                },
+                "boundVariables": {
+                  "color": {
+                    "type": "VARIABLE_ALIAS",
+                    "id": "VariableID:a30255c279da5be0e3281358b6555fa3fed99370/12:328"
+                  }
+                }
+              }
+            ],
+            "lineHeightPx": 64,
+            "lineHeightPercent": 113.77777862548828,
+            "lineHeightPercentFontSize": 133.3333282470703,
+            "lineHeightUnit": "PIXELS"
+          }
+        },
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "CENTER",
+        "textAutoResize": "HEIGHT",
+        "layoutSizingHorizontal": "FILL",
+        "layoutSizingVertical": "HUG"
+      },
+      "aiAnalysis": {
+        "type": "Text",
+        "position": "relative",
+        "parentId": "160:2705",
+        "overflowBehavior": "visible",
+        "zIndex": null,
+        "explicitWidth": null,
+        "notes": "Nested text styling required. 'Your landlord' is white/grey, 'benefits too' is orange."
+      },
+      "aiConfidence": 0.85,
+      "computedStyles": {
+        "width": 297,
+        "height": 128,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        },
+        "_textStyles": {
+          "fontSize": 48,
+          "lineHeight": 64,
+          "fontWeight": 400,
+          "fontFamily": "PlusJakartaSans-Regular",
+          "letterSpacing": -2,
+          "_designToken": "typography.h1",
+          "_useToken": true,
+          "color": "#FFFFFF",
+          "_colorToken": "colors.neutral[white]",
+          "textAlign": "left",
+          "textAlignVertical": "center",
+          "text": "Your landlord benefits too"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2707",
+      "nodeName": "3 months of rent payments unlock a free vacancy cover for your landlord",
+      "nodeType": "TEXT",
+      "figmaData": {
+        "id": "160:2707",
+        "name": "3 months of rent payments unlock a free vacancy cover for your landlord",
+        "type": "TEXT",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 699,
+          "width": 297,
+          "height": 40
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0.6627451181411743,
+              "g": 0.6627451181411743,
+              "b": 0.6627451181411743,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:a30255c279da5be0e3281358b6555fa3fed99370/12:328"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "style": {
+          "fontFamily": "Plus Jakarta Sans",
+          "fontPostScriptName": "PlusJakartaSans-Regular",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "textAutoResize": "HEIGHT",
+          "fontSize": 14,
+          "textAlignHorizontal": "LEFT",
+          "textAlignVertical": "CENTER",
+          "letterSpacing": 0,
+          "lineHeightPx": 20,
+          "lineHeightPercent": 113.37869262695312,
+          "lineHeightPercentFontSize": 142.85714721679688,
+          "lineHeightUnit": "PIXELS"
+        },
+        "characters": "3 months of rent payments unlock a free vacancy cover for your landlord",
+        "characterStyleOverrides": [],
+        "styleOverrideTable": {},
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "CENTER",
+        "textAutoResize": "HEIGHT",
+        "layoutSizingHorizontal": "FILL",
+        "layoutSizingVertical": "HUG"
+      },
+      "computedStyles": {
+        "width": 297,
+        "height": 40,
+        "backgroundColor": "#A9A9A9",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[500]"
+        },
+        "_textStyles": {
+          "fontSize": 14,
+          "lineHeight": 20,
+          "fontWeight": 400,
+          "fontFamily": "PlusJakartaSans-Regular",
+          "letterSpacing": 0,
+          "_designToken": "typography.bodyMd2",
+          "_useToken": true,
+          "color": "#A9A9A9",
+          "_colorToken": "colors.neutral[500]",
+          "textAlign": "left",
+          "textAlignVertical": "center",
+          "text": "3 months of rent payments unlock a free vacancy cover for your landlord"
+        }
+      }
+    },
+    {
+      "nodeId": "169:3206",
+      "nodeName": "Login Text",
+      "nodeType": "TEXT",
+      "figmaData": {
+        "id": "169:3206",
+        "name": "Login Text",
+        "type": "TEXT",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 779,
+          "width": 297,
+          "height": 20
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:7b6c2ec8706e73ec1a8d406ce15c18dc86b52293/12:335"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "style": {
+          "fontFamily": "Plus Jakarta Sans",
+          "fontPostScriptName": "PlusJakartaSans-Regular",
+          "fontStyle": "Regular",
+          "fontWeight": 400,
+          "textAutoResize": "HEIGHT",
+          "fontSize": 14,
+          "textAlignHorizontal": "LEFT",
+          "textAlignVertical": "CENTER",
+          "letterSpacing": 0,
+          "lineHeightPx": 20,
+          "lineHeightPercent": 113.37869262695312,
+          "lineHeightPercentFontSize": 142.85714721679688,
+          "lineHeightUnit": "PIXELS"
+        },
+        "characters": "Skip →",
+        "characterStyleOverrides": [
+          18,
+          18,
+          18,
+          18
+        ],
+        "styleOverrideTable": {
+          "18": {
+            "fontFamily": "Plus Jakarta Sans",
+            "fontPostScriptName": "PlusJakartaSans-Regular",
+            "fontStyle": "Regular",
+            "fontWeight": 400,
+            "textAutoResize": "WIDTH_AND_HEIGHT",
+            "textDecoration": "UNDERLINE",
+            "isOverrideOverTextStyle": true,
+            "fontSize": 14,
+            "letterSpacing": 0,
+            "lineHeightPx": 20,
+            "lineHeightPercent": 113.37869262695312,
+            "lineHeightPercentFontSize": 142.85714721679688,
+            "lineHeightUnit": "PIXELS",
+            "inheritTextStyleId": "1:90",
+            "boundVariables": {
+              "lineHeight": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:636fd7bbcab71d41700413942fdc475e269aa963/22:501"
+              },
+              "letterSpacing": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:3abc8efbf5aca6f68acf49e90d780e828558ce67/22:528"
+              },
+              "fontSize": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:af3daded242dc56297b130f4e9af657ef2ed903a/17:989"
+              }
+            }
+          }
+        },
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "CENTER",
+        "textAutoResize": "HEIGHT",
+        "layoutSizingHorizontal": "FILL",
+        "layoutSizingVertical": "HUG"
+      },
+      "computedStyles": {
+        "width": 297,
+        "height": 20,
+        "backgroundColor": "#FFFFFF",
+        "_designTokens": {
+          "backgroundColor": "colors.neutral[white]"
+        },
+        "_textStyles": {
+          "fontSize": 14,
+          "lineHeight": 20,
+          "fontWeight": 400,
+          "fontFamily": "PlusJakartaSans-Regular",
+          "letterSpacing": 0,
+          "_designToken": "typography.bodyMd2",
+          "_useToken": true,
+          "color": "#FFFFFF",
+          "_colorToken": "colors.neutral[white]",
+          "textAlign": "left",
+          "textAlignVertical": "center",
+          "text": "Skip →"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2708",
+      "nodeName": "Frame 2095586316",
+      "nodeType": "FRAME",
+      "figmaData": {
+        "id": "160:2708",
+        "name": "Frame 2095586316",
+        "type": "FRAME",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 839,
+          "width": 32,
+          "height": 8
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [],
+        "strokes": [],
+        "effects": [],
+        "layoutMode": "HORIZONTAL",
+        "counterAxisAlignItems": "CENTER",
+        "itemSpacing": 4,
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "HUG",
+        "layoutSizingVertical": "HUG",
+        "clipsContent": false
+      },
+      "aiAnalysis": {
+        "type": "Container",
+        "position": "relative",
+        "parentId": "160:2699",
+        "overflowBehavior": "visible",
+        "zIndex": null,
+        "explicitWidth": null,
+        "notes": "Pagination dots container. Flex row, gap 4."
+      },
+      "aiConfidence": 0.85,
+      "computedStyles": {
+        "width": 32,
+        "height": 8,
+        "flexDirection": "row",
+        "alignItems": "center",
+        "_childrenNeedExplicitWidth": true,
+        "gap": 4,
+        "_designTokens": {
+          "gap": "spacing.xxs"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2709",
+      "nodeName": "Ellipse 21885",
+      "nodeType": "ELLIPSE",
+      "figmaData": {
+        "id": "160:2709",
+        "name": "Ellipse 21885",
+        "type": "ELLIPSE",
+        "visible": true,
+        "geometry": {
+          "x": 1778,
+          "y": 839,
+          "width": 8,
+          "height": 8
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0.125490203499794,
+              "g": 0.125490203499794,
+              "b": 0.125490203499794,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:e3cb66c05a62a8680357c6bba79620d8a57e6f10/12:92"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FIXED",
+        "layoutSizingVertical": "FIXED"
+      },
+      "computedStyles": {
+        "width": 8,
+        "height": 8,
+        "backgroundColor": "#202020",
+        "_designTokens": {
+          "backgroundColor": "colors.black[500]"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2710",
+      "nodeName": "Ellipse 21886",
+      "nodeType": "ELLIPSE",
+      "figmaData": {
+        "id": "160:2710",
+        "name": "Ellipse 21886",
+        "type": "ELLIPSE",
+        "visible": true,
+        "geometry": {
+          "x": 1790,
+          "y": 839,
+          "width": 8,
+          "height": 8
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 0.125490203499794,
+              "g": 0.125490203499794,
+              "b": 0.125490203499794,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:e3cb66c05a62a8680357c6bba79620d8a57e6f10/12:92"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FIXED",
+        "layoutSizingVertical": "FIXED"
+      },
+      "computedStyles": {
+        "width": 8,
+        "height": 8,
+        "backgroundColor": "#202020",
+        "_designTokens": {
+          "backgroundColor": "colors.black[500]"
+        }
+      }
+    },
+    {
+      "nodeId": "160:2711",
+      "nodeName": "Ellipse 21887",
+      "nodeType": "ELLIPSE",
+      "figmaData": {
+        "id": "160:2711",
+        "name": "Ellipse 21887",
+        "type": "ELLIPSE",
+        "visible": true,
+        "geometry": {
+          "x": 1802,
+          "y": 839,
+          "width": 8,
+          "height": 8
+        },
+        "constraints": {
+          "vertical": "TOP",
+          "horizontal": "LEFT"
+        },
+        "fills": [
+          {
+            "blendMode": "NORMAL",
+            "type": "SOLID",
+            "color": {
+              "r": 1,
+              "g": 0.6039215922355652,
+              "b": 0.4274509847164154,
+              "a": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:e24126eab8468adae09616b40efaa5e79c21d182/12:53"
+              }
+            }
+          }
+        ],
+        "strokes": [],
+        "effects": [],
+        "blendMode": "PASS_THROUGH",
+        "layoutSizingHorizontal": "FIXED",
+        "layoutSizingVertical": "FIXED"
+      },
+      "computedStyles": {
+        "width": 8,
+        "height": 8,
+        "backgroundColor": "#FF9A6D",
+        "_designTokens": {
+          "backgroundColor": "colors.brand[500]"
+        }
+      }
+    }
+  ],
+  "assets": [
+    {
+      "nodeId": "237:2733",
+      "nodeName": "image 149",
+      "nodeType": "RECTANGLE",
+      "assetType": "background",
+      "fillType": "IMAGE",
+      "geometry": {
+        "x": 1267.0000195233956,
+        "y": -397.0000576553158,
+        "width": 1318.9999804766044,
+        "height": 2346.0000576553157
+      },
+      "opacity": 0.07999999821186066,
+      "blendMode": "NORMAL",
+      "imageRef": "3fc15bf2e66131c93d54c9ad31461a4a869b576d",
+      "filepath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/assets/asset_background_image-149.png"
+    },
+    {
+      "nodeId": "1:29067",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "assetType": "background",
+      "fillType": "IMAGE",
+      "geometry": {
+        "x": 1686,
+        "y": 350,
+        "width": 481,
+        "height": 405
+      },
+      "opacity": 0.4000000059604645,
+      "blendMode": "NORMAL",
+      "imageRef": "80b82f0b567db5030928f0bab900ae5b2bb73be5",
+      "filepath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/assets/asset_background_background-shape.png"
+    },
+    {
+      "nodeId": "1:29067",
+      "nodeName": "Background Shape",
+      "nodeType": "RECTANGLE",
+      "assetType": "background",
+      "fillType": "GRADIENT_LINEAR",
+      "geometry": {
+        "x": 1686,
+        "y": 350,
+        "width": 481,
+        "height": 405
+      },
+      "blendMode": "NORMAL",
+      "gradientData": {
+        "gradientStops": [
+          {
+            "position": 0.5,
+            "color": "#00000000"
+          },
+          {
+            "position": 1,
+            "color": "#131313"
+          }
+        ],
+        "gradientHandlePositions": [
+          {
+            "x": 0.5,
+            "y": -3.0618303766555234e-17
+          },
+          {
+            "x": 0.5,
+            "y": 0.7938271448387278
+          },
+          {
+            "x": 0.10308642758063602,
+            "y": -2.0651622905964347e-14
+          }
+        ]
+      },
+      "filepath": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/autonomous-parity-fixer/data/ai-enhanced/1-29065/assets/asset_background_background-shape.png"
+    }
+  ],
+  "stats": {
+    "totalNodes": 36,
+    "analyzedNodes": 7,
+    "screenshotsCaptured": 6,
+    "aiAnalysisCount": 7,
+    "imageAssetsExtracted": 3,
+    "processingTimeMs": 104204
+  }
+}

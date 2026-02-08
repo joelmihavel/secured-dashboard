@@ -1,0 +1,122 @@
+{
+  "screenId": "1:28053",
+  "screenName": "Splash / get-started",
+  "generatedAt": "2026-02-03T06:56:26.226Z",
+  "summary": {
+    "overallCoverage": 81.8,
+    "propertiesCovered": 9,
+    "propertiesTotal": 11,
+    "propertiesMissing": 2,
+    "nodesCovered": 0,
+    "nodesPartial": 1,
+    "nodesTotal": 1,
+    "limitations": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 3,
+      "total": 4,
+      "percentage": 75
+    },
+    "textContent": {
+      "covered": 0,
+      "total": 1,
+      "percentage": 0
+    },
+    "multiStyleText": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "1:28054",
+      "nodeName": "Tenant Onboarding Flow",
+      "nodeType": "TEXT",
+      "category": "typography",
+      "property": "lineHeight",
+      "figmaValue": 58,
+      "rnValue": "delegated",
+      "covered": false,
+      "fix": "Add lineHeight: 58"
+    },
+    {
+      "nodeId": "1:28054",
+      "nodeName": "Tenant Onboarding Flow",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Tenant Onboarding Flow",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Tenant Onboarding Flow\""
+    }
+  ],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

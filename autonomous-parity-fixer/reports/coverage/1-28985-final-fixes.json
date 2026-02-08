@@ -1,0 +1,25 @@
+{
+  "screenId": "1-28985",
+  "iteration": 1,
+  "coverage": 96.7,
+  "threshold": 100,
+  "fixesNeeded": [
+    {
+      "type": "prop",
+      "target": "Container",
+      "property": "layoutSizingVertical",
+      "figmaValue": "FIXED",
+      "currentValue": null,
+      "fix": "Add explicit height value"
+    },
+    {
+      "type": "style",
+      "target": "Container",
+      "property": "gap",
+      "figmaValue": 48,
+      "currentValue": 16,
+      "fix": "Add gap: 48 (or spacing.xxxl)"
+    }
+  ],
+  "generatedAt": "2026-02-03T07:03:11.587Z"
+}

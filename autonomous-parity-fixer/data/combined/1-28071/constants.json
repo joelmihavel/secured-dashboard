@@ -1,0 +1,47 @@
+{
+  "screen": {
+    "name": "screen",
+    "category": "layout",
+    "values": {
+      "width": 393,
+      "height": 852,
+      "backgroundColor": "#131313"
+    }
+  },
+  "colors": {
+    "name": "colors",
+    "category": "colors",
+    "values": {
+      "background": "#131313",
+      "color000000": "#000000",
+      "white": "#FFFFFF",
+      "accent": "#FF9A6D"
+    }
+  },
+  "typography": {
+    "name": "typography",
+    "category": "typography",
+    "values": {
+      "17_590": {
+        "fontSize": 17,
+        "fontWeight": "590",
+        "lineHeight": 20.29
+      },
+      "12_500": {
+        "fontSize": 12,
+        "fontWeight": "500",
+        "lineHeight": 20,
+        "letterSpacing": -0.2
+      }
+    }
+  },
+  "spacing": {
+    "name": "spacing",
+    "category": "spacing",
+    "values": {
+      "space1": 4,
+      "space2": 8,
+      "space3": 10
+    }
+  }
+}

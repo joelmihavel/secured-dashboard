@@ -1,0 +1,58 @@
+{
+  "colors": {
+    "name": "colors",
+    "category": "colors",
+    "values": {
+      "cardSurface": "#202020",
+      "colorF06321": "#F06321",
+      "colorAE282E": "#AE282E",
+      "white": "#FFFFFF",
+      "cardBackground": "#1A1A1A",
+      "accent": "#FF9A6D",
+      "textDisabled": "#4D4D4D",
+      "textTertiary": "#CBCBCB"
+    }
+  },
+  "typography": {
+    "name": "typography",
+    "category": "typography",
+    "values": {
+      "12_400": {
+        "fontSize": 12,
+        "fontWeight": "400",
+        "lineHeight": 20
+      },
+      "20_400": {
+        "fontSize": 20,
+        "fontWeight": "400",
+        "lineHeight": 32
+      },
+      "16_400": {
+        "fontSize": 16,
+        "fontWeight": "400",
+        "lineHeight": 24
+      },
+      "14_400": {
+        "fontSize": 14,
+        "fontWeight": "400",
+        "lineHeight": 20
+      }
+    }
+  },
+  "spacing": {
+    "name": "spacing",
+    "category": "spacing",
+    "values": {
+      "space1": 4,
+      "space2": 8,
+      "space3": 10,
+      "space4": 12,
+      "space5": 16,
+      "space6": 24,
+      "space7": 28,
+      "space8": 32,
+      "space9": 120,
+      "space10": 130
+    }
+  }
+}
