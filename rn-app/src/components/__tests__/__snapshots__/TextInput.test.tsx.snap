@@ -1,0 +1,572 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TextInput renders correctly - disabled 1`] = `
+<View
+  style={
+    {
+      "width": "100%",
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          [
+            {
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+            },
+            {
+              "color": "#a9a9a9",
+            },
+            false,
+          ],
+        ]
+      }
+    >
+      Username
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderBottomWidth": 1,
+        },
+        {
+          "borderBottomColor": "#4d4d4d",
+        },
+      ]
+    }
+  >
+    <TextInput
+      editable={false}
+      onBlur={[Function]}
+      onChangeText={[MockFunction]}
+      onFocus={[Function]}
+      placeholderTextColor="#444444"
+      style={
+        [
+          {
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 20,
+            "lineHeight": 32,
+            "paddingHorizontal": 0,
+            "paddingVertical": 16,
+          },
+          {
+            "color": "#444444",
+          },
+          {
+            "color": "#dddddd",
+          },
+          false,
+          {
+            "opacity": 0.5,
+          },
+        ]
+      }
+      value="johndoe"
+    />
+  </View>
+</View>
+`;
+
+exports[`TextInput renders correctly - empty dark variant 1`] = `
+<View
+  style={
+    {
+      "width": "100%",
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          [
+            {
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+            },
+            {
+              "color": "#a9a9a9",
+            },
+            false,
+          ],
+        ]
+      }
+    >
+      Full Name
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderBottomWidth": 1,
+        },
+        {
+          "borderBottomColor": "#4d4d4d",
+        },
+      ]
+    }
+  >
+    <TextInput
+      editable={true}
+      onBlur={[Function]}
+      onChangeText={[MockFunction]}
+      onFocus={[Function]}
+      placeholder="Enter your name"
+      placeholderTextColor="#444444"
+      style={
+        [
+          {
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 20,
+            "lineHeight": 32,
+            "paddingHorizontal": 0,
+            "paddingVertical": 16,
+          },
+          {
+            "color": "#444444",
+          },
+          false,
+          false,
+          undefined,
+        ]
+      }
+      value=""
+    />
+  </View>
+</View>
+`;
+
+exports[`TextInput renders correctly - light variant empty 1`] = `
+<View
+  style={
+    {
+      "width": "100%",
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          [
+            {
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+            },
+            {
+              "color": "#797979",
+            },
+            false,
+          ],
+        ]
+      }
+    >
+      Address
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderBottomWidth": 1,
+        },
+        {
+          "borderBottomColor": "#cbcbcb",
+        },
+      ]
+    }
+  >
+    <TextInput
+      editable={true}
+      onBlur={[Function]}
+      onChangeText={[MockFunction]}
+      onFocus={[Function]}
+      placeholder="Enter address"
+      placeholderTextColor="#797979"
+      style={
+        [
+          {
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 20,
+            "lineHeight": 32,
+            "paddingHorizontal": 0,
+            "paddingVertical": 16,
+          },
+          {
+            "color": "#797979",
+          },
+          false,
+          false,
+          undefined,
+        ]
+      }
+      value=""
+    />
+  </View>
+</View>
+`;
+
+exports[`TextInput renders correctly - light variant with value 1`] = `
+<View
+  style={
+    {
+      "width": "100%",
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          [
+            {
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+            },
+            {
+              "color": "#797979",
+            },
+            false,
+          ],
+        ]
+      }
+    >
+      City
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderBottomWidth": 1,
+        },
+        {
+          "borderBottomColor": "#cbcbcb",
+        },
+      ]
+    }
+  >
+    <TextInput
+      editable={true}
+      onBlur={[Function]}
+      onChangeText={[MockFunction]}
+      onFocus={[Function]}
+      placeholderTextColor="#797979"
+      style={
+        [
+          {
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 20,
+            "lineHeight": 32,
+            "paddingHorizontal": 0,
+            "paddingVertical": 16,
+          },
+          {
+            "color": "#797979",
+          },
+          {
+            "color": "#131313",
+          },
+          false,
+          undefined,
+        ]
+      }
+      value="Mumbai"
+    />
+  </View>
+</View>
+`;
+
+exports[`TextInput renders correctly - with error 1`] = `
+<View
+  style={
+    {
+      "width": "100%",
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          [
+            {
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+            },
+            {
+              "color": "#a9a9a9",
+            },
+            {
+              "color": "#ff8080",
+            },
+          ],
+        ]
+      }
+    >
+      Email
+    </Text>
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          [
+            {
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+            },
+            {
+              "color": "#ff8080",
+            },
+          ],
+        ]
+      }
+    >
+      Invalid email address
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderBottomWidth": 1,
+        },
+        {
+          "borderBottomColor": "#ff8080",
+        },
+      ]
+    }
+  >
+    <TextInput
+      editable={true}
+      onBlur={[Function]}
+      onChangeText={[MockFunction]}
+      onFocus={[Function]}
+      placeholderTextColor="#444444"
+      style={
+        [
+          {
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 20,
+            "lineHeight": 32,
+            "paddingHorizontal": 0,
+            "paddingVertical": 16,
+          },
+          {
+            "color": "#444444",
+          },
+          {
+            "color": "#dddddd",
+          },
+          {
+            "color": "#ff9a6d",
+          },
+          undefined,
+        ]
+      }
+      value="invalid"
+    />
+  </View>
+</View>
+`;
+
+exports[`TextInput renders correctly - with value dark variant 1`] = `
+<View
+  style={
+    {
+      "width": "100%",
+    }
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "marginBottom": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          [
+            {
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+            },
+            {
+              "color": "#a9a9a9",
+            },
+            false,
+          ],
+        ]
+      }
+    >
+      Full Name
+    </Text>
+  </View>
+  <View
+    style={
+      [
+        {
+          "borderBottomWidth": 1,
+        },
+        {
+          "borderBottomColor": "#4d4d4d",
+        },
+      ]
+    }
+  >
+    <TextInput
+      editable={true}
+      onBlur={[Function]}
+      onChangeText={[MockFunction]}
+      onFocus={[Function]}
+      placeholderTextColor="#444444"
+      style={
+        [
+          {
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 20,
+            "lineHeight": 32,
+            "paddingHorizontal": 0,
+            "paddingVertical": 16,
+          },
+          {
+            "color": "#444444",
+          },
+          {
+            "color": "#dddddd",
+          },
+          false,
+          undefined,
+        ]
+      }
+      value="John Doe"
+    />
+  </View>
+</View>
+`;

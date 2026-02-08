@@ -7,7 +7,7 @@
 // Sauce Labs Visual configuration
 const sauceVisualConfig = {
   project: 'Secured v2',
-  branch: 'Secured 2.2',
+  branch: 'Secured 2.4',
   buildName: `Visual-${new Date().toISOString().split('T')[0]}`,
 };
 

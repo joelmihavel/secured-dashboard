@@ -735,7 +735,8 @@ function runStructuralAnalysis(
   extractionData: any,
   rnCode: string,
   componentCodes: Map<string, string>,
-  route: string
+  route: string,
+  screenFilePath: string
 ): StructuralAnalysisResult {
   console.log('\n========================================');
   console.log('  BATCH 0: Structural Analysis (Deterministic)');
@@ -775,7 +776,7 @@ function runStructuralAnalysis(
     // Search in screen code
     if (rnCode.includes(textContent) || rnCode.toLowerCase().includes(textContent.toLowerCase())) {
       foundInCode = true;
-      componentFile = `app/(${route})/index.tsx`;
+      componentFile = screenFilePath;
     }
 
     // Search in component codes
@@ -864,7 +865,7 @@ function runStructuralAnalysis(
         nodeName: nodeName,
         figmaValue: { type: 'button', text: buttonText, fill: buttonInfo.fillHex },
         expectedRNValue: `Button with backgroundColor: '${buttonInfo.fillHex}'`,
-        file: `src/components/${route}/*.tsx or app/(${route})/index.tsx`,
+        file: `src/components/${route}/*.tsx or ${screenFilePath}`,
         explanation: `Button "${buttonText}" has fill ${buttonInfo.fillHex} in Figma. Verify RN backgroundColor matches.`,
         suggestedFix: `Verify button has backgroundColor: '${buttonInfo.fillHex}' or equivalent design token`,
       });
@@ -1143,7 +1144,7 @@ function loadDesignTokens(): any {
 }
 
 // Find React Native code for a screen
-function findReactNativeCode(route: string): { screenCode: string; componentCodes: Map<string, string> } {
+function findReactNativeCode(route: string): { screenCode: string; componentCodes: Map<string, string>; screenFilePath: string } {
   const rnAppDir = path.join(BASE_DIR, '..', 'rn-app');
 
   // Map route to file path - COMPLETE mapping for all Figma screens
@@ -1280,7 +1281,7 @@ function findReactNativeCode(route: string): { screenCode: string; componentCode
     }
   }
 
-  return { screenCode, componentCodes };
+  return { screenCode, componentCodes, screenFilePath: screenFile };
 }
 
 // Extract components from extraction data
@@ -1347,7 +1348,7 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
 
   // Load React Native code
   console.log('\nStep 4: Loading React Native code...');
-  const { screenCode, componentCodes } = findReactNativeCode(screenRoute);
+  const { screenCode, componentCodes, screenFilePath } = findReactNativeCode(screenRoute);
   console.log(`  Screen code: ${screenCode.length} chars`);
   console.log(`  Components found: ${componentCodes.size}`);
 
@@ -1365,7 +1366,8 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
     extractionData,
     screenCode,
     componentCodes,
-    screenRoute
+    screenRoute,
+    screenFilePath
   );
 
   batches.push({
