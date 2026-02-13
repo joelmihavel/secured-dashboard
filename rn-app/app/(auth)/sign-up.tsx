@@ -102,7 +102,7 @@ export default function SignUpScreen() {
   // Initialize state based on query parameter for automated testing
   const getInitialPhone = () => (state === 'filled' ? mockData.phone : '');
   const getInitialName = () => (state === 'filled' ? mockData.name : '');
-  const getInitialConsent = () => state === 'filled';
+  const getInitialConsent = () => true; // Consent enabled by default
 
   const [phone, setPhone] = useState(getInitialPhone);
   const [name, setName] = useState(getInitialName);

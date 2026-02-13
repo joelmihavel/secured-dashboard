@@ -103,16 +103,20 @@ const FIGMA = {
     opacity: 0.08,
   },
   // Background shape: w-[481px] h-[405px], left-1/2 top-0 -translate-x-1/2, opacity-40
-  // Fresh from Figma MCP (2026-02-01): h-full left-[-13.12%] top-[-22.18%] w-[126.24%]
+  // Corrected from Figma REST API imageTransform: [[0.6544, 0, 0.0503], [0, 0.8255, 0.2095]]
   shape: {
     width: 481,
     height: 405,
     opacity: 0.4,
-    // Image positioning from Figma MCP API
-    imageWidth: 1.2624,    // 126.24% of container width
-    imageHeight: 1.0,      // 100% (h-full)
-    imageLeft: -0.1312,    // -13.12% offset
-    imageTop: -0.2218,     // -22.18% offset
+    // Image positioning derived from Figma REST API imageTransform (node 1:29109)
+    // imageWidth = 1/scaleX = 1/0.6544 = 1.5281 (152.81% of container)
+    // imageHeight = 1/scaleY = 1/0.8255 = 1.2114 (121.14% of container)
+    // imageLeft = -(translateX/scaleX) = -(0.0503/0.6544) = -0.07693
+    // imageTop = -(translateY/scaleY) = -(0.2095/0.8255) = -0.25382
+    imageWidth: 1.5281,    // 152.81% of container width
+    imageHeight: 1.2114,   // 121.14% of container height
+    imageLeft: -0.07693,   // -7.69% offset from left
+    imageTop: -0.25382,    // -25.38% offset from top
   },
   // Vector 1: w-[333.751px] h-[400px], right-[-120.56px] top-0, -scale-y-100
   vector1: {

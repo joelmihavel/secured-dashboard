@@ -67,7 +67,7 @@ const FIGMA_DIMENSIONS = {
 
 // Exact Figma spacing gaps - CORRECTED from fresh Figma MCP (2026-02-01)
 const FIGMA_GAPS = {
-  progressToLogo: 48,                  // Figma: outer Container (160:2668) gap=48 between progress bar and inner container
+  progressToLogo: 80,                  // Figma: outer Container (160:2668) paddingTop=80
   logoToHeading: 40,                   // Logo to heading gap
   headingToBody: 16,                   // Heading to body gap
   bodyToSkip: 40,                      // Body to skip gap - Figma: body ends y=739, skip at y=779 (40px gap)

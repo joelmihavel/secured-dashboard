@@ -38,12 +38,12 @@ import { duration } from '@/src/theme';
 const INPUT_COLORS_DARK = {
   label: '#a9a9a9',
   labelError: '#ff8080',
-  placeholder: '#444444',          // Figma: #444444 (neutral/800) - placeholder color
+  placeholder: '#222222',          // Figma REST API: #222222 (node I90:2897;47:5569)
   hintText: '#878787',             // Figma hint text color (neutral/600)
   textFilled: '#dddddd',
-  textError: '#ff9a6d',
+  textError: '#ff8080',             // Figma: error text color (matches labelError/borderError)
   border: '#4D4D4D',              // Figma: I90:2897;47:5566 borderColor #4D4D4D (full border box)
-  borderFocus: '#ff9a6d',
+  borderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
   borderError: '#ff8080',
 } as const;
 
@@ -56,7 +56,7 @@ const INPUT_COLORS_LIGHT = {
   textFilled: '#131313',
   textError: '#e5484d',
   border: '#cbcbcb',
-  borderFocus: '#ff9a6d',
+  borderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
   borderError: '#ff8080',
 } as const;
 
@@ -94,10 +94,11 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
     const hasValue = value.length > 0;
 
     // Determine border color based on state
+    // Figma REST API: border visible:false in empty state (1:29108)
     const getBorderColor = () => {
       if (hasError) return INPUT_COLORS.borderError;
       if (isFocused) return INPUT_COLORS.borderFocus;
-      return INPUT_COLORS.border;
+      return 'transparent';
     };
 
     // Dynamic styles based on variant
@@ -166,10 +167,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: INPUT_SPACING.labelInputGap,
   },
-  // Figma: I90:2897;47:5565 - Plus Jakarta Sans Medium, 12px, lineHeight:20
-  // Verified from Figma MCP get_design_context 1:29108: font-medium (500 weight)
+  // Figma REST API: fontWeight 400 (Regular), 12px, lineHeight:20
   label: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     // Color applied dynamically via dynamicStyles

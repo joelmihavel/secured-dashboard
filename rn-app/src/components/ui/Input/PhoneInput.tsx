@@ -56,9 +56,9 @@ const COLORS = {
   countryCodeFilled: colors.neutral[200], // #dddddd - filled state per Figma 1-31073
   placeholder: '#444444',              // Figma: #444444
   textFilled: colors.neutral[200],     // #dddddd
-  textError: colors.brand[500],        // #ff9a6d
+  textError: '#ff8080',                 // Figma: error text color (matches labelError/borderError)
   inputBorder: colors.black[400],      // #4D4D4D - Figma: I1:29184;48:712 borderColor
-  inputBorderFocus: colors.brand[500], // #ff9a6d
+  inputBorderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
   inputBorderError: '#ff8080',
 } as const;
 
@@ -130,7 +130,7 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
     const getBorderColor = () => {
       if (hasError) return COLORS.inputBorderError;
       if (isFocused) return COLORS.inputBorderFocus;
-      return COLORS.inputBorder;
+      return 'transparent'; // Figma REST API: border visible:false in empty state (1:29108)
     };
 
     // Country code color: #444444 when empty, #dddddd when filled
@@ -195,10 +195,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.labelGap,
   },
-  // Label - Figma: Plus Jakarta Sans Medium (fontWeight 500), 12px, line-height 20px, #A9A9A9
-  // Verified from Figma MCP get_design_context 1:29108 node I1:29184;48:608: font-medium
+  // Label - Figma REST API: fontWeight 400 (Regular), 12px, line-height 20px, #A9A9A9
   label: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: COLORS.label,

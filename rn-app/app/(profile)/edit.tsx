@@ -422,6 +422,7 @@ const styles = StyleSheet.create({
   editPictureGradient: {
     paddingHorizontal: 20,
     paddingVertical: 8,
+    gap: 10,                           // Figma: button (41:8887) gap=10
     borderRadius: radius.md,         // 12 - Figma borderRadius
     alignItems: 'center' as const,   // Center the text inside gradient
     justifyContent: 'center' as const,
