@@ -1,0 +1,124 @@
+{
+  "screenId": "41:11313",
+  "screenName": "Screen 41-11313",
+  "generatedAt": "2026-02-13T11:08:09.150Z",
+  "summary": {
+    "overallCoverage": 100,
+    "propertiesCovered": 146,
+    "propertiesTotal": 146,
+    "propertiesMissing": 0,
+    "nodesCovered": 14,
+    "nodesPartial": 2,
+    "nodesTotal": 16,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 32,
+      "total": 32,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 26,
+      "total": 26,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 16,
+      "total": 16,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 57,
+      "total": 57,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 11,
+      "total": 13,
+      "percentage": 84.6
+    },
+    "multiStyleText": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 13,
+      "total": 13,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:11326",
+      "nodeName": "Welcome to the right side of renting.",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Welcome to the right side of renting.",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Welcome to the right side of renting.\""
+    },
+    {
+      "nodeId": "41:11347",
+      "nodeName": "Accepted",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Accepted",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Accepted\""
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

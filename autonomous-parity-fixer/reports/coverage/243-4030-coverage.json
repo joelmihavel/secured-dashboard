@@ -1,0 +1,148 @@
+{
+  "screenId": "243:4030",
+  "screenName": "Screen 243-4030",
+  "generatedAt": "2026-02-13T11:07:58.895Z",
+  "summary": {
+    "overallCoverage": 98,
+    "propertiesCovered": 48,
+    "propertiesTotal": 49,
+    "propertiesMissing": 1,
+    "nodesCovered": 3,
+    "nodesPartial": 3,
+    "nodesTotal": 6,
+    "limitations": 0,
+    "valueMismatches": 1
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 12,
+      "total": 12,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 16,
+      "total": 17,
+      "percentage": 94.1
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 3,
+      "total": 3,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 13,
+      "total": 13,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 1,
+      "total": 3,
+      "percentage": 33.3
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 3,
+      "total": 3,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "243:4030",
+      "nodeName": "Netbanking Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "243:4035",
+      "nodeName": "SELECTED",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "SELECTED",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"SELECTED\""
+    },
+    {
+      "nodeId": "243:4040",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI a/c -  xxx23",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI a/c -  xxx23\""
+    }
+  ],
+  "valueMismatchProperties": [
+    {
+      "nodeId": "243:4040",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    }
+  ],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

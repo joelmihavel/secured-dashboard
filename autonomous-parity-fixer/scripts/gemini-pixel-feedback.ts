@@ -153,8 +153,11 @@ You are a pixel-perfect React Native implementation expert. Analyze the Figma sc
 
 ## YOUR INPUTS
 1. **IMAGE 1: Figma Screenshot** - The VISUAL SOURCE OF TRUTH. This is what the component MUST look like.
-2. **Extracted Data** - Structured measurements from our extract-figma-ai-enhanced pipeline (geometry, fills, typography, computed styles with design token mappings)
-3. **React Native Code** - The current implementation to fix
+2. **IMAGE 2: Simulator Screenshot** (if provided) - Current app rendering from iOS simulator. Compare with IMAGE 1 to spot visual differences.
+3. **Extracted Data** - Structured measurements from our extract-figma-ai-enhanced pipeline (geometry, fills, typography, computed styles with design token mappings)
+4. **React Native Code** - The current implementation to fix
+
+If IMAGE 2 (Simulator) is provided, compare it side-by-side with IMAGE 1 (Figma) to identify visual differences before diving into code.
 
 ## CRITICAL CONSTRAINTS
 - DO NOT imagine new UI. Only fix code to match the Figma screenshot EXACTLY.
@@ -233,9 +236,12 @@ You are a pixel-perfect React Native implementation expert. Analyze the FULL SCR
 
 ## YOUR INPUTS
 1. **IMAGE 1: Full Figma Screenshot** - The complete screen as it should appear. This is VISUAL TRUTH.
-2. **Extracted Component Tree** - Hierarchical data from extract-figma-ai-enhanced with all children, their positions, sizes, and design token mappings
-3. **React Native Screen Code** - The current implementation
-4. **Component Issues** - Already identified per-component issues (don't duplicate these)
+2. **IMAGE 2: Simulator Screenshot** (if provided) - Current app rendering from iOS simulator. Compare with IMAGE 1 to spot screen-level differences.
+3. **Extracted Component Tree** - Hierarchical data from extract-figma-ai-enhanced with all children, their positions, sizes, and design token mappings
+4. **React Native Screen Code** - The current implementation
+5. **Component Issues** - Already identified per-component issues (don't duplicate these)
+
+If IMAGE 2 (Simulator) is provided, compare it side-by-side with IMAGE 1 (Figma) to identify screen-level visual differences.
 
 ## CRITICAL CONSTRAINTS
 - DO NOT imagine new UI. Only fix to match the Figma screenshot.
@@ -406,6 +412,23 @@ function loadImageBase64(imagePath: string): string | null {
     return fs.readFileSync(imagePath).toString('base64');
   } catch {
     return null;
+  }
+}
+
+// Capture simulator screenshot via simctl (graceful — skips if no simulator running)
+async function captureSimulatorScreenshot(route: string, outputPath: string): Promise<boolean> {
+  const { execSync } = require('child_process');
+  try {
+    // Navigate to screen using deep link
+    execSync(`xcrun simctl openurl booted "flentsecured://${route}"`, { timeout: 10000, stdio: 'pipe' });
+    // Wait for screen to render
+    await new Promise(r => setTimeout(r, 2000));
+    // Capture screenshot via simctl
+    execSync(`xcrun simctl io booted screenshot "${outputPath}"`, { timeout: 10000, stdio: 'pipe' });
+    return fs.existsSync(outputPath);
+  } catch (e: any) {
+    console.warn(`  Simulator capture skipped for ${route}: ${e.message?.split('\n')[0] || e}`);
+    return false;
   }
 }
 
@@ -1396,6 +1419,15 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
     console.log(`  Component screenshots: ${componentScreenshots.size}`);
   }
 
+  // Capture simulator screenshot (optional — gracefully skips if no simulator)
+  console.log('\nStep 5b: Capturing simulator screenshot...');
+  const simScreenshotDir = path.join(DATA_DIR, 'simulator-screenshots', screen.figmaId);
+  fs.mkdirSync(simScreenshotDir, { recursive: true });
+  const simScreenshotPath = path.join(simScreenshotDir, 'current.png');
+  const simCaptured = await captureSimulatorScreenshot(route.route, simScreenshotPath);
+  const simScreenshotBase64 = simCaptured ? loadImageBase64(simScreenshotPath) : null;
+  console.log(`  Simulator screenshot: ${simScreenshotBase64 ? 'captured' : 'not available (pipeline continues without it)'}`);
+
   // ========================================
   // BATCH 1: Component-level analysis
   // ========================================
@@ -1424,8 +1456,10 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
     try {
       const prompt = BATCH_PROMPTS.component(componentName, componentExtraction, componentCode);
 
-      // Include screenshot if available
-      const images = componentScreenshotBase64 ? [componentScreenshotBase64] : [];
+      // Include Figma screenshot + simulator screenshot if available
+      const images: string[] = [];
+      if (componentScreenshotBase64) images.push(componentScreenshotBase64);
+      if (simScreenshotBase64) images.push(simScreenshotBase64);
       const result = await callGemini(prompt, images);
 
       componentFeedback.push({
@@ -1472,9 +1506,11 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
       componentFeedback
     );
 
-    // Include full screen Figma screenshot
-    const images = fullScreenshotBase64 ? [fullScreenshotBase64] : [];
-    console.log(`  Analyzing with${fullScreenshotBase64 ? '' : 'out'} Figma screenshot...`);
+    // Include full screen Figma screenshot + simulator screenshot
+    const images: string[] = [];
+    if (fullScreenshotBase64) images.push(fullScreenshotBase64);
+    if (simScreenshotBase64) images.push(simScreenshotBase64);
+    console.log(`  Analyzing with ${images.length} image(s) (Figma: ${fullScreenshotBase64 ? 'yes' : 'no'}, Simulator: ${simScreenshotBase64 ? 'yes' : 'no'})...`);
 
     screenFeedback = await callGemini(prompt, images);
     console.log(`  Screen-level issues: ${screenFeedback.screenLevelIssues?.length || 0}`);

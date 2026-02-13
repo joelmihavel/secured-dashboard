@@ -1,0 +1,234 @@
+{
+  "screenId": "1:30268",
+  "screenName": "Screen 1-30268",
+  "generatedAt": "2026-02-13T11:07:43.827Z",
+  "summary": {
+    "overallCoverage": 97.8,
+    "propertiesCovered": 180,
+    "propertiesTotal": 184,
+    "propertiesMissing": 4,
+    "nodesCovered": 6,
+    "nodesPartial": 12,
+    "nodesTotal": 18,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 36,
+      "total": 36,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 37,
+      "total": 37,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 13,
+      "total": 14,
+      "percentage": 92.9
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 6,
+      "total": 6,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 73,
+      "total": 73,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 6,
+      "total": 14,
+      "percentage": 42.9
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 14,
+      "total": 17,
+      "percentage": 82.4
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "1:30308",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "saved ₹ 325 →",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"saved ₹ 325 →\""
+    },
+    {
+      "nodeId": "1:30313",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Paying to",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Paying to\""
+    },
+    {
+      "nodeId": "1:30318",
+      "nodeName": "ICICI",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI\""
+    },
+    {
+      "nodeId": "1:30321",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Pay Now",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Pay Now\""
+    },
+    {
+      "nodeId": "1:30322",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "All payments are 100% secure",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"All payments are 100% secure\""
+    },
+    {
+      "nodeId": "1:30327",
+      "nodeName": "PAY BY ANY APP INSTEAD",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PAY BY ANY APP INSTEAD",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PAY BY ANY APP INSTEAD\""
+    },
+    {
+      "nodeId": "1:30330",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 1a8928147af6...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:30331",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Google Pay",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Google Pay\""
+    },
+    {
+      "nodeId": "1:30333",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 951e70728a7c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:30334",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PayTM",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PayTM\""
+    },
+    {
+      "nodeId": "1:30336",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 09777000c94c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:30355",
+      "nodeName": "Joel_Ramesh-Agreement_Dec 2025.pdf",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#D2D2D2",
+      "rnValue": "FIGMA.colors.progressBar",
+      "covered": false,
+      "fix": "Add color: '#D2D2D2' (or token)"
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

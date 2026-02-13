@@ -1,21 +1,22 @@
 {
   "screenId": "1:31073",
   "screenName": "auth / sign up --enter OTP --filled",
-  "generatedAt": "2026-02-03T10:56:07.711Z",
+  "generatedAt": "2026-02-13T11:07:46.850Z",
   "summary": {
     "overallCoverage": 100,
-    "propertiesCovered": 77,
-    "propertiesTotal": 77,
+    "propertiesCovered": 69,
+    "propertiesTotal": 69,
     "propertiesMissing": 0,
-    "nodesCovered": 9,
+    "nodesCovered": 8,
     "nodesPartial": 0,
-    "nodesTotal": 9,
-    "limitations": 0
+    "nodesTotal": 8,
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 18,
-      "total": 18,
+      "covered": 16,
+      "total": 16,
       "percentage": 100
     },
     "positioning": {
@@ -24,8 +25,8 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 24,
-      "total": 24,
+      "covered": 23,
+      "total": 23,
       "percentage": 100
     },
     "spacing": {
@@ -34,8 +35,8 @@
       "percentage": 100
     },
     "colors": {
-      "covered": 5,
-      "total": 5,
+      "covered": 4,
+      "total": 4,
       "percentage": 100
     },
     "gradients": {
@@ -90,6 +91,7 @@
     }
   },
   "uncoveredProperties": [],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

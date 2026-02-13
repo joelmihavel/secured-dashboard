@@ -1,21 +1,22 @@
 {
   "screenId": "1:29914",
   "screenName": "Test Extraction",
-  "generatedAt": "2026-02-03T15:26:22.734Z",
+  "generatedAt": "2026-02-13T11:07:40.836Z",
   "summary": {
-    "overallCoverage": 86.1,
-    "propertiesCovered": 173,
-    "propertiesTotal": 201,
-    "propertiesMissing": 28,
-    "nodesCovered": 1,
-    "nodesPartial": 18,
-    "nodesTotal": 19,
-    "limitations": 0
+    "overallCoverage": 98.4,
+    "propertiesCovered": 180,
+    "propertiesTotal": 183,
+    "propertiesMissing": 3,
+    "nodesCovered": 3,
+    "nodesPartial": 15,
+    "nodesTotal": 18,
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 38,
-      "total": 38,
+      "covered": 36,
+      "total": 36,
       "percentage": 100
     },
     "positioning": {
@@ -24,9 +25,9 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 34,
-      "total": 38,
-      "percentage": 89.5
+      "covered": 37,
+      "total": 37,
+      "percentage": 100
     },
     "spacing": {
       "covered": 0,
@@ -34,8 +35,8 @@
       "percentage": 100
     },
     "colors": {
-      "covered": 15,
-      "total": 15,
+      "covered": 14,
+      "total": 14,
       "percentage": 100
     },
     "gradients": {
@@ -64,9 +65,9 @@
       "percentage": 100
     },
     "typography": {
-      "covered": 63,
+      "covered": 72,
       "total": 72,
-      "percentage": 87.5
+      "percentage": 100
     },
     "textContent": {
       "covered": 2,
@@ -105,34 +106,12 @@
       "nodeId": "1:29959",
       "nodeName": "Paying to",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "lineHeight",
-      "figmaValue": 22,
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add lineHeight: 22"
-    },
-    {
-      "nodeId": "1:29959",
-      "nodeName": "Paying to",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "Paying to",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"Paying to\""
-    },
-    {
-      "nodeId": "1:29960",
-      "nodeName": "[Landlord Name]",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "lineHeight",
-      "figmaValue": 22,
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add lineHeight: 22"
     },
     {
       "nodeId": "1:29964",
@@ -146,28 +125,6 @@
       "fix": "Add text content: \"ICICI\""
     },
     {
-      "nodeId": "1:29965",
-      "nodeName": "XXXX XXXX XXXX 2003",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "lineHeight",
-      "figmaValue": 22,
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add lineHeight: 22"
-    },
-    {
-      "nodeId": "1:29967",
-      "nodeName": "Pay Now",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
       "nodeId": "1:29967",
       "nodeName": "Pay Now",
       "nodeType": "TEXT",
@@ -177,28 +134,6 @@
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"Pay Now\""
-    },
-    {
-      "nodeId": "1:29968",
-      "nodeName": "All payments are 100% secure",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "lineHeight",
-      "figmaValue": 22,
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add lineHeight: 22"
-    },
-    {
-      "nodeId": "1:29968",
-      "nodeName": "All payments are 100% secure",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "1:29968",
@@ -226,34 +161,12 @@
       "nodeId": "1:29976",
       "nodeName": "Ellipse 26",
       "nodeType": "ELLIPSE",
-      "category": "layout",
-      "property": "layoutSizingVertical",
-      "figmaValue": "FIXED",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add explicit height value"
-    },
-    {
-      "nodeId": "1:29976",
-      "nodeName": "Ellipse 26",
-      "nodeType": "ELLIPSE",
       "category": "assetExistence",
       "property": "imageAssetFile",
       "figmaValue": "imageRef: 1a8928147af6...",
       "rnValue": null,
       "covered": false,
       "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
-    },
-    {
-      "nodeId": "1:29977",
-      "nodeName": "Google Pay",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "1:29977",
@@ -270,34 +183,12 @@
       "nodeId": "1:29979",
       "nodeName": "Ellipse 26",
       "nodeType": "ELLIPSE",
-      "category": "layout",
-      "property": "layoutSizingVertical",
-      "figmaValue": "FIXED",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add explicit height value"
-    },
-    {
-      "nodeId": "1:29979",
-      "nodeName": "Ellipse 26",
-      "nodeType": "ELLIPSE",
       "category": "assetExistence",
       "property": "imageAssetFile",
       "figmaValue": "imageRef: 951e70728a7c...",
       "rnValue": null,
       "covered": false,
       "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
-    },
-    {
-      "nodeId": "1:29980",
-      "nodeName": "PayTM",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "1:29980",
@@ -314,34 +205,12 @@
       "nodeId": "1:29982",
       "nodeName": "Ellipse 26",
       "nodeType": "ELLIPSE",
-      "category": "layout",
-      "property": "layoutSizingVertical",
-      "figmaValue": "FIXED",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add explicit height value"
-    },
-    {
-      "nodeId": "1:29982",
-      "nodeName": "Ellipse 26",
-      "nodeType": "ELLIPSE",
       "category": "assetExistence",
       "property": "imageAssetFile",
       "figmaValue": "imageRef: 09777000c94c...",
       "rnValue": null,
       "covered": false,
       "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
-    },
-    {
-      "nodeId": "1:29983",
-      "nodeName": "PhonePe",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "1:29983",
@@ -377,17 +246,6 @@
       "fix": "Add text content: \"Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.\""
     },
     {
-      "nodeId": "1:29994",
-      "nodeName": "Outline Icon Library",
-      "nodeType": "INSTANCE",
-      "category": "layout",
-      "property": "layoutSizingVertical",
-      "figmaValue": "FIXED",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add explicit height value"
-    },
-    {
       "nodeId": "1:29995",
       "nodeName": "Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB",
       "nodeType": "TEXT",
@@ -399,6 +257,7 @@
       "fix": "Add text content: \"Upload Rental Agreement\nFile types: PDF, DOCX, Max size: 10MB\""
     }
   ],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

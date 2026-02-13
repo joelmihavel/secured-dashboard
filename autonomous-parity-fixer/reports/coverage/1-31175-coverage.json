@@ -1,21 +1,22 @@
 {
   "screenId": "1:31175",
   "screenName": "auth / sign up --enter OTP",
-  "generatedAt": "2026-02-10T15:55:38.973Z",
+  "generatedAt": "2026-02-13T11:07:47.581Z",
   "summary": {
-    "overallCoverage": 95.3,
-    "propertiesCovered": 82,
-    "propertiesTotal": 86,
-    "propertiesMissing": 4,
-    "nodesCovered": 5,
-    "nodesPartial": 4,
-    "nodesTotal": 9,
-    "limitations": 0
+    "overallCoverage": 100,
+    "propertiesCovered": 77,
+    "propertiesTotal": 77,
+    "propertiesMissing": 0,
+    "nodesCovered": 7,
+    "nodesPartial": 1,
+    "nodesTotal": 8,
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 18,
-      "total": 18,
+      "covered": 16,
+      "total": 16,
       "percentage": 100
     },
     "positioning": {
@@ -24,9 +25,9 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 20,
-      "total": 23,
-      "percentage": 87
+      "covered": 22,
+      "total": 22,
+      "percentage": 100
     },
     "spacing": {
       "covered": 3,
@@ -34,8 +35,8 @@
       "percentage": 100
     },
     "colors": {
-      "covered": 6,
-      "total": 6,
+      "covered": 5,
+      "total": 5,
       "percentage": 100
     },
     "gradients": {
@@ -91,28 +92,6 @@
   },
   "uncoveredProperties": [
     {
-      "nodeId": "1:31251",
-      "nodeName": "input",
-      "nodeType": "INSTANCE",
-      "category": "layout",
-      "property": "overflow",
-      "figmaValue": "visible",
-      "rnValue": "hidden",
-      "covered": false,
-      "fix": "Add overflow: 'visible'"
-    },
-    {
-      "nodeId": "1:31252",
-      "nodeName": "input",
-      "nodeType": "INSTANCE",
-      "category": "layout",
-      "property": "overflow",
-      "figmaValue": "visible",
-      "rnValue": "hidden",
-      "covered": false,
-      "fix": "Add overflow: 'visible'"
-    },
-    {
       "nodeId": "1:31255",
       "nodeName": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
       "nodeType": "TEXT",
@@ -122,19 +101,9 @@
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"You may get a verification message from Cashfree to verify your profile and unlock benefits.\""
-    },
-    {
-      "nodeId": "1:31272",
-      "nodeName": "OTP",
-      "nodeType": "INSTANCE",
-      "category": "layout",
-      "property": "overflow",
-      "figmaValue": "visible",
-      "rnValue": "hidden",
-      "covered": false,
-      "fix": "Add overflow: 'visible'"
     }
   ],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

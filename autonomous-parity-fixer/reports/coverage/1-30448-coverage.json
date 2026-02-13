@@ -1,0 +1,190 @@
+{
+  "screenId": "1:30448",
+  "screenName": "Screen 1-30448",
+  "generatedAt": "2026-02-13T11:07:45.299Z",
+  "summary": {
+    "overallCoverage": 99.1,
+    "propertiesCovered": 323,
+    "propertiesTotal": 326,
+    "propertiesMissing": 3,
+    "nodesCovered": 23,
+    "nodesPartial": 8,
+    "nodesTotal": 31,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 62,
+      "total": 62,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 65,
+      "total": 65,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 27,
+      "total": 27,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 6,
+      "total": 6,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 133,
+      "total": 133,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 22,
+      "total": 27,
+      "percentage": 81.5
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 27,
+      "total": 30,
+      "percentage": 90
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "1:30508",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 1a8928147af6...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:30511",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 951e70728a7c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:30514",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 09777000c94c...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
+    },
+    {
+      "nodeId": "1:30523",
+      "nodeName": "Confirm your details",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Confirm your details",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Confirm your details\""
+    },
+    {
+      "nodeId": "1:30537",
+      "nodeName": "Prestige Pinestripe, Bommanahalli, Bengaluru 560037",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Prestige Pinestripe, Bommanahalli, Bengaluru 56003...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Prestige Pinestripe, Bommanahalli, Bengaluru 560037\""
+    },
+    {
+      "nodeId": "1:30544",
+      "nodeName": "Rahul Joshi, Ashish Shakya,  Gursimran Khamba",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Rahul Joshi, Ashish Shakya,  Gursimran Khamba",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Rahul Joshi, Ashish Shakya,  Gursimran Khamba\""
+    },
+    {
+      "nodeId": "1:30551",
+      "nodeName": "Tanmay Bhatt, Kaneez Surkha",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Tanmay Bhatt, Kaneez Surkha",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Tanmay Bhatt, Kaneez Surkha\""
+    },
+    {
+      "nodeId": "1:30579",
+      "nodeName": "31 Dec, 2027",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "31 Dec, 2027",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"31 Dec, 2027\""
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

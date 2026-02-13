@@ -1,21 +1,22 @@
 {
   "screenId": "243:5870",
   "screenName": "Pay Rent / Transaction Page --without cashback",
-  "generatedAt": "2026-02-10T15:58:35.383Z",
+  "generatedAt": "2026-02-13T11:08:01.223Z",
   "summary": {
-    "overallCoverage": 91.8,
-    "propertiesCovered": 447,
-    "propertiesTotal": 487,
-    "propertiesMissing": 40,
-    "nodesCovered": 24,
-    "nodesPartial": 34,
-    "nodesTotal": 58,
-    "limitations": 0
+    "overallCoverage": 97,
+    "propertiesCovered": 427,
+    "propertiesTotal": 440,
+    "propertiesMissing": 13,
+    "nodesCovered": 20,
+    "nodesPartial": 32,
+    "nodesTotal": 52,
+    "limitations": 0,
+    "valueMismatches": 7
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 108,
-      "total": 108,
+      "covered": 96,
+      "total": 96,
       "percentage": 100
     },
     "positioning": {
@@ -29,14 +30,14 @@
       "percentage": 95.7
     },
     "spacing": {
-      "covered": 8,
+      "covered": 12,
       "total": 14,
-      "percentage": 57.1
+      "percentage": 85.7
     },
     "colors": {
-      "covered": 43,
-      "total": 44,
-      "percentage": 97.7
+      "covered": 37,
+      "total": 38,
+      "percentage": 97.4
     },
     "gradients": {
       "covered": 0,
@@ -45,7 +46,7 @@
     },
     "images": {
       "covered": 0,
-      "total": 2,
+      "total": 1,
       "percentage": 0
     },
     "borders": {
@@ -85,8 +86,8 @@
     },
     "assetExistence": {
       "covered": 27,
-      "total": 32,
-      "percentage": 84.4
+      "total": 31,
+      "percentage": 87.1
     }
   },
   "uncoveredProperties": [
@@ -311,50 +312,6 @@
       "fix": "Add paddingLeft: 4 (or spacing.xxs)"
     },
     {
-      "nodeId": "243:6027",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingRight",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingRight: 24 (or spacing.lg)"
-    },
-    {
-      "nodeId": "243:6027",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingLeft",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingLeft: 24 (or spacing.lg)"
-    },
-    {
-      "nodeId": "243:6028",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingRight",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingRight: 24 (or spacing.lg)"
-    },
-    {
-      "nodeId": "243:6028",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingLeft",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingLeft: 24 (or spacing.lg)"
-    },
-    {
       "nodeId": "243:6032",
       "nodeName": "Label",
       "nodeType": "TEXT",
@@ -465,28 +422,6 @@
       "fix": "Add <Image> or <ImageBackground> component"
     },
     {
-      "nodeId": "243:6082",
-      "nodeName": "Ellipse 8",
-      "nodeType": "ELLIPSE",
-      "category": "assetExistence",
-      "property": "imageAssetFile",
-      "figmaValue": "imageRef: 6d93b82e0916...",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
-    },
-    {
-      "nodeId": "243:6082",
-      "nodeName": "Ellipse 8",
-      "nodeType": "ELLIPSE",
-      "category": "images",
-      "property": "resizeMode",
-      "figmaValue": "cover",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add resizeMode: 'cover'"
-    },
-    {
       "nodeId": "component:CreditCardSelect",
       "nodeName": "CreditCardSelect",
       "nodeType": "COMPONENT",
@@ -529,6 +464,92 @@
       "rnValue": null,
       "covered": false,
       "fix": "Replace placeholder in AddMoreCard (AddMoreCard.tsx) with actual image asset"
+    }
+  ],
+  "valueMismatchProperties": [
+    {
+      "nodeId": "243:5888",
+      "nodeName": "EXPIRY 06/26",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:5889",
+      "nodeName": "CVV •••",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:5973",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:5974",
+      "nodeName": "rishabh@•••",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:5996",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:6021",
+      "nodeName": "Ellipse 21885",
+      "nodeType": "ELLIPSE",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "rnValue": "#FF9A6D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FF9A6D' found but used in wrong property context — verify it's applied as backgroundColor"
+    },
+    {
+      "nodeId": "243:6048",
+      "nodeName": "Ellipse 21906",
+      "nodeType": "ELLIPSE",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "rnValue": "#FF9A6D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FF9A6D' found but used in wrong property context — verify it's applied as backgroundColor"
     }
   ],
   "limitations": [],

@@ -1,0 +1,157 @@
+{
+  "screenId": "41:8529",
+  "screenName": "Screen 41-8529",
+  "generatedAt": "2026-02-13T11:08:14.533Z",
+  "summary": {
+    "overallCoverage": 98.6,
+    "propertiesCovered": 204,
+    "propertiesTotal": 207,
+    "propertiesMissing": 3,
+    "nodesCovered": 17,
+    "nodesPartial": 5,
+    "nodesTotal": 22,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 44,
+      "total": 44,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 57,
+      "total": 57,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 5,
+      "total": 5,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 14,
+      "total": 14,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 3,
+      "percentage": 0
+    },
+    "borders": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 68,
+      "total": 68,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 11,
+      "total": 13,
+      "percentage": 84.6
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 13,
+      "total": 13,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:8567",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "saved ₹ 325 →",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"saved ₹ 325 →\""
+    },
+    {
+      "nodeId": "41:8577",
+      "nodeName": "ICICI",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI\""
+    },
+    {
+      "nodeId": "41:8589",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "1a8928147af64796e2247f1cef1ae9db1a68f5aa",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:8592",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "951e70728a7ce2a5ae5680e74d083d3df51b5e10",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:8595",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "09777000c94ca3fb826eada476cc87c6492dc244",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

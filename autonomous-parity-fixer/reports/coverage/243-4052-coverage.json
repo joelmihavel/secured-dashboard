@@ -1,0 +1,135 @@
+{
+  "screenId": "243:4052",
+  "screenName": "Screen 243-4052",
+  "generatedAt": "2026-02-13T11:07:59.715Z",
+  "summary": {
+    "overallCoverage": 96.6,
+    "propertiesCovered": 28,
+    "propertiesTotal": 29,
+    "propertiesMissing": 1,
+    "nodesCovered": 0,
+    "nodesPartial": 3,
+    "nodesTotal": 3,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 6,
+      "total": 6,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 8,
+      "total": 9,
+      "percentage": 88.9
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 9,
+      "total": 9,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 0,
+      "total": 2,
+      "percentage": 0
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "243:4052",
+      "nodeName": "Add More Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "243:4056",
+      "nodeName": "+  Setup your payment method to start",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "+  Setup your payment method to start",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"+  Setup your payment method to start\""
+    },
+    {
+      "nodeId": "243:4059",
+      "nodeName": "+ NEW PAYMENT",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "+ NEW PAYMENT",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"+ NEW PAYMENT\""
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

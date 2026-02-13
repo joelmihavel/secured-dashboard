@@ -1,0 +1,590 @@
+{
+  "screenId": "243:2967",
+  "screenName": "Screen 243-2967",
+  "generatedAt": "2026-02-13T11:07:52.883Z",
+  "summary": {
+    "overallCoverage": 97.6,
+    "propertiesCovered": 408,
+    "propertiesTotal": 418,
+    "propertiesMissing": 10,
+    "nodesCovered": 15,
+    "nodesPartial": 30,
+    "nodesTotal": 45,
+    "limitations": 2,
+    "valueMismatches": 10
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 90,
+      "total": 90,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 113,
+      "total": 117,
+      "percentage": 96.6
+    },
+    "spacing": {
+      "covered": 14,
+      "total": 14,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 30,
+      "total": 31,
+      "percentage": 96.8
+    },
+    "gradients": {
+      "covered": 4,
+      "total": 4,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 8,
+      "total": 8,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 5,
+      "total": 6,
+      "percentage": 83.3
+    },
+    "effects": {
+      "covered": 3,
+      "total": 3,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 108,
+      "total": 108,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 3,
+      "total": 24,
+      "percentage": 12.5
+    },
+    "multiStyleText": {
+      "covered": 9,
+      "total": 9,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 24,
+      "total": 28,
+      "percentage": 85.7
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "243:2976",
+      "nodeName": "Credit Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "243:2981",
+      "nodeName": "SELECTED",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "SELECTED",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"SELECTED\""
+    },
+    {
+      "nodeId": "243:2983",
+      "nodeName": "•••• 2341",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "•••• 2341",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"•••• 2341\""
+    },
+    {
+      "nodeId": "243:2985",
+      "nodeName": "EXPIRY 06/26",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "EXPIRY 06/26",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"EXPIRY 06/26\""
+    },
+    {
+      "nodeId": "243:2986",
+      "nodeName": "CVV •••",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "CVV •••",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"CVV •••\""
+    },
+    {
+      "nodeId": "243:2995",
+      "nodeName": "CREDIT CARD",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "CREDIT CARD",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"CREDIT CARD\""
+    },
+    {
+      "nodeId": "243:2998",
+      "nodeName": "UPI Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "243:3066",
+      "nodeName": "SELECTED",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "SELECTED",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"SELECTED\""
+    },
+    {
+      "nodeId": "243:3070",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI a/c -  xxx23",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI a/c -  xxx23\""
+    },
+    {
+      "nodeId": "243:3071",
+      "nodeName": "rishabh@•••",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "rishabh@•••",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"rishabh@•••\""
+    },
+    {
+      "nodeId": "243:3080",
+      "nodeName": "UPI",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "UPI",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"UPI\""
+    },
+    {
+      "nodeId": "243:3083",
+      "nodeName": "Netbanking Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "243:3088",
+      "nodeName": "SELECTED",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "SELECTED",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"SELECTED\""
+    },
+    {
+      "nodeId": "243:3093",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI a/c -  xxx23",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI a/c -  xxx23\""
+    },
+    {
+      "nodeId": "243:3102",
+      "nodeName": "NET BANKING",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "NET BANKING",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"NET BANKING\""
+    },
+    {
+      "nodeId": "243:3105",
+      "nodeName": "Add More Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
+      "covered": false,
+      "fix": "Add flexDirection: 'column'"
+    },
+    {
+      "nodeId": "243:3112",
+      "nodeName": "+ NEW PAYMENT",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "+ NEW PAYMENT",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"+ NEW PAYMENT\""
+    },
+    {
+      "nodeId": "243:3122",
+      "nodeName": "Component 7",
+      "nodeType": "INSTANCE",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#0D0D0D",
+      "rnValue": "#1A1A1A",
+      "covered": false,
+      "fix": "Add backgroundColor: '#0D0D0D' (or colors.black[800])"
+    },
+    {
+      "nodeId": "243:3122",
+      "nodeName": "Component 7",
+      "nodeType": "INSTANCE",
+      "category": "borders",
+      "property": "borderVisible",
+      "figmaValue": false,
+      "rnValue": "borderWidth: 1, borderColor: #202020",
+      "covered": false,
+      "valueMatch": false,
+      "fix": "Figma stroke is invisible but RN has borderWidth: 1. Set borderColor to 'transparent' or remove border."
+    },
+    {
+      "nodeId": "243:3126",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "nodeId": "243:3128",
+      "nodeName": "September rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "September rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"September rent\""
+    },
+    {
+      "nodeId": "243:3132",
+      "nodeName": "Paid · 15 Sep, 9:40am",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Paid · 15 Sep, 9:40am",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Paid · 15 Sep, 9:40am\""
+    },
+    {
+      "nodeId": "243:3137",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "nodeId": "243:3139",
+      "nodeName": "August rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "August rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"August rent\""
+    },
+    {
+      "nodeId": "243:3142",
+      "nodeName": "Pending · 15 Sep, 9:40am",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Pending · 15 Sep, 9:40am",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Pending · 15 Sep, 9:40am\""
+    },
+    {
+      "nodeId": "243:3147",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    },
+    {
+      "nodeId": "243:3149",
+      "nodeName": "July rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "July rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"July rent\""
+    },
+    {
+      "nodeId": "243:3152",
+      "nodeName": "Failed · 15 Sep, 9:40am",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Failed · 15 Sep, 9:40am",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Failed · 15 Sep, 9:40am\""
+    },
+    {
+      "nodeId": "243:3157",
+      "nodeName": "Due in 10 Days",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Due in 10 Days",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Due in 10 Days\""
+    },
+    {
+      "nodeId": "243:3168",
+      "nodeName": "Hi, Rishabh",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Hi, Rishabh",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Hi, Rishabh\""
+    },
+    {
+      "nodeId": "243:3169",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "assetExistence",
+      "property": "imageAssetFile",
+      "figmaValue": "imageRef: 6d93b82e0916...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    }
+  ],
+  "valueMismatchProperties": [
+    {
+      "nodeId": "243:2979",
+      "nodeName": "Visa",
+      "nodeType": "VECTOR",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as backgroundColor"
+    },
+    {
+      "nodeId": "243:2985",
+      "nodeName": "EXPIRY 06/26",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:2986",
+      "nodeName": "CVV •••",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3070",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3071",
+      "nodeName": "rishabh@•••",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3093",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3116",
+      "nodeName": "Ellipse 21885",
+      "nodeType": "ELLIPSE",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "rnValue": "#FF9A6D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FF9A6D' found but used in wrong property context — verify it's applied as backgroundColor"
+    },
+    {
+      "nodeId": "243:3128",
+      "nodeName": "September rent",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3139",
+      "nodeName": "August rent",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3149",
+      "nodeName": "July rent",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as color"
+    }
+  ],
+  "limitations": [
+    {
+      "nodeId": "243:3120",
+      "nodeName": "Toggle",
+      "nodeType": "FRAME",
+      "category": "effects",
+      "property": "innerShadow",
+      "figmaValue": "INNER_SHADOW",
+      "rnValue": null,
+      "covered": true,
+      "isLimitation": true,
+      "fix": "RN does not support inner shadows"
+    },
+    {
+      "nodeId": "243:3121",
+      "nodeName": "Component 6",
+      "nodeType": "INSTANCE",
+      "category": "effects",
+      "property": "innerShadow",
+      "figmaValue": "INNER_SHADOW",
+      "rnValue": null,
+      "covered": true,
+      "isLimitation": true,
+      "fix": "RN does not support inner shadows"
+    }
+  ],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

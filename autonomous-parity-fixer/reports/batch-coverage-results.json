@@ -1,13 +1,21 @@
 {
-  "generatedAt": "2026-02-03T06:36:33.059Z",
+  "generatedAt": "2026-02-13T11:08:25.937Z",
   "summary": {
-    "passed": 6,
-    "failed": 11,
+    "passed": 66,
+    "failed": 0,
     "noRNCode": 0,
     "errors": 0,
-    "total": 17
+    "total": 66
   },
   "results": [
+    {
+      "figmaId": "1-28053",
+      "screenName": "Splash / get-started",
+      "route": "/(auth)/splash",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
     {
       "figmaId": "1-28055",
       "screenName": "Splash / get-started --animation",
@@ -25,9 +33,105 @@
       "status": "pass"
     },
     {
+      "figmaId": "1-28985",
+      "screenName": "Splash / get-started --carousel 4",
+      "route": "/(auth)/carousel",
+      "hasRNCode": true,
+      "coverage": 98.1,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-29025",
+      "screenName": "Splash / get-started --carousel 5",
+      "route": "/(auth)/carousel",
+      "hasRNCode": true,
+      "coverage": 97.5,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-29065",
+      "screenName": "Splash / get-started --carousel 6",
+      "route": "/(auth)/carousel",
+      "hasRNCode": true,
+      "coverage": 97.5,
+      "status": "pass"
+    },
+    {
       "figmaId": "1-29108",
       "screenName": "auth / sign up --enter phone number",
       "route": "/(auth)/sign-up",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-29914",
+      "screenName": "auth / sign up --filled",
+      "route": "/(auth)/sign-up",
+      "hasRNCode": true,
+      "coverage": 98.4,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-30001",
+      "screenName": "Onboarding / Agreement --uploading",
+      "route": "/(agreement)/upload",
+      "hasRNCode": true,
+      "coverage": 98.4,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-30090",
+      "screenName": "Onboarding / Agreement --upload",
+      "route": "/(agreement)/upload",
+      "hasRNCode": true,
+      "coverage": 98.4,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-30178",
+      "screenName": "Onboarding / Agreement --upload --expired agreement",
+      "route": "/(agreement)/upload",
+      "hasRNCode": true,
+      "coverage": 97.8,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-30268",
+      "screenName": "Onboarding / Agreement --upload --file too large",
+      "route": "/(agreement)/upload",
+      "hasRNCode": true,
+      "coverage": 97.8,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-30358",
+      "screenName": "Onboarding / Agreement --upload --manual review",
+      "route": "/(agreement)/upload",
+      "hasRNCode": true,
+      "coverage": 97.8,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-30448",
+      "screenName": "Onboarding / Agreement --verify agreement",
+      "route": "/(agreement)/review",
+      "hasRNCode": true,
+      "coverage": 99.1,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-30820",
+      "screenName": "Onboarding / Agreement --modify agreement",
+      "route": "/(agreement)/review",
+      "hasRNCode": true,
+      "coverage": 98.6,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-31073",
+      "screenName": "auth / sign up --enter OTP --filled",
+      "route": "/(auth)/otp",
       "hasRNCode": true,
       "coverage": 100,
       "status": "pass"
@@ -37,7 +141,23 @@
       "screenName": "auth / sign up --enter OTP",
       "route": "/(auth)/otp",
       "hasRNCode": true,
-      "coverage": 95.3,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-31277",
+      "screenName": "auth / sign up --enter OTP --error 1",
+      "route": "/(auth)/otp",
+      "hasRNCode": true,
+      "coverage": 98.2,
+      "status": "pass"
+    },
+    {
+      "figmaId": "1-31380",
+      "screenName": "auth / sign up --enter OTP --error 2",
+      "route": "/(auth)/otp",
+      "hasRNCode": true,
+      "coverage": 98.2,
       "status": "pass"
     },
     {
@@ -45,72 +165,192 @@
       "screenName": "Onboarding / Add bank details",
       "route": "/(setup)/add-bank",
       "hasRNCode": true,
-      "coverage": 81.3,
-      "status": "fail"
+      "coverage": 97,
+      "status": "pass"
     },
     {
       "figmaId": "1-31590",
       "screenName": "Onboarding / Add BESCOM number",
       "route": "/(setup)/add-bank",
       "hasRNCode": true,
-      "coverage": 78.4,
-      "status": "fail"
+      "coverage": 95.9,
+      "status": "pass"
     },
     {
       "figmaId": "1-31671",
       "screenName": "Onboarding / Invite Landlord",
       "route": "/(setup)/invite-landlord",
       "hasRNCode": true,
-      "coverage": 80.5,
-      "status": "fail"
+      "coverage": 99.2,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-2762",
+      "screenName": "Home --active --Bank / UPI only",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 98.1,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-2967",
+      "screenName": "Home --active --complete setup / all methods",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 97.6,
+      "status": "pass"
     },
     {
       "figmaId": "243-3170",
       "screenName": "Home --active --late payment",
       "route": "/(main)/index",
       "hasRNCode": true,
-      "coverage": 82,
-      "status": "fail"
+      "coverage": 98.1,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-3378",
+      "screenName": "Home --active --missed payment",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 98.2,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-3794",
+      "screenName": "Credit Card",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 98.6,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-3816",
+      "screenName": "Credit Card --Selected",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 98.6,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-3838",
+      "screenName": "UPI Card",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 98.3,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-3923",
+      "screenName": "UPI Card --Selected",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 98.3,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-4008",
+      "screenName": "Net Banking Card",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 98,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-4030",
+      "screenName": "Net Banking Card --Selected",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 98,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-4052",
+      "screenName": "Add More Card",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 96.6,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-5689",
+      "screenName": "Home --Empty State --Transaction page without cashback",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 98.3,
+      "status": "pass"
     },
     {
       "figmaId": "243-5870",
       "screenName": "Pay Rent / Transaction Page --without cashback",
       "route": "/(transactions)/index",
       "hasRNCode": true,
-      "coverage": 84.3,
-      "status": "fail"
+      "coverage": 97,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-6083",
+      "screenName": "Pay Rent / Transaction Page --with cashback",
+      "route": "/(transactions)/index",
+      "hasRNCode": true,
+      "coverage": 97,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-6296",
+      "screenName": "Home --Empty State --with upi / no cashbacks",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 98.2,
+      "status": "pass"
     },
     {
       "figmaId": "243-6490",
       "screenName": "Home --Empty State --setup payment",
       "route": "/(main)/index",
       "hasRNCode": true,
-      "coverage": 82,
-      "status": "fail"
+      "coverage": 97.9,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-6731",
+      "screenName": "Home --Empty State --setup payment / upi",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 98.8,
+      "status": "pass"
+    },
+    {
+      "figmaId": "243-7185",
+      "screenName": "Home --active --complete setup / all methods",
+      "route": "/(main)/index",
+      "hasRNCode": true,
+      "coverage": 98.1,
+      "status": "pass"
     },
     {
       "figmaId": "41-10712",
       "screenName": "Onboarding / Post Approval 1",
       "route": "/(setup)/index",
       "hasRNCode": true,
-      "coverage": 87,
-      "status": "fail"
+      "coverage": 99.1,
+      "status": "pass"
     },
     {
       "figmaId": "41-10859",
       "screenName": "Onboarding / Post Approval 2",
       "route": "/(setup)/index",
       "hasRNCode": true,
-      "coverage": 87,
-      "status": "fail"
+      "coverage": 99.1,
+      "status": "pass"
     },
     {
       "figmaId": "41-11006",
       "screenName": "Onboarding / Post Approval 3",
       "route": "/(setup)/index",
       "hasRNCode": true,
-      "coverage": 87.3,
-      "status": "fail"
+      "coverage": 99,
+      "status": "pass"
     },
     {
       "figmaId": "41-11206",
@@ -121,19 +361,139 @@
       "status": "pass"
     },
     {
+      "figmaId": "41-11313",
+      "screenName": "Onboarding / Waitlist Screen --accepted",
+      "route": "/(waitlist)/index",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-11410",
+      "screenName": "Onboarding / Waitlist Screen --rejected",
+      "route": "/(waitlist)/index",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-11506",
+      "screenName": "Onboarding / Waitlist Screen --more than 24hrs",
+      "route": "/(waitlist)/index",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-11613",
+      "screenName": "Onboarding / Waitlist Screen --referral code entry",
+      "route": "/(waitlist)/index",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-11720",
+      "screenName": "Onboarding / Waitlist Screen --referral code entry --invalid",
+      "route": "/(waitlist)/index",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-8369",
+      "screenName": "Pay Rent / Add UPI Payment",
+      "route": "/(payment)/add-upi",
+      "hasRNCode": true,
+      "coverage": 98.2,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-8450",
+      "screenName": "Pay Rent / Add Credit Payment",
+      "route": "/(payment)/add-card",
+      "hasRNCode": true,
+      "coverage": 97.6,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-8529",
+      "screenName": "Pay Rent / Add Net Banking",
+      "route": "/(payment)/add-netbanking",
+      "hasRNCode": true,
+      "coverage": 98.6,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-8695",
+      "screenName": "My Profile / Agreement",
+      "route": "/(profile)/index",
+      "hasRNCode": true,
+      "coverage": 98.8,
+      "status": "pass"
+    },
+    {
       "figmaId": "41-8760",
       "screenName": "My Profile / Main Screen",
       "route": "/(profile)/index",
       "hasRNCode": true,
-      "coverage": 85.3,
-      "status": "fail"
+      "coverage": 99.8,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-8880",
+      "screenName": "My Profile / Secured Account --My Profile",
+      "route": "/(profile)/edit",
+      "hasRNCode": true,
+      "coverage": 98.8,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-8901",
+      "screenName": "Pay Rent / Payment Page --without setup",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 97.5,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9004",
+      "screenName": "Pay Rent / Payment Page --all setup --before 7th",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 97.8,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9114",
+      "screenName": "Pay Rent / Payment Page --all setup --after 7th",
+      "route": "/(payment)/select-method",
+      "hasRNCode": true,
+      "coverage": 97.8,
+      "status": "pass"
     },
     {
       "figmaId": "41-9388",
       "screenName": "Pay Rent / Payment Summary Page --Payment Successful",
       "route": "/(payment)/success",
       "hasRNCode": true,
-      "coverage": 99.4,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9460",
+      "screenName": "Pay Rent / Payment Summary Page --Payment Processing",
+      "route": "/(payment)/processing",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9511",
+      "screenName": "Pay Rent / Payment Summary Page --Payment Successful --no cashback",
+      "route": "/(payment)/success",
+      "hasRNCode": true,
+      "coverage": 100,
       "status": "pass"
     },
     {
@@ -141,8 +501,40 @@
       "screenName": "Pay Rent / Payment Summary Page --Payment Failed",
       "route": "/(payment)/failed",
       "hasRNCode": true,
-      "coverage": 90.8,
-      "status": "fail"
+      "coverage": 95.3,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9635",
+      "screenName": "Pay Rent / Payment Summary Page --Payment Refunded",
+      "route": "/(payment)/failed",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9681",
+      "screenName": "My Profile / Payment --UPI",
+      "route": "/(profile)/payment-methods",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9746",
+      "screenName": "My Profile / Payment --Credit Card",
+      "route": "/(profile)/payment-methods",
+      "hasRNCode": true,
+      "coverage": 100,
+      "status": "pass"
+    },
+    {
+      "figmaId": "41-9811",
+      "screenName": "My Profile / Payment --Bank Account",
+      "route": "/(profile)/payment-methods",
+      "hasRNCode": true,
+      "coverage": 96.4,
+      "status": "pass"
     }
   ]
 }

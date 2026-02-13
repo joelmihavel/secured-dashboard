@@ -1,21 +1,22 @@
 {
   "screenId": "41:8760",
   "screenName": "My Profile / Main Screen",
-  "generatedAt": "2026-02-10T15:58:31.646Z",
+  "generatedAt": "2026-02-13T11:08:16.010Z",
   "summary": {
-    "overallCoverage": 89.7,
-    "propertiesCovered": 402,
-    "propertiesTotal": 448,
-    "propertiesMissing": 46,
-    "nodesCovered": 14,
-    "nodesPartial": 31,
-    "nodesTotal": 45,
-    "limitations": 0
+    "overallCoverage": 99.8,
+    "propertiesCovered": 410,
+    "propertiesTotal": 411,
+    "propertiesMissing": 1,
+    "nodesCovered": 27,
+    "nodesPartial": 16,
+    "nodesTotal": 43,
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 88,
-      "total": 88,
+      "covered": 86,
+      "total": 86,
       "percentage": 100
     },
     "positioning": {
@@ -24,8 +25,8 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 97,
-      "total": 97,
+      "covered": 96,
+      "total": 96,
       "percentage": 100
     },
     "spacing": {
@@ -34,9 +35,9 @@
       "percentage": 100
     },
     "colors": {
-      "covered": 6,
-      "total": 32,
-      "percentage": 18.8
+      "covered": 31,
+      "total": 31,
+      "percentage": 100
     },
     "gradients": {
       "covered": 0,
@@ -44,9 +45,9 @@
       "percentage": 100
     },
     "images": {
-      "covered": 0,
+      "covered": 2,
       "total": 2,
-      "percentage": 0
+      "percentage": 100
     },
     "borders": {
       "covered": 0,
@@ -69,9 +70,9 @@
       "percentage": 100
     },
     "textContent": {
-      "covered": 16,
+      "covered": 17,
       "total": 32,
-      "percentage": 50
+      "percentage": 53.1
     },
     "multiStyleText": {
       "covered": 1,
@@ -85,44 +86,11 @@
     },
     "assetExistence": {
       "covered": 32,
-      "total": 34,
-      "percentage": 94.1
+      "total": 33,
+      "percentage": 97
     }
   },
   "uncoveredProperties": [
-    {
-      "nodeId": "41:8760",
-      "nodeName": "My Profile / Main Screen",
-      "nodeType": "FRAME",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#131313",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#131313' (or colors.black[700])"
-    },
-    {
-      "nodeId": "41:8767",
-      "nodeName": "Your payment history",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8773",
-      "nodeName": "JAN",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
     {
       "nodeId": "41:8773",
       "nodeName": "JAN",
@@ -133,17 +101,6 @@
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"JAN\""
-    },
-    {
-      "nodeId": "41:8779",
-      "nodeName": "FEB",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:8779",
@@ -171,34 +128,12 @@
       "nodeId": "41:8791",
       "nodeName": "APR",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8791",
-      "nodeName": "APR",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "APR",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"APR\""
-    },
-    {
-      "nodeId": "41:8795",
-      "nodeName": "MAY",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:8795",
@@ -215,34 +150,12 @@
       "nodeId": "41:8799",
       "nodeName": "JUN",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8799",
-      "nodeName": "JUN",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "JUN",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"JUN\""
-    },
-    {
-      "nodeId": "41:8803",
-      "nodeName": "JUL",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:8803",
@@ -259,34 +172,12 @@
       "nodeId": "41:8807",
       "nodeName": "AUG",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8807",
-      "nodeName": "AUG",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "AUG",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"AUG\""
-    },
-    {
-      "nodeId": "41:8811",
-      "nodeName": "SEP",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:8811",
@@ -303,34 +194,12 @@
       "nodeId": "41:8815",
       "nodeName": "OCT",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8815",
-      "nodeName": "OCT",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "OCT",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"OCT\""
-    },
-    {
-      "nodeId": "41:8819",
-      "nodeName": "NOV",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:8819",
@@ -347,45 +216,12 @@
       "nodeId": "41:8823",
       "nodeName": "DEC",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8823",
-      "nodeName": "DEC",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "DEC",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"DEC\""
-    },
-    {
-      "nodeId": "41:8829",
-      "nodeName": "Secured Account",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8832",
-      "nodeName": "Ellipse 8",
-      "nodeType": "ELLIPSE",
-      "category": "images",
-      "property": "imageComponent",
-      "figmaValue": "6d93b82e0916dab9a12fe22c604ddce60dfd2dfb",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add <Image> or <ImageBackground> component"
     },
     {
       "nodeId": "41:8832",
@@ -397,17 +233,6 @@
       "rnValue": null,
       "covered": false,
       "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
-    },
-    {
-      "nodeId": "41:8832",
-      "nodeName": "Ellipse 8",
-      "nodeType": "ELLIPSE",
-      "category": "images",
-      "property": "resizeMode",
-      "figmaValue": "cover",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add resizeMode: 'cover'"
     },
     {
       "nodeId": "41:8834",
@@ -424,144 +249,12 @@
       "nodeId": "41:8836",
       "nodeName": "15th sept 9:40am",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8836",
-      "nodeName": "15th sept 9:40am",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "15th sept 9:40am",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"15th sept 9:40am\""
-    },
-    {
-      "nodeId": "41:8837",
-      "nodeName": "Credit Card XX25",
-      "nodeType": "TEXT",
-      "category": "textContent",
-      "property": "characters",
-      "figmaValue": "Credit Card XX25",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add text content: \"Credit Card XX25\""
-    },
-    {
-      "nodeId": "41:8840",
-      "nodeName": "View Agreement",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "41:8843",
-      "nodeName": "Payment Information",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8846",
-      "nodeName": "Edit UPI Method",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "41:8850",
-      "nodeName": "Edit Credit Card",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "41:8854",
-      "nodeName": "Edit Bank Account",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "41:8857",
-      "nodeName": "support",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8860",
-      "nodeName": "Contact Support",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "41:8864",
-      "nodeName": "Rate the App",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "41:8867",
-      "nodeName": "App",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8870",
-      "nodeName": "Sign Out",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
     },
     {
       "nodeId": "41:8870",
@@ -573,30 +266,9 @@
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"Sign Out\""
-    },
-    {
-      "nodeId": "41:8874",
-      "nodeName": "Delete Account",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "file:main",
-      "nodeName": "index.tsx",
-      "nodeType": "FILE",
-      "category": "assetExistence",
-      "property": "placeholderDetected",
-      "figmaValue": "Found 1 placeholder(s): {/* Avatar placeholder - could be actual image */}...",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Replace placeholder pattern with actual image asset"
     }
   ],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

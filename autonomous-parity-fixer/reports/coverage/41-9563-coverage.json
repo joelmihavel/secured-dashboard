@@ -1,21 +1,22 @@
 {
   "screenId": "41:9563",
   "screenName": "Pay Rent / Payment Summary Page --Payment Failed",
-  "generatedAt": "2026-02-03T10:56:48.943Z",
+  "generatedAt": "2026-02-13T11:08:22.839Z",
   "summary": {
-    "overallCoverage": 91.4,
-    "propertiesCovered": 149,
-    "propertiesTotal": 163,
-    "propertiesMissing": 14,
+    "overallCoverage": 95.3,
+    "propertiesCovered": 143,
+    "propertiesTotal": 150,
+    "propertiesMissing": 7,
     "nodesCovered": 20,
-    "nodesPartial": 8,
-    "nodesTotal": 28,
-    "limitations": 0
+    "nodesPartial": 7,
+    "nodesTotal": 27,
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 56,
-      "total": 56,
+      "covered": 54,
+      "total": 54,
       "percentage": 100
     },
     "positioning": {
@@ -25,8 +26,8 @@
     },
     "layout": {
       "covered": 20,
-      "total": 21,
-      "percentage": 95.2
+      "total": 20,
+      "percentage": 100
     },
     "spacing": {
       "covered": 0,
@@ -34,9 +35,9 @@
       "percentage": 100
     },
     "colors": {
-      "covered": 19,
-      "total": 26,
-      "percentage": 73.1
+      "covered": 18,
+      "total": 25,
+      "percentage": 72
     },
     "gradients": {
       "covered": 0,
@@ -91,26 +92,15 @@
   },
   "uncoveredProperties": [
     {
-      "nodeId": "41:9566",
-      "nodeName": "Outline Icon Library",
-      "nodeType": "INSTANCE",
-      "category": "layout",
-      "property": "layoutSizingHorizontal",
-      "figmaValue": "FIXED",
-      "rnValue": "BUTTON_CONTAINER_WIDTH",
-      "covered": false,
-      "fix": "Add explicit width value"
-    },
-    {
       "nodeId": "41:9578",
       "nodeName": "Amount paid",
       "nodeType": "TEXT",
       "category": "colors",
-      "property": "backgroundColor",
+      "property": "color",
       "figmaValue": "#878787",
       "rnValue": "#131313",
       "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+      "fix": "Add color: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:9578",
@@ -128,11 +118,11 @@
       "nodeName": "Date",
       "nodeType": "TEXT",
       "category": "colors",
-      "property": "backgroundColor",
+      "property": "color",
       "figmaValue": "#878787",
       "rnValue": "#131313",
       "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+      "fix": "Add color: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:9585",
@@ -150,22 +140,22 @@
       "nodeName": "4 Nov 2026",
       "nodeType": "TEXT",
       "category": "colors",
-      "property": "backgroundColor",
+      "property": "color",
       "figmaValue": "#CBCBCB",
       "rnValue": "#131313",
       "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+      "fix": "Add color: '#CBCBCB' (or colors.neutral[300])"
     },
     {
       "nodeId": "41:9592",
       "nodeName": "Method",
       "nodeType": "TEXT",
       "category": "colors",
-      "property": "backgroundColor",
+      "property": "color",
       "figmaValue": "#878787",
       "rnValue": "#131313",
       "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+      "fix": "Add color: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:9592",
@@ -183,11 +173,11 @@
       "nodeName": "UPI (joel@oksbi)",
       "nodeType": "TEXT",
       "category": "colors",
-      "property": "backgroundColor",
+      "property": "color",
       "figmaValue": "#CBCBCB",
       "rnValue": "#131313",
       "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+      "fix": "Add color: '#CBCBCB' (or colors.neutral[300])"
     },
     {
       "nodeId": "41:9593",
@@ -205,11 +195,11 @@
       "nodeName": "SEC12345678",
       "nodeType": "TEXT",
       "category": "colors",
-      "property": "backgroundColor",
+      "property": "color",
       "figmaValue": "#CBCBCB",
       "rnValue": "#131313",
       "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
+      "fix": "Add color: '#CBCBCB' (or colors.neutral[300])"
     },
     {
       "nodeId": "41:9600",
@@ -227,11 +217,11 @@
       "nodeName": "Payable Rent",
       "nodeType": "TEXT",
       "category": "colors",
-      "property": "backgroundColor",
+      "property": "color",
       "figmaValue": "#878787",
       "rnValue": "#131313",
       "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+      "fix": "Add color: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "41:9609",
@@ -245,6 +235,7 @@
       "fix": "Add text content: \"Payable Rent\""
     }
   ],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

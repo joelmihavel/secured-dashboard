@@ -1,16 +1,17 @@
 {
   "screenId": "1:28071",
   "screenName": "Splash / get-started --animation 2",
-  "generatedAt": "2026-02-03T06:57:32.489Z",
+  "generatedAt": "2026-02-13T11:07:37.208Z",
   "summary": {
     "overallCoverage": 100,
-    "propertiesCovered": 17,
-    "propertiesTotal": 17,
+    "propertiesCovered": 16,
+    "propertiesTotal": 16,
     "propertiesMissing": 0,
     "nodesCovered": 2,
     "nodesPartial": 0,
     "nodesTotal": 2,
-    "limitations": 0
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
@@ -90,6 +91,7 @@
     }
   },
   "uncoveredProperties": [],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

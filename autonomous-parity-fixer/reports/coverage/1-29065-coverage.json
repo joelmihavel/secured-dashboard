@@ -1,21 +1,22 @@
 {
   "screenId": "1:29065",
   "screenName": "Splash / get-started --carousel 6",
-  "generatedAt": "2026-02-03T07:10:44.735Z",
+  "generatedAt": "2026-02-13T11:07:39.409Z",
   "summary": {
-    "overallCoverage": 100,
-    "propertiesCovered": 47,
-    "propertiesTotal": 47,
-    "propertiesMissing": 0,
-    "nodesCovered": 6,
-    "nodesPartial": 0,
-    "nodesTotal": 6,
-    "limitations": 0
+    "overallCoverage": 97.5,
+    "propertiesCovered": 39,
+    "propertiesTotal": 40,
+    "propertiesMissing": 1,
+    "nodesCovered": 4,
+    "nodesPartial": 1,
+    "nodesTotal": 5,
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 12,
-      "total": 12,
+      "covered": 10,
+      "total": 10,
       "percentage": 100
     },
     "positioning": {
@@ -29,9 +30,9 @@
       "percentage": 100
     },
     "spacing": {
-      "covered": 7,
+      "covered": 6,
       "total": 7,
-      "percentage": 100
+      "percentage": 85.7
     },
     "colors": {
       "covered": 2,
@@ -39,13 +40,13 @@
       "percentage": 100
     },
     "gradients": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "images": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "borders": {
@@ -89,7 +90,20 @@
       "percentage": 100
     }
   },
-  "uncoveredProperties": [],
+  "uncoveredProperties": [
+    {
+      "nodeId": "160:2698",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "category": "spacing",
+      "property": "gap",
+      "figmaValue": 48,
+      "rnValue": 16,
+      "covered": false,
+      "fix": "Add gap: 48 (or spacing.xxxl)"
+    }
+  ],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

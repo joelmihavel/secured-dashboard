@@ -1,21 +1,22 @@
 {
   "screenId": "243:3170",
   "screenName": "Home --active --late payment",
-  "generatedAt": "2026-02-03T10:56:40.178Z",
+  "generatedAt": "2026-02-13T11:07:53.594Z",
   "summary": {
-    "overallCoverage": 82.4,
-    "propertiesCovered": 389,
-    "propertiesTotal": 472,
-    "propertiesMissing": 83,
-    "nodesCovered": 10,
-    "nodesPartial": 42,
-    "nodesTotal": 52,
-    "limitations": 0
+    "overallCoverage": 98.1,
+    "propertiesCovered": 421,
+    "propertiesTotal": 429,
+    "propertiesMissing": 8,
+    "nodesCovered": 16,
+    "nodesPartial": 30,
+    "nodesTotal": 46,
+    "limitations": 0,
+    "valueMismatches": 10
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 104,
-      "total": 104,
+      "covered": 92,
+      "total": 92,
       "percentage": 100
     },
     "positioning": {
@@ -24,19 +25,19 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 116,
+      "covered": 115,
       "total": 119,
-      "percentage": 97.5
+      "percentage": 96.6
     },
     "spacing": {
-      "covered": 2,
+      "covered": 14,
       "total": 14,
-      "percentage": 14.3
+      "percentage": 100
     },
     "colors": {
-      "covered": 3,
-      "total": 39,
-      "percentage": 7.7
+      "covered": 33,
+      "total": 33,
+      "percentage": 100
     },
     "gradients": {
       "covered": 0,
@@ -49,9 +50,9 @@
       "percentage": 100
     },
     "borders": {
-      "covered": 4,
+      "covered": 5,
       "total": 5,
-      "percentage": 80
+      "percentage": 100
     },
     "effects": {
       "covered": 9,
@@ -64,14 +65,14 @@
       "percentage": 100
     },
     "typography": {
-      "covered": 107,
+      "covered": 111,
       "total": 111,
-      "percentage": 96.4
+      "percentage": 100
     },
     "textContent": {
-      "covered": 2,
+      "covered": 3,
       "total": 25,
-      "percentage": 8
+      "percentage": 12
     },
     "multiStyleText": {
       "covered": 9,
@@ -91,59 +92,15 @@
   },
   "uncoveredProperties": [
     {
-      "nodeId": "243:3176",
-      "nodeName": "Your rent is overdue by 10 days",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#BABABA",
-      "rnValue": "#1A1A1A",
+      "nodeId": "243:3182",
+      "nodeName": "Credit Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
       "covered": false,
-      "fix": "Add backgroundColor: '#BABABA' (or colors.neutral[400])"
-    },
-    {
-      "nodeId": "243:3177",
-      "nodeName": "Paying with:",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#A6A6A6",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#A6A6A6' (or colors.black[200])"
-    },
-    {
-      "nodeId": "243:3185",
-      "nodeName": "Visa",
-      "nodeType": "VECTOR",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
-      "nodeId": "243:3187",
-      "nodeName": "SELECTED",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FF9A6D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
-    },
-    {
-      "nodeId": "243:3187",
-      "nodeName": "SELECTED",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
+      "fix": "Add flexDirection: 'column'"
     },
     {
       "nodeId": "243:3187",
@@ -155,17 +112,6 @@
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"SELECTED\""
-    },
-    {
-      "nodeId": "243:3189",
-      "nodeName": "•••• 2341",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FF9A6D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
     },
     {
       "nodeId": "243:3189",
@@ -182,34 +128,12 @@
       "nodeId": "243:3191",
       "nodeName": "EXPIRY 06/26",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#4D4D4D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
-    },
-    {
-      "nodeId": "243:3191",
-      "nodeName": "EXPIRY 06/26",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "EXPIRY 06/26",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"EXPIRY 06/26\""
-    },
-    {
-      "nodeId": "243:3192",
-      "nodeName": "CVV •••",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#4D4D4D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
     },
     {
       "nodeId": "243:3192",
@@ -226,17 +150,6 @@
       "nodeId": "243:3201",
       "nodeName": "CREDIT CARD",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "243:3201",
-      "nodeName": "CREDIT CARD",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "CREDIT CARD",
@@ -245,92 +158,15 @@
       "fix": "Add text content: \"CREDIT CARD\""
     },
     {
-      "nodeId": "243:3211",
-      "nodeName": "path26",
-      "nodeType": "VECTOR",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#000000",
-      "rnValue": "#1A1A1A",
+      "nodeId": "243:3204",
+      "nodeName": "UPI Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
       "covered": false,
-      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
-    },
-    {
-      "nodeId": "243:3262",
-      "nodeName": "path128",
-      "nodeType": "VECTOR",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
-      "nodeId": "243:3264",
-      "nodeName": "path132",
-      "nodeType": "VECTOR",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
-      "nodeId": "243:3266",
-      "nodeName": "path136",
-      "nodeType": "VECTOR",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
-      "nodeId": "243:3268",
-      "nodeName": "path140",
-      "nodeType": "VECTOR",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#27803B",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#27803B' (or colors.success[dark])"
-    },
-    {
-      "nodeId": "243:3270",
-      "nodeName": "path144",
-      "nodeType": "VECTOR",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#E9661C",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#E9661C' (or colors.brand[800])"
-    },
-    {
-      "nodeId": "243:3272",
-      "nodeName": "SELECTED",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FF9A6D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
-    },
-    {
-      "nodeId": "243:3272",
-      "nodeName": "SELECTED",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
+      "fix": "Add flexDirection: 'column'"
     },
     {
       "nodeId": "243:3272",
@@ -347,34 +183,12 @@
       "nodeId": "243:3276",
       "nodeName": "ICICI a/c - xxx23",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#4D4D4D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
-    },
-    {
-      "nodeId": "243:3276",
-      "nodeName": "ICICI a/c - xxx23",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "ICICI a/c -  xxx23",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"ICICI a/c -  xxx23\""
-    },
-    {
-      "nodeId": "243:3277",
-      "nodeName": "rishabh@•••",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#4D4D4D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
     },
     {
       "nodeId": "243:3277",
@@ -391,17 +205,6 @@
       "nodeId": "243:3286",
       "nodeName": "UPI",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "243:3286",
-      "nodeName": "UPI",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "UPI",
@@ -410,26 +213,15 @@
       "fix": "Add text content: \"UPI\""
     },
     {
-      "nodeId": "243:3294",
-      "nodeName": "SELECTED",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FF9A6D",
-      "rnValue": "#1A1A1A",
+      "nodeId": "243:3289",
+      "nodeName": "Netbanking Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
       "covered": false,
-      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
-    },
-    {
-      "nodeId": "243:3294",
-      "nodeName": "SELECTED",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
+      "fix": "Add flexDirection: 'column'"
     },
     {
       "nodeId": "243:3294",
@@ -446,34 +238,12 @@
       "nodeId": "243:3299",
       "nodeName": "ICICI a/c - xxx23",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#4D4D4D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#4D4D4D' (or colors.black[400])"
-    },
-    {
-      "nodeId": "243:3299",
-      "nodeName": "ICICI a/c - xxx23",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "ICICI a/c -  xxx23",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"ICICI a/c -  xxx23\""
-    },
-    {
-      "nodeId": "243:3308",
-      "nodeName": "NET BANKING",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
     },
     {
       "nodeId": "243:3308",
@@ -487,37 +257,15 @@
       "fix": "Add text content: \"NET BANKING\""
     },
     {
-      "nodeId": "243:3315",
-      "nodeName": "Setup your payment method to start",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "#1A1A1A",
+      "nodeId": "243:3311",
+      "nodeName": "Add More Card",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "flexDirection",
+      "figmaValue": "column",
+      "rnValue": "row",
       "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "243:3315",
-      "nodeName": "Setup your payment method to start",
-      "nodeType": "TEXT",
-      "category": "textContent",
-      "property": "characters",
-      "figmaValue": "Setup your payment method to start",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add text content: \"Setup your payment method to start\""
-    },
-    {
-      "nodeId": "243:3316",
-      "nodeName": "Add UPI, card, or bank to start earning rewards",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
+      "fix": "Add flexDirection: 'column'"
     },
     {
       "nodeId": "243:3316",
@@ -534,232 +282,12 @@
       "nodeId": "243:3320",
       "nodeName": "NEW PAYMENT",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
-    },
-    {
-      "nodeId": "243:3320",
-      "nodeName": "NEW PAYMENT",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "NEW PAYMENT",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"NEW PAYMENT\""
-    },
-    {
-      "nodeId": "243:3324",
-      "nodeName": "Ellipse 21885",
-      "nodeType": "ELLIPSE",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FF9A6D",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FF9A6D' (or colors.brand[500])"
-    },
-    {
-      "nodeId": "243:3325",
-      "nodeName": "Ellipse 21886",
-      "nodeType": "ELLIPSE",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#202020",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#202020' (or colors.black[500])"
-    },
-    {
-      "nodeId": "243:3326",
-      "nodeName": "Ellipse 21887",
-      "nodeType": "ELLIPSE",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#202020",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#202020' (or colors.black[500])"
-    },
-    {
-      "nodeId": "243:3328",
-      "nodeName": "Toggle",
-      "nodeType": "FRAME",
-      "category": "layout",
-      "property": "flexDirection",
-      "figmaValue": "row",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add flexDirection: 'row'"
-    },
-    {
-      "nodeId": "243:3328",
-      "nodeName": "Toggle",
-      "nodeType": "FRAME",
-      "category": "spacing",
-      "property": "paddingTop",
-      "figmaValue": 4,
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add paddingTop: 4 (or spacing.xxs)"
-    },
-    {
-      "nodeId": "243:3328",
-      "nodeName": "Toggle",
-      "nodeType": "FRAME",
-      "category": "spacing",
-      "property": "paddingRight",
-      "figmaValue": 4,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingRight: 4 (or spacing.xxs)"
-    },
-    {
-      "nodeId": "243:3328",
-      "nodeName": "Toggle",
-      "nodeType": "FRAME",
-      "category": "spacing",
-      "property": "paddingBottom",
-      "figmaValue": 4,
-      "rnValue": 118,
-      "covered": false,
-      "fix": "Add paddingBottom: 4 (or spacing.xxs)"
-    },
-    {
-      "nodeId": "243:3328",
-      "nodeName": "Toggle",
-      "nodeType": "FRAME",
-      "category": "spacing",
-      "property": "paddingLeft",
-      "figmaValue": 4,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingLeft: 4 (or spacing.xxs)"
-    },
-    {
-      "nodeId": "243:3328",
-      "nodeName": "Toggle",
-      "nodeType": "FRAME",
-      "category": "borders",
-      "property": "borderColor",
-      "figmaValue": "#202020",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add borderColor: '#202020'"
-    },
-    {
-      "nodeId": "243:3329",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "layout",
-      "property": "flexDirection",
-      "figmaValue": "row",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add flexDirection: 'row'"
-    },
-    {
-      "nodeId": "243:3329",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingTop",
-      "figmaValue": 8,
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add paddingTop: 8 (or spacing.xs)"
-    },
-    {
-      "nodeId": "243:3329",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingRight",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingRight: 24 (or spacing.lg)"
-    },
-    {
-      "nodeId": "243:3329",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingBottom",
-      "figmaValue": 8,
-      "rnValue": 118,
-      "covered": false,
-      "fix": "Add paddingBottom: 8 (or spacing.xs)"
-    },
-    {
-      "nodeId": "243:3329",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingLeft",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingLeft: 24 (or spacing.lg)"
-    },
-    {
-      "nodeId": "243:3330",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "layout",
-      "property": "flexDirection",
-      "figmaValue": "row",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add flexDirection: 'row'"
-    },
-    {
-      "nodeId": "243:3330",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingTop",
-      "figmaValue": 8,
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add paddingTop: 8 (or spacing.xs)"
-    },
-    {
-      "nodeId": "243:3330",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingRight",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingRight: 24 (or spacing.lg)"
-    },
-    {
-      "nodeId": "243:3330",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingBottom",
-      "figmaValue": 8,
-      "rnValue": 118,
-      "covered": false,
-      "fix": "Add paddingBottom: 8 (or spacing.xs)"
-    },
-    {
-      "nodeId": "243:3330",
-      "nodeName": "toggle",
-      "nodeType": "INSTANCE",
-      "category": "spacing",
-      "property": "paddingLeft",
-      "figmaValue": 24,
-      "rnValue": 32,
-      "covered": false,
-      "fix": "Add paddingLeft: 24 (or spacing.lg)"
     },
     {
       "nodeId": "243:3334",
@@ -776,34 +304,12 @@
       "nodeId": "243:3336",
       "nodeName": "September rent",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
-      "nodeId": "243:3336",
-      "nodeName": "September rent",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "September rent",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"September rent\""
-    },
-    {
-      "nodeId": "243:3340",
-      "nodeName": "Paid · 15 Sep, 9:40am",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "243:3340",
@@ -831,34 +337,12 @@
       "nodeId": "243:3347",
       "nodeName": "August rent",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
-      "nodeId": "243:3347",
-      "nodeName": "August rent",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "August rent",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"August rent\""
-    },
-    {
-      "nodeId": "243:3350",
-      "nodeName": "Pending · 15 Sep, 9:40am",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "243:3350",
@@ -886,34 +370,12 @@
       "nodeId": "243:3357",
       "nodeName": "July rent",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
-      "nodeId": "243:3357",
-      "nodeName": "July rent",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "July rent",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"July rent\""
-    },
-    {
-      "nodeId": "243:3360",
-      "nodeName": "Failed · 15 Sep, 9:40am",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#878787",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
     },
     {
       "nodeId": "243:3360",
@@ -930,45 +392,12 @@
       "nodeId": "243:3365",
       "nodeName": "Due in 10 Days",
       "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#A9A9A9",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#A9A9A9' (or colors.neutral[500])"
-    },
-    {
-      "nodeId": "243:3365",
-      "nodeName": "Due in 10 Days",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "243:3365",
-      "nodeName": "Due in 10 Days",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "Due in 10 Days",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"Due in 10 Days\""
-    },
-    {
-      "nodeId": "243:3376",
-      "nodeName": "Hi, Rishabh",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#CBCBCB",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#CBCBCB' (or colors.neutral[300])"
     },
     {
       "nodeId": "243:3376",
@@ -985,23 +414,134 @@
       "nodeId": "243:3377",
       "nodeName": "Ellipse 8",
       "nodeType": "ELLIPSE",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFCC8A",
-      "rnValue": "#1A1A1A",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFCC8A' (or colors.brand[300])"
-    },
-    {
-      "nodeId": "243:3377",
-      "nodeName": "Ellipse 8",
-      "nodeType": "ELLIPSE",
       "category": "assetExistence",
       "property": "imageAssetFile",
       "figmaValue": "imageRef: 6d93b82e0916...",
       "rnValue": null,
       "covered": false,
       "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_8.png)"
+    }
+  ],
+  "valueMismatchProperties": [
+    {
+      "nodeId": "243:3185",
+      "nodeName": "Visa",
+      "nodeType": "VECTOR",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as backgroundColor"
+    },
+    {
+      "nodeId": "243:3191",
+      "nodeName": "EXPIRY 06/26",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3192",
+      "nodeName": "CVV •••",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3276",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3277",
+      "nodeName": "rishabh@•••",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3299",
+      "nodeName": "ICICI a/c - xxx23",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#4D4D4D",
+      "rnValue": "#4D4D4D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#4D4D4D' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3324",
+      "nodeName": "Ellipse 21885",
+      "nodeType": "ELLIPSE",
+      "category": "colors",
+      "property": "backgroundColor",
+      "figmaValue": "#FF9A6D",
+      "rnValue": "#FF9A6D",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FF9A6D' found but used in wrong property context — verify it's applied as backgroundColor"
+    },
+    {
+      "nodeId": "243:3336",
+      "nodeName": "September rent",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3347",
+      "nodeName": "August rent",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "243:3357",
+      "nodeName": "July rent",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#FFFFFF",
+      "rnValue": "#FFFFFF",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#FFFFFF' found but used in wrong property context — verify it's applied as color"
     }
   ],
   "limitations": [],

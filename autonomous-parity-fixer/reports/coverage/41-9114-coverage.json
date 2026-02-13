@@ -1,0 +1,234 @@
+{
+  "screenId": "41:9114",
+  "screenName": "Screen 41-9114",
+  "generatedAt": "2026-02-13T11:08:19.452Z",
+  "summary": {
+    "overallCoverage": 97.8,
+    "propertiesCovered": 177,
+    "propertiesTotal": 181,
+    "propertiesMissing": 4,
+    "nodesCovered": 10,
+    "nodesPartial": 9,
+    "nodesTotal": 19,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 38,
+      "total": 38,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 35,
+      "total": 35,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 14,
+      "total": 17,
+      "percentage": 82.4
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 1,
+      "percentage": 0
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 74,
+      "total": 74,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 7,
+      "total": 15,
+      "percentage": 46.7
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 15,
+      "total": 15,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:9120",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "6d93b82e0916dab9a12fe22c604ddce60dfd2dfb",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:9140",
+      "nodeName": "Base rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Base rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Base rent\""
+    },
+    {
+      "nodeId": "41:9147",
+      "nodeName": "Maintenance",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Maintenance",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Maintenance\""
+    },
+    {
+      "nodeId": "41:9154",
+      "nodeName": "Other charges",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Other charges",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Other charges\""
+    },
+    {
+      "nodeId": "41:9162",
+      "nodeName": "Payable Rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Payable Rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Payable Rent\""
+    },
+    {
+      "nodeId": "41:9196",
+      "nodeName": "•••• 2345",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#DDDDDD",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#DDDDDD' (or colors.neutral[200])"
+    },
+    {
+      "nodeId": "41:9196",
+      "nodeName": "•••• 2345",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "•••• 2345",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"•••• 2345\""
+    },
+    {
+      "nodeId": "41:9205",
+      "nodeName": "••••el@oksbi",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#DDDDDD",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#DDDDDD' (or colors.neutral[200])"
+    },
+    {
+      "nodeId": "41:9205",
+      "nodeName": "••••el@oksbi",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "••••el@oksbi",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"••••el@oksbi\""
+    },
+    {
+      "nodeId": "41:9206",
+      "nodeName": "Free",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Free",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Free\""
+    },
+    {
+      "nodeId": "41:9214",
+      "nodeName": "•••• 2345",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#DDDDDD",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#DDDDDD' (or colors.neutral[200])"
+    },
+    {
+      "nodeId": "41:9214",
+      "nodeName": "•••• 2345",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "•••• 2345",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"•••• 2345\""
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

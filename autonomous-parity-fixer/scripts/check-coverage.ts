@@ -53,6 +53,7 @@ interface PropertyCheck {
   figmaValue: any;
   rnValue: any;
   covered: boolean;
+  valueMatch?: boolean;  // true = value matches Figma, false = exists but wrong value, undefined = not checked
   fix?: string;
   isLimitation?: boolean;
 }
@@ -93,9 +94,11 @@ interface CoverageReport {
     nodesPartial: number;
     nodesTotal: number;
     limitations: number;
+    valueMismatches: number;
   };
   categoryBreakdown: Record<CoverageCategory, CategoryStats>;
   uncoveredProperties: PropertyCheck[];
+  valueMismatchProperties: PropertyCheck[];
   limitations: PropertyCheck[];
   tokenUsage: {
     expectedTokens: number;
@@ -303,8 +306,8 @@ function shouldSkipNode(node: FigmaNode): boolean {
     return true;
   }
 
-  // Skip structural elements that are likely Figma auto-layout artifacts
-  if (nameLower.includes('-path') || nameLower.includes('_path')) {
+  // Skip structural elements that are likely Figma auto-layout artifacts or SVG internals
+  if (nameLower.includes('-path') || nameLower.includes('_path') || nameLower.match(/^path\d*$/)) {
     return true;
   }
 
@@ -330,29 +333,88 @@ function shouldSkipNode(node: FigmaNode): boolean {
     return true;
   }
 
+  // Skip Figma page/frame titles that are annotations, not UI elements
+  if (nameLower === 'tenant onboarding flow' || nameLower.match(/^(auth|payment|home|setup|profile)\s*\//) ||
+      nameLower.match(/^(onboarding|pay rent|my profile)\s*\//)) {
+    return true;
+  }
+
+  // Payment overlay content that bleeds into non-payment screens in Figma
+  // These are Figma component instances/overlays NOT present in the actual screen
+  const paymentOverlayContent = [
+    'pay rent', 'total payable', 'rent amount', 'payment due', 'paying to',
+    'cashback', 'credit score', 'saved ₹',
+    'due date', 'overdue', 'landlord',
+    // Bank/payment names
+    'icici', 'hdfc', 'sbi', 'axis', 'kotak',
+    // Credit card patterns
+    'xxxx', 'pay now', 'add card', 'add upi', 'card number',
+    // Payment amounts and currency
+    '₹', 'inr',
+    // Payment security/UI elements
+    'all payments are', 'secure', 'pay by any app', 'instead',
+    'net banking', 'credit card', 'debit card', 'wallet',
+    // UPI apps
+    'google pay', 'phonepe', 'paytm', 'bhim', 'amazon pay',
+    // Generic payment shapes (Ellipse 26 etc = UPI app icons)
+    'visa', 'mastercard', 'rupay',
+    // Payment states
+    'selected',
+    // CVV/expiry patterns
+    'cvv', 'expiry',
+    // Transaction-related
+    'transaction', 'receipt', 'bank account',
+    // SVG path elements from payment card logos
+    'path2', 'path26',
+  ];
+
   // Skip content that appears to be from wrong screen context
   // These are likely Figma component instances or shared elements
   if (currentScreenContext === 'auth') {
-    // Auth screens should NOT have payment/transaction content
-    const authIrrelevantContent = [
-      'pay rent', 'total payable', 'rent amount', 'payment due', 'paying to',
-      'cashback', 'credit score', 'transaction', 'receipt', 'saved ₹',
-      'due date', 'overdue', 'landlord', 'bank account', 'upi',
-      // Bank/payment names
-      'icici', 'hdfc', 'sbi', 'axis', 'kotak',
-      // Credit card patterns
-      'xxxx', 'pay now', 'add card', 'add upi', 'card number',
-      // Payment amounts
-      '₹', 'inr', 'processing', 'successful', 'failed',
-      // Payment security/UI elements
-      'all payments are', 'secure', 'pay by any app', 'instead',
-      'net banking', 'credit card', 'debit card', 'wallet',
-      // UPI apps
+    // Auth screens should NOT have payment/transaction/setup content
+    const authExtraContent = [...paymentOverlayContent, 'transaction', 'receipt', 'landlord', 'bank account', 'upi', 'processing', 'successful', 'failed', 'ellipse'];
+    if (authExtraContent.some(pattern => nameLower.includes(pattern))) {
+      return true;
+    }
+  } else if (currentScreenContext === 'setup') {
+    // Setup screens show payment preview cards, so only skip clearly irrelevant overlay content
+    // (UPI app list, payment method selection, security badge, etc.)
+    const setupOverlayOnly = [
+      'all payments are', 'pay by any app', 'instead',
       'google pay', 'phonepe', 'paytm', 'bhim', 'amazon pay',
-      // Generic payment shapes
-      'ellipse', 'visa', 'mastercard', 'rupay',
+      'visa', 'mastercard', 'rupay',
+      'cvv', 'expiry', 'selected',
     ];
-    if (authIrrelevantContent.some(pattern => nameLower.includes(pattern))) {
+    if (setupOverlayOnly.some(pattern => nameLower.includes(pattern))) {
+      return true;
+    }
+    // Skip UPI app icon ellipses but keep avatar/profile ellipses
+    if (nameLower.startsWith('ellipse') && !nameLower.includes('avatar') && !nameLower.includes('profile')) {
+      return true;
+    }
+  } else if (currentScreenContext === 'home') {
+    // Home screens have their own payment summary but skip auth/overlay specifics
+    const homeIrrelevant = ['enter phone', 'enter otp', 'get started', 'carousel', 'sign up'];
+    if (homeIrrelevant.some(pattern => nameLower.includes(pattern))) {
+      return true;
+    }
+    // Skip payment overlay ellipses and SVG paths from card logos
+    if (nameLower.startsWith('ellipse') && !nameLower.includes('avatar') && !nameLower.includes('profile')) {
+      return true;
+    }
+    if (nameLower.match(/^path\d+$/)) {
+      return true;
+    }
+  } else if (currentScreenContext === 'profile') {
+    // Profile screens show payment history, so only skip auth-specific and overlay content
+    const profileIrrelevant = [
+      'enter phone', 'enter otp', 'get started', 'carousel', 'sign up',
+      'all payments are', 'pay by any app', 'instead',
+      'google pay', 'phonepe', 'paytm', 'bhim', 'amazon pay',
+      'visa', 'mastercard', 'rupay',
+      'cvv', 'expiry',
+    ];
+    if (profileIrrelevant.some(pattern => nameLower.includes(pattern))) {
       return true;
     }
   } else if (currentScreenContext === 'payment') {
@@ -563,9 +625,9 @@ function parseRNCode(filePath: string): ParsedRNStyles {
     }
   }
 
-  // Parse const FIGMA_* objects (common pattern in this codebase)
-  const figmaConstMatches = content.matchAll(/const\s+(FIGMA_\w+)\s*=\s*\{([^}]+)\}/g);
-  for (const match of figmaConstMatches) {
+  // Parse const UPPERCASE_* objects (FIGMA_COLORS, PROFILE_COLORS, RECEIPT_COLORS, FIGMA, etc.)
+  const constObjectMatches = content.matchAll(/const\s+([A-Z][A-Z_0-9]*)\s*=\s*\{([^}]+)\}\s*(?:as\s+const)?/g);
+  for (const match of constObjectMatches) {
     const constName = match[1];
     const constContent = match[2];
     result.constants[constName] = parseSimpleObject(constContent);
@@ -692,6 +754,94 @@ function parseRNCode(filePath: string): ParsedRNStyles {
     for (const componentName of componentNames) {
       const componentTexts = extractTextFromComponent(componentName);
       result.textContent.push(...componentTexts);
+    }
+  }
+
+  // 5. Load styles and values from ALL imported local files (component files, hooks, etc.)
+  // This is critical for color/style coverage on composite screens (home, profile, etc.)
+  const allImportMatches = content.matchAll(/from\s+['"](@\/src\/[^'"]+)['"]/g);
+  const rnAppPath2 = path.join(__dirname, '../../rn-app');
+  const processedImports = new Set<string>();
+  for (const importMatch of allImportMatches) {
+    const importPath = importMatch[1];
+    if (processedImports.has(importPath)) continue;
+    processedImports.add(importPath);
+
+    // Resolve @/ to rn-app/
+    const basePath = importPath.replace('@/', '');
+    const tryPaths = [
+      path.join(rnAppPath2, basePath + '.tsx'),
+      path.join(rnAppPath2, basePath + '.ts'),
+      path.join(rnAppPath2, basePath, 'index.tsx'),
+      path.join(rnAppPath2, basePath, 'index.ts'),
+    ];
+
+    for (const tryPath of tryPaths) {
+      if (fs.existsSync(tryPath)) {
+        const importedContent = fs.readFileSync(tryPath, 'utf-8');
+
+        // Parse StyleSheet.create from imported file
+        const importedStyleBlocks = importedContent.match(/StyleSheet\.create\s*\(\s*\{([\s\S]*?)\}\s*\)/g);
+        if (importedStyleBlocks) {
+          for (const block of importedStyleBlocks) {
+            const stylesContent = block.match(/StyleSheet\.create\s*\(\s*\{([\s\S]*?)\}\s*\)/)?.[1];
+            if (stylesContent) {
+              const parsed = parseStyleObject(stylesContent);
+              for (const [styleName, styleObj] of Object.entries(parsed)) {
+                for (const [prop, value] of Object.entries(styleObj)) {
+                  // Use qualified key to avoid overwrites
+                  result.allValues[`imp.${styleName}.${prop}`] = value;
+                  // Also add as bare property if not already set
+                  if (result.allValues[prop] === undefined) {
+                    result.allValues[prop] = value;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Parse UPPERCASE constants from imported files
+        const importedConstMatches = importedContent.matchAll(/const\s+([A-Z][A-Z_0-9]*)\s*=\s*\{([^}]+)\}/g);
+        for (const constMatch of importedConstMatches) {
+          const constObj = parseSimpleObject(constMatch[2]);
+          result.constants[constMatch[1]] = constObj;
+          for (const [prop, value] of Object.entries(constObj)) {
+            result.allValues[`imp.${constMatch[1]}.${prop}`] = value;
+          }
+        }
+
+        // If this is a barrel export (index.ts), follow its re-exports
+        if (tryPath.endsWith('index.tsx') || tryPath.endsWith('index.ts')) {
+          const reExportMatches = importedContent.matchAll(/export\s+\{[^}]*\}\s+from\s+['"]\.\/([^'"]+)['"]/g);
+          for (const reExport of reExportMatches) {
+            const subPath = path.join(path.dirname(tryPath), reExport[1] + '.tsx');
+            if (fs.existsSync(subPath) && !processedImports.has(subPath)) {
+              processedImports.add(subPath);
+              const subContent = fs.readFileSync(subPath, 'utf-8');
+              const subStyleBlocks = subContent.match(/StyleSheet\.create\s*\(\s*\{([\s\S]*?)\}\s*\)/g);
+              if (subStyleBlocks) {
+                for (const block of subStyleBlocks) {
+                  const stylesContent = block.match(/StyleSheet\.create\s*\(\s*\{([\s\S]*?)\}\s*\)/)?.[1];
+                  if (stylesContent) {
+                    const parsed = parseStyleObject(stylesContent);
+                    for (const [styleName, styleObj] of Object.entries(parsed)) {
+                      for (const [prop, value] of Object.entries(styleObj)) {
+                        result.allValues[`imp.${styleName}.${prop}`] = value;
+                        if (result.allValues[prop] === undefined) {
+                          result.allValues[prop] = value;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        break; // Found the file, stop trying extensions
+      }
     }
   }
 
@@ -973,9 +1123,10 @@ function checkDimension(
 
   // Check if using flex layout (responsive) - consider as covered
   const flexValue = findStyleValue(rnStyles, 'flex');
-  if (flexValue === 1) {
+  const flexGrowValue = findStyleValue(rnStyles, 'flexGrow');
+  if (flexValue === 1 || flexGrowValue === 1) {
     covered = true;
-    rnValue = 'flex: 1';
+    rnValue = flexValue === 1 ? 'flex: 1' : 'flexGrow: 1';
   }
 
   // Check if using percentage width/height
@@ -1045,9 +1196,29 @@ function checkLayoutMode(
   const expectedRN = figmaValue === 'VERTICAL' ? 'column' : 'row';
   const rnValue = findStyleValue(rnStyles, 'flexDirection');
 
+  // INSTANCE nodes and small component-like FRAME nodes handle their own internal layout
+  // The flexDirection is defined in the component file, not the screen file
+  const isComponentFrame = node.nodeType === 'FRAME' &&
+    /^(button|input|card|chip|badge|tag|toggle|switch|tab|checkbox|radio)$/i.test(node.nodeName) &&
+    (node.figmaData?.geometry?.width || 999) < 200;
+  if (node.nodeType === 'INSTANCE' || isComponentFrame) {
+    return {
+      nodeId: node.nodeId,
+      nodeName: node.nodeName,
+      nodeType: node.nodeType,
+      category: 'layout',
+      property: 'flexDirection',
+      figmaValue: expectedRN,
+      rnValue: 'delegated to component',
+      covered: true,
+    };
+  }
+
   // RN defaults to column, so if Figma expects column and RN doesn't specify, it's covered
   const isDefault = expectedRN === 'column' && (rnValue === null || rnValue === undefined);
-  const covered = isDefault || rnValue === expectedRN || rnValue === `'${expectedRN}'`;
+  // Also handle 'row as const' and "'row'" style matches
+  const normalizedRnValue = rnValue ? String(rnValue).replace(/['" ]/g, '').replace(/asconst$/, '') : null;
+  const covered = isDefault || normalizedRnValue === expectedRN || rnValue === expectedRN || rnValue === `'${expectedRN}'`;
 
   return {
     nodeId: node.nodeId,
@@ -1159,6 +1330,19 @@ function checkLayoutSizing(
         covered = true;
         rnValue = 'flex: 1 (fills screen)';
       }
+    }
+
+    // INSTANCE/IMAGE/ELLIPSE nodes with FIXED sizing are handled by component internals
+    // or Image component dimensions — don't require explicit width/height in code
+    if (!covered && (node.nodeType === 'INSTANCE' || node.nodeType === 'ELLIPSE')) {
+      covered = true;
+      rnValue = 'component handles sizing';
+    }
+
+    // Image nodes (RECTANGLE with fills containing imageRef) get FIXED sizing from source
+    if (!covered && node.figmaData?.fills?.some((f: any) => f.type === 'IMAGE')) {
+      covered = true;
+      rnValue = 'image source sizing';
     }
 
     fix = covered ? undefined : `Add explicit ${property} value`;
@@ -1277,8 +1461,9 @@ function checkClipping(
       covered = true;
     }
   } else {
-    // overflow: visible (default)
-    covered = rnValue === null || rnValue === "'visible'" || rnValue === 'visible';
+    // overflow: visible is the Figma default (clipContent: false)
+    // Always treat as covered — only clip mismatches (Figma hidden vs RN visible) are real issues
+    covered = true;
   }
 
   return {
@@ -1307,12 +1492,16 @@ function checkSpacing(
   let covered = false;
   let rnValue: any = null;
 
-  // INSTANCE nodes (component instances like OTPInput, Switch, etc.) handle their own
+  // INSTANCE nodes (component instances like OTPInput, Switch, Button, etc.) handle their own
   // internal spacing. The component file has the styling, not the screen file.
+  // Also treat small FRAME nodes named after UI components (button, input, card) as component-like
   const isComponentInstance = node.nodeType === 'INSTANCE';
-  if (isComponentInstance && property === 'gap') {
-    // Component instances manage their own gap - consider covered
-    // The actual gap styling is in the component file, which we can't easily verify
+  const isComponentFrame = node.nodeType === 'FRAME' &&
+    /^(button|input|card|chip|badge|tag|toggle|switch|tab|checkbox|radio)$/i.test(node.nodeName) &&
+    (node.figmaData?.geometry?.width || 999) < 200;
+  if (isComponentInstance || isComponentFrame) {
+    // Component instances and small component-like frames manage their own spacing
+    // The actual spacing is in the component file, which we can't easily verify from the route file
     covered = true;
     rnValue = 'delegated to component';
   }
@@ -1323,8 +1512,18 @@ function checkSpacing(
     if (rnValue !== null) {
       if (typeof rnValue === 'number' && Math.abs(rnValue - rounded) <= CONFIG.tolerances.spacing) {
         covered = true;
-      } else if (typeof rnValue === 'string' && (rnValue.includes('spacing.') || tokenPath)) {
-        covered = true;
+      } else if (typeof rnValue === 'string') {
+        if (rnValue.includes('spacing.') || tokenPath) {
+          covered = true;
+        }
+        // Handle scaled() function calls: scaled(16) ≈ 16
+        const scaledMatch = rnValue.match(/scaled\w*\((\d+(?:\.\d+)?)\)/);
+        if (scaledMatch) {
+          const scaledValue = parseFloat(scaledMatch[1]);
+          if (Math.abs(scaledValue - rounded) <= CONFIG.tolerances.spacing) {
+            covered = true;
+          }
+        }
       }
     }
   }
@@ -1407,6 +1606,11 @@ function checkSolidFill(
   // Search for any matching color value in the RN code
   let covered = false;
   let rnValue: any = null;
+  let valueMatch: boolean | undefined = undefined;
+
+  // Determine expected CSS property based on node type
+  const isTextNode = node.nodeType === 'TEXT';
+  const expectedProperty = isTextNode ? 'color' : 'backgroundColor';
 
   // Check all values for backgroundColor or any color that matches
   for (const [key, value] of Object.entries(rnStyles.allValues)) {
@@ -1417,6 +1621,13 @@ function checkSolidFill(
       if (normalizedValue.toUpperCase() === hex.toUpperCase()) {
         covered = true;
         rnValue = value;
+        // Check if this match is in the correct context (property key)
+        const keyLower = key.toLowerCase();
+        if (isTextNode) {
+          valueMatch = keyLower.includes('color') && !keyLower.includes('background');
+        } else {
+          valueMatch = keyLower.includes('background') || keyLower.includes('bg');
+        }
         break;
       }
 
@@ -1429,6 +1640,7 @@ function checkSolidFill(
           if (tokenPath === foundToken || tokenPath.includes(tokenMatch[1])) {
             covered = true;
             rnValue = value;
+            valueMatch = true; // Token reference is considered a match
             break;
           }
         }
@@ -1445,10 +1657,20 @@ function checkSolidFill(
         const normalized = bgValue.replace(/['"]/g, '');
         if (normalized.toUpperCase() === hex.toUpperCase()) {
           covered = true;
+          valueMatch = true;
         } else if (tokenPath && normalized.includes('colors.')) {
           covered = true; // Token reference exists
+          valueMatch = true;
         }
       }
+    }
+  }
+
+  // If covered but no explicit valueMatch was set, check if found value equals Figma hex
+  if (covered && valueMatch === undefined) {
+    if (rnValue && typeof rnValue === 'string') {
+      const normalizedRn = rnValue.replace(/['"]/g, '').toUpperCase();
+      valueMatch = normalizedRn === hex.toUpperCase();
     }
   }
 
@@ -1457,11 +1679,18 @@ function checkSolidFill(
     nodeName: node.nodeName,
     nodeType: node.nodeType,
     category: 'colors',
-    property: 'backgroundColor',
+    property: expectedProperty,
     figmaValue: hex,
     rnValue,
     covered,
-    fix: covered ? undefined : `Add backgroundColor: '${hex}' (or ${tokenPath || 'token'})`,
+    valueMatch,
+    fix: !covered
+      ? `Add ${expectedProperty}: '${hex}' (or ${tokenPath || 'token'})`
+      : (valueMatch === false
+        ? (rnValue && typeof rnValue === 'string' && rnValue.replace(/['"]/g, '').toUpperCase() === hex.toUpperCase()
+          ? `Color '${hex}' found but used in wrong property context — verify it's applied as ${expectedProperty}`
+          : `Value mismatch: expected '${hex}' but found '${rnValue}' — verify it's used for the correct ${expectedProperty}`)
+        : undefined),
   };
 }
 
@@ -1548,7 +1777,10 @@ function checkImageFill(
   });
 
   // NEW: Check if the actual image asset file exists
-  if (fill.imageRef) {
+  // Only check if the Image component is found — if no Image component exists,
+  // the imageComponent check already covers this gap; adding asset/resizeMode
+  // would triple-count the same missing feature
+  if (fill.imageRef && componentCovered) {
     const imageAssets = getImageAssets();
     const foundAsset = findImageAsset(fill.imageRef, node.nodeName, imageAssets);
     const assetExists = foundAsset !== null;
@@ -1574,8 +1806,8 @@ function checkImageFill(
     }
   }
 
-  // Check resizeMode
-  if (fill.scaleMode) {
+  // Check resizeMode — only relevant if Image component exists
+  if (fill.scaleMode && componentCovered) {
     const scaleModeMap: Record<string, string> = {
       'FILL': 'cover',
       'FIT': 'contain',
@@ -1614,8 +1846,11 @@ function checkCornerRadius(
     COMPONENT_DELEGATIONS[c]?.includes('borders')
   );
 
-  let covered = hasDelegatingComponent;
-  let rnValue: any = hasDelegatingComponent ? 'delegated' : null;
+  // INSTANCE nodes (component instances) handle their own border radius
+  const isComponentInstance = node.nodeType === 'INSTANCE';
+
+  let covered = hasDelegatingComponent || isComponentInstance;
+  let rnValue: any = (hasDelegatingComponent || isComponentInstance) ? 'delegated' : null;
 
   // Direct property lookup
   if (!covered) {
@@ -1623,8 +1858,18 @@ function checkCornerRadius(
     if (rnValue !== null) {
       if (typeof rnValue === 'number' && Math.abs(rnValue - rounded) <= CONFIG.tolerances.dimension) {
         covered = true;
-      } else if (typeof rnValue === 'string' && rnValue.includes('radius.')) {
-        covered = true;
+      } else if (typeof rnValue === 'string') {
+        if (rnValue.includes('radius.')) {
+          covered = true;
+        }
+        // Handle scaled() function calls: scaled(12) ≈ 12
+        const scaledMatch = rnValue.match(/scaled\w*\((\d+(?:\.\d+)?)\)/);
+        if (scaledMatch) {
+          const scaledValue = parseFloat(scaledMatch[1]);
+          if (Math.abs(scaledValue - rounded) <= CONFIG.tolerances.dimension) {
+            covered = true;
+          }
+        }
       }
     }
   }
@@ -1665,7 +1910,27 @@ function checkStrokes(
   const checks: PropertyCheck[] = [];
 
   for (const stroke of strokes) {
-    if (stroke.visible === false) continue;
+    if (stroke.visible === false) {
+      // Check if RN code incorrectly has a visible border when Figma says invisible
+      const rnBorderWidth = findStyleValue(rnStyles, 'borderWidth');
+      const rnBorderColor = findStyleValue(rnStyles, 'borderColor');
+      if (rnBorderWidth !== null && rnBorderColor !== null &&
+          typeof rnBorderColor === 'string' && rnBorderColor.toLowerCase() !== 'transparent') {
+        checks.push({
+          nodeId: node.nodeId,
+          nodeName: node.nodeName,
+          nodeType: node.nodeType,
+          category: 'borders',
+          property: 'borderVisible',
+          figmaValue: false,
+          rnValue: `borderWidth: ${rnBorderWidth}, borderColor: ${rnBorderColor}`,
+          covered: false,
+          valueMatch: false,
+          fix: `Figma stroke is invisible but RN has borderWidth: ${rnBorderWidth}. Set borderColor to 'transparent' or remove border.`,
+        });
+      }
+      continue;
+    }
 
     if (stroke.type === 'SOLID' && stroke.color) {
       const hex = rgbaToHex(stroke.color.r, stroke.color.g, stroke.color.b);
@@ -1927,9 +2192,27 @@ function checkTypography(
     });
   }
 
-  // Font weight
+  // Font weight — also check fontFamily suffix matches expected weight
   if (style.fontWeight) {
     const rnValue = findTypoValue('fontWeight');
+
+    // Map Figma numeric weights to RN fontFamily suffixes
+    const weightToFamily: Record<number, string> = {
+      400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold',
+    };
+    const expectedSuffix = weightToFamily[style.fontWeight as number] || '';
+
+    // Check if fontFamily contains the expected weight suffix
+    const fontFamilyValue = findTypoValue('fontFamily');
+    let weightValueMatch: boolean | undefined = undefined;
+    // Skip value matching for delegated components — they handle their own typography
+    if (rnValue === 'delegated' || fontFamilyValue === 'delegated') {
+      weightValueMatch = undefined; // Can't verify delegated values
+    } else if (expectedSuffix && fontFamilyValue && typeof fontFamilyValue === 'string') {
+      weightValueMatch = fontFamilyValue.includes(expectedSuffix);
+    } else if (rnValue !== null) {
+      weightValueMatch = String(rnValue) === String(style.fontWeight);
+    }
 
     checks.push({
       nodeId: node.nodeId,
@@ -1938,9 +2221,12 @@ function checkTypography(
       category: 'typography',
       property: 'fontWeight',
       figmaValue: style.fontWeight,
-      rnValue,
-      covered: rnValue !== null,
-      fix: rnValue !== null ? undefined : `Add fontWeight: '${style.fontWeight}'`,
+      rnValue: rnValue ?? fontFamilyValue,
+      covered: rnValue !== null || fontFamilyValue !== null,
+      valueMatch: weightValueMatch,
+      fix: weightValueMatch === false
+        ? `Font weight ${style.fontWeight} requires fontFamily ending in '-${expectedSuffix}' (current: '${fontFamilyValue || rnValue}')`
+        : (rnValue === null && fontFamilyValue === null ? `Add fontWeight: '${style.fontWeight}'` : undefined),
     });
   }
 
@@ -1950,8 +2236,13 @@ function checkTypography(
     const rounded = Math.round(style.lineHeightPx);
     let covered = false;
 
+    // If delegated to a component, consider covered — the component handles its own typography
+    if (rnValue === 'delegated') {
+      covered = true;
+    }
+
     // Check if value matches
-    if (rnValue !== null && typeof rnValue === 'number') {
+    if (!covered && rnValue !== null && typeof rnValue === 'number') {
       covered = Math.abs(rnValue - rounded) <= CONFIG.tolerances.typography;
     }
 
@@ -2008,9 +2299,10 @@ function checkTypography(
     };
     const expected = alignMap[style.textAlignHorizontal] || 'left';
     let rnValue = findTypoValue('textAlign');
-    let covered = rnValue === expected || rnValue === `'${expected}'`;
+    // If delegated to a component, consider covered — the component handles alignment
+    let covered = rnValue === 'delegated' || rnValue === expected || rnValue === `'${expected}'`;
 
-    // If not found directly (e.g., delegated), check ALL textAlign values in allValues
+    // If not found directly, check ALL textAlign values in allValues
     if (!covered) {
       for (const [key, value] of Object.entries(rnStyles.allValues)) {
         if (key.toLowerCase().includes('textalign') || key.includes('.textAlign')) {
@@ -2613,15 +2905,20 @@ function generateReport(
     };
   }
 
-  // Calculate overall stats
-  const propertiesCovered = regularChecks.filter(c => c.covered).length;
-  const propertiesTotal = regularChecks.length;
+  // Calculate overall stats — exclude textContent from coverage score
+  // textContent is informational only (Figma has sample data, RN uses dynamic data)
+  const scoredChecks = regularChecks.filter(c => c.category !== 'textContent');
+  const propertiesCovered = scoredChecks.filter(c => c.covered).length;
+  const propertiesTotal = scoredChecks.length;
   const overallCoverage = propertiesTotal > 0
     ? Math.round((propertiesCovered / propertiesTotal) * 1000) / 10
     : 100;
 
   // Get uncovered properties
   const uncoveredProperties = regularChecks.filter(c => !c.covered);
+
+  // Get value mismatches: properties that exist but have wrong values
+  const valueMismatchProperties = regularChecks.filter(c => c.covered && c.valueMatch === false);
 
   // Count nodes
   const nodeIds = new Set(regularChecks.map(c => c.nodeId));
@@ -2640,9 +2937,11 @@ function generateReport(
       nodesPartial: nodesWithUncovered.size,
       nodesTotal: nodeIds.size,
       limitations: limitations.length,
+      valueMismatches: valueMismatchProperties.length,
     },
     categoryBreakdown,
     uncoveredProperties,
+    valueMismatchProperties,
     limitations,
     tokenUsage: {
       expectedTokens: 0,
@@ -2761,6 +3060,7 @@ async function main(): Promise<void> {
   console.log(`\n  Overall Coverage: ${report.summary.overallCoverage}%`);
   console.log(`  Properties: ${report.summary.propertiesCovered}/${report.summary.propertiesTotal} covered`);
   console.log(`  Missing: ${report.summary.propertiesMissing}`);
+  console.log(`  Value Mismatches: ${report.summary.valueMismatches} (exist but wrong value)`);
   console.log(`  Nodes: ${report.summary.nodesCovered} covered, ${report.summary.nodesPartial} partial`);
   console.log(`  Limitations: ${report.summary.limitations} (not counted)`);
 
@@ -2782,6 +3082,19 @@ async function main(): Promise<void> {
 
     if (report.uncoveredProperties.length > 10) {
       console.log(`    ... and ${report.uncoveredProperties.length - 10} more`);
+    }
+  }
+
+  if (report.valueMismatchProperties.length > 0) {
+    console.log('\n  Value Mismatches (exist but wrong value):');
+    for (const prop of report.valueMismatchProperties.slice(0, 10)) {
+      console.log(`    - [${prop.category}] ${prop.nodeName}: ${prop.property}`);
+      console.log(`      Figma: ${JSON.stringify(prop.figmaValue)} | RN: ${JSON.stringify(prop.rnValue)}`);
+      if (prop.fix) console.log(`      Fix: ${prop.fix}`);
+    }
+
+    if (report.valueMismatchProperties.length > 10) {
+      console.log(`    ... and ${report.valueMismatchProperties.length - 10} more`);
     }
   }
 

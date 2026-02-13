@@ -1,0 +1,146 @@
+{
+  "screenId": "41:9511",
+  "screenName": "Screen 41-9511",
+  "generatedAt": "2026-02-13T11:08:22.028Z",
+  "summary": {
+    "overallCoverage": 100,
+    "propertiesCovered": 106,
+    "propertiesTotal": 106,
+    "propertiesMissing": 0,
+    "nodesCovered": 19,
+    "nodesPartial": 4,
+    "nodesTotal": 23,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 46,
+      "total": 46,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 12,
+      "total": 12,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 21,
+      "total": 21,
+      "percentage": 100
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 21,
+      "total": 21,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 1,
+      "total": 5,
+      "percentage": 20
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 5,
+      "total": 5,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:9543",
+      "nodeName": "Something didn’t go through this time.",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Something didn’t go through this time.",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Something didn’t go through this time.\""
+    },
+    {
+      "nodeId": "41:9549",
+      "nodeName": "Your money is safe and hasn’t been deducted.",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Your money is safe and hasn’t been deducted.",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Your money is safe and hasn’t been deducted.\""
+    },
+    {
+      "nodeId": "41:9555",
+      "nodeName": "If money was debited, it will automatically be refunded within 3-5 business days",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "If money was debited, it will automatically be ref...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"If money was debited, it will automatically be refunded within 3-5 business days\""
+    },
+    {
+      "nodeId": "41:9558",
+      "nodeName": "Try Again",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Try Again",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Try Again\""
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

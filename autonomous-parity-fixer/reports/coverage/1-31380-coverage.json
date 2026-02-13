@@ -1,0 +1,353 @@
+{
+  "screenId": "1:31380",
+  "screenName": "Screen 1-31380",
+  "generatedAt": "2026-02-13T11:07:49.084Z",
+  "summary": {
+    "overallCoverage": 98.2,
+    "propertiesCovered": 213,
+    "propertiesTotal": 217,
+    "propertiesMissing": 4,
+    "nodesCovered": 9,
+    "nodesPartial": 13,
+    "nodesTotal": 22,
+    "limitations": 0,
+    "valueMismatches": 8
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 44,
+      "total": 44,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 50,
+      "total": 50,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 3,
+      "total": 3,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 15,
+      "total": 16,
+      "percentage": 93.8
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 3,
+      "percentage": 0
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 83,
+      "total": 83,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 6,
+      "total": 16,
+      "percentage": 37.5
+    },
+    "multiStyleText": {
+      "covered": 2,
+      "total": 2,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 16,
+      "total": 16,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "1:31419",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#70BF73",
+      "rnValue": "#D9D9D9",
+      "covered": false,
+      "fix": "Add color: '#70BF73' (or colors.success[default])"
+    },
+    {
+      "nodeId": "1:31419",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "saved ₹ 325 →",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"saved ₹ 325 →\""
+    },
+    {
+      "nodeId": "1:31424",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Paying to",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Paying to\""
+    },
+    {
+      "nodeId": "1:31429",
+      "nodeName": "ICICI",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "ICICI",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"ICICI\""
+    },
+    {
+      "nodeId": "1:31432",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Pay Now",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Pay Now\""
+    },
+    {
+      "nodeId": "1:31433",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "All payments are 100% secure",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"All payments are 100% secure\""
+    },
+    {
+      "nodeId": "1:31438",
+      "nodeName": "PAY BY ANY APP INSTEAD",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PAY BY ANY APP INSTEAD",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PAY BY ANY APP INSTEAD\""
+    },
+    {
+      "nodeId": "1:31441",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "1a8928147af64796e2247f1cef1ae9db1a68f5aa",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "1:31442",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Google Pay",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Google Pay\""
+    },
+    {
+      "nodeId": "1:31444",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "951e70728a7ce2a5ae5680e74d083d3df51b5e10",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "1:31445",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PayTM",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PayTM\""
+    },
+    {
+      "nodeId": "1:31447",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "09777000c94ca3fb826eada476cc87c6492dc244",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "1:31448",
+      "nodeName": "PhonePe",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PhonePe",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PhonePe\""
+    },
+    {
+      "nodeId": "1:31460",
+      "nodeName": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "You may get a verification message from Cashfree t...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"You may get a verification message from Cashfree to verify your profile and unlock benefits.\""
+    }
+  ],
+  "valueMismatchProperties": [
+    {
+      "nodeId": "1:31424",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "1:31425",
+      "nodeName": "[Landlord Name]",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "1:31429",
+      "nodeName": "ICICI",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "1:31430",
+      "nodeName": "XXXX XXXX XXXX 2003",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "1:31433",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "1:31442",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "1:31445",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    },
+    {
+      "nodeId": "1:31448",
+      "nodeName": "PhonePe",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#000000",
+      "covered": true,
+      "valueMatch": false,
+      "fix": "Color '#000000' found but used in wrong property context — verify it's applied as color"
+    }
+  ],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

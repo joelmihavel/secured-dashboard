@@ -1,0 +1,465 @@
+{
+  "screenId": "41:9811",
+  "screenName": "Screen 41-9811",
+  "generatedAt": "2026-02-13T11:08:25.923Z",
+  "summary": {
+    "overallCoverage": 96.4,
+    "propertiesCovered": 294,
+    "propertiesTotal": 305,
+    "propertiesMissing": 11,
+    "nodesCovered": 1,
+    "nodesPartial": 29,
+    "nodesTotal": 30,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 60,
+      "total": 60,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 61,
+      "total": 61,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 18,
+      "total": 26,
+      "percentage": 69.2
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 3,
+      "percentage": 0
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 128,
+      "total": 128,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 4,
+      "total": 26,
+      "percentage": 15.4
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 26,
+      "total": 26,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:9849",
+      "nodeName": "saved ₹ 325 →",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "saved ₹ 325 →",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"saved ₹ 325 →\""
+    },
+    {
+      "nodeId": "41:9854",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9854",
+      "nodeName": "Paying to",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Paying to",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Paying to\""
+    },
+    {
+      "nodeId": "41:9855",
+      "nodeName": "[Landlord Name]",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9859",
+      "nodeName": "ICICI",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9860",
+      "nodeName": "XXXX XXXX XXXX 2003",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9862",
+      "nodeName": "Pay Now",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Pay Now",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Pay Now\""
+    },
+    {
+      "nodeId": "41:9863",
+      "nodeName": "All payments are 100% secure",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9868",
+      "nodeName": "PAY BY ANY APP INSTEAD",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PAY BY ANY APP INSTEAD",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PAY BY ANY APP INSTEAD\""
+    },
+    {
+      "nodeId": "41:9871",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "1a8928147af64796e2247f1cef1ae9db1a68f5aa",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:9872",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9872",
+      "nodeName": "Google Pay",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Google Pay",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Google Pay\""
+    },
+    {
+      "nodeId": "41:9874",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "951e70728a7ce2a5ae5680e74d083d3df51b5e10",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:9875",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9875",
+      "nodeName": "PayTM",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PayTM",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PayTM\""
+    },
+    {
+      "nodeId": "41:9877",
+      "nodeName": "Ellipse 26",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "09777000c94ca3fb826eada476cc87c6492dc244",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:9878",
+      "nodeName": "PhonePe",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#000000",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#000000' (or colors.neutral[black])"
+    },
+    {
+      "nodeId": "41:9878",
+      "nodeName": "PhonePe",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "PhonePe",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"PhonePe\""
+    },
+    {
+      "nodeId": "41:9885",
+      "nodeName": "View your agreement",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "View your agreement",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"View your agreement\""
+    },
+    {
+      "nodeId": "41:9891",
+      "nodeName": "Agreement ID",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Agreement ID",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Agreement ID\""
+    },
+    {
+      "nodeId": "41:9892",
+      "nodeName": "KIA 123456789",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "KIA 123456789",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"KIA 123456789\""
+    },
+    {
+      "nodeId": "41:9898",
+      "nodeName": "Property Name",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Property Name",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Property Name\""
+    },
+    {
+      "nodeId": "41:9899",
+      "nodeName": "Prestige Pinestripe, Bommanahalli, Bengaluru 560037",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Prestige Pinestripe, Bommanahalli, Bengaluru 56003...",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Prestige Pinestripe, Bommanahalli, Bengaluru 560037\""
+    },
+    {
+      "nodeId": "41:9905",
+      "nodeName": "Tenant(s)",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Tenant(s)",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Tenant(s)\""
+    },
+    {
+      "nodeId": "41:9906",
+      "nodeName": "Rahul Joshi, Ashish Shakya,  Gursimran Khamba",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Rahul Joshi, Ashish Shakya,  Gursimran Khamba",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Rahul Joshi, Ashish Shakya,  Gursimran Khamba\""
+    },
+    {
+      "nodeId": "41:9912",
+      "nodeName": "Landlord(s)",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Landlord(s)",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Landlord(s)\""
+    },
+    {
+      "nodeId": "41:9913",
+      "nodeName": "Tanmay Bhatt, Kaneez Surkha",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Tanmay Bhatt, Kaneez Surkha",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Tanmay Bhatt, Kaneez Surkha\""
+    },
+    {
+      "nodeId": "41:9919",
+      "nodeName": "Monthly Rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Monthly Rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Monthly Rent\""
+    },
+    {
+      "nodeId": "41:9926",
+      "nodeName": "One-Time Deposit",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "One-Time Deposit",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"One-Time Deposit\""
+    },
+    {
+      "nodeId": "41:9933",
+      "nodeName": "Rent Duration",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Rent Duration",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Rent Duration\""
+    },
+    {
+      "nodeId": "41:9934",
+      "nodeName": "11 Months",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "11 Months",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"11 Months\""
+    },
+    {
+      "nodeId": "41:9940",
+      "nodeName": "Exit Date",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Exit Date",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Exit Date\""
+    },
+    {
+      "nodeId": "41:9941",
+      "nodeName": "31 Dec, 2027",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "31 Dec, 2027",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"31 Dec, 2027\""
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}

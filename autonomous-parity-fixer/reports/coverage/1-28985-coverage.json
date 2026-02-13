@@ -1,16 +1,17 @@
 {
   "screenId": "1:28985",
   "screenName": "Splash / get-started --carousel 4",
-  "generatedAt": "2026-02-10T15:58:27.654Z",
+  "generatedAt": "2026-02-13T11:07:37.980Z",
   "summary": {
-    "overallCoverage": 90.9,
-    "propertiesCovered": 50,
-    "propertiesTotal": 55,
-    "propertiesMissing": 5,
-    "nodesCovered": 3,
-    "nodesPartial": 3,
+    "overallCoverage": 98.1,
+    "propertiesCovered": 52,
+    "propertiesTotal": 53,
+    "propertiesMissing": 1,
+    "nodesCovered": 5,
+    "nodesPartial": 1,
     "nodesTotal": 6,
-    "limitations": 0
+    "limitations": 0,
+    "valueMismatches": 0
   },
   "categoryBreakdown": {
     "geometry": {
@@ -24,9 +25,9 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 14,
+      "covered": 18,
       "total": 18,
-      "percentage": 77.8
+      "percentage": 100
     },
     "spacing": {
       "covered": 6,
@@ -94,58 +95,15 @@
       "nodeId": "160:2668",
       "nodeName": "Container",
       "nodeType": "FRAME",
-      "category": "layout",
-      "property": "justifyContent",
-      "figmaValue": "center",
-      "rnValue": null,
-      "covered": false,
-      "fix": "Add justifyContent: 'center'"
-    },
-    {
-      "nodeId": "160:2668",
-      "nodeName": "Container",
-      "nodeType": "FRAME",
-      "category": "layout",
-      "property": "overflow",
-      "figmaValue": "visible",
-      "rnValue": "hidden",
-      "covered": false,
-      "fix": "Add overflow: 'visible'"
-    },
-    {
-      "nodeId": "160:2668",
-      "nodeName": "Container",
-      "nodeType": "FRAME",
       "category": "spacing",
       "property": "gap",
       "figmaValue": 48,
       "rnValue": 16,
       "covered": false,
       "fix": "Add gap: 48 (or spacing.xxxl)"
-    },
-    {
-      "nodeId": "160:2669",
-      "nodeName": "Container",
-      "nodeType": "FRAME",
-      "category": "layout",
-      "property": "overflow",
-      "figmaValue": "visible",
-      "rnValue": "hidden",
-      "covered": false,
-      "fix": "Add overflow: 'visible'"
-    },
-    {
-      "nodeId": "160:2675",
-      "nodeName": "Text Container",
-      "nodeType": "FRAME",
-      "category": "layout",
-      "property": "overflow",
-      "figmaValue": "visible",
-      "rnValue": "hidden",
-      "covered": false,
-      "fix": "Add overflow: 'visible'"
     }
   ],
+  "valueMismatchProperties": [],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

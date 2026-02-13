@@ -1,0 +1,223 @@
+{
+  "screenId": "41:8901",
+  "screenName": "Screen 41-8901",
+  "generatedAt": "2026-02-13T11:08:17.624Z",
+  "summary": {
+    "overallCoverage": 97.5,
+    "propertiesCovered": 156,
+    "propertiesTotal": 160,
+    "propertiesMissing": 4,
+    "nodesCovered": 9,
+    "nodesPartial": 8,
+    "nodesTotal": 17,
+    "limitations": 0,
+    "valueMismatches": 0
+  },
+  "categoryBreakdown": {
+    "geometry": {
+      "covered": 34,
+      "total": 34,
+      "percentage": 100
+    },
+    "positioning": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "layout": {
+      "covered": 31,
+      "total": 31,
+      "percentage": 100
+    },
+    "spacing": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "colors": {
+      "covered": 12,
+      "total": 15,
+      "percentage": 80
+    },
+    "gradients": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "images": {
+      "covered": 0,
+      "total": 1,
+      "percentage": 0
+    },
+    "borders": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "effects": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "opacity": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "typography": {
+      "covered": 65,
+      "total": 65,
+      "percentage": 100
+    },
+    "textContent": {
+      "covered": 6,
+      "total": 13,
+      "percentage": 46.2
+    },
+    "multiStyleText": {
+      "covered": 1,
+      "total": 1,
+      "percentage": 100
+    },
+    "visibility": {
+      "covered": 0,
+      "total": 0,
+      "percentage": 100
+    },
+    "assetExistence": {
+      "covered": 13,
+      "total": 13,
+      "percentage": 100
+    }
+  },
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:8907",
+      "nodeName": "Ellipse 8",
+      "nodeType": "ELLIPSE",
+      "category": "images",
+      "property": "imageComponent",
+      "figmaValue": "6d93b82e0916dab9a12fe22c604ddce60dfd2dfb",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add <Image> or <ImageBackground> component"
+    },
+    {
+      "nodeId": "41:8927",
+      "nodeName": "Base rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Base rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Base rent\""
+    },
+    {
+      "nodeId": "41:8934",
+      "nodeName": "Maintenance",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Maintenance",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Maintenance\""
+    },
+    {
+      "nodeId": "41:8941",
+      "nodeName": "Other charges",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Other charges",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Other charges\""
+    },
+    {
+      "nodeId": "41:8949",
+      "nodeName": "Payable Rent",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Payable Rent",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Payable Rent\""
+    },
+    {
+      "nodeId": "41:8980",
+      "nodeName": "Set it up",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#DDDDDD",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#DDDDDD' (or colors.neutral[200])"
+    },
+    {
+      "nodeId": "41:8980",
+      "nodeName": "Set it up",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Set it up",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Set it up\""
+    },
+    {
+      "nodeId": "41:8988",
+      "nodeName": "Set it up",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#DDDDDD",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#DDDDDD' (or colors.neutral[200])"
+    },
+    {
+      "nodeId": "41:8988",
+      "nodeName": "Set it up",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Set it up",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Set it up\""
+    },
+    {
+      "nodeId": "41:8996",
+      "nodeName": "Set it up",
+      "nodeType": "TEXT",
+      "category": "colors",
+      "property": "color",
+      "figmaValue": "#DDDDDD",
+      "rnValue": "#131313",
+      "covered": false,
+      "fix": "Add color: '#DDDDDD' (or colors.neutral[200])"
+    },
+    {
+      "nodeId": "41:8996",
+      "nodeName": "Set it up",
+      "nodeType": "TEXT",
+      "category": "textContent",
+      "property": "characters",
+      "figmaValue": "Set it up",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add text content: \"Set it up\""
+    }
+  ],
+  "valueMismatchProperties": [],
+  "limitations": [],
+  "tokenUsage": {
+    "expectedTokens": 0,
+    "usingTokens": 0,
+    "hardcodedValues": []
+  }
+}
