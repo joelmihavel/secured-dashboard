@@ -1,14 +1,14 @@
 {
   "screenId": "41:8760",
   "screenName": "My Profile / Main Screen",
-  "generatedAt": "2026-02-03T10:56:40.883Z",
+  "generatedAt": "2026-02-10T15:58:31.646Z",
   "summary": {
-    "overallCoverage": 85.3,
-    "propertiesCovered": 382,
+    "overallCoverage": 89.7,
+    "propertiesCovered": 402,
     "propertiesTotal": 448,
-    "propertiesMissing": 66,
-    "nodesCovered": 10,
-    "nodesPartial": 35,
+    "propertiesMissing": 46,
+    "nodesCovered": 14,
+    "nodesPartial": 31,
     "nodesTotal": 45,
     "limitations": 0
   },
@@ -34,9 +34,9 @@
       "percentage": 100
     },
     "colors": {
-      "covered": 1,
+      "covered": 6,
       "total": 32,
-      "percentage": 3.1
+      "percentage": 18.8
     },
     "gradients": {
       "covered": 0,
@@ -64,9 +64,9 @@
       "percentage": 100
     },
     "typography": {
-      "covered": 147,
+      "covered": 162,
       "total": 162,
-      "percentage": 90.7
+      "percentage": 100
     },
     "textContent": {
       "covered": 16,
@@ -102,17 +102,6 @@
       "fix": "Add backgroundColor: '#131313' (or colors.black[700])"
     },
     {
-      "nodeId": "41:8764",
-      "nodeName": "My  Profile",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
-    },
-    {
       "nodeId": "41:8767",
       "nodeName": "Your payment history",
       "nodeType": "TEXT",
@@ -138,45 +127,12 @@
       "nodeId": "41:8773",
       "nodeName": "JAN",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:8773",
-      "nodeName": "JAN",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "JAN",
       "rnValue": null,
       "covered": false,
       "fix": "Add text content: \"JAN\""
-    },
-    {
-      "nodeId": "41:8775",
-      "nodeName": "on time",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#000000",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
-    },
-    {
-      "nodeId": "41:8775",
-      "nodeName": "on time",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:8779",
@@ -188,17 +144,6 @@
       "rnValue": "PROFILE_COLORS.cardBackground",
       "covered": false,
       "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8779",
-      "nodeName": "FEB",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:8779",
@@ -212,39 +157,6 @@
       "fix": "Add text content: \"FEB\""
     },
     {
-      "nodeId": "41:8781",
-      "nodeName": "Paid late",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#000000",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
-    },
-    {
-      "nodeId": "41:8781",
-      "nodeName": "Paid late",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:8785",
-      "nodeName": "MAR",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
       "nodeId": "41:8785",
       "nodeName": "MAR",
       "nodeType": "TEXT",
@@ -256,28 +168,6 @@
       "fix": "Add text content: \"MAR\""
     },
     {
-      "nodeId": "41:8787",
-      "nodeName": "Not Paid",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#000000",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#000000' (or colors.neutral[black])"
-    },
-    {
-      "nodeId": "41:8787",
-      "nodeName": "Not Paid",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
       "nodeId": "41:8791",
       "nodeName": "APR",
       "nodeType": "TEXT",
@@ -287,17 +177,6 @@
       "rnValue": "PROFILE_COLORS.cardBackground",
       "covered": false,
       "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8791",
-      "nodeName": "APR",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:8791",
@@ -325,17 +204,6 @@
       "nodeId": "41:8795",
       "nodeName": "MAY",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:8795",
-      "nodeName": "MAY",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "MAY",
@@ -353,17 +221,6 @@
       "rnValue": "PROFILE_COLORS.cardBackground",
       "covered": false,
       "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8799",
-      "nodeName": "JUN",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:8799",
@@ -391,17 +248,6 @@
       "nodeId": "41:8803",
       "nodeName": "JUL",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:8803",
-      "nodeName": "JUL",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "JUL",
@@ -419,17 +265,6 @@
       "rnValue": "PROFILE_COLORS.cardBackground",
       "covered": false,
       "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8807",
-      "nodeName": "AUG",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:8807",
@@ -457,17 +292,6 @@
       "nodeId": "41:8811",
       "nodeName": "SEP",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:8811",
-      "nodeName": "SEP",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "SEP",
@@ -485,17 +309,6 @@
       "rnValue": "PROFILE_COLORS.cardBackground",
       "covered": false,
       "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8815",
-      "nodeName": "OCT",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:8815",
@@ -523,17 +336,6 @@
       "nodeId": "41:8819",
       "nodeName": "NOV",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:8819",
-      "nodeName": "NOV",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "NOV",
@@ -551,17 +353,6 @@
       "rnValue": "PROFILE_COLORS.cardBackground",
       "covered": false,
       "fix": "Add backgroundColor: '#878787' (or colors.neutral[600])"
-    },
-    {
-      "nodeId": "41:8823",
-      "nodeName": "DEC",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:8823",
@@ -617,17 +408,6 @@
       "rnValue": null,
       "covered": false,
       "fix": "Add resizeMode: 'cover'"
-    },
-    {
-      "nodeId": "41:8834",
-      "nodeName": "Rohan Joshi",
-      "nodeType": "TEXT",
-      "category": "colors",
-      "property": "backgroundColor",
-      "figmaValue": "#FFFFFF",
-      "rnValue": "PROFILE_COLORS.cardBackground",
-      "covered": false,
-      "fix": "Add backgroundColor: '#FFFFFF' (or colors.neutral[white])"
     },
     {
       "nodeId": "41:8834",

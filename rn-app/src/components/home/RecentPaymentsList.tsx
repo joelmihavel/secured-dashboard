@@ -108,9 +108,9 @@ const styles = StyleSheet.create({
     // No bottom border on last item
   },
   divider: {
-    height: 1, // Figma: borderWidth 1
+    height: 0.25, // Figma 243:2931: very thin divider
     backgroundColor: '#4D4D4D', // Figma: #4D4D4D (black[400])
-    marginLeft: 44, // Offset to align with content (after avatar)
+    marginLeft: 48, // Offset to align with content (32 avatar + 16 gap)
   },
   // Avatar - Figma: ellipse_8
   avatar: {
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFCC8A', // Figma: #FFCC8A (brand[300])
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12, // Figma: gap between avatar and content
+    marginRight: 16, // Figma 243:2922: gap 16 between avatar and content
   },
   avatarText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   // Content
   content: {
     flex: 1,
-    gap: 2,
+    gap: 8, // Figma 243:2924: gap 8 between title and status row
   },
   title: {
     fontFamily: 'PlusJakartaSans-Medium',
@@ -146,10 +146,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusDot: {
-    width: 10, // Figma: width 10
-    height: 10, // Figma: height 10
-    borderRadius: 5, // Figma: fully rounded
-    marginRight: 6,
+    width: 12, // Figma 243:2927: 12x12 status icon
+    height: 12, // Figma 243:2927: 12x12 status icon
+    borderRadius: 6, // Figma: fully rounded
+    marginRight: 4, // Figma 243:2926: gap 4
   },
   statusText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -172,8 +172,8 @@ const styles = StyleSheet.create({
   amountBase: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontWeight: '600', // Figma: fontWeight 600
-    letterSpacing: -0.48, // Figma: letterSpacing -0.48
-    color: '#EEEEEE', // Figma: #EEEEEE (neutral[100])
+    letterSpacing: -0.64, // Figma 243:2930: letterSpacing -0.64
+    color: '#FFFFFF', // Figma 243:2930: white
   },
   rupeeSymbol: {
     fontSize: 12, // Figma: fontSize 12 (style override for Rs symbol)

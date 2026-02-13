@@ -29,7 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
+import { Screen, Text, PrimaryButton, Logo, DottedPattern } from '@/src/components';
 import { colors, spacing, radius, typography } from '@/src/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -262,16 +262,10 @@ export default function SetupIndexScreen() {
 
   return (
     <Screen testID="setup-index-screen" padded={false} safeAreaBottom={false}>
-      {/* Background - Figma: #131313 */}
-      <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={['transparent', colors.black[700]]}
-          locations={[0.3, 0.7]}
-          style={styles.backgroundGradient}
-        />
-      </View>
+      {/* Background - Figma: #131313 with warm-toned illustration overlay */}
+      <DottedPattern />
 
-      <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
+      <View style={[styles.container, { paddingTop: insets.top + 65 }]}>
         {/* Logo - top left */}
         <View style={styles.logoContainer}>
           <Logo size={40} color={colors.white} />
@@ -281,7 +275,7 @@ export default function SetupIndexScreen() {
         {/* Multi-color text: "Let's get " (#A9A9A9) + "you set up" (#FF9A6D) */}
         <View style={styles.titleContainer}>
           <Text style={styles.titleText}>
-            <Text style={styles.titleTextGray}>Let's get </Text>
+            <Text style={styles.titleTextGray}>{'Let\'s get\n'}</Text>
             <Text style={styles.titleTextAccent}>you set up</Text>
           </Text>
         </View>
@@ -306,6 +300,9 @@ export default function SetupIndexScreen() {
 
         {/* Page indicator - Figma: 8x8 dots */}
         <PageIndicator count={SETUP_STEPS.length} activeIndex={activeIndex} />
+
+        {/* Spacer to push button to bottom */}
+        <View style={{ flex: 1 }} />
 
         {/* Bottom button - changes style on last step per Figma 41-11006 */}
         {/* Figma I41:10823;100:1575: "Start Flenting ->" with arrow */}
@@ -343,13 +340,6 @@ const CARD_WIDTH = FIGMA.cardWidth;
 const CARD_HEIGHT = FIGMA.cardHeight;
 
 const styles = StyleSheet.create({
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.black[700], // #131313
-  },
-  backgroundGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
   container: {
     flex: 1,
   },
@@ -359,7 +349,7 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     marginLeft: FIGMA.headerLeftMargin, // 48 - Figma left alignment (not centered)
-    marginBottom: FIGMA.paginationMarginTop, // 30 - gap before carousel/card
+    marginBottom: 28, // Figma: card Y=322 - title frame bottom ~294 = 28px gap
   },
   // Title: Figma exact - fontSize 32, lineHeight 48, letterSpacing -1
   // Multi-color text: "Let's get " (#A9A9A9) + "you set up" (#FF9A6D)
@@ -378,8 +368,8 @@ const styles = StyleSheet.create({
     color: FIGMA.titleColorAccent, // Figma style override 42 - colors.brand[500] (#FF9A6D)
   },
   carouselContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    // Fixed height matching card - Figma card at Y=322 from screen top
+    height: CARD_HEIGHT,
   },
   slideContainer: {
     width: SCREEN_WIDTH,
@@ -472,7 +462,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: FIGMA.dotGap, // 4 - Figma itemSpacing
-    marginBottom: FIGMA.buttonMarginTop, // 58 - Figma gap to button
+    marginTop: FIGMA.paginationMarginTop, // 30 - Figma gap from card to dots
   },
   indicatorDot: {
     width: FIGMA.dotSize, // 8
@@ -488,11 +478,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   // Inactive button: Figma 41-10712 - 313x56, borderRadius 12, bg #202020
+  // Figma node 41:10823: padding 16 all sides, gap 10, borderRadius 12, overflow visible
   buttonInactive: {
     width: FIGMA.buttonWidth, // 313
     height: FIGMA.buttonHeight, // 56
     backgroundColor: FIGMA.buttonBackgroundColor, // #202020
     borderRadius: FIGMA.buttonBorderRadius, // 12
+    paddingHorizontal: spacing.md, // Figma: paddingLeft/Right = 16
+    paddingVertical: spacing.md, // Figma: paddingTop/Bottom = 16
+    gap: 10, // Figma: itemSpacing = 10
+    overflow: 'visible', // Figma: clipsContent = false
+    flexDirection: 'row', // Figma: layoutMode = HORIZONTAL
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -523,8 +519,10 @@ const styles = StyleSheet.create({
     borderWidth: FIGMA.buttonActiveBorderWidth, // 1
     borderColor: FIGMA.buttonActiveBorderColor, // #FF9A6D
     borderRadius: FIGMA.buttonActiveBorderRadius, // 8
+    flexDirection: 'row', // Figma: layoutMode = HORIZONTAL
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 10, // Figma: itemSpacing = 10
     overflow: 'hidden',
   },
   buttonActiveText: {

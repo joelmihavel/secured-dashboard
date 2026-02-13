@@ -7,17 +7,20 @@
  * - Card container: width 270, borderRadius 12
  * - Card body: width 270, backgroundColor #202020
  *   - Padding: top 24, bottom 24, left 32, right 16
- * - Card footer: height 64, backgroundColor #1A1A1A, padding 16
- * - Selected Pill: bg #1A1A1A, text #FF9A6D, font 12
+ * - Card footer: height 64, backgroundColor #1A1A1A, paddingHorizontal 32
+ * - Selected Pill: bg #1A1A1A, text #FF9A6D, fontSize 12
+ * - UPI Logo: white bg, green "UPI" text, orange "P" icon
+ * - Account text: fontSize 16, bankName #CBCBCB, accent #FF9A6D
+ * - UPI ID text: fontSize 16, color #878787
+ * - Type label: fontSize 14, color #CBCBCB
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Text, Logo } from '@/src/components/ui';
 import { colors } from '@/src/theme';
-import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 
 export type HomePaymentMethodType = 'upi' | 'card' | 'netbanking';
 
@@ -39,7 +42,6 @@ export interface PaymentMethodCardProps {
 }
 
 function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCardProps) {
-  
   const isCard = method.type === 'card';
   const isSelected = method.isSelected;
 
@@ -65,16 +67,10 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
     }
   };
 
-  /**
-   * Render details with proper nested Text structure for multi-styled text
-   * Figma: Single <Text> with nested <Text> spans for different colors
-   * This ensures text stays on single line with mixed styling
-   */
   const renderDetails = () => {
     if (method.type === 'card') {
       return (
         <View style={styles.cardDetailsContainer}>
-          {/* Card number: "•••• 2341" - single Text with nested spans */}
           <Text style={styles.cardNumber}>
             <Text style={styles.cardNumberDots}>{'\u2022\u2022\u2022\u2022'} </Text>
             <Text style={isSelected ? styles.cardNumberAccent : styles.cardNumberValue}>
@@ -82,12 +78,10 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
             </Text>
           </Text>
           <View style={styles.cardInfoWrapper}>
-            {/* EXPIRY: "EXPIRY 06/26" - single Text with nested spans */}
             <Text style={styles.cardInfoText}>
               <Text style={styles.cardLabel}>EXPIRY </Text>
               <Text style={styles.cardValue}>{method.cardExpiry}</Text>
             </Text>
-            {/* CVV: "CVV •••" - single Text with nested spans */}
             <Text style={styles.cardInfoText}>
               <Text style={styles.cardLabel}>CVV </Text>
               <Text style={styles.cardValue}>{'\u2022\u2022\u2022'}</Text>
@@ -99,7 +93,6 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
 
     return (
       <View style={styles.detailsContainer}>
-        {/* Bank account: "ICICI a/c - xxx23" - single Text with nested spans */}
         <Text style={styles.accountText}>
           <Text style={styles.accountBankName}>
             {method.bankName} {method.type === 'netbanking' ? 'Bank' : 'a/c'} -{' '}
@@ -108,7 +101,6 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
             {method.accountMasked}
           </Text>
         </Text>
-        {/* UPI ID: "rishabh@•••" - single Text with nested spans */}
         {method.upiId && (
           <Text style={styles.upiIdText}>
             <Text style={styles.upiIdVisible}>{method.upiId.split('@')[0]}@</Text>
@@ -153,9 +145,9 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
       <View style={styles.cardFooter}>
         <TouchableOpacity style={styles.typeEditContainer} onPress={onEdit}>
           <Text style={styles.typeLabel}>{getTypeLabel()}</Text>
-          <Ionicons name="pencil" size={scaled(10)} color={colors.white} />
+          <Ionicons name="pencil" size={10} color={colors.white} />
         </TouchableOpacity>
-        <Logo size={scaled(24)} />
+        <Logo size={24} />
       </View>
     </TouchableOpacity>
   );
@@ -163,30 +155,30 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
 
 const styles = StyleSheet.create({
   card: {
-    width: scaled(270),
-    borderRadius: scaled(12),
+    width: 270, // Figma: exact 270px
+    borderRadius: 12, // Figma: borderRadius 12
     overflow: 'hidden',
   },
   cardBody: {
-    backgroundColor: '#202020',
-    paddingTop: scaledSpacing(24),
-    paddingBottom: scaledSpacing(24),
-    paddingLeft: scaledSpacing(32),
-    paddingRight: scaledSpacing(16),
+    backgroundColor: '#202020', // Figma: #202020
+    paddingTop: 24, // Figma: paddingTop 24
+    paddingBottom: 24, // Figma: paddingBottom 24
+    paddingLeft: 32, // Figma: paddingLeft 32
+    paddingRight: 16, // Figma: paddingRight 16
     justifyContent: 'space-between',
   },
   cardBodyLarge: {
-    height: scaled(336), // Full height for Credit Card (243-6490)
+    height: 336, // Figma: full height for Credit Card
   },
   cardBodySmall: {
-    height: scaled(200), // Compact for others
+    height: 344, // Figma: matches total 408 (Add More Card) - 64 (footer) = 344
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  // Logos
+  // UPI Logo
   upiLogoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -197,14 +189,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   upiLogoText: {
-    fontSize: scaledFont(12),
+    fontSize: 12, // Figma: exact
     fontWeight: '700',
     color: '#27803B',
   },
   upiLogoIcon: {
     width: 12,
     height: 12,
-    backgroundColor: '#F06321',
+    backgroundColor: '#E9661C', // Figma 243-5870: #E9661C for UPI P icon
     borderRadius: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -215,118 +207,107 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   visaText: {
-    fontSize: scaledFont(20),
+    fontSize: 20, // Figma: exact
     fontWeight: '700',
     color: colors.white,
     fontStyle: 'italic',
     letterSpacing: 1,
   },
   bankText: {
-    fontSize: scaledFont(16),
+    fontSize: 16, // Figma: exact
     fontWeight: '500',
     color: colors.white,
   },
   // Selected Badge
   selectedBadge: {
-    backgroundColor: '#1A1A1A',
-    paddingHorizontal: scaledSpacing(12),
-    paddingVertical: scaledSpacing(8),
-    borderRadius: 200,
+    backgroundColor: '#1A1A1A', // Figma: #1A1A1A
+    paddingHorizontal: 12, // Figma: exact
+    paddingVertical: 8, // Figma: exact
+    borderRadius: 200, // Figma: pill shape
   },
   selectedText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(12),
+    fontSize: 12, // Figma: exact
     color: '#FF9A6D', // Figma: brand[500]
-    // Figma nodes: 243:2776, 243:2861, 243:2883, 243:6310, 243:6395, 243:6417 "SELECTED"
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
+    textAlign: 'center',
   },
-  // Details - Figma: proper nested Text structure for multi-styled text
+  // Details
   detailsContainer: {
-    gap: scaledSpacing(4),
+    gap: 4, // Figma: gap 4
   },
-  // Base text style for account info
   accountText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(16),
+    fontSize: 16, // Figma: exact
   },
-  // Bank name part: gray color - Figma 243:6610 "ICICI a/c -"
   accountBankName: {
-    color: '#CBCBCB', // Figma: neutral[300] - visible on dark bg
+    color: '#4D4D4D', // Figma 243-5870: #4D4D4D for bank name text on card
   },
-  // Masked account part: gray by default - Figma 243:6610 "xxx23"
   accountMasked: {
-    color: '#CBCBCB', // Figma: neutral[300]
+    color: '#4D4D4D', // Figma 243-5870: #4D4D4D for masked account text
   },
-  // Accent text when selected
   accentText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(20),
+    fontSize: 20, // Figma: accent is larger
     color: '#FF9A6D', // Figma: brand[500]
   },
-  // UPI ID with nested spans: "rishabh@•••"
   upiIdText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(16),
+    fontSize: 16, // Figma: exact
   },
   upiIdVisible: {
-    color: '#878787', // Figma: neutral[600] - UPI ID visible part
+    color: '#4D4D4D', // Figma 243-5870: #4D4D4D for UPI ID visible text
   },
   upiIdMasked: {
-    color: '#878787', // Figma: neutral[600] - masked portion
+    color: '#FF9A6D', // Figma 243:2866: brand[500] for masked dots
   },
-  // Card Details - Figma: nested Text for "•••• 2341"
+  // Card Details
   cardDetailsContainer: {
-    gap: scaledSpacing(28),
+    gap: 28, // Figma: gap 28
   },
-  // Card number base style
   cardNumber: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(20),
+    fontSize: 20, // Figma: exact
   },
-  // Dots part "••••"
   cardNumberDots: {
     color: '#CBCBCB', // Figma: neutral[300]
   },
-  // Value part "2341"
   cardNumberValue: {
     color: '#CBCBCB', // Figma: neutral[300]
   },
-  // Accent color when selected
   cardNumberAccent: {
     color: '#FF9A6D', // Figma: brand[500]
   },
   cardInfoWrapper: {
-    gap: scaledSpacing(8),
+    gap: 8, // Figma: gap 8
   },
-  // Single text line for "EXPIRY 06/26" and "CVV •••"
   cardInfoText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(16),
+    fontSize: 16, // Figma: exact
   },
   cardLabel: {
-    color: '#878787', // Figma: neutral[600] - "EXPIRY", "CVV" labels
+    color: '#4D4D4D', // Figma 243-5870: #4D4D4D for EXPIRY/CVV labels
   },
   cardValue: {
-    color: '#CBCBCB', // Figma: neutral[300] - values like "06/26"
+    color: '#CBCBCB', // Figma: neutral[300]
   },
   // Footer
   cardFooter: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#1A1A1A', // Figma: #1A1A1A
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: scaledSpacing(32),
-    height: scaled(64),
+    paddingHorizontal: 32, // Figma: exact
+    height: 64, // Figma: exact
   },
   typeEditContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: scaledSpacing(4),
+    gap: 4, // Figma: gap 4
   },
   typeLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(14),
-    color: '#CBCBCB',
+    fontSize: 14, // Figma: exact
+    color: '#CBCBCB', // Figma: neutral[300]
     textTransform: 'uppercase',
   },
 });

@@ -1,21 +1,21 @@
 {
   "screenId": "1:28985",
   "screenName": "Splash / get-started --carousel 4",
-  "generatedAt": "2026-02-03T07:07:11.240Z",
+  "generatedAt": "2026-02-10T15:58:27.654Z",
   "summary": {
-    "overallCoverage": 100,
-    "propertiesCovered": 61,
-    "propertiesTotal": 61,
-    "propertiesMissing": 0,
-    "nodesCovered": 7,
-    "nodesPartial": 0,
-    "nodesTotal": 7,
+    "overallCoverage": 90.9,
+    "propertiesCovered": 50,
+    "propertiesTotal": 55,
+    "propertiesMissing": 5,
+    "nodesCovered": 3,
+    "nodesPartial": 3,
+    "nodesTotal": 6,
     "limitations": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 14,
-      "total": 14,
+      "covered": 12,
+      "total": 12,
       "percentage": 100
     },
     "positioning": {
@@ -24,14 +24,14 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 18,
+      "covered": 14,
       "total": 18,
-      "percentage": 100
+      "percentage": 77.8
     },
     "spacing": {
-      "covered": 7,
+      "covered": 6,
       "total": 7,
-      "percentage": 100
+      "percentage": 85.7
     },
     "colors": {
       "covered": 3,
@@ -39,13 +39,13 @@
       "percentage": 100
     },
     "gradients": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "images": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "borders": {
@@ -89,7 +89,63 @@
       "percentage": 100
     }
   },
-  "uncoveredProperties": [],
+  "uncoveredProperties": [
+    {
+      "nodeId": "160:2668",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "justifyContent",
+      "figmaValue": "center",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add justifyContent: 'center'"
+    },
+    {
+      "nodeId": "160:2668",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "overflow",
+      "figmaValue": "visible",
+      "rnValue": "hidden",
+      "covered": false,
+      "fix": "Add overflow: 'visible'"
+    },
+    {
+      "nodeId": "160:2668",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "category": "spacing",
+      "property": "gap",
+      "figmaValue": 48,
+      "rnValue": 16,
+      "covered": false,
+      "fix": "Add gap: 48 (or spacing.xxxl)"
+    },
+    {
+      "nodeId": "160:2669",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "overflow",
+      "figmaValue": "visible",
+      "rnValue": "hidden",
+      "covered": false,
+      "fix": "Add overflow: 'visible'"
+    },
+    {
+      "nodeId": "160:2675",
+      "nodeName": "Text Container",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "overflow",
+      "figmaValue": "visible",
+      "rnValue": "hidden",
+      "covered": false,
+      "fix": "Add overflow: 'visible'"
+    }
+  ],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

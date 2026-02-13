@@ -189,12 +189,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8, // Figma: borderRadius 8
-    borderWidth: 1, // Figma: borderWidth 1
+    borderWidth: 0.5, // Figma: 0.1px (0.5 minimum for RN visibility)
     borderColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
-    // Shadow - Figma: #995C41, offset 0/6, blur 12
+    // Shadow - Figma: rgba(153,92,65,0.24), offset 0/6, blur 12, spread -2
     shadowColor: '#995C41',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.24,
     shadowRadius: 12,
     elevation: 6,
   },

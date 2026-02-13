@@ -1,22 +1,22 @@
 {
   "screenId": "1:28055",
   "screenName": "Splash / get-started --animation",
-  "generatedAt": "2026-02-03T06:57:24.010Z",
+  "generatedAt": "2026-02-10T15:58:11.279Z",
   "summary": {
-    "overallCoverage": 100,
-    "propertiesCovered": 72,
-    "propertiesTotal": 72,
-    "propertiesMissing": 0,
-    "nodesCovered": 8,
-    "nodesPartial": 0,
-    "nodesTotal": 8,
+    "overallCoverage": 86.4,
+    "propertiesCovered": 57,
+    "propertiesTotal": 66,
+    "propertiesMissing": 9,
+    "nodesCovered": 1,
+    "nodesPartial": 6,
+    "nodesTotal": 7,
     "limitations": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 16,
-      "total": 16,
-      "percentage": 100
+      "covered": 10,
+      "total": 14,
+      "percentage": 71.4
     },
     "positioning": {
       "covered": 0,
@@ -24,9 +24,9 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 20,
+      "covered": 15,
       "total": 20,
-      "percentage": 100
+      "percentage": 75
     },
     "spacing": {
       "covered": 6,
@@ -39,13 +39,13 @@
       "percentage": 100
     },
     "gradients": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "images": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "borders": {
@@ -89,7 +89,107 @@
       "percentage": 100
     }
   },
-  "uncoveredProperties": [],
+  "uncoveredProperties": [
+    {
+      "nodeId": "1:28055",
+      "nodeName": "Splash / get-started",
+      "nodeType": "FRAME",
+      "category": "geometry",
+      "property": "height",
+      "figmaValue": 852,
+      "rnValue": 613,
+      "covered": false,
+      "fix": "Add height: 852"
+    },
+    {
+      "nodeId": "1:28062",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "category": "geometry",
+      "property": "height",
+      "figmaValue": 328,
+      "rnValue": 613,
+      "covered": false,
+      "fix": "Add height: 328"
+    },
+    {
+      "nodeId": "1:28062",
+      "nodeName": "Container",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FILL",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add flex: 1 or width: '100%' or alignSelf: 'stretch'"
+    },
+    {
+      "nodeId": "1:28065",
+      "nodeName": "Text Container",
+      "nodeType": "FRAME",
+      "category": "geometry",
+      "property": "height",
+      "figmaValue": 248,
+      "rnValue": 613,
+      "covered": false,
+      "fix": "Add height: 248"
+    },
+    {
+      "nodeId": "1:28065",
+      "nodeName": "Text Container",
+      "nodeType": "FRAME",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FILL",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add flex: 1 or width: '100%' or alignSelf: 'stretch'"
+    },
+    {
+      "nodeId": "1:28066",
+      "nodeName": "Main Heading",
+      "nodeType": "TEXT",
+      "category": "geometry",
+      "property": "height",
+      "figmaValue": 192,
+      "rnValue": 613,
+      "covered": false,
+      "fix": "Add height: 192"
+    },
+    {
+      "nodeId": "1:28066",
+      "nodeName": "Main Heading",
+      "nodeType": "TEXT",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FILL",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add flex: 1 or width: '100%' or alignSelf: 'stretch'"
+    },
+    {
+      "nodeId": "1:28067",
+      "nodeName": "Subheading",
+      "nodeType": "TEXT",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FILL",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add flex: 1 or width: '100%' or alignSelf: 'stretch'"
+    },
+    {
+      "nodeId": "1:28070",
+      "nodeName": "Login Text",
+      "nodeType": "TEXT",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FILL",
+      "rnValue": null,
+      "covered": false,
+      "fix": "Add flex: 1 or width: '100%' or alignSelf: 'stretch'"
+    }
+  ],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

@@ -97,7 +97,7 @@ export default function SplashScreen() {
               {/* Body Text - Figma: Subheading (node 1:28067) */}
               {/* Uses curly apostrophe (') per Figma exact text */}
               <Text style={styles.bodyText}>
-                Secured is India's first rent payment app built to reward reliable tenants.
+                Secured is India{'\u2019'}s first rent payment app built to reward reliable tenants.
               </Text>
             </View>
           </View>
@@ -140,15 +140,16 @@ const styles = StyleSheet.create({
   // Main Content - Figma node 1:28061: Container
   // height: 613, layoutMode: VERTICAL, primaryAxisAlignItems: SPACE_BETWEEN
   // paddingBottom: 64, itemSpacing: 48
-  // NOTE: Removed fixed height for responsiveness on smaller screens (Gemini fix)
   mainContent: {
-    minHeight: 613, // Use minHeight for flexibility on smaller devices
+    height: 852, // Figma root screen height (node 1:28055)
     justifyContent: 'space-between', // Figma: primaryAxisAlignItems: SPACE_BETWEEN
     paddingBottom: spacing.huge, // Figma: paddingBottom = 64 → spacing.huge
     gap: spacing.xxxl, // Figma: itemSpacing = 48 → minimum gap between sections
   },
   // Top section with horizontal padding - Figma: paddingLeft/Right = 48
+  // Figma node 1:28062 "Container": layoutSizingHorizontal: FILL
   topSection: {
+    width: '100%',
     paddingHorizontal: spacing.xxxl, // Figma: 48px
   },
   logoContainer: {
@@ -156,6 +157,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
   },
   textContainer: {
+    // Figma node 1:28065 "Text Container": layoutSizingHorizontal: FILL
+    width: '100%',
     // Figma: Text Container gap = 16 → spacing.md
     gap: spacing.md,
   },
@@ -168,8 +171,8 @@ const styles = StyleSheet.create({
     lineHeight: 64,
     letterSpacing: -2,
     color: FIGMA_COLORS.headingGray,
-    // Figma: width 297 - removed explicit width, let padding control (Gemini fix)
-    // width: scaledWidth(FIGMA_DIMENSIONS.contentWidth),
+    // Figma node 1:28066 "Main Heading": layoutSizingHorizontal: FILL
+    width: '100%',
   },
   headingAccent: {
     // Nested <Text> inherits typography from parent headingGray — only set color here
@@ -180,8 +183,8 @@ const styles = StyleSheet.create({
     // Figma: typography.bodyMd2 (14/20/400)
     ...typography.bodyMd2,
     color: FIGMA_COLORS.bodyText,
-    // Figma: width 297 - removed explicit width, let padding control (Gemini fix)
-    // width: scaledWidth(FIGMA_DIMENSIONS.contentWidth),
+    // Figma node 1:28067 "Subheading": layoutSizingHorizontal: FILL
+    width: '100%',
   },
   // Bottom section with horizontal padding - Figma: paddingLeft/Right = 48
   bottomSection: {
@@ -204,6 +207,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: FIGMA_COLORS.textWhite,                          // Figma: styleOverrideTable[16] = #FFFFFF
     textAlign: 'center',             // Figma: textAlignHorizontal: CENTER
+    // Figma node 1:28070 "Login Text": layoutSizingHorizontal: FILL
+    width: '100%',
   },
   loginLink: {
     // Figma styleOverrideTable[17]: fontSize 14, color #FFFFFF, underline

@@ -1,12 +1,12 @@
 {
   "screenId": "41:10712",
   "screenName": "Onboarding / Post Approval 1",
-  "generatedAt": "2026-02-03T10:56:37.809Z",
+  "generatedAt": "2026-02-10T15:58:33.413Z",
   "summary": {
-    "overallCoverage": 87.6,
-    "propertiesCovered": 311,
+    "overallCoverage": 89,
+    "propertiesCovered": 316,
     "propertiesTotal": 355,
-    "propertiesMissing": 44,
+    "propertiesMissing": 39,
     "nodesCovered": 47,
     "nodesPartial": 20,
     "nodesTotal": 67,
@@ -64,9 +64,9 @@
       "percentage": 100
     },
     "typography": {
-      "covered": 58,
+      "covered": 63,
       "total": 68,
-      "percentage": 85.3
+      "percentage": 92.6
     },
     "textContent": {
       "covered": 4,
@@ -182,17 +182,6 @@
       "nodeId": "41:10804",
       "nodeName": "Pay Now",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:10804",
-      "nodeName": "Pay Now",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "Pay Now",
@@ -210,17 +199,6 @@
       "rnValue": "delegated",
       "covered": false,
       "fix": "Add lineHeight: 22"
-    },
-    {
-      "nodeId": "41:10805",
-      "nodeName": "All payments are 100% secure",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:10805",
@@ -292,17 +270,6 @@
       "nodeId": "41:10814",
       "nodeName": "Google Pay",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:10814",
-      "nodeName": "Google Pay",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "Google Pay",
@@ -347,17 +314,6 @@
       "nodeId": "41:10817",
       "nodeName": "PayTM",
       "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
-    },
-    {
-      "nodeId": "41:10817",
-      "nodeName": "PayTM",
-      "nodeType": "TEXT",
       "category": "textContent",
       "property": "characters",
       "figmaValue": "PayTM",
@@ -397,17 +353,6 @@
       "rnValue": null,
       "covered": false,
       "fix": "Export image from Figma and add to assets/images/ (suggested name: ellipse_26.png)"
-    },
-    {
-      "nodeId": "41:10820",
-      "nodeName": "PhonePe",
-      "nodeType": "TEXT",
-      "category": "typography",
-      "property": "textAlign",
-      "figmaValue": "center",
-      "rnValue": "delegated",
-      "covered": false,
-      "fix": "Add textAlign: 'center'"
     },
     {
       "nodeId": "41:10820",

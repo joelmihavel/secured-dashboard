@@ -1,21 +1,21 @@
 {
   "screenId": "1:29108",
   "screenName": "auth / sign up --enter phone number",
-  "generatedAt": "2026-02-03T06:57:40.828Z",
+  "generatedAt": "2026-02-10T15:55:38.031Z",
   "summary": {
     "overallCoverage": 100,
-    "propertiesCovered": 35,
-    "propertiesTotal": 35,
+    "propertiesCovered": 29,
+    "propertiesTotal": 29,
     "propertiesMissing": 0,
-    "nodesCovered": 5,
+    "nodesCovered": 4,
     "nodesPartial": 0,
-    "nodesTotal": 5,
+    "nodesTotal": 4,
     "limitations": 0
   },
   "categoryBreakdown": {
     "geometry": {
-      "covered": 10,
-      "total": 10,
+      "covered": 8,
+      "total": 8,
       "percentage": 100
     },
     "positioning": {
@@ -39,13 +39,13 @@
       "percentage": 100
     },
     "gradients": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "images": {
-      "covered": 2,
-      "total": 2,
+      "covered": 0,
+      "total": 0,
       "percentage": 100
     },
     "borders": {

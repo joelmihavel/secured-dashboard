@@ -1,14 +1,14 @@
 {
   "screenId": "41:9388",
   "screenName": "Pay Rent / Payment Summary Page --Payment Successful",
-  "generatedAt": "2026-02-03T10:49:01.967Z",
+  "generatedAt": "2026-02-10T15:55:41.399Z",
   "summary": {
-    "overallCoverage": 100,
-    "propertiesCovered": 163,
+    "overallCoverage": 99.4,
+    "propertiesCovered": 162,
     "propertiesTotal": 163,
-    "propertiesMissing": 0,
-    "nodesCovered": 28,
-    "nodesPartial": 0,
+    "propertiesMissing": 1,
+    "nodesCovered": 27,
+    "nodesPartial": 1,
     "nodesTotal": 28,
     "limitations": 0
   },
@@ -24,9 +24,9 @@
       "percentage": 100
     },
     "layout": {
-      "covered": 21,
+      "covered": 20,
       "total": 21,
-      "percentage": 100
+      "percentage": 95.2
     },
     "spacing": {
       "covered": 0,
@@ -89,7 +89,19 @@
       "percentage": 100
     }
   },
-  "uncoveredProperties": [],
+  "uncoveredProperties": [
+    {
+      "nodeId": "41:9391",
+      "nodeName": "Outline Icon Library",
+      "nodeType": "INSTANCE",
+      "category": "layout",
+      "property": "layoutSizingHorizontal",
+      "figmaValue": "FIXED",
+      "rnValue": "FIGMA_CARD_INNER_WIDTH",
+      "covered": false,
+      "fix": "Add explicit width value"
+    }
+  ],
   "limitations": [],
   "tokenUsage": {
     "expectedTokens": 0,

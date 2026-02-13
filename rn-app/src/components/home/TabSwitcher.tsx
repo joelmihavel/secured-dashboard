@@ -74,13 +74,13 @@ function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
 const styles = StyleSheet.create({
   container: {
     // Figma 243-3378: Toggle container
-    // Container is darker (#131313) so active tab (#1A1A1A) stands out
+    // Figma 243-5870: Toggle container #1A1A1A with active tab shadow for depth
     flexDirection: 'row',
     alignSelf: 'center',
     alignItems: 'center',
     width: 297, // Figma: width 297
     height: 44, // Figma: height 44
-    backgroundColor: '#131313', // Darker background for contrast
+    backgroundColor: '#1A1A1A', // Figma 243-5870: Toggle bg #1A1A1A
     borderRadius: 200, // Figma: borderRadius 200 (pill shape)
     borderWidth: 1, // Figma: borderWidth 1
     borderColor: '#202020', // Figma: borderColor #202020
@@ -93,11 +93,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 8, // Figma: paddingVertical 8
-    paddingHorizontal: 24, // Figma: paddingHorizontal 24
+    paddingHorizontal: 12, // Reduced from Figma 24 to prevent text truncation on device
   },
   tabActive: {
-    // Active tab is visibly lighter than container
-    backgroundColor: '#1A1A1A', // Figma: #1A1A1A (visible against #131313)
+    // Active tab uses shadow for visual distinction from same-bg container
+    backgroundColor: '#1A1A1A', // Figma 243-5870: #1A1A1A active tab
     // Multiple drop shadows from Figma for depth
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   tabTextInactive: {
     fontWeight: '500', // Figma: fontWeight 500 for inactive
-    color: '#656565', // Figma: #656565 for inactive tab text per home-active JSON
+    color: '#A9A9A9', // Figma 243-5870: #A9A9A9 for inactive tab label
   },
 });
 

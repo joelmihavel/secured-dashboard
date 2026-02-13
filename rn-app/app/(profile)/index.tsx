@@ -284,14 +284,18 @@ export default function ProfileScreen() {
             {/* User Info Row */}
             <TouchableOpacity style={styles.userInfoRow} accessibilityRole="button">
               <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  {/* Avatar placeholder - could be actual image */}
-                  <View style={styles.avatarInner} />
-                </View>
+                <Image
+                  source={require('@/assets/images/profile-avatar.png')}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
               </View>
               <View style={styles.userDetails}>
                 <Text style={styles.userName}>{fullName}</Text>
-                <Text style={styles.userJoinDate}>{joinDate}</Text>
+                <View style={styles.userSubtitleRow}>
+                  <Text style={styles.userJoinDate}>{joinDate}</Text>
+                  <Text style={styles.userCardInfo}>Credit Card XX25</Text>
+                </View>
               </View>
               <Ionicons name="arrow-forward" size={16} color={PROFILE_COLORS.arrowOrange} />
             </TouchableOpacity>
@@ -523,20 +527,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.brand[300],  // Light avatar background
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.brand[500],  // Avatar accent
   },
   userDetails: {
     flex: 1,
     gap: 4,  // Figma: itemSpacing 4
+  },
+  userSubtitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,  // Figma: itemSpacing 8
   },
   userName: {
     fontFamily: 'PlusJakartaSans-Medium',
@@ -551,6 +550,13 @@ const styles = StyleSheet.create({
     lineHeight: 16.92,
     letterSpacing: -0.24,
     color: PROFILE_COLORS.sectionTitle,  // #878787
+  },
+  userCardInfo: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 19.74,
+    letterSpacing: -0.56,
+    color: PROFILE_COLORS.sectionTitle,  // #878787 - Figma: fill color
   },
   menuItem: {
     flexDirection: 'row',

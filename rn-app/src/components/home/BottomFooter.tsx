@@ -152,14 +152,14 @@ const styles = StyleSheet.create({
     // Inherits fontWeight, letterSpacing, color from parent
   },
   buttonWrapper: {
-    minWidth: 164.5, // Figma: width ~164.5
+    width: 164.5, // Figma: exact width ~164.5 - NOT flex
   },
   button: {
     height: 52, // Figma: height 52
     paddingVertical: 16, // Figma: paddingVertical 16
     paddingHorizontal: 16, // Figma: paddingHorizontal 16
     borderRadius: 8, // Figma: borderRadius 8
-    borderWidth: 0.1, // Figma I243:3367;100:1564: borderWidth 0.1
+    borderWidth: 0.5, // Figma: borderWidth 0.1 (thin orange border, 0.5 minimum for RN visibility)
     borderColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
     alignItems: 'center',
     justifyContent: 'center',

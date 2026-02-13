@@ -85,12 +85,11 @@ function HeadlineSectionComponent({
 const styles = StyleSheet.create({
   container: {
     // Figma 243-3378 node 243:3383 (Frame 2095586453)
-    // Exact values: width 393, height 110, gap 10, padding 64/64
+    // Exact values: width 393, height auto, gap 10, padding 64/64
     width: '100%',
-    height: 110, // Figma: height 110
     flexDirection: 'column',
-    justifyContent: 'center', // Figma: primaryAxisAlignItems CENTER
-    alignItems: 'center', // Figma: counterAxisAlignItems CENTER
+    justifyContent: 'flex-start', // Figma: content flows top-down
+    alignItems: 'flex-start', // Figma: LEFT-aligned text content
     gap: 10, // Figma: itemSpacing 10 between headline and "Paying with:"
     paddingLeft: 64, // Figma: paddingLeft 64
     paddingRight: 64, // Figma: paddingRight 64
