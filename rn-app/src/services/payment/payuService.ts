@@ -3,10 +3,21 @@
  *
  * Integrates with PayU's React Native SDK for native checkout experience.
  * Uses Supabase edge function for hash generation (server-side).
+ *
+ * Payment flow:
+ * 1. Client calls initiate-payment edge function to get PayU hash + params
+ * 2. Client launches PayU SDK (or mock in Expo Go)
+ * 3. PayU sends webhook to payment-webhook edge function (S2S)
+ * 4. Client polls payment status from Supabase payments table
+ *
+ * Note: There is no "verify-payment" or "payment-callback" edge function.
+ * The webhook handles status updates server-side; the client polls the
+ * payments table directly for status.
  */
 
 import { Alert } from 'react-native';
 import { callEdgeFunction } from '../supabase';
+import { supabase } from '../supabase';
 
 // ==============================================
 // TYPES
@@ -226,7 +237,7 @@ export async function mockPayUCheckout(
 ): Promise<PayUCheckoutResult> {
   // Show warning in development to make mock checkout obvious
   if (__DEV__) {
-    console.warn('⚠️ Using MOCK PayU checkout - not a real payment');
+    console.warn('Using MOCK PayU checkout - not a real payment');
   }
 
   // Add artificial delay to simulate real checkout experience
@@ -257,51 +268,94 @@ export async function mockPayUCheckout(
 }
 
 /**
- * Verify payment status with server
+ * Verify payment status by polling the payments table directly.
+ *
+ * The payment-webhook edge function (S2S from PayU) updates the payments table.
+ * The client polls this table to detect when the status changes from "initiated"/"processing"
+ * to a terminal state ("success", "failed", "refunded").
+ *
+ * NOTE: There is no "verify-payment" edge function. The webhook handles this server-side.
  */
 export async function verifyPaymentStatus(
   paymentId: string
 ): Promise<{ status: 'success' | 'failure' | 'pending'; error?: string }> {
-  const { data, error } = await callEdgeFunction<{
-    success: boolean;
-    data: {
-      status: 'success' | 'failure' | 'pending' | 'initiated' | 'processing';
+  try {
+    const { data, error } = await supabase
+      .from('payments')
+      .select('status')
+      .eq('id', paymentId)
+      .single();
+
+    if (error) {
+      return { status: 'pending', error: error.message };
+    }
+
+    if (!data) {
+      return { status: 'pending', error: 'Payment not found' };
+    }
+
+    const paymentStatus = data.status as string;
+
+    if (paymentStatus === 'success') {
+      return { status: 'success' };
+    } else if (paymentStatus === 'failed' || paymentStatus === 'refunded') {
+      return { status: 'failure' };
+    } else {
+      // initiated, processing, pending -- still in progress
+      return { status: 'pending' };
+    }
+  } catch (error) {
+    return {
+      status: 'pending',
+      error: error instanceof Error ? error.message : 'Network error',
     };
-  }>('verify-payment', { payment_id: paymentId }, true);
-
-  if (error) {
-    return { status: 'pending', error };
-  }
-
-  const status = data?.data?.status;
-  if (status === 'success') {
-    return { status: 'success' };
-  } else if (status === 'failure') {
-    return { status: 'failure' };
-  } else {
-    return { status: 'pending' };
   }
 }
 
 /**
- * Update payment status after PayU callback
+ * Update payment status after PayU SDK callback.
+ *
+ * NOTE: In the real flow, PayU sends a server-to-server webhook to the
+ * payment-webhook edge function, which handles the official status update.
+ *
+ * This client-side function is a fallback for when the PayU SDK returns
+ * before the webhook fires. It records the client-side PayU response
+ * as metadata on the payment record so we have a record of what the
+ * SDK reported. The actual status update comes from the webhook.
+ *
+ * This updates the payment_method_details JSONB column, NOT the status column.
  */
 export async function updatePaymentStatus(
   paymentId: string,
   payuResponse: Record<string, string>
 ): Promise<{ success: boolean; error?: string }> {
-  const { data, error } = await callEdgeFunction<{ success: boolean }>(
-    'payment-callback',
-    {
-      payment_id: paymentId,
-      payu_response: payuResponse,
-    },
-    true
-  );
+  try {
+    // Only store the client-side SDK response as metadata.
+    // The webhook is the authoritative source for status changes.
+    const { error } = await supabase
+      .from('payments')
+      .update({
+        payment_method_details: {
+          client_sdk_response: payuResponse,
+          client_reported_status: payuResponse.status,
+          client_reported_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', paymentId);
 
-  if (error) {
-    return { success: false, error };
+    if (error) {
+      // Non-critical: webhook will handle the real update
+      if (__DEV__) {
+        console.warn('Failed to store client SDK response:', error.message);
+      }
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    };
   }
-
-  return { success: data?.success ?? false };
 }

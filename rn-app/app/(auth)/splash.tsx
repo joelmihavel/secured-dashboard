@@ -25,7 +25,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Screen, Logo, Text, PrimaryButton } from '@/src/components';
 import { DottedPattern } from '@/src/components';
-import { colors, typography, spacing, radius, scaled, scaledSpacing, scaledWidth } from '@/src/theme';
+import { colors, typography, spacing, radius, scaled, scaledSpacing, scaledWidth, sv } from '@/src/theme';
 
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
@@ -140,8 +140,9 @@ const styles = StyleSheet.create({
   // Main Content - Figma node 1:28061: Container
   // height: 613, layoutMode: VERTICAL, primaryAxisAlignItems: SPACE_BETWEEN
   // paddingBottom: 64, itemSpacing: 48
+  // Container starts at y=239 relative to root (852-613=239), so ~28% from top
   mainContent: {
-    height: 852, // Figma root screen height (node 1:28055)
+    height: sv(613), // Figma Container height (NOT 852 root screen height)
     justifyContent: 'space-between', // Figma: primaryAxisAlignItems: SPACE_BETWEEN
     paddingBottom: spacing.huge, // Figma: paddingBottom = 64 → spacing.huge
     gap: spacing.xxxl, // Figma: itemSpacing = 48 → minimum gap between sections
@@ -175,8 +176,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headingAccent: {
-    // Nested <Text> inherits typography from parent headingGray — only set color here
-    // Do NOT re-spread ...typography.h1 (pixel-feedback fix: avoids style conflicts in nested Text)
+    // Custom Text component applies default bodyMdRegular (16px), breaking RN text inheritance.
+    // Must explicitly set h1 properties so nested text renders at 48px like the parent.
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 48,
+    lineHeight: 64,
+    letterSpacing: -2,
+    fontWeight: '400',
     color: FIGMA_COLORS.headingAccent,
   },
   bodyText: {

@@ -1,73 +1,113 @@
 /**
  * Setup Flow Types
- * Type definitions for bank verification, utility verification, and landlord invite
+ *
+ * Type definitions for bank verification, utility verification, and landlord invite.
+ * All types are aligned with the actual Supabase edge function contracts.
+ *
+ * Edge functions:
+ *   - verify-bank (POST, auth required) - Cashfree Penny Drop bank verification
+ *   - verify-utility (POST, auth required) - API Club electricity bill verification
+ *   - verify-utility?action=operators (GET, auth optional) - Electricity operator list
+ *   - send-landlord-invite (POST, auth required) - Email invitation to landlord
  */
 
-// Bank Verification Types
+// ==============================================
+// BANK VERIFICATION
+// ==============================================
+
+/** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface BankVerificationRequest {
   tenancyId: string;
   accountHolderName: string;
   accountNumber: string;
   ifscCode: string;
+  partyType?: 'landlord' | 'tenant';
 }
 
+/** Mapped RN response from verify-bank edge function */
 export interface BankVerificationResponse {
   success: boolean;
-  verifiedName?: string;
-  bankName?: string;
-  branch?: string;
-  accountType?: string;
-  error?: string;
+  bankAccountId: string;
+  verified: boolean;
+  accountNumberMasked: string;
+  ifscCode: string;
+  verifiedName: string | null;
+  nameMatchScore: number;
+  nameMatchThreshold: number;
+  verificationStatus: 'SUCCESS' | 'FAILURE' | 'PENDING';
+  bankName: string | null;
+  branch: string | null;
+  message: string;
 }
 
-// Utility Verification Types
+// ==============================================
+// UTILITY VERIFICATION
+// ==============================================
+
 export type UtilityType = 'electricity' | 'gas' | 'water';
 
+/** Operator info returned by verify-utility?action=operators */
 export interface UtilityOperator {
   operatorCode: string;
   operatorName: string;
-  state: string;
-  utilityType: UtilityType;
+  state?: string;
+  params?: string[];
 }
 
+/** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface UtilityVerificationRequest {
   tenancyId: string;
   operatorCode: string;
   consumerNumber: string;
 }
 
+/** Mapped RN response from verify-utility edge function */
 export interface UtilityVerificationResponse {
   success: boolean;
-  consumerName?: string;
+  verificationId: string;
+  verified: boolean;
   nameVerified: boolean;
   addressVerified: boolean;
-  nameMatchScore?: number;
-  billAmount?: number;
-  dueDate?: string;
-  error?: string;
+  consumerName: string | null;
+  landlordName: string | null;
+  nameMatchScore: number;
+  addressMatchScore: number;
+  matchThreshold: number;
+  billAmount: number | null;
+  billDueDate: string | null;
+  message: string;
+  matchingMethod: 'gemini_ai' | 'algorithmic';
 }
 
-// Landlord Invite Types
-export type InviteChannel = 'sms' | 'whatsapp';
+// ==============================================
+// LANDLORD INVITE
+// ==============================================
 
+/** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface LandlordInviteRequest {
   tenancyId: string;
-  landlordName: string;
-  landlordPhone: string;
+  landlordName?: string;
   landlordEmail?: string;
-  channel: InviteChannel;
+  resend?: boolean;
 }
 
+/** Mapped RN response from send-landlord-invite edge function */
 export interface LandlordInviteResponse {
   success: boolean;
+  alreadyApproved?: boolean;
   inviteId?: string;
-  inviteLink?: string;
-  sentVia: string;
+  status?: string;
+  sentVia?: string;
   expiresAt?: string;
-  error?: string;
+  message: string;
+  inviteLink?: string;
+  landlordEmailMasked?: string;
 }
 
-// Setup Progress Types
+// ==============================================
+// SETUP PROGRESS (derived from dashboard data)
+// ==============================================
+
 export type SetupStepType = 'bank' | 'utility' | 'landlord';
 
 export interface SetupStep {
@@ -94,7 +134,10 @@ export interface SetupProgress {
   totalCount: number;
 }
 
-// Form Validation Types
+// ==============================================
+// FORM VALIDATION
+// ==============================================
+
 export interface BankFormData {
   accountHolderName: string;
   accountNumber: string;
@@ -109,7 +152,26 @@ export interface UtilityFormData {
 
 export interface LandlordFormData {
   landlordName: string;
-  landlordPhone: string;
   landlordEmail: string;
-  selectedChannel: InviteChannel;
+}
+
+// ==============================================
+// SETUP ERROR
+// ==============================================
+
+export type SetupErrorCode =
+  | 'NOT_AUTHENTICATED'
+  | 'VALIDATION_ERROR'
+  | 'VERIFICATION_FAILED'
+  | 'NAME_MISMATCH'
+  | 'ADDRESS_MISMATCH'
+  | 'EMAIL_FAILED'
+  | 'NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'NETWORK_ERROR'
+  | 'UNKNOWN_ERROR';
+
+export interface SetupError {
+  code: SetupErrorCode;
+  message: string;
 }

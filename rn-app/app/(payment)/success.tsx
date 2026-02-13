@@ -16,7 +16,7 @@
  * - Contact Support: fontSize 12, color #A9A9A9, textAlign center
  */
 
-import React, { useEffect, useCallback, memo } from 'react';
+import React, { useEffect, useCallback, useState, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -25,6 +25,7 @@ import {
   Linking,
   Share,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,6 +35,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { DashedDivider } from '@/src/components/payment';
+import { useGenerateReceipt } from '@/src/hooks';
 import { colors, spacing } from '@/src/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -183,14 +185,17 @@ CashbackPill.displayName = 'CashbackPill';
 export default function SuccessScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { mutateAsync: generateReceiptAsync, isPending: isGeneratingReceipt } = useGenerateReceipt();
   const params = useLocalSearchParams<{
+    paymentId?: string;
     amount?: string;
     cashback?: string;
     transactionId?: string;
     method?: string;
   }>();
 
-  // Default values for demo
+  // Real values from params, with fallbacks for demo
+  const paymentId = params.paymentId ?? '';
   const amount = params.amount ?? '32,175';
   const cashback = params.cashback ?? '350';
   const transactionId = params.transactionId ?? 'SEC12345678';
@@ -208,18 +213,60 @@ export default function SuccessScreen() {
 
   const handleDownloadReceipt = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Share receipt info
+
+    // Try to generate a real receipt if we have a paymentId
+    if (paymentId) {
+      try {
+        const receipt = await generateReceiptAsync(paymentId);
+
+        // Share the rich receipt data
+        const receiptText = [
+          `Payment Receipt - ${receipt.receiptNumber}`,
+          '',
+          `Amount: \u20B9${receipt.payment.amount.toLocaleString('en-IN')}`,
+          `Date: ${new Date(receipt.payment.paidAt).toLocaleDateString('en-IN')}`,
+          `Transaction ID: ${receipt.payment.transactionId ?? transactionId}`,
+          `Method: ${receipt.payment.paymentMethod ?? method}`,
+          `Rent Month: ${receipt.payment.rentMonthDisplay}`,
+          '',
+          `Tenant: ${receipt.tenant.name}`,
+          `Property: ${receipt.property.address}`,
+          `Landlord: ${receipt.landlord.name}`,
+          '',
+          `Net Amount Paid: \u20B9${receipt.payment.netAmountPaid.toLocaleString('en-IN')}`,
+          receipt.payment.cashbackApplied > 0
+            ? `Cashback Applied: \u20B9${receipt.payment.cashbackApplied.toLocaleString('en-IN')}`
+            : '',
+          '',
+          `Receipt #: ${receipt.receiptNumber}`,
+          `${receipt.company.name}`,
+          `GSTIN: ${receipt.company.gstin}`,
+        ].filter(Boolean).join('\n');
+
+        await Share.share({
+          message: receiptText,
+          title: `Receipt ${receipt.receiptNumber}`,
+        });
+        return;
+      } catch (err) {
+        if (__DEV__) {
+          console.warn('Receipt generation failed, falling back to basic share:', err);
+        }
+      }
+    }
+
+    // Fallback: share basic receipt info
     try {
       await Share.share({
         message: `Payment Receipt\n\nAmount: \u20B9${amount}\nDate: ${new Date().toLocaleDateString()}\nTransaction ID: ${transactionId}\nMethod: ${method}`,
         title: 'Payment Receipt',
       });
-    } catch (error) {
+    } catch (err) {
       if (__DEV__) {
-        console.log('Share error:', error);
+        console.log('Share error:', err);
       }
     }
-  }, [amount, transactionId, method]);
+  }, [paymentId, amount, transactionId, method, generateReceiptAsync]);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -307,8 +354,9 @@ export default function SuccessScreen() {
         {/* Buttons */}
         <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 24 }]}>
           <PrimaryButton
-            title="Download Receipt"
+            title={isGeneratingReceipt ? 'Generating...' : 'Download Receipt'}
             onPress={handleDownloadReceipt}
+            loading={isGeneratingReceipt}
             testID="download-receipt-button"
           />
 

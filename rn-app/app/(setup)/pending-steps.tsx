@@ -17,7 +17,7 @@
  * - Button: width 313, height 52, borderColor #FF9A6D, borderRadius 8, shadow
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +26,7 @@ import Svg, { Path, Line, G, Rect } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text, Logo } from '@/src/components';
-import { useDashboard } from '@/src/hooks';
+import { useDashboard, useVerificationStatus, deriveSetupProgress } from '@/src/hooks';
 import { colors, spacing, radius } from '@/src/theme';
 
 // Figma exact values from 1-34236
@@ -151,6 +151,19 @@ export default function PendingStepsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, tenancy } = useDashboard();
+  const { bankVerified, utilityVerified, landlordApproved, allVerified, pendingSteps } =
+    useVerificationStatus();
+
+  // Derive setup progress from real verification status
+  const setupProgress = useMemo(
+    () =>
+      deriveSetupProgress(
+        tenancy
+          ? tenancy.verification_status
+          : null
+      ),
+    [tenancy]
+  );
 
   // User data for display
   const userName = user?.first_name
@@ -162,8 +175,25 @@ export default function PendingStepsScreen() {
 
   const handleStartEarning = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(main)');
-  }, [router]);
+    if (allVerified) {
+      // All steps complete - go to main dashboard
+      router.replace('/(main)');
+    } else if (pendingSteps.length > 0) {
+      // Navigate to the first incomplete step
+      const nextStep = pendingSteps[0];
+      if (nextStep === 'bank') {
+        router.push('/(setup)/add-bank');
+      } else if (nextStep === 'utility') {
+        router.push('/(setup)/add-utility');
+      } else if (nextStep === 'landlord') {
+        router.push('/(setup)/invite-landlord');
+      } else {
+        router.replace('/(main)');
+      }
+    } else {
+      router.replace('/(main)');
+    }
+  }, [router, allVerified, pendingSteps]);
 
   return (
     <View style={styles.container} testID="pending-steps-screen">
@@ -186,7 +216,11 @@ export default function PendingStepsScreen() {
       >
         {/* Title - Figma: fontSize 40, lineHeight 56, letterSpacing -1 */}
         <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>Here is your personalized cashback plan</Text>
+          <Text style={styles.titleText}>
+            {allVerified
+              ? 'Here is your personalized cashback plan'
+              : `${setupProgress.completedCount} of ${setupProgress.totalCount} steps done`}
+          </Text>
         </View>
 
         {/* Grid background behind card */}
@@ -267,7 +301,9 @@ export default function PendingStepsScreen() {
           onPress={handleStartEarning}
           testID="start-earning-button"
         >
-          <Text style={styles.buttonText}>Start Earning</Text>
+          <Text style={styles.buttonText}>
+            {allVerified ? 'Start Earning' : `Continue Setup (${setupProgress.completedCount}/${setupProgress.totalCount})`}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

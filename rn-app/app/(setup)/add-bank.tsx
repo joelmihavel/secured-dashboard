@@ -22,6 +22,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TextInput as RNTextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,7 +30,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text } from '@/src/components';
-import { useVerifyBank, validateAccountNumber, validateIfscCode } from '@/src/hooks';
+import { useVerifyBank, useDashboard, validateAccountNumber, validateIfscCode } from '@/src/hooks';
+import type { BankVerificationResponse, SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme/colors';
 import { spacing } from '@/src/theme/spacing';
 import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
@@ -145,26 +147,54 @@ export default function AddBankScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const verifyBank = useVerifyBank();
+  const { tenancy } = useDashboard();
 
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
   const [panCard, setPanCard] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [verificationResult, setVerificationResult] = useState<BankVerificationResponse | null>(null);
 
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
 
+  // Clear field-level errors when user types
+  const handleAccountHolderNameChange = useCallback((text: string) => {
+    setAccountHolderName(text);
+    setErrors((prev) => { const { accountHolderName: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
+  const handleAccountNumberChange = useCallback((text: string) => {
+    setAccountNumber(text);
+    setErrors((prev) => { const { accountNumber: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
+  const handleIfscCodeChange = useCallback((text: string) => {
+    setIfscCode(text);
+    setErrors((prev) => { const { ifscCode: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
+  const handlePanCardChange = useCallback((text: string) => {
+    setPanCard(text);
+    setErrors((prev) => { const { panCard: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
     if (!accountHolderName.trim()) newErrors.accountHolderName = 'Required';
     if (!accountNumber.trim()) newErrors.accountNumber = 'Required';
-    else if (!validateAccountNumber(accountNumber)) newErrors.accountNumber = 'Invalid';
+    else if (!validateAccountNumber(accountNumber)) newErrors.accountNumber = '9-18 digits required';
     if (!ifscCode.trim()) newErrors.ifscCode = 'Required';
-    else if (!validateIfscCode(ifscCode)) newErrors.ifscCode = 'Invalid';
+    else if (!validateIfscCode(ifscCode)) newErrors.ifscCode = 'Invalid IFSC format';
     if (!panCard.trim()) newErrors.panCard = 'Required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [accountHolderName, accountNumber, ifscCode, panCard]);
@@ -174,23 +204,46 @@ export default function AddBankScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+
+    if (!tenancy?.id) {
+      setApiError('No active tenancy found. Please complete onboarding first.');
+      return;
+    }
+
+    setApiError(null);
+    setVerificationResult(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     verifyBank.mutate(
       {
-        tenancyId: '',
+        tenancyId: tenancy.id,
         accountNumber: accountNumber.replace(/\s/g, ''),
         ifscCode: ifscCode.toUpperCase(),
         accountHolderName: accountHolderName.trim(),
       },
       {
-        onSuccess: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          router.back();
+        onSuccess: (data) => {
+          setVerificationResult(data);
+          if (data.verified) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            // Brief delay to show success state before navigating back
+            setTimeout(() => router.back(), 1200);
+          } else {
+            // Penny drop returned but name did not match
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            setApiError(
+              data.message ||
+                `Name mismatch: verified as "${data.verifiedName ?? 'unknown'}". Please check the account holder name.`
+            );
+          }
         },
-        onError: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+        onError: (error: SetupError) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          setApiError(error.message || 'Bank verification failed. Please try again.');
+        },
       }
     );
-  }, [validateForm, verifyBank, accountNumber, ifscCode, accountHolderName, router]);
+  }, [validateForm, verifyBank, accountNumber, ifscCode, accountHolderName, tenancy?.id, router]);
 
   const isFormValid =
     accountHolderName.length > 0 &&
@@ -250,25 +303,47 @@ export default function AddBankScreen() {
             </View>
           </View>
 
+          {/* API Error Banner */}
+          {apiError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{apiError}</Text>
+            </View>
+          )}
+
+          {/* Verification Success Banner */}
+          {verificationResult?.verified && (
+            <View style={styles.successBanner}>
+              <Text style={styles.successBannerText}>
+                Bank verified{verificationResult.bankName ? ` - ${verificationResult.bankName}` : ''}
+                {verificationResult.branch ? `, ${verificationResult.branch}` : ''}
+              </Text>
+            </View>
+          )}
+
           {/* Form - Figma: gap 16 between fields */}
           <View style={{ gap: scaled(FIGMA.layout.formGap) }}>
-            
+
             {/* Account Holder Name */}
             <View>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Account Holder Name</Text>
-                <TouchableOpacity>
-                  <Text style={styles.editLink}>edit</Text>
-                </TouchableOpacity>
+                {errors.accountHolderName ? (
+                  <Text style={styles.errorHint}>{errors.accountHolderName}</Text>
+                ) : (
+                  <TouchableOpacity>
+                    <Text style={styles.editLink}>edit</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={[styles.inputContainer, errors.accountHolderName && styles.inputError]}>
                 <RNTextInput
                   style={styles.input}
                   value={accountHolderName}
-                  onChangeText={setAccountHolderName}
+                  onChangeText={handleAccountHolderNameChange}
                   placeholder="e.g. John Smith"
                   placeholderTextColor={FIGMA.colors.placeholder}
                   autoCapitalize="words"
+                  editable={!verifyBank.isPending}
                 />
               </View>
             </View>
@@ -277,18 +352,23 @@ export default function AddBankScreen() {
             <View>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Account holder number</Text>
-                <TouchableOpacity>
-                  <Text style={styles.editLink}>edit</Text>
-                </TouchableOpacity>
+                {errors.accountNumber ? (
+                  <Text style={styles.errorHint}>{errors.accountNumber}</Text>
+                ) : (
+                  <TouchableOpacity>
+                    <Text style={styles.editLink}>edit</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={[styles.inputContainer, errors.accountNumber && styles.inputError]}>
                 <RNTextInput
                   style={styles.input}
                   value={accountNumber}
-                  onChangeText={setAccountNumber}
+                  onChangeText={handleAccountNumberChange}
                   placeholder="e.g. 1234567890"
                   placeholderTextColor={FIGMA.colors.placeholder}
                   keyboardType="number-pad"
+                  editable={!verifyBank.isPending}
                 />
               </View>
             </View>
@@ -297,18 +377,23 @@ export default function AddBankScreen() {
             <View>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>IFSC Code</Text>
-                <TouchableOpacity>
-                  <Text style={styles.editLink}>edit</Text>
-                </TouchableOpacity>
+                {errors.ifscCode ? (
+                  <Text style={styles.errorHint}>{errors.ifscCode}</Text>
+                ) : (
+                  <TouchableOpacity>
+                    <Text style={styles.editLink}>edit</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={[styles.inputContainer, errors.ifscCode && styles.inputError]}>
                 <RNTextInput
                   style={styles.input}
                   value={ifscCode}
-                  onChangeText={setIfscCode}
+                  onChangeText={handleIfscCodeChange}
                   placeholder="e.g. SBIN0002125"
                   placeholderTextColor={FIGMA.colors.placeholder}
                   autoCapitalize="characters"
+                  editable={!verifyBank.isPending}
                 />
               </View>
             </View>
@@ -317,18 +402,23 @@ export default function AddBankScreen() {
             <View>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>PAN CARD</Text>
-                <TouchableOpacity>
-                  <Text style={styles.editLink}>edit</Text>
-                </TouchableOpacity>
+                {errors.panCard ? (
+                  <Text style={styles.errorHint}>{errors.panCard}</Text>
+                ) : (
+                  <TouchableOpacity>
+                    <Text style={styles.editLink}>edit</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={[styles.inputContainer, errors.panCard && styles.inputError]}>
                 <RNTextInput
                   style={styles.input}
                   value={panCard}
-                  onChangeText={setPanCard}
+                  onChangeText={handlePanCardChange}
                   placeholder="e.g. CSNPM9874A"
                   placeholderTextColor={FIGMA.colors.placeholder}
                   autoCapitalize="characters"
+                  editable={!verifyBank.isPending}
                 />
               </View>
             </View>
@@ -337,19 +427,23 @@ export default function AddBankScreen() {
             <TouchableOpacity
               style={[
                 styles.button,
-                isFormValid && { backgroundColor: FIGMA.colors.buttonActiveBg },
+                isFormValid && !verifyBank.isPending && { backgroundColor: FIGMA.colors.buttonActiveBg },
               ]}
               onPress={handleSubmit}
               disabled={!isFormValid || verifyBank.isPending}
             >
-              <Text
-                style={[
-                  styles.buttonText,
-                  isFormValid && { color: FIGMA.colors.buttonActiveText },
-                ]}
-              >
-                Proceed
-              </Text>
+              {verifyBank.isPending ? (
+                <ActivityIndicator size="small" color={FIGMA.colors.buttonActiveText} />
+              ) : (
+                <Text
+                  style={[
+                    styles.buttonText,
+                    isFormValid && { color: FIGMA.colors.buttonActiveText },
+                  ]}
+                >
+                  Proceed
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* Footer */}
@@ -444,5 +538,42 @@ const styles = StyleSheet.create({
     color: '#A9A9A9',
     marginTop: scaled(16),
     textAlign: 'left', // Explicit alignment for Figma parity
+  },
+  errorHint: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: scaledFont(14),
+    lineHeight: scaledFont(20),
+    color: '#E5484D',
+    textAlign: 'right' as const,
+  },
+  errorBanner: {
+    backgroundColor: 'rgba(229, 72, 77, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(229, 72, 77, 0.3)',
+    borderRadius: scaled(8),
+    padding: scaled(12),
+    marginBottom: scaled(16),
+  },
+  errorBannerText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: scaledFont(13),
+    lineHeight: scaledFont(18),
+    color: '#E5484D',
+    textAlign: 'left' as const,
+  },
+  successBanner: {
+    backgroundColor: 'rgba(70, 167, 88, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(70, 167, 88, 0.3)',
+    borderRadius: scaled(8),
+    padding: scaled(12),
+    marginBottom: scaled(16),
+  },
+  successBannerText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: scaledFont(13),
+    lineHeight: scaledFont(18),
+    color: '#46A758',
+    textAlign: 'left' as const,
   },
 });

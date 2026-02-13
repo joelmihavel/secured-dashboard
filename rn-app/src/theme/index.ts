@@ -17,7 +17,7 @@ import { typography, fontFamily } from './typography';
 import { spacing, layout } from './spacing';
 import { radius, borderRadius } from './radius';
 import { shadows, applyShadow } from './shadows';
-import { scaled, scaledFont, scaledSpacing, widthScale, heightScale, screen } from './scale';
+import { scaled, scaledFont, scaledSpacing, widthScale, heightScale, screen, s, sf, sv } from './scale';
 import { duration, springConfig, timingConfig, animationValues } from './animations';
 
 export const theme = {
@@ -39,6 +39,9 @@ export const theme = {
     scaledSpacing,
     widthScale,
     heightScale,
+    s,
+    sf,
+    sv,
   },
   screen,
   animation: {

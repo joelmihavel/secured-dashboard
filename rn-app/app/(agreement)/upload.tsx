@@ -45,9 +45,8 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
-import { useDashboard } from '@/src/hooks';
+import { useAgreement } from '@/src/hooks';
 import {
-  uploadAgreement,
   getMimeType,
   validateFileSize,
   validateAgreementType,
@@ -490,14 +489,18 @@ function ProgressBar({ progress }: { progress: number }) {
 export default function UploadScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tenancy } = useDashboard();
-  const { state } = useLocalSearchParams<{
+  const { state: stateParam } = useLocalSearchParams<{
     state?: 'idle' | 'uploading' | 'success' | 'expired' | 'too-large' | 'manual-review';
   }>();
 
+  // Use real API via useAgreement hook
+  // Set useMock to true for visual testing / development only
+  const useMock = stateParam != null && stateParam !== 'idle';
+  const agreement = useAgreement({ useMock });
+
   // Map URL state parameter to internal upload state
   const getInitialUploadState = (): UploadState => {
-    switch (state) {
+    switch (stateParam) {
       case 'uploading': return 'uploading';
       case 'success': return 'success';
       case 'expired': return 'error_expired';
@@ -509,12 +512,12 @@ export default function UploadScreen() {
 
   // Mock document for non-idle states (for visual testing)
   const getInitialDocument = (): SelectedDocument | null => {
-    if (state && state !== 'idle') {
+    if (stateParam && stateParam !== 'idle') {
       return {
         uri: 'mock://document.pdf',
         name: 'Joel_Ramesh-Agreement_Dec 2025.pdf', // Exact Figma text
         type: 'pdf',
-        size: state === 'too-large' ? 15 * 1024 * 1024 : 2 * 1024 * 1024,
+        size: stateParam === 'too-large' ? 15 * 1024 * 1024 : 2 * 1024 * 1024,
       };
     }
     return null;
@@ -522,11 +525,11 @@ export default function UploadScreen() {
 
   const [document, setDocument] = useState<SelectedDocument | null>(getInitialDocument);
   const [uploadState, setUploadState] = useState<UploadState>(getInitialUploadState);
-  const [uploadProgress, setUploadProgress] = useState(state === 'uploading' ? 30 : 0);
+  const [uploadProgress, setUploadProgress] = useState(stateParam === 'uploading' ? 30 : 0);
 
-  // Simulate upload progress for 'uploading' state demo
+  // Simulate upload progress for visual testing state demo
   useEffect(() => {
-    if (state === 'uploading') {
+    if (stateParam === 'uploading') {
       const interval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
@@ -538,7 +541,14 @@ export default function UploadScreen() {
       }, 500);
       return () => clearInterval(interval);
     }
-  }, [state]);
+  }, [stateParam]);
+
+  // Sync real upload progress from hook
+  useEffect(() => {
+    if (agreement.isUploading && agreement.uploadProgress > 0) {
+      setUploadProgress(agreement.uploadProgress);
+    }
+  }, [agreement.isUploading, agreement.uploadProgress]);
 
   const handlePickDocument = useCallback(async () => {
     try {
@@ -568,7 +578,8 @@ export default function UploadScreen() {
     setDocument(null);
     setUploadState('idle');
     setUploadProgress(0);
-  }, []);
+    agreement.resetUpload();
+  }, [agreement]);
 
   const handleUpload = useCallback(async () => {
     if (!document) return;
@@ -588,62 +599,62 @@ export default function UploadScreen() {
     setUploadProgress(0);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return prev;
-        }
-        return prev + 10;
-      });
-    }, FIGMA.animation.duration);
-
     try {
-      const tenancyId = tenancy?.id ?? 'pending';
+      const result = await agreement.upload(
+        document.uri,
+        document.name,
+        document.size ?? 0
+      );
 
-      const result = await uploadAgreement(tenancyId, {
-        uri: document.uri,
-        fileName: document.name,
-        mimeType: mimeType,
-      });
-
-      clearInterval(progressInterval);
       setUploadProgress(100);
 
-      if (!result.success) {
-        if (result.error?.includes('expired')) {
-          setUploadState('error_expired');
-        } else if (result.error?.includes('review')) {
-          setUploadState('manual_review');
-        } else {
-          throw new Error(result.error ?? 'Upload failed');
-        }
+      // Check processing result for manual review
+      if (result.processResult.needsManualReview) {
+        setUploadState('manual_review');
+        return;
+      }
+
+      if (!result.processResult.isCitySupported) {
+        setUploadState('manual_review');
         return;
       }
 
       setUploadState('success');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+      // Navigate to review with extraction ID
       setTimeout(() => {
-        router.replace('/(agreement)/review' as never);
+        router.replace({
+          pathname: '/(agreement)/review',
+          params: { extractionId: result.extractionId },
+        } as never);
       }, FIGMA.animation.duration);
     } catch (error) {
-      clearInterval(progressInterval);
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setUploadState('error_expired');
+
+      // Map error to upload state
+      const agreementError = error as { code?: string; message?: string };
+      if (agreementError.code === 'INVALID_FILE_TYPE') {
+        setUploadState('error_expired');
+      } else if (agreementError.code === 'FILE_TOO_LARGE') {
+        setUploadState('error_size');
+      } else {
+        setUploadState('error_expired');
+      }
     }
-  }, [document, tenancy?.id, router]);
+  }, [document, agreement, router]);
 
   const handleRetry = useCallback(() => {
     setUploadState('idle');
     setUploadProgress(0);
     setDocument(null);
-  }, []);
+    agreement.resetUpload();
+  }, [agreement]);
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(tabs)' as never);
+    router.replace('/(main)' as never);
   }, [router]);
 
   // Get current state config

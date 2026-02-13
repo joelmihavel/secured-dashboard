@@ -1,19 +1,26 @@
 /**
  * Setup Flow Layout
- * Stack navigation for setup screens with progress indicator
- *
- * Figma Screens:
- * - 41-10712: Add landlord's bank details
- * - 41-10859: Upload address proof
- * - 41-11006: Invite landlord
+ * Protected — requires authentication
  */
 
 import React from 'react';
 import { Stack } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
 
 import { colors } from '@/src/theme';
+import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 export default function SetupLayout() {
+  const { isReady } = useRequireAuth();
+
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.brand[500]} />
+      </View>
+    );
+  }
+
   return (
     <Stack
       screenOptions={{

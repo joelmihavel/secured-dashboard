@@ -309,7 +309,7 @@ serve(async (req) => {
 
     return jsonResponse(response, 200, headers);
   } catch (error) {
-    return handleError(error);
+    return handleError(error, req.headers.get("x-request-id") ?? undefined);
   }
 });
 

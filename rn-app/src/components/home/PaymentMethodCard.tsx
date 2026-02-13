@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     height: 336, // Figma: full height for Credit Card
   },
   cardBodySmall: {
-    height: 344, // Figma: matches total 408 (Add More Card) - 64 (footer) = 344
+    height: 336, // Figma: 400 total - 64 footer = 336 (same as all card types)
   },
   cardHeader: {
     flexDirection: 'row',

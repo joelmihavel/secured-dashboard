@@ -5,20 +5,25 @@
  * All mutation hooks expose loading/error states via React Query's useMutation.
  */
 
-import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import {
   initiatePayment,
   fetchPaymentHistory,
   getSavedPaymentMethods,
   addUpiVpa,
+  addCardToken,
   deletePaymentMethod,
   generateReceipt,
   InitiatePaymentRequest,
   InitiatePaymentData,
   PaymentHistoryItem,
+  PaymentHistoryPagination,
+  PaymentHistorySummary,
   SavedPaymentMethod,
   PaymentErrorCode,
+  ReceiptData,
+  AddCardTokenRequest,
 } from '../services/api/payments';
 import { dashboardKeys } from './useDashboard';
 
@@ -37,15 +42,36 @@ export const paymentKeys = {
 // PAYMENT HISTORY QUERY
 // ==============================================
 
-export function usePaymentHistory(page = 1, limit = 20) {
+export interface PaymentHistoryData {
+  payments: PaymentHistoryItem[];
+  pagination: PaymentHistoryPagination | null;
+  summary: PaymentHistorySummary | null;
+}
+
+/**
+ * Hook to fetch paginated payment history.
+ *
+ * Returns payments array, pagination metadata, and summary stats.
+ * The edge function is called via GET with query params (page, limit, filters).
+ * Amounts are returned in rupees with paise backward-compat fields.
+ */
+export function usePaymentHistory(
+  page = 1,
+  limit = 20,
+  filters?: { status?: string; tenancy_id?: string; from_date?: string; to_date?: string }
+) {
   return useQuery({
-    queryKey: [...paymentKeys.history(), page, limit],
-    queryFn: async () => {
-      const { data, error } = await fetchPaymentHistory(page, limit);
+    queryKey: [...paymentKeys.history(), page, limit, filters],
+    queryFn: async (): Promise<PaymentHistoryData> => {
+      const { data, pagination, summary, error } = await fetchPaymentHistory(page, limit, filters);
       if (error) {
         throw new Error(error);
       }
-      return data;
+      return {
+        payments: data ?? [],
+        pagination,
+        summary,
+      };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -107,7 +133,8 @@ export function useInitiatePayment(callbacks: UseInitiatePaymentCallbacks = {}) 
 
 export interface AddUpiVpaParams {
   vpa: string;
-  displayName?: string;
+  nickname?: string;
+  setPrimary?: boolean;
 }
 
 export interface AddUpiVpaResult {
@@ -133,7 +160,7 @@ export interface AddUpiVpaResult {
  * const { mutate, isPending, error } = useAddUpiVpa();
  *
  * const handleAdd = () => {
- *   mutate({ vpa: 'user@upi', displayName: 'My UPI' });
+ *   mutate({ vpa: 'user@upi', nickname: 'My UPI' });
  * };
  *
  * if (isPending) return <Loading />;
@@ -143,8 +170,48 @@ export function useAddUpiVpa() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ vpa, displayName }: AddUpiVpaParams): Promise<AddUpiVpaResult> => {
-      const { data, error } = await addUpiVpa(vpa, displayName);
+    mutationFn: async ({ vpa, nickname, setPrimary }: AddUpiVpaParams): Promise<AddUpiVpaResult> => {
+      const { data, error } = await addUpiVpa(vpa, nickname, setPrimary);
+      if (error) {
+        throw new Error(error);
+      }
+      return data!;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
+    },
+  });
+}
+
+// ==============================================
+// ADD CARD TOKEN MUTATION
+// ==============================================
+
+/**
+ * Hook to add a tokenized card payment method.
+ *
+ * @returns Mutation object with standard React Query mutation fields.
+ *
+ * @example
+ * const { mutate, isPending, error } = useAddCardToken();
+ *
+ * const handleAdd = () => {
+ *   mutate({
+ *     card_token: 'payu_token_xxx',
+ *     card_last4: '1234',
+ *     card_network: 'visa',
+ *     card_type: 'credit',
+ *     card_expiry_month: 12,
+ *     card_expiry_year: 2028,
+ *   });
+ * };
+ */
+export function useAddCardToken() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: AddCardTokenRequest): Promise<SavedPaymentMethod> => {
+      const { data, error } = await addCardToken(request);
       if (error) {
         throw new Error(error);
       }
@@ -201,22 +268,20 @@ export function useDeletePaymentMethod() {
 // ==============================================
 
 /**
- * Hook to generate a receipt PDF for a completed payment.
+ * Hook to generate a receipt for a completed payment.
  *
- * @returns Mutation object with:
- * - `mutate(paymentId)` - Function to trigger receipt generation
- * - `isPending` - Loading state (true while generating)
- * - `isError` - Error state
- * - `error` - Error object if failed
- * - `data` - Receipt URL/data if successful
+ * Returns rich ReceiptData from the edge function (receipt_number, payment details,
+ * tenant/landlord info, company info) -- not just a URL.
+ *
+ * @returns Mutation object with standard React Query mutation fields.
  *
  * @example
- * const { mutateAsync: generateReceipt, isPending } = useGenerateReceipt();
+ * const { mutateAsync: getReceipt, isPending } = useGenerateReceipt();
  *
  * const handleDownload = async (paymentId: string) => {
  *   try {
- *     const receipt = await generateReceipt(paymentId);
- *     await Share.share({ url: receipt.url });
+ *     const receipt = await getReceipt(paymentId);
+ *     // receipt.receiptNumber, receipt.payment.amount, etc.
  *   } catch (err) {
  *     Alert.alert('Error generating receipt');
  *   }
@@ -224,7 +289,7 @@ export function useDeletePaymentMethod() {
  */
 export function useGenerateReceipt() {
   return useMutation({
-    mutationFn: async (paymentId: string) => {
+    mutationFn: async (paymentId: string): Promise<ReceiptData> => {
       const { data, error } = await generateReceipt(paymentId);
       if (error) {
         throw new Error(error);
@@ -264,44 +329,24 @@ export interface AddPaymentMethodResult {
 /**
  * Hook to add a new payment method (UPI, card, or netbanking).
  *
- * @returns Mutation object with:
- * - `mutate(request)` - Function to trigger the mutation
- * - `mutateAsync(request)` - Async version that returns a promise
- * - `isPending` - Loading state (true while adding)
- * - `isError` - Error state (true if failed)
- * - `error` - Error object if failed
- * - `isSuccess` - Success state (true if completed)
- * - `data` - Result data if successful
- * - `reset()` - Reset mutation state
+ * For UPI: calls addUpiVpa with correct edge function field names.
+ * For card: calls addCardToken when a card_token is provided in metadata,
+ *           otherwise falls back to mock for dev mode.
  *
- * @example
- * const {
- *   mutate: addMethod,
- *   isPending: isAdding,
- *   isError,
- *   error,
- *   isSuccess,
- * } = useAddPaymentMethod();
- *
- * // In component
- * if (isAdding) return <ActivityIndicator />;
- * if (isError) return <Text>Error: {error.message}</Text>;
- *
- * // To add a method
- * addMethod({
- *   type: 'upi',
- *   details: 'user@upi',
- *   isDefault: true,
- * });
+ * @returns Mutation object with standard React Query mutation fields.
  */
 export function useAddPaymentMethod() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (request: AddPaymentMethodRequest): Promise<AddPaymentMethodResult> => {
-      // For UPI, use the existing addUpiVpa function
+      // For UPI, use the addUpiVpa function with correct field mapping
       if (request.type === 'upi') {
-        const { data, error } = await addUpiVpa(request.details);
+        const { data, error } = await addUpiVpa(
+          request.details,
+          request.metadata?.displayName,
+          request.isDefault
+        );
         if (error) {
           throw new Error(error);
         }
@@ -313,8 +358,36 @@ export function useAddPaymentMethod() {
         };
       }
 
-      // For card/netbanking, we'd call a different API
-      // For now, simulate success (in production, this would integrate with PayU tokenization)
+      // For card with a token, use addCardToken
+      if (request.type === 'card' && request.metadata?.card_token) {
+        const cardNetwork = (request.metadata.cardNetwork ?? 'visa') as AddCardTokenRequest['card_network'];
+        const cardType = (request.metadata.cardType ?? 'credit') as AddCardTokenRequest['card_type'];
+        const [expiryMonth, expiryYear] = (request.metadata.expiryDate ?? '01/30').split('/').map(Number);
+
+        const { data, error } = await addCardToken({
+          card_token: request.metadata.card_token,
+          card_last4: request.details,
+          card_network: cardNetwork,
+          card_type: cardType,
+          card_expiry_month: expiryMonth,
+          card_expiry_year: 2000 + expiryYear,
+          card_issuer: request.metadata.cardIssuer,
+          nickname: request.metadata.cardholderName,
+          set_primary: request.isDefault,
+        });
+        if (error) {
+          throw new Error(error);
+        }
+        return {
+          id: data!.id,
+          type: 'card',
+          details: request.details,
+          is_default: request.isDefault ?? false,
+        };
+      }
+
+      // For card/netbanking without token, simulate success in dev mode
+      // (In production, this would integrate with PayU tokenization)
       if (__DEV__) {
         console.warn(`Card/Netbanking tokenization not implemented - using mock for ${request.type}`);
       }
@@ -344,12 +417,7 @@ export interface VerifyUpiResult {
 /**
  * Hook to verify a UPI VPA before adding it as a payment method.
  *
- * @returns Mutation object with:
- * - `mutate({ upiId })` - Function to trigger verification
- * - `isPending` - Loading state (true while verifying)
- * - `isError` - Error state
- * - `error` - Error object if verification failed
- * - `data` - Verification result with account holder name
+ * @returns Mutation object with standard React Query mutation fields.
  *
  * @example
  * const { mutate: verify, isPending, data, error } = useVerifyUpi();
@@ -388,40 +456,6 @@ export function useVerifyUpi() {
  * Combined hook for common payment operations.
  * Provides a convenient interface for all payment-related queries and mutations
  * with explicit loading and error states.
- *
- * @returns Object containing:
- * - Query states: `history`, `savedMethods` with loading/error states
- * - Mutations: `initiatePayment`, `addMethod`, `deleteMethod` with states
- * - Utilities: `refreshAll` to invalidate all payment caches
- *
- * @example
- * const {
- *   // Data
- *   history,
- *   savedMethods,
- *
- *   // Loading states
- *   isLoadingHistory,
- *   isLoadingMethods,
- *   isInitiating,
- *   isAddingMethod,
- *   isDeletingMethod,
- *
- *   // Error states
- *   historyError,
- *   methodsError,
- *   initiateError,
- *   addMethodError,
- *   deleteMethodError,
- *
- *   // Mutations
- *   initiatePayment,
- *   addMethod,
- *   deleteMethod,
- *
- *   // Utilities
- *   refreshAll,
- * } = usePayments();
  */
 export function usePayments() {
   const historyQuery = usePaymentHistory();
@@ -440,7 +474,9 @@ export function usePayments() {
 
   return {
     // History query
-    history: historyQuery.data ?? [],
+    history: historyQuery.data?.payments ?? [],
+    pagination: historyQuery.data?.pagination ?? null,
+    summary: historyQuery.data?.summary ?? null,
     isLoadingHistory: historyQuery.isLoading,
     historyError: historyQuery.error,
     refetchHistory: historyQuery.refetch,

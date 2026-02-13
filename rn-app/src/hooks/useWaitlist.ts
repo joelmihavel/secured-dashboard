@@ -182,7 +182,7 @@ export function useValidateReferral(code: string) {
       }
       return result.data!;
     },
-    enabled: code.length === 4,
+    enabled: code.length >= 4 && code.length <= 10,
     staleTime: 60000, // Cache validation for 1 minute
   });
 }
@@ -226,10 +226,10 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
   // Actions
   const applyReferral = useCallback(() => {
     const code = selectReferralCodeString(store);
-    if (code.length === 4) {
+    if (code.length >= 4 && code.length <= 10) {
       applyReferralMutation.mutate(code);
     } else {
-      store.setReferralError('Please enter a 4-character code');
+      store.setReferralError('Please enter a valid referral code (4-10 characters)');
     }
   }, [store, applyReferralMutation]);
 

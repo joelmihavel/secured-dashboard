@@ -15,13 +15,16 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { Screen, Text, Logo } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
+import { useDashboard } from '@/src/hooks';
 import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 
 // ============================================
@@ -84,10 +87,18 @@ const DiscountIcon = () => (
 export default function FirstRentPaymentScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { tenancy, cashback } = useDashboard();
 
-  const handlePay = () => {
-    router.push('/(agreement)/success' as never);
-  };
+  // Real data from dashboard
+  const rentAmount = tenancy?.monthly_rent ?? 32175;
+  const cashbackSaved = cashback?.available_balance ?? 325;
+  const landlordName = tenancy?.landlord_name ?? '[Landlord Name]';
+
+  const handlePay = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    // Navigate to the payment method selection flow
+    router.push('/(payment)/select-method' as never);
+  }, [router]);
 
   return (
     <Screen testID="first-rent-payment-screen">
@@ -154,11 +165,11 @@ export default function FirstRentPaymentScreen() {
                 >
                   Total payable rent
                 </Text>
-                <Text 
+                <Text
                   className="text-black font-jakarta-semibold"
                   style={{ fontSize: scaledFont(16), lineHeight: scaledFont(17) }}
                 >
-                  ₹ 32,175
+                  {`\u20B9 ${rentAmount.toLocaleString('en-IN')}`}
                 </Text>
               </View>
             </View>
@@ -177,11 +188,11 @@ export default function FirstRentPaymentScreen() {
                 <DiscountIcon />
               </View>
               <View>
-                <Text 
+                <Text
                   className="text-success font-jakarta-medium"
                   style={{ fontSize: scaledFont(12), lineHeight: scaledFont(17) }}
                 >
-                  saved ₹ 325 →
+                  {`saved \u20B9 ${cashbackSaved.toLocaleString('en-IN')} \u2192`}
                 </Text>
                 <Text 
                   className="text-neutral-500 font-jakarta-medium text-center"
@@ -198,7 +209,7 @@ export default function FirstRentPaymentScreen() {
             <View className="flex-col gap-2">
               <View className="flex-row justify-between items-center w-full">
                 <Text className="text-black font-jakarta-medium text-xs">Paying to</Text>
-                <Text className="text-black font-jakarta-medium text-xs">[Landlord Name]</Text>
+                <Text className="text-black font-jakarta-medium text-xs">{landlordName}</Text>
               </View>
               
               <View className="flex-row gap-4 items-center">

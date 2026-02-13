@@ -2,6 +2,15 @@
  * Hooks barrel export
  */
 
+// Agreement
+export {
+  useAgreement,
+  useUploadAgreement,
+  useExtractedData,
+  useConfirmExtraction,
+  agreementKeys,
+} from './useAgreement';
+
 // Auth
 export { useAuth, useSendOtp, useVerifyOtp, useResendOtp, authKeys } from './useAuth';
 
@@ -21,6 +30,7 @@ export {
   usePaymentMethods,
   useInitiatePayment,
   useAddUpiVpa,
+  useAddCardToken,
   useAddPaymentMethod,
   useVerifyUpi,
   useDeletePaymentMethod,
@@ -30,7 +40,13 @@ export {
 } from './usePayments';
 
 // Profile
-export { useUpdateProfile } from './useProfile';
+export {
+  useUpdateProfile,
+  useUploadAvatar,
+  useProfilePaymentMethods,
+  useProfile,
+  profileKeys,
+} from './useProfile';
 
 // Setup
 export {
@@ -45,9 +61,14 @@ export {
   validateIfscCode,
   validatePhoneNumber,
   validateEmail,
+  validateConsumerNumber,
   formatAccountNumber,
   formatPhoneNumber,
+  deriveSetupProgress,
 } from './useSetup';
+
+// Auth Guard
+export { useRequireAuth } from './useRequireAuth';
 
 // Waitlist
 export {

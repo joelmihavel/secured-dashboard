@@ -153,7 +153,7 @@ function HomeEmptyStateComponent({
       {/* Payment Setup Card (for base variants) */}
       {showPaymentSetupCard && !showPaymentCarousel && (
         <View style={styles.section}>
-          <PaymentSetupCard onAddPayment={onAddPayment} />
+          <PaymentSetupCard variant="standalone" onAddPayment={onAddPayment} />
         </View>
       )}
 

@@ -47,7 +47,8 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { useAddPaymentMethod, useDashboard } from '@/src/hooks';
+import { useAddPaymentMethod, useAddCardToken, useDashboard } from '@/src/hooks';
+import type { AddCardTokenRequest } from '@/src/services/api/payments';
 
 // Exact Figma colors - from 41-8450 extracted values
 const FIGMA_COLORS = {
@@ -182,16 +183,22 @@ export default function AddCardScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     const last4 = cardNumber.replace(/\s/g, '').slice(-4);
-    const cardType = getCardType(cardNumber);
+    const cardNetwork = getCardType(cardNumber);
+    const [expiryMonth, expiryYear] = expiryDate.split('/').map(Number);
 
+    // In production, the card_token comes from PayU's tokenization SDK.
+    // For development, we use addPaymentMethod which handles the mock fallback.
+    // When a real token is available, useAddCardToken would be called directly.
     addMethod.mutate(
       {
         type: 'card',
         details: last4,
         metadata: {
-          cardType: cardType ?? 'unknown',
+          cardType: cardNetwork ?? 'unknown',
+          cardNetwork: cardNetwork ?? 'visa',
           expiryDate,
           cardholderName: cardholderName.trim(),
+          // card_token would be set here after PayU tokenization in production
         },
         isDefault: false,
       },

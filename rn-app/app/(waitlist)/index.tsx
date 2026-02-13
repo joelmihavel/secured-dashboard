@@ -1,18 +1,15 @@
 /**
- * Waitlist Screen - Pixel Perfect Figma Implementation
+ * Waitlist Screen - Multi-State Implementation
  *
  * Source: figma-parity/data/ai-enhanced/41-11206/enhanced-extraction.json
  * Extracted: 2026-02-01 via extract-figma-ai-enhanced.ts v3.0
  *
  * Figma Node References:
- * - 41:11206: Onboarding / Waitlist Screen (root)
- * - 41:11212: Frame 1686557268 (main content container)
- * - 41:11213: Frame 1686557318 (content wrapper, width 313)
- * - 41:11214: Frame 2095586325 (header section)
- * - 41:11217: Frame 2095586319 (text block)
- * - 41:11218: Welcome title (mixed styles)
- * - 41:11219: Subtitle
- * - 41:11220: Frame 2095586388 (timeline card)
+ * - 41:11206: Onboarding / Waitlist Screen (root) — pending state
+ * - 41:11410: Onboarding / Waitlist Screen -- Rejected
+ * - 41:11506: Onboarding / Waitlist Screen -- more than 24hrs (pending_long)
+ *
+ * Handles states: loading, pending, pending_long, approved (redirect), rejected, error
  *
  * Design Specs:
  * - Screen: 393x852 (iPhone 14/15 base)
@@ -20,10 +17,11 @@
  * - All values are exact Figma pixels with design tokens
  */
 
-import React from 'react';
-import { View, ScrollView, StyleSheet, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import {
@@ -63,6 +61,10 @@ const FIGMA = {
     // Card background: #202020 → colors.black[500]
     // VariableID:e3cb66c05a62a8680357c6bba79620d8a57e6f10
     cardBackground: colors.black[500],
+
+    // Secondary card background: #1A1A1A → colors.black[600]
+    // From rejected state bottom card (node 41:11473)
+    cardBackgroundSecondary: colors.black[600],
 
     // Text primary (white): #FFFFFF → colors.white
     // VariableID:7b6c2ec8706e73ec1a8d406ce15c18dc86b52293
@@ -104,6 +106,10 @@ const FIGMA = {
 
     // Hint text: #797979 → colors.black[300]
     textHint: colors.black[300],
+
+    // Error/rejection red: #E5484D → colors.error.radix
+    // From Figma error state design system (Radix red)
+    errorRed: colors.error.radix,
   },
 
   // Typography - mapped to design tokens from extraction _textStyles
@@ -123,6 +129,15 @@ const FIGMA = {
     // Timeline values: fontSize 14, lineHeight 20, fontWeight 400
     // _designToken: "typography.bodyMd2"
     value: typography.bodyMd2,
+
+    // Card heading: fontSize 28, lineHeight 40, fontWeight 400, letterSpacing -1
+    // From Figma node 160:3054 "Why was I Rejected?" text
+    cardHeading: {
+      fontSize: 28,
+      lineHeight: 40,
+      letterSpacing: -1,
+      fontWeight: '400' as const,
+    },
   },
 
   // Layout from extraction computedStyles._designTokens
@@ -165,6 +180,19 @@ const FIGMA = {
 
     // itemSpacing: 24 → spacing.lg
     gap: spacing.lg, // 24
+  },
+
+  // Rejection reasons card (node 160:3051)
+  // From Figma: fill=#202020, radius=12, gap=24, padding 32/24
+  rejectionCard: {
+    borderRadius: radius.lg, // 12
+    paddingVertical: 32,
+    paddingHorizontal: spacing.lg, // 24
+    gap: spacing.lg, // 24
+    innerGap: 30, // gap between title section and reasons (node 160:3052)
+    titleGap: 10, // gap in title section (node 160:3053)
+    reasonsGap: spacing.lg, // 24 between reason items (node 160:3075)
+    reasonItemGap: spacing.md, // 16 between icon and text in each reason (node 160:3076)
   },
 
   // Timeline item layout (from node 41:11221)
@@ -213,17 +241,30 @@ const FIGMA = {
 // ============================================
 
 export default function WaitlistScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
     status,
+    viewState,
     userName,
     referralCode,
     isReferralComplete,
     isApplyingReferral,
     referralError,
+    countdownText,
+    isLoading,
+    error,
     applyReferral,
     setReferralCharacter,
+    refresh,
   } = useWaitlist({ useMock: true, mockState: 'pending' });
+
+  // Redirect to approved screen when approved
+  useEffect(() => {
+    if (viewState === 'approved') {
+      router.replace('/(waitlist)/approved');
+    }
+  }, [viewState, router]);
 
   // Data from mock or API
   const displayName = userName || 'Rishabh Agnihotri';
@@ -231,6 +272,274 @@ export default function WaitlistScreen() {
   const reviewTime = status?.estimatedReviewTime || 'Approximately 24 hrs';
   const membersOnboarded = status?.currentOnboarded || 18;
   const totalSlots = status?.totalMemberSlots || 150;
+
+  // ============================================
+  // LOADING STATE
+  // ============================================
+  if (viewState === 'loading' || isLoading) {
+    return (
+      <View style={styles.screen}>
+        <LinearGradient
+          colors={[...FIGMA.background.gradientColors]}
+          locations={[...FIGMA.background.gradientLocations]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.794 }}
+          style={styles.backgroundGradient}
+        />
+        <View style={styles.loadingContainer}>
+          {/* Skeleton header */}
+          <Animated.View
+            entering={FadeIn.duration(FIGMA.animation.duration)}
+            style={[styles.headerSection, { paddingTop: insets.top + spacing.huge }]}
+          >
+            <View style={styles.logoContainer}>
+              <Logo size={38} color={FIGMA.colors.textPrimary} />
+            </View>
+            <View style={styles.textBlock}>
+              {/* Shimmer placeholder for title */}
+              <View style={styles.skeletonTitle} />
+              <View style={styles.skeletonTitleLine2} />
+              {/* Shimmer placeholder for subtitle */}
+              <View style={styles.skeletonSubtitle} />
+            </View>
+          </Animated.View>
+
+          {/* Skeleton card */}
+          <Animated.View
+            entering={FadeIn.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
+            style={styles.skeletonCard}
+          >
+            <View style={styles.skeletonCardLine} />
+            <View style={styles.skeletonCardLine} />
+            <View style={styles.skeletonCardLineShort} />
+          </Animated.View>
+
+          {/* Loading indicator */}
+          <ActivityIndicator
+            size="small"
+            color={FIGMA.colors.textAccent}
+            style={styles.loadingIndicator}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // ============================================
+  // ERROR STATE
+  // ============================================
+  if (viewState === 'error') {
+    return (
+      <View style={styles.screen}>
+        <LinearGradient
+          colors={[...FIGMA.background.gradientColors]}
+          locations={[...FIGMA.background.gradientLocations]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.794 }}
+          style={styles.backgroundGradient}
+        />
+        <View style={[styles.errorContainer, { paddingTop: insets.top + spacing.huge }]}>
+          <Animated.View
+            entering={FadeInDown.duration(FIGMA.animation.duration)}
+            style={styles.headerSection}
+          >
+            <View style={styles.logoContainer}>
+              <Logo size={38} color={FIGMA.colors.textPrimary} />
+            </View>
+            <View style={styles.textBlock}>
+              <Text style={styles.titleBase}>
+                <Text style={styles.titleGray}>Oops,</Text>
+                {'\n'}
+                <Text style={{ color: FIGMA.colors.errorRed }}>something{'\n'}went wrong.</Text>
+              </Text>
+              <Text style={styles.subtitle}>
+                {error?.message || 'We could not load your waitlist status. Please try again.'}
+              </Text>
+            </View>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
+            style={styles.errorCardContainer}
+          >
+            <View style={styles.errorCard}>
+              <Text style={styles.errorCardTitle}>
+                {error?.code || 'UNKNOWN_ERROR'}
+              </Text>
+              <Text style={styles.errorCardDescription}>
+                {error?.message || 'An unexpected error occurred while checking your application status.'}
+              </Text>
+            </View>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+            style={styles.retryButtonContainer}
+          >
+            <PrimaryButton
+              title="Try Again"
+              onPress={refresh}
+            />
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
+
+  // ============================================
+  // REJECTED STATE
+  // Figma: 41-11410 "Onboarding / Waitlist Screen -- Rejected"
+  // ============================================
+  if (viewState === 'rejected') {
+    const rejectionReasons = status?.rejectionReasons || [];
+    const canReapply = countdownText === '00:00:00';
+
+    // Timeline for rejected state
+    // From Figma nodes 41:11430-41:11444
+    const rejectedTimelineItems: TimelineItemData[] = [
+      {
+        label: 'Application Sent',
+        value: `Submitted on ${submissionDate}`,
+        status: 'complete',
+      },
+      {
+        label: 'In Review',
+        value: reviewTime,
+        status: 'complete',
+      },
+      {
+        label: 'Account Status',
+        value: 'Rejected',
+        status: 'rejected',
+      },
+    ];
+
+    return (
+      <View style={styles.screen}>
+        <LinearGradient
+          colors={[...FIGMA.background.gradientColors]}
+          locations={[...FIGMA.background.gradientLocations]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.794 }}
+          style={styles.backgroundGradient}
+        />
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + spacing.huge,
+              paddingBottom: insets.bottom + spacing.xl,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Section */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
+            style={styles.headerSection}
+          >
+            <View style={styles.logoContainer}>
+              <Logo size={38} color={FIGMA.colors.textPrimary} />
+            </View>
+
+            {/* Text Block - Figma node 41:11421 */}
+            <View style={styles.textBlock}>
+              {/* Title: "We can't approve you right now" */}
+              {/* Figma: #FFFFFF, fontSize 48, lineHeight 64, fontWeight 400 */}
+              <Text style={[styles.titleBase, { color: FIGMA.colors.textPrimary }]}>
+                We can't approve you right now
+              </Text>
+
+              {/* Subtitle: "We're opening access in batches. Stay tuned." */}
+              {/* Figma: #A6A6A6, fontSize 14, lineHeight 20 */}
+              <Text style={styles.subtitle}>
+                We're opening access in batches. Stay tuned.
+              </Text>
+            </View>
+          </Animated.View>
+
+          <View style={styles.contentWrapper}>
+            {/* Timeline Card - same structure as pending */}
+            {/* Figma node 41:11424: fill=#202020, radius=12, padding 24/16, gap 24 */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
+              style={styles.timelineCard}
+            >
+              <ApplicationTimeline items={rejectedTimelineItems} />
+            </Animated.View>
+
+            {/* Rejection Reasons Card */}
+            {/* Figma node 160:3051: fill=#202020, radius=12, padding 32/24, gap 24 */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+              style={styles.rejectionCard}
+            >
+              <View style={styles.rejectionCardInner}>
+                {/* Title section - node 160:3053 */}
+                <View style={styles.rejectionTitleSection}>
+                  {/* "Why was I Rejected?" */}
+                  {/* Figma: #FFFFFF, fontSize 28, lineHeight 40, fontWeight 400 */}
+                  <Text style={styles.rejectionTitle}>
+                    Why was I Rejected?
+                  </Text>
+                </View>
+
+                {/* Reasons list - node 160:3075, gap 24 between items */}
+                <View style={styles.rejectionReasonsList}>
+                  {rejectionReasons.map((reason, index) => (
+                    <View key={index} style={styles.rejectionReasonItem}>
+                      {/* Bullet indicator */}
+                      <View style={styles.rejectionBullet} />
+                      {/* Reason text - Figma: #A9A9A9, fontSize 12, lineHeight 20 */}
+                      <Text style={styles.rejectionReasonText}>{reason}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </Animated.View>
+
+            {/* Contact Support + Countdown */}
+            {/* Figma node 41:11468: gap 16 */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
+              style={styles.rejectionActionsContainer}
+            >
+              <PrimaryButton
+                title="Contact support"
+                onPress={() => {/* TODO: Open support */}}
+              />
+
+              {/* Countdown text */}
+              {/* Figma node 41:11470: "Next applications open in 28:24:24" */}
+              {/* Color: #797979, fontSize 14, lineHeight 20 */}
+              {!canReapply && (
+                <Text style={styles.countdownText}>
+                  Next applications open in {countdownText}
+                </Text>
+              )}
+            </Animated.View>
+
+            {/* Benefits Card - same as pending state */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
+            >
+              <BenefitsCard variant="benefits" />
+            </Animated.View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ============================================
+  // PENDING & PENDING_LONG STATES
+  // Figma: 41-11206 (pending), 41-11506 (pending_long)
+  // pending_long has same layout with different review time text
+  // ============================================
+
+  const isPendingLong = viewState === 'pending_long';
 
   // Timeline Data - from extraction text content
   const timelineItems: TimelineItemData[] = [
@@ -241,7 +550,9 @@ export default function WaitlistScreen() {
     },
     {
       label: 'In Review',
-      value: reviewTime,
+      value: isPendingLong
+        ? (status?.estimatedReviewTime || 'Approximately 24-48 hrs')
+        : reviewTime,
       status: 'active',
     },
     {
@@ -300,7 +611,9 @@ export default function WaitlistScreen() {
             {/* Subtitle - node 41:11219 */}
             {/* computedStyles: fontSize 14, lineHeight 20, color #A6A6A6 */}
             <Text style={styles.subtitle}>
-              Your application is in review
+              {isPendingLong
+                ? 'Taking a bit longer than usual. Hang tight!'
+                : 'Your application is in review'}
             </Text>
           </View>
         </Animated.View>
@@ -315,6 +628,23 @@ export default function WaitlistScreen() {
           >
             <ApplicationTimeline items={timelineItems} />
           </Animated.View>
+
+          {/* Pending Long: Additional info card */}
+          {isPendingLong && (
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 2.5).duration(FIGMA.animation.duration)}
+              style={styles.pendingLongCard}
+            >
+              {/* Figma: same card styling as timeline card */}
+              {/* Info text: #A6A6A6 (textSecondary), fontSize 14 */}
+              <Text style={styles.pendingLongTitle}>
+                We're experiencing high demand
+              </Text>
+              <Text style={styles.pendingLongDescription}>
+                Your application is still being reviewed. We'll notify you as soon as there's an update. Estimated wait: {status?.estimatedReviewTime || 'Approximately 24-48 hrs'}.
+              </Text>
+            </Animated.View>
+          )}
 
           {/* Progress & Invite Card - Frame 2095586389 (node 41:11236) */}
           <Animated.View
@@ -516,7 +846,6 @@ const styles = StyleSheet.create({
     color: FIGMA.colors.textValue,
     textAlign: 'left',
     width: '100%',
-    // Removed marginBottom - gap is handled by parent inviteCard (24px)
   },
 
   // Hint text
@@ -540,5 +869,217 @@ const styles = StyleSheet.create({
   // Button container
   buttonContainer: {
     width: '100%',
+  },
+
+  // ============================================
+  // LOADING STATE STYLES
+  // ============================================
+
+  loadingContainer: {
+    flex: 1,
+    paddingHorizontal: FIGMA.layout.containerPadding,
+    gap: FIGMA.layout.contentGap,
+  },
+
+  skeletonTitle: {
+    width: 200,
+    height: 48,
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: radius.sm,
+  },
+
+  skeletonTitleLine2: {
+    width: 260,
+    height: 48,
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: radius.sm,
+    marginTop: 4,
+  },
+
+  skeletonSubtitle: {
+    width: 220,
+    height: 20,
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: radius.sm,
+    marginTop: FIGMA.layout.textGap,
+  },
+
+  skeletonCard: {
+    width: FIGMA.layout.contentWidth,
+    alignSelf: 'center',
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: FIGMA.card.borderRadius,
+    paddingVertical: FIGMA.card.paddingVertical,
+    paddingHorizontal: FIGMA.card.paddingHorizontal,
+    gap: spacing.md,
+  },
+
+  skeletonCardLine: {
+    width: '80%',
+    height: 16,
+    backgroundColor: colors.black[400],
+    borderRadius: radius.sm,
+    opacity: 0.3,
+  },
+
+  skeletonCardLineShort: {
+    width: '50%',
+    height: 16,
+    backgroundColor: colors.black[400],
+    borderRadius: radius.sm,
+    opacity: 0.3,
+  },
+
+  loadingIndicator: {
+    marginTop: spacing.lg,
+  },
+
+  // ============================================
+  // ERROR STATE STYLES
+  // ============================================
+
+  errorContainer: {
+    flex: 1,
+    paddingHorizontal: FIGMA.layout.containerPadding,
+    gap: FIGMA.layout.contentGap,
+  },
+
+  errorCardContainer: {
+    width: FIGMA.layout.contentWidth,
+    alignSelf: 'center',
+  },
+
+  errorCard: {
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: FIGMA.card.borderRadius,
+    paddingVertical: FIGMA.card.paddingVertical,
+    paddingHorizontal: FIGMA.card.paddingHorizontal,
+    gap: spacing.sm,
+    // Red left border to indicate error
+    borderLeftWidth: 3,
+    borderLeftColor: FIGMA.colors.errorRed,
+  },
+
+  errorCardTitle: {
+    ...FIGMA.typography.label,
+    color: FIGMA.colors.errorRed,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+
+  errorCardDescription: {
+    ...FIGMA.typography.value,
+    color: FIGMA.colors.textSecondary,
+  },
+
+  retryButtonContainer: {
+    width: FIGMA.layout.contentWidth,
+    alignSelf: 'center',
+  },
+
+  // ============================================
+  // REJECTED STATE STYLES
+  // All values from Figma node 41-11410
+  // ============================================
+
+  // Rejection Reasons Card - node 160:3051
+  // fill=#202020, radius=12, padding 32/24, gap 24
+  rejectionCard: {
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: FIGMA.rejectionCard.borderRadius,
+    paddingVertical: FIGMA.rejectionCard.paddingVertical, // 32
+    paddingHorizontal: FIGMA.rejectionCard.paddingHorizontal, // 24
+  },
+
+  // Inner container - node 160:3052, gap 30
+  rejectionCardInner: {
+    gap: FIGMA.rejectionCard.innerGap, // 30
+  },
+
+  // Title section - node 160:3053, gap 10
+  rejectionTitleSection: {
+    gap: FIGMA.rejectionCard.titleGap, // 10
+  },
+
+  // "Why was I Rejected?" - node 160:3054
+  // Figma: #FFFFFF, fontSize 28, lineHeight 40, fontWeight 400, letterSpacing -1
+  rejectionTitle: {
+    ...FIGMA.typography.cardHeading,
+    color: FIGMA.colors.textPrimary,
+  },
+
+  // Reasons list container - node 160:3075, gap 24
+  rejectionReasonsList: {
+    gap: FIGMA.rejectionCard.reasonsGap, // 24
+  },
+
+  // Each reason item - node 160:3076, gap 16
+  rejectionReasonItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: FIGMA.rejectionCard.reasonItemGap, // 16
+  },
+
+  // Bullet indicator - matches timeline indicator style
+  rejectionBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: FIGMA.colors.errorRed, // #E5484D for rejected
+    marginTop: 7, // Center with 20px line height text
+  },
+
+  // Reason text - node 160:3081, etc.
+  // Figma: #A9A9A9, fontSize 12, lineHeight 20, fontWeight 400
+  rejectionReasonText: {
+    ...FIGMA.typography.label,
+    color: FIGMA.colors.textGray, // #A9A9A9
+    flex: 1,
+  },
+
+  // Actions container - node 41:11468, gap 16
+  rejectionActionsContainer: {
+    gap: spacing.md, // 16
+  },
+
+  // Countdown text - node 41:11470
+  // Figma: "Next applications open in 28:24:24"
+  // Color: #797979, fontSize 14, lineHeight 20
+  countdownText: {
+    ...FIGMA.typography.value,
+    color: FIGMA.colors.textHint, // #797979
+    textAlign: 'center',
+  },
+
+  // ============================================
+  // PENDING_LONG STATE STYLES
+  // Additional card for extended wait messaging
+  // ============================================
+
+  // Info card for pending_long - uses same card tokens as timeline card
+  pendingLongCard: {
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: FIGMA.card.borderRadius, // 12
+    paddingVertical: FIGMA.card.paddingVertical, // 24
+    paddingHorizontal: FIGMA.card.paddingHorizontal, // 16
+    gap: spacing.sm, // 12
+    // Orange left border to indicate attention
+    borderLeftWidth: 3,
+    borderLeftColor: FIGMA.colors.textAccent, // #FF9A6D
+  },
+
+  // Pending long title
+  // Uses same label style as timeline, but with accent color
+  pendingLongTitle: {
+    ...FIGMA.typography.value, // fontSize 14, lineHeight 20
+    color: FIGMA.colors.textAccent, // #FF9A6D
+    fontWeight: '500',
+  },
+
+  // Pending long description
+  // Uses textSecondary for subdued messaging
+  pendingLongDescription: {
+    ...FIGMA.typography.value, // fontSize 14, lineHeight 20
+    color: FIGMA.colors.textSecondary, // #A6A6A6
   },
 });

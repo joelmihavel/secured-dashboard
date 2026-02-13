@@ -1,16 +1,22 @@
 /**
  * Setup Hooks
- * React Query hooks for bank verification, utility verification, and landlord invites
+ *
+ * React Query hooks for bank verification, utility verification, and landlord invites.
+ * All hooks use the service layer which handles snake_case <-> camelCase mapping.
+ *
+ * API functions now return { data, error } instead of throwing, consistent with
+ * the waitlist pattern.
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import {
   verifyBank,
   verifyUtility,
   getUtilityOperators,
   sendLandlordInvite,
   resendLandlordInvite,
-  getSetupProgress,
+  deriveSetupProgress,
   mockOperators,
   mockSetupSteps,
 } from '@/src/services/api/setup';
@@ -23,146 +29,264 @@ import type {
   LandlordInviteRequest,
   LandlordInviteResponse,
   SetupProgress,
+  SetupError,
 } from '@/src/types/setup';
+import { dashboardKeys, useDashboard } from './useDashboard';
 
-// Query Keys
+// ==============================================
+// QUERY KEYS
+// ==============================================
+
 export const setupQueryKeys = {
   all: ['setup'] as const,
   progress: (tenancyId: string) => [...setupQueryKeys.all, 'progress', tenancyId] as const,
-  operators: (state: string) => [...setupQueryKeys.all, 'operators', state] as const,
+  operators: () => [...setupQueryKeys.all, 'operators'] as const,
 };
 
+// ==============================================
+// BANK VERIFICATION
+// ==============================================
+
 /**
- * Hook for bank account verification
+ * Hook for bank account verification via Cashfree Penny Drop.
+ *
+ * Usage:
+ *   const verifyBank = useVerifyBank();
+ *   verifyBank.mutate(request, { onSuccess, onError });
+ *
+ * The mutation throws a SetupError on failure so React Query's onError works.
  */
 export function useVerifyBank() {
   const queryClient = useQueryClient();
 
-  return useMutation<BankVerificationResponse, Error, BankVerificationRequest>({
-    mutationFn: verifyBank,
-    onSuccess: (data, variables) => {
-      if (data.success) {
-        // Invalidate setup progress to refresh the steps
-        queryClient.invalidateQueries({
-          queryKey: setupQueryKeys.progress(variables.tenancyId),
-        });
-      }
+  return useMutation<BankVerificationResponse, SetupError, BankVerificationRequest>({
+    mutationFn: async (request) => {
+      const { data, error } = await verifyBank(request);
+      if (error) throw error;
+      if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      // Invalidate dashboard to refresh verification status
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 }
 
+// ==============================================
+// UTILITY OPERATORS
+// ==============================================
+
 /**
- * Hook for fetching utility operators
+ * Hook for fetching electricity operators from the verify-utility endpoint.
+ *
+ * Calls: GET /functions/v1/verify-utility?action=operators
+ * Falls back to mock Karnataka operators in dev mode.
  */
-export function useUtilityOperators(state: string = 'Karnataka') {
-  return useQuery<UtilityOperator[], Error>({
-    queryKey: setupQueryKeys.operators(state),
-    queryFn: () => getUtilityOperators(state),
-    staleTime: 1000 * 60 * 60, // 1 hour
-    // Use mock data in development
+export function useUtilityOperators() {
+  return useQuery<UtilityOperator[], SetupError>({
+    queryKey: setupQueryKeys.operators(),
+    queryFn: async () => {
+      const { data, error } = await getUtilityOperators();
+      if (error) {
+        // In dev mode, fall back to mock operators
+        if (__DEV__) return mockOperators;
+        throw error;
+      }
+      if (!data || data.length === 0) {
+        // Return mock operators as fallback if API returns empty
+        if (__DEV__) return mockOperators;
+        return [];
+      }
+      return data;
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour - operators rarely change
     placeholderData: mockOperators,
   });
 }
 
+// ==============================================
+// UTILITY VERIFICATION
+// ==============================================
+
 /**
- * Hook for utility bill verification
+ * Hook for utility bill verification via API Club + Gemini matching.
+ *
+ * Usage:
+ *   const verifyUtility = useVerifyUtility();
+ *   verifyUtility.mutate(request, { onSuccess, onError });
  */
 export function useVerifyUtility() {
   const queryClient = useQueryClient();
 
-  return useMutation<UtilityVerificationResponse, Error, UtilityVerificationRequest>({
-    mutationFn: verifyUtility,
-    onSuccess: (data, variables) => {
-      if (data.success) {
-        // Invalidate setup progress to refresh the steps
-        queryClient.invalidateQueries({
-          queryKey: setupQueryKeys.progress(variables.tenancyId),
-        });
-      }
+  return useMutation<UtilityVerificationResponse, SetupError, UtilityVerificationRequest>({
+    mutationFn: async (request) => {
+      const { data, error } = await verifyUtility(request);
+      if (error) throw error;
+      if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
+      return data;
+    },
+    onSuccess: (_data, _variables) => {
+      // Invalidate dashboard to refresh verification status
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 }
 
+// ==============================================
+// LANDLORD INVITE
+// ==============================================
+
 /**
- * Hook for sending landlord invite
+ * Hook for sending landlord invitation email.
+ *
+ * Usage:
+ *   const invite = useSendLandlordInvite();
+ *   invite.mutate(request, { onSuccess, onError });
+ *
+ * Note: The edge function sends email, not SMS. The request accepts
+ * landlordName and landlordEmail (not phone/channel).
  */
 export function useSendLandlordInvite() {
   const queryClient = useQueryClient();
 
-  return useMutation<LandlordInviteResponse, Error, LandlordInviteRequest>({
-    mutationFn: sendLandlordInvite,
-    onSuccess: (data, variables) => {
-      if (data.success) {
-        // Invalidate setup progress to refresh the steps
-        queryClient.invalidateQueries({
-          queryKey: setupQueryKeys.progress(variables.tenancyId),
-        });
-      }
+  return useMutation<LandlordInviteResponse, SetupError, LandlordInviteRequest>({
+    mutationFn: async (request) => {
+      const { data, error } = await sendLandlordInvite(request);
+      if (error) throw error;
+      if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
+      return data;
+    },
+    onSuccess: (_data, _variables) => {
+      // Invalidate dashboard to refresh verification status
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 }
 
 /**
- * Hook for resending landlord invite
+ * Hook for resending landlord invitation.
+ * Reuses the same send-landlord-invite edge function with resend=true.
  */
 export function useResendLandlordInvite() {
-  return useMutation<LandlordInviteResponse, Error, string>({
-    mutationFn: resendLandlordInvite,
-  });
-}
+  const queryClient = useQueryClient();
 
-/**
- * Hook for fetching setup progress
- */
-export function useSetupProgress(tenancyId: string) {
-  return useQuery<SetupProgress, Error>({
-    queryKey: setupQueryKeys.progress(tenancyId),
-    queryFn: () => getSetupProgress(tenancyId),
-    enabled: !!tenancyId,
-    staleTime: 1000 * 30, // 30 seconds
-    // Use mock data as placeholder
-    placeholderData: {
-      steps: mockSetupSteps,
-      currentStepIndex: 0,
-      landlordStatus: { type: 'none' },
-      completedCount: 0,
-      totalCount: 3,
+  return useMutation<LandlordInviteResponse, SetupError, string>({
+    mutationFn: async (tenancyId) => {
+      const { data, error } = await resendLandlordInvite(tenancyId);
+      if (error) throw error;
+      if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 }
 
+// ==============================================
+// SETUP PROGRESS (derived from dashboard data)
+// ==============================================
+
 /**
- * Validation helpers
+ * Hook for fetching setup progress.
+ *
+ * Setup progress is derived from the dashboard query (tenancy.verification_status),
+ * NOT from a separate edge function. This avoids an unnecessary API call.
+ *
+ * @param _tenancyId - Retained for API compatibility; progress is derived from dashboard data.
+ */
+export function useSetupProgress(_tenancyId: string) {
+  const { tenancy, isLoading, error } = useDashboard();
+
+  const progress: SetupProgress = useMemo(() => {
+    if (!tenancy) {
+      return {
+        steps: mockSetupSteps,
+        currentStepIndex: 0,
+        landlordStatus: { type: 'none' as const },
+        completedCount: 0,
+        totalCount: 3,
+      };
+    }
+    return deriveSetupProgress(tenancy.verification_status);
+  }, [tenancy]);
+
+  return {
+    data: progress,
+    isLoading,
+    error,
+    // Mimic useQuery shape for consumers
+    isSuccess: !isLoading && !error,
+    isPending: isLoading,
+  };
+}
+
+// ==============================================
+// VALIDATION HELPERS
+// ==============================================
+
+/**
+ * Validates account number: 9-18 digits.
+ * Matches edge function validation: minLength: 9, maxLength: 18.
  */
 export function validateAccountNumber(accountNumber: string): boolean {
   return /^\d{9,18}$/.test(accountNumber);
 }
 
+/**
+ * Validates IFSC code format: 4 uppercase letters, 0, then 6 alphanumeric characters.
+ * Matches edge function isValidIfsc validation from _shared/validation.ts.
+ */
 export function validateIfscCode(ifsc: string): boolean {
   return /^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc.toUpperCase());
 }
 
+/**
+ * Validates phone number: 10 digits or 12 digits starting with 91.
+ */
 export function validatePhoneNumber(phone: string): boolean {
   const cleaned = phone.replace(/\D/g, '');
   return cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91'));
 }
 
+/**
+ * Validates email format. Empty string is valid (email is optional for landlord invite).
+ * Matches edge function isValidEmail from send-landlord-invite.
+ */
 export function validateEmail(email: string): boolean {
   if (!email) return true; // Email is optional
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 /**
- * Format helpers
+ * Validates consumer number: 5-30 characters (alphanumeric).
+ * Matches edge function validation: minLength: 5, maxLength: 30.
+ */
+export function validateConsumerNumber(consumerNumber: string): boolean {
+  const trimmed = consumerNumber.trim();
+  return trimmed.length >= 5 && trimmed.length <= 30;
+}
+
+// ==============================================
+// FORMAT HELPERS
+// ==============================================
+
+/**
+ * Masks account number showing only last 4 digits.
+ * e.g., "1234567890" -> "XXXX 7890"
  */
 export function formatAccountNumber(accountNumber: string): string {
-  // Show last 4 digits only
   if (accountNumber.length >= 4) {
     return `XXXX ${accountNumber.slice(-4)}`;
   }
   return accountNumber;
 }
 
+/**
+ * Formats a 10-digit phone number with country code.
+ * e.g., "9876543210" -> "+91 98765 43210"
+ */
 export function formatPhoneNumber(phone: string): string {
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 10) {
@@ -174,3 +298,6 @@ export function formatPhoneNumber(phone: string): string {
   }
   return phone;
 }
+
+// Re-export deriveSetupProgress for use by dashboard-aware components
+export { deriveSetupProgress };

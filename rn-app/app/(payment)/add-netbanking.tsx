@@ -28,7 +28,7 @@ import Svg, { Path, Circle, Rect, Line, G, Defs, ClipPath } from 'react-native-s
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { useAddPaymentMethod } from '@/src/hooks';
+import { useAddPaymentMethod, useDashboard } from '@/src/hooks';
 import { colors, spacing, radius, typography, fontFamily } from '@/src/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -241,6 +241,7 @@ export default function AddNetbankingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const addMethod = useAddPaymentMethod();
+  const { tenancy, cashback } = useDashboard();
   const params = useLocalSearchParams();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -248,17 +249,21 @@ export default function AddNetbankingScreen() {
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardHolderName, setCardHolderName] = useState('');
+  const [error, setError] = useState('');
 
   // Determine if form is filled enough to enable button
   const isFormValid = useMemo(() => {
     return cardNumber.length >= 16 && expiryDate.length >= 4 && cvv.length >= 3;
   }, [cardNumber, expiryDate, cvv]);
 
-  // Payment data (in real app, this would come from params or state)
+  // Payment data from dashboard and params
   const paymentData = useMemo(() => ({
-    ...MOCK_PAYMENT,
-    totalRent: params.amount ? Number(params.amount) : MOCK_PAYMENT.totalRent,
-  }), [params.amount]);
+    totalRent: params.amount ? Number(params.amount) : (tenancy?.monthly_rent ?? MOCK_PAYMENT.totalRent),
+    cashbackSaved: cashback?.available_balance ?? MOCK_PAYMENT.cashbackSaved,
+    landlordName: tenancy?.landlord_name ?? MOCK_PAYMENT.landlordName,
+    bankName: MOCK_PAYMENT.bankName,
+    cardLast4: cardNumber.replace(/\s/g, '').slice(-4) || MOCK_PAYMENT.cardLast4,
+  }), [params.amount, tenancy, cashback, cardNumber]);
 
   const handleClose = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -266,22 +271,44 @@ export default function AddNetbankingScreen() {
   }, [router]);
 
   const handlePayNow = useCallback(async () => {
+    if (!isFormValid) return;
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsProcessing(true);
+    setError('');
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.push('/(payment)/success');
-    }, 2000);
-  }, [router]);
+    const last4 = cardNumber.replace(/\s/g, '').slice(-4);
+
+    addMethod.mutate(
+      {
+        type: 'netbanking',
+        details: last4,
+        metadata: {
+          cardholderName: cardHolderName.trim(),
+          expiryDate,
+        },
+        isDefault: false,
+      },
+      {
+        onSuccess: () => {
+          setIsProcessing(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          router.back();
+        },
+        onError: (err) => {
+          setIsProcessing(false);
+          setError(err instanceof Error ? err.message : 'Failed to add payment method');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        },
+      }
+    );
+  }, [isFormValid, addMethod, cardNumber, cardHolderName, expiryDate, router]);
 
   const handleUPIApp = useCallback((app: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Handle UPI app selection
-    console.log(`Selected UPI app: ${app}`);
-  }, []);
+    // Navigate to UPI add screen for the selected app
+    router.push('/(payment)/add-upi' as never);
+  }, [router]);
 
   const formatCurrency = (amount: number) => {
     return `\u20B9 ${amount.toLocaleString('en-IN')}`;

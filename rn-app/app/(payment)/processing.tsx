@@ -140,15 +140,29 @@ const InfoRow = ({ text }: InfoRowProps) => (
 export default function ProcessingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { paymentId } = useLocalSearchParams<{ paymentId?: string }>();
+  const params = useLocalSearchParams<{
+    paymentId?: string;
+    amount?: string;
+    method?: string;
+  }>();
+  const { paymentId, amount, method } = params;
   const lottieRef = useRef<LottieView>(null);
 
   const checkPaymentStatus = useCallback(async () => {
     if (!paymentId) {
       // Demo mode - simulate processing for 5 seconds then go to success
+      const DEMO_DELAY_MS = 5000;
       setTimeout(() => {
-        router.replace('/(payment)/success' as never);
-      }, 5000);
+        router.replace({
+          pathname: '/(payment)/success',
+          params: {
+            amount: amount ?? '32,175',
+            method: method ?? 'UPI',
+            transactionId: `SEC${Date.now().toString().slice(-8)}`,
+            cashback: '350',
+          },
+        } as never);
+      }, DEMO_DELAY_MS);
       return;
     }
 
@@ -162,29 +176,63 @@ export default function ProcessingScreen() {
 
         if (status === 'success') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          router.replace('/(payment)/success' as never);
+          router.replace({
+            pathname: '/(payment)/success',
+            params: {
+              paymentId,
+              amount: amount ?? '',
+              method: method ?? '',
+              transactionId: paymentId,
+              cashback: '0',
+            },
+          } as never);
           return;
         } else if (status === 'failure') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          router.replace('/(payment)/failed' as never);
+          router.replace({
+            pathname: '/(payment)/failed',
+            params: {
+              paymentId,
+              amount: amount ?? '',
+              method: method ?? '',
+              error: error ?? 'Payment failed',
+            },
+          } as never);
           return;
         } else if (status === 'pending' && attempts < MAX_VERIFICATION_ATTEMPTS) {
           setTimeout(pollStatus, VERIFICATION_INTERVAL_MS);
         } else {
-          router.replace('/(payment)/failed' as never);
+          // Max attempts reached - treat as timeout
+          router.replace({
+            pathname: '/(payment)/failed',
+            params: {
+              paymentId,
+              amount: amount ?? '',
+              method: method ?? '',
+              error: 'Payment verification timed out. Please check your transaction history.',
+            },
+          } as never);
         }
-      } catch (error) {
-        console.error('Payment verification error:', error);
+      } catch (err) {
+        console.error('Payment verification error:', err);
         if (attempts < MAX_VERIFICATION_ATTEMPTS) {
           setTimeout(pollStatus, VERIFICATION_INTERVAL_MS);
         } else {
-          router.replace('/(payment)/failed' as never);
+          router.replace({
+            pathname: '/(payment)/failed',
+            params: {
+              paymentId,
+              amount: amount ?? '',
+              method: method ?? '',
+              error: 'Could not verify payment status. Please check your transaction history.',
+            },
+          } as never);
         }
       }
     };
 
     pollStatus();
-  }, [paymentId, router]);
+  }, [paymentId, amount, method, router]);
 
   useEffect(() => {
     checkPaymentStatus();

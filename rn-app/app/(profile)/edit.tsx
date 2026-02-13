@@ -35,7 +35,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Screen, Text } from '@/src/components';
-import { useDashboard, useUpdateProfile } from '@/src/hooks';
+import { useDashboard, useUpdateProfile, useUploadAvatar } from '@/src/hooks';
 import { colors, spacing, radius } from '@/src/theme';
 
 // Design System Colors - mapped from theme (EXACT Figma values)
@@ -144,6 +144,7 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const { user } = useDashboard();
   const updateProfile = useUpdateProfile();
+  const uploadAvatar = useUploadAvatar();
 
   const fullName = user ? `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : '';
   const [name, setName] = useState(fullName || 'John Smith');
@@ -177,16 +178,35 @@ export default function EditProfileScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setAvatarUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      // Set local preview immediately
+      setAvatarUri(asset.uri);
+
+      // Upload to Supabase Storage via presigned URL flow
+      const contentType = asset.mimeType ?? 'image/jpeg';
+      uploadAvatar.mutate(
+        { fileUri: asset.uri, contentType },
+        {
+          onSuccess: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+          onError: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            // Revert local preview on failure
+            setAvatarUri(null);
+          },
+        }
+      );
     }
-  }, []);
+  }, [uploadAvatar]);
 
   const handleSave = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     updateProfile.mutate(
       {
-        name: name.trim(),
+        // Use fullName - edge function auto-splits into first_name/last_name
+        fullName: name.trim(),
         email: email.trim() || undefined,
       },
       {

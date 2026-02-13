@@ -246,6 +246,13 @@ serve(async (req: Request) => {
         first_name: userProfile?.first_name ?? "User",
         last_name: userProfile?.last_name ?? null,
         phone: userProfile?.phone ?? null,
+        email: userProfile?.email ?? null,
+        role: userProfile?.role ?? "tenant",
+        is_role_locked: userProfile?.is_role_locked ?? false,
+        user_status: userProfile?.user_status ?? "active",
+        kyc_status: userProfile?.kyc_status ?? null,
+        cashback_balance_paise: userProfile?.cashback_balance_paise ?? 0,
+        created_at: userProfile?.created_at ?? new Date().toISOString(),
       },
       tenancy: tenancy
         ? {

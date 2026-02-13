@@ -55,7 +55,7 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { useAddPaymentMethod, useVerifyUpi } from '@/src/hooks';
+import { useAddUpiVpa, useVerifyUpi } from '@/src/hooks';
 import { colors, spacing, typography } from '@/src/theme';
 
 // Design tokens from Figma 41-8369 (VERIFIED from extracted-values.json)
@@ -118,7 +118,7 @@ const BackArrow = () => (
 export default function AddUpiScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const addMethod = useAddPaymentMethod();
+  const addUpi = useAddUpiVpa();
   const verifyUpi = useVerifyUpi();
 
   const [accountName, setAccountName] = useState('');
@@ -126,6 +126,7 @@ export default function AddUpiScreen() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingUpi, setIsEditingUpi] = useState(false);
   const [error, setError] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -136,6 +137,38 @@ export default function AddUpiScreen() {
     const upiRegex = /^[\w.-]+@[\w.-]+$/;
     return upiRegex.test(id);
   };
+
+  // Verify UPI VPA before adding
+  const handleVerify = useCallback(async () => {
+    if (!validateUpiId(upiId)) {
+      setError('Please enter a valid UPI ID (e.g., name@upi)');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    setError('');
+    verifyUpi.mutate(
+      { upiId: upiId.trim() },
+      {
+        onSuccess: (data) => {
+          if (data.verified) {
+            setIsVerified(true);
+            // Auto-fill account name from verification if empty
+            if (!accountName && data.name) {
+              setAccountName(data.name);
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } else {
+            setError('UPI ID could not be verified');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          }
+        },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Verification failed');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        },
+      }
+    );
+  }, [verifyUpi, upiId, accountName]);
 
   const handleProceed = useCallback(async () => {
     if (!upiId || !accountName) {
@@ -153,12 +186,11 @@ export default function AddUpiScreen() {
     setError('');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    addMethod.mutate(
+    addUpi.mutate(
       {
-        type: 'upi',
-        details: upiId.trim(),
-        metadata: { displayName: accountName.trim() },
-        isDefault: false,
+        vpa: upiId.trim(),
+        nickname: accountName.trim(),
+        setPrimary: false,
       },
       {
         onSuccess: () => {
@@ -171,9 +203,10 @@ export default function AddUpiScreen() {
         },
       }
     );
-  }, [addMethod, upiId, accountName, router]);
+  }, [addUpi, upiId, accountName, router]);
 
   const isFormValid = accountName.length > 0 && upiId.includes('@');
+  const isLoading = addUpi.isPending || verifyUpi.isPending;
 
   return (
     <Screen testID="add-upi-screen" style={styles.screen}>
@@ -268,14 +301,24 @@ export default function AddUpiScreen() {
           {/* Spacer */}
           <View style={styles.spacer} />
 
-          {/* Proceed Button */}
-          <PrimaryButton
-            title="Proceed"
-            onPress={handleProceed}
-            disabled={!isFormValid}
-            loading={addMethod.isPending}
-            testID="proceed-button"
-          />
+          {/* Verify + Proceed Buttons */}
+          {!isVerified && isFormValid ? (
+            <PrimaryButton
+              title={verifyUpi.isPending ? 'Verifying...' : 'Verify UPI'}
+              onPress={handleVerify}
+              disabled={!isFormValid || verifyUpi.isPending}
+              loading={verifyUpi.isPending}
+              testID="verify-upi-button"
+            />
+          ) : (
+            <PrimaryButton
+              title="Proceed"
+              onPress={handleProceed}
+              disabled={!isFormValid}
+              loading={addUpi.isPending}
+              testID="proceed-button"
+            />
+          )}
 
           {/* Footer Text - centered per Figma */}
           <Text style={styles.footerText}>

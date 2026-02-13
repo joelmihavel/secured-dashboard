@@ -1,20 +1,21 @@
 /**
  * BottomFooter Component
  * Fixed bottom bar with due date, amount and "Review & pay" button - Figma pixel-perfect
- * Figma Reference: 243-2762, 243-2967, 243-3170, 243-3378, 243-4062
+ * Figma Reference: 243-7382 (node data from REST API 2026-02-13)
  *
- * Figma Pixel-Perfect Values:
- * - Container (frame_1686557229): width full, height 118, backgroundColor #202020
- *   - paddingTop 16, paddingRight 32, paddingBottom 40, paddingLeft 32
- *   - gap 24, flexDirection row, justifyContent space-between, alignItems center
- * - Due label: fontSize 12, lineHeight 20, fontWeight 700 (Bold), color #A9A9A9
- * - Amount: Rs symbol fontSize 12, numeric portion fontSize 16, fontWeight 600, letterSpacing -0.48, color #EEEEEE
- * - Progress bar (rectangle_140): width 24, height 2, backgroundColor #4D4D4D, borderRadius 200
- * - Button (frame_2095586312): width ~164.5, height 52
- *   - borderColor #FF9A6D, borderWidth 1, borderRadius 8
- *   - paddingVertical 16, paddingHorizontal 16
- *   - shadow: #995C41, offset 0/6, blur 12
- * - Button text: fontSize 14, fontWeight 500, lineHeight 20, color #FFFFFF, textAlign center
+ * Figma Pixel-Perfect Values (from REST API node 243:7382):
+ * - Container (Frame 1686557229): width 393, height 118, fill #202020
+ *   - HORIZONTAL layout, SPACE_BETWEEN + CENTER
+ *   - padding: top=16, bottom=40, left=32, right=32, gap=24
+ * - Left content (243:7383): VERTICAL, gap=4
+ *   - Due label (243:7384): fontSize 12, base Regular but override[2] ALL chars = Bold 700, lineHeight 20, color #A9A9A9
+ *   - Amount (243:7385): base fontSize 12 weight 600 ls -0.48 color #EEEEEE; override[6] "32,500" fontSize 16
+ * - Button wrapper (243:7386): VERTICAL, CENTER, gap=8, radius=12
+ *   - Handle bar (I243:7386;137:37): 24x2, fill #4D4D4D, radius=200
+ *   - Button (I243:7386;100:1564): 164.5x52, stroke #FF9A6D w=0.1, radius=8
+ *     - Text "Review & pay": fontSize 14, weight 500, lineHeight 20, color #FFFFFF
+ *
+ * Uses s() / sf() scaling utilities for responsive sizing across all screen widths.
  */
 
 import React, { memo } from 'react';
@@ -23,6 +24,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/ui';
+import { s, sf } from '@/src/theme/scale';
 
 export interface BottomFooterProps {
   dueInDays: number;
@@ -45,44 +47,34 @@ function BottomFooterComponent({
     return value.toLocaleString('en-IN');
   };
 
-  // Figma 243-6490: Frame 1686557229 has total height 118px
-  // Layout breakdown: progressBar area (~14px) + content paddingTop (16px) + content (~52px) + paddingBottom (40px) = ~122px
-  // On devices with safe area, we add extra padding to account for home indicator
-  const bottomPadding = 40 + insets.bottom; // Figma base: 40px paddingBottom + safe area
-
   return (
-    <View style={[styles.container, { paddingBottom: bottomPadding }]}>
-      {/* Top progress bar (white line) */}
-      <View style={styles.progressBarContainer}>
-        <View style={styles.progressBar} />
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom - 12, 8) }]}>
+      {/* Left side - Due info */}
+      <View style={styles.leftContent}>
+        <Text style={styles.dueLabel}>
+          {dueInDays < 0 ? `${Math.abs(dueInDays)} Days Overdue` : `Due in ${dueInDays} Days`}
+        </Text>
+        <Text style={styles.amountText}>
+          <Text style={styles.rupeeSymbol}>{'₹ '}</Text>
+          <Text style={styles.amountValue}>{formatAmount(amount)}</Text>
+        </Text>
       </View>
 
-      <View style={styles.content}>
-        {/* Left side - Due info */}
-        <View style={styles.leftContent}>
-          <Text style={styles.dueLabel}>
-            {dueInDays < 0 ? `${Math.abs(dueInDays)} Days Overdue` : `Due in ${dueInDays} Days`}
-          </Text>
-          {/* Figma 243-6490 node 243:6506: "₹ 32,500" uses single Text with nested spans
-              - Style override 5: Rs symbol (fontSize 12)
-              - Style override 6: numeric value (fontSize 16)
-              Both share: fontWeight 600, letterSpacing -0.48, color #EEEEEE */}
-          <Text style={styles.amountBase}>
-            <Text style={styles.rupeeSymbol}>{'₹ '}</Text>
-            <Text style={styles.amountValue}>{formatAmount(amount)}</Text>
-          </Text>
-        </View>
-
-        {/* Right side - Button */}
+      {/* Right side - Button wrapper with handle bar above button */}
+      <View style={styles.buttonColumn}>
+        <View style={styles.handleBar} />
         <TouchableOpacity
           onPress={onPress}
           disabled={disabled}
-          style={styles.buttonWrapper}
           activeOpacity={0.9}
+          style={[styles.buttonOuter, disabled && styles.buttonOuterDisabled]}
         >
           <LinearGradient
-            colors={disabled ? ['#202020', '#202020'] : ['#202020', '#0d0d0d']}
-            locations={[0, 0.9018]}
+            colors={disabled
+              ? ['#202020', '#202020']
+              : ['#272727', '#212121', '#1a1a1a', '#0d0d0d']
+            }
+            locations={disabled ? [0, 1] : [0, 0.12, 0.85, 1]}
             style={[styles.button, disabled && styles.buttonDisabled]}
           >
             <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
@@ -96,94 +88,94 @@ function BottomFooterComponent({
 }
 
 const styles = StyleSheet.create({
+  // Figma 243:7382: HORIZONTAL, SPACE_BETWEEN, CENTER
   container: {
-    backgroundColor: '#202020', // Figma: #202020 (black[500])
-    // No top border in Figma
-  },
-  progressBarContainer: {
-    // Progress indicator at top
-    paddingHorizontal: 32, // Figma: paddingHorizontal 32
-    paddingTop: 16, // Figma: paddingTop 16
-    alignItems: 'center', // Figma: center align the handle
-  },
-  progressBar: {
-    width: 24, // Figma: width 24
-    height: 2, // Figma: height 2
-    backgroundColor: '#4D4D4D', // Figma: #4D4D4D (black[400])
-    borderRadius: 200, // Figma: borderRadius 200
-  },
-  content: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 8, // Figma: 8px gap between handle and content (16 + 2 + 8 + 52 + 40 = 118)
-    // paddingBottom handled by container for safe area
-    paddingHorizontal: 32, // Figma: paddingHorizontal 32
-    gap: 24, // Figma: gap 24
+    backgroundColor: '#202020',
+    paddingTop: s(16),
+    paddingHorizontal: s(32),
+    gap: s(24),
   },
+  // Figma 243:7383: VERTICAL, gap=4
   leftContent: {
-    gap: 4,
+    gap: s(4),
+    flex: 1,
   },
+  // Figma 243:7384: Bold 700, fontSize 12, lineHeight 20, color #A9A9A9
   dueLabel: {
-    // Figma 243-3378: Due label text
-    // Figma nodes: 243:2954, 243:6477 "Due in X Days"
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 12, // Figma: fontSize 12
-    lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '700', // Figma: fontWeight 700 (Bold)
-    color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
-    textAlign: 'left', // Figma: left-aligned label in left content block
+    fontSize: sf(12),
+    lineHeight: sf(20),
+    fontWeight: '700',
+    color: '#A9A9A9',
   },
-  // Amount text: "₹ 32,500" - Figma: single Text with nested spans for different sizes
-  // Uses nested <Text> to keep on single line with mixed font sizes
-  amountBase: {
-    // Base styles inherited by children
+  // Figma 243:7385: base fontSize 12, weight 600, ls -0.48, color #EEEEEE
+  amountText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontWeight: '600', // Figma: fontWeight 600
-    letterSpacing: -0.48, // Figma: letterSpacing -0.48
-    color: '#EEEEEE', // Figma: #EEEEEE (neutral[100])
+    fontWeight: '600',
+    letterSpacing: -0.48,
+    color: '#EEEEEE',
   },
+  // Figma override[7]: stays at base 12
   rupeeSymbol: {
-    fontSize: 12, // Figma: fontSize 12 (style override 5)
-    // Inherits fontWeight, letterSpacing, color from parent
+    fontSize: sf(12),
   },
+  // Figma override[6]: fontSize 16 for numeric portion
   amountValue: {
-    fontSize: 16, // Figma: fontSize 16 (style override 6 for numeric portion - 243:6506)
-    // Inherits fontWeight, letterSpacing, color from parent
+    fontSize: sf(16),
   },
-  buttonWrapper: {
-    width: 164.5, // Figma: exact width ~164.5 - NOT flex
-  },
-  button: {
-    height: 52, // Figma: height 52
-    paddingVertical: 16, // Figma: paddingVertical 16
-    paddingHorizontal: 16, // Figma: paddingHorizontal 16
-    borderRadius: 8, // Figma: borderRadius 8
-    borderWidth: 0.5, // Figma: borderWidth 0.1 (thin orange border, 0.5 minimum for RN visibility)
-    borderColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
+  // Figma 243:7386: VERTICAL, CENTER, gap=8
+  buttonColumn: {
     alignItems: 'center',
-    justifyContent: 'center',
-    // Shadow - Figma: #995C41, offset 0/6, blur 12, spread -2
-    shadowColor: '#995C41',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.24,
-    shadowRadius: 12,
-    elevation: 6,
+    gap: s(8),
   },
-  buttonDisabled: {
-    borderColor: '#4D4D4D', // Figma: #4D4D4D
+  // Figma I243:7386;137:37: 24x2, fill #4D4D4D, radius 200
+  handleBar: {
+    width: s(24),
+    height: 2,
+    backgroundColor: '#4D4D4D',
+    borderRadius: 200,
+  },
+  // Figma: DROP_SHADOW — applied to outer wrapper for proper RN rendering
+  buttonOuter: {
+    shadowColor: '#995C41',
+    shadowOffset: { width: 0, height: s(6) },
+    shadowOpacity: 0.24,
+    shadowRadius: s(10),
+    elevation: 4,
+  },
+  buttonOuterDisabled: {
     shadowOpacity: 0,
   },
+  // Figma I243:7386;100:1564: 164.5x52, stroke #FF9A6D w=0.1, radius=8
+  button: {
+    width: s(164.5),
+    height: s(52),
+    paddingVertical: s(16),
+    paddingHorizontal: s(16),
+    borderRadius: s(8),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 154, 109, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  buttonDisabled: {
+    borderColor: '#4D4D4D',
+  },
+  // Figma I243:7386;100:1565: fontSize 14, weight 500, lineHeight 20, color #FFFFFF
   buttonText: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14, // Figma: fontSize 14
-    fontWeight: '500', // Figma: fontWeight 500
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#FFFFFF', // Figma: #FFFFFF
+    fontSize: sf(14),
+    fontWeight: '500',
+    lineHeight: sf(20),
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   buttonTextDisabled: {
-    color: '#878787', // Figma: #878787
+    color: '#878787',
   },
 });
 

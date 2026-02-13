@@ -24,40 +24,33 @@ import {
   TextInputProps as RNTextInputProps,
   StyleSheet,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
-
 import { Text } from '../Typography';
-import { duration } from '@/src/theme';
 
 // Exact Figma color values - Dark theme
 // Verified from Figma extraction 1-29108: Name input node I90:2897;47:5569
 const INPUT_COLORS_DARK = {
   label: '#a9a9a9',
-  labelError: '#ff8080',
+  labelError: '#E5484D',
   placeholder: '#222222',          // Figma REST API: #222222 (node I90:2897;47:5569)
   hintText: '#878787',             // Figma hint text color (neutral/600)
   textFilled: '#dddddd',
-  textError: '#ff8080',             // Figma: error text color (matches labelError/borderError)
+  textError: '#E5484D',             // Figma: error text color (matches labelError/borderError)
   border: '#4D4D4D',              // Figma: I90:2897;47:5566 borderColor #4D4D4D (full border box)
   borderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
-  borderError: '#ff8080',
+  borderError: '#E5484D',
 } as const;
 
 // Light theme variant (for white backgrounds)
 const INPUT_COLORS_LIGHT = {
   label: '#797979',
-  labelError: '#ff8080',
+  labelError: '#E5484D',
   placeholder: '#797979',
   hintText: '#878787',
   textFilled: '#131313',
   textError: '#e5484d',
   border: '#cbcbcb',
   borderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
-  borderError: '#ff8080',
+  borderError: '#E5484D',
 } as const;
 
 // Exact Figma spacing values
@@ -114,11 +107,11 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
       <View style={styles.container}>
         {label ? (
           <View style={styles.labelRow}>
-            <Text style={[styles.label, dynamicStyles.label, hasError && dynamicStyles.labelError]}>
+            <Text style={[styles.label, dynamicStyles.label]}>
               {label}
             </Text>
             {error ? (
-              <Text style={[styles.errorText, dynamicStyles.labelError]}>
+              <Text style={[styles.errorText, dynamicStyles.inputError]}>
                 {error}
               </Text>
             ) : hintText ? (
@@ -179,9 +172,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
+    fontSize: 14,          // Figma: error hint text 14px (node I90:3059;99:1529)
     lineHeight: 20,
-    // Color applied dynamically via dynamicStyles
+    textAlign: 'right' as const,  // Figma: textAlignHorizontal: RIGHT
+    // Color applied dynamically via dynamicStyles.inputError (#E5484D)
   },
   hintText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -190,12 +184,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',  // Figma: textAlignHorizontal: RIGHT
     // Color applied inline
   },
-  // Figma: I90:2897;47:5566 - full border box, borderWidth 1, borderRadius 12, borderColor #4D4D4D
+  // Figma: I90:2897;47:5566 - fill:invisible, stroke:invisible in empty state
   inputContainer: {
     borderWidth: 1,
-    borderRadius: 12,    // Figma: borderRadius 12
-    paddingHorizontal: 16, // Figma: implicit from content x-position within Input box
-    // Border color applied dynamically via getBorderColor()
+    borderColor: 'transparent',
+    borderRadius: 12,
+    paddingHorizontal: 16,
   },
   input: {
     fontFamily: 'PlusJakartaSans-Regular',

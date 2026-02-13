@@ -26,8 +26,9 @@ import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Screen, Text } from '@/src/components';
-import { usePaymentMethods, useDeletePaymentMethod } from '@/src/hooks';
+import { useProfilePaymentMethods, useDeletePaymentMethod } from '@/src/hooks';
 import { colors, spacing, radius, gradients } from '@/src/theme';
+import type { SavedPaymentMethod as ProfilePaymentMethod } from '@/src/services/api/profile';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -175,15 +176,54 @@ function MethodSection({ title, children }: MethodSectionProps) {
   );
 }
 
+/**
+ * Derive display details from a saved payment method for the UI.
+ */
+function getMethodDisplayDetails(method: ProfilePaymentMethod): string {
+  if (method.type === 'upi' && method.upiVpa) {
+    // Mask part of the VPA: "rishabh@icici" -> "rish***@icici"
+    const [local, domain] = method.upiVpa.split('@');
+    const masked = local.length > 4 ? local.slice(0, 4) + '***' : local;
+    return domain ? `${masked}@${domain}` : masked;
+  }
+  if (method.type === 'card') {
+    const expiry = method.cardExpiryMonth && method.cardExpiryYear
+      ? `Expires ${String(method.cardExpiryMonth).padStart(2, '0')}/${String(method.cardExpiryYear).slice(-2)}`
+      : '';
+    return expiry;
+  }
+  if (method.type === 'netbanking' && method.bankName) {
+    return method.bankName;
+  }
+  return '';
+}
+
 export default function PaymentMethodsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: methods, isLoading } = usePaymentMethods();
+  const { data: methodsData, isLoading } = useProfilePaymentMethods();
   const deleteMethod = useDeletePaymentMethod();
 
-  const [defaultUpi, setDefaultUpi] = useState<string | null>('upi_1');
-  const [defaultCard, setDefaultCard] = useState<string | null>('card_1');
-  const [defaultBank, setDefaultBank] = useState<string | null>('bank_1');
+  // Track which method is default per type (initialized from API data)
+  const primaryId = methodsData?.primaryMethodId ?? null;
+  const [defaultUpi, setDefaultUpi] = useState<string | null>(null);
+  const [defaultCard, setDefaultCard] = useState<string | null>(null);
+  const [defaultBank, setDefaultBank] = useState<string | null>(null);
+
+  // Initialize default selections from API data
+  React.useEffect(() => {
+    if (methodsData?.groupedMethods) {
+      const primaryUpi = methodsData.groupedMethods.upi.find(m => m.isPrimary);
+      const primaryCard = methodsData.groupedMethods.cards.find(m => m.isPrimary);
+      const primaryNb = methodsData.groupedMethods.netbanking.find(m => m.isPrimary);
+      if (primaryUpi) setDefaultUpi(primaryUpi.id);
+      else if (methodsData.groupedMethods.upi.length > 0) setDefaultUpi(methodsData.groupedMethods.upi[0].id);
+      if (primaryCard) setDefaultCard(primaryCard.id);
+      else if (methodsData.groupedMethods.cards.length > 0) setDefaultCard(methodsData.groupedMethods.cards[0].id);
+      if (primaryNb) setDefaultBank(primaryNb.id);
+      else if (methodsData.groupedMethods.netbanking.length > 0) setDefaultBank(methodsData.groupedMethods.netbanking[0].id);
+    }
+  }, [methodsData]);
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -218,23 +258,31 @@ export default function PaymentMethodsScreen() {
 
   const handleEditMethod = useCallback((methodId: string, type: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navigate to edit method screen based on type
-    router.push(`/(payment)/edit-${type}?id=${methodId}` as never);
+    // No dedicated edit screen; re-use the add screen for the method type
+    const addRoute = type === 'upi' ? '/(payment)/add-upi'
+      : type === 'card' ? '/(payment)/add-card'
+      : '/(payment)/add-netbanking';
+    router.push({ pathname: addRoute as never, params: { editId: methodId } });
   }, [router]);
 
-  // Mock data for display
-  const upiMethods = [
-    { id: 'upi_1', label: 'ICICI a/c - xxx23', details: 'rishabh@***' },
-    { id: 'upi_2', label: 'HDFC a/c - xxx45', details: 'john@***' },
-  ];
+  // Map real data from the profile service (grouped by type)
+  const upiMethods = (methodsData?.groupedMethods.upi ?? []).map(m => ({
+    id: m.id,
+    label: m.displayName,
+    details: getMethodDisplayDetails(m),
+  }));
 
-  const cardMethods = [
-    { id: 'card_1', label: 'Visa **** 4242', details: 'Expires 12/25' },
-  ];
+  const cardMethods = (methodsData?.groupedMethods.cards ?? []).map(m => ({
+    id: m.id,
+    label: m.displayName,
+    details: getMethodDisplayDetails(m),
+  }));
 
-  const bankMethods = [
-    { id: 'bank_1', label: 'ICICI Bank', details: 'A/c **** 7890' },
-  ];
+  const bankMethods = (methodsData?.groupedMethods.netbanking ?? []).map(m => ({
+    id: m.id,
+    label: m.displayName,
+    details: getMethodDisplayDetails(m),
+  }));
 
   return (
     <Screen testID="payment-methods-screen">

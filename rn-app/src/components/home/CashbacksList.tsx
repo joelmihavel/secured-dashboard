@@ -1,22 +1,21 @@
 /**
  * CashbacksList Component
  * Cashback balance display and cashback history list - Figma pixel-perfect
- * Figma Reference: 243-7185
+ * Figma Reference: 243-7337 (REST API data 2026-02-13)
  *
- * Figma Pixel-Perfect Values:
- * - Container padding: horizontal 32px
- * - Balance label: "CASHBACK BALANCE", fontSize 12, fontWeight 500, lineHeight 20, color #A9A9A9
- * - Balance amount: fontSize 16/28, fontWeight 600, lineHeight ~22.56, color #FFFFFF/green
- * - Stats row:
- *   - Label: fontSize 14, lineHeight 20, color #DDDDDD (neutral[200])
- *   - Value: fontSize 28, lineHeight 40, letterSpacing -1, color #BABABA (neutral[400])
- * - Divider: borderColor #4D4D4D, borderWidth 1
- * - History items:
- *   - Title: fontSize 14, fontWeight 500, lineHeight ~19.74, letterSpacing -0.56, color #FFFFFF
- *   - Status: fontSize 12, lineHeight ~16.92, letterSpacing -0.24, color #878787
- *   - Status dot: width 10, height 10, colors: #4CAF50/#FFB020/#E5484D
- *   - Amount: fontSize 16, fontWeight 600, lineHeight ~22.56, letterSpacing -0.64, color #FFFFFF
- *   - NA text: fontSize 12, fontWeight 600, color #FFFFFF
+ * Figma Pixel-Perfect Values (from REST API node 243:7337):
+ * - Container: VERTICAL, crossAxis CENTER, padding top=8 bottom=8 left=32 right=32, gap=32
+ * - Balance label (243:7344): fontSize 12, weight 500, lineHeight 20, color #A9A9A9
+ * - Balance text (243:7345): base fontSize 28, weight 400, lineHeight 40, ls -1, color #BABABA
+ *   - override[41] "₹ ": fontSize 14, color #444444
+ *   - override[42] "325": fontSize 32, color #FF9A6D (orange!)
+ *   - override[24] ".00": fontSize 14, color #444444
+ * - Stats rows (243:7347, 243:7351): HORIZONTAL, SPACE_BETWEEN, CENTER, gap 16
+ *   - Label: fontSize 14, weight 400, lineHeight 20, color #DDDDDD
+ *   - "₹  3,256.00" override[41]: fs 14 #444444, override[43]: fs 16 #FF9A6D, override[24]: fs 14 #444444
+ *   - "0.8% Avg" override[43]: fs 16 #FF9A6D, override[24]: fs 14 #444444
+ * - Dividers: stroke #4D4D4D, strokeWeight 0.25
+ * - History rows (gap=24): title fs 14 w500 #FFFFFF, status fs 12 #878787, amount fs 16 w600 #FFFFFF
  */
 
 import React, { memo } from 'react';
@@ -62,7 +61,7 @@ function CashbacksListComponent({
 
   return (
     <View style={styles.container}>
-      {/* Balance Section */}
+      {/* Figma 243:7342: Balance + Stats section (VERTICAL, gap=16) */}
       <View style={styles.balanceSection}>
         <Text style={styles.balanceLabel}>CASHBACK BALANCE</Text>
         <View style={styles.balanceRow}>
@@ -70,10 +69,11 @@ function CashbacksListComponent({
           <Text style={styles.balanceAmount}>{Math.floor(balance)}</Text>
           <Text style={styles.balanceDecimal}>.00</Text>
         </View>
-      </View>
 
-      {/* Stats Row */}
-      <View style={styles.statsSection}>
+        {/* Figma 243:7346: divider between balance and all-time total */}
+        <View style={styles.divider} />
+
+        {/* Figma 243:7347: All-time Total row */}
         <View style={styles.statRow}>
           <Text style={styles.statLabel}>All-time Total</Text>
           <View style={styles.statValueRow}>
@@ -82,6 +82,11 @@ function CashbacksListComponent({
             <Text style={styles.statDecimal}>.00</Text>
           </View>
         </View>
+
+        {/* Figma 243:7350: divider between all-time total and cashback rate */}
+        <View style={styles.divider} />
+
+        {/* Figma 243:7351: Cashback Rate row */}
         <View style={styles.statRow}>
           <Text style={styles.statLabel}>Cashback Rate</Text>
           <View style={styles.statValueRow}>
@@ -91,8 +96,8 @@ function CashbacksListComponent({
         </View>
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
+      {/* Figma 243:7354: Main divider between stats and history (gap=32 from parent) */}
+      <View style={styles.mainDivider} />
 
       {/* Cashback History */}
       <View style={styles.historySection}>
@@ -132,120 +137,124 @@ function CashbacksListComponent({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 32, // Figma: 32px exact
+    paddingHorizontal: 32, // Figma 243:7337: paddingLeft 32, paddingRight 32
   },
-  // Balance section
+  // Figma 243:7342: VERTICAL, gap=16
   balanceSection: {
-    gap: 8, // Figma: gap between label and amount
+    gap: 16, // Figma: itemSpacing 16 between label and amount
   },
+  // Figma 243:7344: fontSize 12, weight 500, lineHeight 20, color #A9A9A9
   balanceLabel: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12, // Figma: fontSize 12
-    fontWeight: '500', // Figma: fontWeight 500
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
-    letterSpacing: 0,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 20,
+    color: '#A9A9A9',
   },
   balanceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
+  // Figma 243:7345 override[41]: fontSize 14, color #444444
   rupeeSymbol: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16, // Figma: fontSize 16
-    fontWeight: '600', // Figma: fontWeight 600
-    lineHeight: 22.56, // Figma: lineHeight ~22.56
-    letterSpacing: -0.64, // Figma: letterSpacing -0.64
-    color: '#FFFFFF', // Figma: #FFFFFF
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: '#444444',
   },
+  // Figma 243:7345 override[42]: fontSize 32, color #FF9A6D
   balanceAmount: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16, // Figma: fontSize 16
-    fontWeight: '600', // Figma: fontWeight 600
-    lineHeight: 22.56, // Figma: lineHeight ~22.56
-    letterSpacing: -0.64, // Figma: letterSpacing -0.64
-    color: '#FFFFFF', // Figma: #FFFFFF
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 32,
+    fontWeight: '400',
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: '#FF9A6D',
   },
+  // Figma 243:7345 override[24]: fontSize 14, color #444444
   balanceDecimal: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF', // Figma: #FFFFFF
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#444444',
   },
-  // Stats section - Figma layout
-  statsSection: {
-    marginTop: 24, // Figma: gap
-    gap: 12, // Figma: gap between stat rows
-  },
+  // Figma 243:7347/7351: HORIZONTAL, SPACE_BETWEEN, CENTER, gap=16
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  // Figma 243:7348/7352: fontSize 14, weight 400, lineHeight 20, color #DDDDDD
   statLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: '400',
-    color: '#DDDDDD', // Figma: #DDDDDD (neutral[200])
-    textAlign: 'left', // Figma: left-aligned stat label in space-between row
+    color: '#DDDDDD',
   },
   statValueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
+  // Figma 243:7349 override[41]: fontSize 14, color #444444
   statRupee: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28, // Figma: fontSize 28
-    lineHeight: 40, // Figma: lineHeight 40
-    letterSpacing: -1, // Figma: letterSpacing -1
+    fontSize: 14,
     fontWeight: '400',
-    color: '#BABABA', // Figma: #BABABA (neutral[400])
+    color: '#444444',
   },
+  // Figma 243:7349 override[43]: fontSize 16, color #FF9A6D
   statValue: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28, // Figma: fontSize 28
-    lineHeight: 40, // Figma: lineHeight 40
-    letterSpacing: -1, // Figma: letterSpacing -1
+    fontSize: 16,
     fontWeight: '400',
-    color: '#BABABA', // Figma: #BABABA (neutral[400])
+    color: '#FF9A6D',
   },
+  // Figma 243:7349 override[24]: fontSize 14, color #444444
   statDecimal: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
-    color: '#BABABA',
+    color: '#444444',
   },
+  // Figma 243:7353 override[43]: fontSize 16, color #FF9A6D
   rateValue: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28, // Figma: fontSize 28
-    lineHeight: 40, // Figma: lineHeight 40
-    letterSpacing: -1, // Figma: letterSpacing -1
+    fontSize: 16,
     fontWeight: '400',
-    color: '#BABABA', // Figma: same as other values
+    color: '#FF9A6D',
   },
+  // Figma 243:7353 override[24]: fontSize 14, color #444444
   rateAvg: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
-    color: '#BABABA',
+    color: '#444444',
   },
-  // Divider - Figma: vector line
+  // Figma 243:7346/7350: stroke #4D4D4D, strokeWeight 0.25
   divider: {
-    height: 1, // Figma: borderWidth 1
-    backgroundColor: '#4D4D4D', // Figma: #4D4D4D (black[400])
-    marginVertical: 24, // Figma: spacing
+    height: StyleSheet.hairlineWidth, // Figma: strokeWeight 0.25 (hairline)
+    backgroundColor: '#4D4D4D',
   },
-  // History section
+  // Figma 243:7354: Main divider between stats and history
+  mainDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#4D4D4D',
+    marginVertical: 32, // Figma: gap 32 from parent frame between content sections
+  },
+  // Figma 243:7355: VERTICAL, gap=24
   historySection: {
-    gap: 16, // Figma: gap between history rows
+    gap: 24, // Figma: itemSpacing 24
   },
   historyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  // Figma 243:7358: VERTICAL, CENTER, gap=8
   historyContent: {
     flex: 1,
-    gap: 2,
+    gap: 8, // Figma: itemSpacing 8 between title and status row
   },
   historyTitle: {
     fontFamily: 'PlusJakartaSans-Medium',
@@ -259,11 +268,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // Figma 243:7362: 10x10 colored dot (inside 12x12 white frame)
   statusDot: {
-    width: 10, // Figma: width 10
-    height: 10, // Figma: height 10
-    borderRadius: 5, // Figma: fully rounded
-    marginRight: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 4, // Figma 243:7360: gap=4
   },
   historyStatus: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -276,13 +286,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
   },
+  // Figma 243:7364 override[1]: fontSize 12 for rupee symbol
   historyRupee: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16, // Figma: fontSize 16
-    fontWeight: '600', // Figma: fontWeight 600
-    lineHeight: 22.56, // Figma: lineHeight ~22.56
-    letterSpacing: -0.64, // Figma: letterSpacing -0.64
-    color: '#FFFFFF', // Figma: #FFFFFF
+    fontSize: 12, // Figma: override[1] fontSize 12
+    fontWeight: '600',
+    lineHeight: 22.56,
+    letterSpacing: -0.64,
+    color: '#FFFFFF',
     marginRight: 2,
   },
   historyAmount: {

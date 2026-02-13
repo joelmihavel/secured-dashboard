@@ -23,6 +23,7 @@ export type AuthStatus =
 interface AuthState {
   status: AuthStatus;
   phoneNumber: string;
+  userName: string;
   verificationSid: string | null;
   userId: string | null;
   isNewUser: boolean;
@@ -35,6 +36,7 @@ interface AuthState {
 interface AuthActions {
   // Phone entry
   setPhoneNumber: (phone: string) => void;
+  setUserName: (name: string) => void;
 
   // OTP flow
   setOtpSent: (verificationSid: string) => void;
@@ -58,6 +60,7 @@ type AuthStore = AuthState & AuthActions;
 const initialState: AuthState = {
   status: 'idle',
   phoneNumber: '',
+  userName: '',
   verificationSid: null,
   userId: null,
   isNewUser: false,
@@ -77,6 +80,11 @@ export const useAuthStore = create<AuthStore>()(
         state.phoneNumber = phone;
         state.status = 'phone_input';
         state.error = null;
+      }),
+
+    setUserName: (name) =>
+      set((state) => {
+        state.userName = name;
       }),
 
     setOtpSent: (verificationSid) =>

@@ -198,7 +198,7 @@ export default function WaitlistApprovedScreen() {
   // Handle "Step Inside" button
   const handleStepInside = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(main)' as never);
+    router.replace('/(agreement)/upload' as never);
   }, [router]);
 
   return (

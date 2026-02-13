@@ -177,18 +177,25 @@ export default function InitiatePaymentScreen() {
         ? await mockPayUCheckout(data.payuParams)
         : await launchPayUCheckout(data.payuParams);
 
-      if (checkoutResult.status === 'success') {
-        await updatePaymentStatus(data.paymentId, checkoutResult.payuResponse ?? {});
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.replace('/(payment)/success' as never);
-      } else if (checkoutResult.status === 'cancelled') {
+      // Store client-side SDK response as metadata
+      if (checkoutResult.payuResponse) {
+        await updatePaymentStatus(data.paymentId, checkoutResult.payuResponse);
+      }
+
+      if (checkoutResult.status === 'cancelled') {
         setIsProcessing(false);
         return;
-      } else {
-        await updatePaymentStatus(data.paymentId, checkoutResult.payuResponse ?? {});
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        router.replace('/(payment)/failed' as never);
       }
+
+      // Navigate to processing screen with paymentId; let it poll for final status
+      router.replace({
+        pathname: '/(payment)/processing',
+        params: {
+          paymentId: data.paymentId,
+          amount: String(totalAmount),
+          method,
+        },
+      } as never);
     } catch (error) {
       console.error('Payment error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

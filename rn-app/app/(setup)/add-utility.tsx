@@ -23,6 +23,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   TextInput as RNTextInput,
+  ActivityIndicator,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,7 +33,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text } from '@/src/components';
-import { useVerifyUtility, useDashboard } from '@/src/hooks';
+import { useVerifyUtility, useUtilityOperators, useDashboard, validateConsumerNumber } from '@/src/hooks';
+import type { UtilityOperator, SetupError } from '@/src/types/setup';
 import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 
 // Figma exact values from 1-31590 enhanced-extraction.json
@@ -99,9 +103,13 @@ export default function AddUtilityScreen() {
   const insets = useSafeAreaInsets();
   const verifyUtility = useVerifyUtility();
   const { tenancy } = useDashboard();
+  const { data: operators, isLoading: operatorsLoading } = useUtilityOperators();
 
-  const [bescomNumber, setBescomNumber] = useState('');
+  const [selectedOperator, setSelectedOperator] = useState<UtilityOperator | null>(null);
+  const [consumerNumber, setConsumerNumber] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [showOperatorPicker, setShowOperatorPicker] = useState(false);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -112,38 +120,71 @@ export default function AddUtilityScreen() {
     router.back();
   }, [router]);
 
+  const handleConsumerNumberChange = useCallback((text: string) => {
+    setConsumerNumber(text.replace(/\D/g, ''));
+    setErrors((prev) => { const { consumerNumber: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
+  const handleSelectOperator = useCallback((operator: UtilityOperator) => {
+    setSelectedOperator(operator);
+    setShowOperatorPicker(false);
+    setErrors((prev) => { const { operator: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!bescomNumber.trim()) newErrors.bescomNumber = 'Required';
-    else if (bescomNumber.length < 8) newErrors.bescomNumber = 'Invalid';
-    
+    if (!selectedOperator) newErrors.operator = 'Please select an operator';
+    if (!consumerNumber.trim()) newErrors.consumerNumber = 'Required';
+    else if (!validateConsumerNumber(consumerNumber)) newErrors.consumerNumber = '5-30 characters required';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [bescomNumber]);
+  }, [selectedOperator, consumerNumber]);
 
   const handleSubmit = useCallback(() => {
     if (!validateForm()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+
+    if (!tenancy?.id) {
+      setApiError('No active tenancy found. Please complete onboarding first.');
+      return;
+    }
+
+    setApiError(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     verifyUtility.mutate(
       {
-        tenancyId: tenancy?.id ?? '',
-        operatorCode: 'bescom',
-        consumerNumber: bescomNumber.trim(),
+        tenancyId: tenancy.id,
+        operatorCode: selectedOperator!.operatorCode,
+        consumerNumber: consumerNumber.trim(),
       },
       {
-        onSuccess: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          router.back();
+        onSuccess: (data) => {
+          if (data.verified) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setTimeout(() => router.back(), 1200);
+          } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            setApiError(
+              data.message || 'Address verification failed. Please check your consumer number and try again.'
+            );
+          }
         },
-        onError: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+        onError: (error: SetupError) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          setApiError(error.message || 'Utility verification failed. Please try again.');
+        },
       }
     );
-  }, [validateForm, verifyUtility, bescomNumber, tenancy?.id, router]);
+  }, [validateForm, verifyUtility, selectedOperator, consumerNumber, tenancy?.id, router]);
 
-  const isFormValid = bescomNumber.length >= 8;
+  const isFormValid = !!selectedOperator && validateConsumerNumber(consumerNumber);
+  const operatorDisplayName = selectedOperator?.operatorName ?? 'Select Operator';
 
   return (
     <View style={[styles.container, { backgroundColor: FIGMA.colors.background }]}>
@@ -191,24 +232,69 @@ export default function AddUtilityScreen() {
                 </View>
               </View>
 
+              {/* API Error Banner */}
+              {apiError && (
+                <View style={styles.errorBanner}>
+                  <Text style={styles.errorBannerText}>{apiError}</Text>
+                </View>
+              )}
+
               {/* Form - Figma: Frame 90:2928 with gap: 16 */}
               <View style={styles.formContainer}>
-                {/* Account Number Input */}
+                {/* Operator Selector */}
                 <View>
                   <View style={styles.labelRow}>
-                    <Text style={styles.label}>Enter BESCOM Account Number</Text>
-                    <TouchableOpacity>
-                      <Text style={styles.editLink}>edit</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.label}>Electricity Operator</Text>
+                    {errors.operator && (
+                      <Text style={styles.errorHint}>{errors.operator}</Text>
+                    )}
                   </View>
-                  <View style={[styles.inputContainer, errors.bescomNumber && styles.inputError]}>
+                  <TouchableOpacity
+                    style={[styles.inputContainer, errors.operator && styles.inputError]}
+                    onPress={() => setShowOperatorPicker(true)}
+                    disabled={verifyUtility.isPending}
+                  >
+                    <Text
+                      style={[
+                        styles.input,
+                        { lineHeight: scaled(FIGMA.dimensions.inputHeight) - scaledSpacing(32) },
+                        !selectedOperator && { color: FIGMA.colors.placeholder },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {operatorDisplayName}
+                    </Text>
+                    <Ionicons
+                      name="chevron-down"
+                      size={scaled(20)}
+                      color={FIGMA.colors.editLink}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Consumer Number Input */}
+                <View>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.label}>
+                      Enter {selectedOperator?.operatorName ?? 'Account'} Number
+                    </Text>
+                    {errors.consumerNumber ? (
+                      <Text style={styles.errorHint}>{errors.consumerNumber}</Text>
+                    ) : (
+                      <TouchableOpacity>
+                        <Text style={styles.editLink}>edit</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={[styles.inputContainer, errors.consumerNumber && styles.inputError]}>
                     <RNTextInput
-                      style={styles.input}
-                      value={bescomNumber}
-                      onChangeText={(text) => setBescomNumber(text.replace(/\D/g, ''))}
+                      style={[styles.input, { flex: 1 }]}
+                      value={consumerNumber}
+                      onChangeText={handleConsumerNumberChange}
                       placeholder="e.g. 1234567890"
                       placeholderTextColor={FIGMA.colors.placeholder}
                       keyboardType="number-pad"
+                      editable={!verifyUtility.isPending}
                     />
                   </View>
                 </View>
@@ -218,20 +304,70 @@ export default function AddUtilityScreen() {
               <View style={styles.buttonSection}>
                 {/* Submit Button */}
                 <TouchableOpacity
-                  style={[styles.button, isFormValid && styles.buttonActive]}
+                  style={[styles.button, isFormValid && !verifyUtility.isPending && styles.buttonActive]}
                   onPress={handleSubmit}
                   disabled={!isFormValid || verifyUtility.isPending}
                 >
-                  <Text style={[styles.buttonText, isFormValid && styles.buttonTextActive]}>
-                    Proceed
-                  </Text>
+                  {verifyUtility.isPending ? (
+                    <ActivityIndicator size="small" color={FIGMA.colors.buttonTextActive} />
+                  ) : (
+                    <Text style={[styles.buttonText, isFormValid && styles.buttonTextActive]}>
+                      Proceed
+                    </Text>
+                  )}
                 </TouchableOpacity>
 
                 {/* Skip Button */}
-                <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+                <TouchableOpacity onPress={handleSkip} style={styles.skipButton} disabled={verifyUtility.isPending}>
                   <Text style={styles.skipText}>Skip</Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Operator Picker Modal */}
+              <Modal
+                visible={showOperatorPicker}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowOperatorPicker(false)}
+              >
+                <TouchableOpacity
+                  style={styles.modalOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShowOperatorPicker(false)}
+                >
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <Text style={styles.modalTitle}>Select Operator</Text>
+                      <TouchableOpacity onPress={() => setShowOperatorPicker(false)}>
+                        <Ionicons name="close" size={scaled(24)} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                    {operatorsLoading ? (
+                      <View style={styles.modalLoading}>
+                        <ActivityIndicator size="large" color={FIGMA.colors.accent} />
+                      </View>
+                    ) : (
+                      <FlatList
+                        data={operators ?? []}
+                        keyExtractor={(item) => item.operatorCode}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            style={[
+                              styles.operatorItem,
+                              selectedOperator?.operatorCode === item.operatorCode && styles.operatorItemSelected,
+                            ]}
+                            onPress={() => handleSelectOperator(item)}
+                          >
+                            <Text style={styles.operatorName}>{item.operatorName}</Text>
+                            {item.state && <Text style={styles.operatorState}>{item.state}</Text>}
+                          </TouchableOpacity>
+                        )}
+                        showsVerticalScrollIndicator={false}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </Modal>
             </View>
           </View>
         </ScrollView>
@@ -396,5 +532,82 @@ const styles = StyleSheet.create({
     fontSize: scaledFont(14),
     lineHeight: scaledFont(20),
     color: FIGMA.colors.skipText, // #FFFFFF
+  },
+  // Error hint text for inline label errors
+  errorHint: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: scaledFont(14),
+    lineHeight: scaledFont(20),
+    color: '#E5484D',
+    textAlign: 'right' as const,
+  },
+  // Error banner
+  errorBanner: {
+    backgroundColor: 'rgba(229, 72, 77, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(229, 72, 77, 0.3)',
+    borderRadius: scaled(8),
+    padding: scaled(12),
+  },
+  errorBannerText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: scaledFont(13),
+    lineHeight: scaledFont(18),
+    color: '#E5484D',
+    textAlign: 'left' as const,
+  },
+  // Operator picker modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1A1A1A',
+    borderTopLeftRadius: scaled(16),
+    borderTopRightRadius: scaled(16),
+    maxHeight: '60%',
+    paddingBottom: scaledSpacing(32),
+  },
+  modalHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: scaledSpacing(24),
+    paddingVertical: scaledSpacing(16),
+    borderBottomWidth: 1,
+    borderBottomColor: '#333333',
+  },
+  modalTitle: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: scaledFont(18),
+    lineHeight: scaledFont(24),
+    color: '#FFFFFF',
+  },
+  modalLoading: {
+    paddingVertical: scaledSpacing(40),
+    alignItems: 'center' as const,
+  },
+  operatorItem: {
+    paddingHorizontal: scaledSpacing(24),
+    paddingVertical: scaledSpacing(14),
+    borderBottomWidth: 1,
+    borderBottomColor: '#262626',
+  },
+  operatorItemSelected: {
+    backgroundColor: 'rgba(255, 154, 109, 0.08)',
+  },
+  operatorName: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: scaledFont(16),
+    lineHeight: scaledFont(22),
+    color: '#DDDDDD',
+  },
+  operatorState: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: scaledFont(12),
+    lineHeight: scaledFont(16),
+    color: '#878787',
+    marginTop: scaledSpacing(2),
   },
 });

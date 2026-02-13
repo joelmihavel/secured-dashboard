@@ -170,7 +170,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, tenancy } = useDashboard();
   const { signOut } = useAuth();
-  const { data: paymentHistory } = usePaymentHistory();
+  const { data: paymentHistoryData } = usePaymentHistory();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -218,23 +218,46 @@ export default function ProfileScreen() {
     // TODO: Show delete account confirmation
   }, []);
 
-  // Mock payment history data for chart - 12 months per Figma
+  // Derive chart data from real payment history.
+  // Maps each month's payment status to chart bars.
+  // Falls back to all-unpaid when there's no payment history yet.
+  const MONTH_LABELS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
   const chartData = useMemo(() => {
-    return [
-      { month: 'JAN', status: 'ontime' as const },
-      { month: 'FEB', status: 'late' as const },
-      { month: 'MAR', status: 'unpaid' as const },
-      { month: 'APR', status: 'unpaid' as const },
-      { month: 'MAY', status: 'unpaid' as const },
-      { month: 'JUN', status: 'unpaid' as const },
-      { month: 'JUL', status: 'unpaid' as const },
-      { month: 'AUG', status: 'unpaid' as const },
-      { month: 'SEP', status: 'unpaid' as const },
-      { month: 'OCT', status: 'unpaid' as const },
-      { month: 'NOV', status: 'unpaid' as const },
-      { month: 'DEC', status: 'unpaid' as const },
-    ];
-  }, []);
+    const payments = paymentHistoryData?.payments ?? [];
+
+    if (payments.length === 0) {
+      // No data yet -- show all unpaid
+      return MONTH_LABELS.map(month => ({ month, status: 'unpaid' as const }));
+    }
+
+    // Build a map of month index -> payment status
+    const monthStatusMap = new Map<number, 'ontime' | 'late' | 'unpaid'>();
+    for (const payment of payments) {
+      if (!payment.rent_month) continue;
+      // rent_month format is "YYYY-MM" from edge function
+      const parts = payment.rent_month.split('-');
+      const monthIndex = parseInt(parts[1], 10) - 1; // 0-based
+      if (monthIndex < 0 || monthIndex > 11) continue;
+
+      if (payment.status === 'success') {
+        // Determine if paid on time (by day 7 of the month) or late
+        const paidDate = payment.paid_at ? new Date(payment.paid_at) : null;
+        const isLate = paidDate ? paidDate.getDate() > 7 : false;
+        monthStatusMap.set(monthIndex, isLate ? 'late' : 'ontime');
+      } else if (payment.status === 'failed') {
+        // Only set unpaid if not already marked as success
+        if (!monthStatusMap.has(monthIndex)) {
+          monthStatusMap.set(monthIndex, 'unpaid');
+        }
+      }
+    }
+
+    return MONTH_LABELS.map((month, index) => ({
+      month,
+      status: monthStatusMap.get(index) ?? 'unpaid',
+    }));
+  }, [paymentHistoryData]);
 
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User';
   const joinDate = '15th sept 9:40am'; // Mock date - actual implementation would use user metadata

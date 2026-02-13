@@ -62,6 +62,21 @@ export function scaledHeight(value: number): number {
   return PixelRatio.roundToNearestPixel(value * heightScale);
 }
 
+// ---------------------------------------------------------------------------
+// Shorthand aliases — use these in components for concise scaled styles
+// ---------------------------------------------------------------------------
+
+/** Scale a Figma dimension/spacing value by screen width. Most common scaler. */
+export const s = (value: number): number =>
+  PixelRatio.roundToNearestPixel(value * widthScale);
+
+/** Scale a font size (clamped ±15% so text stays readable on all devices). */
+export const sf = scaledFont;
+
+/** Scale a value by screen height (use for vertical-only dimensions). */
+export const sv = (value: number): number =>
+  PixelRatio.roundToNearestPixel(value * heightScale);
+
 // Device size categories
 export const isSmallDevice = SCREEN_WIDTH < 375;
 export const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH <= 414;

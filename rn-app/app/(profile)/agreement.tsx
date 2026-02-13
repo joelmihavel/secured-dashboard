@@ -165,18 +165,40 @@ export default function ProfileAgreementScreen() {
     router.push('/(payment)/initiate' as never);
   }, [router]);
 
-  // Mock data - would come from tenancy in production
-  const rentData = useMemo(() => ({
-    dueIn: 10,
-    setupMessage: 'Complete setup to unlock 1% cashback',
-    cashbackApplied: 350,
-    baseRent: 30000,
-    maintenance: 2500,
-    totalRent: 32500,
-    cashback: 325,
-    payableRent: 32175,
-    payByDate: '7 Dec',
-  }), []);
+  // Derive rent data from dashboard tenancy and cashback, with sensible defaults
+  const rentData = useMemo(() => {
+    const monthlyRent = tenancy?.monthly_rent ?? 30000;
+    // Maintenance is not in the dashboard API; default to 0
+    const maintenance = 0;
+    const totalRent = monthlyRent + maintenance;
+    const cashbackBalance = 0; // Cashback applied comes from payment initiation, not profile
+    const cashback = cashbackBalance;
+    const payableRent = totalRent - cashback;
+
+    // Calculate days until due
+    const now = new Date();
+    const dueDay = tenancy?.rent_due_day ?? 5;
+    const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+    if (dueDate < now) {
+      dueDate.setMonth(dueDate.getMonth() + 1);
+    }
+    const daysUntilDue = Math.max(0, Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Format pay-by date
+    const payByDate = `${dueDay} ${dueDate.toLocaleDateString('en-IN', { month: 'short' })}`;
+
+    return {
+      dueIn: daysUntilDue,
+      setupMessage: 'Complete setup to unlock 1% cashback',
+      cashbackApplied: cashback,
+      baseRent: monthlyRent,
+      maintenance,
+      totalRent,
+      cashback,
+      payableRent,
+      payByDate,
+    };
+  }, [tenancy]);
 
   return (
     <Screen testID="profile-agreement-screen" padded={false}>

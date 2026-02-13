@@ -1,0 +1,11 @@
+appId: com.flent.secured
+---
+- launchApp
+- waitForAnimationToEnd
+- tapOn: "Search screens, routes, or Figma nodes..."
+- inputText: "waitlist"
+- hideKeyboard
+- waitForAnimationToEnd
+- tapOn:
+    text: "Waitlist"
+    index: 1

@@ -1,42 +1,222 @@
 /**
  * Profile Hooks
  *
- * React Query hooks for profile operations.
+ * React Query hooks for profile operations:
+ * - Update profile (name, email, avatar)
+ * - Avatar upload (presigned URL flow)
+ * - Saved payment methods (via profile service)
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import {
+  updateProfile,
+  requestAvatarUpload,
+  uploadAvatarFile,
+  getSavedPaymentMethods,
+  type UpdateProfileRequest,
+  type ProfileData,
+  type AvatarUploadData,
+  type PaymentMethodsData,
+  type SavedPaymentMethod,
+  type ProfileError,
+} from '../services/api/profile';
 import { dashboardKeys } from './useDashboard';
-import { callEdgeFunction } from '../services/supabase';
+import { paymentKeys } from './usePayments';
+
+// ==============================================
+// QUERY KEYS
+// ==============================================
+
+export const profileKeys = {
+  all: ['profile'] as const,
+  paymentMethods: () => [...profileKeys.all, 'payment-methods'] as const,
+};
 
 // ==============================================
 // UPDATE PROFILE MUTATION
 // ==============================================
 
-interface UpdateProfileRequest {
-  name?: string;
-  email?: string;
-}
-
+/**
+ * Hook to update user profile.
+ *
+ * Maps RN UI fields to edge function expected shape:
+ * - fullName -> full_name (edge function also auto-splits into first/last)
+ * - firstName -> first_name
+ * - lastName -> last_name
+ * - email -> email
+ * - avatarUrl -> avatar_url
+ *
+ * @returns Mutation with { mutate, isPending, error, data }
+ */
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (request: UpdateProfileRequest) => {
-      const { data, error } = await callEdgeFunction<{ success: boolean }>(
-        'update-profile',
-        request,
-        true
-      );
+    mutationFn: async (request: UpdateProfileRequest): Promise<ProfileData> => {
+      const { data, error } = await updateProfile(request);
 
       if (error) {
-        throw new Error(error);
+        throw new Error(error.message);
       }
 
-      return data;
+      return data!;
     },
     onSuccess: () => {
-      // Invalidate dashboard to refresh user data
+      // Invalidate dashboard to refresh user data across the app
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
+}
+
+// ==============================================
+// AVATAR UPLOAD MUTATION
+// ==============================================
+
+export interface UploadAvatarParams {
+  /** Local file URI from ImagePicker */
+  fileUri: string;
+  /** MIME type: 'image/jpeg', 'image/png', 'image/heic', 'image/heif' */
+  contentType: string;
+}
+
+/**
+ * Hook to upload an avatar image.
+ *
+ * Implements the full presigned URL flow:
+ * 1. Calls upload-avatar edge function to get a presigned upload URL
+ * 2. PUTs the image blob to the presigned URL
+ * 3. Calls update-profile to save the new avatar_url
+ *
+ * @returns Mutation with { mutate, isPending, error, data }
+ *
+ * @example
+ * const { mutateAsync: uploadAvatar, isPending } = useUploadAvatar();
+ *
+ * const handlePick = async () => {
+ *   const result = await ImagePicker.launchImageLibraryAsync({ ... });
+ *   if (!result.canceled) {
+ *     const asset = result.assets[0];
+ *     const contentType = asset.mimeType ?? 'image/jpeg';
+ *     await uploadAvatar({ fileUri: asset.uri, contentType });
+ *   }
+ * };
+ */
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ fileUri, contentType }: UploadAvatarParams): Promise<ProfileData> => {
+      // Step 1: Get presigned upload URL
+      const { data: uploadData, error: uploadError } = await requestAvatarUpload(contentType);
+      if (uploadError || !uploadData) {
+        throw new Error(uploadError?.message ?? 'Failed to get upload URL');
+      }
+
+      // Step 2: Upload file to presigned URL
+      const { success, error: fileError } = await uploadAvatarFile(
+        uploadData.uploadUrl,
+        fileUri,
+        contentType
+      );
+      if (!success) {
+        throw new Error(fileError ?? 'Failed to upload avatar file');
+      }
+
+      // Step 3: Update profile with the new avatar URL
+      const { data: profileData, error: profileError } = await updateProfile({
+        avatarUrl: uploadData.avatarUrl,
+      });
+      if (profileError || !profileData) {
+        throw new Error(profileError?.message ?? 'Failed to save avatar URL');
+      }
+
+      return profileData;
+    },
+    onSuccess: () => {
+      // Invalidate dashboard to reflect new avatar everywhere
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+    },
+  });
+}
+
+// ==============================================
+// SAVED PAYMENT METHODS QUERY (Profile context)
+// ==============================================
+
+/**
+ * Hook to fetch saved payment methods for the profile screen.
+ *
+ * Uses the profile service which maps edge function response to the
+ * proper RN types (isPrimary, grouped by type, etc.)
+ *
+ * Note: This is separate from usePaymentMethods in usePayments.ts which
+ * uses the payments service. Both call the same edge function but the
+ * profile version returns richer data (grouped methods, primary ID).
+ */
+export function useProfilePaymentMethods() {
+  return useQuery({
+    queryKey: profileKeys.paymentMethods(),
+    queryFn: async () => {
+      const { data, error } = await getSavedPaymentMethods();
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data!;
+    },
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+}
+
+// ==============================================
+// COMBINED PROFILE HOOK
+// ==============================================
+
+/**
+ * Combined hook for profile operations.
+ *
+ * Provides convenient access to all profile-related queries and mutations
+ * in a single hook.
+ */
+export function useProfile() {
+  const updateProfileMutation = useUpdateProfile();
+  const uploadAvatarMutation = useUploadAvatar();
+  const paymentMethodsQuery = useProfilePaymentMethods();
+  const queryClient = useQueryClient();
+
+  const refreshAll = useCallback(() => {
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: profileKeys.all }),
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all }),
+    ]);
+  }, [queryClient]);
+
+  return {
+    // Update profile
+    updateProfile: updateProfileMutation.mutate,
+    updateProfileAsync: updateProfileMutation.mutateAsync,
+    isUpdating: updateProfileMutation.isPending,
+    updateError: updateProfileMutation.error,
+    updateSuccess: updateProfileMutation.isSuccess,
+    updatedProfile: updateProfileMutation.data,
+    resetUpdate: updateProfileMutation.reset,
+
+    // Avatar upload
+    uploadAvatar: uploadAvatarMutation.mutate,
+    uploadAvatarAsync: uploadAvatarMutation.mutateAsync,
+    isUploadingAvatar: uploadAvatarMutation.isPending,
+    uploadError: uploadAvatarMutation.error,
+    uploadSuccess: uploadAvatarMutation.isSuccess,
+    resetUpload: uploadAvatarMutation.reset,
+
+    // Payment methods
+    paymentMethods: paymentMethodsQuery.data ?? null,
+    isLoadingMethods: paymentMethodsQuery.isLoading,
+    methodsError: paymentMethodsQuery.error,
+    refetchMethods: paymentMethodsQuery.refetch,
+
+    // Utilities
+    refreshAll,
+  };
 }

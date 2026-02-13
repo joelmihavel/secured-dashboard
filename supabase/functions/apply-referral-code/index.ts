@@ -11,9 +11,9 @@
  * @date 2026-01-29
  */
 
-import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createServiceClient, createAuthenticatedClient } from "../_shared/supabase.ts";
-import { handleCors, jsonResponse } from "../_shared/cors.ts";
+import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
 import { validateSchema } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
@@ -60,8 +60,10 @@ serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  const headers = getCorsHeaders(req);
+
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return jsonResponse({ error: true, message: "Method not allowed", code: "METHOD_NOT_ALLOWED" }, 405, headers);
   }
 
   const supabase = createServiceClient();
@@ -129,7 +131,7 @@ serve(async (req: Request) => {
         error: true,
         message: result?.error_message || "Invalid referral code",
         code: "INVALID_CODE",
-      }, 400);
+      }, 400, headers);
     }
 
     // Get the referral code details for audit
@@ -199,7 +201,7 @@ serve(async (req: Request) => {
         },
         message: rewardMessage,
       },
-    });
+    }, 200, headers);
   } catch (error) {
     // Log failure
     if (audit && userId) {

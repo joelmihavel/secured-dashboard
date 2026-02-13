@@ -2,13 +2,18 @@
  * Waitlist API Service
  *
  * Handles waitlist status and referral code operations via Supabase edge functions.
- * Implements the same patterns as the iOS WaitlistViewModel.
+ * Maps edge function responses to the shapes expected by the RN app UI layer.
+ *
+ * Edge function contracts:
+ * - get-waitlist-status: GET, returns V1-compat shape with has_entry, waitlist_entry, etc.
+ * - apply-referral-code: POST, returns { success, data: { code, reward_type, rewards, message } }
+ * - validate-referral-code: POST, returns { success, data: { is_valid, code, message, ... } }
  */
 
 import { callEdgeFunction } from '../supabase';
 
 // ==============================================
-// TYPES
+// TYPES — RN App UI Contract
 // ==============================================
 
 export type WaitlistState =
@@ -29,11 +34,6 @@ export interface WaitlistStatusData {
   nextApplicationCountdown: number;
 }
 
-export interface WaitlistStatusResponse {
-  success: boolean;
-  data: WaitlistStatusData;
-}
-
 export interface ApplyReferralRequest {
   code: string;
 }
@@ -43,6 +43,13 @@ export interface ApplyReferralResponse {
   data: {
     valid: boolean;
     message: string;
+    code: string;
+    rewardType: string | null;
+    rewards: {
+      cashbackPaise: number;
+      cashbackRupees: string;
+      priorityBoost: number;
+    };
     newPosition?: number;
     priorityAccess?: boolean;
   };
@@ -53,6 +60,15 @@ export interface ValidateReferralResponse {
   data: {
     valid: boolean;
     message: string;
+    code?: string;
+    referredBy?: string | null;
+    rewardType?: string | null;
+    rewardDetails?: {
+      cashbackPaise: number;
+      cashbackRupees: string;
+      priorityBoost: number;
+    };
+    alreadyApplied?: boolean;
   };
 }
 
@@ -61,6 +77,7 @@ export type WaitlistErrorCode =
   | 'INVALID_REFERRAL'
   | 'REFERRAL_EXPIRED'
   | 'REFERRAL_ALREADY_USED'
+  | 'ALREADY_APPLIED'
   | 'NETWORK_ERROR'
   | 'UNKNOWN_ERROR';
 
@@ -70,22 +87,196 @@ export interface WaitlistError {
 }
 
 // ==============================================
+// TYPES — Edge Function Raw Responses
+// ==============================================
+
+/** Raw response from get-waitlist-status edge function (V1 compat shape) */
+interface RawWaitlistStatusResponse {
+  success: boolean;
+  has_entry: boolean;
+  contract_status?: string;
+  extraction_status?: string;
+  requires_manual_review?: boolean;
+  manual_review_reason?: string | null;
+  fields_extracted?: number;
+  total_fields?: number;
+  confidence_score?: number;
+  waitlist_position?: number;
+  admin_review?: string;
+  waitlist_entry?: {
+    id: string;
+    status: string;
+    extraction_status: string;
+    contract_status: string;
+    requires_manual_review: boolean;
+    manual_review_reason: string | null;
+    waitlist_position: number | null;
+    document_uploaded: boolean;
+    admin_review: string;
+    created_at: string;
+  };
+  extracted_info?: {
+    property_name: string;
+    monthly_rent: string;
+    security_deposit: string;
+    rent_duration: string;
+    lease_end_date: string;
+    tenants: string[];
+    landlords: string[];
+    confidence_score: number;
+    certificate_no: string | null;
+  };
+  rewards?: {
+    pending_total: number;
+    credited_total: number;
+  };
+}
+
+/** Raw response from apply-referral-code edge function */
+interface RawApplyReferralResponse {
+  success: boolean;
+  data?: {
+    code: string;
+    reward_type: string | null;
+    rewards: {
+      cashback_paise: number;
+      cashback_rupees: string;
+      priority_boost: number;
+    };
+    message: string;
+  };
+  // Error shape (when success: false)
+  error?: boolean;
+  message?: string;
+  code?: string;
+}
+
+/** Raw response from validate-referral-code edge function */
+interface RawValidateReferralResponse {
+  success: boolean;
+  data?: {
+    is_valid: boolean;
+    code?: string;
+    referred_by?: string | null;
+    reward_type?: string | null;
+    reward_details?: {
+      cashback_paise: number;
+      cashback_rupees: string;
+      priority_boost: number;
+    };
+    message?: string;
+    error_message?: string;
+    already_applied?: boolean;
+  };
+}
+
+// ==============================================
+// MAPPING FUNCTIONS
+// ==============================================
+
+/**
+ * Maps the raw V1-compat edge function response to the RN app's WaitlistStatusData shape.
+ *
+ * Derivation logic:
+ * - state: derived from admin_review + extraction_status
+ * - position: from waitlist_position
+ * - estimatedWaitDays: heuristic based on position
+ * - submissionDate: from waitlist_entry.created_at
+ */
+function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistStatusData {
+  // No entry means user hasn't joined waitlist yet — treat as pending
+  if (!raw.has_entry) {
+    return {
+      state: 'pending',
+      position: null,
+      estimatedWaitDays: null,
+      submissionDate: null,
+      currentOnboarded: 0,
+      totalMemberSlots: 150,
+      estimatedReviewTime: 'Approximately 24 hrs',
+      rejectionReasons: [],
+      nextApplicationCountdown: 0,
+    };
+  }
+
+  // Derive state from admin_review field
+  let state: WaitlistState = 'pending';
+  const adminReview = raw.admin_review ?? raw.waitlist_entry?.admin_review;
+  const extractionStatus = raw.extraction_status ?? raw.waitlist_entry?.extraction_status;
+
+  if (adminReview === 'approved') {
+    state = 'approved';
+  } else if (adminReview === 'rejected') {
+    state = 'rejected';
+  } else if (adminReview === 'in_progress' || extractionStatus === 'manual_review') {
+    state = 'pending_long';
+  } else {
+    state = 'pending';
+  }
+
+  // Derive position
+  const position = raw.waitlist_position ?? raw.waitlist_entry?.waitlist_position ?? null;
+
+  // Derive estimated wait days from position (heuristic: ~1 day per 50 positions)
+  const estimatedWaitDays = position ? Math.max(1, Math.ceil(position / 50)) : null;
+
+  // Format submission date
+  const createdAt = raw.waitlist_entry?.created_at;
+  let submissionDate: string | null = null;
+  if (createdAt) {
+    const d = new Date(createdAt);
+    submissionDate = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  // Build rejection reasons if rejected
+  const rejectionReasons: string[] = [];
+  if (state === 'rejected') {
+    if (raw.requires_manual_review && raw.manual_review_reason) {
+      rejectionReasons.push(raw.manual_review_reason);
+    }
+    if (extractionStatus === 'failed') {
+      rejectionReasons.push('Document processing failed. Please re-upload.');
+    }
+  }
+
+  // Estimated review time
+  let estimatedReviewTime = 'Approximately 24 hrs';
+  if (state === 'pending_long') {
+    estimatedReviewTime = 'Approximately 24-48 hrs';
+  }
+
+  return {
+    state,
+    position,
+    estimatedWaitDays,
+    submissionDate,
+    currentOnboarded: 0, // Not tracked in V2 backend
+    totalMemberSlots: 150, // Default capacity
+    estimatedReviewTime,
+    rejectionReasons,
+    nextApplicationCountdown: state === 'rejected' ? 86400 : 0, // 24 hrs if rejected
+  };
+}
+
+// ==============================================
 // API FUNCTIONS
 // ==============================================
 
 /**
  * Get current waitlist status for the authenticated user
  *
- * @returns Promise with waitlist status data or error
+ * Calls the get-waitlist-status edge function (GET) and maps the V1-compat
+ * response to the WaitlistStatusData shape expected by the RN UI.
  */
 export async function getWaitlistStatus(): Promise<{
   data: WaitlistStatusData | null;
   error: WaitlistError | null;
 }> {
-  const { data, error } = await callEdgeFunction<WaitlistStatusResponse>(
+  const { data, error } = await callEdgeFunction<RawWaitlistStatusResponse>(
     'get-waitlist-status',
     {},
-    true // requireAuth
+    true, // requireAuth
+    'GET'
   );
 
   if (error) {
@@ -102,29 +293,39 @@ export async function getWaitlistStatus(): Promise<{
     };
   }
 
-  return { data: data.data, error: null };
+  // Map the raw V1 response to the RN app's expected shape
+  const mapped = mapRawToWaitlistStatusData(data);
+  return { data: mapped, error: null };
 }
 
 /**
  * Apply a referral code to get priority access
  *
- * @param code - 4-character referral code
+ * @param code - Alphanumeric referral code (4-10 characters)
  * @returns Promise with referral result or error
  */
 export async function applyReferralCode(
   code: string
 ): Promise<{ data: ApplyReferralResponse['data'] | null; error: WaitlistError | null }> {
-  // Validate code format
-  if (!code || code.length !== 4) {
+  // Validate code format (alphanumeric, 4-10 characters)
+  const trimmed = code.trim().toUpperCase();
+  if (!trimmed || trimmed.length < 4 || trimmed.length > 10) {
     return {
       data: null,
-      error: { code: 'INVALID_REFERRAL', message: 'Referral code must be 4 characters' },
+      error: { code: 'INVALID_REFERRAL', message: 'Referral code must be 4-10 characters' },
     };
   }
 
-  const { data, error } = await callEdgeFunction<ApplyReferralResponse>(
+  if (!/^[A-Z0-9]+$/.test(trimmed)) {
+    return {
+      data: null,
+      error: { code: 'INVALID_REFERRAL', message: 'Referral code must be alphanumeric' },
+    };
+  }
+
+  const { data, error } = await callEdgeFunction<RawApplyReferralResponse>(
     'apply-referral-code',
-    { code: code.toUpperCase() },
+    { code: trimmed },
     true // requireAuth
   );
 
@@ -135,44 +336,71 @@ export async function applyReferralCode(
     };
   }
 
+  // Handle backend error response (success: false with message)
   if (!data?.success) {
+    const errorMessage = data?.message ?? 'Failed to apply referral code';
+    const errorCode = data?.code;
     return {
       data: null,
-      error: { code: 'UNKNOWN_ERROR', message: 'Failed to apply referral code' },
+      error: mapWaitlistErrorFromCode(errorCode, errorMessage),
     };
   }
 
-  if (!data.data.valid) {
+  // Map successful response
+  const rawData = data.data;
+  if (!rawData) {
     return {
       data: null,
-      error: { code: 'INVALID_REFERRAL', message: data.data.message },
+      error: { code: 'UNKNOWN_ERROR', message: 'Invalid response from server' },
     };
   }
 
-  return { data: data.data, error: null };
+  return {
+    data: {
+      valid: true,
+      message: rawData.message,
+      code: rawData.code,
+      rewardType: rawData.reward_type,
+      rewards: {
+        cashbackPaise: rawData.rewards.cashback_paise,
+        cashbackRupees: rawData.rewards.cashback_rupees,
+        priorityBoost: rawData.rewards.priority_boost,
+      },
+      priorityAccess: (rawData.rewards.priority_boost ?? 0) > 0,
+    },
+    error: null,
+  };
 }
 
 /**
  * Validate a referral code without applying it
  *
- * @param code - 4-character referral code
+ * @param code - Alphanumeric referral code (4-10 characters)
  * @returns Promise with validation result or error
  */
 export async function validateReferralCode(
   code: string
 ): Promise<{ data: ValidateReferralResponse['data'] | null; error: WaitlistError | null }> {
   // Validate code format
-  if (!code || code.length !== 4) {
+  const trimmed = code.trim().toUpperCase();
+  if (!trimmed || trimmed.length < 4 || trimmed.length > 10) {
     return {
       data: null,
-      error: { code: 'INVALID_REFERRAL', message: 'Referral code must be 4 characters' },
+      error: { code: 'INVALID_REFERRAL', message: 'Referral code must be 4-10 characters' },
     };
   }
 
-  const { data, error } = await callEdgeFunction<ValidateReferralResponse>(
+  if (!/^[A-Z0-9]+$/.test(trimmed)) {
+    return {
+      data: null,
+      error: { code: 'INVALID_REFERRAL', message: 'Referral code must be alphanumeric' },
+    };
+  }
+
+  const { data, error } = await callEdgeFunction<RawValidateReferralResponse>(
     'validate-referral-code',
-    { code: code.toUpperCase() },
-    false // no auth required for validation only
+    { code: trimmed },
+    true // requireAuth — edge function requires it
   );
 
   if (error) {
@@ -182,7 +410,36 @@ export async function validateReferralCode(
     };
   }
 
-  return { data: data?.data ?? null, error: null };
+  if (!data?.success || !data.data) {
+    return {
+      data: null,
+      error: { code: 'UNKNOWN_ERROR', message: 'Failed to validate referral code' },
+    };
+  }
+
+  const rawData = data.data;
+
+  // Map is_valid -> valid, error_message -> message
+  return {
+    data: {
+      valid: rawData.is_valid,
+      message: rawData.is_valid
+        ? (rawData.message ?? 'Valid referral code')
+        : (rawData.error_message ?? 'Invalid referral code'),
+      code: rawData.code,
+      referredBy: rawData.referred_by,
+      rewardType: rawData.reward_type,
+      rewardDetails: rawData.reward_details
+        ? {
+            cashbackPaise: rawData.reward_details.cashback_paise,
+            cashbackRupees: rawData.reward_details.cashback_rupees,
+            priorityBoost: rawData.reward_details.priority_boost,
+          }
+        : undefined,
+      alreadyApplied: rawData.already_applied,
+    },
+    error: null,
+  };
 }
 
 // ==============================================
@@ -192,8 +449,12 @@ export async function validateReferralCode(
 function mapWaitlistError(errorMessage: string): WaitlistError {
   const lowerMessage = errorMessage.toLowerCase();
 
-  if (lowerMessage.includes('not authenticated') || lowerMessage.includes('unauthorized')) {
+  if (lowerMessage.includes('not authenticated') || lowerMessage.includes('unauthorized') || lowerMessage.includes('auth')) {
     return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+  }
+
+  if (lowerMessage.includes('already applied') || lowerMessage.includes('already_applied')) {
+    return { code: 'ALREADY_APPLIED', message: 'You have already applied a referral code' };
   }
 
   if (lowerMessage.includes('invalid') && lowerMessage.includes('referral')) {
@@ -213,6 +474,19 @@ function mapWaitlistError(errorMessage: string): WaitlistError {
   }
 
   return { code: 'UNKNOWN_ERROR', message: errorMessage };
+}
+
+function mapWaitlistErrorFromCode(code: string | undefined, message: string): WaitlistError {
+  switch (code) {
+    case 'ALREADY_APPLIED':
+      return { code: 'ALREADY_APPLIED', message };
+    case 'INVALID_CODE':
+      return { code: 'INVALID_REFERRAL', message };
+    case 'AUTH_ERROR':
+      return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+    default:
+      return mapWaitlistError(message);
+  }
 }
 
 // ==============================================

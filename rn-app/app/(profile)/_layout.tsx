@@ -1,14 +1,26 @@
 /**
  * Profile Flow Layout
- * Stack navigation for profile screens
+ * Protected — requires authentication
  */
 
 import React from 'react';
 import { Stack } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
 
 import { colors } from '@/src/theme';
+import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 export default function ProfileLayout() {
+  const { isReady } = useRequireAuth();
+
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.brand[500]} />
+      </View>
+    );
+  }
+
   return (
     <Stack
       screenOptions={{
@@ -20,6 +32,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="edit" />
       <Stack.Screen name="payment-methods" />
+      <Stack.Screen name="agreement" />
       <Stack.Screen name="help" />
       <Stack.Screen name="about" />
       <Stack.Screen name="notifications" />

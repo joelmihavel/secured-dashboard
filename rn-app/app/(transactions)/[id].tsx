@@ -156,13 +156,14 @@ export default function TransactionDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { data: transactions, isLoading } = usePaymentHistory();
-  const generateReceipt = useGenerateReceipt();
+  const { data: historyData, isLoading } = usePaymentHistory();
+  const generateReceiptMutation = useGenerateReceipt();
 
   const transaction = useMemo(() => {
-    if (!transactions || !id) return null;
-    return transactions.find((t) => t.id === id) ?? null;
-  }, [transactions, id]);
+    const payments = historyData?.payments;
+    if (!payments || !id) return null;
+    return payments.find((t) => t.id === id) ?? null;
+  }, [historyData, id]);
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -170,29 +171,35 @@ export default function TransactionDetailScreen() {
   }, [router]);
 
   const handleDownloadReceipt = useCallback(async () => {
-    if (!transaction) return;
+    if (!transaction || !transaction.can_download_receipt) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    if (transaction.receipt_url) {
-      await Linking.openURL(transaction.receipt_url);
-    } else {
-      generateReceipt.mutate(transaction.id, {
-        onSuccess: (data) => {
-          if (data.receipt_url) {
-            Linking.openURL(data.receipt_url);
-          }
-        },
-      });
-    }
-  }, [transaction, generateReceipt]);
+    // Generate receipt via edge function -- returns ReceiptData
+    generateReceiptMutation.mutate(transaction.id, {
+      onSuccess: (receiptData) => {
+        // Share the receipt details since edge function returns structured data
+        const message =
+          `Receipt #${receiptData.receiptNumber}\n` +
+          `Amount: ${formatRupees(receiptData.payment.amount)}\n` +
+          `Date: ${formatDate(receiptData.payment.paidAt)}\n` +
+          `Status: ${receiptData.payment.status.toUpperCase()}\n\n` +
+          `Paid via Flent Secured`;
+
+        Share.share({ message, title: 'Payment Receipt' }).catch(() => {
+          // User cancelled share
+        });
+      },
+    });
+  }, [transaction, generateReceiptMutation]);
 
   const handleShareReceipt = useCallback(async () => {
     if (!transaction) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const amount = formatAmount(transaction.amount_paise);
+    // Use rupee amounts (edge function already converts from paise)
+    const amount = formatRupees(transaction.amount);
     const date = formatDate(transaction.created_at);
     const month = formatRentMonth(transaction.rent_month);
 
@@ -228,13 +235,12 @@ export default function TransactionDetailScreen() {
   }
 
   const isPaid = transaction.status === 'success';
-  const formattedAmount = formatAmount(transaction.amount_paise);
+  const formattedAmount = formatRupees(transaction.amount);
   const formattedDate = formatDate(transaction.created_at);
   const paymentMethod = formatPaymentMethod(transaction.payment_method);
   const transactionId = `SEC${transaction.id.slice(0, 8).toUpperCase()}`;
-  const totalPayable = formatAmount(
-    transaction.amount_paise + transaction.pg_fee_paise - transaction.cashback_applied_paise
-  );
+  // net_amount is already computed by edge function (amount - cashback_applied)
+  const totalPayable = formatRupees(transaction.net_amount + transaction.pg_fee);
 
   return (
     <Screen testID="transaction-detail-screen">
@@ -300,7 +306,7 @@ export default function TransactionDetailScreen() {
           <TouchableOpacity
             style={styles.downloadButton}
             onPress={handleDownloadReceipt}
-            disabled={generateReceipt.isPending}
+            disabled={generateReceiptMutation.isPending}
             accessibilityRole="button"
             accessibilityLabel="Download receipt"
           >
@@ -310,7 +316,7 @@ export default function TransactionDetailScreen() {
               style={styles.downloadButtonGradient}
             >
               <Text style={styles.downloadButtonText}>
-                {generateReceipt.isPending ? 'Generating...' : 'Download Receipt'}
+                {generateReceiptMutation.isPending ? 'Generating...' : 'Download Receipt'}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -353,6 +359,11 @@ function Header({ onBack }: HeaderProps) {
 // Helper functions
 function formatAmount(paise: number): string {
   const rupees = paise / 100;
+  return `₹ ${rupees.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+/** Format a rupee amount (already in rupees, not paise) with currency symbol */
+function formatRupees(rupees: number): string {
   return `₹ ${rupees.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 

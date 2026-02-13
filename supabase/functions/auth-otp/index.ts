@@ -322,11 +322,25 @@ async function handleVerifyOtp(
   const sanitizedPhone = sanitizePhone(phone_number);
   const phoneWithCountryCode = formatPhoneWithCountryCode(phone_number);
 
+  // Debug logging for troubleshooting verify issues
+  console.log("[DEBUG] verify_otp - Raw phone_number:", phone_number);
+  console.log("[DEBUG] verify_otp - sanitizedPhone:", sanitizedPhone);
+  console.log("[DEBUG] verify_otp - phoneWithCountryCode:", phoneWithCountryCode);
+  console.log("[DEBUG] verify_otp - OTP length:", otp.length);
+
   // Call Twilio Verify Check API
   const result = await callTwilioVerifyOtp({
     phone_number: phoneWithCountryCode,
     otp,
   });
+
+  console.log("[DEBUG] verify_otp - Twilio result:", JSON.stringify({
+    status: result.status,
+    valid: result.valid,
+    to: result.to,
+    channel: result.channel,
+    sid: result.sid,
+  }));
 
   if (result.status !== "approved" || !result.valid) {
     // Increment attempt counter
@@ -463,6 +477,26 @@ async function handleVerifyOtp(
     },
   });
 
+  if (sessionError) {
+    console.error("Failed to generate session link:", sessionError);
+    throw new AppError(
+      "Phone verified but failed to create session. Please try signing in again.",
+      "SESSION_GENERATION_FAILED",
+      500
+    );
+  }
+
+  // Extract hashed_token from generateLink response for client-side session exchange
+  const tokenHash = sessionData?.properties?.hashed_token;
+  if (!tokenHash) {
+    console.error("generateLink returned no hashed_token. sessionData:", JSON.stringify(sessionData));
+    throw new AppError(
+      "Phone verified but session token unavailable. Please try signing in again.",
+      "SESSION_TOKEN_MISSING",
+      500
+    );
+  }
+
   // Log success
   await audit.logSuccess(
     AuditActions.AUTH_SUCCESS,
@@ -481,11 +515,10 @@ async function handleVerifyOtp(
     data: {
       user_id: userId,
       is_new_user: !authError?.message?.includes("already been registered"),
+      token_hash: tokenHash,
       consent_verification_id: consentVerificationId,
       consent_status: consentVerificationId ? "CONSENT_GIVEN" : null,
       message: "Phone verified successfully. You are now signed in.",
-      // In production, return a proper access token
-      // For now, client should use Supabase auth with phone
       next_steps: consentVerificationId
         ? ["identity_verification_ready"]
         : ["identity_verification_requires_separate_consent"],
@@ -589,8 +622,12 @@ async function callTwilioVerifyOtp(
 
     const data = await response.json();
 
+    console.log("[DEBUG] Twilio VerificationCheck - HTTP status:", response.status);
+    console.log("[DEBUG] Twilio VerificationCheck - Response:", JSON.stringify(data));
+
     if (!response.ok) {
       console.error("Twilio Verify OTP error:", data);
+      console.error("[DEBUG] Twilio error code:", data.code, "message:", data.message);
 
       // Handle specific error codes
       if (data.code === 60202) {

@@ -4,16 +4,17 @@
  * Validates a referral code without applying it.
  * Returns code details if valid.
  *
- * Endpoint: GET /functions/v1/validate-referral-code?code=XXXXXX
+ * Endpoint: POST /functions/v1/validate-referral-code  (body: { code: "XXXXXX" })
+ *       OR: GET  /functions/v1/validate-referral-code?code=XXXXXX
  * Auth: Required (JWT)
  *
  * @author Backend API Agent
  * @date 2026-01-29
  */
 
-import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createServiceClient, createAuthenticatedClient } from "../_shared/supabase.ts";
-import { handleCors, jsonResponse } from "../_shared/cors.ts";
+import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { ValidationError, handleError } from "../_shared/errors.ts";
 
 // ==============================================
@@ -40,8 +41,11 @@ serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  if (req.method !== "GET") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+  const headers = getCorsHeaders(req);
+
+  // Accept both GET (query params) and POST (JSON body) for mobile client compatibility
+  if (req.method !== "GET" && req.method !== "POST") {
+    return jsonResponse({ error: true, message: "Method not allowed", code: "METHOD_NOT_ALLOWED" }, 405, headers);
   }
 
   const supabase = createServiceClient();
@@ -51,9 +55,21 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     const { userId } = await createAuthenticatedClient(authHeader);
 
-    // Parse query parameters
-    const url = new URL(req.url);
-    const code = url.searchParams.get("code")?.trim().toUpperCase();
+    // Extract code from query params (GET) or body (POST)
+    let code: string | undefined;
+
+    if (req.method === "GET") {
+      const url = new URL(req.url);
+      code = url.searchParams.get("code")?.trim().toUpperCase();
+    } else {
+      // POST - read from JSON body
+      try {
+        const body = await req.json();
+        code = typeof body.code === "string" ? body.code.trim().toUpperCase() : undefined;
+      } catch {
+        throw new ValidationError("Invalid JSON body", { body: "Must be valid JSON" });
+      }
+    }
 
     if (!code) {
       throw new ValidationError("Referral code is required", { code: "Required" });
@@ -67,7 +83,7 @@ serve(async (req: Request) => {
           is_valid: false,
           error_message: "Invalid referral code format",
         },
-      });
+      }, 200, headers);
     }
 
     // Check if user already has a referral applied
@@ -85,7 +101,7 @@ serve(async (req: Request) => {
           error_message: "You have already applied a referral code",
           already_applied: true,
         },
-      });
+      }, 200, headers);
     }
 
     // Call database function to validate
@@ -117,7 +133,7 @@ serve(async (req: Request) => {
             is_valid: false,
             error_message: "You cannot use your own referral code",
           },
-        });
+        }, 200, headers);
       }
     }
 
@@ -128,7 +144,7 @@ serve(async (req: Request) => {
           is_valid: false,
           error_message: validationResult?.error_message || "Invalid referral code",
         },
-      });
+      }, 200, headers);
     }
 
     // Return valid code details
@@ -154,7 +170,7 @@ serve(async (req: Request) => {
           validationResult.priority_boost
         ),
       },
-    });
+    }, 200, headers);
   } catch (error) {
     return handleError(error, req.headers.get("x-request-id") ?? undefined);
   }

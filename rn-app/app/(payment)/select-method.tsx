@@ -20,13 +20,14 @@
  * - Divider: #4D4D4D (black.400)
  */
 
-import React, { useCallback, useState, memo } from 'react';
+import React, { useCallback, useState, useMemo, memo } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,8 +44,10 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { useDashboard } from '@/src/hooks';
+import { useDashboard, useSavedPaymentMethods } from '@/src/hooks';
 import { colors, spacing, radius, gradients } from '@/src/theme';
+import { getCurrentRentMonth } from '@/src/services/api/payments';
+import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
 
 // Exact Figma colors from 41-8901 analysis
 const FIGMA_COLORS = {
@@ -250,6 +253,7 @@ export default function SelectPaymentMethodScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { tenancy, upcomingPayment, cashback } = useDashboard();
+  const { data: savedMethods, isLoading: isLoadingMethods } = useSavedPaymentMethods();
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
 
   // Rent data from dashboard
@@ -274,36 +278,53 @@ export default function SelectPaymentMethodScreen() {
     return `Rent due in ${daysUntilDue} days`;
   };
 
+  // Build subtitle from saved methods for each type
+  const getSavedMethodSubtitle = (type: 'upi' | 'card' | 'netbanking'): string | null => {
+    if (!savedMethods?.length) return null;
+    const methods = savedMethods.filter((m: SavedMethod) => m.type === type);
+    if (methods.length === 0) return null;
+    if (type === 'upi') {
+      return methods.map((m: SavedMethod) => m.vpa ?? m.display_name).join(', ');
+    }
+    if (type === 'card') {
+      return methods.map((m: SavedMethod) => `${(m.card_network ?? 'Card').toUpperCase()} ****${m.last_four ?? ''}`).join(', ');
+    }
+    if (type === 'netbanking') {
+      return methods.map((m: SavedMethod) => m.bank_name ?? m.display_name).join(', ');
+    }
+    return null;
+  };
+
   // Payment methods with proper data
-  const paymentMethods: PaymentMethod[] = [
+  const paymentMethods: PaymentMethod[] = useMemo(() => [
     {
       id: 'upi-1',
-      type: 'upi',
+      type: 'upi' as const,
       title: 'UPI',
-      subtitle: 'Google Pay, PhonePe, Paytm',
+      subtitle: getSavedMethodSubtitle('upi') ?? 'Google Pay, PhonePe, Paytm',
       fee: 'Free',
       feeAmount: 0,
-      iconType: 'upi',
+      iconType: 'upi' as const,
     },
     {
       id: 'card-1',
-      type: 'card',
+      type: 'card' as const,
       title: 'Credit Card',
-      subtitle: 'Visa, Mastercard, RuPay',
+      subtitle: getSavedMethodSubtitle('card') ?? 'Visa, Mastercard, RuPay',
       fee: `Rs ${Math.round(rentAmount * 0.01)} fee`,
       feeAmount: Math.round(rentAmount * 0.01),
-      iconType: 'card',
+      iconType: 'card' as const,
     },
     {
       id: 'netbanking-1',
-      type: 'netbanking',
+      type: 'netbanking' as const,
       title: 'Net Banking',
-      subtitle: 'All major banks supported',
+      subtitle: getSavedMethodSubtitle('netbanking') ?? 'All major banks supported',
       fee: 'Rs 10 fee',
       feeAmount: 10,
-      iconType: 'bank',
+      iconType: 'bank' as const,
     },
-  ];
+  ], [rentAmount, savedMethods]);
 
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethod);
   const feeAmount = selectedPaymentMethod?.feeAmount ?? 0;
@@ -321,11 +342,25 @@ export default function SelectPaymentMethodScreen() {
   const handleProceed = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const method = paymentMethods.find(m => m.id === selectedMethod);
+    const methodType = method?.type ?? 'upi';
+
+    // Find the default saved method for this type (if any)
+    const defaultSaved = savedMethods?.find(
+      (m: SavedMethod) => m.type === methodType && m.is_default
+    ) ?? savedMethods?.find((m: SavedMethod) => m.type === methodType);
+
     router.push({
       pathname: '/(payment)/initiate',
-      params: { method: method?.type ?? 'upi' },
+      params: {
+        method: methodType,
+        tenancyId: tenancy?.id ?? '',
+        rentAmount: String(rentAmount),
+        cashbackAvailable: String(cashbackAvailable),
+        rentMonth: getCurrentRentMonth(),
+        savedMethodId: defaultSaved?.id ?? '',
+      },
     } as never);
-  }, [router, selectedMethod, paymentMethods]);
+  }, [router, selectedMethod, paymentMethods, savedMethods, tenancy?.id, rentAmount, cashbackAvailable]);
 
   const formatCurrency = (amount: number) => {
     return `Rs ${amount.toLocaleString('en-IN')}`;

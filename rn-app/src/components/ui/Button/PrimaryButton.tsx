@@ -1,31 +1,30 @@
 /**
  * Primary Button Component
- * Figma Node: 1:31151 (active), 1:81 (disabled)
+ * Figma Node: I1:28069;100:1564 (active state from splash screen)
  *
- * CORRECT Figma Values from get_design_context (node 1:31151):
+ * FRESH Figma REST API Values (fetched 2026-02-13 from node 1-28068):
  *
- * ACTIVE STATE:
- * - Container: flex-col, gap-8px, items-center, p-0, rounded-12px, w-297px
- * - Divider above: 24x2px, #4d4d4d, rounded-200px
- * - Button body: DARK vertical gradient from #202020 to #0d0d0d (90.179%)
- * - Border: 0.1px solid #ff9a6d (thin orange border)
- * - Border radius: 8px
- * - Padding: 16px
- * - Drop shadow: 0px 6px 12px -2px rgba(153,92,65,0.24)
- * - Inner shadows: inset -2px -4px 0px 1px black, inset 0px -3px 4px 1px rgba(255,255,255,0.12)
- * - Text: Plus Jakarta Sans Medium, 16px, line-height 24px, white
+ * ACTIVE STATE (Frame 2095586312):
+ * - Size: 297x56, layoutSizingHorizontal: FILL, layoutSizingVertical: HUG
+ * - Fill: LINEAR_GRADIENT vertical — #202020 (pos 0) → #0D0D0D (pos 1.0), handle y=0.9018
+ * - Stroke: #FF9A6D, strokeWeight: 0.1px, strokeAlign: INSIDE
+ * - Corner radius: 8px
+ * - Padding: 16px all sides
+ * - Effects:
+ *   1. DROP_SHADOW: rgba(153,92,65,0.24), offset(0,6), blur 12, spread -2
+ *   2. INNER_SHADOW (visible): rgba(255,255,255,0.12), offset(0,-3), blur 4, spread 1
+ *   3. INNER_SHADOW (hidden): skip
+ *   4. INNER_SHADOW (visible): rgba(0,0,0,1), offset(-2,-4), blur 0, spread 1
+ * - Text: Plus Jakarta Sans Medium 500, 16px, lineHeight 24px, #FFFFFF
  *
- * DISABLED STATE (node 1:81):
- * - bg: #202020 (black/500)
- * - border: 1px solid #202020
- * - padding: 16px (all sides)
- * - radius: 12px
- * - Text: Plus Jakarta Sans Medium, 16px, line-height 24px, #444444
+ * BUTTON INSTANCE (1:28069):
+ * - Layout: VERTICAL, counterAxisAlignItems: CENTER, itemSpacing: 8
+ * - Width: 297 (FIXED), cornerRadius: 12
+ * - Divider (Rectangle 140): 24x2, #4D4D4D, cornerRadius 200
  *
- * 3D PRESS ANIMATION:
- * - On press: translateY increases (button moves down into shadows)
- * - On press: inner shadows become more prominent
- * - Spring back on release (like mechanical keyboard)
+ * DISABLED STATE:
+ * - bg: #202020, border: 1px #202020, radius 12px, padding 16px
+ * - Text: PlusJakartaSans-Medium 16px/24px #444444
  */
 
 import React, { memo, useCallback } from 'react';
@@ -53,38 +52,6 @@ export interface PrimaryButtonProps {
   testID?: string;
 }
 
-/**
- * Token Mapping from Figma to Theme:
- * - var(--colours/black/500,#202020) → colors.black[500]
- * - var(--colours/black/800,#0d0d0d) → colors.black[800]
- * - var(--colours/brand/500,#ff9a6d) → colors.brand[500]
- * - var(--colours/neutral/800,#444444) → colors.neutral[800]
- * - var(--colours/black/400,#4d4d4d) → colors.black[400]
- * - var(--spacing/sp-16,16px) → spacing.md
- * - var(--spacing/sp-8,8px) → spacing.xs
- * - var(--radius/rd-8,8px) → 8
- * - var(--radius/rd-12,12px) → 12
- */
-const TOKENS = {
-  // Disabled state - Figma: var(--colours/black/500)
-  bgDisabled: colors.black[500],
-  borderDisabled: colors.black[500],
-  textDisabled: colors.neutral[800],
-  // Active state - Figma: gradient from var(--colours/black/500) to var(--colours/black/800)
-  gradientColors: gradients.button.colors,
-  gradientLocations: gradients.button.locations,
-  borderActive: colors.brand[500],
-  textActive: colors.white,
-  // Divider - Figma: var(--colours/black/400)
-  divider: colors.black[400],
-  // Spacing
-  padding: spacing.md,
-  gap: spacing.xs,
-  // Radius
-  radiusOuter: 12,
-  radiusInner: 8,
-} as const;
-
 // Animation constants for 3D mechanical keyboard effect
 const SPRING_CONFIG = {
   damping: 15,
@@ -102,26 +69,26 @@ function PrimaryButtonComponent({
   style,
   testID,
 }: PrimaryButtonProps) {
-  // Animation value: 0 = normal, 1 = pressed
   const pressed = useSharedValue(0);
-
   const isDisabled = disabled || loading;
 
-  // Button press animation - moves down and enhances shadows
+  // 3D press: button sinks down, shadow shrinks
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateY: interpolate(pressed.value, [0, 1], [0, 3], Extrapolation.CLAMP) },
-      { scale: interpolate(pressed.value, [0, 1], [1, 0.98], Extrapolation.CLAMP) },
+      { translateY: interpolate(pressed.value, [0, 1], [0, 2], Extrapolation.CLAMP) },
+      { scale: interpolate(pressed.value, [0, 1], [1, 0.985], Extrapolation.CLAMP) },
     ],
+    // Shadow shrinks when pressed (button closer to surface)
+    shadowOffset: {
+      width: 0,
+      height: interpolate(pressed.value, [0, 1], [6, 2], Extrapolation.CLAMP),
+    },
+    shadowRadius: interpolate(pressed.value, [0, 1], [10, 4], Extrapolation.CLAMP),
+    shadowOpacity: interpolate(pressed.value, [0, 1], [0.24, 0.16], Extrapolation.CLAMP),
   }));
 
-  // Inner shadow becomes more prominent when pressed
-  const innerShadowAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(pressed.value, [0, 1], [1, 1.5], Extrapolation.CLAMP),
-  }));
-
-  // Bottom highlight fades when pressed (button sinks into surface)
-  const bottomHighlightAnimatedStyle = useAnimatedStyle(() => ({
+  // Bottom highlight dims when pressed (light source effect)
+  const highlightAnimatedStyle = useAnimatedStyle(() => ({
     opacity: interpolate(pressed.value, [0, 1], [1, 0.3], Extrapolation.CLAMP),
   }));
 
@@ -154,41 +121,53 @@ function PrimaryButtonComponent({
       accessibilityLabel={title}
       style={[styles.pressable, fullWidth && styles.fullWidth, style]}
     >
-      {/* Container: Figma gap-8px items-center */}
+      {/* Outer container: Figma VERTICAL, CENTER, gap 8, radius 12 */}
       <View style={styles.container}>
-        {/* Divider above button: Figma 24x2px #4d4d4d rounded-200px */}
+        {/* Divider: Figma Rectangle 140 — 24x2 #4D4D4D radius 200 */}
         {showDivider && <View style={styles.divider} />}
 
         {isDisabled ? (
-          /* DISABLED STATE - Figma: flat button with 16px padding */
           <View style={styles.buttonDisabled}>
             {loading ? (
-              <ActivityIndicator color={TOKENS.textDisabled} size="small" />
+              <ActivityIndicator color={colors.neutral[800]} size="small" />
             ) : (
               <RNText style={styles.textDisabled}>{title}</RNText>
             )}
           </View>
         ) : (
-          /* ACTIVE STATE - Dark gradient with orange border and 3D depth */
-          <Animated.View style={[styles.buttonActiveWrapper, buttonAnimatedStyle]}>
+          /* ACTIVE STATE — 3D button with gradient, glow border, inner shadows */
+          <Animated.View style={[styles.shadowHost, buttonAnimatedStyle]}>
+            {/* Main button face — gradient #202020 → #0D0D0D */}
             <LinearGradient
-              colors={[...TOKENS.gradientColors]}
-              locations={[...TOKENS.gradientLocations]}
-              start={gradients.button.start}
-              end={gradients.button.end}
-              style={styles.buttonActive}
+              colors={['#202020', '#0d0d0d']}
+              locations={[0, 0.9018]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.buttonFace}
             >
+              {/* Text */}
               {loading ? (
-                <ActivityIndicator color={TOKENS.textActive} size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               ) : (
                 <RNText style={styles.textActive}>{title}</RNText>
               )}
 
-              {/* Inner shadow: inset -2px -4px 0px 1px black (bottom-right dark) */}
-              <Animated.View style={[styles.innerShadowDark, innerShadowAnimatedStyle]} />
+              {/* Inner shadow simulation: bottom white highlight for 3D depth */}
+              {/* Figma: inset 0px -3px 4px 1px rgba(255,255,255,0.12) */}
+              <Animated.View style={[styles.bottomHighlight, highlightAnimatedStyle]}>
+                <LinearGradient
+                  colors={['transparent', 'rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.12)']}
+                  locations={[0, 0.4, 1]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={styles.bottomHighlightGradient}
+                />
+              </Animated.View>
 
-              {/* Inner shadow: inset 0px -3px 4px 1px rgba(255,255,255,0.12) (bottom highlight) */}
-              <Animated.View style={[styles.innerShadowLight, bottomHighlightAnimatedStyle]} />
+              {/* Inner shadow simulation: dark edge for recessed 3D depth */}
+              {/* Figma: inset -2px -4px 0px 1px rgba(0,0,0,1) */}
+              <View style={styles.darkEdgeBottom} />
+              <View style={styles.darkEdgeRight} />
             </LinearGradient>
           </Animated.View>
         )}
@@ -204,48 +183,49 @@ const styles = StyleSheet.create({
   fullWidth: {
     width: '100%',
   },
-  // Figma: flex-col gap-8px items-center p-0 rounded-12px w-297px
+  // Figma button instance: VERTICAL, CENTER, gap 8
   container: {
     width: '100%',
     alignItems: 'center',
     gap: 8,
   },
-  // Figma: 24x2px #4d4d4d rounded-200px
+  // Figma Rectangle 140: 24x2 #4D4D4D radius 200
   divider: {
     width: 24,
     height: 2,
-    backgroundColor: TOKENS.divider,
+    backgroundColor: colors.black[400], // #4D4D4D
     borderRadius: 200,
   },
 
-  // DISABLED: Figma bg-[#202020] border-[#202020] p-[16px] rounded-[12px]
+  // DISABLED STATE — Figma: flat #202020, border #202020, radius 12
   buttonDisabled: {
     width: '100%',
-    backgroundColor: TOKENS.bgDisabled,
+    backgroundColor: colors.black[500],
     borderWidth: 1,
-    borderColor: TOKENS.borderDisabled,
+    borderColor: colors.black[500],
     borderRadius: 12,
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // ACTIVE wrapper with drop shadow
-  buttonActiveWrapper: {
+  // Drop shadow host — Figma: rgba(153,92,65,0.24) offset(0,6) blur 12 spread -2
+  // RN doesn't support spread, so we use slightly reduced shadowRadius
+  shadowHost: {
     width: '100%',
-    // Figma: shadow-[0px_6px_12px_-2px_rgba(153,92,65,0.24)]
-    shadowColor: 'rgb(153, 92, 65)',
+    shadowColor: '#995C41',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.24,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 10, // Figma blur 12, reduced slightly for spread -2 approximation
+    elevation: 8,
   },
 
-  // ACTIVE: Figma dark gradient #202020 → #0d0d0d, border 0.1px #ff9a6d, radius 8px, p-16px
-  buttonActive: {
+  // Button face — gradient fill + thin orange border
+  // Figma: stroke #FF9A6D 0.1px INSIDE, radius 8, padding 16
+  buttonFace: {
     width: '100%',
-    borderWidth: 0.5, // 0.1px doesn't render well, use 0.5px
-    borderColor: TOKENS.borderActive,
+    borderWidth: StyleSheet.hairlineWidth, // ~0.33px — closest to Figma 0.1px
+    borderColor: 'rgba(255, 154, 109, 0.25)', // #FF9A6D — Figma 0.1px at hairlineWidth(0.33px): opacity ≈ 0.1/0.33
     borderRadius: 8,
     padding: 16,
     justifyContent: 'center',
@@ -253,51 +233,62 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // Figma: inset -2px -4px 0px 1px black (dark shadow at bottom-right)
-  // Simulated with border since RN doesn't support inset shadows
-  innerShadowDark: {
+  // Bottom highlight — simulates Figma inner shadow:
+  // inset 0px -3px 4px 1px rgba(255,255,255,0.12)
+  // Gradient fade from transparent → white 12% at the bottom edge
+  bottomHighlight: {
     position: 'absolute',
-    top: 0,
     left: 0,
-    right: -2, // offset x: -2px
-    bottom: -4, // offset y: -4px
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 1)', // spread: 1px, black
-    backgroundColor: 'transparent',
+    right: 0,
+    bottom: 0,
+    height: 8, // spread(1) + blur(4) + offset(3) = ~8px visible region
+    borderBottomLeftRadius: 7,
+    borderBottomRightRadius: 7,
+  },
+  bottomHighlightGradient: {
+    flex: 1,
+    borderBottomLeftRadius: 7,
+    borderBottomRightRadius: 7,
   },
 
-  // Figma: inset 0px -3px 4px 1px rgba(255,255,255,0.12) (subtle bottom highlight)
-  // Creates a soft glow at the bottom edge for 3D depth
-  innerShadowLight: {
+  // Dark edge bottom — simulates Figma inner shadow:
+  // inset -2px -4px 0px 1px rgba(0,0,0,1)
+  // Hard 1px black line at the very bottom (spread=1, blur=0)
+  darkEdgeBottom: {
     position: 'absolute',
-    left: 1,
-    right: 1,
-    bottom: 1,
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    // Blur effect approximation
-    opacity: 0.8,
+    left: 0,
+    right: 2, // offset x: -2 means right edge shifts in by 2
+    bottom: 0,
+    height: 1, // spread: 1px
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Softened from pure black for subtlety
   },
 
-  // Text styles - Figma: text-center
+  // Dark edge right — extends the inset shadow along the right edge
+  darkEdgeRight: {
+    position: 'absolute',
+    right: 0,
+    top: 4, // offset y: -4 means it starts 4px from the bottom edge conceptually
+    bottom: 0,
+    width: 1, // spread: 1px
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+
+  // Text — Figma: PlusJakartaSans-Medium 16px/24px #444444
   textDisabled: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 16,
     lineHeight: 24,
-    color: TOKENS.textDisabled,
+    color: colors.neutral[800], // #444444
     textAlign: 'center',
-    width: '100%', // Ensures center alignment works
   },
-  // Figma: font-['Plus_Jakarta_Sans:Medium'] font-medium (500 weight, NOT SemiBold!)
+  // Text — Figma: PlusJakartaSans-Medium 500, 16px/24px #FFFFFF
+  // Figma: shrink-0 (natural width), centered by parent items-center + justify-center
   textActive: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 16,
     lineHeight: 24,
-    color: TOKENS.textActive,
+    color: colors.white,
     textAlign: 'center',
-    width: '100%', // Ensures center alignment works
   },
 });
 

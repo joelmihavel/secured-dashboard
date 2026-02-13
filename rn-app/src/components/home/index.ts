@@ -36,8 +36,8 @@ export { BottomFooter } from './BottomFooter';
 export type { BottomFooterProps } from './BottomFooter';
 
 // Setup components
-export { PaymentSetupCard, GradientBorderButton } from './PaymentSetupCard';
-export type { PaymentSetupCardProps } from './PaymentSetupCard';
+export { PaymentSetupCard } from './PaymentSetupCard';
+export type { PaymentSetupCardProps, PaymentSetupVariant } from './PaymentSetupCard';
 
 export { SetupProgressCard } from './SetupProgressCard';
 

@@ -1,14 +1,26 @@
 /**
  * Main App Layout
- * Placeholder for authenticated screens
+ * Protected — requires authentication
  */
 
 import React from 'react';
 import { Stack } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
 
 import { colors } from '@/src/theme';
+import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 export default function MainLayout() {
+  const { isReady } = useRequireAuth();
+
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.brand[500]} />
+      </View>
+    );
+  }
+
   return (
     <Stack
       screenOptions={{

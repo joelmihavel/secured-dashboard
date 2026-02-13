@@ -2,15 +2,20 @@
  * Dashboard Hooks
  *
  * React Query hooks for dashboard data fetching and caching.
+ * Provides raw data accessors and UI-mapped data (payments, cashback entries).
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   fetchDashboard,
   DashboardData,
   DashboardState,
   getDashboardState,
+  mapRecentPayments,
+  deriveCashbackEntries,
+  MappedRecentPayment,
+  MappedCashbackEntry,
 } from '../services/api/dashboard';
 
 // ==============================================
@@ -52,18 +57,34 @@ export function useDashboard(options: UseDashboardOptions = {}) {
   // Derive dashboard state from data
   const dashboardState: DashboardState = getDashboardState(query.data ?? null);
 
+  // Map raw recent_payments to UI-ready shape for RecentPaymentsList
+  const mappedRecentPayments: MappedRecentPayment[] = useMemo(
+    () => mapRecentPayments(query.data?.recent_payments ?? []),
+    [query.data?.recent_payments]
+  );
+
+  // Derive cashback entries from raw recent_payments for CashbacksList
+  const mappedCashbackEntries: MappedCashbackEntry[] = useMemo(
+    () => deriveCashbackEntries(query.data?.recent_payments ?? []),
+    [query.data?.recent_payments]
+  );
+
   return {
     ...query,
     dashboardState,
 
-    // Convenience accessors
+    // Raw data accessors (edge function shape)
     user: query.data?.user ?? null,
     tenancy: query.data?.tenancy ?? null,
     upcomingPayment: query.data?.upcoming_payment ?? null,
     cashback: query.data?.cashback ?? null,
-    recentPayments: query.data?.recent_payments ?? [],
+    rawRecentPayments: query.data?.recent_payments ?? [],
     notifications: query.data?.notifications ?? [],
     unreadCount: query.data?.unread_notification_count ?? 0,
+
+    // UI-mapped data for home screen components
+    recentPayments: mappedRecentPayments,
+    cashbackEntries: mappedCashbackEntries,
   };
 }
 
@@ -71,6 +92,10 @@ export function useDashboard(options: UseDashboardOptions = {}) {
 // REFRESH HOOK
 // ==============================================
 
+/**
+ * Returns a function that invalidates all dashboard-related queries.
+ * Use this for pull-to-refresh to ensure stale data is re-fetched.
+ */
 export function useRefreshDashboard() {
   const queryClient = useQueryClient();
 

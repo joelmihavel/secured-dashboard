@@ -6,9 +6,12 @@
  * Extraction: /autonomous-parity-fixer/data/combined/1-31671/extraction.json
  *
  * Captures landlord details for invitation
- * - Name, Phone Number inputs with error states
+ * - Name, Email inputs with error states
  * - "Get Started" / "Proceed" button
  * - Dark theme (#131313 background)
+ *
+ * Backend: send-landlord-invite edge function (POST, auth required)
+ * Sends email invitation (not SMS) to landlord for tenancy approval.
  */
 
 import React, { useCallback, useState } from 'react';
@@ -20,6 +23,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TextInput as RNTextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +31,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/src/components';
-import { useSendLandlordInvite } from '@/src/hooks';
+import { useSendLandlordInvite, useDashboard, validateEmail } from '@/src/hooks';
+import type { SetupError } from '@/src/types/setup';
 import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 
 // Figma exact values from 1-31671 (extraction.json)
@@ -110,51 +115,82 @@ export default function InviteLandlordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const sendLandlordInvite = useSendLandlordInvite();
+  const { tenancy } = useDashboard();
 
   const [landlordName, setLandlordName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [landlordEmail, setLandlordEmail] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [inviteSent, setInviteSent] = useState(false);
 
   const handleBack = useCallback(() => {
     router.back();
   }, [router]);
 
+  // Clear field errors on typing
+  const handleLandlordNameChange = useCallback((text: string) => {
+    setLandlordName(text);
+    setErrors((prev) => { const { landlordName: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
+  const handleLandlordEmailChange = useCallback((text: string) => {
+    setLandlordEmail(text);
+    setErrors((prev) => { const { landlordEmail: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
     if (!landlordName.trim()) newErrors.landlordName = 'Required';
-    if (!phoneNumber.trim()) newErrors.phoneNumber = 'Required';
-    else if (phoneNumber.length < 10) newErrors.phoneNumber = 'Invalid phone number';
+    if (!landlordEmail.trim()) newErrors.landlordEmail = 'Required';
+    else if (!validateEmail(landlordEmail)) newErrors.landlordEmail = 'Invalid email address';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [landlordName, phoneNumber]);
+  }, [landlordName, landlordEmail]);
 
   const handleSubmit = useCallback(() => {
     if (!validateForm()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+
+    if (!tenancy?.id) {
+      setApiError('No active tenancy found. Please complete onboarding first.');
+      return;
+    }
+
+    setApiError(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     sendLandlordInvite.mutate(
       {
-        tenancyId: 'current-tenancy', // TODO: Get from context/state
+        tenancyId: tenancy.id,
         landlordName: landlordName.trim(),
-        landlordPhone: phoneNumber.replace(/\D/g, ''),
-        channel: 'sms',
+        landlordEmail: landlordEmail.trim().toLowerCase(),
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          // Navigate to Add Bank (next step)
-          router.push('/(setup)/add-bank' as never);
+          if (data.alreadyApproved) {
+            // Landlord already approved - skip ahead
+            router.push('/(setup)/add-bank' as never);
+          } else {
+            setInviteSent(true);
+            // Navigate to next setup step after brief success display
+            setTimeout(() => router.push('/(setup)/add-bank' as never), 1500);
+          }
         },
-        onError: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+        onError: (error: SetupError) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          setApiError(error.message || 'Failed to send invite. Please try again.');
+        },
       }
     );
-  }, [validateForm, sendLandlordInvite, landlordName, phoneNumber, router]);
+  }, [validateForm, sendLandlordInvite, landlordName, landlordEmail, tenancy?.id, router]);
 
-  const isFormValid = landlordName.length > 0 && phoneNumber.length >= 10;
+  const isFormValid = landlordName.length > 0 && landlordEmail.length > 0 && validateEmail(landlordEmail);
 
   return (
     <View style={[styles.container, { backgroundColor: FIGMA.colors.background }]}>
@@ -192,6 +228,22 @@ export default function InviteLandlordScreen() {
             </View>
           </View>
 
+          {/* API Error Banner */}
+          {apiError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{apiError}</Text>
+            </View>
+          )}
+
+          {/* Invite Sent Success Banner */}
+          {inviteSent && (
+            <View style={styles.successBanner}>
+              <Text style={styles.successBannerText}>
+                Invite sent to {landlordEmail.trim().toLowerCase()}
+              </Text>
+            </View>
+          )}
+
           {/* Form - Figma gap: 16px from extraction */}
           <View style={styles.formContainer}>
             {/* Landlord Name Input */}
@@ -207,32 +259,35 @@ export default function InviteLandlordScreen() {
                 <RNTextInput
                   style={[styles.input, errors.landlordName && styles.inputTextError]}
                   value={landlordName}
-                  onChangeText={setLandlordName}
+                  onChangeText={handleLandlordNameChange}
                   placeholder="e.g. John Smith"
                   placeholderTextColor={FIGMA.colors.placeholder}
                   autoCapitalize="words"
+                  editable={!sendLandlordInvite.isPending}
                 />
               </View>
             </View>
 
-            {/* Phone Number Input */}
+            {/* Email Input */}
             <View style={styles.inputGroup}>
               {/* Label row with space-between */}
               <View style={styles.labelRow}>
-                <Text style={styles.label}>Phone</Text>
-                {errors.phoneNumber && (
-                  <Text style={styles.errorHint}>{errors.phoneNumber}</Text>
+                <Text style={styles.label}>Email</Text>
+                {errors.landlordEmail && (
+                  <Text style={styles.errorHint}>{errors.landlordEmail}</Text>
                 )}
               </View>
-              <View style={[styles.inputContainer, errors.phoneNumber && styles.inputError]}>
+              <View style={[styles.inputContainer, errors.landlordEmail && styles.inputError]}>
                 <RNTextInput
-                  style={[styles.input, errors.phoneNumber && styles.inputTextError]}
-                  value={phoneNumber}
-                  onChangeText={(text) => setPhoneNumber(text.replace(/\D/g, ''))}
-                  placeholder="e.g. 9876543210"
+                  style={[styles.input, errors.landlordEmail && styles.inputTextError]}
+                  value={landlordEmail}
+                  onChangeText={handleLandlordEmailChange}
+                  placeholder="e.g. landlord@email.com"
                   placeholderTextColor={FIGMA.colors.placeholder}
-                  keyboardType="number-pad"
-                  maxLength={10}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  editable={!sendLandlordInvite.isPending}
                 />
               </View>
             </View>
@@ -242,18 +297,22 @@ export default function InviteLandlordScreen() {
           <View style={styles.buttonSection}>
             {/* Submit Button - Figma: 297x56, borderRadius 12 */}
             <TouchableOpacity
-              style={[styles.button, isFormValid && styles.buttonActive]}
+              style={[styles.button, isFormValid && !sendLandlordInvite.isPending && styles.buttonActive]}
               onPress={handleSubmit}
               disabled={!isFormValid || sendLandlordInvite.isPending}
             >
-              <Text style={[styles.buttonText, isFormValid && styles.buttonTextActive]}>
-                Get Started
-              </Text>
+              {sendLandlordInvite.isPending ? (
+                <ActivityIndicator size="small" color={FIGMA.colors.buttonTextActive} />
+              ) : (
+                <Text style={[styles.buttonText, isFormValid && styles.buttonTextActive]}>
+                  Get Started
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* Footer - Figma: fontSize 12, lineHeight 20, color #A9A9A9 */}
             <Text style={styles.footerText}>
-              We will send an invite link to your landlord to verify their bank details.
+              We will send an invite email to your landlord to approve the tenancy.
             </Text>
           </View>
         </ScrollView>
@@ -403,6 +462,38 @@ const styles = StyleSheet.create({
     fontSize: scaledFont(FIGMA.typography.footer.fontSize), // 12
     lineHeight: scaledFont(FIGMA.typography.footer.lineHeight), // 20
     color: FIGMA.colors.footer, // #A9A9A9
+    textAlign: 'left' as const,
+  },
+  // Error banner
+  errorBanner: {
+    backgroundColor: 'rgba(229, 72, 77, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(229, 72, 77, 0.3)',
+    borderRadius: scaled(8),
+    padding: scaled(12),
+    marginBottom: scaledSpacing(FIGMA.dimensions.formGap),
+  },
+  errorBannerText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: scaledFont(13),
+    lineHeight: scaledFont(18),
+    color: '#E5484D',
+    textAlign: 'left' as const,
+  },
+  // Success banner
+  successBanner: {
+    backgroundColor: 'rgba(70, 167, 88, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(70, 167, 88, 0.3)',
+    borderRadius: scaled(8),
+    padding: scaled(12),
+    marginBottom: scaledSpacing(FIGMA.dimensions.formGap),
+  },
+  successBannerText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: scaledFont(13),
+    lineHeight: scaledFont(18),
+    color: '#46A758',
     textAlign: 'left' as const,
   },
 });

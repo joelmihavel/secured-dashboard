@@ -78,14 +78,29 @@ export const getFunctionsUrl = () => {
   return `${SUPABASE_URL}/functions/v1`;
 };
 
+/** Default timeout for edge function calls (15 seconds) */
+const EDGE_FUNCTION_TIMEOUT_MS = 15_000;
+
 /**
  * Make an authenticated call to a Supabase edge function
+ *
+ * @param functionName - Edge function name (e.g., 'get-waitlist-status')
+ * @param body - Request body (POST) or query params object (GET)
+ * @param requireAuth - Whether to include auth token
+ * @param method - HTTP method (defaults to 'POST')
+ * @param timeoutMs - Request timeout in milliseconds (defaults to 15s)
  */
 export async function callEdgeFunction<T = unknown>(
   functionName: string,
-  body: object,
-  requireAuth = false
+  body: Record<string, unknown> | object = {},
+  requireAuth = false,
+  method: 'GET' | 'POST' = 'POST',
+  timeoutMs: number = EDGE_FUNCTION_TIMEOUT_MS
 ): Promise<{ data: T | null; error: string | null }> {
+  // AbortController for timeout enforcement
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -101,27 +116,60 @@ export async function callEdgeFunction<T = unknown>(
       headers['Authorization'] = `Bearer ${session.access_token}`;
     }
 
-    const response = await fetch(`${getFunctionsUrl()}/${functionName}`, {
-      method: 'POST',
+    const fetchOptions: RequestInit = {
+      method,
       headers,
-      body: JSON.stringify(body),
-    });
+      signal: controller.signal,
+    };
+
+    // Build URL -- for GET, append query params; for POST, set JSON body
+    let url = `${getFunctionsUrl()}/${functionName}`;
+
+    if (method === 'GET') {
+      // Convert body object to query parameters (skip null/undefined values)
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(body)) {
+        if (value != null && value !== '') {
+          params.append(key, String(value));
+        }
+      }
+      const qs = params.toString();
+      if (qs) {
+        url += `?${qs}`;
+      }
+    } else {
+      fetchOptions.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, fetchOptions);
 
     const data = await response.json();
 
     if (!response.ok) {
+      // Parse error from backend structured error responses
+      // Backend returns: { error: true, message: "...", code: "..." }
+      const errorMessage = data.message ?? data.error?.message ?? `HTTP ${response.status}`;
       return {
         data: null,
-        error: data.error?.message ?? data.message ?? `HTTP ${response.status}`,
+        error: errorMessage,
       };
     }
 
     return { data: data as T, error: null };
   } catch (error) {
+    // Distinguish abort/timeout from other network errors
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return {
+        data: null,
+        error: `Request timed out after ${Math.round(timeoutMs / 1000)}s`,
+      };
+    }
     return {
       data: null,
       error: error instanceof Error ? error.message : 'Network error',
     };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

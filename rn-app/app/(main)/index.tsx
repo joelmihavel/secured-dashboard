@@ -50,8 +50,6 @@ import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
 import {
   HomeHeader,
   HeadlineSection,
-  PaymentSetupCard,
-  SetupProgressCard,
   WarningBanner,
   PaymentMethodCarousel,
   TabSwitcher,
@@ -60,19 +58,22 @@ import {
   BottomFooter,
   HomeEmptyState,
   CashbackSetupModal,
+  EmptyPaymentsState,
+  CashbackEmptyState,
   // Import types from home components
   TabId,
   PaymentMethod,
   EmptyStateVariant,
-  RecentPayment,
-  CashbackEntry,
 } from '@/src/components/home';
+
+// RecentPayment type from home components for the list props
+import type { RecentPayment } from '@/src/components/home/RecentPaymentsList';
 
 // Import hooks from useDashboard
 import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
 
-// Import DashboardState type from dashboard service
-import { DashboardState } from '@/src/services/api/dashboard';
+// Import DashboardState type and mapped types from dashboard service
+import type { DashboardState, MappedRecentPayment, MappedCashbackEntry } from '@/src/services/api/dashboard';
 
 // Import saved payment methods hook
 import { useSavedPaymentMethods } from '@/src/hooks/usePayments';
@@ -80,57 +81,7 @@ import { useSavedPaymentMethods } from '@/src/hooks/usePayments';
 // Import colors from theme
 import { colors } from '@/src/theme';
 
-// ==============================================
-// MOCK DATA FOR DEVELOPMENT
-// ==============================================
-
-const MOCK_RECENT_PAYMENTS: RecentPayment[] = [
-  {
-    id: 'pay_001',
-    title: 'January rent',
-    status: 'paid',
-    date: '5 Jan, 10:30am',
-    amount: 25000,
-  },
-  {
-    id: 'pay_002',
-    title: 'December rent',
-    status: 'paid',
-    date: '3 Dec, 2:15pm',
-    amount: 25000,
-  },
-  {
-    id: 'pay_003',
-    title: 'November rent',
-    status: 'paid',
-    date: '2 Nov, 9:45am',
-    amount: 25000,
-  },
-];
-
-const MOCK_CASHBACK_ENTRIES: CashbackEntry[] = [
-  {
-    id: 'cb_001',
-    title: 'January Cashback',
-    status: 'paid',
-    statusLabel: 'Paid - On Time',
-    amount: 200,
-  },
-  {
-    id: 'cb_002',
-    title: 'December Cashback',
-    status: 'paid',
-    statusLabel: 'Paid - On Time',
-    amount: 200,
-  },
-  {
-    id: 'cb_003',
-    title: 'November Cashback',
-    status: 'delayed',
-    statusLabel: 'Paid - Delayed',
-    amount: 150,
-  },
-];
+// Mock data removed -- useDashboard now provides UI-mapped recentPayments and cashbackEntries
 
 // ==============================================
 // MAIN COMPONENT
@@ -145,10 +96,12 @@ export default function HomeScreen() {
     tenancy,
     upcomingPayment,
     cashback,
+    recentPayments,
+    cashbackEntries,
+    unreadCount,
     isLoading,
     isRefetching,
     error,
-    refetch,
   } = useDashboard();
   const refresh = useRefreshDashboard();
 
@@ -166,16 +119,33 @@ export default function HomeScreen() {
   // Convert saved methods to PaymentMethod type for carousel
   const paymentMethods: PaymentMethod[] = useMemo(() => {
     if (!savedMethods) return [];
-    return savedMethods.map((method) => ({
-      type: method.type === 'upi' ? 'upi' : 'card',
-      bankName: method.display_name || 'Bank',
-      accountMasked: method.vpa || `****${method.last_four || ''}`,
-      upiId: method.vpa,
-      cardBrand: method.card_network,
-      cardLastFour: method.last_four,
-      cardExpiry: method.type === 'card' ? '06/26' : undefined,
-      isSelected: method.is_default,
-    }));
+    return savedMethods.map((method) => {
+      // Derive a human-readable bank name from display_name
+      // UPI: "UPI - ICICI" -> "ICICI"; Card: "Visa ****2341" -> "Visa"
+      const bankName =
+        method.type === 'upi'
+          ? (method.display_name?.replace(/^UPI\s*-\s*/i, '') || method.upi_provider || 'Bank')
+          : method.type === 'card'
+            ? (method.card_network?.toUpperCase() || method.display_name?.split(' ')[0] || 'Card')
+            : (method.display_name || 'Bank');
+
+      // Format card expiry from month/year fields (e.g., 6/2026 -> "06/26")
+      const cardExpiry =
+        method.type === 'card' && method.card_expiry_month && method.card_expiry_year
+          ? `${String(method.card_expiry_month).padStart(2, '0')}/${String(method.card_expiry_year).slice(-2)}`
+          : undefined;
+
+      return {
+        type: method.type, // Preserve original type: 'upi' | 'card' | 'netbanking'
+        bankName,
+        accountMasked: method.vpa || `****${method.last_four || ''}`,
+        upiId: method.vpa,
+        cardBrand: method.card_network,
+        cardLastFour: method.last_four,
+        cardExpiry,
+        isSelected: method.is_default,
+      };
+    });
   }, [savedMethods]);
 
   // User's first name for greeting
@@ -187,19 +157,37 @@ export default function HomeScreen() {
   const isMissed = isOverdue && daysUntilDue < -30; // Missed if overdue by more than 30 days
   const rentAmount = upcomingPayment?.amount ?? tenancy?.monthly_rent ?? 0;
 
+  // Derive the missed month name from rent_month (ISO date "YYYY-MM-DD")
+  const missedMonthName = useMemo(() => {
+    if (!upcomingPayment?.rent_month) return '';
+    const MONTH_NAMES = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const match = upcomingPayment.rent_month.match(/^(\d{4})-(\d{2})/);
+    if (match) {
+      const monthIndex = parseInt(match[2], 10) - 1;
+      if (monthIndex >= 0 && monthIndex < 12) return MONTH_NAMES[monthIndex];
+    }
+    return '';
+  }, [upcomingPayment?.rent_month]);
+
   // Cashback values
   const cashbackBalance = cashback?.available_balance ?? 0;
   const allTimeCashback = cashback?.total_earned ?? 0;
   const cashbackRate = 0.8; // 0.8% cashback rate
 
-  // Show bottom footer for active payment states
+  // Show bottom footer for active payment states when there's an upcoming payment
+  // (not during processing or when no payment is due)
   const showBottomFooter = useMemo(() => {
+    const hasUpcomingPayment = upcomingPayment !== null && rentAmount > 0;
     return (
-      dashboardState === 'all_verified' ||
-      dashboardState === 'payment_due' ||
-      dashboardState === 'payment_overdue'
+      hasUpcomingPayment &&
+      (dashboardState === 'all_verified' ||
+        dashboardState === 'payment_due' ||
+        dashboardState === 'payment_overdue')
     );
-  }, [dashboardState]);
+  }, [dashboardState, upcomingPayment, rentAmount]);
 
   // Determine empty state variant based on dashboard state
   const emptyStateVariant: EmptyStateVariant = useMemo(() => {
@@ -250,8 +238,8 @@ export default function HomeScreen() {
 
   const handleRefresh = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    refetch();
-  }, [refetch]);
+    refresh();
+  }, [refresh]);
 
   const handleAddPayment = useCallback(() => {
     if (!isSetupComplete) {
@@ -278,12 +266,12 @@ export default function HomeScreen() {
 
   const handlePayNow = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/(payment)/summary' as never);
+    router.push('/(payment)/initiate' as never);
   }, [router]);
 
   const handleAddAgreement = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/(onboarding)/agreement-upload' as never);
+    router.push('/(agreement)/upload' as never);
   }, [router]);
 
   const handleSendReminder = useCallback(() => {
@@ -301,7 +289,7 @@ export default function HomeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Select this payment method for the transaction
     router.push({
-      pathname: '/(payment)/summary' as never,
+      pathname: '/(payment)/initiate' as never,
       params: { methodType: method.type, methodAccount: method.accountMasked },
     });
   }, [router]);
@@ -309,7 +297,7 @@ export default function HomeScreen() {
   const handlePaymentMethodEdit = useCallback((method: PaymentMethod) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
-      pathname: '/(payment)/edit-method' as never,
+      pathname: '/(profile)/payment-methods' as never,
       params: { methodType: method.type, methodAccount: method.accountMasked },
     });
   }, [router]);
@@ -317,8 +305,8 @@ export default function HomeScreen() {
   const handlePaymentPress = useCallback((payment: RecentPayment) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
-      pathname: '/(transactions)/detail' as never,
-      params: { paymentId: payment.id },
+      pathname: '/(transactions)/[id]' as never,
+      params: { id: payment.id },
     });
   }, [router]);
 
@@ -391,7 +379,7 @@ export default function HomeScreen() {
       >
         {/* Header: Logo + "Hi, [Name]" + Avatar */}
         {/* Figma: HomeHeader handles its own paddingHorizontal: 32 */}
-        <HomeHeader userName={userName} />
+        <HomeHeader userName={userName} unreadCount={unreadCount} />
 
         {/* Warning Banner for overdue/missed states */}
         {/* Figma 243-3170: WarningBanner handles its own paddingLeft: 64, paddingRight: 32 */}
@@ -408,10 +396,13 @@ export default function HomeScreen() {
           upcomingPayment,
           cashback,
           paymentMethods,
+          recentPayments,
+          cashbackEntries,
           emptyStateVariant,
           daysUntilDue,
           isOverdue,
           isMissed,
+          missedMonthName,
           activeTab,
           cashbackBalance,
           allTimeCashback,
@@ -462,10 +453,13 @@ interface ContentProps {
   upcomingPayment: ReturnType<typeof useDashboard>['upcomingPayment'];
   cashback: ReturnType<typeof useDashboard>['cashback'];
   paymentMethods: PaymentMethod[];
+  recentPayments: MappedRecentPayment[];
+  cashbackEntries: MappedCashbackEntry[];
   emptyStateVariant: EmptyStateVariant;
   daysUntilDue: number;
   isOverdue: boolean;
   isMissed: boolean;
+  missedMonthName: string;
   activeTab: TabId;
   cashbackBalance: number;
   allTimeCashback: number;
@@ -488,10 +482,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     upcomingPayment,
     cashback,
     paymentMethods,
+    recentPayments,
+    cashbackEntries,
     emptyStateVariant,
     daysUntilDue,
     isOverdue,
     isMissed,
+    missedMonthName,
     activeTab,
     cashbackBalance,
     allTimeCashback,
@@ -568,7 +565,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             variant={headlineVariant}
             daysUntilDue={headlineVariant === 'due' ? daysValue : undefined}
             daysOverdue={headlineVariant === 'overdue' ? daysValue : undefined}
-            missedMonth={headlineVariant === 'missed' ? 'December' : undefined}
+            missedMonth={headlineVariant === 'missed' ? (missedMonthName || 'This Month') : undefined}
           />
 
           {/* Payment Method Carousel - cards + Setup card (Figma 243:2762)
@@ -596,18 +593,45 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               paddingHorizontal: 32 -- DO NOT add parent padding */}
           <View style={styles.tabContent}>
             {activeTab === 'recent_payments' ? (
-              <RecentPaymentsList
-                payments={__DEV__ ? MOCK_RECENT_PAYMENTS : []}
-                onPaymentPress={onPaymentPress}
-              />
+              recentPayments.length > 0 ? (
+                <RecentPaymentsList
+                  payments={recentPayments}
+                  onPaymentPress={onPaymentPress}
+                />
+              ) : (
+                <EmptyPaymentsState />
+              )
             ) : (
-              <CashbacksList
-                balance={cashbackBalance}
-                allTimeTotal={allTimeCashback}
-                cashbackRate={cashbackRate}
-                entries={__DEV__ ? MOCK_CASHBACK_ENTRIES : []}
-              />
+              cashbackEntries.length > 0 ? (
+                <CashbacksList
+                  balance={cashbackBalance}
+                  allTimeTotal={allTimeCashback}
+                  cashbackRate={cashbackRate}
+                  entries={cashbackEntries}
+                />
+              ) : (
+                <CashbackEmptyState
+                  accruedAmount={cashbackBalance}
+                  allTimeTotal={allTimeCashback}
+                  cashbackRate={cashbackRate}
+                />
+              )
             )}
+          </View>
+        </View>
+      );
+
+    case 'payment_processing':
+      return (
+        <View style={styles.contentContainer}>
+          <View style={styles.successContainer}>
+            <ActivityIndicator size="large" color={colors.brand[500]} />
+            <Text variant="h5" color="primary" align="center">
+              Processing Payment
+            </Text>
+            <Text variant="bodyMd2" color="muted" align="center" style={styles.successText}>
+              Your payment is being processed. This usually takes a few minutes.
+            </Text>
           </View>
         </View>
       );

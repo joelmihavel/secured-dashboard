@@ -1,43 +1,92 @@
 /**
- * Entry Point
- * Redirects to appropriate screen based on auth state.
+ * Entry Point — Journey-Aware Router
  *
- * In __DEV__ mode, redirects to the Screen Picker for quick navigation.
- * Set DISABLE_SCREEN_PICKER to true to bypass (e.g. during parity testing).
+ * Determines the correct screen based on auth + waitlist state:
+ *  1. Not authenticated → auth flow (beta-splash)
+ *  2. Authenticated, waitlist pending/rejected → waitlist screen
+ *  3. Authenticated, waitlist approved → main dashboard
+ *     (dashboard itself handles agreement/setup prompts)
+ *
+ * In __DEV__ mode, redirects to Screen Picker for quick navigation.
+ * Set DISABLE_SCREEN_PICKER to true to bypass.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Redirect } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { supabase } from '@/src/services/supabase/client';
-import { DISABLE_SCREEN_PICKER } from './(dev)/screen-picker';
+import { getWaitlistStatus } from '@/src/services/api/waitlist';
+import { DISABLE_SCREEN_PICKER, DEV_DIRECT_SCREEN } from './(dev)/screen-picker';
+
+type JourneyTarget =
+  | '/(auth)/beta-splash'
+  | '/(waitlist)'
+  | '/(main)';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [target, setTarget] = useState<JourneyTarget>('/(auth)/beta-splash');
 
-  useEffect(() => {
-    checkAuthState();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAuthState = async () => {
+  const resolveAuthenticatedJourney = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      setIsAuthenticated(false);
+      const { data, error } = await getWaitlistStatus();
+
+      if (error || !data) {
+        // Fail-open: if waitlist check fails, go to main (returning user likely)
+        setTarget('/(main)');
+        return;
+      }
+
+      if (data.state === 'approved') {
+        setTarget('/(main)');
+      } else {
+        // pending, pending_long, rejected → waitlist screen
+        setTarget('/(waitlist)');
+      }
+    } catch {
+      // Fail-open for network errors
+      setTarget('/(main)');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // In dev mode with screen picker enabled, skip auth journey entirely
+    if (__DEV__ && (!DISABLE_SCREEN_PICKER || DEV_DIRECT_SCREEN)) {
+      setIsLoading(false);
+      return;
+    }
+
+    const resolveJourney = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setTarget('/(auth)/beta-splash');
+          setIsLoading(false);
+          return;
+        }
+        await resolveAuthenticatedJourney();
+      } catch {
+        setTarget('/(auth)/beta-splash');
+        setIsLoading(false);
+      }
+    };
+
+    resolveJourney();
+
+    // Listen for auth state changes (sign-out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!session) {
+          setTarget('/(auth)/beta-splash');
+          setIsLoading(false);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [resolveAuthenticatedJourney]);
 
   if (isLoading) {
     return (
@@ -47,17 +96,17 @@ export default function Index() {
     );
   }
 
+  // Dev mode: jump directly to a specific screen
+  if (__DEV__ && DEV_DIRECT_SCREEN) {
+    return <Redirect href={DEV_DIRECT_SCREEN as any} />;
+  }
+
   // Dev mode: show screen picker for quick navigation
-  // Disable with DISABLE_SCREEN_PICKER flag during parity testing
   if (__DEV__ && !DISABLE_SCREEN_PICKER) {
     return <Redirect href="/(dev)/screen-picker" />;
   }
 
-  if (isAuthenticated) {
-    return <Redirect href="/(main)" />;
-  }
-
-  return <Redirect href="/(auth)/beta-splash" />;
+  return <Redirect href={target} />;
 }
 
 const styles = StyleSheet.create({

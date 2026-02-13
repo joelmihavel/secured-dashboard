@@ -30,6 +30,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text, PrimaryButton, Logo, DottedPattern } from '@/src/components';
+import { useVerificationStatus } from '@/src/hooks';
 import { colors, spacing, radius, typography } from '@/src/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -212,6 +213,7 @@ export default function SetupIndexScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { step } = useLocalSearchParams<{ step?: string }>();
+  const { allVerified, pendingSteps } = useVerificationStatus();
 
   // Support ?step=1|2|3 for automated testing - parse to 0-indexed
   const initialStep = step
@@ -248,8 +250,14 @@ export default function SetupIndexScreen() {
 
   const handleStartFlenting = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/(setup)/pending-steps');
-  }, [router]);
+    if (allVerified) {
+      // All setup steps complete, go to main
+      router.replace('/(main)');
+    } else {
+      // Go to pending-steps which shows progress and routes to first incomplete step
+      router.push('/(setup)/pending-steps');
+    }
+  }, [router, allVerified]);
 
   const renderItem = useCallback(
     ({ item, index }: { item: SetupStep; index: number }) => (

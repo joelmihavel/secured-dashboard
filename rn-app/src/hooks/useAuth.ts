@@ -8,7 +8,36 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, VerifyOtpRequest } from '../services/api/auth';
+import { supabase } from '../services/supabase';
 import { useAuthStore } from '../stores/auth';
+
+// ==============================================
+// ERROR NORMALIZATION
+// ==============================================
+
+/**
+ * Normalize any thrown error into a { code, message } shape.
+ * Handles plain Error objects, string throws, and structured auth errors.
+ */
+function normalizeError(error: unknown): { code: string; message: string } {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    'message' in error &&
+    typeof (error as { code: unknown }).code === 'string' &&
+    typeof (error as { message: unknown }).message === 'string'
+  ) {
+    return error as { code: string; message: string };
+  }
+  if (error instanceof Error) {
+    return { code: 'UNKNOWN_ERROR', message: error.message };
+  }
+  if (typeof error === 'string') {
+    return { code: 'UNKNOWN_ERROR', message: error };
+  }
+  return { code: 'UNKNOWN_ERROR', message: 'An unexpected error occurred' };
+}
 
 // ==============================================
 // QUERY KEYS
@@ -45,8 +74,9 @@ export function useSendOtp() {
         setError('SEND_FAILED', data.data.message);
       }
     },
-    onError: (error: { code: string; message: string }) => {
-      setError(error.code, error.message);
+    onError: (error: unknown) => {
+      const normalized = normalizeError(error);
+      setError(normalized.code, normalized.message);
     },
   });
 }
@@ -70,17 +100,33 @@ export function useVerifyOtp() {
     onMutate: () => {
       setVerifying();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.success) {
+        // Exchange token_hash for a proper Supabase session
+        try {
+          const { error: sessionError } = await supabase.auth.verifyOtp({
+            token_hash: data.data.token_hash,
+            type: 'magiclink',
+          });
+
+          if (sessionError) {
+            setError('SESSION_ERROR', 'Verified but failed to establish session. Please try again.');
+            return;
+          }
+        } catch {
+          setError('SESSION_ERROR', 'Failed to establish session. Please try again.');
+          return;
+        }
+
         setAuthenticated(data.data.user_id, data.data.is_new_user);
-        // Invalidate any cached user data to refetch
         queryClient.invalidateQueries({ queryKey: authKeys.session() });
       } else {
         setError('VERIFY_FAILED', data.data.message);
       }
     },
-    onError: (error: { code: string; message: string }) => {
-      setError(error.code, error.message);
+    onError: (error: unknown) => {
+      const normalized = normalizeError(error);
+      setError(normalized.code, normalized.message);
     },
   });
 }
@@ -93,7 +139,7 @@ export function useResendOtp() {
   const { phoneNumber, setOtpSent, setError, clearError } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (channel: 'sms' | 'whatsapp' = 'sms') => {
+    mutationFn: async (channel: 'sms' | 'whatsapp' = 'whatsapp') => {
       if (!phoneNumber) {
         throw { code: 'NO_PHONE', message: 'No phone number to resend to' };
       }
@@ -113,8 +159,9 @@ export function useResendOtp() {
         setError('RESEND_FAILED', data.data.message);
       }
     },
-    onError: (error: { code: string; message: string }) => {
-      setError(error.code, error.message);
+    onError: (error: unknown) => {
+      const normalized = normalizeError(error);
+      setError(normalized.code, normalized.message);
     },
   });
 }
@@ -137,7 +184,7 @@ export function useAuth() {
     (phoneNumber: string, channel?: 'sms' | 'whatsapp') => {
       sendOtpMutation.mutate({
         phone_number: phoneNumber,
-        channel: channel ?? 'sms',
+        channel: channel ?? 'whatsapp',
       });
     },
     [sendOtpMutation]
@@ -156,7 +203,7 @@ export function useAuth() {
 
   const resendCode = useCallback(
     (channel?: 'sms' | 'whatsapp') => {
-      resendOtpMutation.mutate(channel ?? 'sms');
+      resendOtpMutation.mutate(channel ?? 'whatsapp');
     },
     [resendOtpMutation]
   );

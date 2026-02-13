@@ -26,7 +26,7 @@
  *   Text: "Didn't receive the code? Resend"
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable, BackHandler, Text as RNText } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, {
@@ -43,6 +43,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Text, PrimaryButton, OTPInput } from '@/src/components';
 import { colors, springConfig, duration, radius, spacing } from '@/src/theme';
 import { useAuth } from '@/src/hooks';
+import { useAuthStore } from '@/src/stores/auth';
 
 // Exact Figma color values mapped to theme tokens (verified from 1-31277 extraction)
 const FIGMA_COLORS = {
@@ -112,6 +113,15 @@ export default function OTPScreen() {
     isResendingOtp,
     clearError,
   } = useAuth();
+  const userName = useAuthStore((s) => s.userName);
+
+  // Ref-based guard to prevent double-submission across the synchronous gap
+  // between tap and React Query's isPending becoming true.
+  const isSubmittingRef = useRef(false);
+
+  // Track consecutive verify failures for exponential backoff cooldown
+  const failureCountRef = useRef(0);
+  const lastFailureTimeRef = useRef(0);
 
   // Mock OTP for testing states
   const getMockOtp = () => {
@@ -140,12 +150,44 @@ export default function OTPScreen() {
 
   const [otp, setOtp] = React.useState(getMockOtp);
   const [mockError, setMockError] = React.useState<string | undefined>(getMockError);
+  const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
 
   // Animation values
   const translateY = useSharedValue(0);
   const overlayOpacity = useSharedValue(0);
 
   const isOtpComplete = otp.length === 6;
+
+  // Reset the ref-based submission guard when verification completes (success or error)
+  useEffect(() => {
+    if (!isVerifyingOtp) {
+      isSubmittingRef.current = false;
+    }
+  }, [isVerifyingOtp]);
+
+  // Track failures for exponential backoff
+  useEffect(() => {
+    if (error && !mockError) {
+      failureCountRef.current += 1;
+      lastFailureTimeRef.current = Date.now();
+
+      // Apply cooldown: 2s, 4s, 8s, capped at 15s
+      const cooldownMs = Math.min(
+        Math.pow(2, failureCountRef.current) * 1000,
+        15000
+      );
+      setCooldownRemaining(Math.ceil(cooldownMs / 1000));
+    }
+  }, [error, mockError]);
+
+  // Countdown timer for cooldown display
+  useEffect(() => {
+    if (cooldownRemaining <= 0) return;
+    const timer = setTimeout(() => {
+      setCooldownRemaining((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [cooldownRemaining]);
 
   // Map error codes to user-friendly messages
   const getErrorMessage = (): string | undefined => {
@@ -160,6 +202,12 @@ export default function OTPScreen() {
         return 'Too many Attempts';
       case 'OTP_EXPIRED':
         return 'Code Expired';
+      case 'SESSION_ERROR':
+        return 'Session error. Please try again.';
+      case 'NETWORK_ERROR':
+        return 'Check your connection';
+      case 'TIMEOUT':
+        return 'Request timed out. Try again.';
       default:
         return error.message;
     }
@@ -198,19 +246,33 @@ export default function OTPScreen() {
   // Navigate to main app when authenticated
   useEffect(() => {
     if (status === 'authenticated') {
-      router.replace('/(main)');
+      router.replace('/(waitlist)');
     }
   }, [status, router]);
 
-  const handleProceed = useCallback(() => {
-    if (!isOtpComplete) return;
-    verifyCode(otp);
-  }, [isOtpComplete, otp, verifyCode]);
+  const handleProceed = useCallback((otpValue?: string) => {
+    // Ref-based guard: prevents double-fire even before React Query isPending updates
+    if (isSubmittingRef.current || isVerifyingOtp) return;
+
+    const code = otpValue ?? otp;
+    if (code.length !== 6) return;
+
+    // Enforce exponential backoff cooldown between retries
+    if (cooldownRemaining > 0) return;
+
+    isSubmittingRef.current = true;
+    verifyCode(code, userName || undefined);
+  }, [otp, verifyCode, userName, isVerifyingOtp, cooldownRemaining]);
 
   const handleResend = useCallback(() => {
     setOtp('');
+    // Reset failure tracking on resend -- new OTP means fresh attempts
+    failureCountRef.current = 0;
+    lastFailureTimeRef.current = 0;
+    setCooldownRemaining(0);
+    if (error) clearError();
     resendCode();
-  }, [resendCode]);
+  }, [resendCode, error, clearError]);
 
   // Pan gesture for dismiss
   const panGesture = Gesture.Pan()
@@ -287,9 +349,9 @@ export default function OTPScreen() {
             <View style={styles.footerBlock}>
               {/* Proceed Button - Figma: "Proceed" with 12px border radius */}
               <PrimaryButton
-                title="Proceed"
+                title={cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Proceed'}
                 onPress={handleProceed}
-                disabled={!isOtpComplete || !!error}
+                disabled={!isOtpComplete || !!error || cooldownRemaining > 0}
                 loading={isVerifyingOtp}
                 showDivider={true}
                 testID="proceed-button"

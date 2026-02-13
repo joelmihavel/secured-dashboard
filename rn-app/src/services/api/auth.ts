@@ -41,6 +41,7 @@ export interface VerifyOtpResponse {
   data: {
     user_id: string;
     is_new_user: boolean;
+    token_hash: string;
     consent_verification_id: string | null;
     consent_status: string | null;
     message: string;
@@ -55,6 +56,7 @@ export type AuthErrorCode =
   | 'OTP_EXPIRED'
   | 'MAX_ATTEMPTS'
   | 'NETWORK_ERROR'
+  | 'TIMEOUT'
   | 'UNKNOWN_ERROR';
 
 export interface AuthError {
@@ -78,7 +80,7 @@ export async function sendOtp(
   const { data, error } = await callEdgeFunction<SendOtpResponse>('auth-otp', {
     action: 'send_otp',
     phone_number: request.phone_number,
-    channel: request.channel ?? 'sms',
+    channel: request.channel ?? 'whatsapp',
     consent_for_mobile360: request.consent_for_mobile360 ?? true,
   });
 
@@ -124,7 +126,7 @@ export async function verifyOtp(
  */
 export async function resendOtp(
   phoneNumber: string,
-  channel: 'sms' | 'whatsapp' = 'sms'
+  channel: 'sms' | 'whatsapp' = 'whatsapp'
 ): Promise<{ data: SendOtpResponse | null; error: AuthError | null }> {
   return sendOtp({ phone_number: phoneNumber, channel });
 }
@@ -158,6 +160,11 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
 
 function mapAuthError(errorMessage: string): AuthError {
   const lowerMessage = errorMessage.toLowerCase();
+
+  // Timeout detection (from AbortController in callEdgeFunction)
+  if (lowerMessage.includes('timed out') || lowerMessage.includes('aborted')) {
+    return { code: 'TIMEOUT', message: 'Request timed out. Please try again.' };
+  }
 
   if (lowerMessage.includes('invalid phone') || lowerMessage.includes('phone number')) {
     return { code: 'INVALID_PHONE', message: 'Please enter a valid phone number' };

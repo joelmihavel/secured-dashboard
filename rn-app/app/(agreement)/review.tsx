@@ -14,19 +14,26 @@
  * - MAJOR: Typography - PlusJakartaSans font family on all text styles
  */
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
   StyleSheet,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
+import { useAgreement } from '@/src/hooks';
+import {
+  formatPaiseToRupees,
+  formatDateDisplay,
+} from '@/src/services/api/agreement';
 import { colors } from '@/src/theme/colors';
 import { spacing, layout } from '@/src/theme/spacing';
 import { typography, fontFamily } from '@/src/theme/typography';
@@ -159,18 +166,6 @@ const DetailRow = ({ label, value }: DetailRowProps) => (
   </View>
 );
 
-// Agreement detail data for verify state
-const AGREEMENT_DETAILS: DetailRowProps[] = [
-  { label: 'Agreement ID', value: 'KIA 123456789' },
-  { label: 'Property Name', value: '2BHK, Koramangala' },
-  { label: 'Tenant(s)', value: 'John Doe' },
-  { label: 'Landlord(s)', value: 'Jane Smith' },
-  { label: 'Monthly Rent', value: '₹ 32,175' },
-  { label: 'One-Time Deposit', value: '₹ 96,525' },
-  { label: 'Rent Duration', value: '11 months' },
-  { label: 'Exit Date', value: '31 Dec 2026' },
-];
-
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -178,10 +173,107 @@ const AGREEMENT_DETAILS: DetailRowProps[] = [
 export default function ReviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { extractionId } = useLocalSearchParams<{ extractionId?: string }>();
 
-  const handlePay = () => {
-    router.push('/(agreement)/success' as never);
+  // Fetch real extraction data via the agreement hook.
+  // Falls back to mock data when no extractionId is provided (visual testing).
+  const useMock = !extractionId;
+  const {
+    extractedData,
+    isLoadingExtraction,
+    confirm,
+    isConfirming,
+  } = useAgreement({
+    useMock,
+    extractionId: extractionId ?? null,
+  });
+
+  // Build agreement detail rows from extracted data
+  const agreementDetails: DetailRowProps[] = useMemo(() => {
+    if (!extractedData) return [];
+
+    const details: DetailRowProps[] = [];
+
+    if (extractedData.certificateNo) {
+      details.push({ label: 'Agreement ID', value: extractedData.certificateNo });
+    }
+    if (extractedData.propertyName) {
+      details.push({ label: 'Property Name', value: extractedData.propertyName });
+    }
+    if (extractedData.tenantNames.length > 0) {
+      details.push({ label: 'Tenant(s)', value: extractedData.tenantNames.join(', ') });
+    }
+    if (extractedData.landlordNames.length > 0) {
+      details.push({ label: 'Landlord(s)', value: extractedData.landlordNames.join(', ') });
+    }
+    if (extractedData.monthlyRentPaise) {
+      details.push({
+        label: 'Monthly Rent',
+        value: `\u20B9 ${formatPaiseToRupees(extractedData.monthlyRentPaise)}`,
+      });
+    }
+    if (extractedData.securityDepositPaise) {
+      details.push({
+        label: 'One-Time Deposit',
+        value: `\u20B9 ${formatPaiseToRupees(extractedData.securityDepositPaise)}`,
+      });
+    }
+    if (extractedData.rentDurationMonths) {
+      details.push({
+        label: 'Rent Duration',
+        value: `${extractedData.rentDurationMonths} months`,
+      });
+    }
+    if (extractedData.leaseEndDate) {
+      details.push({
+        label: 'Exit Date',
+        value: formatDateDisplay(extractedData.leaseEndDate),
+      });
+    }
+
+    return details;
+  }, [extractedData]);
+
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+
+  const handleConfirmAndProceed = async () => {
+    if (!extractedData) return;
+    setConfirmError(null);
+
+    try {
+      await confirm({ confirmedRole: 'tenant' });
+      router.push({
+        pathname: '/(agreement)/success',
+        params: { extractionId: extractedData.extractionId },
+      } as never);
+    } catch (error) {
+      console.error('Confirm extraction error:', error);
+      const msg =
+        (error as { message?: string })?.message ?? 'Something went wrong. Please try again.';
+      setConfirmError(msg);
+      Alert.alert('Confirmation Failed', msg);
+    }
   };
+
+  // Derived values for payment card
+  const monthlyRent = extractedData?.monthlyRentPaise
+    ? formatPaiseToRupees(extractedData.monthlyRentPaise)
+    : '0';
+  const landlordName = extractedData?.landlordNames?.[0] ?? '[Landlord Name]';
+
+  // Loading state
+  if (isLoadingExtraction) {
+    return (
+      <Screen testID="review-screen">
+        <View style={[styles.scrollContent, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.brand[500]} />
+          <Text style={[styles.verifyHeaderTitle, { fontSize: scaledFont(16), marginTop: scaledSpacing(16) }]}>
+            Loading your details...
+          </Text>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen testID="review-screen">
@@ -208,7 +300,7 @@ export default function ReviewScreen() {
 
         {/* Agreement Details Section (1-30448) */}
         <View style={styles.detailsSection}>
-          {AGREEMENT_DETAILS.map((detail) => (
+          {agreementDetails.map((detail) => (
             <DetailRow key={detail.label} label={detail.label} value={detail.value} />
           ))}
         </View>
@@ -237,7 +329,7 @@ export default function ReviewScreen() {
               </View>
               <View style={styles.amountTextContainer}>
                 <Text style={styles.labelText}>TOTAL PAYABLE RENT</Text>
-                <Text style={styles.amountValue}>₹ 32,175</Text>
+                <Text style={styles.amountValue}>{'\u20B9'} {monthlyRent}</Text>
               </View>
             </View>
 
@@ -252,7 +344,7 @@ export default function ReviewScreen() {
                 <DiscountIcon />
               </View>
               <View style={styles.amountTextContainer}>
-                <Text style={styles.savingsText}>saved ₹ 325 →</Text>
+                <Text style={styles.savingsText}>saved {'\u20B9'} 325 {'\u2192'}</Text>
                 <Text style={styles.cashbackText}>using flent cashback</Text>
               </View>
             </View>
@@ -263,7 +355,7 @@ export default function ReviewScreen() {
             {/* Paying to row */}
             <View style={styles.payeeRow}>
               <Text style={styles.payeeLabel}>Paying to</Text>
-              <Text style={styles.payeeValue}>[Landlord Name]</Text>
+              <Text style={styles.payeeValue}>{landlordName}</Text>
             </View>
 
             {/* Bank details */}
@@ -275,13 +367,16 @@ export default function ReviewScreen() {
               </View>
             </View>
 
-            {/* Pay Now Button */}
+            {/* Confirm & Pay Button */}
             <TouchableOpacity
-              onPress={handlePay}
-              style={styles.payButton}
+              onPress={handleConfirmAndProceed}
+              style={[styles.payButton, isConfirming && { opacity: 0.6 }]}
               activeOpacity={0.9}
+              disabled={isConfirming}
             >
-              <Text style={styles.payButtonText}>Pay Now</Text>
+              <Text style={styles.payButtonText}>
+                {isConfirming ? 'Confirming...' : 'Pay Now'}
+              </Text>
             </TouchableOpacity>
 
             {/* Security text */}

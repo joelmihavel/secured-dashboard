@@ -1,38 +1,28 @@
 /**
  * Phone Input Component
- * Figma Node: 1:31073 (Sign Up - Filled state)
+ * Figma Node: 1:29184 (Sign Up - Empty state, REST API verified 2026-02-13)
  *
- * CORRECTED Figma Values from get_design_context (2026-02-01):
+ * Input Container (I1:29184;48:712):
+ * - gap: 16px, items-center, py:16px, radius:12px
+ * - fill: INVISIBLE (#1A1A1A visible:false) — no background in empty state
+ * - stroke: INVISIBLE (#4D4D4D visible:false) — no border in empty state
+ * - Border shows on focus (#FF9A6D) and error (#E5484D)
  *
- * Container (I90:3005;48:723):
- * - gap: 16px between country code and input
- * - items-center (vertical alignment)
- * - padding: 16px vertical, 0px horizontal
- * - rounded: 12px
+ * Dropdown (I1:29184;48:713):
+ * - row, center, gap:4px between "+91" text and chevron icon
  *
- * Country Code (+91) (I90:3005;48:725):
- * - font: Plus Jakarta Sans Regular (NOT Inter!)
- * - size: 20px (NOT 16px!)
- * - line-height: 32px
- * - color: #dddddd (neutral/200) - same as filled text
- * - NO chevron/dropdown per user request
+ * Country Code "+91" (I1:29184;48:714):
+ * - PlusJakartaSans-Regular, 20px, lineHeight 32px
+ * - color: #444444 (empty), #dddddd (filled)
  *
- * Input Text (I90:3005;48:728):
- * - font: Plus Jakarta Sans Regular
- * - size: 20px
- * - line-height: 32px
- * - color: #444444 (placeholder), #dddddd (filled)
+ * Chevron Icon (I1:29184;48:715):
+ * - 16x16, stroke #444444 (empty) / #dddddd (filled), strokeWidth 1.6
  *
- * Label (VERIFIED via Figma MCP get_design_context 2026-02-08):
- * - font: Plus Jakarta Sans Medium (500)
- * - size: 12px
- * - line-height: 20px
- * - color: #a9a9a9 (normal), #ff8080 (error)
- * - gap to input: 6px
+ * Input Text (I1:29184;48:717):
+ * - PlusJakartaSans-Regular, 20px, lineHeight 32px, #444444
  *
- * Border:
- * - 1px bottom border
- * - color: #2a2a2a (default), #ff9a6d (focus), #ff8080 (error)
+ * Label (I1:29184;99:1497):
+ * - PlusJakartaSans-Regular (400), 12px, lineHeight 20px, #A9A9A9
  */
 
 import React, { memo, useState, useCallback, forwardRef } from 'react';
@@ -42,24 +32,22 @@ import {
   Text as RNText,
   StyleSheet,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '../Typography';
-import { colors } from '@/src/theme';
 
-// Exact Figma color values mapped to theme tokens
-// Verified from Figma extraction 1-29108 (sign-up empty state)
+// Figma REST API verified colors (node 1:29184, 2026-02-13)
 const COLORS = {
-  label: colors.neutral[500],          // #a9a9a9
-  labelError: '#ff8080',
-  hintText: '#878787',                 // Figma hint text color (neutral/600)
-  countryCodeEmpty: '#444444',         // Figma: I1:29184;48:714 - #444444 in empty state
-  countryCodeFilled: colors.neutral[200], // #dddddd - filled state per Figma 1-31073
-  placeholder: '#444444',              // Figma: #444444
-  textFilled: colors.neutral[200],     // #dddddd
-  textError: '#ff8080',                 // Figma: error text color (matches labelError/borderError)
-  inputBorder: colors.black[400],      // #4D4D4D - Figma: I1:29184;48:712 borderColor
-  inputBorderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
-  inputBorderError: '#ff8080',
+  label: '#A9A9A9',
+  labelError: '#E5484D',
+  hintText: '#878787',
+  countryCodeEmpty: '#444444',
+  countryCodeFilled: '#DDDDDD',
+  placeholder: '#444444',
+  textFilled: '#DDDDDD',
+  textError: '#E5484D',
+  borderFocus: '#FF9A6D',
+  borderError: '#E5484D',
 } as const;
 
 // Exact Figma spacing values
@@ -128,8 +116,8 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
     const hasValue = value.length > 0;
 
     const getBorderColor = () => {
-      if (hasError) return COLORS.inputBorderError;
-      if (isFocused) return COLORS.inputBorderFocus;
+      if (hasError) return COLORS.borderError;
+      if (isFocused) return COLORS.borderFocus;
       return 'transparent'; // Figma REST API: border visible:false in empty state (1:29108)
     };
 
@@ -140,7 +128,7 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
       <View style={styles.container}>
         {/* Label Row - Figma: label + hint/error on same row */}
         <View style={styles.labelRow}>
-          <Text style={[styles.label, hasError && styles.labelError]}>
+          <Text style={styles.label}>
             {label}
           </Text>
           {error ? (
@@ -150,11 +138,20 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
           ) : null}
         </View>
 
-        {/* Input Container - Figma: I1:29184;48:712 - full border box, gap-16, items-center, py-16, radius-12 */}
+        {/* Input Container - Figma: I1:29184;48:712 - NO fill, NO stroke in empty state */}
         <View style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
-          {/* Country Code - wrapped in container to match Figma Dropdown structure */}
-          <View style={styles.countryCodeContainer}>
+          {/* Dropdown - Figma: I1:29184;48:713 - row, center, space-between, gap:4, w:48, h:32 */}
+          <View style={styles.dropdownContainer}>
             <RNText style={[styles.countryCode, { color: countryCodeColor }]}>{countryCode}</RNText>
+            <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+              <Path
+                d="M4 6L8 10L12 6"
+                stroke={countryCodeColor}
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
           </View>
 
           {/* Input Field - Figma: Plus Jakarta Sans Regular 20px, line-height 32px */}
@@ -207,9 +204,10 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 20,
-    color: COLORS.labelError,
+    textAlign: 'right' as const,
+    color: COLORS.textError,   // Figma: #E5484D — error hint text (node I90:3059;99:1529)
   },
   hintText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -218,30 +216,29 @@ const styles = StyleSheet.create({
     textAlign: 'right',  // Figma: textAlignHorizontal: RIGHT
     color: COLORS.hintText,
   },
-  // Input container - Figma: I1:29184;48:712 - full border box, gap-16, items-center, py-16, radius-12
+  // Input container - Figma: I1:29184;48:712 - fill:invisible, stroke:invisible in empty state
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // Figma: items-center
+    alignItems: 'center',
     gap: SPACING.countryCodeGap, // Figma: gap-[16px]
     paddingVertical: SPACING.inputPaddingV, // Figma: py-[16px]
     borderWidth: 1,
-    borderColor: COLORS.inputBorder, // Figma: #4D4D4D
+    borderColor: 'transparent',
     borderRadius: SPACING.inputBorderRadius, // Figma: 12px
-    paddingHorizontal: 16, // Figma: implicit from Dropdown x-position within Input box
+    paddingHorizontal: 16,
   },
-  // Country code container - matches Figma "Dropdown" container (I90:3005;48:724)
-  // Figma: flex items-center, height determined by content (32px line-height)
-  countryCodeContainer: {
-    height: 32, // Match line-height for consistent alignment
-    justifyContent: 'center', // Vertically center the text
+  // Dropdown container - Figma: I1:29184;48:713 - row, center, gap:4
+  dropdownContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4, // Figma: itemSpacing 4 between "+91" and chevron
   },
-  // Country code text - Figma: Plus Jakarta Sans Regular 20px, line-height 32px
-  // Color is dynamic: #444444 empty, #dddddd filled (set inline)
+  // Country code text - Figma: I1:29184;48:714 - PlusJakartaSans-Regular 20px, lineHeight 32px
   countryCode: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    lineHeight: 32, // Figma: line-height 32px
-    includeFontPadding: false, // Remove Android extra font padding
+    lineHeight: 32,
+    includeFontPadding: false,
   },
   // Input field - Figma: Plus Jakarta Sans 20px, line-height 32px
   // Height 32 to match countryCodeContainer for alignment

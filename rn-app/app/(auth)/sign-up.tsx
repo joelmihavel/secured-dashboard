@@ -29,6 +29,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput } from '@/src/components';
 import { DottedPattern, ConsentToggle } from '@/src/components';
 import { useAuth } from '@/src/hooks';
+import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme';
 
 // Exact Figma color values mapped to theme tokens
@@ -92,6 +93,7 @@ export default function SignUpScreen() {
   const { state } = useLocalSearchParams<{ state?: 'empty' | 'filled' | 'error' }>();
   const nameInputRef = useRef<RNTextInput>(null);
   const { sendCode, status, error, isSendingOtp, clearError } = useAuth();
+  const setUserName = useAuthStore((s) => s.setUserName);
 
   // Mock data for testing states
   const mockData = {
@@ -136,6 +138,8 @@ export default function SignUpScreen() {
         return 'Too many attempts. Please wait.';
       case 'NETWORK_ERROR':
         return 'Check your internet connection';
+      case 'TIMEOUT':
+        return 'Request timed out. Try again.';
       default:
         return error.message;
     }
@@ -155,16 +159,29 @@ export default function SignUpScreen() {
     setConsent(value);
   }, []);
 
+  // Ref-based guard to prevent double-submission before isSendingOtp updates
+  const isSendingRef = useRef(false);
+
+  // Reset the ref when the mutation settles
+  useEffect(() => {
+    if (!isSendingOtp) {
+      isSendingRef.current = false;
+    }
+  }, [isSendingOtp]);
+
   const handleGetStarted = useCallback(() => {
-    if (!isFormValid) return;
+    if (!isFormValid || isSendingRef.current || isSendingOtp) return;
 
-    // Format phone number: remove non-digits and add country code
+    // Format phone number: remove non-digits and add +91 country code (E.164 format)
     const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+    const formattedPhone = `+91${cleanPhone}`;
 
-    // Store name in auth store (will be used during OTP verification)
-    sendCode(formattedPhone);
-  }, [isFormValid, phone, sendCode]);
+    isSendingRef.current = true;
+
+    // Store name in auth store (used during OTP verification)
+    setUserName(name.trim());
+    sendCode(formattedPhone, 'whatsapp');
+  }, [isFormValid, phone, name, sendCode, setUserName, isSendingOtp]);
 
   return (
     <Screen padded={false} testID="sign-up-screen">

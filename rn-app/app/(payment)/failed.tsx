@@ -23,7 +23,7 @@ import {
   Dimensions,
   Linking,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Rect } from 'react-native-svg';
@@ -136,6 +136,14 @@ const InfoRow = ({ text }: InfoRowProps) => (
 export default function FailedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{
+    paymentId?: string;
+    amount?: string;
+    method?: string;
+    error?: string;
+  }>();
+
+  const errorMessage = params.error ?? '';
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -153,7 +161,8 @@ export default function FailedScreen() {
 
   const handleTryAgain = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
+    // Navigate back to select-method to retry the payment flow
+    router.replace('/(payment)/select-method' as never);
   }, [router]);
 
   return (
@@ -198,7 +207,7 @@ export default function FailedScreen() {
 
             {/* Info Rows - Figma 41:9537: gap 24, px 32 */}
             <View style={styles.infoSection}>
-              <InfoRow text="Something didn't go through this time." />
+              <InfoRow text={errorMessage || "Something didn't go through this time."} />
               <InfoRow text="Your money is safe and hasn't been deducted." />
               <InfoRow text="If money was debited, it will automatically be refunded within 3-5 business days" />
             </View>
