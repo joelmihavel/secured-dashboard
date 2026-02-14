@@ -11,6 +11,9 @@ export * from './auth';
 // Dashboard
 export * from './dashboard';
 
+// Identity
+export * from './identity';
+
 // Payments
 export * from './payments';
 

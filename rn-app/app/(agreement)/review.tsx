@@ -1,20 +1,16 @@
 /**
- * Agreement Review Screen - Pixel Perfect Figma Implementation
+ * Agreement Review Screen
  *
- * Figma References:
- * - 1-30448: Onboarding / Agreement --verify agreement (Confirm your details)
- * - 1-30820: Onboarding / Agreement --modify agreement (Pay Rent verification)
+ * Two modes based on Figma designs:
+ * - Verify (1:30448): Read-only detail rows with "Proceed" button
+ * - Edit (1:30820): Editable input fields with "Save Changes" button
  *
- * Fixes Applied:
- * - CRITICAL: Correct Figma ID reference and component structure
- * - MAJOR: Text alignment (textAlign: 'center' for ALL text nodes per Figma spec)
- * - MAJOR: Layout order and spacing using design tokens
- * - MAJOR: Added agreement detail rows from 1-30448 (verify state)
- * - MAJOR: Color corrections - labels #878787, values #CBCBCB per Figma
- * - MAJOR: Typography - PlusJakartaSans font family on all text styles
+ * Flow: verify → (Enter Manually) → edit → (Save Changes) → verify → (Proceed) → success
+ *
+ * All values sourced from Figma REST API — no AI guesswork.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -22,10 +18,10 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  TextInput as RNTextInput,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
@@ -33,138 +29,291 @@ import { useAgreement } from '@/src/hooks';
 import {
   formatPaiseToRupees,
   formatDateDisplay,
+  type ExtractedAgreementData,
 } from '@/src/services/api/agreement';
-import { colors } from '@/src/theme/colors';
-import { spacing, layout } from '@/src/theme/spacing';
-import { typography, fontFamily } from '@/src/theme/typography';
-import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 
 // ============================================
-// FIGMA EXTRACTED CONSTANTS (1-30448, 1-30820)
+// FIGMA CONSTANTS — Figma REST API (1:30448, 1:30820)
 // ============================================
 
-const FIGMA = {
-  screen: {
-    width: 393,
-    height: 1432,
-    backgroundColor: colors.black[700], // #131313
+const F = {
+  // Screen
+  bg: '#131313',
+  contentPadH: 48, // Frame 1686557268 paddingLeft/Right
+
+  // Layout gaps (from Figma frame itemSpacing)
+  mainGap: 40,       // Frame 1686557268 gap
+  titleGroupGap: 48, // Frame 1686557318 gap
+  buttonGroupGap: 24, // Frame 2095586322 gap
+
+  // Title (both screens: size=48, w=400, lineH=64, ls=-2, #ffffff)
+  title: {
+    size: 48,
+    weight: '400' as const,
+    lineH: 64,
+    ls: -2,
+    color: '#ffffff',
   },
-  colors: {
-    screenBackground: colors.black[700],    // #131313
-    cardBackground: colors.white,           // #FFFFFF
-    primaryText: '#000000',                 // black
-    secondaryText: colors.neutral[500],     // #A9A9A9
-    divider: '#D9D9D9',                     // neutral.200
-    handleBar: '#D9D9D9',
-    successText: colors.success.default,    // #70BF73
-    buttonBackground: '#000000',            // black
-    buttonText: colors.white,               // white
-    footerText: colors.neutral[600],        // #878787
-    iconBg: colors.neutral[100],            // #EEEEEE
-    // 1-30448 verify state colors
-    detailLabel: colors.neutral[600],       // #878787 - detail row labels
-    detailValue: colors.neutral[300],       // #CBCBCB - detail row values
-    headerWhite: colors.white,              // #FFFFFF - verify header text
+
+  // Detail rows (verify mode — 1:30448)
+  detail: {
+    gap: 16,          // Frame 2095586321 itemSpacing
+    rowGap: 4,        // within row frame gap
+    labelSize: 12,    // TEXT "Agreement ID" size=12
+    labelWeight: '400' as const,
+    labelColor: '#878787',
+    valueSize: 14,    // TEXT "KIA 123456789" size=14
+    valueWeight: '400' as const,
+    valueColor: '#cbcbcb',
+    dividerColor: '#4d4d4d', // Vector stroke
   },
-  typography: {
-    title: { fontSize: 28, fontWeight: '400' as const, lineHeight: 39.48, letterSpacing: -0.56 },
-    labelUppercase: { fontSize: 12, fontWeight: '500' as const, lineHeight: 21.6 },
-    amount: { fontSize: 12, fontWeight: '600' as const, lineHeight: 16.92, letterSpacing: -0.48 },
-    bankName: { fontSize: 16, fontWeight: '500' as const, lineHeight: 28.8, letterSpacing: -0.18 },
-    button: { fontSize: 14, fontWeight: '600' as const, lineHeight: 25.2, letterSpacing: -0.15 },
-    appName: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16.92, letterSpacing: -0.48 },
-    // 1-30448 verify state typography
-    verifyTitle: { fontSize: 48, fontWeight: '400' as const, lineHeight: 64, letterSpacing: -2 },
-    detailLabel: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20, letterSpacing: 0 },
-    detailValue: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20, letterSpacing: 0 },
-    enterManually: { fontSize: 14, fontWeight: '600' as const, lineHeight: 20, letterSpacing: 0 },
+
+  // Input fields (edit mode — 1:30820)
+  input: {
+    gap: 16,              // Frame 2095586312 itemSpacing
+    bg: '#222222',        // Input bg
+    borderActive: '#4d4d4d',  // stroke on first 2 inputs
+    borderFilled: '#0d0d0d',  // stroke on filled inputs 3-8
+    radius: 12,
+    padV: 16,             // Input paddingTop/Bottom
+    padH: 16,             // Input paddingLeft
+    labelSize: 12,        // w=500
+    labelWeight: '500' as const,
+    labelColor: '#a9a9a9',
+    editSize: 14,         // "Edit" text w=400
+    editWeight: '400' as const,
+    editColor: '#878787',
+    valueSize: 20,        // value text size=20
+    valueWeight: '400' as const,
+    valueLineH: 32,
+    filledColor: '#dddddd',
+    placeholderColor: '#222222',
+    hintSize: 14,
+    hintWeight: '400' as const,
+    hintColor: '#878787',
+    labelGap: 6,          // gap between label row and input
   },
-  spacing: {
-    cardTopPadding: 15.19,
-    cardGap: 24,
-    sectionGap: 30.38,
-    contentPadding: 16,
-    horizontalPadding: 24,
-    iconTextGap: 16,
-    smallGap: 4,
-    mediumGap: 8,
-    largeGap: 10,
+
+  // Button (both screens — stroke=#ff9a6d, r=8)
+  button: {
+    height: 56,           // Frame 2095586312 (button inner) height
+    radius: 8,
+    border: '#ff9a6d',
+    textSize: 16,         // "Proceed"/"Save Changes" size=16
+    textWeight: '500' as const,
+    textColor: '#ffffff',
+    textLineH: 24,
+    pad: 16,
   },
-  dimensions: {
-    cardBorderRadius: 22.79,
-    handleWidth: 28,
-    handleHeight: 4,
-    iconContainerSize: 40,
-    buttonHeight: 41,
-    buttonRadius: 200,
+
+  // Decorative pill above button
+  pill: {
+    w: 24,               // Rectangle 140 width
+    h: 2,                // Rectangle 140 height
+    color: '#4d4d4d',
+    radius: 200,
+  },
+
+  // "Enter Manually" link (verify mode only)
+  manual: {
+    size: 14,            // size=14, w=400
+    weight: '400' as const,
+    lineH: 20,
+    color: '#a9a9a9',
   },
 } as const;
 
 // ============================================
-// SVG ICONS
+// FIELD DEFINITIONS
 // ============================================
 
-const VerticalDashedLine = () => (
-  <Svg width={scaled(1)} height={scaled(33)} viewBox="0 0 1 33" fill="none">
-    <Path
-      d="M0.253846 0V33"
-      stroke="#1A1A1A"
-      strokeWidth={0.5}
-      strokeDasharray="8 8"
-    />
-  </Svg>
-);
-
-const HorizontalLine = () => (
-  <Svg width="100%" height={scaled(1)} viewBox="0 0 393 1" fill="none">
-    <Path d="M0 0.25H393" stroke={colors.neutral[100]} strokeWidth={0.5} />
-  </Svg>
-);
-
-const WalletIcon = () => (
-  <Svg width={scaled(24)} height={scaled(24)} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M4.77419 4.77419V12C4.77419 12.5475 4.9917 13.0727 5.37888 13.4598C5.76605 13.847 6.29117 14.0645 6.83871 14.0645H17.1613C17.7088 14.0645 18.234 13.847 18.6211 13.4598C19.0083 13.0727 19.2258 12.5475 19.2258 12V4.77419"
-      stroke="black"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M8.78947 8.21053V1.89474C8.78947 1.33639 9.01128 0.8009 9.40609 0.40609C9.8009 0.01128 10.3364 -0.210526 10.8947 -0.210526H13C13.5583 -0.210526 14.0938 0.01128 14.4886 0.40609C14.8835 0.8009 15.1053 1.33639 15.1053 1.89474V8.21053"
-      stroke="black"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      transform="translate(0 2)"
-    />
-  </Svg>
-);
-
-const DiscountIcon = () => (
-  <Svg width={scaled(16)} height={scaled(20)} viewBox="0 0 17 20" fill="none">
-    <Path
-      d="M6.23758 20.0001H1.86316V10.6031H0V8.0109H1.86316C0.82626 3.99289 3.75334 1.58428 5.3465 0.882227C10.0125 -1.58041 14.8514 1.69229 16.6876 3.63647V20.0001H12.3132V5.82368C9.78572 1.67608 6.61562 2.63738 5.3465 3.63647C3.72634 6.42314 6.02156 7.71387 7.37169 8.0109H9.63991V10.6031H6.23758V20.0001Z"
-      fill="black"
-    />
-  </Svg>
-);
-
-// ============================================
-// DETAIL ROW COMPONENT (1-30448 verify state)
-// ============================================
-
-interface DetailRowProps {
+interface FieldDef {
+  key: string;
   label: string;
-  value: string;
+  placeholder: string;
+  hintText?: string;
+  /** Key for update-extraction modifications object */
+  backendKey?: string;
+  isMonetary?: boolean;
+  getValue: (data: ExtractedAgreementData) => string;
 }
 
-const DetailRow = ({ label, value }: DetailRowProps) => (
-  <View style={styles.detailRow}>
-    <Text style={styles.detailLabel}>{label}</Text>
-    <Text style={styles.detailValue}>{value}</Text>
+const FIELDS: FieldDef[] = [
+  {
+    key: 'certificateNo',
+    label: 'Agreement ID',
+    placeholder: 'e.g. KIA123456789',
+    hintText: 'Certificate number from agreement',
+    // Not in backend MODIFIABLE_FIELDS — no backendKey
+    getValue: (d) => d.certificateNo ?? '',
+  },
+  {
+    key: 'propertyName',
+    label: 'Property Name',
+    placeholder: 'e.g. Prestige Pinestripe, Bengaluru',
+    hintText: 'Full property address',
+    backendKey: 'property_address',
+    getValue: (d) => {
+      const parts = [d.propertyName, d.propertyAddress, d.propertyCity, d.propertyPincode].filter(Boolean);
+      return parts.join(', ') || '';
+    },
+  },
+  {
+    key: 'tenants',
+    label: 'Tenant(s)',
+    placeholder: 'e.g. John Appleseed',
+    backendKey: 'tenant_name',
+    getValue: (d) => d.tenantNames?.join(', ') ?? '',
+  },
+  {
+    key: 'landlords',
+    label: 'Landlord(s)',
+    placeholder: 'e.g. Lisa Appleseed',
+    backendKey: 'landlord_name',
+    getValue: (d) => d.landlordNames?.join(', ') ?? '',
+  },
+  {
+    key: 'monthlyRent',
+    label: 'Monthly Rent',
+    placeholder: 'e.g. 40,000',
+    backendKey: 'monthly_rent',
+    isMonetary: true,
+    getValue: (d) => d.monthlyRentPaise ? `\u20B9 ${formatPaiseToRupees(d.monthlyRentPaise)}` : '',
+  },
+  {
+    key: 'deposit',
+    label: 'One-Time Deposit',
+    placeholder: 'e.g. 130,000',
+    backendKey: 'security_deposit',
+    isMonetary: true,
+    getValue: (d) => d.securityDepositPaise ? `\u20B9 ${formatPaiseToRupees(d.securityDepositPaise)}` : '',
+  },
+  {
+    key: 'duration',
+    label: 'Rent Duration',
+    placeholder: 'e.g. 11 Months',
+    // Derived from dates — no backendKey
+    getValue: (d) => d.rentDurationMonths ? `${d.rentDurationMonths} Months` : '',
+  },
+  {
+    key: 'exitDate',
+    label: 'Exit Date',
+    placeholder: 'e.g. 31 Dec 2027',
+    backendKey: 'lease_end_date',
+    getValue: (d) => d.leaseEndDate ? formatDateDisplay(d.leaseEndDate) : '',
+  },
+];
+
+// ============================================
+// SUB-COMPONENTS
+// ============================================
+
+/** Detail row for verify mode — matches Figma 1:30448 detail frames */
+const DetailRow = ({ label, value }: { label: string; value: string }) => {
+  const isLong = value.length > 30;
+
+  return (
+    <View style={isLong ? styles.detailRowVertical : styles.detailRowHorizontal}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={isLong ? styles.detailValueBelow : styles.detailValueRight}>
+        {value}
+      </Text>
+    </View>
+  );
+};
+
+/** Divider between detail rows — Vector stroke=#4d4d4d */
+const Divider = () => <View style={styles.divider} />;
+
+/** Outline button matching Figma button instance */
+const OutlineButton = ({
+  label,
+  onPress,
+  disabled,
+  loading,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) => (
+  <View style={styles.buttonOuter}>
+    <View style={styles.buttonPill} />
+    <TouchableOpacity
+      style={[styles.button, disabled && { opacity: 0.5 }]}
+      onPress={onPress}
+      disabled={disabled || loading}
+      activeOpacity={0.8}
+    >
+      <Text style={styles.buttonText}>
+        {loading ? 'Saving...' : label}
+      </Text>
+    </TouchableOpacity>
   </View>
 );
+
+/** Editable field for edit mode — matches Figma 1:30820 input instances */
+const EditField = ({
+  field,
+  value,
+  isEditing,
+  onEdit,
+  onChangeText,
+}: {
+  field: FieldDef;
+  value: string;
+  isEditing: boolean;
+  onEdit: () => void;
+  onChangeText: (text: string) => void;
+}) => {
+  const hasValue = value.length > 0;
+  const showEditButton = hasValue && !isEditing;
+  const isFieldEditable = isEditing || !hasValue;
+
+  return (
+    <View style={styles.editFieldContainer}>
+      {/* Label row */}
+      <View style={styles.editLabelRow}>
+        <Text style={styles.editLabel}>{field.label}</Text>
+        {showEditButton ? (
+          <TouchableOpacity
+            onPress={onEdit}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
+        ) : !hasValue && field.hintText ? (
+          <Text style={styles.editHint}>{field.hintText}</Text>
+        ) : null}
+      </View>
+
+      {/* Input */}
+      <View
+        style={[
+          styles.editInput,
+          {
+            borderColor: isFieldEditable
+              ? F.input.borderActive
+              : F.input.borderFilled,
+          },
+        ]}
+      >
+        <RNTextInput
+          value={value}
+          onChangeText={onChangeText}
+          editable={isFieldEditable}
+          placeholder={field.placeholder}
+          placeholderTextColor={F.input.placeholderColor}
+          style={[
+            styles.editInputText,
+            hasValue && { color: F.input.filledColor },
+          ]}
+          keyboardType={field.isMonetary ? 'numeric' : 'default'}
+        />
+      </View>
+    </View>
+  );
+};
 
 // ============================================
 // MAIN COMPONENT
@@ -175,70 +324,113 @@ export default function ReviewScreen() {
   const insets = useSafeAreaInsets();
   const { extractionId } = useLocalSearchParams<{ extractionId?: string }>();
 
-  // Fetch real extraction data via the agreement hook.
-  // Falls back to mock data when no extractionId is provided (visual testing).
   const useMock = !extractionId;
   const {
     extractedData,
     isLoadingExtraction,
     confirm,
     isConfirming,
+    update,
+    isUpdating,
   } = useAgreement({
     useMock,
     extractionId: extractionId ?? null,
   });
 
-  // Build agreement detail rows from extracted data
-  const agreementDetails: DetailRowProps[] = useMemo(() => {
-    if (!extractedData) return [];
+  // Mode: verify (read-only detail rows) or edit (input fields)
+  const [mode, setMode] = useState<'verify' | 'edit'>('verify');
 
-    const details: DetailRowProps[] = [];
+  // Per-field editing state (which fields user has tapped "Edit" on)
+  const [editingFields, setEditingFields] = useState<Set<string>>(new Set());
 
-    if (extractedData.certificateNo) {
-      details.push({ label: 'Agreement ID', value: extractedData.certificateNo });
-    }
-    if (extractedData.propertyName) {
-      details.push({ label: 'Property Name', value: extractedData.propertyName });
-    }
-    if (extractedData.tenantNames.length > 0) {
-      details.push({ label: 'Tenant(s)', value: extractedData.tenantNames.join(', ') });
-    }
-    if (extractedData.landlordNames.length > 0) {
-      details.push({ label: 'Landlord(s)', value: extractedData.landlordNames.join(', ') });
-    }
-    if (extractedData.monthlyRentPaise) {
-      details.push({
-        label: 'Monthly Rent',
-        value: `\u20B9 ${formatPaiseToRupees(extractedData.monthlyRentPaise)}`,
-      });
-    }
-    if (extractedData.securityDepositPaise) {
-      details.push({
-        label: 'One-Time Deposit',
-        value: `\u20B9 ${formatPaiseToRupees(extractedData.securityDepositPaise)}`,
-      });
-    }
-    if (extractedData.rentDurationMonths) {
-      details.push({
-        label: 'Rent Duration',
-        value: `${extractedData.rentDurationMonths} months`,
-      });
-    }
-    if (extractedData.leaseEndDate) {
-      details.push({
-        label: 'Exit Date',
-        value: formatDateDisplay(extractedData.leaseEndDate),
-      });
-    }
+  // Edit values (overrides for extracted data)
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
 
-    return details;
+  // Build display values from extracted data
+  const fieldValues = useMemo(() => {
+    if (!extractedData) return {};
+    const values: Record<string, string> = {};
+    for (const field of FIELDS) {
+      values[field.key] = field.getValue(extractedData);
+    }
+    return values;
   }, [extractedData]);
 
-  const [confirmError, setConfirmError] = useState<string | null>(null);
+  // Get current value: edit override > extracted data
+  const getFieldValue = useCallback(
+    (key: string) => editValues[key] ?? fieldValues[key] ?? '',
+    [editValues, fieldValues]
+  );
 
-  const handleConfirmAndProceed = async () => {
+  // Unlock a field for editing
+  const toggleEditing = useCallback((key: string) => {
+    setEditingFields((prev) => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
+  // Update a field value
+  const updateFieldValue = useCallback((key: string, value: string) => {
+    setEditValues((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  // Switch to edit mode, pre-populate edit values
+  const handleEnterManually = useCallback(() => {
+    const values: Record<string, string> = {};
+    for (const field of FIELDS) {
+      const v = fieldValues[field.key];
+      if (v) values[field.key] = v;
+    }
+    setEditValues(values);
+    setMode('edit');
+  }, [fieldValues]);
+
+  // Save changes via update-extraction endpoint
+  const handleSaveChanges = useCallback(async () => {
     if (!extractedData) return;
-    setConfirmError(null);
+
+    // Build modifications: only include fields with a backendKey that changed
+    const modifications: Record<string, string | number> = {};
+
+    for (const field of FIELDS) {
+      if (!field.backendKey) continue;
+      const edited = editValues[field.key];
+      const original = fieldValues[field.key];
+
+      if (edited !== undefined && edited !== original) {
+        if (field.isMonetary) {
+          // Strip currency symbol and commas, convert to rupees
+          const numStr = edited.replace(/[\u20B9,\s]/g, '');
+          const num = parseInt(numStr, 10);
+          if (!isNaN(num)) modifications[field.backendKey] = num;
+        } else {
+          modifications[field.backendKey] = edited;
+        }
+      }
+    }
+
+    if (Object.keys(modifications).length === 0) {
+      setMode('verify');
+      return;
+    }
+
+    try {
+      await update(modifications);
+      setMode('verify');
+      setEditingFields(new Set());
+      setEditValues({});
+    } catch (error) {
+      const msg =
+        (error as { message?: string })?.message ?? 'Failed to save changes';
+      Alert.alert('Save Failed', msg);
+    }
+  }, [extractedData, update, editValues, fieldValues]);
+
+  // Confirm extraction and navigate to success
+  const handleProceed = useCallback(async () => {
+    if (!extractedData) return;
 
     try {
       await confirm({ confirmedRole: 'tenant' });
@@ -247,29 +439,20 @@ export default function ReviewScreen() {
         params: { extractionId: extractedData.extractionId },
       } as never);
     } catch (error) {
-      console.error('Confirm extraction error:', error);
       const msg =
-        (error as { message?: string })?.message ?? 'Something went wrong. Please try again.';
-      setConfirmError(msg);
+        (error as { message?: string })?.message ??
+        'Something went wrong. Please try again.';
       Alert.alert('Confirmation Failed', msg);
     }
-  };
-
-  // Derived values for payment card
-  const monthlyRent = extractedData?.monthlyRentPaise
-    ? formatPaiseToRupees(extractedData.monthlyRentPaise)
-    : '0';
-  const landlordName = extractedData?.landlordNames?.[0] ?? '[Landlord Name]';
+  }, [extractedData, confirm, router]);
 
   // Loading state
   if (isLoadingExtraction) {
     return (
       <Screen testID="review-screen">
-        <View style={[styles.scrollContent, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
-          <ActivityIndicator size="large" color={colors.brand[500]} />
-          <Text style={[styles.verifyHeaderTitle, { fontSize: scaledFont(16), marginTop: scaledSpacing(16) }]}>
-            Loading your details...
-          </Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ff9a6d" />
+          <Text style={styles.loadingText}>Loading your details...</Text>
         </View>
       </Screen>
     );
@@ -277,7 +460,7 @@ export default function ReviewScreen() {
 
   return (
     <Screen testID="review-screen">
-      {/* Background Pattern */}
+      {/* Background pattern */}
       <View style={styles.backgroundPattern}>
         <DottedPattern />
       </View>
@@ -287,133 +470,68 @@ export default function ReviewScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: insets.top + scaledSpacing(FIGMA.spacing.contentPadding),
-            paddingBottom: insets.bottom + scaledSpacing(32),
+            paddingTop: insets.top + 16,
+            paddingBottom: insets.bottom + 32,
           },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Verify State Header (1-30448) */}
-        <View style={styles.verifyHeaderContainer}>
-          <Text style={styles.verifyHeaderTitle}>Confirm your{'\n'}details</Text>
-        </View>
+        <View style={styles.mainContent}>
+          {/* Title group (Frame 1686557318) */}
+          <View style={styles.titleGroup}>
+            <Text style={styles.title}>
+              {mode === 'verify'
+                ? 'Confirm your\ndetails'
+                : "Let's fix the\ndetails"}
+            </Text>
 
-        {/* Agreement Details Section (1-30448) */}
-        <View style={styles.detailsSection}>
-          {agreementDetails.map((detail) => (
-            <DetailRow key={detail.label} label={detail.label} value={detail.value} />
-          ))}
-        </View>
+            {/* Verify mode: detail rows */}
+            {mode === 'verify' ? (
+              <View style={styles.detailsContainer}>
+                {FIELDS.map((field, index) => {
+                  const value = getFieldValue(field.key);
+                  if (!value) return null;
 
-        {/* Enter Manually Link (1-30448) */}
-        <TouchableOpacity style={styles.enterManuallyContainer}>
-          <Text style={styles.enterManuallyText}>Enter Manually</Text>
-        </TouchableOpacity>
-
-        {/* Header Title - Pay Rent (1-30820 modify state) */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.headerTitle}>Pay Rent</Text>
-        </View>
-
-        {/* White Card Section */}
-        <View style={styles.cardContainer}>
-          {/* Handle Bar */}
-          <View style={styles.handleBar} />
-
-          {/* Amount Section with Icons */}
-          <View style={styles.amountSection}>
-            {/* Left: Total Rent */}
-            <View style={styles.amountItem}>
-              <View style={styles.iconContainer}>
-                <WalletIcon />
+                  return (
+                    <React.Fragment key={field.key}>
+                      <DetailRow label={field.label} value={value} />
+                      {index < FIELDS.length - 1 && <Divider />}
+                    </React.Fragment>
+                  );
+                })}
               </View>
-              <View style={styles.amountTextContainer}>
-                <Text style={styles.labelText}>TOTAL PAYABLE RENT</Text>
-                <Text style={styles.amountValue}>{'\u20B9'} {monthlyRent}</Text>
+            ) : (
+              /* Edit mode: input fields */
+              <View style={styles.inputsContainer}>
+                {FIELDS.map((field) => (
+                  <EditField
+                    key={field.key}
+                    field={field}
+                    value={getFieldValue(field.key)}
+                    isEditing={editingFields.has(field.key)}
+                    onEdit={() => toggleEditing(field.key)}
+                    onChangeText={(text) => updateFieldValue(field.key, text)}
+                  />
+                ))}
               </View>
-            </View>
-
-            {/* Vertical Divider */}
-            <View style={styles.dividerContainer}>
-              <VerticalDashedLine />
-            </View>
-
-            {/* Right: Savings */}
-            <View style={styles.amountItem}>
-              <View style={styles.iconContainer}>
-                <DiscountIcon />
-              </View>
-              <View style={styles.amountTextContainer}>
-                <Text style={styles.savingsText}>saved {'\u20B9'} 325 {'\u2192'}</Text>
-                <Text style={styles.cashbackText}>using flent cashback</Text>
-              </View>
-            </View>
+            )}
           </View>
 
-          {/* Payment Details Section */}
-          <View style={styles.paymentDetailsSection}>
-            {/* Paying to row */}
-            <View style={styles.payeeRow}>
-              <Text style={styles.payeeLabel}>Paying to</Text>
-              <Text style={styles.payeeValue}>{landlordName}</Text>
-            </View>
+          {/* Button section (Frame 2095586322) */}
+          <View style={styles.buttonSection}>
+            <OutlineButton
+              label={mode === 'verify' ? 'Proceed' : 'Save Changes'}
+              onPress={mode === 'verify' ? handleProceed : handleSaveChanges}
+              disabled={mode === 'verify' ? isConfirming : isUpdating}
+              loading={mode === 'verify' ? isConfirming : isUpdating}
+            />
 
-            {/* Bank details */}
-            <View style={styles.bankRow}>
-              <View style={styles.bankIcon} />
-              <View style={styles.bankDetails}>
-                <Text style={styles.bankName}>ICICI</Text>
-                <Text style={styles.accountNumber}>XXXX XXXX XXXX 2003</Text>
-              </View>
-            </View>
-
-            {/* Confirm & Pay Button */}
-            <TouchableOpacity
-              onPress={handleConfirmAndProceed}
-              style={[styles.payButton, isConfirming && { opacity: 0.6 }]}
-              activeOpacity={0.9}
-              disabled={isConfirming}
-            >
-              <Text style={styles.payButtonText}>
-                {isConfirming ? 'Confirming...' : 'Pay Now'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Security text */}
-            <Text style={styles.securityText}>All payments are 100% secure</Text>
-          </View>
-
-          {/* Horizontal Divider */}
-          <View style={styles.horizontalDivider}>
-            <HorizontalLine />
-          </View>
-
-          {/* Footer - Alternative Payment Methods */}
-          <View style={styles.footerSection}>
-            <View style={styles.alternativePaymentHeader}>
-              <View style={styles.upiIcon} />
-              <Text style={styles.alternativePaymentText}>PAY BY ANY APP INSTEAD</Text>
-            </View>
-
-            <View style={styles.paymentAppsRow}>
-              {/* Google Pay */}
-              <View style={styles.paymentAppItem}>
-                <View style={styles.paymentAppIcon} />
-                <Text style={styles.paymentAppName}>Google Pay</Text>
-              </View>
-
-              {/* PayTM */}
-              <View style={styles.paymentAppItem}>
-                <View style={styles.paymentAppIcon} />
-                <Text style={styles.paymentAppName}>PayTM</Text>
-              </View>
-
-              {/* PhonePe */}
-              <View style={styles.paymentAppItem}>
-                <View style={styles.paymentAppIcon} />
-                <Text style={styles.paymentAppName}>PhonePe</Text>
-              </View>
-            </View>
+            {mode === 'verify' && (
+              <TouchableOpacity onPress={handleEnterManually}>
+                <Text style={styles.enterManuallyText}>Enter Manually</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -422,21 +540,18 @@ export default function ReviewScreen() {
 }
 
 // ============================================
-// STYLES - EXACT FIGMA VALUES (1-30820)
+// STYLES — All values from Figma REST API
 // ============================================
 
 const styles = StyleSheet.create({
-  // Background
   backgroundPattern: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: scaled(405),
+    height: 405,
     overflow: 'hidden',
   },
-
-  // Scroll
   scrollView: {
     flex: 1,
   },
@@ -444,330 +559,214 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // Header
-  headerContainer: {
-    paddingHorizontal: scaledSpacing(FIGMA.spacing.horizontalPadding),
-    marginBottom: scaledSpacing(FIGMA.spacing.cardGap),
-  },
-  headerTitle: {
-    color: colors.white,
-    fontFamily: fontFamily.primary.regular,
-    fontSize: scaledFont(FIGMA.typography.title.fontSize),
-    fontWeight: FIGMA.typography.title.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.title.lineHeight),
-    letterSpacing: FIGMA.typography.title.letterSpacing,
-    textAlign: 'center', // MAJOR FIX: Added center alignment
-  },
-
-  // Card Container
-  cardContainer: {
+  // Main content area (Frame 1686557268: pad=48h, gap=40)
+  mainContent: {
     flex: 1,
-    backgroundColor: FIGMA.colors.cardBackground,
-    borderTopLeftRadius: scaled(FIGMA.dimensions.cardBorderRadius),
-    borderTopRightRadius: scaled(FIGMA.dimensions.cardBorderRadius),
-    alignItems: 'center',
-    paddingTop: scaledSpacing(FIGMA.spacing.cardTopPadding),
-    paddingBottom: scaledSpacing(FIGMA.spacing.cardGap),
+    paddingHorizontal: F.contentPadH,
+    gap: F.mainGap,
+    justifyContent: 'space-between',
   },
 
-  // Handle Bar
-  handleBar: {
-    width: scaled(FIGMA.dimensions.handleWidth),
-    height: scaled(FIGMA.dimensions.handleHeight),
-    backgroundColor: FIGMA.colors.handleBar,
-    borderRadius: scaled(200),
-    marginBottom: scaledSpacing(FIGMA.spacing.cardGap),
+  // Title group (Frame 1686557318: gap=48)
+  titleGroup: {
+    gap: F.titleGroupGap,
   },
 
-  // Amount Section
-  amountSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    paddingHorizontal: scaledSpacing(FIGMA.spacing.horizontalPadding),
-    marginBottom: scaledSpacing(FIGMA.spacing.sectionGap),
-    gap: scaledSpacing(FIGMA.spacing.iconTextGap),
-  },
-  amountItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scaledSpacing(FIGMA.spacing.iconTextGap),
-  },
-  iconContainer: {
-    width: scaled(FIGMA.dimensions.iconContainerSize),
-    height: scaled(FIGMA.dimensions.iconContainerSize),
-    backgroundColor: FIGMA.colors.iconBg,
-    borderRadius: scaled(200),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  amountTextContainer: {
-    gap: scaledSpacing(FIGMA.spacing.smallGap),
-  },
-  labelText: {
-    color: FIGMA.colors.secondaryText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(FIGMA.typography.labelUppercase.fontSize),
-    fontWeight: FIGMA.typography.labelUppercase.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.labelUppercase.lineHeight),
-    textAlign: 'center', // MAJOR FIX: Added center alignment
-    textTransform: 'uppercase',
-  },
-  amountValue: {
-    color: FIGMA.colors.primaryText,
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: scaledFont(FIGMA.typography.amount.fontSize),
-    fontWeight: FIGMA.typography.amount.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.amount.lineHeight),
-    letterSpacing: FIGMA.typography.amount.letterSpacing,
-    textAlign: 'center',
-  },
-  dividerContainer: {
-    height: scaled(33),
-    width: scaled(1),
-  },
-  savingsText: {
-    color: FIGMA.colors.successText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(FIGMA.typography.amount.fontSize),
-    fontWeight: FIGMA.typography.amount.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.amount.lineHeight),
-    letterSpacing: FIGMA.typography.amount.letterSpacing,
-    textAlign: 'center',
-  },
-  cashbackText: {
-    color: FIGMA.colors.secondaryText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(FIGMA.typography.labelUppercase.fontSize),
-    fontWeight: FIGMA.typography.labelUppercase.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.labelUppercase.lineHeight),
-    textAlign: 'center', // MAJOR FIX: Added center alignment
+  // Title text (size=48, w=400, lineH=64, ls=-2, #ffffff)
+  title: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.title.size,
+    fontWeight: F.title.weight,
+    lineHeight: F.title.lineH,
+    letterSpacing: F.title.ls,
+    color: F.title.color,
   },
 
-  // Payment Details Section
-  paymentDetailsSection: {
-    width: '100%',
-    paddingHorizontal: scaledSpacing(FIGMA.spacing.horizontalPadding),
-    gap: scaledSpacing(FIGMA.spacing.mediumGap),
+  // ---- Verify Mode: Detail Rows ----
+
+  // Container (Frame 2095586321: gap=16)
+  detailsContainer: {
+    gap: F.detail.gap,
   },
-  payeeRow: {
+
+  // Horizontal row (short values, e.g. "Agreement ID")
+  detailRowHorizontal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-  },
-  payeeLabel: {
-    color: FIGMA.colors.primaryText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(12),
-    fontWeight: '500',
-    lineHeight: scaledFont(21.6),
-    letterSpacing: -0.13,
-    textAlign: 'left',
-  },
-  payeeValue: {
-    color: FIGMA.colors.primaryText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(12),
-    fontWeight: '500',
-    lineHeight: scaledFont(21.6),
-    letterSpacing: -0.13,
-    textAlign: 'right',
-  },
-  bankRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scaledSpacing(FIGMA.spacing.iconTextGap),
-  },
-  bankIcon: {
-    width: scaled(51),
-    height: scaled(51),
-    backgroundColor: '#E5E5E5',
-    borderRadius: scaled(8),
-  },
-  bankDetails: {
-    gap: scaledSpacing(FIGMA.spacing.smallGap),
-  },
-  bankName: {
-    color: FIGMA.colors.primaryText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(FIGMA.typography.bankName.fontSize),
-    fontWeight: FIGMA.typography.bankName.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.bankName.lineHeight),
-    letterSpacing: FIGMA.typography.bankName.letterSpacing,
-    textAlign: 'left',
-  },
-  accountNumber: {
-    color: FIGMA.colors.primaryText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(12),
-    fontWeight: '500',
-    lineHeight: scaledFont(21.6),
-    letterSpacing: -0.13,
-    textAlign: 'left',
+    gap: F.detail.rowGap,
   },
 
-  // Pay Button
-  payButton: {
-    height: scaled(FIGMA.dimensions.buttonHeight),
-    width: scaled(345),
-    backgroundColor: FIGMA.colors.buttonBackground,
-    borderRadius: scaled(FIGMA.dimensions.buttonRadius),
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.neutral[600],
-    marginTop: scaledSpacing(FIGMA.spacing.largeGap),
-    shadowColor: '#995C41',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.24,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  payButtonText: {
-    color: FIGMA.colors.buttonText,
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: scaledFont(FIGMA.typography.button.fontSize),
-    fontWeight: FIGMA.typography.button.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.button.lineHeight),
-    letterSpacing: FIGMA.typography.button.letterSpacing,
-    textAlign: 'center', // MAJOR FIX: Added center alignment
-  },
-  securityText: {
-    color: FIGMA.colors.primaryText,
-    fontFamily: fontFamily.primary.medium,
-    fontSize: scaledFont(12),
-    fontWeight: '500',
-    lineHeight: scaledFont(21.6),
-    textAlign: 'center', // MAJOR FIX: Added center alignment
-    marginTop: scaledSpacing(FIGMA.spacing.mediumGap),
+  // Vertical row (long values, e.g. "Property Name")
+  detailRowVertical: {
+    gap: F.detail.rowGap,
   },
 
-  // Horizontal Divider
-  horizontalDivider: {
-    width: '100%',
-    marginVertical: scaledSpacing(FIGMA.spacing.sectionGap),
-  },
-
-  // Footer Section
-  footerSection: {
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: scaledSpacing(FIGMA.spacing.horizontalPadding),
-    gap: scaledSpacing(FIGMA.spacing.iconTextGap),
-  },
-  alternativePaymentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scaledSpacing(FIGMA.spacing.mediumGap),
-  },
-  upiIcon: {
-    width: scaled(40),
-    height: scaled(32),
-    backgroundColor: '#E5E5E5',
-    borderRadius: scaled(4),
-  },
-  alternativePaymentText: {
-    color: FIGMA.colors.footerText,
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: scaledFont(12),
-    fontWeight: '600',
-    lineHeight: scaledFont(16.92),
-    letterSpacing: -0.48,
-    textAlign: 'center', // MAJOR FIX: Added center alignment
-    textTransform: 'uppercase',
-  },
-  paymentAppsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-    gap: scaled(72),
-  },
-  paymentAppItem: {
-    alignItems: 'center',
-    gap: scaledSpacing(FIGMA.spacing.mediumGap),
-  },
-  paymentAppIcon: {
-    width: scaled(FIGMA.dimensions.iconContainerSize),
-    height: scaled(FIGMA.dimensions.iconContainerSize),
-    backgroundColor: '#E5E5E5',
-    borderRadius: scaled(200),
-  },
-  paymentAppName: {
-    color: FIGMA.colors.primaryText,
-    fontFamily: fontFamily.primary.regular,
-    fontSize: scaledFont(FIGMA.typography.appName.fontSize),
-    fontWeight: FIGMA.typography.appName.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.appName.lineHeight),
-    letterSpacing: FIGMA.typography.appName.letterSpacing,
-    textAlign: 'center', // MAJOR FIX: Added center alignment
-  },
-
-  // ============================================
-  // VERIFY STATE STYLES (1-30448)
-  // ============================================
-
-  // Verify Header
-  verifyHeaderContainer: {
-    paddingHorizontal: scaledSpacing(FIGMA.spacing.horizontalPadding),
-    marginBottom: scaledSpacing(40),
-  },
-  verifyHeaderTitle: {
-    color: FIGMA.colors.headerWhite,
-    fontFamily: fontFamily.primary.regular,
-    fontSize: scaledFont(FIGMA.typography.verifyTitle.fontSize),
-    fontWeight: FIGMA.typography.verifyTitle.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.verifyTitle.lineHeight),
-    letterSpacing: FIGMA.typography.verifyTitle.letterSpacing,
-    textAlign: 'left',
-  },
-
-  // Agreement Details Section
-  detailsSection: {
-    paddingHorizontal: scaledSpacing(FIGMA.spacing.horizontalPadding),
-    marginBottom: scaledSpacing(24),
-    gap: scaledSpacing(16),
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
+  // Label (size=12, w=400, #878787)
   detailLabel: {
-    color: FIGMA.colors.detailLabel,           // #878787
-    fontFamily: fontFamily.primary.regular,
-    fontSize: scaledFont(FIGMA.typography.detailLabel.fontSize),
-    fontWeight: FIGMA.typography.detailLabel.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.detailLabel.lineHeight),
-    letterSpacing: FIGMA.typography.detailLabel.letterSpacing,
-    textAlign: 'left',
-  },
-  detailValue: {
-    color: FIGMA.colors.detailValue,           // #CBCBCB
-    fontFamily: fontFamily.primary.regular,
-    fontSize: scaledFont(FIGMA.typography.detailValue.fontSize),
-    fontWeight: FIGMA.typography.detailValue.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.detailValue.lineHeight),
-    letterSpacing: FIGMA.typography.detailValue.letterSpacing,
-    textAlign: 'right',
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.detail.labelSize,
+    fontWeight: F.detail.labelWeight,
+    lineHeight: 20,
+    color: F.detail.labelColor,
   },
 
-  // Enter Manually Link
-  enterManuallyContainer: {
-    alignItems: 'center',
-    paddingHorizontal: scaledSpacing(FIGMA.spacing.horizontalPadding),
-    marginBottom: scaledSpacing(32),
+  // Value right-aligned (for horizontal layout)
+  detailValueRight: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.detail.valueSize,
+    fontWeight: F.detail.valueWeight,
+    lineHeight: 20,
+    color: F.detail.valueColor,
+    textAlign: 'right',
+    flex: 1,
   },
-  enterManuallyText: {
-    color: FIGMA.colors.headerWhite,
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: scaledFont(FIGMA.typography.enterManually.fontSize),
-    fontWeight: FIGMA.typography.enterManually.fontWeight,
-    lineHeight: scaledFont(FIGMA.typography.enterManually.lineHeight),
-    letterSpacing: FIGMA.typography.enterManually.letterSpacing,
+
+  // Value below (for vertical layout)
+  detailValueBelow: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.detail.valueSize,
+    fontWeight: F.detail.valueWeight,
+    lineHeight: 20,
+    color: F.detail.valueColor,
+  },
+
+  // Divider (Vector stroke=#4d4d4d)
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: F.detail.dividerColor,
+  },
+
+  // ---- Edit Mode: Input Fields ----
+
+  // Container (Frame 2095586312: gap=16)
+  inputsContainer: {
+    gap: F.input.gap,
+  },
+
+  // Field wrapper (gap=6 between label and input)
+  editFieldContainer: {
+    gap: F.input.labelGap,
+  },
+
+  // Label row (horizontal: label + "Edit"/"hint")
+  editLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  // Label (size=12, w=500, #a9a9a9)
+  editLabel: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: F.input.labelSize,
+    fontWeight: F.input.labelWeight,
+    lineHeight: 20,
+    color: F.input.labelColor,
+  },
+
+  // "Edit" button text (size=14, w=400, #878787)
+  editButtonText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.input.editSize,
+    fontWeight: F.input.editWeight,
+    lineHeight: 20,
+    color: F.input.editColor,
+  },
+
+  // Hint text (size=14, w=400, #878787)
+  editHint: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.input.hintSize,
+    fontWeight: F.input.hintWeight,
+    lineHeight: 20,
+    color: F.input.hintColor,
+  },
+
+  // Input container (bg=#222222, border, r=12)
+  editInput: {
+    backgroundColor: F.input.bg,
+    borderWidth: 1,
+    borderRadius: F.input.radius,
+    paddingHorizontal: F.input.padH,
+  },
+
+  // Input text (size=20, w=400, lineH=32, placeholder=#222222)
+  editInputText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.input.valueSize,
+    fontWeight: F.input.valueWeight,
+    lineHeight: F.input.valueLineH,
+    color: F.input.placeholderColor,
+    paddingVertical: F.input.padV,
+  },
+
+  // ---- Button Section ----
+
+  // Container (Frame 2095586322: gap=24)
+  buttonSection: {
+    gap: F.buttonGroupGap,
+    alignItems: 'center',
+  },
+
+  // Button outer (contains pill + button)
+  buttonOuter: {
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
+  },
+
+  // Decorative pill (Rectangle 140: 24x2, #4d4d4d, r=200)
+  buttonPill: {
+    width: F.pill.w,
+    height: F.pill.h,
+    backgroundColor: F.pill.color,
+    borderRadius: F.pill.radius,
+  },
+
+  // Button (Frame 2095586312: h=56, stroke=#ff9a6d, r=8)
+  button: {
+    width: '100%',
+    height: F.button.height,
+    borderWidth: 1,
+    borderColor: F.button.border,
+    borderRadius: F.button.radius,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: F.button.pad,
+  },
+
+  // Button text (size=16, w=500, #ffffff)
+  buttonText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: F.button.textSize,
+    fontWeight: F.button.textWeight,
+    lineHeight: F.button.textLineH,
+    color: F.button.textColor,
     textAlign: 'center',
-    textDecorationLine: 'underline',
+  },
+
+  // "Enter Manually" (size=14, w=400, #a9a9a9)
+  enterManuallyText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: F.manual.size,
+    fontWeight: F.manual.weight,
+    lineHeight: F.manual.lineH,
+    color: F.manual.color,
+    textAlign: 'center',
+  },
+
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#ffffff',
   },
 });

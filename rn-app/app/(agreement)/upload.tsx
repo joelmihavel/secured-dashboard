@@ -21,14 +21,15 @@
  * - All values are exact Figma pixels, no scaling
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   Alert,
   StyleSheet,
-  Image,
+  AppState,
+  type AppStateStatus,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,7 +52,8 @@ import {
   validateFileSize,
   validateAgreementType,
 } from '@/src/services/payment';
-import { colors, semanticColors } from '@/src/theme/colors';
+import { supabase } from '@/src/services/supabase/client';
+import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
 
 // ============================================
@@ -227,8 +229,6 @@ const FIGMA = {
 // ============================================
 
 type UploadState = 'idle' | 'uploading' | 'success' | 'error_expired' | 'error_size' | 'manual_review';
-type IconStatus = 'idle' | 'error' | 'success' | 'warning';
-
 interface SelectedDocument {
   uri: string;
   name: string;
@@ -242,92 +242,72 @@ const STATE_CONFIG = {
   idle: {
     borderColor: FIGMA.colors.cardBorder,
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
-    iconStatus: 'idle' as IconStatus,
+
     buttonTitle: 'Proceed',
     buttonEnabled: false,
-    errorMessage: null,
+    errorMessage: null as string | null,
     showDivider: false,
+    fileNameColor: FIGMA.colors.fileName, // #D2D2D2
   },
   uploading: {
     borderColor: FIGMA.colors.cardBorder,
     foldCornerStroke: FIGMA.colors.foldCornerStroke,
-    iconStatus: 'idle' as IconStatus,
+
     buttonTitle: 'Proceed',
     buttonEnabled: false,
-    errorMessage: null,
+    errorMessage: null as string | null,
     showDivider: false,
+    fileNameColor: FIGMA.colors.fileName,
   },
   success: {
     // From Figma 1:30090 - no colored border, just default card
     borderColor: FIGMA.colors.cardBorder,
     foldCornerStroke: FIGMA.colors.foldCornerStroke,
-    iconStatus: 'idle' as IconStatus,
+
     buttonTitle: 'Proceed',
     buttonEnabled: true,
-    errorMessage: null,
-    showDivider: false,
+    errorMessage: null as string | null,
+    showDivider: true, // Figma: divider pill above active button
+    fileNameColor: '#4D4D4D', // Figma 1:30090: dimmer filename color
   },
   error_expired: {
     borderColor: FIGMA.colors.iconError,
     foldCornerStroke: FIGMA.colors.iconError, // #E5484D - matches card border
-    iconStatus: 'error' as IconStatus,
+
     buttonTitle: 'Upload Again',
     buttonEnabled: true,
-    // From 1-30178 text-content.json
+    // From 1-30178 - message appears OUTSIDE the card
     errorMessage: 'The agreement is invalid or expired. Please upload a valid one.',
-    showDivider: false,
+    showDivider: true, // Figma: divider pill above active button
+    fileNameColor: '#D2D2D2', // Figma 1:30178: lighter filename
   },
   error_size: {
     borderColor: FIGMA.colors.iconError,
     foldCornerStroke: FIGMA.colors.iconError,
-    iconStatus: 'error' as IconStatus,
+
     buttonTitle: 'Upload Again',
     buttonEnabled: true,
-    // From 1-30268 text-content.json
+    // From 1-30268 - message appears OUTSIDE the card
     errorMessage: 'This file is too large. Please upload a file under 10MB',
-    showDivider: false,
+    showDivider: true, // Figma: divider pill above active button
+    fileNameColor: '#D2D2D2', // Figma 1:30268: lighter filename
   },
   manual_review: {
     borderColor: FIGMA.colors.iconWarning, // #FFB020
     foldCornerStroke: FIGMA.colors.iconWarning, // #FFB020 - matches card border
-    iconStatus: 'warning' as IconStatus,
+
     buttonTitle: 'Get Notified',
     buttonEnabled: true,
-    // From 1-30358 text-content.json - this message appears OUTSIDE the card
+    // From 1-30358 - message appears OUTSIDE the card
     errorMessage: 'Our team will review it manually and get back to you within 24 hours.',
-    showDivider: true, // Figma shows divider above button in this state
+    showDivider: true, // Figma: divider pill above active button
+    fileNameColor: '#D2D2D2', // Figma 1:30358: lighter filename
   },
 } as const;
 
 // ============================================
 // SVG ICON COMPONENTS (from exported assets)
 // ============================================
-
-// Document Icon - status-colored document
-function DocumentIcon({ size = 20, status = 'idle' }: { size?: number; status?: IconStatus }) {
-  const iconColor =
-    status === 'error' ? FIGMA.colors.iconError :
-    status === 'warning' ? FIGMA.colors.iconWarning :
-    status === 'success' ? FIGMA.colors.iconSuccess :
-    FIGMA.colors.iconError;
-
-  return (
-    <Svg width={size} height={size * 1.2} viewBox="0 0 20 24" fill="none">
-      <Path
-        d="M2 4C2 2.89543 2.89543 2 4 2H12L18 8V20C18 21.1046 17.1046 22 16 22H4C2.89543 22 2 21.1046 2 20V4Z"
-        fill={iconColor}
-        fillOpacity={0.2}
-        stroke={iconColor}
-        strokeWidth={1.5}
-      />
-      <Path
-        d="M12 2V6C12 7.10457 12.8954 8 14 8H18"
-        stroke={iconColor}
-        strokeWidth={1.5}
-      />
-    </Svg>
-  );
-}
 
 // Upload Icon - from Outline Icon Library (1:29994)
 function UploadIcon({ size = 24 }: { size?: number }) {
@@ -526,6 +506,8 @@ export default function UploadScreen() {
   const [document, setDocument] = useState<SelectedDocument | null>(getInitialDocument);
   const [uploadState, setUploadState] = useState<UploadState>(getInitialUploadState);
   const [uploadProgress, setUploadProgress] = useState(stateParam === 'uploading' ? 30 : 0);
+  // Overrides config.errorMessage for dynamic backend errors (OCR failed, network, etc.)
+  const [errorOverrideMessage, setErrorOverrideMessage] = useState<string | null>(null);
 
   // Simulate upload progress for visual testing state demo
   useEffect(() => {
@@ -549,6 +531,209 @@ export default function UploadScreen() {
       setUploadProgress(agreement.uploadProgress);
     }
   }, [agreement.isUploading, agreement.uploadProgress]);
+
+  // ============================================
+  // APP LIFECYCLE HANDLING
+  // Handles: app minimize during upload, app kill during upload,
+  // and app reopen after processing completed in background.
+  //
+  // SAFETY:
+  // - mountedRef prevents state updates after unmount
+  // - uploadStateRef avoids stale closures in async callbacks
+  // - Direct Supabase queries (not React Query) to avoid cache pollution
+  // - agreement.setExtractionId() only called for completed extractions
+  //   so useExtractedData never caches incomplete data
+  // - supabase.auth.getSession() is read-only; does not affect auth state
+  // ============================================
+
+  const mountedRef = useRef(true);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const uploadStateRef = useRef<UploadState>(uploadState);
+
+  // Track mounted state for async safety
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Keep ref in sync so async callbacks see current value
+  useEffect(() => {
+    uploadStateRef.current = uploadState;
+  }, [uploadState]);
+
+  const clearPollTimer = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+
+  // Cleanup poll on unmount
+  useEffect(() => clearPollTimer, [clearPollTimer]);
+
+  // Check extraction status on backend; poll if still processing.
+  // Uses direct Supabase query (NOT React Query) to avoid polluting the
+  // useExtractedData cache with incomplete data.
+  const checkAndPollStatus = useCallback(
+    async (extractionId: string, attemptsLeft = 24) => {
+      clearPollTimer();
+
+      // Stop if state already moved past uploading (user tapped retry, or promise settled)
+      if (!mountedRef.current || uploadStateRef.current !== 'uploading') return;
+
+      try {
+        const { data } = await supabase
+          .from('extracted_rental_info')
+          .select('id, extraction_status, is_city_supported')
+          .eq('id', extractionId)
+          .single();
+
+        // Re-check after async gap
+        if (!mountedRef.current || uploadStateRef.current !== 'uploading') return;
+
+        if (!data || data.extraction_status === 'failed') {
+          setUploadState('error_expired');
+          setErrorOverrideMessage('Document processing failed. Please try uploading again.');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+
+        if (data.extraction_status === 'completed') {
+          setUploadProgress(100);
+          // Only set extraction ID when data is complete — this triggers
+          // useExtractedData, which will now fetch fully populated data
+          agreement.setExtractionId(extractionId);
+          if (data.is_city_supported === false) {
+            setUploadState('manual_review');
+            setErrorOverrideMessage(
+              "We're not in your city yet. Our team will review your document manually."
+            );
+          } else {
+            setUploadState('success');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setTimeout(() => {
+              if (mountedRef.current) {
+                router.replace({
+                  pathname: '/(agreement)/review',
+                  params: { extractionId },
+                } as never);
+              }
+            }, FIGMA.animation.duration);
+          }
+          return;
+        }
+
+        // Still processing — schedule next check
+        if (attemptsLeft <= 0) {
+          setUploadState('error_expired');
+          setErrorOverrideMessage(
+            'Processing is taking longer than expected. Please try again later.'
+          );
+          return;
+        }
+
+        pollTimerRef.current = setTimeout(() => {
+          checkAndPollStatus(extractionId, attemptsLeft - 1);
+        }, 5000);
+      } catch {
+        if (mountedRef.current && uploadStateRef.current === 'uploading') {
+          setUploadState('error_expired');
+          setErrorOverrideMessage('Connection lost. Please try again.');
+        }
+      }
+    },
+    [clearPollTimer, agreement, router]
+  );
+
+  // Query the DB for the user's latest processing/completed extraction.
+  // Used by both the mount check and the foreground handler.
+  // Returns the extraction ID if a resumable record was found, or null.
+  const findResumableExtraction = useCallback(async (): Promise<string | null> => {
+    try {
+      // Read-only — does not modify auth state or trigger token refresh
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return null;
+
+      const { data } = await supabase
+        .from('extracted_rental_info')
+        .select('id, extraction_status, is_city_supported, updated_at')
+        .eq('user_id', session.user.id)
+        .in('extraction_status', ['processing', 'completed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!data || !mountedRef.current) return null;
+
+      if (data.extraction_status === 'completed') {
+        // Set extraction ID only now (data is complete → safe for React Query cache)
+        agreement.setExtractionId(data.id);
+        router.replace({
+          pathname: '/(agreement)/review',
+          params: { extractionId: data.id },
+        } as never);
+        return data.id;
+      }
+
+      if (data.extraction_status === 'processing') {
+        // Skip stale records — backend resets them after 5 min
+        const ageMs = Date.now() - new Date(data.updated_at).getTime();
+        if (ageMs > 5 * 60 * 1000) return null;
+
+        // DO NOT call agreement.setExtractionId() here — extraction data is
+        // incomplete, and setting it would trigger useExtractedData to cache
+        // partial results with a 5-min staleTime.
+        setDocument({
+          uri: 'resumed://processing',
+          name: 'Processing your document...',
+          type: 'pdf',
+        });
+        setUploadState('uploading');
+        setUploadProgress(75);
+        checkAndPollStatus(data.id);
+        return data.id;
+      }
+
+      return null;
+    } catch {
+      return null; // Silent fail — user can upload normally
+    }
+  }, [agreement, router, checkAndPollStatus]);
+
+  // On mount: check for existing in-progress extraction (handles app kill + reopen)
+  useEffect(() => {
+    if (stateParam) return; // Skip for visual testing states
+    findResumableExtraction();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle app foreground/background transitions
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      'change',
+      (nextAppState: AppStateStatus) => {
+        const wasBg = appStateRef.current.match(/inactive|background/);
+        appStateRef.current = nextAppState;
+
+        if (wasBg && nextAppState === 'active' && uploadStateRef.current === 'uploading') {
+          // App returned to foreground during upload — verify backend status.
+          // If extractionId is available, poll by ID (fast path).
+          // If not (promise died before mutateAsync resolved), check DB (slow path).
+          const eid = agreement.extractionId;
+          if (eid) {
+            checkAndPollStatus(eid);
+          } else {
+            findResumableExtraction();
+          }
+        }
+      }
+    );
+
+    return () => subscription.remove();
+  }, [agreement.extractionId, checkAndPollStatus, findResumableExtraction]);
 
   const handlePickDocument = useCallback(async () => {
     try {
@@ -575,11 +760,13 @@ export default function UploadScreen() {
 
   const handleRemoveDocument = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    clearPollTimer();
     setDocument(null);
     setUploadState('idle');
     setUploadProgress(0);
+    setErrorOverrideMessage(null);
     agreement.resetUpload();
-  }, [agreement]);
+  }, [agreement, clearPollTimer]);
 
   const handleUpload = useCallback(async () => {
     if (!document) return;
@@ -597,6 +784,7 @@ export default function UploadScreen() {
 
     setUploadState('uploading');
     setUploadProgress(0);
+    setErrorOverrideMessage(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
@@ -611,11 +799,16 @@ export default function UploadScreen() {
       // Check processing result for manual review
       if (result.processResult.needsManualReview) {
         setUploadState('manual_review');
+        // Use backend review reason if available
+        if (result.processResult.reviewReason) {
+          setErrorOverrideMessage(result.processResult.reviewReason);
+        }
         return;
       }
 
       if (!result.processResult.isCitySupported) {
         setUploadState('manual_review');
+        setErrorOverrideMessage("We're not in your city yet. Our team will review your document manually.");
         return;
       }
 
@@ -633,24 +826,62 @@ export default function UploadScreen() {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-      // Map error to upload state
+      // Map backend error codes to UI states with appropriate messages
       const agreementError = error as { code?: string; message?: string };
-      if (agreementError.code === 'INVALID_FILE_TYPE') {
-        setUploadState('error_expired');
-      } else if (agreementError.code === 'FILE_TOO_LARGE') {
-        setUploadState('error_size');
-      } else {
-        setUploadState('error_expired');
+      const code = agreementError.code ?? '';
+
+      switch (code) {
+        case 'FILE_TOO_LARGE':
+          setUploadState('error_size');
+          break;
+
+        case 'INVALID_FILE_TYPE':
+          setUploadState('error_expired');
+          setErrorOverrideMessage('This file type is not supported. Please upload a PDF.');
+          break;
+
+        case 'OCR_FAILED':
+          setUploadState('error_expired');
+          setErrorOverrideMessage('We couldn\u2019t read the document. Please upload a clearer PDF.');
+          break;
+
+        case 'NETWORK_ERROR':
+          setUploadState('error_expired');
+          setErrorOverrideMessage('Network error. Please check your connection and try again.');
+          break;
+
+        case 'UPLOAD_FAILED':
+          setUploadState('error_expired');
+          setErrorOverrideMessage('Upload failed. Please check your connection and try again.');
+          break;
+
+        case 'PROCESSING_IN_PROGRESS':
+          setUploadState('error_expired');
+          setErrorOverrideMessage('A document is already being processed. Please wait a moment.');
+          break;
+
+        case 'NOT_AUTHENTICATED':
+          // Redirect to sign-in
+          router.replace('/(auth)/sign-up' as never);
+          return;
+
+        default:
+          // Generic server error — show a helpful retry message
+          setUploadState('error_expired');
+          setErrorOverrideMessage('Something went wrong. Please try uploading again.');
+          break;
       }
     }
   }, [document, agreement, router]);
 
   const handleRetry = useCallback(() => {
+    clearPollTimer();
     setUploadState('idle');
     setUploadProgress(0);
     setDocument(null);
+    setErrorOverrideMessage(null);
     agreement.resetUpload();
-  }, [agreement]);
+  }, [agreement, clearPollTimer]);
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -669,6 +900,18 @@ export default function UploadScreen() {
         break;
       case 'manual_review':
         handleGetNotified();
+        break;
+      case 'success':
+        // Navigate to review (same as auto-navigate after upload)
+        if (agreement.extractionId) {
+          router.replace({
+            pathname: '/(agreement)/review',
+            params: { extractionId: agreement.extractionId },
+          } as never);
+        }
+        break;
+      case 'uploading':
+        // No action while uploading
         break;
       default:
         handleUpload();
@@ -721,71 +964,68 @@ export default function UploadScreen() {
           </View>
 
           {/* Upload Card - Frame 1686557325 (node 1:29992) */}
+          {/* Figma states: idle (upload box), uploading (% + bar), success/error/warning (file + icon) */}
+          {/* Error/warning messages appear OUTSIDE the card per Figma */}
           {document ? (
-            <Animated.View
-              entering={FadeIn.duration(FIGMA.animation.duration)}
-              style={[
-                styles.uploadCard,
-                {
-                  borderWidth: 1,
-                  borderColor: config.borderColor,
-                },
-              ]}
-            >
-              {/* Fold Corner - positioned at top-right of card */}
-              <FoldCorner />
+            <View style={uploadState !== 'uploading' ? styles.cardWithMessageWrapper : undefined}>
+              <Animated.View
+                entering={FadeIn.duration(FIGMA.animation.duration)}
+                style={[
+                  styles.uploadCard,
+                  {
+                    borderWidth: 1,
+                    borderColor: config.borderColor,
+                  },
+                ]}
+              >
+                {/* Fold Corner - positioned at top-right of card */}
+                <FoldCorner />
 
-              {/* Paperclip - positioned at top-left of card */}
-              <PaperclipIcon />
+                {/* Paperclip - positioned at top-left of card */}
+                <PaperclipIcon />
 
-              {/* Content container */}
-              <View style={styles.cardContent}>
-                {/* Icon Square with Document icon or Trash button based on state */}
-                {uploadState === 'uploading' ? (
-                  <View style={styles.iconSquare}>
-                    <DocumentIcon size={20} status="idle" />
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.iconSquare}
-                    onPress={handleRemoveDocument}
-                    activeOpacity={0.7}
-                  >
-                    <TrashIcon size={FIGMA.uploadIcon.size} />
-                  </TouchableOpacity>
-                )}
-
-                {/* File info */}
-                <View style={styles.fileInfoContainer}>
-                  <Text style={styles.fileName} numberOfLines={1}>
-                    {document.name}
-                  </Text>
-
-                  {/* Progress bar (only during upload) */}
-                  {uploadState === 'uploading' && (
-                    <View style={styles.progressContainer}>
-                      <View style={styles.progressTextRow}>
-                        <Text style={styles.progressText}>Uploading...</Text>
-                        <Text style={styles.progressText}>{uploadProgress}%</Text>
-                      </View>
+                {/* Content container - differs by state */}
+                <View style={styles.cardContent}>
+                  {uploadState === 'uploading' ? (
+                    /* Uploading: Figma 1:30001 - only centered % + progress bar */
+                    <>
+                      <Text style={styles.progressPercent}>{uploadProgress}%</Text>
                       <ProgressBar progress={uploadProgress} />
-                    </View>
-                  )}
-
-                  {/* Error/Status message */}
-                  {config.errorMessage && (
-                    <Text
-                      style={[
-                        styles.errorText,
-                        uploadState === 'manual_review' && styles.warningText,
-                      ]}
-                    >
-                      {config.errorMessage}
-                    </Text>
+                    </>
+                  ) : (
+                    /* File selected: Figma 1:30090/30268/30178/30358 - small trash icon + filename */
+                    <>
+                      <TouchableOpacity
+                        onPress={handleRemoveDocument}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      >
+                        <TrashIcon size={16} />
+                      </TouchableOpacity>
+                      <Text
+                        style={[styles.fileName, { color: config.fileNameColor }]}
+                        numberOfLines={2}
+                      >
+                        {document.name}
+                      </Text>
+                    </>
                   )}
                 </View>
-              </View>
-            </Animated.View>
+              </Animated.View>
+
+              {/* Error/Warning message - OUTSIDE the card per Figma */}
+              {/* errorOverrideMessage takes priority (dynamic backend errors) */}
+              {(errorOverrideMessage || config.errorMessage) && (
+                <Text
+                  style={[
+                    styles.errorTextOutside,
+                    uploadState === 'manual_review' && styles.warningTextOutside,
+                  ]}
+                >
+                  {errorOverrideMessage ?? config.errorMessage}
+                </Text>
+              )}
+            </View>
           ) : (
             <TouchableOpacity
               onPress={handlePickDocument}
@@ -800,7 +1040,7 @@ export default function UploadScreen() {
 
               {/* Content container */}
               <View style={styles.cardContent}>
-                {/* Icon Square */}
+                {/* Icon Square - Figma 1:29993: 56px bg square */}
                 <View style={styles.iconSquare}>
                   <UploadIcon size={FIGMA.uploadIcon.size} />
                 </View>
@@ -825,6 +1065,7 @@ export default function UploadScreen() {
             onPress={handleButtonPress}
             disabled={!isButtonEnabled}
             loading={uploadState === 'uploading'}
+            showDivider={config.showDivider && isButtonEnabled}
             testID="proceed-button"
           />
         </View>
@@ -840,21 +1081,6 @@ export default function UploadScreen() {
 const styles = StyleSheet.create({
   screen: {
     backgroundColor: FIGMA.colors.background,
-  },
-
-  // Background pattern
-  backgroundPattern: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 405, // Background Shape height from Figma (exact)
-    overflow: 'hidden',
-  },
-  patternImage: {
-    width: '100%',
-    height: '100%',
-    opacity: FIGMA.colors.backgroundPattern,
   },
 
   // Scroll
@@ -883,23 +1109,22 @@ const styles = StyleSheet.create({
   },
 
   // Title styles - using h1 design token, only color differs
+  // Figma: LEFT aligned (not centered)
   titleGray: {
     ...FIGMA.typography.title,
     color: FIGMA.colors.titleGray,
-    textAlign: 'center' as const,
   },
   titleAccent: {
     ...FIGMA.typography.title,
     color: FIGMA.colors.titleAccent,
-    textAlign: 'center' as const,
   },
 
   // Subtitle - node 1:29991, using bodySm design token
   // Figma token: Font Size/Body/sm = 12px, Line Height/Body/sm = 20px
+  // Figma: LEFT aligned
   subtitle: {
     ...FIGMA.typography.subtitle,
     color: FIGMA.colors.subtitle, // #797979
-    textAlign: 'center' as const,
   },
 
   // Upload card - Frame 1686557325 (node 1:29992)
@@ -951,11 +1176,6 @@ const styles = StyleSheet.create({
     right: FIGMA.foldCorner.shape.rightOffset,        // -13
   },
 
-  // Icon container - relative for paperclip positioning
-  iconContainer: {
-    position: 'relative',
-  },
-
   // Paperclip positioning - absolute, extends outside card (Vector, node 1:29999)
   // AI Note: "CRITICAL: Must have overflow='visible' to allow paperclip to extend outside bounds"
   paperclip: {
@@ -987,34 +1207,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // File info
-  fileInfoContainer: {
+  // Card + message wrapper - for error/warning states
+  // Figma: gap 32 between card and error text (node 1:30346)
+  cardWithMessageWrapper: {
+    gap: 32,
     alignItems: 'center',
-    gap: 4,
   },
 
+  // File name - Figma: centered, bodySmMedium
+  // Color varies by state (set inline)
   fileName: {
     ...FIGMA.typography.fileName, // bodySmMedium design token
     color: FIGMA.colors.fileName,
-    textAlign: 'center',          // Figma: textAlignHorizontal: CENTER
+    textAlign: 'center' as const,
+    maxWidth: 167, // Figma: 167px width for filename text
   },
 
-  // Progress
-  progressContainer: {
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-  },
-
-  progressTextRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: FIGMA.progressBar.width,
-  },
-
-  progressText: {
-    ...FIGMA.typography.hint, // bodySm design token
-    color: FIGMA.colors.progressText,
+  // Progress percent - Figma 1:30001: centered "30%" text
+  // bodyMd2 Regular 14/20 in #444 color
+  progressPercent: {
+    ...typography.bodyMd2,
+    color: FIGMA.colors.progressText, // #444444
     textAlign: 'center' as const,
   },
 
@@ -1023,7 +1236,7 @@ const styles = StyleSheet.create({
     height: FIGMA.progressBar.height,
     width: FIGMA.progressBar.width,
     borderRadius: FIGMA.progressBar.borderRadius,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
   },
 
   progressFill: {
@@ -1032,17 +1245,17 @@ const styles = StyleSheet.create({
     borderRadius: FIGMA.progressBar.borderRadius,
   },
 
-  // Error text - using bodyMd2 design token (14/20)
-  errorText: {
+  // Error text OUTSIDE card - Figma: centered, bodyMd2 (14/20), #E5484D
+  // Node 1:30356 (error_size) / 1:30266 (expired) / 1:30446 (manual_review)
+  errorTextOutside: {
     ...typography.bodyMd2,
     color: FIGMA.colors.iconError,
-    marginTop: 4,
-    textAlign: 'center',
+    textAlign: 'center' as const,
+    maxWidth: 255, // Figma: 255px width constraint
   },
 
-  warningText: {
+  warningTextOutside: {
     color: FIGMA.colors.iconWarning,
-    textAlign: 'center' as const,
   },
 
   // Layout

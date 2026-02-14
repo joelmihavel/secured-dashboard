@@ -1,128 +1,113 @@
 /**
- * Progress Arc Component - Pixel Perfect Figma Implementation
+ * Progress Arc Component - Figma-Parity Implementation
  *
- * Source: figma-parity/data/ai-enhanced/41-11206/enhanced-extraction.json
+ * Figma Node References:
+ * - 41:11543: Frame 2095586334 (gauge container) - 278x139
+ * - 41:11544: Ellipse 21888 (background ring) - 278x278, fill #1A1A1A, innerRadius 0.8
+ * - 41:11545: Ellipse 21889 (progress ring) - 278x278, fill #FF9A6D, innerRadius 0.8
+ * - 41:11546: "18 / 150  members onboarded" text - 147x40, centered
+ * - 41:11547: Vector 56 (dashed line) - stroke #FFAE8A, strokeWeight 0.5, strokeDashes [3,3]
+ * - 41:11548: Polygon 1 (triangle marker) - fill #CC7B57
+ * - 41:11549: "This release" hint text - 42x40, color #797979
  *
- * Figma Node References (with exact positions relative to gauge container):
- * - 41:11243: Frame 2095586334 (gauge container) - 278x139 at (0, 0)
- * - 41:11244: Ellipse 21888 (background circle) - 278x278, #1A1A1A
- * - 41:11245: Ellipse 21889 (progress arc) - 278x278, #FF9A6D
- * - 41:11246: "18 / 150 members onboarded" text - 147x40 at (65.5, 74.6) - CENTERED
- * - 41:11247: Vector 56 (dashed line) - 29x30 at (35.5, 34.4)
- * - 41:11248: Polygon 1 (triangle marker) - 22x22 at (28.5, 27.6)
- * - 41:11249: "This release" hint text - 42x40 at (17.5, -28.4)
+ * Both ellipses have arcData.innerRadius = 0.8 (from Figma REST API).
+ * This means they are RING/DONUT shapes, not filled circles.
+ * Rendered as thick stroked arcs with strokeLinecap="round".
+ * A 278x139 container clips to show the top semicircle.
  *
- * IMPORTANT: Text "18 / 150  members onboarded" is ONE LINE with mixed colors,
- * NOT two separate lines. The characterStyleOverrides define:
- * - chars 0-8 ("18 / 150 "): gray #A9A9A9 (styleOverride 44)
- * - char 9 (" "): transition
- * - chars 10-26 ("members onboarded"): orange #FF9A6D (styleOverride 42)
+ * Callout positioning strategy:
+ * - At the Figma reference (18/150 = 12%), positions use exact Figma relativeTransform matrices.
+ * - For other progress values, all callout elements rotate around the arc center (139, 139)
+ *   by the angular difference from reference. This keeps the callout group rigid.
  */
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
-import Svg, { Path, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Line, G } from 'react-native-svg';
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
-// All values from enhanced-extraction.json with EXACT positions
+// Source: Figma REST API arcData + node data
 // ============================================
 
-const FIGMA = {
-  // Gauge container (node 41:11243)
-  // Position: x=9278, y=1137.4
-  container: {
-    width: 278,
-    height: 139, // Half of 278 - shows semi-circle
-  },
+/** Gauge container: 41:11543 — 278x139 */
+const CONTAINER_W = 278;
+const CONTAINER_H = 139;
 
-  // Ellipse dimensions (nodes 41:11244, 41:11245)
-  ellipse: {
-    size: 278, // Both width and height
-  },
+/** Ellipse dimensions: 41:11544 + 41:11545 — both 278x278 */
+const ELLIPSE_SIZE = 278;
+const OUTER_RADIUS = ELLIPSE_SIZE / 2; // 139
 
-  // Relative positions (calculated from absolute Figma coordinates)
-  // All positions relative to gauge container top-left (0, 0)
-  positions: {
-    // "This release" hint (41:11249): x=9295.5, y=1109 → relative: (17.5, -28.4)
-    hint: {
-      left: 17.5,
-      top: -28.4, // Above gauge container
-      width: 42,
-      height: 40,
-    },
-    // Vector 56 dashed line (41:11247): x=9313.5, y=1171.8 → relative: (35.5, 34.4)
-    dashedLine: {
-      left: 35.5,
-      top: 34.4,
-      width: 29,
-      height: 30,
-    },
-    // Polygon 1 triangle (41:11248): x=9306.5, y=1165 → relative: (28.5, 27.6)
-    triangle: {
-      left: 28.5,
-      top: 27.6,
-      width: 22.34,
-      height: 22.12,
-    },
-    // Members text (41:11246): x=9343.5, y=1212 → relative: (65.5, 74.6)
-    // This is centered: (278 - 147) / 2 = 65.5
-    membersText: {
-      left: 65.5,
-      top: 74.6,
-      width: 147,
-      height: 40,
-    },
-  },
+/**
+ * From Figma REST API: arcData.innerRadius = 0.8 for both ellipses.
+ * Ring inner edge at 80% of outer radius.
+ */
+const INNER_RATIO = 0.8;
+const INNER_RADIUS = OUTER_RADIUS * INNER_RATIO; // 111.2
+const ARC_RADIUS = (OUTER_RADIUS + INNER_RADIUS) / 2; // 125.1 — center of ring
+const ARC_STROKE = OUTER_RADIUS - INNER_RADIUS; // 27.8 — ring thickness
 
-  // Colors from Figma with design token mappings
-  colors: {
-    // Ellipse 21888 background: #1A1A1A → colors.black[600]
-    backgroundCircle: '#1A1A1A',
+/** Colors — directly from Figma fills/strokes */
+const BG_FILL = '#1A1A1A';
+const PROGRESS_FILL = '#FF9A6D';
+const DASHED_STROKE = '#FFAE8A';
+const TRIANGLE_FILL = '#CC7B57';
+const HINT_COLOR = '#797979';
+const TEXT_GRAY = '#A9A9A9';
+const TEXT_ORANGE = '#FF9A6D';
 
-    // Ellipse 21889 progress: #FF9A6D → colors.brand[500]
-    progressArc: '#FF9A6D',
+/** Text: 41:11546 — 147x40, centered within gauge */
+const TEXT_W = 147;
+const TEXT_H = 40;
+const TEXT_REL_X = 65.5;
+const TEXT_REL_Y = 74.6;
 
-    // Text "18 / 150  " gray: #A9A9A9 → colors.neutral[500]
-    // styleOverride 44
-    textGray: '#A9A9A9',
+/** Hint text: 41:11549 — 42x40, "This\nrelease" */
+const HINT_W = 42;
+const HINT_H = 40;
 
-    // Text "members onboarded" orange: #FF9A6D → colors.brand[500]
-    // styleOverride 42
-    textOrange: '#FF9A6D',
+/** Reference progress from Figma design (18/150) */
+const REF_PROGRESS = 18 / 150;
 
-    // Vector 56 stroke: #FFAE8A → colors.brand[400]
-    dashedLine: '#FFAE8A',
+/** Reference angle at 12% progress */
+const REF_ANGLE = Math.PI * (1 - REF_PROGRESS);
 
-    // Polygon 1 fill: #CC7B57
-    triangleMarker: '#CC7B57',
+/** Arc center — rotation pivot for callout positioning */
+const CX = OUTER_RADIUS; // 139
+const CY = OUTER_RADIUS; // 139
 
-    // "This release" hint: #797979 → colors.black[300]
-    hintText: '#797979',
-  },
+/**
+ * Triangle relativeTransform from Figma REST API (node 41:11548).
+ * Maps from the triangle's local path coordinates to the gauge container.
+ * SVG matrix format: matrix(a, b, c, d, e, f) where:
+ *   [a c e]
+ *   [b d f]
+ *
+ * Figma relativeTransform: [[0.7532, -0.6577, 38.12], [-0.6577, -0.7532, 49.73]]
+ * Decomposes as: Rotate(-41.13°) × Scale(1, -1) + translate(38.12, 49.73)
+ */
+const TRI_MATRIX = '0.7532426118850708 -0.6577427983283997 -0.6577427983283997 -0.7532426118850708 38.119140625 49.725341796875';
 
-  // Text specs
-  text: {
-    // Node 41:11246: fontSize 14, lineHeight 20, textAlign CENTER
-    members: {
-      fontSize: 14,
-      lineHeight: 20,
-      fontFamily: 'PlusJakartaSans-Regular',
-    },
-    // Node 41:11249: fontSize 12, lineHeight 20
-    hint: {
-      fontSize: 12,
-      lineHeight: 20,
-      fontFamily: 'PlusJakartaSans-Regular',
-    },
-  },
+/** Triangle SVG path (from Figma fillGeometry — includes corner rounding) */
+const TRIANGLE_PATH =
+  'M12.5167 14.9143C13.649 15.3014 14.7757 14.3176 14.5447 13.1435L12.2064 1.25577C11.9755 0.0816735 10.5601 -0.402134 9.65882 0.384916L0.532906 8.3538C-0.368419 9.14085 -0.0797377 10.6085 1.05253 10.9955L12.5167 14.9143Z';
 
-  // Vector 56 (dashed line): stroke specs
-  dashedLine: {
-    strokeWidth: 1,
-    dashArray: '3 3',
-  },
-} as const;
+/**
+ * Dashed line reference endpoints (from vectorNetwork vertices
+ * transformed via relativeTransform to gauge container coords).
+ * Node 41:11547 — strokeWeight 0.5, strokeDashes [3,3], color #FFAE8A
+ */
+const DASH_REF_X1 = 35.5;
+const DASH_REF_Y1 = 34.60;
+const DASH_REF_X2 = 64.5;
+const DASH_REF_Y2 = 64.10;
+
+/**
+ * Hint text reference position (from absoluteBoundingBox relative to gauge container).
+ * Node 41:11549 — "This release", relX=17.5, relY=-28.4
+ */
+const HINT_REF_X = 17.5;
+const HINT_REF_Y = -28.4;
 
 // ============================================
 // TYPES
@@ -136,116 +121,174 @@ export interface ProgressArcProps {
 }
 
 // ============================================
+// GEOMETRY HELPERS
+// ============================================
+
+/**
+ * Build SVG arc path for the background semicircular ring.
+ */
+function bgArcPath(): string {
+  const startX = OUTER_RADIUS - ARC_RADIUS;
+  const endX = OUTER_RADIUS + ARC_RADIUS;
+  const cy = OUTER_RADIUS;
+  return `M ${startX} ${cy} A ${ARC_RADIUS} ${ARC_RADIUS} 0 1 1 ${endX} ${cy}`;
+}
+
+/**
+ * Build SVG arc path for the progress ring segment.
+ */
+function progressArcPath(progress: number): string {
+  if (progress <= 0) return '';
+  const clamped = Math.min(progress, 1);
+  const angle = Math.PI * (1 - clamped);
+  const startX = OUTER_RADIUS - ARC_RADIUS;
+  const startY = OUTER_RADIUS;
+  const endX = OUTER_RADIUS + ARC_RADIUS * Math.cos(angle);
+  const endY = OUTER_RADIUS - ARC_RADIUS * Math.sin(angle);
+  const largeArc = clamped > 0.5 ? 1 : 0;
+  return `M ${startX} ${startY} A ${ARC_RADIUS} ${ARC_RADIUS} 0 ${largeArc} 1 ${endX} ${endY}`;
+}
+
+/**
+ * Compute rotation delta (degrees) from reference progress.
+ * All callout elements rotate around the arc center by this amount.
+ */
+function rotationDelta(progress: number): number {
+  const curAngle = Math.PI * (1 - progress);
+  return ((REF_ANGLE - curAngle) * 180) / Math.PI;
+}
+
+/**
+ * Rotate a point (px, py) around the arc center (CX, CY) by angleDeg degrees.
+ * Returns the new position.
+ */
+function rotateAroundCenter(px: number, py: number, angleDeg: number): { x: number; y: number } {
+  const rad = (angleDeg * Math.PI) / 180;
+  const cosR = Math.cos(rad);
+  const sinR = Math.sin(rad);
+  const dx = px - CX;
+  const dy = py - CY;
+  return {
+    x: CX + dx * cosR - dy * sinR,
+    y: CY + dx * sinR + dy * cosR,
+  };
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
 function ProgressArcComponent({
   current,
   total,
-  label = 'This release',
+  label = 'This\nrelease',
   testID,
 }: ProgressArcProps) {
-  // Calculate progress percentage (capped at 100%)
-  const progress = Math.min(current / total, 1);
+  const progress = Math.min(current / Math.max(total, 1), 1);
 
-  // Calculate the arc angle (180 degrees = half circle, starting from left)
-  const progressAngle = progress * 180;
+  const rotDelta = useMemo(() => rotationDelta(progress), [progress]);
+  const bgPath = useMemo(() => bgArcPath(), []);
+  const progressPath = useMemo(() => progressArcPath(progress), [progress]);
+
+  // Rotate hint text reference position around arc center
+  const hintCenter = useMemo(() => {
+    const refCenterX = HINT_REF_X + HINT_W / 2; // 38.5
+    const refCenterY = HINT_REF_Y + HINT_H / 2; // -8.4
+    const rotated = rotateAroundCenter(refCenterX, refCenterY, rotDelta);
+    return {
+      x: rotated.x - HINT_W / 2,
+      y: rotated.y - HINT_H / 2,
+    };
+  }, [rotDelta]);
 
   return (
-    <View style={styles.container} testID={testID}>
-      {/* "This release" hint label - positioned using exact Figma coordinates */}
-      <View style={styles.hintContainer}>
+    <View
+      style={styles.outerWrapper}
+      testID={testID}
+    >
+      {/* "This release" hint label — node 41:11549 */}
+      <View
+        style={[
+          styles.hintContainer,
+          {
+            left: hintCenter.x,
+            top: hintCenter.y,
+            width: HINT_W,
+            height: HINT_H,
+          },
+        ]}
+      >
         <RNText style={styles.hintText}>{label}</RNText>
       </View>
 
-      {/* Dashed line (Vector 56) - positioned absolutely */}
-      <View style={styles.dashedLineContainer}>
-        <Svg
-          width={FIGMA.positions.dashedLine.width}
-          height={FIGMA.positions.dashedLine.height}
-          viewBox={`0 0 ${FIGMA.positions.dashedLine.width} ${FIGMA.positions.dashedLine.height}`}
-        >
+      {/* Callout SVG overlay — triangle + dashed line */}
+      {/* Uses rotate(delta, CX, CY) to move callout with progress */}
+      <Svg
+        style={styles.calloutSvg}
+        width={CONTAINER_W}
+        height={CONTAINER_H}
+      >
+        <G transform={`rotate(${rotDelta} ${CX} ${CY})`}>
+          {/* Dashed line — node 41:11547, reference endpoints */}
           <Line
-            x1={0}
-            y1={0}
-            x2={FIGMA.positions.dashedLine.width}
-            y2={FIGMA.positions.dashedLine.height}
-            stroke={FIGMA.colors.dashedLine}
-            strokeWidth={FIGMA.dashedLine.strokeWidth}
-            strokeDasharray={FIGMA.dashedLine.dashArray}
+            x1={DASH_REF_X1}
+            y1={DASH_REF_Y1}
+            x2={DASH_REF_X2}
+            y2={DASH_REF_Y2}
+            stroke={DASHED_STROKE}
+            strokeWidth={0.5}
+            strokeDasharray="3 3"
           />
-        </Svg>
-      </View>
 
-      {/* Triangle marker (Polygon 1) - positioned absolutely */}
-      <View style={styles.triangleContainer}>
+          {/* Triangle — node 41:11548, using exact Figma relativeTransform matrix */}
+          <G transform={`matrix(${TRI_MATRIX})`}>
+            <Path d={TRIANGLE_PATH} fill={TRIANGLE_FILL} />
+          </G>
+        </G>
+      </Svg>
+
+      {/* Gauge — thick stroked arcs clipped to top semicircle */}
+      <View style={styles.gaugeClip}>
         <Svg
-          width={FIGMA.positions.triangle.width}
-          height={FIGMA.positions.triangle.height}
-          viewBox="0 0 15 15"
+          width={ELLIPSE_SIZE}
+          height={ELLIPSE_SIZE}
+          viewBox={`0 0 ${ELLIPSE_SIZE} ${ELLIPSE_SIZE}`}
         >
+          {/* Background ring arc — node 41:11544 */}
           <Path
-            d="M12.5167 14.9143C13.649 15.3014 14.7757 14.3176 14.5447 13.1435L12.2064 1.25577C11.9755 0.0816735 10.5601 -0.402134 9.65882 0.384916L0.532906 8.3538C-0.368419 9.14085 -0.0797377 10.6085 1.05253 10.9955L12.5167 14.9143Z"
-            fill={FIGMA.colors.triangleMarker}
+            d={bgPath}
+            fill="none"
+            stroke={BG_FILL}
+            strokeWidth={ARC_STROKE}
+            strokeLinecap="round"
           />
-        </Svg>
-      </View>
 
-      {/* Gauge container - clips to show semi-circle */}
-      <View style={styles.gaugeContainer}>
-        <Svg
-          width={FIGMA.ellipse.size}
-          height={FIGMA.ellipse.size}
-          viewBox={`0 0 ${FIGMA.ellipse.size} ${FIGMA.ellipse.size}`}
+          {/* Progress ring arc — node 41:11545 */}
+          {progress > 0 && (
+            <Path
+              d={progressPath}
+              fill="none"
+              stroke={PROGRESS_FILL}
+              strokeWidth={ARC_STROKE}
+              strokeLinecap="round"
+            />
+          )}
+        </Svg>
+
+        {/* Members text — node 41:11546, centered within gauge */}
+        <View
+          style={[
+            styles.textContainer,
+            { left: TEXT_REL_X, top: TEXT_REL_Y, width: TEXT_W, height: TEXT_H },
+          ]}
         >
-          <Defs>
-            <LinearGradient id="progressGradient" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0%" stopColor={FIGMA.colors.progressArc} stopOpacity={1} />
-              <Stop offset="100%" stopColor={FIGMA.colors.progressArc} stopOpacity={0.8} />
-            </LinearGradient>
-          </Defs>
-          {(() => {
-            const STROKE_WIDTH = 40;
-            const RADIUS = FIGMA.ellipse.size / 2 - STROKE_WIDTH / 2;
-            const CENTER = FIGMA.ellipse.size / 2;
-
-            const backgroundArcPath = `M ${CENTER - RADIUS},${CENTER} A ${RADIUS},${RADIUS} 0 0 1 ${CENTER + RADIUS},${CENTER}`;
-
-            const angleRad = ((180 - progressAngle) * Math.PI) / 180;
-            const endX = CENTER + RADIUS * Math.cos(angleRad);
-            const endY = CENTER - RADIUS * Math.sin(angleRad);
-            const progressArcPath = `M ${CENTER - RADIUS},${CENTER} A ${RADIUS},${RADIUS} 0 0 1 ${endX},${endY}`;
-
-            return (
-              <>
-                {/* Background Arc */}
-                <Path
-                  d={backgroundArcPath}
-                  stroke={FIGMA.colors.backgroundCircle}
-                  strokeWidth={STROKE_WIDTH}
-                  fill="none"
-                />
-                {/* Progress Arc */}
-                {progress > 0 && (
-                  <Path
-                    d={progressArcPath}
-                    stroke="url(#progressGradient)"
-                    strokeWidth={STROKE_WIDTH}
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                )}
-              </>
-            );
-          })()}
-        </Svg>
-
-        {/* Members text - ONE LINE with mixed colors, centered */}
-        {/* Figma: "18 / 150  members onboarded" - textAlignHorizontal: CENTER */}
-        <View style={styles.textContainer}>
           <RNText style={styles.membersText}>
-            <RNText style={styles.membersTextGray}>{current} / {total}  </RNText>
-            <RNText style={styles.membersTextOrange}>members onboarded</RNText>
+            <RNText style={styles.textGray}>
+              {current} / {total}{'  '}
+            </RNText>
+            <RNText style={styles.textOrange}>
+              {'members\nonboarded'}
+            </RNText>
           </RNText>
         </View>
       </View>
@@ -254,93 +297,65 @@ function ProgressArcComponent({
 }
 
 // ============================================
-// STYLES - Exact Figma positions
+// STYLES
 // ============================================
 
 const styles = StyleSheet.create({
-  // Main container - needs overflow visible for hint above
-  container: {
-    width: FIGMA.container.width,
-    height: FIGMA.container.height,
+  outerWrapper: {
+    width: CONTAINER_W,
+    height: CONTAINER_H,
+    alignSelf: 'center',
     position: 'relative',
-    overflow: 'visible', // Allow hint to show above container
   },
 
-  // "This release" hint - exact Figma position (17.5, -28.4) relative to gauge
-  // Node 41:11249
-  hintContainer: {
+  gaugeClip: {
     position: 'absolute',
-    left: FIGMA.positions.hint.left,
-    top: FIGMA.positions.hint.top,
-    width: FIGMA.positions.hint.width,
-    height: FIGMA.positions.hint.height,
-    zIndex: 10,
+    left: 0,
+    top: 0,
+    width: CONTAINER_W,
+    height: CONTAINER_H,
+    overflow: 'hidden',
   },
 
-  hintText: {
-    fontFamily: FIGMA.text.hint.fontFamily,
-    fontSize: FIGMA.text.hint.fontSize,
-    lineHeight: FIGMA.text.hint.lineHeight,
-    color: FIGMA.colors.hintText,
-    textAlign: 'center',
-  },
-
-  // Dashed line - exact Figma position (35.5, 34.4)
-  // Node 41:11247
-  dashedLineContainer: {
-    position: 'absolute',
-    left: FIGMA.positions.dashedLine.left,
-    top: FIGMA.positions.dashedLine.top,
-    zIndex: 5,
-  },
-
-  // Triangle marker - exact Figma position (28.5, 27.6)
-  // Node 41:11248
-  triangleContainer: {
-    position: 'absolute',
-    left: FIGMA.positions.triangle.left,
-    top: FIGMA.positions.triangle.top,
-    zIndex: 5,
-  },
-
-  // Gauge container - shows semi-circle (half height)
-  // Node 41:11243: width=278, height=139
-  gaugeContainer: {
-    width: FIGMA.container.width,
-    height: FIGMA.container.height,
-    overflow: 'hidden', // Clips to show only top half of circle
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-
-  // Members text container - exact Figma position (65.5, 74.6)
-  // Node 41:11246: width=147, height=40, textAlign=CENTER
   textContainer: {
     position: 'absolute',
-    left: FIGMA.positions.membersText.left,
-    top: FIGMA.positions.membersText.top,
-    width: FIGMA.positions.membersText.width,
-    height: FIGMA.positions.membersText.height,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  // Single line text with mixed colors - textAlign CENTER per Figma
   membersText: {
     textAlign: 'center',
-    fontFamily: FIGMA.text.members.fontFamily,
-    fontSize: FIGMA.text.members.fontSize,
-    lineHeight: FIGMA.text.members.lineHeight,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
   },
 
-  // "18 / 150  " in gray (styleOverride 44)
-  membersTextGray: {
-    color: FIGMA.colors.textGray,
+  textGray: {
+    color: TEXT_GRAY,
   },
 
-  // "members onboarded" in orange (styleOverride 42)
-  membersTextOrange: {
-    color: FIGMA.colors.textOrange,
+  textOrange: {
+    color: TEXT_ORANGE,
+  },
+
+  hintContainer: {
+    position: 'absolute',
+    zIndex: 10,
+  },
+
+  hintText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: HINT_COLOR,
+    textAlign: 'center',
+  },
+
+  calloutSvg: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 5,
   },
 });
 

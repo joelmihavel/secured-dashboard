@@ -50,6 +50,7 @@ interface VerifyOtpRequest {
   phone_number: string;
   otp: string;
   name?: string; // User's name for profile creation
+  verification_sid?: string; // SID from send_otp for reliable verification
   consent_for_mobile360?: boolean; // Record consent for Cashfree Mobile 360
 }
 
@@ -133,6 +134,12 @@ const verifyOtpSchema = {
     required: false,
     type: "string" as const,
     minLength: 2,
+    maxLength: 100,
+  },
+  verification_sid: {
+    required: false,
+    type: "string" as const,
+    minLength: 10,
     maxLength: 100,
   },
   consent_for_mobile360: { required: false, type: "boolean" as const },
@@ -315,6 +322,7 @@ async function handleVerifyOtp(
     phone_number,
     otp,
     name,
+    verification_sid,
     consent_for_mobile360 = true,
   } = validatedBody;
 
@@ -327,11 +335,14 @@ async function handleVerifyOtp(
   console.log("[DEBUG] verify_otp - sanitizedPhone:", sanitizedPhone);
   console.log("[DEBUG] verify_otp - phoneWithCountryCode:", phoneWithCountryCode);
   console.log("[DEBUG] verify_otp - OTP length:", otp.length);
+  console.log("[DEBUG] verify_otp - verification_sid:", verification_sid ?? "NOT PROVIDED");
 
   // Call Twilio Verify Check API
+  // Prefer VerificationSid (more reliable) over phone number lookup
   const result = await callTwilioVerifyOtp({
     phone_number: phoneWithCountryCode,
     otp,
+    verification_sid,
   });
 
   console.log("[DEBUG] verify_otp - Twilio result:", JSON.stringify({
@@ -596,6 +607,7 @@ async function callTwilioSendOtp(
 interface TwilioVerifyOtpParams {
   phone_number: string;
   otp: string;
+  verification_sid?: string;
 }
 
 async function callTwilioVerifyOtp(
@@ -608,16 +620,26 @@ async function callTwilioVerifyOtp(
   try {
     const url = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
 
+    // Build form params: prefer VerificationSid (direct lookup) over To (phone lookup)
+    // VerificationSid is more reliable as it targets the exact verification instance
+    const formParams: Record<string, string> = {
+      Code: params.otp,
+    };
+    if (params.verification_sid) {
+      formParams.VerificationSid = params.verification_sid;
+      console.log("[DEBUG] Twilio VerificationCheck - Using VerificationSid:", params.verification_sid);
+    } else {
+      formParams.To = params.phone_number;
+      console.log("[DEBUG] Twilio VerificationCheck - Using To (phone):", params.phone_number);
+    }
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
       },
-      body: new URLSearchParams({
-        To: params.phone_number,
-        Code: params.otp,
-      }).toString(),
+      body: new URLSearchParams(formParams).toString(),
     });
 
     const data = await response.json();
@@ -644,10 +666,41 @@ async function callTwilioVerifyOtp(
         };
       }
       if (data.code === 20404) {
+        // 20404 = "Resource not found" — the verification doesn't exist.
+        // This happens when: verification expired, was already checked, or phone number mismatch.
+        console.error("[DEBUG] Twilio 20404 - Verification not found. Params:", {
+          usedSid: !!params.verification_sid,
+          phone: params.phone_number,
+          sid: params.verification_sid ?? "none",
+        });
+
+        // If we used VerificationSid and got 20404, retry with phone number as fallback
+        if (params.verification_sid) {
+          console.log("[DEBUG] Retrying VerificationCheck with phone number fallback...");
+          const retryResponse = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
+            },
+            body: new URLSearchParams({
+              To: params.phone_number,
+              Code: params.otp,
+            }).toString(),
+          });
+          const retryData = await retryResponse.json();
+          console.log("[DEBUG] Twilio retry response:", JSON.stringify(retryData));
+
+          if (retryResponse.ok) {
+            return retryData as TwilioVerificationCheckResponse;
+          }
+          // If retry also fails, fall through to the expired status below
+        }
+
         return {
           sid: "",
-          service_sid: TWILIO_VERIFY_SERVICE_SID,
-          account_sid: TWILIO_ACCOUNT_SID,
+          service_sid: TWILIO_VERIFY_SERVICE_SID!,
+          account_sid: TWILIO_ACCOUNT_SID!,
           to: params.phone_number,
           channel: "sms",
           status: "expired",

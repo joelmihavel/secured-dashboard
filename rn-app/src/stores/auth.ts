@@ -24,9 +24,10 @@ interface AuthState {
   status: AuthStatus;
   phoneNumber: string;
   userName: string;
-  verificationSid: string | null;
+  otpSent: boolean;
   userId: string | null;
   isNewUser: boolean;
+  consentForMobile360: boolean;
   error: {
     code: string;
     message: string;
@@ -38,8 +39,11 @@ interface AuthActions {
   setPhoneNumber: (phone: string) => void;
   setUserName: (name: string) => void;
 
+  // Consent
+  setConsentForMobile360: (value: boolean) => void;
+
   // OTP flow
-  setOtpSent: (verificationSid: string) => void;
+  setOtpSent: () => void;
   setVerifying: () => void;
   setAuthenticated: (userId: string, isNewUser: boolean) => void;
 
@@ -61,9 +65,10 @@ const initialState: AuthState = {
   status: 'idle',
   phoneNumber: '',
   userName: '',
-  verificationSid: null,
+  otpSent: false,
   userId: null,
   isNewUser: false,
+  consentForMobile360: false,
   error: null,
 };
 
@@ -87,9 +92,14 @@ export const useAuthStore = create<AuthStore>()(
         state.userName = name;
       }),
 
-    setOtpSent: (verificationSid) =>
+    setConsentForMobile360: (value) =>
       set((state) => {
-        state.verificationSid = verificationSid;
+        state.consentForMobile360 = value;
+      }),
+
+    setOtpSent: () =>
+      set((state) => {
+        state.otpSent = true;
         state.status = 'otp_sent';
         state.error = null;
       }),
@@ -118,7 +128,7 @@ export const useAuthStore = create<AuthStore>()(
       set((state) => {
         state.error = null;
         if (state.status === 'error') {
-          state.status = state.verificationSid ? 'otp_sent' : 'phone_input';
+          state.status = state.otpSent ? 'otp_sent' : 'phone_input';
         }
       }),
 

@@ -67,6 +67,9 @@ export {
   deriveSetupProgress,
 } from './useSetup';
 
+// Identity
+export { useIdentityFetch } from './useIdentityVerification';
+
 // Auth Guard
 export { useRequireAuth } from './useRequireAuth';
 
@@ -74,6 +77,8 @@ export { useRequireAuth } from './useRequireAuth';
 export {
   useWaitlist,
   useWaitlistStatus,
+  useJoinWaitlist,
+  useMyReferralCode,
   useApplyReferral,
   useValidateReferral,
   waitlistKeys,

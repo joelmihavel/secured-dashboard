@@ -2,14 +2,15 @@
  * Auth Hooks
  *
  * React Query hooks for authentication operations.
- * Wraps auth API calls with caching and mutation handling.
+ * Uses Supabase Auth's built-in phone OTP (signInWithOtp / verifyOtp).
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, VerifyOtpRequest } from '../services/api/auth';
-import { supabase } from '../services/supabase';
 import { useAuthStore } from '../stores/auth';
+import { useIdentityFetch } from './useIdentityVerification';
+import { supabase } from '../services/supabase/client';
 
 // ==============================================
 // ERROR NORMALIZATION
@@ -67,12 +68,8 @@ export function useSendOtp() {
     onMutate: (variables) => {
       setPhoneNumber(variables.phone_number);
     },
-    onSuccess: (data) => {
-      if (data.success) {
-        setOtpSent(data.data.verification_sid);
-      } else {
-        setError('SEND_FAILED', data.data.message);
-      }
+    onSuccess: () => {
+      setOtpSent();
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);
@@ -100,29 +97,10 @@ export function useVerifyOtp() {
     onMutate: () => {
       setVerifying();
     },
-    onSuccess: async (data) => {
-      if (data.success) {
-        // Exchange token_hash for a proper Supabase session
-        try {
-          const { error: sessionError } = await supabase.auth.verifyOtp({
-            token_hash: data.data.token_hash,
-            type: 'magiclink',
-          });
-
-          if (sessionError) {
-            setError('SESSION_ERROR', 'Verified but failed to establish session. Please try again.');
-            return;
-          }
-        } catch {
-          setError('SESSION_ERROR', 'Failed to establish session. Please try again.');
-          return;
-        }
-
-        setAuthenticated(data.data.user_id, data.data.is_new_user);
-        queryClient.invalidateQueries({ queryKey: authKeys.session() });
-      } else {
-        setError('VERIFY_FAILED', data.data.message);
-      }
+    onSuccess: (data) => {
+      // Session is already established by supabase.auth.verifyOtp()
+      setAuthenticated(data.user_id, data.is_new_user);
+      queryClient.invalidateQueries({ queryKey: authKeys.session() });
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);
@@ -152,12 +130,8 @@ export function useResendOtp() {
     onMutate: () => {
       clearError();
     },
-    onSuccess: (data) => {
-      if (data.success) {
-        setOtpSent(data.data.verification_sid);
-      } else {
-        setError('RESEND_FAILED', data.data.message);
-      }
+    onSuccess: () => {
+      setOtpSent();
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);
@@ -179,6 +153,34 @@ export function useAuth() {
   const sendOtpMutation = useSendOtp();
   const verifyOtpMutation = useVerifyOtp();
   const resendOtpMutation = useResendOtp();
+  const identityFetchMutation = useIdentityFetch();
+  const identityFiredRef = useRef(false);
+
+  // Hydrate userName from Supabase session for returning users
+  useEffect(() => {
+    if (authStore.status === 'authenticated' && !authStore.userName) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const name = session?.user?.user_metadata?.name;
+        if (name) authStore.setUserName(name);
+      });
+    }
+  }, [authStore.status]);
+
+  // Fire non-blocking Mobile 360 identity fetch after successful authentication
+  useEffect(() => {
+    if (
+      authStore.status === 'authenticated' &&
+      authStore.isNewUser &&
+      authStore.consentForMobile360 &&
+      !identityFiredRef.current
+    ) {
+      identityFiredRef.current = true;
+      identityFetchMutation.mutate({
+        consent_timestamp: new Date().toISOString(),
+        name: authStore.userName || undefined,
+      });
+    }
+  }, [authStore.status, authStore.isNewUser, authStore.consentForMobile360]);
 
   const sendCode = useCallback(
     (phoneNumber: string, channel?: 'sms' | 'whatsapp') => {
@@ -217,6 +219,7 @@ export function useAuth() {
     // State
     status: authStore.status,
     phoneNumber: authStore.phoneNumber,
+    userName: authStore.userName,
     userId: authStore.userId,
     isNewUser: authStore.isNewUser,
     error: authStore.error,

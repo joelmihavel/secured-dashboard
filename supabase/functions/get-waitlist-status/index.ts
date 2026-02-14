@@ -1,13 +1,12 @@
 /**
  * Flent Secured v2 - Edge Function: get-waitlist-status
  *
- * V1 COMPATIBILITY: This function maintains the exact response format expected by the iOS app.
- * It reads from V2's extracted_rental_info table but returns data in V1's waitlist format.
+ * Returns the user's waitlist status by combining data from:
+ * - waitlist_entries: position, admin review, rejection reasons
+ * - extracted_rental_info: agreement extraction details
+ * - cashback_ledger / users: reward balances
  *
- * V2 IMPROVEMENTS USED:
- * - Typed error handling (AuthError, NotFoundError)
- * - Audit logging for compliance
- * - CORS with origin validation
+ * V1 COMPATIBILITY: Maintains the response format expected by the iOS app.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -44,6 +43,8 @@ interface WaitlistStatusResponse {
     waitlist_position: number | null;
     document_uploaded: boolean;
     admin_review: string;
+    rejection_reasons: string[];
+    next_application_at: string | null;
     created_at: string;
   };
   extracted_info?: {
@@ -61,6 +62,8 @@ interface WaitlistStatusResponse {
     pending_total: number;
     credited_total: number;
   };
+  onboarded_count?: number;
+  total_member_slots?: number;
   error?: string;
 }
 
@@ -124,6 +127,24 @@ function calculateFieldsExtracted(data: Record<string, unknown>): number {
   return fields.filter((f) => data[f] != null && data[f] !== "").length;
 }
 
+function calculateRentDuration(
+  startDate: string | null,
+  endDate: string | null
+): string {
+  if (!startDate || !endDate) return "11 Months"; // Default
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+
+  return `${months} Months`;
+}
+
+// Total member slots (configurable via env or default)
+const TOTAL_MEMBER_SLOTS = parseInt(Deno.env.get("WAITLIST_TOTAL_SLOTS") || "150", 10);
+
 // ==============================================
 // MAIN HANDLER
 // ==============================================
@@ -164,7 +185,7 @@ serve(async (req) => {
     // Create service client for admin operations
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Initialize audit logger (V2 improvement)
+    // Initialize audit logger
     const audit = AuditLogger.fromRequest(
       adminClient,
       req,
@@ -173,26 +194,22 @@ serve(async (req) => {
     );
 
     // ==============================================
-    // QUERY V2's extracted_rental_info TABLE
+    // QUERY WAITLIST ENTRY
     // ==============================================
-    // V2 uses extracted_rental_info directly linked to user
-    // We map this to V1's waitlist format
 
-    const { data: extractedInfo, error: queryError } = await supabase
-      .from("extracted_rental_info")
+    const { data: waitlistEntry, error: waitlistError } = await adminClient
+      .from("waitlist_entries")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
       .maybeSingle();
 
-    if (queryError) {
-      console.error("Query error:", queryError);
-      throw queryError;
+    if (waitlistError) {
+      console.error("Waitlist query error:", waitlistError);
+      // Don't throw — fall back to no entry
     }
 
-    // No extraction record found - user hasn't uploaded a document yet
-    if (!extractedInfo) {
+    // No waitlist entry — user hasn't been assigned a position yet
+    if (!waitlistEntry) {
       const response: WaitlistStatusResponse = {
         success: true,
         has_entry: false,
@@ -201,60 +218,100 @@ serve(async (req) => {
     }
 
     // ==============================================
-    // MAP V2 DATA TO V1 RESPONSE FORMAT
+    // QUERY EXTRACTED RENTAL INFO (if linked)
     // ==============================================
 
-    const extractionStatus = extractedInfo.extraction_status || "pending";
-    const userVerified = extractedInfo.user_verified || false;
-    const confidenceScore = extractedInfo.extraction_confidence
-      ? Math.round(extractedInfo.extraction_confidence * 100)
+    let extractedInfo: Record<string, unknown> | null = null;
+
+    if (waitlistEntry.extraction_id) {
+      const { data: extraction } = await adminClient
+        .from("extracted_rental_info")
+        .select("*")
+        .eq("id", waitlistEntry.extraction_id)
+        .single();
+      extractedInfo = extraction;
+    } else {
+      // Fall back: find latest extraction for this user
+      const { data: extraction } = await adminClient
+        .from("extracted_rental_info")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      extractedInfo = extraction;
+    }
+
+    // ==============================================
+    // GET ONBOARDED COUNT
+    // ==============================================
+
+    const { data: onboardedResult } = await adminClient
+      .rpc("get_onboarded_count");
+
+    const onboardedCount = (onboardedResult as number) ?? 0;
+
+    // ==============================================
+    // BUILD RESPONSE
+    // ==============================================
+
+    const extractionStatus = (extractedInfo?.extraction_status as string) || "pending";
+    const userVerified = (extractedInfo?.user_verified as boolean) || false;
+    const confidenceScore = extractedInfo?.extraction_confidence
+      ? Math.round((extractedInfo.extraction_confidence as number) * 100)
       : 0;
-    const fieldsExtracted = calculateFieldsExtracted(extractedInfo);
+    const fieldsExtracted = extractedInfo ? calculateFieldsExtracted(extractedInfo) : 0;
+    const contractStatus = mapExtractionStatusToContract(extractionStatus, userVerified);
 
-    // Map to contract status (V1 field)
-    const contractStatus = mapExtractionStatusToContract(
-      extractionStatus,
-      userVerified
-    );
+    // Admin review comes from waitlist_entries (authoritative)
+    const adminReview = waitlistEntry.admin_review as string;
 
-    // Determine admin review status
-    const adminReviewStatus = userVerified
-      ? "approved"
-      : extractionStatus === "manual_review"
-      ? "in_progress"
-      : "due";
+    // Determine user-facing status from admin_review
+    let entryStatus = "pending_review";
+    if (adminReview === "approved") {
+      entryStatus = "approved";
+    } else if (adminReview === "rejected") {
+      entryStatus = "rejected";
+    } else if (adminReview === "in_progress") {
+      entryStatus = "in_review";
+    }
 
-    // Build response in V1 format
     const response: WaitlistStatusResponse = {
       success: true,
       has_entry: true,
 
-      // Polling fields at root level (iOS app checks these)
+      // Polling fields at root level
       contract_status: contractStatus,
       extraction_status: extractionStatus,
       requires_manual_review: extractionStatus === "manual_review",
-      manual_review_reason: extractedInfo.extraction_error || null,
+      manual_review_reason: (extractedInfo?.extraction_error as string) || null,
       fields_extracted: fieldsExtracted,
       total_fields: 14,
       confidence_score: confidenceScore,
-      waitlist_position: 1000, // V2 doesn't track waitlist position, provide default
-      admin_review: adminReviewStatus,
+      waitlist_position: waitlistEntry.waitlist_position,
+      admin_review: adminReview,
 
-      // Full waitlist entry (V1 format)
+      // Full waitlist entry
       waitlist_entry: {
-        id: extractedInfo.id,
-        status: userVerified ? "approved" : "pending_review",
+        id: waitlistEntry.id,
+        status: entryStatus,
         extraction_status: extractionStatus,
         contract_status: contractStatus,
         requires_manual_review: extractionStatus === "manual_review",
-        manual_review_reason: extractedInfo.extraction_error || null,
-        waitlist_position: 1000,
-        document_uploaded: !!extractedInfo.document_storage_path,
-        admin_review: adminReviewStatus,
-        created_at: extractedInfo.created_at,
+        manual_review_reason: (extractedInfo?.extraction_error as string) || null,
+        waitlist_position: waitlistEntry.waitlist_position,
+        document_uploaded: !!(extractedInfo?.document_storage_path),
+        admin_review: adminReview,
+        rejection_reasons: waitlistEntry.rejection_reasons || [],
+        next_application_at: waitlistEntry.next_application_at,
+        created_at: waitlistEntry.created_at,
       },
 
-      // Rewards (V2 uses cashback_ledger, simplified here)
+      // Counts
+      onboarded_count: onboardedCount,
+      total_member_slots: TOTAL_MEMBER_SLOTS,
+
+      // Rewards placeholder
       rewards: {
         pending_total: 0,
         credited_total: 0,
@@ -262,8 +319,11 @@ serve(async (req) => {
     };
 
     // Add extracted info if available
-    if (extractionStatus === "completed" || extractionStatus === "manual_review") {
-      // Get cashback balance from users table (V2 tracks it there)
+    if (
+      extractedInfo &&
+      (extractionStatus === "completed" || extractionStatus === "manual_review")
+    ) {
+      // Get cashback balance
       const { data: userData } = await supabase
         .from("users")
         .select("cashback_balance_paise")
@@ -272,24 +332,27 @@ serve(async (req) => {
 
       response.extracted_info = {
         property_name: extractedInfo.property_address
-          ? `${extractedInfo.property_city || "Unknown"} Property`
+          ? `${(extractedInfo.property_city as string) || "Unknown"} Property`
           : "Unknown Property",
-        monthly_rent: formatCurrency(extractedInfo.monthly_rent_paise),
-        security_deposit: formatCurrency(extractedInfo.security_deposit_paise),
-        rent_duration: calculateRentDuration(
-          extractedInfo.lease_start_date,
-          extractedInfo.lease_end_date
+        monthly_rent: formatCurrency(extractedInfo.monthly_rent_paise as number | null),
+        security_deposit: formatCurrency(
+          extractedInfo.security_deposit_paise as number | null
         ),
-        lease_end_date: formatDate(extractedInfo.lease_end_date),
-        tenants: extractedInfo.tenant_name ? [extractedInfo.tenant_name] : [],
+        rent_duration: calculateRentDuration(
+          extractedInfo.lease_start_date as string | null,
+          extractedInfo.lease_end_date as string | null
+        ),
+        lease_end_date: formatDate(extractedInfo.lease_end_date as string | null),
+        tenants: extractedInfo.tenant_name
+          ? [extractedInfo.tenant_name as string]
+          : [],
         landlords: extractedInfo.landlord_name
-          ? [extractedInfo.landlord_name]
+          ? [extractedInfo.landlord_name as string]
           : [],
         confidence_score: confidenceScore,
-        certificate_no: null, // V2 doesn't track e-stamp separately
+        certificate_no: null,
       };
 
-      // Update rewards with actual cashback balance
       if (userData?.cashback_balance_paise) {
         response.rewards = {
           pending_total: 0,
@@ -298,13 +361,17 @@ serve(async (req) => {
       }
     }
 
-    // Log successful status check (V2 audit improvement)
+    // Log successful status check
     await audit.logSuccess(
       "WAITLIST_STATUS_CHECKED",
-      "extraction",
-      "extracted_rental_info",
-      extractedInfo.id,
-      { extraction_status: extractionStatus, user_verified: userVerified }
+      "waitlist",
+      "waitlist_entries",
+      waitlistEntry.id,
+      {
+        position: waitlistEntry.waitlist_position,
+        admin_review: adminReview,
+        extraction_status: extractionStatus,
+      }
     );
 
     return jsonResponse(response, 200, headers);
@@ -312,18 +379,3 @@ serve(async (req) => {
     return handleError(error, req.headers.get("x-request-id") ?? undefined);
   }
 });
-
-function calculateRentDuration(
-  startDate: string | null,
-  endDate: string | null
-): string {
-  if (!startDate || !endDate) return "11 Months"; // Default
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const months =
-    (end.getFullYear() - start.getFullYear()) * 12 +
-    (end.getMonth() - start.getMonth());
-
-  return `${months} Months`;
-}

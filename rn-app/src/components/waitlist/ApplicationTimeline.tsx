@@ -27,19 +27,19 @@ const FIGMA = {
   // Timeline card container (node 41:11220)
   card: {
     width: 313,
-    borderRadius: 12, // radius.lg
-    paddingTop: 24, // spacing[6]
+    borderRadius: 12,
+    paddingTop: 24,
     paddingBottom: 24,
-    paddingLeft: 16, // spacing.lg
+    paddingLeft: 16,
     paddingRight: 16,
-    gap: 24, // spacing[6]
+    gap: 24,
   },
 
   // Timeline row (node 41:11221)
   row: {
     width: 281,
     height: 44,
-    gap: 8, // spacing.sm
+    gap: 8,
   },
 
   // Indicator container (node 41:11222)
@@ -49,13 +49,11 @@ const FIGMA = {
   },
 
   // Indicator dot (node 41:11223)
-  // Ellipse 21906: 12x12, centered in 20x20 container
   indicator: {
     size: 12,
   },
 
   // Connector line (node 41:11224)
-  // Vector 59: height 47
   connector: {
     height: 47,
     width: 1,
@@ -64,58 +62,31 @@ const FIGMA = {
   // Text container (node 41:11225)
   textContainer: {
     width: 253,
-    gap: 4, // spacing.xs
+    gap: 4,
   },
 
-  // Colors from Figma with design token mappings
   colors: {
-    // Card background: #202020 → colors.black[500]
     cardBackground: colors.black[500],
-
-    // Complete status indicator: #FF9A6D → colors.brand[500]
     indicatorComplete: colors.brand[500],
-
-    // Pending status indicator: #1A1A1A → colors.black[600]
     indicatorPending: colors.black[600],
-
-    // Active status indicator (same as complete for now)
     indicatorActive: colors.brand[500],
-
-    // Accepted status: #70BF73 → colors.success.default
     indicatorSuccess: colors.success.default,
-
-    // Rejected status: #E5484D → colors.error.radix
     indicatorError: colors.error.radix,
-
-    // Connector line complete: #FFAE8A → colors.brand[400]
     connectorComplete: colors.brand[400],
-
-    // Connector line pending: #A6A6A6 → colors.black[200]
     connectorPending: colors.black[200],
-
-    // Label text: #878787 → colors.neutral[600]
     textLabel: colors.neutral[600],
-
-    // Value text: #CBCBCB → colors.neutral[300]
     textValue: colors.neutral[300],
-
-    // Success text: #70BF73 → colors.success.default
     textSuccess: colors.success.default,
-
-    // Error text: #E5484D → colors.error.radix
     textError: colors.error.radix,
   },
 
-  // Typography from Figma
   typography: {
-    // Label: fontSize 12, lineHeight 20 → typography.bodySm
     label: {
       fontSize: 12,
       lineHeight: 20,
       fontFamily: 'PlusJakartaSans-Regular',
       fontWeight: '400' as const,
     },
-    // Value: fontSize 14, lineHeight 20 → typography.bodyMd2
     value: {
       fontSize: 14,
       lineHeight: 20,
@@ -143,104 +114,100 @@ export interface ApplicationTimelineProps {
 }
 
 // ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+function getIndicatorColor(status: TimelineStatus): string {
+  switch (status) {
+    case 'complete':
+    case 'active':
+      return FIGMA.colors.indicatorComplete;
+    case 'accepted':
+      return FIGMA.colors.indicatorSuccess;
+    case 'rejected':
+      return FIGMA.colors.indicatorError;
+    default:
+      return FIGMA.colors.indicatorPending;
+  }
+}
+
+function getValueColor(status: TimelineStatus): string {
+  switch (status) {
+    case 'accepted':
+      return FIGMA.colors.textSuccess;
+    case 'rejected':
+      return FIGMA.colors.textError;
+    default:
+      return FIGMA.colors.textValue;
+  }
+}
+
+/**
+ * Get connector line color below a given item.
+ * Per Figma: connector owned by the row above the gap.
+ * - 41:11224 (row 1 connector): #FFAE8A (orange) when row is complete/accepted
+ * - 41:11231 (row 2 connector): #A6A6A6 (gray) when row is pending
+ */
+function getConnectorColor(status: TimelineStatus): string {
+  return status === 'complete' || status === 'accepted'
+    ? FIGMA.colors.connectorComplete
+    : FIGMA.colors.connectorPending;
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
 function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProps) {
   return (
     <View style={styles.container} testID={testID}>
-      {items.map((item, index) => (
-        <TimelineItem
-          key={`${item.label}-${index}`}
-          {...item}
-          isFirst={index === 0}
-          isLast={index === items.length - 1}
-          prevStatus={index > 0 ? items[index - 1].status : undefined}
-        />
-      ))}
-    </View>
-  );
-}
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
+        const indicatorColor = getIndicatorColor(item.status);
+        const valueColor = getValueColor(item.status);
+        const connectorColor = getConnectorColor(item.status);
 
-// ============================================
-// TIMELINE ITEM
-// ============================================
+        return (
+          <View key={`${item.label}-${index}`}>
+            {/* Timeline row: indicator (20x20) + text column (flex) */}
+            {/* Node 41:11221: 281x44, flexDirection row, gap 8 */}
+            <View style={styles.timelineRow}>
+              {/* Indicator container - 20x20 with 12x12 dot centered */}
+              {/* Node 41:11222: 20x20 FIXED */}
+              <View style={styles.indicatorContainer}>
+                <View
+                  style={[
+                    styles.indicatorDot,
+                    { backgroundColor: indicatorColor },
+                  ]}
+                />
+              </View>
 
-interface TimelineItemProps extends TimelineItemData {
-  isFirst: boolean;
-  isLast: boolean;
-  prevStatus?: TimelineStatus;
-}
+              {/* Text column - flex fill, gap 4 */}
+              {/* Node 41:11225: 253x44, VERTICAL, justifyContent center, gap 4 */}
+              <View style={styles.textColumn}>
+                <RNText style={styles.labelText}>{item.label}</RNText>
+                <RNText style={[styles.valueText, { color: valueColor }]}>
+                  {item.value}
+                </RNText>
+              </View>
+            </View>
 
-function TimelineItem({ label, value, status, isFirst, isLast, prevStatus }: TimelineItemProps) {
-  // Get indicator color based on status
-  const getIndicatorColor = () => {
-    switch (status) {
-      case 'complete':
-      case 'active':
-        return FIGMA.colors.indicatorComplete;
-      case 'accepted':
-        return FIGMA.colors.indicatorSuccess;
-      case 'rejected':
-        return FIGMA.colors.indicatorError;
-      default:
-        return FIGMA.colors.indicatorPending;
-    }
-  };
-
-  // Get connector color based on previous item status
-  const getConnectorColor = () => {
-    if (prevStatus === 'complete' || prevStatus === 'active') {
-      return FIGMA.colors.connectorComplete;
-    }
-    return FIGMA.colors.connectorPending;
-  };
-
-  // Get value text color based on status
-  const getValueColor = () => {
-    switch (status) {
-      case 'accepted':
-        return FIGMA.colors.textSuccess;
-      case 'rejected':
-        return FIGMA.colors.textError;
-      default:
-        return FIGMA.colors.textValue;
-    }
-  };
-
-  const indicatorColor = getIndicatorColor();
-  const connectorColor = getConnectorColor();
-  const valueColor = getValueColor();
-
-  return (
-    <View style={styles.timelineRow}>
-      {/* Indicator column - 20x20 container with 12x12 dot */}
-      <View style={styles.indicatorColumn}>
-        {/* Connector line above (if not first) */}
-        {!isFirst && (
-          <View style={[styles.connectorTop, { backgroundColor: connectorColor }]} />
-        )}
-
-        {/* Indicator container - 20x20 */}
-        <View style={styles.indicatorContainer}>
-          {/* Indicator dot - 12x12, centered */}
-          <View style={[styles.indicatorDot, { backgroundColor: indicatorColor }]} />
-        </View>
-
-        {/* Connector line below (if not last) */}
-        {!isLast && (
-          <View style={[styles.connectorBottom, { backgroundColor: getConnectorColor() }]} />
-        )}
-      </View>
-
-      {/* Text column - 253x44, gap 4 */}
-      <View style={styles.textColumn}>
-        {/* Label: fontSize 12, color #878787 */}
-        <RNText style={styles.labelText}>{label}</RNText>
-
-        {/* Value: fontSize 14, color #CBCBCB (or status color) */}
-        <RNText style={[styles.valueText, { color: valueColor }]}>{value}</RNText>
-      </View>
+            {/* Connector line below this row (except for last item) */}
+            {/* Node 41:11224/41:11231: Vector 59, height 47, centered under indicator */}
+            {!isLast && (
+              <View style={styles.connectorWrapper}>
+                <View
+                  style={[
+                    styles.connectorLine,
+                    { backgroundColor: connectorColor },
+                  ]}
+                />
+              </View>
+            )}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -251,28 +218,24 @@ function TimelineItem({ label, value, status, isFirst, isLast, prevStatus }: Tim
 
 const styles = StyleSheet.create({
   // Timeline card container
-  // Node 41:11220: 313x228, #202020, borderRadius 12, padding 24/16, gap 24
+  // Node 41:11220: VERTICAL layout, gap 24
+  // The outer card wrapper (bg, padding, borderRadius) is rendered by the parent.
+  // This container just manages internal vertical flow.
   container: {
     width: '100%',
-    gap: FIGMA.card.gap,
   },
 
   // Timeline row
-  // Node 41:11221: 281x44, gap 8
+  // Node 41:11221: 281x44, HORIZONTAL, gap 8, layoutSizingHorizontal FILL
   timelineRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: FIGMA.row.gap,
     minHeight: FIGMA.row.height,
   },
 
-  // Indicator column
-  indicatorColumn: {
-    width: FIGMA.indicatorContainer.width,
-    alignItems: 'center',
-  },
-
-  // Indicator container - 20x20
-  // Node 41:11222
+  // Indicator container - exactly 20x20 with centered 12x12 dot
+  // Node 41:11222: 20x20, FIXED sizing both axes
   indicatorContainer: {
     width: FIGMA.indicatorContainer.width,
     height: FIGMA.indicatorContainer.height,
@@ -280,42 +243,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Indicator dot - 12x12
-  // Node 41:11223: Ellipse 21906
+  // Indicator dot - 12x12 circle
+  // Node 41:11223: Ellipse 21906, 12x12, centered in 20x20 container
   indicatorDot: {
     width: FIGMA.indicator.size,
     height: FIGMA.indicator.size,
     borderRadius: FIGMA.indicator.size / 2,
   },
 
-  // Connector line above indicator
-  connectorTop: {
-    width: FIGMA.connector.width,
-    height: 8, // Small gap above indicator
+  // Connector wrapper - aligns the 1px line centered under the 20px indicator column
+  connectorWrapper: {
+    width: FIGMA.indicatorContainer.width,
+    alignItems: 'center',
   },
 
-  // Connector line below indicator
-  // Node 41:11224: Vector 59, height 47
-  connectorBottom: {
-    flex: 1,
+  // Connector line
+  // Node 41:11224: Vector 59, width 0 (stroke-based = 1px), height 47
+  connectorLine: {
     width: FIGMA.connector.width,
-    minHeight: FIGMA.connector.height - 8, // Account for spacing
-    marginTop: 4,
+    height: FIGMA.connector.height,
   },
 
   // Text column
-  // Node 41:11225: 253x44, gap 4
+  // Node 41:11225: 253x44, VERTICAL, primaryAxisAlignItems CENTER, gap 4
+  // layoutSizingHorizontal FILL = flex 1 in RN
   textColumn: {
     flex: 1,
     gap: FIGMA.textContainer.gap,
     justifyContent: 'center',
-    // Removed paddingBottom: 16 - not in Figma extraction
-    // The timeline uses gap: 24 between rows, no extra padding needed
   },
 
   // Label text
-  // Node 41:11226: fontSize 12, lineHeight 20, color #878787
-  // Figma: textAlignHorizontal CENTER
+  // Node 41:11226: fontSize 12, lineHeight 20, fontWeight 400, color #878787
+  // PlusJakartaSans-Regular, textAlignHorizontal CENTER (but HUG width in FILL parent)
   labelText: {
     fontFamily: FIGMA.typography.label.fontFamily,
     fontSize: FIGMA.typography.label.fontSize,
@@ -326,7 +286,8 @@ const styles = StyleSheet.create({
   },
 
   // Value text
-  // Node 41:11227: fontSize 14, lineHeight 20, color #CBCBCB
+  // Node 41:11227: fontSize 14, lineHeight 20, fontWeight 400, color #CBCBCB
+  // PlusJakartaSans-Regular, textAlignHorizontal LEFT, layoutSizingHorizontal FILL
   valueText: {
     fontFamily: FIGMA.typography.value.fontFamily,
     fontSize: FIGMA.typography.value.fontSize,

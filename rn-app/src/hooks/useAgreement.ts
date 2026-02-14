@@ -19,12 +19,15 @@ import {
   processDocument,
   getExtractedAgreementData,
   confirmExtraction,
+  updateExtraction,
   getMockExtractedAgreementData,
   getMockProcessResult,
   ExtractedAgreementData,
   ProcessDocumentResult,
   ConfirmExtractionResult,
   ConfirmExtractionRequest,
+  UpdateExtractionRequest,
+  UpdateExtractionResult,
   AgreementError,
 } from '../services/api/agreement';
 import {
@@ -247,6 +250,35 @@ export function useConfirmExtraction() {
 }
 
 // ==============================================
+// UPDATE EXTRACTION MUTATION
+// ==============================================
+
+/**
+ * Hook to update extracted data with user modifications before confirmation.
+ *
+ * Stores modifications in user_modified_data JSONB and invalidates cache.
+ */
+export function useUpdateExtraction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      request: UpdateExtractionRequest
+    ): Promise<UpdateExtractionResult> => {
+      const result = await updateExtraction(request);
+      if (result.error) {
+        throw result.error;
+      }
+      return result.data!;
+    },
+    onSuccess: (data) => {
+      // Invalidate extraction data to refetch updated values
+      queryClient.invalidateQueries({ queryKey: agreementKeys.extraction(data.extractionId) });
+    },
+  });
+}
+
+// ==============================================
 // COMBINED AGREEMENT HOOK
 // ==============================================
 
@@ -277,11 +309,14 @@ export function useAgreement(options: UseAgreementOptions = {}) {
   // Extracted data query
   const extractedDataQuery = useExtractedData(currentExtractionId, {
     useMock,
-    enabled: !!currentExtractionId,
+    enabled: useMock || !!currentExtractionId,
   });
 
   // Confirm mutation
   const confirmMutation = useConfirmExtraction();
+
+  // Update mutation
+  const updateMutation = useUpdateExtraction();
 
   // Upload handler
   const upload = useCallback(
@@ -311,6 +346,20 @@ export function useAgreement(options: UseAgreementOptions = {}) {
     [currentExtractionId, confirmMutation]
   );
 
+  // Update handler (save modifications before confirmation)
+  const update = useCallback(
+    async (modifications: Record<string, string | number | boolean>) => {
+      if (!currentExtractionId) {
+        throw new Error('No extraction to update');
+      }
+      return updateMutation.mutateAsync({
+        extractionId: currentExtractionId,
+        modifications,
+      });
+    },
+    [currentExtractionId, updateMutation]
+  );
+
   return {
     // State
     extractionId: currentExtractionId,
@@ -334,6 +383,11 @@ export function useAgreement(options: UseAgreementOptions = {}) {
     isConfirming: confirmMutation.isPending,
     confirmResult: confirmMutation.data ?? null,
     confirmError: confirmMutation.error as AgreementError | null,
+
+    // Update (pre-confirmation modifications)
+    update,
+    isUpdating: updateMutation.isPending,
+    updateError: updateMutation.error as AgreementError | null,
 
     // Actions
     setExtractionId: setCurrentExtractionId,

@@ -3,12 +3,12 @@
  * Figma Nodes: 1-31175 (empty), 1-31277 (filled)
  *
  * PIXEL-PERFECT Figma Values:
- * - Overlay: background rgba(0,0,0,0.6), backdrop-blur effect
+ * - Overlay: background rgba(0,0,0,0.4) (Figma Rectangle 54 opacity=0.4)
  * - Sheet background: #1A1A1A (black.600)
  * - Sheet width: 393px (full width)
  * - Sheet height: 409.96px (OTP filled state)
  * - Sheet border radius: 22.79px top (Figma: borderRadius)
- * - Handle: 28px width, 4px height, #D9D9D9 (light gray), radius 200px
+ * - Handle: 48px width, 4px height, #4D4D4D (dark gray), radius 200px
  * - Handle top padding: 15.19px
  * - Container padding: 48px horizontal (per content width 297px)
  * - Title: Plus Jakarta Sans Regular, 28px, line-height 39.48px, tracking -0.56px, #FFFFFF
@@ -37,8 +37,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-// TODO: Enable blur once native build is working
-// import { BlurView } from 'expo-blur';
+import { BlurView } from 'expo-blur';
 
 import { Text, PrimaryButton, OTPInput } from '@/src/components';
 import { colors, springConfig, duration, radius, spacing } from '@/src/theme';
@@ -47,9 +46,9 @@ import { useAuthStore } from '@/src/stores/auth';
 
 // Exact Figma color values mapped to theme tokens (verified from 1-31277 extraction)
 const FIGMA_COLORS = {
-  overlay: 'rgba(0,0,0,0.6)',          // Figma: rgba(0,0,0,0.6) = 60% opacity
+  overlay: 'rgba(0,0,0,0.4)',          // Figma: Rectangle 54 opacity=0.4 = 40% opacity
   sheetBackground: colors.black[600], // #1A1A1A - Frame 1686557301
-  handle: '#D9D9D9',                   // Figma: node 1:31361 Rectangle 53 - light gray handle
+  handle: '#4D4D4D',                   // Figma: node 1:31258 Rectangle 53 - dark gray handle
   titleText: colors.white,            // #FFFFFF
   subtitleText: colors.neutral[500],  // #A9A9A9
   otpBoxBg: colors.neutral[900],      // #222222
@@ -66,7 +65,7 @@ const FIGMA_DIMENSIONS = {
   sheetWidth: 393,                     // Figma: full width
   sheetHeight: 409.96,                 // Figma: frame_1686557301 height (filled)
   sheetBorderRadius: 22.79,            // Figma: exact radius (24 for cleaner value)
-  handleWidth: 28,                     // Figma: rectangle_53 width (node 1:31361)
+  handleWidth: 48,                     // Figma: rectangle_53 width (node 1:31258)
   handleHeight: 4,                     // Figma: rectangle_53 height
   handleRadius: 200,                   // Figma: rectangle_53 borderRadius
   handleToSheetGap: 15,                // Figma: Frame 2095586317 gap between handle and sheet
@@ -231,7 +230,7 @@ export default function OTPScreen() {
 
   // Animate in on mount
   useEffect(() => {
-    overlayOpacity.value = withTiming(1, { duration: duration.normal });
+    overlayOpacity.value = withTiming(0.4, { duration: duration.normal }); // Figma: 40% opacity overlay
   }, [overlayOpacity]);
 
   // Handle back button - include handleClose in dependencies to prevent stale closure
@@ -294,16 +293,17 @@ export default function OTPScreen() {
   }));
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value, // Figma: overlay color already has 0.6 opacity
+    opacity: overlayOpacity.value, // Figma: 40% opacity (0.4 target)
   }));
 
   return (
     <View style={styles.container}>
       {/* Blurred overlay - tap to dismiss */}
-      {/* Figma: backdrop-blur-[4px] bg-[rgba(0,0,0,0.6)] */}
+      {/* BlurView intensity=8 + dark tint, overlay at 40% opacity (Figma Rectangle 54) */}
       <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
-        {/* TODO: Enable BlurView once native build is working */}
-        {/* <BlurView intensity={10} tint="dark" style={StyleSheet.absoluteFill} /> */}
+        {/* Glass blur effect - shows sign-up screen in a hazy manner behind modal */}
+        {/* Figma: Rectangle 55 = blur 8px + 60% black, Rectangle 54 = 40% black overlay */}
+        <BlurView intensity={8} tint="dark" style={StyleSheet.absoluteFill} />
         <Animated.View style={[styles.overlay, overlayAnimatedStyle]} />
       </Pressable>
 
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000', // Base black - opacity controlled by animation (0.16 per Figma)
+    backgroundColor: '#000000', // Base black - opacity controlled by animation (0.4 per Figma Rectangle 54)
   },
   // Figma: Floating handle structure - wrapper is transparent, handle floats above content
   sheetWrapper: {
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     width: FIGMA_DIMENSIONS.resendWidth, // 297
   },
   resendLink: {
-    color: colors.brand[500],                              // Figma: #FF9A6D - active resend link color
+    color: FIGMA_COLORS.resendText,                        // Figma: same #A9A9A9 as base text, only underline differs
     textDecorationLine: 'underline',
   },
   // cashfreeText style removed - text belongs to underlying screen (Gemini feedback)

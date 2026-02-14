@@ -108,6 +108,19 @@ export interface ConfirmExtractionRequest {
   landlordEmail?: string;
 }
 
+/** Request to update extraction with user modifications */
+export interface UpdateExtractionRequest {
+  extractionId: string;
+  modifications: Record<string, string | number | boolean>;
+}
+
+/** Result after updating extraction */
+export interface UpdateExtractionResult {
+  success: boolean;
+  extractionId: string;
+  modifiedFields: string[];
+}
+
 export type AgreementErrorCode =
   | 'NOT_AUTHENTICATED'
   | 'INVALID_FILE_TYPE'
@@ -173,6 +186,14 @@ interface RawConfirmExtractionResponse {
     tenancy_id: string;
     user_status: string;
   };
+  error?: string;
+}
+
+/** Raw response from update-extraction edge function */
+interface RawUpdateExtractionResponse {
+  success: boolean;
+  extraction_id?: string;
+  modified_fields?: string[];
   error?: string;
 }
 
@@ -498,6 +519,51 @@ export async function confirmExtraction(
   }
 
   return { data: mapRawConfirmResponse(data), error: null };
+}
+
+/**
+ * Update extracted data with user modifications (pre-confirmation).
+ *
+ * Calls the update-extraction edge function which:
+ * - Validates extraction belongs to user
+ * - Validates field whitelist (MODIFIABLE_FIELDS)
+ * - Stores modifications in user_modified_data JSONB
+ * - Returns list of modified fields
+ */
+export async function updateExtraction(
+  request: UpdateExtractionRequest
+): Promise<{ data: UpdateExtractionResult | null; error: AgreementError | null }> {
+  const body = {
+    extraction_id: request.extractionId,
+    modifications: request.modifications,
+  };
+
+  const { data, error } = await callEdgeFunction<RawUpdateExtractionResponse>(
+    'update-extraction',
+    body,
+    true, // requireAuth
+    'POST'
+  );
+
+  if (error) {
+    return { data: null, error: mapAgreementError(error) };
+  }
+
+  if (!data?.success) {
+    return {
+      data: null,
+      error: mapAgreementErrorFromMessage(data?.error ?? 'Failed to update extraction'),
+    };
+  }
+
+  return {
+    data: {
+      success: data.success,
+      extractionId: data.extraction_id ?? request.extractionId,
+      modifiedFields: data.modified_fields ?? [],
+    },
+    error: null,
+  };
 }
 
 // ==============================================

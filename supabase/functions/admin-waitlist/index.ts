@@ -1,0 +1,200 @@
+/**
+ * Flent Secured v2 - Edge Function: admin-waitlist
+ *
+ * Admin-only endpoint for managing waitlist entries.
+ * Requires service_role authentication.
+ *
+ * Actions:
+ * - approve: Approve a single user or batch of users
+ * - reject: Reject a user with reasons and cooldown
+ * - set_in_progress: Mark user(s) as under review
+ *
+ * Endpoint: POST /functions/v1/admin-waitlist
+ * Auth: service_role only
+ */
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createServiceClient } from "../_shared/supabase.ts";
+import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
+import { ValidationError, AuthError, handleError } from "../_shared/errors.ts";
+import { AuditLogger } from "../_shared/audit.ts";
+
+// ==============================================
+// TYPES
+// ==============================================
+
+type AdminAction = "approve" | "reject" | "set_in_progress";
+
+interface AdminWaitlistRequest {
+  admin_key: string;            // ADMIN_API_KEY secret for authentication
+  action: AdminAction;
+  user_ids: string[];           // One or more user IDs
+  rejection_reasons?: string[];
+  next_application_hours?: number; // Hours until user can re-apply (default 24)
+  admin_note?: string;
+}
+
+// ==============================================
+// MAIN HANDLER
+// ==============================================
+
+serve(async (req: Request) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const headers = getCorsHeaders(req);
+
+  if (req.method !== "POST") {
+    return jsonResponse({ error: true, message: "Method not allowed" }, 405, headers);
+  }
+
+  try {
+    // Parse body first (need admin_key from body for auth)
+    const body: AdminWaitlistRequest = await req.json();
+
+    // Authenticate via admin_key in request body
+    // (Supabase relay strips all custom headers and Authorization,
+    //  so body-based auth is the only reliable method for admin endpoints)
+    const expectedKey = Deno.env.get("ADMIN_API_KEY");
+    if (!body.admin_key || !expectedKey || body.admin_key !== expectedKey) {
+      throw new AuthError("Unauthorized - invalid admin key");
+    }
+
+    const supabase = createServiceClient();
+    const audit = AuditLogger.fromRequest(supabase, req, "admin", "admin-waitlist");
+
+    if (!body.action || !["approve", "reject", "set_in_progress"].includes(body.action)) {
+      throw new ValidationError("Invalid action. Use 'approve', 'reject', or 'set_in_progress'");
+    }
+
+    if (!body.user_ids || !Array.isArray(body.user_ids) || body.user_ids.length === 0) {
+      throw new ValidationError("user_ids must be a non-empty array of UUIDs");
+    }
+
+    if (body.user_ids.length > 100) {
+      throw new ValidationError("Cannot process more than 100 users at once");
+    }
+
+    // Validate UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    for (const uid of body.user_ids) {
+      if (!uuidRegex.test(uid)) {
+        throw new ValidationError(`Invalid UUID: ${uid}`);
+      }
+    }
+
+    if (body.action === "reject") {
+      if (!body.rejection_reasons || body.rejection_reasons.length === 0) {
+        throw new ValidationError("rejection_reasons required for reject action");
+      }
+    }
+
+    // ==============================================
+    // EXECUTE ACTION
+    // ==============================================
+
+    const results: Array<{ user_id: string; success: boolean; error?: string }> = [];
+
+    if (body.action === "approve") {
+      // Batch approve
+      const { data, error } = await supabase
+        .from("waitlist_entries")
+        .update({ admin_review: "approved" })
+        .in("user_id", body.user_ids)
+        .select("user_id");
+
+      if (error) {
+        throw new Error(`Batch approve failed: ${error.message}`);
+      }
+
+      const approvedIds = new Set((data ?? []).map((r: { user_id: string }) => r.user_id));
+      for (const uid of body.user_ids) {
+        results.push({
+          user_id: uid,
+          success: approvedIds.has(uid),
+          error: approvedIds.has(uid) ? undefined : "No waitlist entry found",
+        });
+      }
+
+      await audit.logSuccess("WAITLIST_BATCH_APPROVED", "admin", "waitlist_entries", undefined, {
+        count: approvedIds.size,
+        user_ids: body.user_ids,
+      });
+
+    } else if (body.action === "reject") {
+      const cooldownHours = body.next_application_hours ?? 24;
+      const nextApplicationAt = new Date(Date.now() + cooldownHours * 60 * 60 * 1000).toISOString();
+
+      const { data, error } = await supabase
+        .from("waitlist_entries")
+        .update({
+          admin_review: "rejected",
+          rejection_reasons: body.rejection_reasons,
+          next_application_at: nextApplicationAt,
+        })
+        .in("user_id", body.user_ids)
+        .select("user_id");
+
+      if (error) {
+        throw new Error(`Batch reject failed: ${error.message}`);
+      }
+
+      const rejectedIds = new Set((data ?? []).map((r: { user_id: string }) => r.user_id));
+      for (const uid of body.user_ids) {
+        results.push({
+          user_id: uid,
+          success: rejectedIds.has(uid),
+          error: rejectedIds.has(uid) ? undefined : "No waitlist entry found",
+        });
+      }
+
+      await audit.logSuccess("WAITLIST_BATCH_REJECTED", "admin", "waitlist_entries", undefined, {
+        count: rejectedIds.size,
+        user_ids: body.user_ids,
+        rejection_reasons: body.rejection_reasons,
+        next_application_at: nextApplicationAt,
+      });
+
+    } else if (body.action === "set_in_progress") {
+      const { data, error } = await supabase
+        .from("waitlist_entries")
+        .update({ admin_review: "in_progress" })
+        .in("user_id", body.user_ids)
+        .select("user_id");
+
+      if (error) {
+        throw new Error(`Batch set_in_progress failed: ${error.message}`);
+      }
+
+      const updatedIds = new Set((data ?? []).map((r: { user_id: string }) => r.user_id));
+      for (const uid of body.user_ids) {
+        results.push({
+          user_id: uid,
+          success: updatedIds.has(uid),
+          error: updatedIds.has(uid) ? undefined : "No waitlist entry found",
+        });
+      }
+
+      await audit.logSuccess("WAITLIST_BATCH_IN_PROGRESS", "admin", "waitlist_entries", undefined, {
+        count: updatedIds.size,
+        user_ids: body.user_ids,
+      });
+    }
+
+    const successCount = results.filter((r) => r.success).length;
+    const failCount = results.filter((r) => !r.success).length;
+
+    return jsonResponse({
+      success: true,
+      data: {
+        action: body.action,
+        total: body.user_ids.length,
+        succeeded: successCount,
+        failed: failCount,
+        results,
+      },
+    }, 200, headers);
+  } catch (error) {
+    return handleError(error, req.headers.get("x-request-id") ?? undefined);
+  }
+});

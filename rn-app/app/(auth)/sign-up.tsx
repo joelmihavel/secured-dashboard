@@ -94,6 +94,7 @@ export default function SignUpScreen() {
   const nameInputRef = useRef<RNTextInput>(null);
   const { sendCode, status, error, isSendingOtp, clearError } = useAuth();
   const setUserName = useAuthStore((s) => s.setUserName);
+  const setConsentForMobile360 = useAuthStore((s) => s.setConsentForMobile360);
 
   // Mock data for testing states
   const mockData = {
@@ -125,12 +126,15 @@ export default function SignUpScreen() {
     }
   }, [status, router]);
 
-  // Error message mapping
+  // Error message mapping - only show phone-related errors, not OTP errors
   const getPhoneErrorMessage = (): string | undefined => {
     // Return mock error for testing if set
     if (mockError) return mockError;
     if (!error) return undefined;
 
+    // Only display errors relevant to the phone input step.
+    // OTP-related errors (INVALID_OTP, OTP_EXPIRED, MAX_ATTEMPTS, SESSION_ERROR)
+    // are handled by the OTP screen and should not leak into the sign-up form.
     switch (error.code) {
       case 'INVALID_PHONE':
         return 'Enter valid number';
@@ -141,7 +145,7 @@ export default function SignUpScreen() {
       case 'TIMEOUT':
         return 'Request timed out. Try again.';
       default:
-        return error.message;
+        return undefined;
     }
   };
 
@@ -178,10 +182,11 @@ export default function SignUpScreen() {
 
     isSendingRef.current = true;
 
-    // Store name in auth store (used during OTP verification)
+    // Store name and consent in auth store (used during OTP verification)
     setUserName(name.trim());
+    setConsentForMobile360(consent);
     sendCode(formattedPhone, 'whatsapp');
-  }, [isFormValid, phone, name, sendCode, setUserName, isSendingOtp]);
+  }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
   return (
     <Screen padded={false} testID="sign-up-screen">

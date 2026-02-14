@@ -9,6 +9,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import {
   getWaitlistStatus,
+  joinWaitlist,
+  getMyReferralCode,
   applyReferralCode,
   validateReferralCode,
   getMockWaitlistStatus,
@@ -21,6 +23,8 @@ import {
   selectIsReferralComplete,
   selectCountdownText,
 } from '../stores/waitlist';
+import { useAuthStore } from '../stores/auth';
+import { supabase } from '../services/supabase/client';
 
 // ==============================================
 // QUERY KEYS
@@ -50,18 +54,60 @@ interface UseWaitlistStatusOptions {
 
 /**
  * Hook to fetch and cache waitlist status
- * Automatically polls while status is pending
+ * Subscribes to realtime updates and falls back to polling
  */
 export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
   const { enabled = true, useMock = false, mockState = 'pending' } = options;
   const store = useWaitlistStore();
+  const queryClient = useQueryClient();
+
+  // Realtime subscription — instantly refetch when admin approves/rejects
+  useEffect(() => {
+    if (!enabled || useMock) return;
+
+    let userId: string | null = null;
+
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      userId = session?.user?.id ?? null;
+      if (!userId) return;
+
+      const channel = supabase
+        .channel(`waitlist:${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'waitlist_entries',
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            // Immediately refetch status on any change to user's waitlist entry
+            queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
+          }
+        )
+        .subscribe();
+
+      // Store cleanup reference
+      return channel;
+    };
+
+    let channelRef: ReturnType<typeof supabase.channel> | undefined;
+    setupRealtime().then((ch) => { channelRef = ch; });
+
+    return () => {
+      if (channelRef) {
+        supabase.removeChannel(channelRef);
+      }
+    };
+  }, [enabled, useMock, queryClient]);
 
   const query = useQuery({
     queryKey: waitlistKeys.status(),
     queryFn: async (): Promise<WaitlistStatusData> => {
-      // Use mock data for development
-      if (useMock || process.env.NODE_ENV === 'development') {
-        // Simulate network delay
+      // Use mock data only when explicitly requested
+      if (useMock) {
         await new Promise((resolve) => setTimeout(resolve, 800));
         return getMockWaitlistStatus(mockState);
       }
@@ -74,14 +120,15 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
     },
     enabled,
     refetchInterval: (query) => {
-      // Only poll if status is pending
+      // Only poll if status is pending (realtime handles instant updates,
+      // polling is a fallback for connection drops)
       const data = query.state.data;
       if (data?.state === 'pending' || data?.state === 'pending_long') {
         return POLLING_INTERVAL;
       }
       return false;
     },
-    staleTime: 10000, // Consider data stale after 10 seconds
+    staleTime: 10000,
     retry: 2,
   });
 
@@ -123,6 +170,54 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
   }, [query.error]);
 
   return query;
+}
+
+// ==============================================
+// JOIN WAITLIST MUTATION
+// ==============================================
+
+/**
+ * Hook to join the waitlist (idempotent)
+ * Typically called after auth, but the DB trigger also auto-creates the entry.
+ */
+export function useJoinWaitlist() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await joinWaitlist();
+      if (result.error) {
+        throw result.error;
+      }
+      return result.data!;
+    },
+    onSuccess: () => {
+      // Refresh waitlist status after joining
+      queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
+    },
+  });
+}
+
+// ==============================================
+// GET MY REFERRAL CODE QUERY
+// ==============================================
+
+/**
+ * Hook to get/generate the user's own referral code for sharing
+ */
+export function useMyReferralCode(enabled = true) {
+  return useQuery({
+    queryKey: [...waitlistKeys.all, 'my-referral-code'] as const,
+    queryFn: async () => {
+      const result = await getMyReferralCode();
+      if (result.error) {
+        throw result.error;
+      }
+      return result.data!;
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 }
 
 // ==============================================
@@ -198,9 +293,16 @@ export function useValidateReferral(code: string) {
 export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
   const store = useWaitlistStore();
   const queryClient = useQueryClient();
+  const authUserName = useAuthStore((s) => s.userName);
 
   // Status query
   const statusQuery = useWaitlistStatus(options);
+
+  // Join waitlist mutation
+  const joinWaitlistMutation = useJoinWaitlist();
+
+  // My referral code query
+  const myReferralCodeQuery = useMyReferralCode(options.enabled !== false);
 
   // Apply referral mutation
   const applyReferralMutation = useApplyReferral();
@@ -244,11 +346,16 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
     [store]
   );
 
+  // Join waitlist action
+  const joinWaitlistAction = useCallback(() => {
+    joinWaitlistMutation.mutate();
+  }, [joinWaitlistMutation]);
+
   return {
     // Status data
     status: statusQuery.data,
     viewState: store.viewState,
-    userName: store.userName,
+    userName: authUserName || store.userName,
     isLoading: statusQuery.isLoading,
     isRefetching: statusQuery.isRefetching,
     error: store.error,
@@ -261,11 +368,17 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
     referralError: store.referralError,
     isReferralExpanded: store.isReferralExpanded,
 
+    // My referral code (for sharing)
+    myReferralCode: myReferralCodeQuery.data,
+    isLoadingMyCode: myReferralCodeQuery.isLoading,
+
     // UI state
     showConfetti: store.showConfetti,
     countdownText: selectCountdownText(store),
 
     // Actions
+    joinWaitlist: joinWaitlistAction,
+    isJoiningWaitlist: joinWaitlistMutation.isPending,
     applyReferral,
     refresh,
     setReferralCharacter,

@@ -1,11 +1,16 @@
 /**
  * Auth API Service
  *
- * Handles phone-based OTP authentication via Supabase edge functions.
- * Integrates with Twilio Verify API on the backend.
+ * Handles phone-based OTP authentication via Supabase Auth's built-in
+ * Twilio integration. Uses signInWithOtp / verifyOtp for the phone flow.
+ *
+ * Previously this used a custom edge function (`auth-otp`) that called
+ * Twilio Verify API directly — which caused "Code Expired" errors because
+ * the edge function's createUser call would fail for existing users,
+ * consuming the Twilio verification in the process.
  */
 
-import { callEdgeFunction, supabase } from '../supabase';
+import { supabase } from '../supabase';
 import { tryCatch, logError, getErrorMessage } from '@/src/utils';
 
 // ==============================================
@@ -14,39 +19,13 @@ import { tryCatch, logError, getErrorMessage } from '@/src/utils';
 
 export interface SendOtpRequest {
   phone_number: string;
-  channel?: 'sms' | 'whatsapp' | 'call';
-  consent_for_mobile360?: boolean;
-}
-
-export interface SendOtpResponse {
-  success: boolean;
-  data: {
-    verification_sid: string;
-    status: 'pending' | 'approved' | 'canceled' | 'max_attempts_reached' | 'expired' | 'failed';
-    channel: string;
-    phone_masked: string;
-    message: string;
-  };
+  channel?: 'sms' | 'whatsapp';
 }
 
 export interface VerifyOtpRequest {
   phone_number: string;
   otp: string;
   name?: string;
-  consent_for_mobile360?: boolean;
-}
-
-export interface VerifyOtpResponse {
-  success: boolean;
-  data: {
-    user_id: string;
-    is_new_user: boolean;
-    token_hash: string;
-    consent_verification_id: string | null;
-    consent_status: string | null;
-    message: string;
-    next_steps: string[];
-  };
 }
 
 export type AuthErrorCode =
@@ -69,56 +48,97 @@ export interface AuthError {
 // ==============================================
 
 /**
- * Send OTP to phone number
- *
- * @param request - Phone number and optional channel preference
- * @returns Promise with verification SID or error
+ * Send OTP to phone number via Supabase Auth (built-in Twilio integration)
  */
 export async function sendOtp(
   request: SendOtpRequest
-): Promise<{ data: SendOtpResponse | null; error: AuthError | null }> {
-  const { data, error } = await callEdgeFunction<SendOtpResponse>('auth-otp', {
-    action: 'send_otp',
-    phone_number: request.phone_number,
-    channel: request.channel ?? 'whatsapp',
-    consent_for_mobile360: request.consent_for_mobile360 ?? true,
-  });
+): Promise<{ data: { success: boolean } | null; error: AuthError | null }> {
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: request.phone_number,
+      options: {
+        channel: request.channel ?? 'whatsapp',
+      },
+    });
 
-  if (error) {
+    if (error) {
+      return {
+        data: null,
+        error: mapAuthError(error.message),
+      };
+    }
+
+    return { data: { success: true }, error: null };
+  } catch (err) {
     return {
       data: null,
-      error: mapAuthError(error),
+      error: {
+        code: 'NETWORK_ERROR',
+        message: err instanceof Error ? err.message : 'Network error',
+      },
     };
   }
-
-  return { data, error: null };
 }
 
 /**
- * Verify OTP code
- *
- * @param request - Phone number, OTP code, and optional user name
- * @returns Promise with user data or error
+ * Verify OTP code via Supabase Auth.
+ * Returns a session directly on success (no token_hash exchange needed).
  */
 export async function verifyOtp(
   request: VerifyOtpRequest
-): Promise<{ data: VerifyOtpResponse | null; error: AuthError | null }> {
-  const { data, error } = await callEdgeFunction<VerifyOtpResponse>('auth-otp', {
-    action: 'verify_otp',
-    phone_number: request.phone_number,
-    otp: request.otp,
-    name: request.name,
-    consent_for_mobile360: request.consent_for_mobile360 ?? true,
-  });
+): Promise<{
+  data: { user_id: string; is_new_user: boolean } | null;
+  error: AuthError | null;
+}> {
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: request.phone_number,
+      token: request.otp,
+      type: 'sms',
+    });
 
-  if (error) {
+    if (error) {
+      return {
+        data: null,
+        error: mapAuthError(error.message),
+      };
+    }
+
+    const user = data.user;
+    if (!user) {
+      return {
+        data: null,
+        error: { code: 'UNKNOWN_ERROR', message: 'Verification succeeded but no user returned' },
+      };
+    }
+
+    // Update user name if provided (post-auth profile update)
+    if (request.name) {
+      await supabase.auth.updateUser({
+        data: { name: request.name },
+      });
+    }
+
+    // Heuristic: user created within the last 10 minutes is likely new
+    const createdAt = new Date(user.created_at).getTime();
+    const isNewUser = (Date.now() - createdAt) < 600_000;
+
+    return {
+      data: {
+        user_id: user.id,
+        is_new_user: isNewUser,
+      },
+      error: null,
+    };
+  } catch (err) {
     return {
       data: null,
-      error: mapAuthError(error),
+      error: {
+        code: 'NETWORK_ERROR',
+        message: err instanceof Error ? err.message : 'Network error',
+      },
     };
   }
-
-  return { data, error: null };
 }
 
 /**
@@ -127,7 +147,7 @@ export async function verifyOtp(
 export async function resendOtp(
   phoneNumber: string,
   channel: 'sms' | 'whatsapp' = 'whatsapp'
-): Promise<{ data: SendOtpResponse | null; error: AuthError | null }> {
+): Promise<{ data: { success: boolean } | null; error: AuthError | null }> {
   return sendOtp({ phone_number: phoneNumber, channel });
 }
 
@@ -161,7 +181,6 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
 function mapAuthError(errorMessage: string): AuthError {
   const lowerMessage = errorMessage.toLowerCase();
 
-  // Timeout detection (from AbortController in callEdgeFunction)
   if (lowerMessage.includes('timed out') || lowerMessage.includes('aborted')) {
     return { code: 'TIMEOUT', message: 'Request timed out. Please try again.' };
   }
@@ -170,11 +189,11 @@ function mapAuthError(errorMessage: string): AuthError {
     return { code: 'INVALID_PHONE', message: 'Please enter a valid phone number' };
   }
 
-  if (lowerMessage.includes('rate') || lowerMessage.includes('too many')) {
+  if (lowerMessage.includes('rate') || lowerMessage.includes('too many') || lowerMessage.includes('exceeded')) {
     return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait before trying again.' };
   }
 
-  if (lowerMessage.includes('invalid otp') || lowerMessage.includes('wrong code')) {
+  if ((lowerMessage.includes('invalid') && lowerMessage.includes('otp')) || lowerMessage.includes('wrong code') || lowerMessage.includes('token')) {
     return { code: 'INVALID_OTP', message: 'The code you entered is incorrect' };
   }
 

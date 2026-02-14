@@ -66,6 +66,8 @@ interface VerifyOtpRequest {
 interface FetchWithConsentRequest {
   action: "fetch_with_consent";
   tenancy_id?: string;
+  consent_timestamp?: string;
+  name?: string;
 }
 
 type VerifyIdentityRequest = SendOtpRequest | VerifyOtpRequest | FetchWithConsentRequest;
@@ -187,6 +189,8 @@ const verifyOtpSchema = {
 const fetchWithConsentSchema = {
   action: { required: true, type: "string" as const, enum: ["fetch_with_consent"] },
   tenancy_id: { required: false, type: "string" as const },
+  consent_timestamp: { required: false, type: "string" as const },
+  name: { required: false, type: "string" as const },
 };
 
 // ==============================================
@@ -605,9 +609,13 @@ async function callCashfreeSendOtp(
         mobile_number: params.mobile_number,
         name: params.name,
         user_consent: {
-          consent_given: true,
-          consent_timestamp: new Date().toISOString(),
-          consent_ip: params.consent_ip,
+          obtained: true,
+          type: "EXPLICIT",
+          timestamp: new Date().toISOString(),
+          purpose: "Identity verification for rental services",
+          network_details: {
+            ip: params.consent_ip,
+          },
         },
         notification_modes: params.notification_modes.map((m) => m.toUpperCase()),
       }),
@@ -791,7 +799,8 @@ async function handleFetchWithConsent(
   const sanitizedPhone = sanitizePhone(userPhone);
 
   // Check for existing consent record
-  const { data: consentRecord, error: consentError } = await supabase
+  let consentRecord: Record<string, unknown> | null = null;
+  const { data: existingConsent, error: consentError } = await supabase
     .from("identity_verifications")
     .select("*")
     .eq("user_id", userId)
@@ -800,11 +809,39 @@ async function handleFetchWithConsent(
     .limit(1)
     .single();
 
-  if (consentError || !consentRecord) {
-    throw new ValidationError(
-      "No consent record found. Please authenticate via OTP first with consent_for_mobile360=true.",
-      { consent: "Not found" }
-    );
+  if (consentError || !existingConsent) {
+    // Auto-create consent record from request data
+    const now = new Date().toISOString();
+    const consentTimestamp = validatedBody.consent_timestamp || now;
+    const consentName = validatedBody.name || "User";
+    const verificationId = `CONSENT_AUTO_${Date.now()}_${crypto.randomUUID()}`;
+
+    const { data: newConsent, error: insertError } = await supabase
+      .from("identity_verifications")
+      .insert({
+        verification_id: verificationId,
+        user_id: userId,
+        status: "CONSENT_GIVEN",
+        consent_phone: sanitizedPhone,
+        consent_ip: clientIp || "0.0.0.0",
+        consent_timestamp: consentTimestamp,
+        m360_full_name: consentName,
+      })
+      .select()
+      .single();
+
+    if (insertError || !newConsent) {
+      console.error("[verify-identity] Failed to auto-create consent record:", insertError);
+      throw new ValidationError(
+        "Failed to create consent record. Please try again.",
+        { consent: "Auto-creation failed" }
+      );
+    }
+
+    consentRecord = newConsent;
+    console.log(`[verify-identity] Auto-created consent record ${verificationId} for user ${userId}`);
+  } else {
+    consentRecord = existingConsent;
   }
 
   // Check if consent is still valid (within 24 hours)
@@ -861,7 +898,42 @@ async function handleFetchWithConsent(
     consent_ip: consentIpToUse,
   });
 
-  // Prepare verification data
+  // Handle OTP_GENERATED (Cashfree OTP sent, pending verification)
+  if (m360Result.status === "OTP_GENERATED") {
+    // Update consent record with Cashfree verification_id for later OTP verify
+    await supabase
+      .from("identity_verifications")
+      .update({
+        verification_id: m360Result.verification_id,
+        status: "OTP_SENT",
+        tenancy_id: tenancy_id ?? null,
+      })
+      .eq("id", consentRecord.id);
+
+    await audit.logSuccess(
+      AuditActions.IDENTITY_VERIFICATION_INITIATED,
+      "verification",
+      "identity_verification",
+      consentRecord.id,
+      {
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+        cashfree_verification_id: m360Result.verification_id,
+        action: "otp_sent_for_consent",
+      }
+    );
+
+    return jsonResponse({
+      success: true,
+      data: {
+        verification_id: consentRecord.id,
+        cashfree_verification_id: m360Result.verification_id,
+        status: "OTP_SENT",
+        message: "Cashfree OTP sent. Verify to complete identity fetch.",
+      },
+    });
+  }
+
+  // Prepare verification data (for SUCCESS or other terminal statuses)
   const verificationData = {
     reference_id: m360Result.reference_id,
     status: m360Result.status === "SUCCESS" ? "SUCCESS" : m360Result.status,
@@ -1003,8 +1075,18 @@ interface Mobile360ConsentParams {
 }
 
 /**
- * Calls Cashfree Mobile 360 API using pre-recorded consent.
- * This is the consent-based flow where OTP was already verified via Twilio.
+ * Calls Cashfree Mobile 360 API using the OTP flow server-side.
+ *
+ * Since Cashfree has no consent-only data endpoint, we use the 2-step OTP flow:
+ * 1. Send OTP via /mobile360/otp/send (OTP goes to user's phone silently)
+ * 2. The OTP is NOT auto-verified here — we store the verification_id and
+ *    the user can verify later, OR the caller can handle it.
+ *
+ * For the consent-based post-auth flow, this sends the OTP and returns
+ * the verification_id so the data can be fetched after OTP verification.
+ *
+ * NOTE: The user has already verified their phone via Supabase Auth (Twilio).
+ * This Cashfree OTP is a separate requirement for Mobile 360 data access.
  */
 async function callCashfreeMobile360WithConsent(
   params: Mobile360ConsentParams
@@ -1013,13 +1095,14 @@ async function callCashfreeMobile360WithConsent(
     throw new ExternalServiceError("Cashfree", "API credentials not configured");
   }
 
-  // Generate verification ID for this request
   const verificationId = `FLENT_CONSENT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+  const mobileNumber = params.mobile_number.startsWith("+91")
+    ? params.mobile_number.slice(3)
+    : params.mobile_number;
 
   try {
-    // Note: Cashfree Mobile 360 consent-based API endpoint
-    // This calls the data fetch endpoint directly with consent proof
-    const response = await fetch(`${CASHFREE_BASE_URL}/mobile360/data`, {
+    // Step 1: Send OTP via Cashfree Mobile 360
+    const sendResponse = await fetch(`${CASHFREE_BASE_URL}/mobile360/otp/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1029,78 +1112,41 @@ async function callCashfreeMobile360WithConsent(
       },
       body: JSON.stringify({
         verification_id: verificationId,
-        mobile_number: params.mobile_number.startsWith("+91")
-          ? params.mobile_number.slice(3)
-          : params.mobile_number,
+        mobile_number: mobileNumber,
         name: params.name,
         user_consent: {
-          consent_given: true,
-          consent_timestamp: params.consent_timestamp,
-          consent_ip: params.consent_ip,
-          consent_mode: "OTP_VERIFIED", // Indicates OTP was verified externally
+          obtained: true,
+          type: "EXPLICIT",
+          timestamp: params.consent_timestamp,
+          purpose: "Identity verification for rental services",
+          network_details: {
+            ip: params.consent_ip,
+          },
         },
+        notification_modes: ["SMS"],
       }),
     });
 
-    const data = await response.json();
+    const sendData = await sendResponse.json();
 
-    if (!response.ok) {
-      console.error("Cashfree Mobile 360 consent API error:", data);
-
-      // No data found is a valid response
-      if (data.status === "DETAILS_NOT_FOUND") {
-        return {
-          verification_id: verificationId,
-          reference_id: data.reference_id ?? verificationId,
-          status: "DETAILS_NOT_FOUND",
-          message: "No identity data found for this phone number",
-        };
-      }
-
-      // If consent-based flow is not supported, fall back to error
-      if (data.code === "consent_required" || data.code === "otp_required") {
-        throw new AppError(
-          "Consent-based Mobile 360 not available. Please use OTP flow.",
-          "CONSENT_FLOW_UNAVAILABLE",
-          400
-        );
-      }
-
-      throw new ExternalServiceError(
-        "Cashfree",
-        data.message ?? `HTTP ${response.status}`
-      );
+    if (!sendResponse.ok || sendData.status === "OTP_GENERATION_FAILED" || sendData.status === "INVALID_MOBILE_NUMBER") {
+      console.error("Cashfree Mobile 360 OTP send failed:", JSON.stringify(sendData));
+      const errDetail = sendResponse.status === 404
+        ? "Mobile 360 product may not be activated on your Cashfree account"
+        : sendData.message ?? sendData.status ?? `HTTP ${sendResponse.status}`;
+      throw new ExternalServiceError("Cashfree", `OTP send failed: ${errDetail}`);
     }
 
-    // Map Cashfree response to our interface
+    console.log(`[verify-identity] Cashfree OTP sent for consent flow, verification_id=${sendData.verification_id ?? verificationId}`);
+
+    // Return a pending status — the OTP was sent but not yet verified.
+    // The consent record will be updated when the user verifies the Cashfree OTP
+    // via a separate verify_otp call.
     return {
-      verification_id: data.verification_id ?? verificationId,
-      reference_id: data.reference_id ?? verificationId,
-      status: data.status ?? "SUCCESS",
-      data: {
-        full_name: data.full_name ?? data.name,
-        gender: data.gender,
-        dob: data.dob,
-        age: data.age,
-        occupation: data.occupation,
-        total_income: data.total_income,
-        relatives: data.relatives,
-        phone_numbers: data.phone_numbers,
-        emails: data.emails,
-        pan_details: data.pan_details,
-        aadhaar_number: data.aadhaar_number,
-        passport_details: data.passport_details,
-        driving_license_details: data.driving_license_details,
-        voter_details: data.voter_details,
-        ration_card_details: data.ration_card_details,
-        bank_accounts: data.bank_accounts,
-        employment_details: data.employment_details,
-        addresses: data.addresses,
-        credit_score: data.credit_score,
-        mobile_intelligence: data.mobile_intelligence,
-        risk_intelligence: data.risk_intelligence,
-        social_profiles: data.social_profiles,
-      },
+      verification_id: sendData.verification_id ?? verificationId,
+      reference_id: verificationId,
+      status: "OTP_GENERATED" as Mobile360VerifyOtpResponse["status"],
+      message: "Cashfree OTP sent to phone. Verify to fetch identity data.",
     };
   } catch (error) {
     if (error instanceof ExternalServiceError || error instanceof AppError) throw error;

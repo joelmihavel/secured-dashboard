@@ -30,7 +30,7 @@ export const DISABLE_SCREEN_PICKER = false;
 // Set to a route path to jump directly to that screen on launch (e.g. '/(auth)/splash')
 // The app will boot straight to this screen, bypassing the screen picker.
 // Set to null to use the normal screen picker flow.
-export const DEV_DIRECT_SCREEN: string | null = null;
+export const DEV_DIRECT_SCREEN: string | null = '/(auth)/sign-up';
 
 interface ScreenRoute {
   name: string;

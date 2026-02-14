@@ -174,6 +174,27 @@ serve(async (req: Request) => {
       });
     }
 
+    // Apply priority boost to waitlist position (if any)
+    let newPosition: number | null = null;
+    if (result.priority_boost && result.priority_boost > 0) {
+      const { data: boostResult, error: boostError } = await supabase
+        .rpc("apply_waitlist_priority_boost", {
+          p_user_id: userId,
+          p_boost: result.priority_boost,
+        })
+        .single();
+
+      if (boostError) {
+        console.warn("[apply-referral-code] Priority boost failed (non-blocking):", boostError);
+      } else if (boostResult) {
+        const boost = boostResult as { old_position: number; new_position: number; total_boost: number };
+        newPosition = boost.new_position;
+        console.log(
+          `[apply-referral-code] Position boosted: ${boost.old_position} → ${boost.new_position} (total boost: ${boost.total_boost})`
+        );
+      }
+    }
+
     // Build response message
     const rewards: string[] = [];
     if (result.reward_amount_paise && result.reward_amount_paise > 0) {
@@ -199,6 +220,7 @@ serve(async (req: Request) => {
             : "0",
           priority_boost: result.priority_boost || 0,
         },
+        new_position: newPosition,
         message: rewardMessage,
       },
     }, 200, headers);

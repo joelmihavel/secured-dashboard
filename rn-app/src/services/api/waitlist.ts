@@ -6,6 +6,8 @@
  *
  * Edge function contracts:
  * - get-waitlist-status: GET, returns V1-compat shape with has_entry, waitlist_entry, etc.
+ * - join-waitlist: POST, returns { success, data: { entry_id, position, is_new } }
+ * - get-my-referral-code: GET, returns { success, data: { code, usage_count, max_uses } }
  * - apply-referral-code: POST, returns { success, data: { code, reward_type, rewards, message } }
  * - validate-referral-code: POST, returns { success, data: { is_valid, code, message, ... } }
  */
@@ -103,6 +105,8 @@ interface RawWaitlistStatusResponse {
   confidence_score?: number;
   waitlist_position?: number;
   admin_review?: string;
+  onboarded_count?: number;
+  total_member_slots?: number;
   waitlist_entry?: {
     id: string;
     status: string;
@@ -113,6 +117,8 @@ interface RawWaitlistStatusResponse {
     waitlist_position: number | null;
     document_uploaded: boolean;
     admin_review: string;
+    rejection_reasons: string[];
+    next_application_at: string | null;
     created_at: string;
   };
   extracted_info?: {
@@ -130,6 +136,31 @@ interface RawWaitlistStatusResponse {
     pending_total: number;
     credited_total: number;
   };
+}
+
+/** Raw response from join-waitlist edge function */
+interface RawJoinWaitlistResponse {
+  success: boolean;
+  data?: {
+    entry_id: string;
+    position: number;
+    is_new: boolean;
+  };
+  error?: boolean;
+  message?: string;
+}
+
+/** Raw response from get-my-referral-code edge function */
+interface RawGetMyReferralCodeResponse {
+  success: boolean;
+  data?: {
+    code: string;
+    usage_count: number;
+    max_uses: number;
+    reward_amount_paise: number;
+  };
+  error?: boolean;
+  message?: string;
 }
 
 /** Raw response from apply-referral-code edge function */
@@ -229,8 +260,8 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
   }
 
   // Build rejection reasons if rejected
-  const rejectionReasons: string[] = [];
-  if (state === 'rejected') {
+  const rejectionReasons: string[] = raw.waitlist_entry?.rejection_reasons ?? [];
+  if (rejectionReasons.length === 0 && state === 'rejected') {
     if (raw.requires_manual_review && raw.manual_review_reason) {
       rejectionReasons.push(raw.manual_review_reason);
     }
@@ -245,16 +276,26 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
     estimatedReviewTime = 'Approximately 24-48 hrs';
   }
 
+  // Calculate countdown from next_application_at if present
+  let nextApplicationCountdown = 0;
+  if (state === 'rejected' && raw.waitlist_entry?.next_application_at) {
+    const nextAt = new Date(raw.waitlist_entry.next_application_at).getTime();
+    const now = Date.now();
+    nextApplicationCountdown = Math.max(0, Math.floor((nextAt - now) / 1000));
+  } else if (state === 'rejected') {
+    nextApplicationCountdown = 86400; // default 24 hrs
+  }
+
   return {
     state,
     position,
     estimatedWaitDays,
     submissionDate,
-    currentOnboarded: 0, // Not tracked in V2 backend
-    totalMemberSlots: 150, // Default capacity
+    currentOnboarded: raw.onboarded_count ?? 0,
+    totalMemberSlots: raw.total_member_slots ?? 150,
     estimatedReviewTime,
     rejectionReasons,
-    nextApplicationCountdown: state === 'rejected' ? 86400 : 0, // 24 hrs if rejected
+    nextApplicationCountdown,
   };
 }
 
@@ -437,6 +478,97 @@ export async function validateReferralCode(
           }
         : undefined,
       alreadyApplied: rawData.already_applied,
+    },
+    error: null,
+  };
+}
+
+// ==============================================
+// JOIN WAITLIST
+// ==============================================
+
+export interface JoinWaitlistData {
+  entryId: string;
+  position: number;
+  isNew: boolean;
+}
+
+/**
+ * Join the waitlist (idempotent — returns existing entry if already joined)
+ */
+export async function joinWaitlist(): Promise<{
+  data: JoinWaitlistData | null;
+  error: WaitlistError | null;
+}> {
+  const { data, error } = await callEdgeFunction<RawJoinWaitlistResponse>(
+    'join-waitlist',
+    {},
+    true
+  );
+
+  if (error) {
+    return { data: null, error: mapWaitlistError(error) };
+  }
+
+  if (!data?.success || !data.data) {
+    return {
+      data: null,
+      error: { code: 'UNKNOWN_ERROR', message: data?.message || 'Failed to join waitlist' },
+    };
+  }
+
+  return {
+    data: {
+      entryId: data.data.entry_id,
+      position: data.data.position,
+      isNew: data.data.is_new,
+    },
+    error: null,
+  };
+}
+
+// ==============================================
+// GET MY REFERRAL CODE
+// ==============================================
+
+export interface MyReferralCodeData {
+  code: string;
+  usageCount: number;
+  maxUses: number;
+  rewardAmountPaise: number;
+}
+
+/**
+ * Get or generate the user's personal referral code for sharing
+ */
+export async function getMyReferralCode(): Promise<{
+  data: MyReferralCodeData | null;
+  error: WaitlistError | null;
+}> {
+  const { data, error } = await callEdgeFunction<RawGetMyReferralCodeResponse>(
+    'get-my-referral-code',
+    {},
+    true,
+    'GET'
+  );
+
+  if (error) {
+    return { data: null, error: mapWaitlistError(error) };
+  }
+
+  if (!data?.success || !data.data) {
+    return {
+      data: null,
+      error: { code: 'UNKNOWN_ERROR', message: data?.message || 'Failed to get referral code' },
+    };
+  }
+
+  return {
+    data: {
+      code: data.data.code,
+      usageCount: data.data.usage_count,
+      maxUses: data.data.max_uses,
+      rewardAmountPaise: data.data.reward_amount_paise,
     },
     error: null,
   };

@@ -18,7 +18,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text as RNText } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -253,11 +253,14 @@ export default function WaitlistScreen() {
     referralError,
     countdownText,
     isLoading,
+    isRefetching,
     error,
     applyReferral,
+    joinWaitlist,
+    isJoiningWaitlist,
     setReferralCharacter,
     refresh,
-  } = useWaitlist({ useMock: true, mockState: 'pending' });
+  } = useWaitlist();
 
   // Redirect to approved screen when approved
   useEffect(() => {
@@ -266,12 +269,19 @@ export default function WaitlistScreen() {
     }
   }, [viewState, router]);
 
-  // Data from mock or API
-  const displayName = userName || 'Rishabh Agnihotri';
-  const submissionDate = status?.submissionDate || '27 Jan 2026';
-  const reviewTime = status?.estimatedReviewTime || 'Approximately 24 hrs';
-  const membersOnboarded = status?.currentOnboarded || 18;
-  const totalSlots = status?.totalMemberSlots || 150;
+  // Auto-join waitlist on first visit if no entry exists
+  useEffect(() => {
+    if (!isLoading && viewState === 'pending' && !status?.position && !isJoiningWaitlist) {
+      joinWaitlist();
+    }
+  }, [isLoading, viewState, status?.position]);
+
+  // Data from API
+  const displayName = userName || 'there';
+  const submissionDate = status?.submissionDate ?? '';
+  const reviewTime = status?.estimatedReviewTime ?? '';
+  const membersOnboarded = status?.currentOnboarded ?? 0;
+  const totalSlots = status?.totalMemberSlots ?? 150;
 
   // ============================================
   // LOADING STATE
@@ -348,9 +358,9 @@ export default function WaitlistScreen() {
             </View>
             <View style={styles.textBlock}>
               <Text style={styles.titleBase}>
-                <Text style={styles.titleGray}>Oops,</Text>
+                <RNText style={styles.titleGray}>Oops,</RNText>
                 {'\n'}
-                <Text style={{ color: FIGMA.colors.errorRed }}>something{'\n'}went wrong.</Text>
+                <RNText style={{ color: FIGMA.colors.errorRed }}>something{'\n'}went wrong.</RNText>
               </Text>
               <Text style={styles.subtitle}>
                 {error?.message || 'We could not load your waitlist status. Please try again.'}
@@ -434,6 +444,9 @@ export default function WaitlistScreen() {
             },
           ]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
+          }
         >
           {/* Header Section */}
           <Animated.View
@@ -584,6 +597,9 @@ export default function WaitlistScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
+        }
       >
         {/* Header Section - Frame 2095586325 (node 41:11214) */}
         <Animated.View
@@ -601,11 +617,11 @@ export default function WaitlistScreen() {
             {/* Welcome Title - node 41:11218 */}
             {/* Text: "Welcome,   Rishabh Agnihotri" - 313x192, single text with nested styles */}
             {/* characterStyleOverrides: 0-9 (37): gray #A9A9A9, 11+ (36): orange #FF9A6D */}
-            {/* aiAnalysis: "Nested text styling required. 'Welcome,' is gray, 'Rishabh Agnihotri' is orange." */}
+            {/* Uses RNText for inner spans so they inherit parent h1 fontSize/lineHeight */}
             <Text style={styles.titleBase}>
-              <Text style={styles.titleGray}>Welcome,</Text>
+              <RNText style={styles.titleGray}>Welcome,</RNText>
               {'\n'}
-              <Text style={styles.titleAccent}>{displayName}</Text>
+              <RNText style={styles.titleAccent}>{displayName}</RNText>
             </Text>
 
             {/* Subtitle - node 41:11219 */}
@@ -683,11 +699,9 @@ export default function WaitlistScreen() {
             {/* Hint text - only shown when there's an error */}
             {referralError ? <Text style={styles.hintText}>{referralError}</Text> : null}
 
-            {/* Divider - from button node */}
-            <View style={styles.divider} />
-
-            {/* Button */}
-            <View style={styles.buttonContainer}>
+            {/* Button group — Figma node 41:11554: gap 8px between divider and button */}
+            <View style={styles.buttonGroup}>
+              <View style={styles.divider} />
               <PrimaryButton
                 title="Enter Invite Code"
                 onPress={applyReferral}
@@ -856,19 +870,19 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
-  // Divider - from extraction
+  // Button group — Figma node 41:11554: gap 8px between divider and button
+  buttonGroup: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  // Divider — 24x2, #4D4D4D, borderRadius 200
   divider: {
     width: FIGMA.divider.width,
     height: FIGMA.divider.height,
     backgroundColor: FIGMA.colors.divider,
     borderRadius: FIGMA.divider.borderRadius,
-    marginTop: spacing.lg, // 24px
-    marginBottom: spacing.xs, // 8px (asymmetric per Figma)
-  },
-
-  // Button container
-  buttonContainer: {
-    width: '100%',
   },
 
   // ============================================

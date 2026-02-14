@@ -26,6 +26,7 @@ export default function AuthLayout() {
         options={{
           presentation: 'containedTransparentModal',
           animation: 'slide_from_bottom',
+          contentStyle: { backgroundColor: 'transparent' },
         }}
       />
     </Stack>

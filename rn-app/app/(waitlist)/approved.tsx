@@ -134,11 +134,11 @@ export default function WaitlistApprovedScreen() {
     userName,
     showConfetti,
     status,
-  } = useWaitlist({ useMock: true, mockState: 'approved' });
+  } = useWaitlist();
 
-  const displayName = userName || 'Rishabh Agnihotri';
-  const submissionDate = status?.submissionDate || '27 Jan 2026';
-  const reviewTime = status?.estimatedReviewTime || 'Approximately 24 hrs';
+  const displayName = userName || 'there';
+  const submissionDate = status?.submissionDate ?? '';
+  const reviewTime = status?.estimatedReviewTime ?? '';
 
   // Animation values
   const confettiRef = useRef<LottieView>(null);

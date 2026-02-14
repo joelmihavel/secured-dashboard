@@ -104,6 +104,7 @@ export async function callEdgeFunction<T = unknown>(
   try {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY!,
       'x-request-id': `rn-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     };
 
