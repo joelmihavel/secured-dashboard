@@ -1,0 +1,10 @@
+.env
+node_modules/
+dist/
+data/screenshots/
+data/diffs/
+data/baselines/
+data/extractions/
+data/style-maps/
+reports/
+*.log

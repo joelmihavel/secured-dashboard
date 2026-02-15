@@ -1,0 +1,47 @@
+{
+  "screens": [
+    {
+      "screenId": "41-8760",
+      "screenName": "My Profile / Main Screen",
+      "route": "/(profile)/index",
+      "status": "FIX_LOOP_1",
+      "blueprintNodes": 162,
+      "blueprintAssets": 1,
+      "extractedAt": "2026-02-15T09:28:54.020Z",
+      "fixLoop": {
+        "iteration": 2,
+        "fixesApplied": [
+          "Title maxWidth:313 for 2-line wrap",
+          "Demo chart data (mixed statuses instead of all-unpaid)",
+          "Legend pills positioned above chart (absolute, top:6)",
+          "Added Payment Information section (card with 3 items + dividers)",
+          "Added Support section (card with 2 items + divider)",
+          "Added App section (card with Sign Out + Delete Account)",
+          "Chart clip wrapper (overflow:hidden)",
+          "DEMO_CHART_DATA updated to match Figma exactly: JAN=ontime, FEB=late, MAR-DEC=unpaid",
+          "Removed Credit Card XX25 (fill.visible=false in Figma node 41:8837)",
+          "Removed unused styles: userSubtitleRow, userCardInfo"
+        ],
+        "coverageBefore": 97.2,
+        "visualScoreBefore": 52,
+        "issuesAddressed": ["P0:bars_invisible", "P0:legend_position", "P1:title_wrap", "P1:missing_sections", "P1:wrong_chart_data", "P2:credit_card_visible"]
+      }
+    },
+    {
+      "screenId": "1-30090",
+      "screenName": "Agreement Upload - Idle",
+      "route": "/(agreement)/upload",
+      "status": "EXTRACTED",
+      "blueprintNodes": 46,
+      "blueprintAssets": 3,
+      "extractedAt": "2026-02-15T09:29:59.787Z"
+    }
+  ],
+  "lastUpdated": "2026-02-15T10:45:00Z",
+  "version": "1.0.0",
+  "pipelineValidation": {
+    "extractionValidated": true,
+    "validatedScreens": ["41-8760", "1-30090"],
+    "bugsFixes": ["absoluteBoundingBox canvas coordinates fix", "shouldSkipNode 1x→4x threshold"]
+  }
+}

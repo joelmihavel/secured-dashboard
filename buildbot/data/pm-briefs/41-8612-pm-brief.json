@@ -1,0 +1,232 @@
+{
+  "screenId": "41-8612",
+  "screenName": "My Profile / Payment --Credit Card",
+  "route": "/(profile)/index",
+  "generatedAt": "2026-02-15T12:13:15.204Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 1686557230",
+      "nodeId": "41:8619",
+      "childCount": 5
+    },
+    {
+      "name": "Frame 1686557268",
+      "nodeId": "41:8683",
+      "childCount": 1
+    }
+  ],
+  "states": [
+    {
+      "state": "main",
+      "figmaId": "41-8760",
+      "name": "My Profile / Main Screen"
+    },
+    {
+      "state": "edit-profile",
+      "figmaId": "41-8880",
+      "name": "My Profile / Secured Account --My Profile"
+    },
+    {
+      "state": "payment-upi",
+      "figmaId": "41-8450",
+      "name": "My Profile / Payment --UPI"
+    },
+    {
+      "state": "payment-credit-card",
+      "figmaId": "41-8612",
+      "name": "My Profile / Payment --Credit Card"
+    },
+    {
+      "state": "payment-bank",
+      "figmaId": "41-9307",
+      "name": "My Profile / Payment --Bank Account"
+    },
+    {
+      "state": "agreement",
+      "figmaId": "41-9811",
+      "name": "My Profile / Agreement"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "41:8688",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:8689",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:8690",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:8691",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:8692",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "41:8629",
+      "name": "Pay Rent",
+      "content": "Pay Rent"
+    },
+    {
+      "nodeId": "41:8640",
+      "name": "Total payable rent",
+      "content": "Total payable rent"
+    },
+    {
+      "nodeId": "41:8641",
+      "name": "₹ 32,175",
+      "content": "₹  32,175"
+    },
+    {
+      "nodeId": "41:8650",
+      "name": "saved ₹ 325 →",
+      "content": "saved ₹ 325 →"
+    },
+    {
+      "nodeId": "41:8651",
+      "name": "using flent cashback",
+      "content": "using flent cashback"
+    },
+    {
+      "nodeId": "41:8655",
+      "name": "Paying to",
+      "content": "Paying to"
+    },
+    {
+      "nodeId": "41:8656",
+      "name": "[Landlord Name]",
+      "content": "[Landlord Name]"
+    },
+    {
+      "nodeId": "41:8660",
+      "name": "ICICI",
+      "content": "ICICI "
+    },
+    {
+      "nodeId": "41:8661",
+      "name": "XXXX XXXX XXXX 2003",
+      "content": "XXXX XXXX XXXX 2003"
+    },
+    {
+      "nodeId": "41:8663",
+      "name": "Pay Now",
+      "content": "Pay Now"
+    },
+    {
+      "nodeId": "41:8664",
+      "name": "All payments are 100% secure",
+      "content": "All payments are 100% secure"
+    },
+    {
+      "nodeId": "41:8669",
+      "name": "PAY BY ANY APP INSTEAD",
+      "content": "PAY BY ANY APP INSTEAD"
+    },
+    {
+      "nodeId": "41:8673",
+      "name": "Google Pay",
+      "content": "Google Pay"
+    },
+    {
+      "nodeId": "41:8676",
+      "name": "PayTM",
+      "content": "PayTM"
+    },
+    {
+      "nodeId": "41:8679",
+      "name": "PhonePe",
+      "content": "PhonePe"
+    },
+    {
+      "nodeId": "I41:8682;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "41:8686",
+      "name": "Edit your  Credit Card",
+      "content": "Edit your  Credit Card"
+    },
+    {
+      "nodeId": "I41:8688;47:5581",
+      "name": "Label",
+      "content": "Cardholder name"
+    },
+    {
+      "nodeId": "I41:8688;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:8688;47:5585",
+      "name": "Text",
+      "content": "John Smith"
+    },
+    {
+      "nodeId": "I41:8689;47:5581",
+      "name": "Label",
+      "content": "Card number"
+    },
+    {
+      "nodeId": "I41:8689;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:8689;47:5585",
+      "name": "Text",
+      "content": "1234 5678 9012 3456"
+    },
+    {
+      "nodeId": "I41:8690;47:5581",
+      "name": "Label",
+      "content": "Expiry date"
+    },
+    {
+      "nodeId": "I41:8690;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:8690;47:5585",
+      "name": "Text",
+      "content": "01 / 27"
+    },
+    {
+      "nodeId": "I41:8691;47:5581",
+      "name": "Label",
+      "content": "CVV"
+    },
+    {
+      "nodeId": "I41:8691;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:8691;47:5585",
+      "name": "Text",
+      "content": "***"
+    },
+    {
+      "nodeId": "I41:8692;100:1565",
+      "name": "Text",
+      "content": "Save Changes"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

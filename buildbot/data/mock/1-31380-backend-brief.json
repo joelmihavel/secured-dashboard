@@ -1,0 +1,23 @@
+{
+  "screenId": "1-31380",
+  "screenRoute": "/(auth)/otp",
+  "screenFile": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/rn-app/app/(auth)/otp.tsx",
+  "generatedAt": "2026-02-15T11:47:47.225Z",
+  "generatedBy": "buildbot-backend-agent-auto",
+  "requiredHooks": [
+    "useAuth",
+    "useCallback",
+    "useEffect",
+    "useRef",
+    "useRouter",
+    "useLocalSearchParams",
+    "useSharedValue",
+    "useAnimatedStyle",
+    "useAuthStore",
+    "useState"
+  ],
+  "services": [],
+  "supabaseCalls": [],
+  "mockData": null,
+  "notes": "Auto-generated from source scan. Review for completeness."
+}

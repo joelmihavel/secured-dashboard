@@ -1,0 +1,16 @@
+{
+  "fileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+  "figmaToken": "figd_1_Jk4EZoz3wTA_C0lB7G_zrhgBAJd1WF8cuOQL2Z",
+  "baseDesignWidth": 393,
+  "baseDesignHeight": 852,
+  "exportScale": 3,
+  "exportFormat": "png",
+  "restApiBaseUrl": "https://api.figma.com/v1",
+  "endpoints": {
+    "file": "/files/{fileKey}",
+    "nodes": "/files/{fileKey}/nodes?ids={nodeIds}",
+    "images": "/images/{fileKey}?ids={nodeIds}&scale={scale}&format={format}",
+    "components": "/files/{fileKey}/components",
+    "variables": "/files/{fileKey}/variables/local"
+  }
+}
