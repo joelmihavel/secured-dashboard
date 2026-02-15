@@ -5,9 +5,9 @@
  * - Verify (1:30448): Read-only detail rows with "Proceed" button
  * - Edit (1:30820): Editable input fields with "Save Changes" button
  *
- * Flow: verify → (Enter Manually) → edit → (Save Changes) → verify → (Proceed) → success
+ * Flow: verify -> (Enter Manually) -> edit -> (Save Changes) -> verify -> (Proceed) -> success
  *
- * All values sourced from Figma REST API — no AI guesswork.
+ * All values sourced from Figma REST API -- no AI guesswork.
  */
 
 import React, { useMemo, useState, useCallback } from 'react';
@@ -18,13 +18,20 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
-  TextInput as RNTextInput,
 } from 'react-native';
+import type { TextInput as RNTextInputRef } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, PrimaryButton, TextInput } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
+import {
+  FlentLogoIcon,
+  AgreementIdIcon,
+  PropertyIcon,
+  TenantIcon,
+  LandlordIcon,
+} from '@/src/components/icons/AgreementIcons';
 import { useAgreement } from '@/src/hooks';
 import {
   formatPaiseToRupees,
@@ -33,7 +40,7 @@ import {
 } from '@/src/services/api/agreement';
 
 // ============================================
-// FIGMA CONSTANTS — Figma REST API (1:30448, 1:30820)
+// FIGMA CONSTANTS -- Figma REST API (1:30448, 1:30820)
 // ============================================
 
 const F = {
@@ -42,48 +49,62 @@ const F = {
   contentPadH: 48, // Frame 1686557268 paddingLeft/Right
 
   // Layout gaps (from Figma frame itemSpacing)
+  outerGap: 64,      // Frame 2095586323 gap
   mainGap: 40,       // Frame 1686557268 gap
   titleGroupGap: 48, // Frame 1686557318 gap
   buttonGroupGap: 24, // Frame 2095586322 gap
 
-  // Title (both screens: size=48, w=400, lineH=64, ls=-2, #ffffff)
+  // Flent logo (Frame 1686557264: 32x38, Vector fill=#ffffff)
+  logo: {
+    w: 32,
+    h: 38,
+  },
+
+  // Title (size=48, w=400, lineH=64, ls=-2)
+  // Character style overrides from Figma REST API (charStyleOverrides):
+  //   "Confirm" (chars 0-6) → override 37 → #A9A9A9 (grey)
+  //   "your details" (chars 8-19) → override 36 → #FF9A6D (brand orange)
   title: {
     size: 48,
     weight: '400' as const,
     lineH: 64,
     ls: -2,
-    color: '#ffffff',
+    greyColor: '#a9a9a9',   // "Confirm" — override 37 fill r=0.6627
+    orangeColor: '#ff9a6d',  // "your details" — override 36 fill r=1.0,g=0.6039,b=0.4274
   },
 
-  // Detail rows (verify mode — 1:30448)
+  // Detail rows (verify mode -- 1:30448)
   detail: {
     gap: 16,          // Frame 2095586321 itemSpacing
     rowGap: 4,        // within row frame gap
-    labelSize: 12,    // TEXT "Agreement ID" size=12
+    labelSize: 12,    // TEXT size=12
     labelWeight: '400' as const,
+    labelLineH: 20,
     labelColor: '#878787',
-    valueSize: 14,    // TEXT "KIA 123456789" size=14
+    labelIconGap: 4,  // Frame gap between icon and label text
+    valueSize: 14,    // TEXT size=14
     valueWeight: '400' as const,
+    valueLineH: 20,
     valueColor: '#cbcbcb',
     dividerColor: '#4d4d4d', // Vector stroke
   },
 
-  // Input fields (edit mode — 1:30820)
+  // Input fields (edit mode -- 1:30820)
   input: {
-    gap: 16,              // Frame 2095586312 itemSpacing
-    bg: '#222222',        // Input bg
-    borderActive: '#4d4d4d',  // stroke on first 2 inputs
-    borderFilled: '#0d0d0d',  // stroke on filled inputs 3-8
+    gap: 16,              // Frame itemSpacing
+    bg: '#222222',
+    borderActive: '#4d4d4d',
+    borderFilled: '#0d0d0d',
     radius: 12,
-    padV: 16,             // Input paddingTop/Bottom
-    padH: 16,             // Input paddingLeft
-    labelSize: 12,        // w=500
+    padV: 16,
+    padH: 16,
+    labelSize: 12,
     labelWeight: '500' as const,
     labelColor: '#a9a9a9',
-    editSize: 14,         // "Edit" text w=400
+    editSize: 14,
     editWeight: '400' as const,
     editColor: '#878787',
-    valueSize: 20,        // value text size=20
+    valueSize: 20,
     valueWeight: '400' as const,
     valueLineH: 32,
     filledColor: '#dddddd',
@@ -91,32 +112,12 @@ const F = {
     hintSize: 14,
     hintWeight: '400' as const,
     hintColor: '#878787',
-    labelGap: 6,          // gap between label row and input
-  },
-
-  // Button (both screens — stroke=#ff9a6d, r=8)
-  button: {
-    height: 56,           // Frame 2095586312 (button inner) height
-    radius: 8,
-    border: '#ff9a6d',
-    textSize: 16,         // "Proceed"/"Save Changes" size=16
-    textWeight: '500' as const,
-    textColor: '#ffffff',
-    textLineH: 24,
-    pad: 16,
-  },
-
-  // Decorative pill above button
-  pill: {
-    w: 24,               // Rectangle 140 width
-    h: 2,                // Rectangle 140 height
-    color: '#4d4d4d',
-    radius: 200,
+    labelGap: 6,
   },
 
   // "Enter Manually" link (verify mode only)
   manual: {
-    size: 14,            // size=14, w=400
+    size: 14,
     weight: '400' as const,
     lineH: 20,
     color: '#a9a9a9',
@@ -127,14 +128,19 @@ const F = {
 // FIELD DEFINITIONS
 // ============================================
 
+type FieldLayout = 'horizontal' | 'vertical';
+
 interface FieldDef {
   key: string;
   label: string;
   placeholder: string;
   hintText?: string;
-  /** Key for update-extraction modifications object */
   backendKey?: string;
   isMonetary?: boolean;
+  /** Whether the field is user-editable in edit mode */
+  editable?: boolean;
+  layout: FieldLayout;
+  icon: React.FC<{ size?: number; color?: string }>;
   getValue: (data: ExtractedAgreementData) => string;
 }
 
@@ -144,7 +150,8 @@ const FIELDS: FieldDef[] = [
     label: 'Agreement ID',
     placeholder: 'e.g. KIA123456789',
     hintText: 'Certificate number from agreement',
-    // Not in backend MODIFIABLE_FIELDS — no backendKey
+    layout: 'horizontal',
+    icon: AgreementIdIcon,
     getValue: (d) => d.certificateNo ?? '',
   },
   {
@@ -153,6 +160,9 @@ const FIELDS: FieldDef[] = [
     placeholder: 'e.g. Prestige Pinestripe, Bengaluru',
     hintText: 'Full property address',
     backendKey: 'property_address',
+    editable: true,
+    layout: 'vertical',
+    icon: PropertyIcon,
     getValue: (d) => {
       const parts = [d.propertyName, d.propertyAddress, d.propertyCity, d.propertyPincode].filter(Boolean);
       return parts.join(', ') || '';
@@ -163,6 +173,9 @@ const FIELDS: FieldDef[] = [
     label: 'Tenant(s)',
     placeholder: 'e.g. John Appleseed',
     backendKey: 'tenant_name',
+    editable: true,
+    layout: 'vertical',
+    icon: TenantIcon,
     getValue: (d) => d.tenantNames?.join(', ') ?? '',
   },
   {
@@ -170,6 +183,9 @@ const FIELDS: FieldDef[] = [
     label: 'Landlord(s)',
     placeholder: 'e.g. Lisa Appleseed',
     backendKey: 'landlord_name',
+    editable: true,
+    layout: 'vertical',
+    icon: LandlordIcon,
     getValue: (d) => d.landlordNames?.join(', ') ?? '',
   },
   {
@@ -178,6 +194,8 @@ const FIELDS: FieldDef[] = [
     placeholder: 'e.g. 40,000',
     backendKey: 'monthly_rent',
     isMonetary: true,
+    layout: 'horizontal',
+    icon: AgreementIdIcon,
     getValue: (d) => d.monthlyRentPaise ? `\u20B9 ${formatPaiseToRupees(d.monthlyRentPaise)}` : '',
   },
   {
@@ -186,13 +204,16 @@ const FIELDS: FieldDef[] = [
     placeholder: 'e.g. 130,000',
     backendKey: 'security_deposit',
     isMonetary: true,
+    layout: 'horizontal',
+    icon: AgreementIdIcon,
     getValue: (d) => d.securityDepositPaise ? `\u20B9 ${formatPaiseToRupees(d.securityDepositPaise)}` : '',
   },
   {
     key: 'duration',
     label: 'Rent Duration',
     placeholder: 'e.g. 11 Months',
-    // Derived from dates — no backendKey
+    layout: 'horizontal',
+    icon: AgreementIdIcon,
     getValue: (d) => d.rentDurationMonths ? `${d.rentDurationMonths} Months` : '',
   },
   {
@@ -200,6 +221,8 @@ const FIELDS: FieldDef[] = [
     label: 'Exit Date',
     placeholder: 'e.g. 31 Dec 2027',
     backendKey: 'lease_end_date',
+    layout: 'horizontal',
+    icon: AgreementIdIcon,
     getValue: (d) => d.leaseEndDate ? formatDateDisplay(d.leaseEndDate) : '',
   },
 ];
@@ -208,110 +231,97 @@ const FIELDS: FieldDef[] = [
 // SUB-COMPONENTS
 // ============================================
 
-/** Detail row for verify mode — matches Figma 1:30448 detail frames */
-const DetailRow = ({ label, value }: { label: string; value: string }) => {
-  const isLong = value.length > 30;
+/** Detail row for verify mode -- matches Figma 1:30448 detail frames */
+const DetailRow = ({
+  field,
+  value,
+}: {
+  field: FieldDef;
+  value: string;
+}) => {
+  const IconComponent = field.icon;
+  const isVertical = field.layout === 'vertical';
 
   return (
-    <View style={isLong ? styles.detailRowVertical : styles.detailRowHorizontal}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={isLong ? styles.detailValueBelow : styles.detailValueRight}>
+    <View style={isVertical ? styles.detailRowVertical : styles.detailRowHorizontal}>
+      {/* Label group: icon + label text */}
+      <View style={styles.detailLabelGroup}>
+        <IconComponent />
+        <Text style={styles.detailLabel}>{field.label}</Text>
+      </View>
+      <Text style={isVertical ? styles.detailValueBelow : styles.detailValueRight}>
         {value}
       </Text>
     </View>
   );
 };
 
-/** Divider between detail rows — Vector stroke=#4d4d4d */
+/** Divider between detail rows -- Vector stroke=#4d4d4d */
 const Divider = () => <View style={styles.divider} />;
 
-/** Outline button matching Figma button instance */
-const OutlineButton = ({
-  label,
-  onPress,
-  disabled,
-  loading,
-}: {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-}) => (
-  <View style={styles.buttonOuter}>
-    <View style={styles.buttonPill} />
-    <TouchableOpacity
-      style={[styles.button, disabled && { opacity: 0.5 }]}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.buttonText}>
-        {loading ? 'Saving...' : label}
-      </Text>
-    </TouchableOpacity>
-  </View>
-);
-
-/** Editable field for edit mode — matches Figma 1:30820 input instances */
+/**
+ * Edit mode field -- uses shared TextInput component.
+ *
+ * Figma component variants (1:30820):
+ *   - Disabled (1:25417): empty fields, no bg, no border, placeholder text
+ *   - Focus (1:25369): filled fields, "Edit" in hint slot, value displayed
+ *
+ * Per Figma, "Edit" shows on ALL filled fields. Only editable fields (Property Name,
+ * Tenant(s), Landlord(s)) actually respond to the Edit tap.
+ */
 const EditField = ({
   field,
   value,
   isEditing,
   onEdit,
   onChangeText,
+  editableFields,
 }: {
   field: FieldDef;
   value: string;
   isEditing: boolean;
   onEdit: () => void;
   onChangeText: (text: string) => void;
+  /** Backend-driven editable field keys; overrides static field.editable when present */
+  editableFields?: string[];
 }) => {
+  const inputRef = React.useRef<RNTextInputRef>(null);
   const hasValue = value.length > 0;
-  const showEditButton = hasValue && !isEditing;
-  const isFieldEditable = isEditing || !hasValue;
+
+  // Backend flag overrides static default: check backendKey OR field key
+  const isFieldEditable = editableFields
+    ? editableFields.includes(field.backendKey ?? field.key)
+    : field.editable === true;
+
+  // Determine input interactivity: only editable fields can type
+  const canType = isFieldEditable && (isEditing || !hasValue);
+
+  // Handle Edit tap: only editable fields respond
+  const handleEdit = useCallback(() => {
+    if (!isFieldEditable) return;
+    onEdit();
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [onEdit, isFieldEditable]);
+
+  // "Edit" only on EDITABLE filled fields — not all filled fields
+  const hintText = hasValue && !isEditing && isFieldEditable
+    ? 'Edit'
+    : !hasValue && field.hintText
+      ? field.hintText
+      : undefined;
 
   return (
-    <View style={styles.editFieldContainer}>
-      {/* Label row */}
-      <View style={styles.editLabelRow}>
-        <Text style={styles.editLabel}>{field.label}</Text>
-        {showEditButton ? (
-          <TouchableOpacity
-            onPress={onEdit}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
-        ) : !hasValue && field.hintText ? (
-          <Text style={styles.editHint}>{field.hintText}</Text>
-        ) : null}
-      </View>
-
-      {/* Input */}
-      <View
-        style={[
-          styles.editInput,
-          {
-            borderColor: isFieldEditable
-              ? F.input.borderActive
-              : F.input.borderFilled,
-          },
-        ]}
-      >
-        <RNTextInput
-          value={value}
-          onChangeText={onChangeText}
-          editable={isFieldEditable}
-          placeholder={field.placeholder}
-          placeholderTextColor={F.input.placeholderColor}
-          style={[
-            styles.editInputText,
-            hasValue && { color: F.input.filledColor },
-          ]}
-          keyboardType={field.isMonetary ? 'numeric' : 'default'}
-        />
-      </View>
-    </View>
+    <TextInput
+      ref={inputRef}
+      label={field.label}
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={field.placeholder}
+      hintText={hintText}
+      onHintPress={hasValue && !isEditing && isFieldEditable ? handleEdit : undefined}
+      editable={canType}
+      keyboardType={field.isMonetary ? 'numeric' : 'default'}
+    />
   );
 };
 
@@ -391,7 +401,6 @@ export default function ReviewScreen() {
   const handleSaveChanges = useCallback(async () => {
     if (!extractedData) return;
 
-    // Build modifications: only include fields with a backendKey that changed
     const modifications: Record<string, string | number> = {};
 
     for (const field of FIELDS) {
@@ -401,7 +410,6 @@ export default function ReviewScreen() {
 
       if (edited !== undefined && edited !== original) {
         if (field.isMonetary) {
-          // Strip currency symbol and commas, convert to rupees
           const numStr = edited.replace(/[\u20B9,\s]/g, '');
           const num = parseInt(numStr, 10);
           if (!isNaN(num)) modifications[field.backendKey] = num;
@@ -459,10 +467,10 @@ export default function ReviewScreen() {
   }
 
   return (
-    <Screen testID="review-screen">
+    <Screen testID="review-screen" padded={false}>
       {/* Background pattern */}
       <View style={styles.backgroundPattern}>
-        <DottedPattern />
+        <DottedPattern backgroundShape="agreement" />
       </View>
 
       <ScrollView
@@ -480,10 +488,23 @@ export default function ReviewScreen() {
         <View style={styles.mainContent}>
           {/* Title group (Frame 1686557318) */}
           <View style={styles.titleGroup}>
+            {/* Flent logo icon (Frame 1686557264: 32x38, white) -- visible in both modes */}
+            <FlentLogoIcon size={F.logo.h} color="#ffffff" />
+
             <Text style={styles.title}>
-              {mode === 'verify'
-                ? 'Confirm your\ndetails'
-                : "Let's fix the\ndetails"}
+              {mode === 'verify' ? (
+                <>
+                  <Text inherit style={styles.titleGrey}>Confirm</Text>
+                  {'\n'}
+                  <Text inherit style={styles.titleOrange}>your details</Text>
+                </>
+              ) : (
+                <>
+                  <Text inherit style={styles.titleGrey}>{"Let's"}</Text>
+                  {'\n'}
+                  <Text inherit style={styles.titleOrange}>fix the details</Text>
+                </>
+              )}
             </Text>
 
             {/* Verify mode: detail rows */}
@@ -495,7 +516,7 @@ export default function ReviewScreen() {
 
                   return (
                     <React.Fragment key={field.key}>
-                      <DetailRow label={field.label} value={value} />
+                      <DetailRow field={field} value={value} />
                       {index < FIELDS.length - 1 && <Divider />}
                     </React.Fragment>
                   );
@@ -512,6 +533,7 @@ export default function ReviewScreen() {
                     isEditing={editingFields.has(field.key)}
                     onEdit={() => toggleEditing(field.key)}
                     onChangeText={(text) => updateFieldValue(field.key, text)}
+                    editableFields={extractedData?.editableFields}
                   />
                 ))}
               </View>
@@ -520,12 +542,23 @@ export default function ReviewScreen() {
 
           {/* Button section (Frame 2095586322) */}
           <View style={styles.buttonSection}>
-            <OutlineButton
-              label={mode === 'verify' ? 'Proceed' : 'Save Changes'}
-              onPress={mode === 'verify' ? handleProceed : handleSaveChanges}
-              disabled={mode === 'verify' ? isConfirming : isUpdating}
-              loading={mode === 'verify' ? isConfirming : isUpdating}
-            />
+            {mode === 'verify' ? (
+              <PrimaryButton
+                title="Proceed"
+                onPress={handleProceed}
+                disabled={isConfirming}
+                loading={isConfirming}
+                showDivider
+              />
+            ) : (
+              <PrimaryButton
+                title="Save Changes"
+                onPress={handleSaveChanges}
+                disabled={isUpdating}
+                loading={isUpdating}
+                showDivider
+              />
+            )}
 
             {mode === 'verify' && (
               <TouchableOpacity onPress={handleEnterManually}>
@@ -540,7 +573,7 @@ export default function ReviewScreen() {
 }
 
 // ============================================
-// STYLES — All values from Figma REST API
+// STYLES -- All values from Figma REST API
 // ============================================
 
 const styles = StyleSheet.create({
@@ -572,14 +605,21 @@ const styles = StyleSheet.create({
     gap: F.titleGroupGap,
   },
 
-  // Title text (size=48, w=400, lineH=64, ls=-2, #ffffff)
+  // Title text base (size=48, w=400, lineH=64, ls=-2)
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.title.size,
     fontWeight: F.title.weight,
     lineHeight: F.title.lineH,
     letterSpacing: F.title.ls,
-    color: F.title.color,
+  },
+  // "Confirm" — Figma override 37: #A9A9A9
+  titleGrey: {
+    color: F.title.greyColor,
+  },
+  // "your details" — Figma override 36: #FF9A6D
+  titleOrange: {
+    color: F.title.orangeColor,
   },
 
   // ---- Verify Mode: Detail Rows ----
@@ -589,7 +629,7 @@ const styles = StyleSheet.create({
     gap: F.detail.gap,
   },
 
-  // Horizontal row (short values, e.g. "Agreement ID")
+  // Horizontal row (Agreement ID, Monthly Rent, One-Time Deposit, Rent Duration, Exit Date)
   detailRowHorizontal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -597,17 +637,24 @@ const styles = StyleSheet.create({
     gap: F.detail.rowGap,
   },
 
-  // Vertical row (long values, e.g. "Property Name")
+  // Vertical row (Property Name, Tenant(s), Landlord(s))
   detailRowVertical: {
     gap: F.detail.rowGap,
   },
 
-  // Label (size=12, w=400, #878787)
+  // Label group: icon (16x16) + label text, gap=4
+  detailLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: F.detail.labelIconGap,
+  },
+
+  // Label (size=12, w=400, lineH=20, #878787)
   detailLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.labelSize,
     fontWeight: F.detail.labelWeight,
-    lineHeight: 20,
+    lineHeight: F.detail.labelLineH,
     color: F.detail.labelColor,
   },
 
@@ -616,7 +663,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.valueSize,
     fontWeight: F.detail.valueWeight,
-    lineHeight: 20,
+    lineHeight: F.detail.valueLineH,
     color: F.detail.valueColor,
     textAlign: 'right',
     flex: 1,
@@ -627,7 +674,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.valueSize,
     fontWeight: F.detail.valueWeight,
-    lineHeight: 20,
+    lineHeight: F.detail.valueLineH,
     color: F.detail.valueColor,
   },
 
@@ -639,66 +686,9 @@ const styles = StyleSheet.create({
 
   // ---- Edit Mode: Input Fields ----
 
-  // Container (Frame 2095586312: gap=16)
+  // Container (gap=16)
   inputsContainer: {
     gap: F.input.gap,
-  },
-
-  // Field wrapper (gap=6 between label and input)
-  editFieldContainer: {
-    gap: F.input.labelGap,
-  },
-
-  // Label row (horizontal: label + "Edit"/"hint")
-  editLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  // Label (size=12, w=500, #a9a9a9)
-  editLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: F.input.labelSize,
-    fontWeight: F.input.labelWeight,
-    lineHeight: 20,
-    color: F.input.labelColor,
-  },
-
-  // "Edit" button text (size=14, w=400, #878787)
-  editButtonText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: F.input.editSize,
-    fontWeight: F.input.editWeight,
-    lineHeight: 20,
-    color: F.input.editColor,
-  },
-
-  // Hint text (size=14, w=400, #878787)
-  editHint: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: F.input.hintSize,
-    fontWeight: F.input.hintWeight,
-    lineHeight: 20,
-    color: F.input.hintColor,
-  },
-
-  // Input container (bg=#222222, border, r=12)
-  editInput: {
-    backgroundColor: F.input.bg,
-    borderWidth: 1,
-    borderRadius: F.input.radius,
-    paddingHorizontal: F.input.padH,
-  },
-
-  // Input text (size=20, w=400, lineH=32, placeholder=#222222)
-  editInputText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: F.input.valueSize,
-    fontWeight: F.input.valueWeight,
-    lineHeight: F.input.valueLineH,
-    color: F.input.placeholderColor,
-    paddingVertical: F.input.padV,
   },
 
   // ---- Button Section ----
@@ -709,44 +699,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Button outer (contains pill + button)
-  buttonOuter: {
-    alignItems: 'center',
-    gap: 8,
-    width: '100%',
-  },
-
-  // Decorative pill (Rectangle 140: 24x2, #4d4d4d, r=200)
-  buttonPill: {
-    width: F.pill.w,
-    height: F.pill.h,
-    backgroundColor: F.pill.color,
-    borderRadius: F.pill.radius,
-  },
-
-  // Button (Frame 2095586312: h=56, stroke=#ff9a6d, r=8)
-  button: {
-    width: '100%',
-    height: F.button.height,
-    borderWidth: 1,
-    borderColor: F.button.border,
-    borderRadius: F.button.radius,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: F.button.pad,
-  },
-
-  // Button text (size=16, w=500, #ffffff)
-  buttonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: F.button.textSize,
-    fontWeight: F.button.textWeight,
-    lineHeight: F.button.textLineH,
-    color: F.button.textColor,
-    textAlign: 'center',
-  },
-
-  // "Enter Manually" (size=14, w=400, #a9a9a9)
+  // "Enter Manually" (size=14, w=400, lineH=20, #a9a9a9)
   enterManuallyText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.manual.size,

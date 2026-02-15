@@ -72,19 +72,19 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
       return (
         <View style={styles.cardDetailsContainer}>
           <Text style={styles.cardNumber}>
-            <Text style={styles.cardNumberDots}>{'\u2022\u2022\u2022\u2022'} </Text>
-            <Text style={isSelected ? styles.cardNumberAccent : styles.cardNumberValue}>
+            <Text inherit style={styles.cardNumberDots}>{'\u2022\u2022\u2022\u2022'} </Text>
+            <Text inherit style={isSelected ? styles.cardNumberAccent : styles.cardNumberValue}>
               {method.cardLastFour}
             </Text>
           </Text>
           <View style={styles.cardInfoWrapper}>
             <Text style={styles.cardInfoText}>
-              <Text style={styles.cardLabel}>EXPIRY </Text>
-              <Text style={styles.cardValue}>{method.cardExpiry}</Text>
+              <Text inherit style={styles.cardLabel}>EXPIRY </Text>
+              <Text inherit style={styles.cardValue}>{method.cardExpiry}</Text>
             </Text>
             <Text style={styles.cardInfoText}>
-              <Text style={styles.cardLabel}>CVV </Text>
-              <Text style={styles.cardValue}>{'\u2022\u2022\u2022'}</Text>
+              <Text inherit style={styles.cardLabel}>CVV </Text>
+              <Text inherit style={styles.cardValue}>{'\u2022\u2022\u2022'}</Text>
             </Text>
           </View>
         </View>
@@ -94,17 +94,17 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
     return (
       <View style={styles.detailsContainer}>
         <Text style={styles.accountText}>
-          <Text style={styles.accountBankName}>
+          <Text inherit style={styles.accountBankName}>
             {method.bankName} {method.type === 'netbanking' ? 'Bank' : 'a/c'} -{' '}
           </Text>
-          <Text style={isSelected ? styles.accentText : styles.accountMasked}>
+          <Text inherit style={isSelected ? styles.accentText : styles.accountMasked}>
             {method.accountMasked}
           </Text>
         </Text>
         {method.upiId && (
           <Text style={styles.upiIdText}>
-            <Text style={styles.upiIdVisible}>{method.upiId.split('@')[0]}@</Text>
-            <Text style={styles.upiIdMasked}>{'\u2022\u2022\u2022'}</Text>
+            <Text inherit style={styles.upiIdVisible}>{method.upiId.split('@')[0]}@</Text>
+            <Text inherit style={styles.upiIdMasked}>{'\u2022\u2022\u2022'}</Text>
           </Text>
         )}
       </View>

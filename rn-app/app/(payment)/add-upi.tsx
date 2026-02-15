@@ -209,7 +209,7 @@ export default function AddUpiScreen() {
   const isLoading = addUpi.isPending || verifyUpi.isPending;
 
   return (
-    <Screen testID="add-upi-screen" style={styles.screen}>
+    <Screen testID="add-upi-screen" padded={false} style={styles.screen}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

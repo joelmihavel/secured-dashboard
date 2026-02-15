@@ -175,36 +175,36 @@ function PaymentMethodSelectionSheetComponent({
           <Text style={styles.methodLabel}>
             {method.type === 'upi' && method.bankName && (
               <>
-                <Text style={styles.methodLabelGray}>{method.bankName} a/c - </Text>
-                <Text style={[styles.methodLabelAccent, isSelected && styles.methodLabelSelected]}>
+                <Text inherit style={styles.methodLabelGray}>{method.bankName} a/c - </Text>
+                <Text inherit style={[styles.methodLabelAccent, isSelected && styles.methodLabelSelected]}>
                   {method.accountMasked}
                 </Text>
               </>
             )}
             {method.type === 'card' && (
               <>
-                <Text style={styles.methodLabelGray}>{'\u2022\u2022\u2022\u2022'} </Text>
-                <Text style={[styles.methodLabelAccent, isSelected && styles.methodLabelSelected]}>
+                <Text inherit style={styles.methodLabelGray}>{'\u2022\u2022\u2022\u2022'} </Text>
+                <Text inherit style={[styles.methodLabelAccent, isSelected && styles.methodLabelSelected]}>
                   {method.cardLastFour}
                 </Text>
               </>
             )}
             {method.type === 'netbanking' && (
-              <Text style={styles.methodLabelGray}>{method.label}</Text>
+              <Text inherit style={styles.methodLabelGray}>{method.label}</Text>
             )}
           </Text>
 
           {method.upiId && (
             <Text style={styles.methodSubLabel}>
-              <Text style={styles.upiIdText}>{method.upiId.split('@')[0]}@</Text>
-              <Text style={styles.upiIdMasked}>{'\u2022\u2022\u2022'}</Text>
+              <Text inherit style={styles.upiIdText}>{method.upiId.split('@')[0]}@</Text>
+              <Text inherit style={styles.upiIdMasked}>{'\u2022\u2022\u2022'}</Text>
             </Text>
           )}
 
           {method.type === 'card' && method.cardExpiry && (
             <Text style={styles.methodSubLabel}>
-              <Text style={styles.expiryLabel}>EXPIRY </Text>
-              <Text style={styles.expiryValue}>{method.cardExpiry}</Text>
+              <Text inherit style={styles.expiryLabel}>EXPIRY </Text>
+              <Text inherit style={styles.expiryValue}>{method.cardExpiry}</Text>
             </Text>
           )}
         </View>
@@ -261,8 +261,8 @@ function PaymentMethodSelectionSheetComponent({
           {/* Title with multi-styled text */}
           <View style={styles.titleContainer}>
             <Text style={styles.title}>
-              <Text style={styles.titleGray}>Choose a </Text>
-              <Text style={styles.titleAccent}>Payment Method</Text>
+              <Text inherit style={styles.titleGray}>Choose a </Text>
+              <Text inherit style={styles.titleAccent}>Payment Method</Text>
             </Text>
           </View>
 

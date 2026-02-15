@@ -55,8 +55,8 @@ function BottomFooterComponent({
           {dueInDays < 0 ? `${Math.abs(dueInDays)} Days Overdue` : `Due in ${dueInDays} Days`}
         </Text>
         <Text style={styles.amountText}>
-          <Text style={styles.rupeeSymbol}>{'₹ '}</Text>
-          <Text style={styles.amountValue}>{formatAmount(amount)}</Text>
+          <Text inherit style={styles.rupeeSymbol}>{'₹ '}</Text>
+          <Text inherit style={styles.amountValue}>{formatAmount(amount)}</Text>
         </Text>
       </View>
 

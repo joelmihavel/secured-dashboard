@@ -50,8 +50,8 @@ function CashbackEmptyStateComponent({
       <View style={styles.accruedRow}>
         <View style={styles.accentDot} />
         <Text style={styles.accruedAmount}>
-          <Text style={styles.accruedRupee}>{'₹ '}</Text>
-          <Text style={styles.accruedValue}>{formatAmount(accruedAmount)}</Text>
+          <Text inherit style={styles.accruedRupee}>{'₹ '}</Text>
+          <Text inherit style={styles.accruedValue}>{formatAmount(accruedAmount)}</Text>
         </Text>
       </View>
 

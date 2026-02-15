@@ -166,6 +166,7 @@ function SetupCard({ step, stepIndex }: { step: SetupStep; stepIndex: number }) 
           <Text style={styles.cardDescText}>
             {step.description.split('||').map((part, idx) => (
               <Text
+                inherit
                 key={idx}
                 style={
                   idx === 0
@@ -283,8 +284,8 @@ export default function SetupIndexScreen() {
         {/* Multi-color text: "Let's get " (#A9A9A9) + "you set up" (#FF9A6D) */}
         <View style={styles.titleContainer}>
           <Text style={styles.titleText}>
-            <Text style={styles.titleTextGray}>{'Let\'s get\n'}</Text>
-            <Text style={styles.titleTextAccent}>you set up</Text>
+            <Text inherit style={styles.titleTextGray}>{'Let\'s get\n'}</Text>
+            <Text inherit style={styles.titleTextAccent}>you set up</Text>
           </Text>
         </View>
 

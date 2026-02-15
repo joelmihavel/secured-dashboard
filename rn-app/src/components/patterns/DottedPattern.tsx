@@ -182,8 +182,8 @@ function DottedPatternComponent({
           >
             <Defs>
               <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0.39691" stopColor="transparent" stopOpacity={0} />
-                <Stop offset="0.79383" stopColor={colors.black[700]} stopOpacity={1} />
+                <Stop offset="0.5" stopColor="transparent" stopOpacity={0} />
+                <Stop offset="1.0" stopColor={colors.black[700]} stopOpacity={1} />
               </LinearGradient>
             </Defs>
             <Rect

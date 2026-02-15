@@ -301,8 +301,8 @@ export default function PayRentTransactionScreen() {
           <View style={styles.rentDueSection}>
             {/* Multi-styled text: "Your rent is due in 10 days" */}
             <Text style={styles.rentDueTitle}>
-              <Text style={styles.rentDueTextSecondary}>Your rent is due in </Text>
-              <Text style={styles.rentDueTextAccent}>{daysUntilDue} days</Text>
+              <Text inherit style={styles.rentDueTextSecondary}>Your rent is due in </Text>
+              <Text inherit style={styles.rentDueTextAccent}>{daysUntilDue} days</Text>
             </Text>
             <Text style={styles.payingWithText}>Paying with:</Text>
           </View>
@@ -352,9 +352,9 @@ export default function PayRentTransactionScreen() {
               <Text style={styles.cashbackStatLabel}>All-time Total</Text>
               {/* Multi-styled text: "Rs 3,256.00" */}
               <Text style={styles.cashbackStatValue}>
-                <Text style={styles.currencySymbol}>Rs  </Text>
-                <Text style={styles.cashbackValueMain}>{allTimeCashback.toLocaleString('en-IN')}</Text>
-                <Text style={styles.currencySymbol}>.00</Text>
+                <Text inherit style={styles.currencySymbol}>Rs  </Text>
+                <Text inherit style={styles.cashbackValueMain}>{allTimeCashback.toLocaleString('en-IN')}</Text>
+                <Text inherit style={styles.currencySymbol}>.00</Text>
               </Text>
             </View>
 
@@ -363,8 +363,8 @@ export default function PayRentTransactionScreen() {
               <Text style={styles.cashbackStatLabel}>Avg Rate</Text>
               {/* Multi-styled text: "0.8% Avg" */}
               <Text style={styles.cashbackStatValue}>
-                <Text style={styles.cashbackRateAccent}>{cashbackRate}</Text>
-                <Text style={styles.cashbackRateSuffix}> Avg</Text>
+                <Text inherit style={styles.cashbackRateAccent}>{cashbackRate}</Text>
+                <Text inherit style={styles.cashbackRateSuffix}> Avg</Text>
               </Text>
             </View>
 
@@ -373,9 +373,9 @@ export default function PayRentTransactionScreen() {
               <Text style={styles.cashbackStatLabel}>Available</Text>
               {/* Multi-styled text: "Rs 325.00" */}
               <Text style={styles.cashbackStatValue}>
-                <Text style={styles.currencySymbol}>Rs  </Text>
-                <Text style={styles.cashbackAvailableMain}>{cashbackAvailable.toLocaleString('en-IN')}</Text>
-                <Text style={styles.currencySymbol}>.00</Text>
+                <Text inherit style={styles.currencySymbol}>Rs  </Text>
+                <Text inherit style={styles.cashbackAvailableMain}>{cashbackAvailable.toLocaleString('en-IN')}</Text>
+                <Text inherit style={styles.currencySymbol}>.00</Text>
               </Text>
             </View>
           </View>
@@ -384,10 +384,10 @@ export default function PayRentTransactionScreen() {
           <View style={styles.setupMessageContainer}>
             {/* Multi-styled text: "Complete setup in 28:12:12 to unlock Cashbacks" */}
             <Text style={styles.setupMessageText}>
-              <Text style={styles.setupTextNormal}>Complete setup in </Text>
-              <Text style={styles.setupTextTimer}>28:12:12</Text>
-              <Text style={styles.setupTextNormal}> to  unlock </Text>
-              <Text style={styles.setupTextAccent}>Cashbacks</Text>
+              <Text inherit style={styles.setupTextNormal}>Complete setup in </Text>
+              <Text inherit style={styles.setupTextTimer}>28:12:12</Text>
+              <Text inherit style={styles.setupTextNormal}> to  unlock </Text>
+              <Text inherit style={styles.setupTextAccent}>Cashbacks</Text>
             </Text>
           </View>
 
@@ -400,8 +400,8 @@ export default function PayRentTransactionScreen() {
             <Text style={styles.amountLabel}>Due in {daysUntilDue} Days</Text>
             {/* Multi-styled text: "Rs 32,500" */}
             <Text style={styles.amountValue}>
-              <Text style={styles.amountCurrency}>Rs  </Text>
-              <Text style={styles.amountMain}>{totalAmount.toLocaleString('en-IN')}</Text>
+              <Text inherit style={styles.amountCurrency}>Rs  </Text>
+              <Text inherit style={styles.amountMain}>{totalAmount.toLocaleString('en-IN')}</Text>
             </Text>
           </View>
 

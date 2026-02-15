@@ -52,16 +52,16 @@ function PaymentSetupCardComponent({
               // Figma 243-4052: "+  Setup your payment method to start"
               // override[1]: "+" is orange, rest is #CBCBCB
               <Text style={styles.titleLine}>
-                <Text style={styles.accentText}>+  Setup</Text>
-                <Text style={styles.grayText}> your payment method to start</Text>
+                <Text inherit style={styles.accentText}>+  Setup</Text>
+                <Text inherit style={styles.grayText}> your payment method to start</Text>
               </Text>
             ) : (
               // Figma 243-4062: "Setup your payment method to start"
               // "Setup" in orange, rest in #CBCBCB
               <>
                 <Text style={styles.titleLine}>
-                  <Text style={styles.accentText}>Setup</Text>
-                  <Text style={styles.grayText}> your payment method to start</Text>
+                  <Text inherit style={styles.accentText}>Setup</Text>
+                  <Text inherit style={styles.grayText}> your payment method to start</Text>
                 </Text>
                 <Text style={styles.subtitle}>
                   Add UPI, card, or bank to start earning rewards

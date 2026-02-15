@@ -1,0 +1,5 @@
+appId: com.flent.secured
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd

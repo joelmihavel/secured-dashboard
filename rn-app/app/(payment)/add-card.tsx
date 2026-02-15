@@ -226,7 +226,7 @@ export default function AddCardScreen() {
   };
 
   return (
-    <Screen testID="add-card-screen" style={styles.screen}>
+    <Screen testID="add-card-screen" padded={false} style={styles.screen}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

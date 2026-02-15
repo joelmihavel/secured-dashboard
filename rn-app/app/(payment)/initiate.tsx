@@ -229,7 +229,7 @@ export default function InitiatePaymentScreen() {
         {/* Status Banner */}
         <View style={styles.statusBanner}>
           <Text style={styles.statusText}>
-            Rent due in <Text style={styles.statusAccent}>{daysUntilDue} days</Text>
+            Rent due in <Text inherit style={styles.statusAccent}>{daysUntilDue} days</Text>
           </Text>
         </View>
 

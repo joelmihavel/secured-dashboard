@@ -82,8 +82,8 @@ function RecentPaymentsListComponent({ payments, onPaymentPress }: RecentPayment
 
             {/* Amount - Figma format: single Text with nested spans for inline display */}
             <Text style={styles.amountBase}>
-              <Text style={styles.rupeeSymbol}>{'₹ '}</Text>
-              <Text style={styles.amount}>{payment.amount.toLocaleString('en-IN')}</Text>
+              <Text inherit style={styles.rupeeSymbol}>{'₹ '}</Text>
+              <Text inherit style={styles.amount}>{payment.amount.toLocaleString('en-IN')}</Text>
             </Text>
           </TouchableOpacity>
 

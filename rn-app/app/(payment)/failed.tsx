@@ -166,7 +166,7 @@ export default function FailedScreen() {
   }, [router]);
 
   return (
-    <Screen testID="failed-screen" style={styles.screen}>
+    <Screen testID="failed-screen" padded={false} style={styles.screen}>
       <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
         {/* Back Button */}
         <TouchableOpacity

@@ -77,6 +77,8 @@ export interface ExtractedAgreementData {
   isCitySupported: boolean;
   needsManualReview: boolean;
   reviewReason?: string;
+  /** Backend-driven list of field keys that the user can edit (overrides static defaults) */
+  editableFields?: string[];
 }
 
 /** Confirmation result after user approves extracted data */
@@ -418,7 +420,8 @@ export async function getExtractedAgreementData(
       confidence_score,
       certificate_no,
       extraction_status,
-      is_city_supported
+      is_city_supported,
+      editable_fields
     `)
     .eq('id', extractionId)
     .single();
@@ -459,6 +462,7 @@ export async function getExtractedAgreementData(
     isCitySupported: data.is_city_supported ?? false,
     needsManualReview: false,
     reviewReason: undefined,
+    editableFields: data.editable_fields ?? undefined,
   };
 
   return { data: mapped, error: null };
@@ -641,6 +645,7 @@ export function getMockExtractedAgreementData(): ExtractedAgreementData {
     contractStatus: 'user_review',
     isCitySupported: true,
     needsManualReview: false,
+    editableFields: ['property_address', 'tenant_name', 'landlord_name'],
   };
 }
 

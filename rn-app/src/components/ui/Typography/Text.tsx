@@ -1,6 +1,10 @@
 /**
  * Text Component
  * Design system typography wrapper
+ *
+ * Use `inherit` prop when nesting <Text> inside another <Text> for
+ * multicolor/styled spans. This skips the variant defaults so the
+ * child inherits fontSize, lineHeight, fontFamily etc. from the parent.
  */
 
 import React, { memo } from 'react';
@@ -21,6 +25,8 @@ interface TextProps extends RNTextProps {
   variant?: TypographyVariant;
   color?: TextColor;
   align?: 'left' | 'center' | 'right';
+  /** When true, skip variant defaults and inherit text styles from parent Text. */
+  inherit?: boolean;
   children: React.ReactNode;
 }
 
@@ -37,14 +43,27 @@ const colorMap: Record<TextColor, string> = {
 
 function TextComponent({
   variant = 'bodyMdRegular',
-  color = 'primary',
+  color,
   align = 'left',
+  inherit = false,
   style,
   children,
   ...props
 }: TextProps) {
+  // Nested span mode: only apply color + style, inherit everything else from parent
+  if (inherit) {
+    return (
+      <RNText
+        style={[color ? { color: colorMap[color] } : undefined, style]}
+        {...props}
+      >
+        {children}
+      </RNText>
+    );
+  }
+
   const typographyStyle = typography[variant];
-  const textColor = colorMap[color];
+  const textColor = color ? colorMap[color] : colorMap.primary;
 
   return (
     <RNText

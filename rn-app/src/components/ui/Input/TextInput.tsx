@@ -23,6 +23,7 @@ import {
   TextInput as RNTextInput,
   TextInputProps as RNTextInputProps,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import { Text } from '../Typography';
 
@@ -67,11 +68,12 @@ export interface TextInputProps extends Omit<RNTextInputProps, 'style'> {
   disabled?: boolean;
   variant?: 'dark' | 'light';
   hintText?: string;
+  onHintPress?: () => void;
   testID?: string;
 }
 
 const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
-  ({ label, value, onChangeText, error, disabled, placeholder, variant = 'dark', hintText, testID, ...props }, ref) => {
+  ({ label, value, onChangeText, error, disabled, placeholder, variant = 'dark', hintText, onHintPress, testID, ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
     const INPUT_COLORS = variant === 'light' ? INPUT_COLORS_LIGHT : INPUT_COLORS_DARK;
 
@@ -115,9 +117,20 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
                 {error}
               </Text>
             ) : hintText ? (
-              <Text style={[styles.hintText, { color: INPUT_COLORS.hintText }]}>
-                {hintText}
-              </Text>
+              onHintPress ? (
+                <TouchableOpacity
+                  onPress={onHintPress}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={[styles.hintText, { color: INPUT_COLORS.hintText }]}>
+                    {hintText}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={[styles.hintText, { color: INPUT_COLORS.hintText }]}>
+                  {hintText}
+                </Text>
+              )
             ) : null}
           </View>
         ) : null}
@@ -185,11 +198,11 @@ const styles = StyleSheet.create({
     // Color applied inline
   },
   // Figma: I90:2897;47:5566 - fill:invisible, stroke:invisible in empty state
+  // paddingHorizontal: 0 per Figma (label and input text left-aligned)
   inputContainer: {
     borderWidth: 1,
     borderColor: 'transparent',
     borderRadius: 12,
-    paddingHorizontal: 16,
   },
   input: {
     fontFamily: 'PlusJakartaSans-Regular',

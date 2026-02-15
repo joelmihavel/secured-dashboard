@@ -919,7 +919,7 @@ export default function UploadScreen() {
   };
 
   return (
-    <Screen testID="upload-screen" style={styles.screen}>
+    <Screen testID="upload-screen" padded={false} style={styles.screen}>
       {/* Background Pattern - DottedPattern component with agreement-specific shape */}
       <DottedPattern showShape={true} backgroundShape="agreement" />
 

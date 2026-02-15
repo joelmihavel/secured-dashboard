@@ -233,8 +233,8 @@ export default function WaitlistApprovedScreen() {
         {/* Header Text */}
         <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
           <Text style={styles.headlineText}>
-            <Text style={styles.headlineWhite}>{displayName},{'\n'}</Text>
-            <Text style={styles.headlineAccent}>you're all set.</Text>
+            <Text inherit style={styles.headlineWhite}>{displayName},{'\n'}</Text>
+            <Text inherit style={styles.headlineAccent}>you're all set.</Text>
           </Text>
           <Text style={styles.subtitleText}>
             Welcome to the right side of renting.

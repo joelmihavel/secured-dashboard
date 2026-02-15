@@ -249,7 +249,7 @@ export default function ProcessingScreen() {
   }, []);
 
   return (
-    <Screen testID="processing-screen" style={styles.screen}>
+    <Screen testID="processing-screen" padded={false} style={styles.screen}>
       <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
         {/* Back Button */}
         <TouchableOpacity

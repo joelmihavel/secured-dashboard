@@ -202,7 +202,7 @@ export default function CarouselScreen() {
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Text style={styles.skipText}>
-            <Text style={styles.skipUnderline}>Skip</Text>
+            <Text inherit style={styles.skipUnderline}>Skip</Text>
             {' →'}
           </Text>
         </TouchableOpacity>
