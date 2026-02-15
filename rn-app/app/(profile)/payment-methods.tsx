@@ -1,578 +1,399 @@
 /**
- * Payment Methods Screen - Pixel Perfect Figma Parity
- * Figma Reference: 41-9681 (UPI), 41-9746 (Credit Card), 41-9811 (Bank Account)
+ * Payment Methods Edit Screen - Pixel Perfect Figma Parity
+ * Figma Reference: 41-8450 (UPI), 41-8515 (Credit Card), 41-8580 (Bank Account)
  *
- * Features:
- * - List of saved payment methods (UPI, Credit Card, Bank Account)
- * - Set default method option
- * - Add new method option
- * - Delete/edit existing methods
+ * Displays an EDIT FORM for a single payment type, determined by `tab` query param.
+ * Supported tabs: upi | credit | bank
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
-  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Screen, Text } from '@/src/components';
-import { useProfilePaymentMethods, useDeletePaymentMethod } from '@/src/hooks';
+import { Screen, Text, TextInput } from '@/src/components';
+import { useProfilePaymentMethods, useAddPaymentMethod } from '@/src/hooks';
 import { colors, spacing, radius, gradients } from '@/src/theme';
-import type { SavedPaymentMethod as ProfilePaymentMethod } from '@/src/services/api/profile';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// ==============================================
+// TYPES
+// ==============================================
 
-// Design System Colors - mapped from Figma specs
-const PAYMENT_COLORS = {
-  background: '#131313',                 // Figma: black.700
-  cardBackground: '#1A1A1A',             // Figma: black.600 (cards/surfaces)
-  cardBodyDark: '#202020',               // Figma: black.500 (card bg)
-  accentOrange: '#FF9A6D',              // Figma: brand.500 (accent)
-  textPrimary: '#FFFFFF',               // Figma: white
-  textSecondary: '#878787',             // Figma: neutral.600 (labels)
-  textValues: '#CBCBCB',               // Figma: neutral.300 (values)
-  textMuted: '#A9A9A9',                // Figma: neutral.500 (hint text)
-  textHighEmphasis: '#DDDDDD',         // Figma: neutral.200 (payable rent value)
-  divider: '#4D4D4D',                  // Figma: black.400 (dividers)
-  upiGreen: colors.success.dark,         // #27803B
-  upiOrange: '#E9661C',                // Figma: brand.800
-  checkGreen: '#70BF73',               // Figma: success.default
-  radioSelected: '#FF9A6D',            // Figma: brand.500
-  radioUnselected: '#4D4D4D',          // Figma: black.400
-  cashbackRed: '#EF9194',              // Figma: cashback locked color
-  visaBlue: '#1A1F71',                   // Visa brand color (external)
-} as const;
+type PaymentTab = 'upi' | 'credit' | 'bank';
 
-// UPI Logo component
-const UPILogo = ({ size = 45 }: { size?: number }) => (
-  <Svg width={size} height={size * 0.35} viewBox="0 0 45 16" fill="none">
-    <Path d="M0 0H3V10C3 12 4 13 6 13C8 13 9 12 9 10V0H12V10C12 14 9 16 6 16C3 16 0 14 0 10V0Z" fill={PAYMENT_COLORS.textPrimary} />
-    <Path d="M14 0H20C23 0 25 2 25 5C25 8 23 10 20 10H17V16H14V0ZM17 7H19C21 7 22 6 22 5C22 4 21 3 19 3H17V7Z" fill={PAYMENT_COLORS.textPrimary} />
-    <Rect x="27" y="0" width="3" height="16" fill={PAYMENT_COLORS.textPrimary} />
-    <Path d="M35 0L41 16H38L35 8V0Z" fill={PAYMENT_COLORS.upiOrange} />
-    <Path d="M38 0L44 16H41L38 8V0Z" fill={PAYMENT_COLORS.upiGreen} />
-  </Svg>
-);
-
-// Visa Logo component
-const VisaLogo = ({ size = 45 }: { size?: number }) => (
-  <Svg width={size} height={size * 0.35} viewBox="0 0 45 16" fill="none">
-    <Path d="M16.5 0.5L13 15.5H10L13.5 0.5H16.5Z" fill={PAYMENT_COLORS.visaBlue} />
-    <Path d="M27.5 0.5L22 10.5L21 0.5H17.5L19.5 15.5H23L30.5 0.5H27.5Z" fill={PAYMENT_COLORS.visaBlue} />
-    <Path d="M39.5 0.5C38 0.5 37 1.5 36.5 2.5L30.5 15.5H34.5L35 13.5H40L40.5 15.5H44L41 0.5H39.5ZM36 10.5L38 4L39 10.5H36Z" fill={PAYMENT_COLORS.visaBlue} />
-    <Path d="M9 0.5L5 10.5L4 2C4 1 3 0.5 2 0.5H0V1.5C1.5 2 3 2.5 4 3.5L6.5 15.5H10.5L14 0.5H9Z" fill={PAYMENT_COLORS.visaBlue} />
-  </Svg>
-);
-
-// Radio button component
-interface RadioButtonProps {
-  selected: boolean;
-  onPress: () => void;
-}
-
-function RadioButton({ selected, onPress }: RadioButtonProps) {
-  return (
-    <TouchableOpacity onPress={onPress} style={styles.radioButton}>
-      <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
-        {selected && <View style={styles.radioInner} />}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// Payment method row item
-interface PaymentMethodItemProps {
-  type: 'upi' | 'card' | 'bank';
+interface FormField {
+  key: string;
   label: string;
-  details: string;
-  isDefault: boolean;
-  onSetDefault: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  placeholder: string;
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  secureTextEntry?: boolean;
+  maxLength?: number;
 }
 
-function PaymentMethodItem({
-  type,
-  label,
-  details,
-  isDefault,
-  onSetDefault,
-  onEdit,
-  onDelete,
-}: PaymentMethodItemProps) {
-  const renderLogo = () => {
-    switch (type) {
-      case 'upi':
-        return <UPILogo size={40} />;
-      case 'card':
-        return <VisaLogo size={40} />;
-      case 'bank':
-        return (
-          <View style={styles.bankIcon}>
-            <Ionicons name="business-outline" size={24} color={PAYMENT_COLORS.textPrimary} />
-          </View>
-        );
-      default:
-        return null;
-    }
-  };
+// ==============================================
+// FORM CONFIGURATION PER TAB
+// ==============================================
 
-  return (
-    <View style={styles.methodItem}>
-      <View style={styles.methodContent}>
-        <View style={styles.methodLeft}>
-          <RadioButton selected={isDefault} onPress={onSetDefault} />
-          <View style={styles.methodInfo}>
-            {renderLogo()}
-            <View style={styles.methodDetails}>
-              <Text style={styles.methodLabel}>{label}</Text>
-              <Text style={styles.methodDetailText}>{details}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.methodActions}>
-          <TouchableOpacity onPress={onEdit} style={styles.actionButton}>
-            <Ionicons name="create-outline" size={20} color={PAYMENT_COLORS.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onDelete} style={styles.actionButton}>
-            <Ionicons name="trash-outline" size={20} color={PAYMENT_COLORS.accentOrange} />
-          </TouchableOpacity>
-        </View>
-      </View>
-      {isDefault && (
-        <View style={styles.defaultBadge}>
-          <Ionicons name="checkmark-circle" size={14} color={PAYMENT_COLORS.checkGreen} />
-          <Text style={styles.defaultText}>Default</Text>
-        </View>
-      )}
-    </View>
-  );
-}
+const FORM_CONFIG: Record<PaymentTab, { typeName: string; fields: FormField[] }> = {
+  upi: {
+    typeName: 'UPI Method',
+    fields: [
+      { key: 'holderName', label: 'Account holder name', placeholder: 'John Smith' },
+      { key: 'upiId', label: 'UPI ID', placeholder: 'john@oksbi' },
+    ],
+  },
+  credit: {
+    typeName: 'Credit Card',
+    fields: [
+      { key: 'holderName', label: 'Cardholder name', placeholder: 'John Smith' },
+      { key: 'cardNumber', label: 'Card number', placeholder: '1234 5678 9012 3456', keyboardType: 'numeric', maxLength: 19 },
+      { key: 'expiry', label: 'Expiry date', placeholder: 'MM/YY', keyboardType: 'numeric', maxLength: 5 },
+      { key: 'cvv', label: 'CVV', placeholder: '123', keyboardType: 'numeric', secureTextEntry: true, maxLength: 4 },
+    ],
+  },
+  bank: {
+    typeName: 'Bank Account',
+    fields: [
+      { key: 'bankName', label: 'Bank name', placeholder: 'State Bank of India' },
+      { key: 'holderName', label: 'Account holder name', placeholder: 'John Smith' },
+      { key: 'accountNumber', label: 'Account number', placeholder: '1234567890', keyboardType: 'numeric' },
+      { key: 'ifsc', label: 'IFSC code', placeholder: 'SBIN0001234' },
+    ],
+  },
+};
 
-// Section component
-interface MethodSectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function MethodSection({ title, children }: MethodSectionProps) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>
-        {children}
-      </View>
-    </View>
-  );
-}
+// ==============================================
+// HELPERS
+// ==============================================
 
 /**
- * Derive display details from a saved payment method for the UI.
+ * Populate initial form values from saved payment method data.
  */
-function getMethodDisplayDetails(method: ProfilePaymentMethod): string {
-  if (method.type === 'upi' && method.upiVpa) {
-    // Mask part of the VPA: "rishabh@icici" -> "rish***@icici"
-    const [local, domain] = method.upiVpa.split('@');
-    const masked = local.length > 4 ? local.slice(0, 4) + '***' : local;
-    return domain ? `${masked}@${domain}` : masked;
+function getInitialValues(
+  tab: PaymentTab,
+  data: ReturnType<typeof useProfilePaymentMethods>['data'],
+): Record<string, string> {
+  if (!data) return {};
+
+  if (tab === 'upi') {
+    const method = data.groupedMethods.upi[0];
+    if (!method) return {};
+    return {
+      holderName: method.displayName || '',
+      upiId: method.upiVpa || '',
+    };
   }
-  if (method.type === 'card') {
-    const expiry = method.cardExpiryMonth && method.cardExpiryYear
-      ? `Expires ${String(method.cardExpiryMonth).padStart(2, '0')}/${String(method.cardExpiryYear).slice(-2)}`
-      : '';
-    return expiry;
+
+  if (tab === 'credit') {
+    const method = data.groupedMethods.cards[0];
+    if (!method) return {};
+    return {
+      holderName: method.displayName || '',
+      cardNumber: method.cardLast4 ? `**** **** **** ${method.cardLast4}` : '',
+      expiry:
+        method.cardExpiryMonth && method.cardExpiryYear
+          ? `${String(method.cardExpiryMonth).padStart(2, '0')}/${String(method.cardExpiryYear).slice(-2)}`
+          : '',
+      cvv: '',
+    };
   }
-  if (method.type === 'netbanking' && method.bankName) {
-    return method.bankName;
+
+  if (tab === 'bank') {
+    const method = data.groupedMethods.netbanking[0];
+    if (!method) return {};
+    return {
+      bankName: method.bankName || '',
+      holderName: method.displayName || '',
+      accountNumber: '',
+      ifsc: method.bankCode || '',
+    };
   }
-  return '';
+
+  return {};
 }
+
+// ==============================================
+// MAIN COMPONENT
+// ==============================================
 
 export default function PaymentMethodsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: methodsData, isLoading } = useProfilePaymentMethods();
-  const deleteMethod = useDeletePaymentMethod();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const activeTab: PaymentTab = (tab === 'credit' || tab === 'bank' || tab === 'upi') ? tab : 'upi';
 
-  // Track which method is default per type (initialized from API data)
-  const primaryId = methodsData?.primaryMethodId ?? null;
-  const [defaultUpi, setDefaultUpi] = useState<string | null>(null);
-  const [defaultCard, setDefaultCard] = useState<string | null>(null);
-  const [defaultBank, setDefaultBank] = useState<string | null>(null);
+  const { data: methodsData } = useProfilePaymentMethods();
+  const addMethod = useAddPaymentMethod();
 
-  // Initialize default selections from API data
-  React.useEffect(() => {
-    if (methodsData?.groupedMethods) {
-      const primaryUpi = methodsData.groupedMethods.upi.find(m => m.isPrimary);
-      const primaryCard = methodsData.groupedMethods.cards.find(m => m.isPrimary);
-      const primaryNb = methodsData.groupedMethods.netbanking.find(m => m.isPrimary);
-      if (primaryUpi) setDefaultUpi(primaryUpi.id);
-      else if (methodsData.groupedMethods.upi.length > 0) setDefaultUpi(methodsData.groupedMethods.upi[0].id);
-      if (primaryCard) setDefaultCard(primaryCard.id);
-      else if (methodsData.groupedMethods.cards.length > 0) setDefaultCard(methodsData.groupedMethods.cards[0].id);
-      if (primaryNb) setDefaultBank(primaryNb.id);
-      else if (methodsData.groupedMethods.netbanking.length > 0) setDefaultBank(methodsData.groupedMethods.netbanking[0].id);
+  // Form state: keyed by field key
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  // Populate form from saved data when it loads
+  useEffect(() => {
+    if (methodsData) {
+      const initial = getInitialValues(activeTab, methodsData);
+      setFormValues(initial);
     }
-  }, [methodsData]);
+  }, [methodsData, activeTab]);
+
+  const config = FORM_CONFIG[activeTab];
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   }, [router]);
 
-  const handleAddMethod = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(payment)/select-method' as never);
-  }, [router]);
+  const handleFieldChange = useCallback((key: string, value: string) => {
+    setFormValues(prev => ({ ...prev, [key]: value }));
+  }, []);
 
-  const handleDeleteMethod = useCallback(
-    (methodId: string, methodName: string) => {
-      Alert.alert(
-        'Remove Payment Method',
-        `Are you sure you want to remove ${methodName}?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: () => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              deleteMethod.mutate(methodId);
-            },
-          },
-        ]
+  const handleEditPress = useCallback((key: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditingField(prev => (prev === key ? null : key));
+  }, []);
+
+  const handleSave = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Build mutation payload based on tab
+    if (activeTab === 'upi' && formValues.upiId) {
+      addMethod.mutate(
+        {
+          type: 'upi',
+          details: formValues.upiId,
+          metadata: { displayName: formValues.holderName },
+        },
+        { onSuccess: () => router.back() },
       );
-    },
-    [deleteMethod]
-  );
+    } else if (activeTab === 'credit' && formValues.cardNumber) {
+      addMethod.mutate(
+        {
+          type: 'card',
+          details: formValues.cardNumber.replace(/\s/g, ''),
+          metadata: {
+            displayName: formValues.holderName,
+            expiry: formValues.expiry,
+          },
+        },
+        { onSuccess: () => router.back() },
+      );
+    } else if (activeTab === 'bank' && formValues.accountNumber) {
+      addMethod.mutate(
+        {
+          type: 'netbanking',
+          details: formValues.accountNumber,
+          metadata: {
+            displayName: formValues.holderName,
+            bankName: formValues.bankName,
+            ifsc: formValues.ifsc,
+          },
+        },
+        { onSuccess: () => router.back() },
+      );
+    }
+  }, [activeTab, formValues, addMethod, router]);
 
-  const handleEditMethod = useCallback((methodId: string, type: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // No dedicated edit screen; re-use the add screen for the method type
-    const addRoute = type === 'upi' ? '/(payment)/add-upi'
-      : type === 'card' ? '/(payment)/add-card'
-      : '/(payment)/add-netbanking';
-    router.push({ pathname: addRoute as never, params: { editId: methodId } });
-  }, [router]);
-
-  // Map real data from the profile service (grouped by type)
-  const upiMethods = (methodsData?.groupedMethods.upi ?? []).map(m => ({
-    id: m.id,
-    label: m.displayName,
-    details: getMethodDisplayDetails(m),
-  }));
-
-  const cardMethods = (methodsData?.groupedMethods.cards ?? []).map(m => ({
-    id: m.id,
-    label: m.displayName,
-    details: getMethodDisplayDetails(m),
-  }));
-
-  const bankMethods = (methodsData?.groupedMethods.netbanking ?? []).map(m => ({
-    id: m.id,
-    label: m.displayName,
-    details: getMethodDisplayDetails(m),
-  }));
+  // Check if form has any values to enable save
+  const hasValues = useMemo(() => {
+    return config.fields.some(f => (formValues[f.key] ?? '').trim().length > 0);
+  }, [config.fields, formValues]);
 
   return (
-    <Screen testID="payment-methods-screen">
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.xxl },
-        ]}
-        showsVerticalScrollIndicator={false}
+    <Screen testID="payment-methods-screen" padded={false}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
       >
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + spacing.xxl },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Ionicons name="arrow-back" size={24} color={PAYMENT_COLORS.textPrimary} />
-        </TouchableOpacity>
-
-        {/* Title */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleMain}>Payment</Text>
-          <Text style={styles.titleAccent}>Methods</Text>
-        </View>
-
-        {/* UPI Methods Section */}
-        <MethodSection title="UPI">
-          {upiMethods.map((method, index) => (
-            <React.Fragment key={method.id}>
-              {index > 0 && <View style={styles.methodDivider} />}
-              <PaymentMethodItem
-                type="upi"
-                label={method.label}
-                details={method.details}
-                isDefault={defaultUpi === method.id}
-                onSetDefault={() => setDefaultUpi(method.id)}
-                onEdit={() => handleEditMethod(method.id, 'upi')}
-                onDelete={() => handleDeleteMethod(method.id, 'UPI Method')}
-              />
-            </React.Fragment>
-          ))}
-        </MethodSection>
-
-        {/* Credit Card Section */}
-        <MethodSection title="CREDIT CARD">
-          {cardMethods.map((method, index) => (
-            <React.Fragment key={method.id}>
-              {index > 0 && <View style={styles.methodDivider} />}
-              <PaymentMethodItem
-                type="card"
-                label={method.label}
-                details={method.details}
-                isDefault={defaultCard === method.id}
-                onSetDefault={() => setDefaultCard(method.id)}
-                onEdit={() => handleEditMethod(method.id, 'card')}
-                onDelete={() => handleDeleteMethod(method.id, 'Credit Card')}
-              />
-            </React.Fragment>
-          ))}
-        </MethodSection>
-
-        {/* Bank Account Section */}
-        <MethodSection title="BANK ACCOUNT">
-          {bankMethods.map((method, index) => (
-            <React.Fragment key={method.id}>
-              {index > 0 && <View style={styles.methodDivider} />}
-              <PaymentMethodItem
-                type="bank"
-                label={method.label}
-                details={method.details}
-                isDefault={defaultBank === method.id}
-                onSetDefault={() => setDefaultBank(method.id)}
-                onEdit={() => handleEditMethod(method.id, 'bank')}
-                onDelete={() => handleDeleteMethod(method.id, 'Bank Account')}
-              />
-            </React.Fragment>
-          ))}
-        </MethodSection>
-
-        {/* Add Payment Method Button */}
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAddMethod}
-          accessibilityRole="button"
-          accessibilityLabel="Add payment method"
-        >
-          <LinearGradient
-            colors={gradients.button.colors as unknown as readonly [string, string, ...string[]]}
-            locations={gradients.button.locations as unknown as readonly [number, number, ...number[]]}
-            style={styles.addButtonGradient}
+          {/* Back Button — Figma: 32x32 icon area */}
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="add" size={24} color={PAYMENT_COLORS.accentOrange} />
-            <Text style={styles.addButtonText}>Add Payment Method</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <Ionicons name="arrow-back" size={24} color={colors.white} />
+          </TouchableOpacity>
 
-        {/* Security Info */}
-        <View style={styles.securityInfo}>
-          <Ionicons name="shield-checkmark-outline" size={20} color={PAYMENT_COLORS.checkGreen} />
-          <Text style={styles.securityText}>
-            Your payment information is encrypted and securely stored
-          </Text>
-        </View>
-      </ScrollView>
+          {/* Title — Figma: 297x128, 48/400, 2-line wrap */}
+          <View style={styles.titleContainer}>
+            <Text
+              style={styles.titleBase}
+            >
+              <Text inherit style={styles.titleGray}>
+                {'Edit your  '}
+              </Text>
+              <Text inherit style={styles.titleAccent}>
+                {config.typeName}
+              </Text>
+            </Text>
+          </View>
+
+          {/* Form Fields — Figma: 297px wide, gap=16 */}
+          <View style={styles.formContainer}>
+            {config.fields.map((field) => (
+              <TextInput
+                key={field.key}
+                label={field.label}
+                value={formValues[field.key] ?? ''}
+                onChangeText={(text) => handleFieldChange(field.key, text)}
+                placeholder={field.placeholder}
+                hintText="edit"
+                onHintPress={() => handleEditPress(field.key)}
+                variant="dark"
+                keyboardType={field.keyboardType}
+                secureTextEntry={field.secureTextEntry}
+                maxLength={field.maxLength}
+                editable={editingField === field.key || !formValues[field.key]}
+                testID={`input-${field.key}`}
+              />
+            ))}
+          </View>
+
+          {/* Save Button — Figma: 297x66 total (2px pill + 8px gap + 56px button) */}
+          <View style={styles.saveContainer}>
+            {/* Indicator pill — Figma: 24x2, bg=#4D4D4D, borderRadius=200 */}
+            <View style={styles.indicatorPill} />
+
+            {/* Gradient button — Figma: 297x56, borderRadius=8, border 0.1px #FF9A6D */}
+            <TouchableOpacity
+              onPress={handleSave}
+              disabled={!hasValues || addMethod.isPending}
+              activeOpacity={0.9}
+              accessibilityRole="button"
+              accessibilityLabel="Save changes"
+              style={styles.saveButtonTouchable}
+            >
+              <LinearGradient
+                colors={gradients.button.colors as unknown as readonly [string, string, ...string[]]}
+                locations={gradients.button.locations as unknown as readonly [number, number, ...number[]]}
+                start={gradients.button.start}
+                end={gradients.button.end}
+                style={[
+                  styles.saveButtonGradient,
+                  (!hasValues || addMethod.isPending) && styles.saveButtonDisabled,
+                ]}
+              >
+                <Text style={styles.saveButtonText}>
+                  {addMethod.isPending ? 'Saving...' : 'Save Changes'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
+// ==============================================
+// STYLES — Pixel-perfect from Figma blueprint
+// ==============================================
+
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
-    backgroundColor: PAYMENT_COLORS.background,
   },
+  // Figma: content frame paddingH=48
   scrollContent: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 48,
+    paddingTop: 0,
   },
+  // Figma: back arrow 32x32 icon area, positioned at top of content
   backButton: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
-    marginBottom: spacing.lg,
-  },
-  titleContainer: {
-    marginBottom: spacing.xxl,
-  },
-  titleMain: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 40,
-    lineHeight: 52,
-    color: PAYMENT_COLORS.textPrimary,
-    letterSpacing: -1,
-    textAlign: 'center' as const,
-  },
-  titleAccent: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 40,
-    lineHeight: 52,
-    color: PAYMENT_COLORS.accentOrange,
-    letterSpacing: -1,
-    textAlign: 'center' as const,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 1.5,
-    color: PAYMENT_COLORS.textSecondary,
-    textTransform: 'uppercase',
-    textAlign: 'left' as const,
-    marginBottom: spacing.sm,
-  },
-  sectionCard: {
-    backgroundColor: PAYMENT_COLORS.cardBodyDark,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  methodItem: {
-    padding: spacing.md,
-  },
-  methodContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  methodLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  radioButton: {
-    padding: spacing.xxs,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: PAYMENT_COLORS.radioUnselected,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioOuterSelected: {
-    borderColor: PAYMENT_COLORS.radioSelected,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: PAYMENT_COLORS.radioSelected,
-  },
-  methodInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  bankIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: PAYMENT_COLORS.cardBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  methodDetails: {
-    flex: 1,
-  },
-  methodLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,
-    lineHeight: 20,
-    color: PAYMENT_COLORS.textValues,
-    textAlign: 'left' as const,
-  },
-  methodDetailText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: PAYMENT_COLORS.textSecondary,
-    textAlign: 'left' as const,
-  },
-  methodActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  actionButton: {
-    padding: spacing.xs,
-  },
-  defaultBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xxs,
-    marginTop: spacing.xs,
-    marginLeft: 36,
-  },
-  defaultText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: PAYMENT_COLORS.checkGreen,
-    textAlign: 'left' as const,
-  },
-  methodDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: PAYMENT_COLORS.divider,
-    marginHorizontal: spacing.md,
-  },
-  addButton: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: PAYMENT_COLORS.accentOrange,
-    marginTop: spacing.lg,
-  },
-  addButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  addButtonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,
-    lineHeight: 20,
-    color: PAYMENT_COLORS.textPrimary,
-    textAlign: 'center' as const,
-  },
-  securityInfo: {
-    flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    padding: spacing.md,
-    backgroundColor: PAYMENT_COLORS.cardBodyDark,
-    borderRadius: 12,
+    marginBottom: 0,
   },
-  securityText: {
+  // Figma: title area 297x128, gap=48 from back button
+  // 48px gap between back arrow and title
+  titleContainer: {
+    width: 297,
+    marginTop: 48,
+    marginBottom: 48,
+  },
+  // Figma: 48px fontSize, fontWeight 400 (Regular), wraps to 2 lines
+  titleBase: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: PAYMENT_COLORS.textSecondary,
-    textAlign: 'center' as const,
-    flex: 1,
+    fontSize: 48,
+    lineHeight: 64,
+    letterSpacing: -1,
+  },
+  // Figma: "Edit your " in #A9A9A9
+  titleGray: {
+    color: '#A9A9A9',
+  },
+  // Figma: type name in #FF9A6D (brand accent)
+  titleAccent: {
+    color: '#FF9A6D',
+  },
+  // Figma: form container 297px wide, gap=16 between fields
+  formContainer: {
+    width: 297,
+    gap: 16,
+  },
+  // Figma: save area 297x66 total, 48px gap from form
+  saveContainer: {
+    width: 297,
+    marginTop: 48,
+    alignItems: 'center',
+  },
+  // Figma: 24x2, bg=#4D4D4D, borderRadius=200
+  indicatorPill: {
+    width: 24,
+    height: 2,
+    backgroundColor: '#4D4D4D',
+    borderRadius: 200,
+    marginBottom: 8,
+  },
+  saveButtonTouchable: {
+    width: '100%',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  // Figma: 297x56, gradient bg, borderRadius=8, border 0.1px #FF9A6D
+  saveButtonGradient: {
+    height: 56,
+    borderRadius: 8,
+    borderWidth: 0.1,
+    borderColor: '#FF9A6D',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
+  },
+  // Figma: "Save Changes" 16/500 #FFFFFF
+  saveButtonText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#FFFFFF',
   },
 });

@@ -28,15 +28,14 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, TextInput, PhoneInput } from '@/src/components';
 import { useDashboard, useUpdateProfile, useUploadAvatar } from '@/src/hooks';
-import { colors, spacing, radius } from '@/src/theme';
+import { colors, radius } from '@/src/theme';
 
 // Design System Colors - mapped from theme (EXACT Figma values)
 const EDIT_COLORS = {
@@ -64,81 +63,6 @@ const FIGMA_SPACING = {
   topOffset: 111,               // top offset for scroll content (77 status bar + 34)
   bottomPadding: 48,            // paddingBottom from Figma
 } as const;
-
-interface EditableFieldProps {
-  label: string;
-  value: string;
-  onChangeText?: (text: string) => void;
-  placeholder?: string;
-  editable?: boolean;
-  showEditButton?: boolean;
-  onEditPress?: () => void;
-  keyboardType?: 'default' | 'email-address' | 'phone-pad';
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  hintText?: string;
-}
-
-function EditableField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  editable = true,
-  showEditButton = false,
-  onEditPress,
-  keyboardType = 'default',
-  autoCapitalize = 'sentences',
-  hintText,
-}: EditableFieldProps) {
-  return (
-    <View style={styles.fieldContainer}>
-      {/* Label Row - Figma: Frame 2 with horizontal layout, gap 6 */}
-      <View style={styles.fieldHeader}>
-        <Text style={styles.fieldLabel}>{label}</Text>
-        {showEditButton && (
-          <TouchableOpacity onPress={onEditPress}>
-            {/* MAJOR FIX: Hint text must be right-aligned per Figma */}
-            <Text style={styles.editText}>edit</Text>
-          </TouchableOpacity>
-        )}
-        {hintText && (
-          <Text style={styles.hintText}>{hintText}</Text>
-        )}
-      </View>
-      {/* Input Box - Figma: 313x64, borderRadius 12, border #4D4D4D */}
-      <View style={styles.inputContainer}>
-        <Text
-          style={[
-            styles.fieldValue,
-            !value && styles.fieldPlaceholder,
-          ]}
-        >
-          {value || placeholder}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-interface PhoneFieldProps {
-  countryCode: string;
-  phoneNumber: string;
-}
-
-function PhoneField({ countryCode, phoneNumber }: PhoneFieldProps) {
-  return (
-    <View style={styles.fieldContainer}>
-      <Text style={styles.fieldLabel}>Phone Number</Text>
-      <View style={styles.phoneRow}>
-        <View style={styles.countryCodeContainer}>
-          <Text style={styles.countryCode}>{countryCode}</Text>
-          <Ionicons name="chevron-down" size={16} color={EDIT_COLORS.textMuted} />
-        </View>
-        <Text style={styles.phoneNumber}>{phoneNumber}</Text>
-      </View>
-    </View>
-  );
-}
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -224,13 +148,13 @@ export default function EditProfileScreen() {
   const hasChanges = name !== fullName || email !== (user?.email ?? '');
 
   /**
-   * CRITICAL FIX: Page Layout matching Figma exactly
-   * - SafeAreaView with flex: 1, backgroundColor: colors.black[700]
-   * - ScrollView with paddingTop: 111, paddingBottom: 48, gap: 40
+   * Page Layout matching Figma exactly
+   * - Screen component wraps SafeAreaView with bg: colors.black[700]
+   * - ScrollView with paddingBottom: 48, gap: 40
    * - Content sections with paddingHorizontal: 40
    */
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <Screen testID="edit-profile-screen" padded={false}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -243,21 +167,23 @@ export default function EditProfileScreen() {
         >
           {/* Header Section - Figma: Frame 2095586345 with gap 24, paddingHorizontal 40 */}
           <View style={styles.headerSection}>
-            {/* Back Button - Figma: 32x32 icon */}
+            {/* Back Button - Figma: 40x40 container, 24px icon */}
             <TouchableOpacity
               onPress={handleBack}
               style={styles.backButton}
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="arrow-back" size={32} color={EDIT_COLORS.textPrimary} />
+              <Ionicons name="arrow-back" size={24} color={EDIT_COLORS.textPrimary} />
             </TouchableOpacity>
 
-            {/* Title - Figma: 313x128, fontSize 48, lineHeight 64, letterSpacing -2 */}
-            <View style={styles.titleContainer}>
-              <Text style={styles.titleMy}>My</Text>
-              <Text style={styles.titleProfile}>Profile</Text>
-            </View>
+            {/* Title (41:8882): "My  Profile" single text with spans */}
+            {/* Blueprint: width=313, height=128 (2 lines x 64px lineHeight) */}
+            <Text style={styles.titleBase}>
+              <Text inherit style={styles.titleGray}>{'My '}</Text>
+              <Text inherit style={styles.titleSpace}>{' '}</Text>
+              <Text inherit style={styles.titleAccent}>{'Profile'}</Text>
+            </Text>
           </View>
 
           {/* Avatar Section - Figma: Frame 2095586371 with space-between, paddingHorizontal 40 */}
@@ -294,34 +220,38 @@ export default function EditProfileScreen() {
 
           {/* Form Fields - Figma: Frame 2095586311 with gap 16, paddingHorizontal 40 */}
           <View style={styles.formContainer}>
-            <EditableField
+            <TextInput
               label="User name"
               value={name}
               onChangeText={setName}
-              showEditButton
-              onEditPress={() => {/* Focus input */}}
+              hintText="edit"
+              onHintPress={() => {/* Focus input */}}
             />
 
-            <EditableField
+            <TextInput
               label="Email"
               value={email}
               onChangeText={setEmail}
+              hintText="edit"
+              onHintPress={() => {/* Focus input */}}
               keyboardType="email-address"
               autoCapitalize="none"
-              showEditButton
-              onEditPress={() => {/* Focus input */}}
             />
 
-            <EditableField
+            <TextInput
               label="City"
               value={city}
-              editable={false}
+              onChangeText={setCity}
+              disabled
               hintText="This is a hint text to help user."
             />
 
-            <PhoneField
+            <PhoneInput
+              label="Phone Number"
+              value={phoneNumber}
+              onChangeText={() => {}}
               countryCode={countryCode}
-              phoneNumber={phoneNumber}
+              disabled
             />
           </View>
 
@@ -343,15 +273,11 @@ export default function EditProfileScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: EDIT_COLORS.background,
-  },
   keyboardView: {
     flex: 1,
   },
@@ -372,22 +298,27 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
-  titleContainer: {
-    // No extra margin; headerSection.gap handles spacing between back button and title
-  },
-  titleMy: {
+  // Title base: 48px/64 Regular, letterSpacing -2
+  // Blueprint (41:8882): width=313, height=128 (2 lines x 64px lineHeight)
+  titleBase: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,       // Figma: h1 = 48px (was 40)
-    lineHeight: 64,     // Figma: h1 lineHeight = 64 (was 52)
-    color: '#A9A9A9',  // Figma: "My" in gray to match Profile Main screen pattern
-    letterSpacing: -2,  // Figma: h1 letterSpacing = -2 (was -1)
+    fontSize: 48,
+    lineHeight: 64,
+    letterSpacing: -2,
+    color: colors.white,
+    maxWidth: 313,    // Blueprint: text node width=313, forces 2-line wrap
   },
-  titleProfile: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,       // Figma: h1 = 48px (was 40)
-    lineHeight: 64,     // Figma: h1 lineHeight = 64 (was 52)
-    color: EDIT_COLORS.accentOrange,
-    letterSpacing: -2,  // Figma: h1 letterSpacing = -2 (was -1)
+  // "My " span: #A9A9A9
+  titleGray: {
+    color: '#A9A9A9',
+  },
+  // " " span: inherits default #FFFFFF
+  titleSpace: {
+    color: colors.white,
+  },
+  // "Profile" span: #FF9A6D
+  titleAccent: {
+    color: '#FF9A6D',
   },
   avatarSection: {
     flexDirection: 'row',
@@ -448,11 +379,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center' as const,
   },
   editPictureText: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: 14-500 = Medium weight (was SemiBold)
-    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: 12-500 = Medium weight
+    fontSize: 12,                          // Figma: 12px (was 14)
     lineHeight: 20,
     color: EDIT_COLORS.editButtonText,
-    textAlign: 'center' as const,         // Pixel-feedback: center-align button text
+    textAlign: 'center' as const,
   },
   formContainer: {
     gap: FIGMA_SPACING.formFieldGap, // 16 - Figma exact (was spacing.lg = 24)
@@ -460,78 +391,6 @@ const styles = StyleSheet.create({
   buttonSection: {
     // No extra paddingHorizontal; scrollContent provides it
     // Gap from scrollContent (40) handles spacing from form section
-  },
-  fieldContainer: {
-    gap: FIGMA_SPACING.labelInputGap, // 6 - Figma exact gap between label row and input box (was spacing.xs = 8)
-  },
-  fieldHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  fieldLabel: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: 12-500 = Medium weight (was Regular)
-    fontSize: 12,
-    lineHeight: 20,
-    color: EDIT_COLORS.labelColor,        // #A9A9A9
-  },
-  editText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: EDIT_COLORS.textSecondary,     // #878787
-  },
-  hintText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,         // Figma: hint text is 14px (Plus Jakarta Sans-14-400)
-    lineHeight: 20,
-    color: EDIT_COLORS.textSecondary, // #878787
-    flex: 1,
-    textAlign: 'right',   // Pixel-feedback: right-aligned hint text
-  },
-  inputContainer: {
-    height: 64,                           // Figma: input box height 64
-    borderWidth: 1,                       // Figma: full border (was borderBottomWidth only)
-    borderColor: EDIT_COLORS.inputBorder, // #4D4D4D
-    borderRadius: radius.md,              // 12 - Figma: borderRadius 12
-    paddingHorizontal: 16,                // Inner padding for text
-    justifyContent: 'center',             // Vertically center the text
-  },
-  fieldValue: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20,
-    lineHeight: 32,
-    color: EDIT_COLORS.inputText,         // #DDDDDD - Figma input text color (was textPrimary #FFFFFF)
-  },
-  fieldPlaceholder: {
-    color: EDIT_COLORS.textMuted,         // #222222
-  },
-  phoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 64,                           // Match input box height
-    borderWidth: 1,
-    borderColor: EDIT_COLORS.inputBorder, // #4D4D4D
-    borderRadius: radius.md,              // 12
-    paddingHorizontal: 16,
-    gap: spacing.md,
-  },
-  countryCodeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xxs,
-  },
-  countryCode: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20,
-    lineHeight: 32,
-    color: EDIT_COLORS.textMuted,
-  },
-  phoneNumber: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20,
-    lineHeight: 32,
-    color: EDIT_COLORS.textMuted,
   },
   saveButton: {
     borderRadius: radius.md,  // 12
@@ -545,10 +404,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,                    // 12 - match parent borderRadius
   },
   saveButtonText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    lineHeight: 24,
-    color: EDIT_COLORS.background,            // #131313 - Figma: dark text on orange button (was textPrimary #FFFFFF)
-    textAlign: 'center' as const,             // Pixel-feedback: center-align button text
+    fontFamily: 'PlusJakartaSans-Medium',      // Figma: 14-500 = Medium (was SemiBold)
+    fontSize: 14,                               // Figma: 14px (was 16)
+    lineHeight: 20,
+    color: EDIT_COLORS.textPrimary,            // #FFFFFF - Figma: white text on orange button
+    textAlign: 'center' as const,
   },
 });
