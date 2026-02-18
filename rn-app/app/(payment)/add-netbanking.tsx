@@ -16,7 +16,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput as RNTextInput,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -27,7 +26,7 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Rect, Line, G, Defs, ClipPath } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Screen, Text, PrimaryButton } from '@/src/components';
+import { Screen, Text, PrimaryButton, TextInput } from '@/src/components';
 import { useAddPaymentMethod, useDashboard } from '@/src/hooks';
 import { colors, spacing, radius, typography, fontFamily } from '@/src/theme';
 
@@ -407,75 +406,57 @@ export default function AddNetbankingScreen() {
               </View>
             </View>
 
-            {/* Card Input Fields — Figma: borders #4D4D4D, borderRadius 12 */}
+            {/* Card Input Fields — using shared TextInput with light variant */}
             <View style={styles.cardInputSection}>
-              {/* Card Number */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Card number</Text>
-                <View style={styles.inputContainer}>
-                  <RNTextInput
-                    style={styles.inputField}
-                    placeholder="XXXX XXXX XXXX XXXX"
-                    placeholderTextColor={FIGMA.colors.hintText}
-                    value={cardNumber}
-                    onChangeText={setCardNumber}
-                    keyboardType="number-pad"
-                    maxLength={19}
-                  />
-                  <Text style={styles.inputHint}>Hint text</Text>
-                </View>
-              </View>
+              <TextInput
+                label="Card number"
+                value={cardNumber}
+                onChangeText={setCardNumber}
+                placeholder="XXXX XXXX XXXX XXXX"
+                hintText="Hint text"
+                variant="light"
+                keyboardType="number-pad"
+                maxLength={19}
+              />
 
               {/* Expiry + CVV Row */}
               <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>Expiry date</Text>
-                  <View style={styles.inputContainer}>
-                    <RNTextInput
-                      style={styles.inputField}
-                      placeholder="MM/YY"
-                      placeholderTextColor={FIGMA.colors.hintText}
-                      value={expiryDate}
-                      onChangeText={setExpiryDate}
-                      keyboardType="number-pad"
-                      maxLength={5}
-                    />
-                    <Text style={styles.inputHint}>Hint text</Text>
-                  </View>
+                <View style={{ flex: 1 }}>
+                  <TextInput
+                    label="Expiry date"
+                    value={expiryDate}
+                    onChangeText={setExpiryDate}
+                    placeholder="MM/YY"
+                    hintText="Hint text"
+                    variant="light"
+                    keyboardType="number-pad"
+                    maxLength={5}
+                  />
                 </View>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>CVV</Text>
-                  <View style={styles.inputContainer}>
-                    <RNTextInput
-                      style={styles.inputField}
-                      placeholder="***"
-                      placeholderTextColor={FIGMA.colors.hintText}
-                      value={cvv}
-                      onChangeText={setCvv}
-                      keyboardType="number-pad"
-                      maxLength={4}
-                      secureTextEntry
-                    />
-                    <Text style={styles.inputHint}>Hint text</Text>
-                  </View>
+                <View style={{ flex: 1 }}>
+                  <TextInput
+                    label="CVV"
+                    value={cvv}
+                    onChangeText={setCvv}
+                    placeholder="***"
+                    hintText="Hint text"
+                    variant="light"
+                    keyboardType="number-pad"
+                    maxLength={4}
+                    secureTextEntry
+                  />
                 </View>
               </View>
 
-              {/* Card Holder Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Card holder name</Text>
-                <View style={styles.inputContainer}>
-                  <RNTextInput
-                    style={styles.inputField}
-                    placeholder="Name on card"
-                    placeholderTextColor={FIGMA.colors.hintText}
-                    value={cardHolderName}
-                    onChangeText={setCardHolderName}
-                    autoCapitalize="words"
-                  />
-                  <Text style={styles.inputHint}>Hint text</Text>
-                </View>
-              </View>
+              <TextInput
+                label="Card holder name"
+                value={cardHolderName}
+                onChangeText={setCardHolderName}
+                placeholder="Name on card"
+                hintText="Hint text"
+                variant="light"
+                autoCapitalize="words"
+              />
             </View>
 
             {/* Payment Details Section */}
@@ -763,47 +744,7 @@ const styles = StyleSheet.create({
   cardInputSection: {
     gap: spacing.md, // 16
   },
-  inputGroup: {
-    gap: spacing.xs, // 8
-  },
-  inputLabel: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.labelMd.fontSize, // 12
-    fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
-    lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
-    color: FIGMA.colors.textGray, // #A9A9A9
-    textAlign: 'left',
-  },
-  inputContainer: {
-    borderWidth: 1,
-    borderColor: FIGMA.colors.inputBorder, // #4D4D4D
-    borderRadius: radius.md, // 12
-    paddingHorizontal: spacing.md, // 16
-    paddingVertical: spacing.sm, // 12
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.white,
-  },
-  inputField: {
-    flex: 1,
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.inputText.fontSize, // 20
-    fontWeight: FIGMA.typography.inputText.fontWeight, // 400
-    lineHeight: FIGMA.typography.inputText.lineHeight, // 28
-    color: colors.black[700], // #131313
-    textAlign: 'left',
-    padding: 0,
-  },
-  // Figma I41:8605;99:1459, I41:8606;99:1459 etc — textAlignHorizontal: RIGHT
-  inputHint: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.hintText.fontSize, // 14
-    fontWeight: FIGMA.typography.hintText.fontWeight, // 400
-    lineHeight: FIGMA.typography.hintText.lineHeight, // 20
-    color: FIGMA.colors.hintText, // #878787
-    textAlign: 'right',
-  },
+  // Form fields use shared TextInput (light variant) — styles handled internally
   inputRow: {
     flexDirection: 'row',
     gap: spacing.md, // 16

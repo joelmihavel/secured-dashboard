@@ -21,20 +21,16 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  TextInput as RNTextInput,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useVerifyBank, useDashboard, validateAccountNumber, validateIfscCode } from '@/src/hooks';
 import type { BankVerificationResponse, SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme/colors';
-import { spacing } from '@/src/theme/spacing';
-import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 
 // Figma exact values from 1-33737 extraction mapped to design tokens
 const FIGMA = {
@@ -260,43 +256,32 @@ export default function AddBankScreen() {
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            paddingHorizontal: scaledSpacing(spacing.xxxl), // Figma padding = 48px
-            paddingTop: insets.top + scaledSpacing(spacing.md), // spacing.md = 16px
-            paddingBottom: insets.bottom + scaledSpacing(spacing.xl), // spacing.xl = 32px
+            paddingHorizontal: 48,
+            paddingTop: insets.top + 16,
+            paddingBottom: insets.bottom + 32,
           }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Back button */}
-          <TouchableOpacity onPress={handleBack} style={{ marginBottom: scaledSpacing(spacing.xxl) }}>
-            <Ionicons name="arrow-back" size={scaled(24)} color={colors.white} />
+          <TouchableOpacity onPress={handleBack} style={{ marginBottom: 40 }}>
+            <Ionicons name="arrow-back" size={24} color={colors.white} />
           </TouchableOpacity>
 
-          {/* Title - Figma: fontSize 48, fontWeight 400, lineHeight 64, letterSpacing -2 */}
-          <View style={{ marginBottom: scaledSpacing(spacing.xxxl) }}>
-            <Text
-              style={{
-                fontFamily: 'PlusJakartaSans-Regular',
-                fontSize: scaledFont(FIGMA.typography.title.fontSize),
-                lineHeight: scaledFont(FIGMA.typography.title.lineHeight),
-                letterSpacing: FIGMA.typography.title.letterSpacing,
-                color: FIGMA.colors.title,
-              }}
-            >
-              Add your Landlord's{'\n'}
-              <Text style={{ color: FIGMA.colors.accent }}>Bank Details</Text>
-            </Text>
+          {/* Title */}
+          <View style={{ marginBottom: 48 }}>
+            <ScreenTitle white="Add your Landlord's" accent="Bank Details" />
           </View>
 
           {/* Progress Bar - Figma: height 12, track #4D4D4D, fill #CC7B57 width 131 */}
-          <View style={{ marginBottom: scaledSpacing(spacing.xxxl), width: '100%' }}>
+          <View style={{ marginBottom: 48, width: '100%' }}>
             <View style={{
-              height: scaled(FIGMA.layout.progressBarHeight),
+              height: 12,
               backgroundColor: FIGMA.colors.progressTrack,
               width: '100%',
             }}>
               <View style={{
-                width: scaled(FIGMA.layout.progressFillWidth),
+                width: 131,
                 height: '100%',
                 backgroundColor: FIGMA.colors.progressFill,
               }} />
@@ -321,136 +306,62 @@ export default function AddBankScreen() {
           )}
 
           {/* Form - Figma: gap 16 between fields */}
-          <View style={{ gap: scaled(FIGMA.layout.formGap) }}>
+          <View style={{ gap: 16 }}>
+            <TextInput
+              label="Account Holder Name"
+              value={accountHolderName}
+              onChangeText={handleAccountHolderNameChange}
+              placeholder="e.g. John Smith"
+              error={errors.accountHolderName}
+              hintText="edit"
+              disabled={verifyBank.isPending}
+              autoCapitalize="words"
+            />
 
-            {/* Account Holder Name */}
-            <View>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Account Holder Name</Text>
-                {errors.accountHolderName ? (
-                  <Text style={styles.errorHint}>{errors.accountHolderName}</Text>
-                ) : (
-                  <TouchableOpacity>
-                    <Text style={styles.editLink}>edit</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={[styles.inputContainer, errors.accountHolderName && styles.inputError]}>
-                <RNTextInput
-                  style={styles.input}
-                  value={accountHolderName}
-                  onChangeText={handleAccountHolderNameChange}
-                  placeholder="e.g. John Smith"
-                  placeholderTextColor={FIGMA.colors.placeholder}
-                  autoCapitalize="words"
-                  editable={!verifyBank.isPending}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="Account holder number"
+              value={accountNumber}
+              onChangeText={handleAccountNumberChange}
+              placeholder="e.g. 1234567890"
+              error={errors.accountNumber}
+              hintText="edit"
+              disabled={verifyBank.isPending}
+              keyboardType="number-pad"
+            />
 
-            {/* Account Number */}
-            <View>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Account holder number</Text>
-                {errors.accountNumber ? (
-                  <Text style={styles.errorHint}>{errors.accountNumber}</Text>
-                ) : (
-                  <TouchableOpacity>
-                    <Text style={styles.editLink}>edit</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={[styles.inputContainer, errors.accountNumber && styles.inputError]}>
-                <RNTextInput
-                  style={styles.input}
-                  value={accountNumber}
-                  onChangeText={handleAccountNumberChange}
-                  placeholder="e.g. 1234567890"
-                  placeholderTextColor={FIGMA.colors.placeholder}
-                  keyboardType="number-pad"
-                  editable={!verifyBank.isPending}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="IFSC Code"
+              value={ifscCode}
+              onChangeText={handleIfscCodeChange}
+              placeholder="e.g. SBIN0002125"
+              error={errors.ifscCode}
+              hintText="edit"
+              disabled={verifyBank.isPending}
+              autoCapitalize="characters"
+            />
 
-            {/* IFSC Code */}
-            <View>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>IFSC Code</Text>
-                {errors.ifscCode ? (
-                  <Text style={styles.errorHint}>{errors.ifscCode}</Text>
-                ) : (
-                  <TouchableOpacity>
-                    <Text style={styles.editLink}>edit</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={[styles.inputContainer, errors.ifscCode && styles.inputError]}>
-                <RNTextInput
-                  style={styles.input}
-                  value={ifscCode}
-                  onChangeText={handleIfscCodeChange}
-                  placeholder="e.g. SBIN0002125"
-                  placeholderTextColor={FIGMA.colors.placeholder}
-                  autoCapitalize="characters"
-                  editable={!verifyBank.isPending}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="PAN CARD"
+              value={panCard}
+              onChangeText={handlePanCardChange}
+              placeholder="e.g. CSNPM9874A"
+              error={errors.panCard}
+              hintText="edit"
+              disabled={verifyBank.isPending}
+              autoCapitalize="characters"
+            />
 
-            {/* PAN Card */}
-            <View>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>PAN CARD</Text>
-                {errors.panCard ? (
-                  <Text style={styles.errorHint}>{errors.panCard}</Text>
-                ) : (
-                  <TouchableOpacity>
-                    <Text style={styles.editLink}>edit</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={[styles.inputContainer, errors.panCard && styles.inputError]}>
-                <RNTextInput
-                  style={styles.input}
-                  value={panCard}
-                  onChangeText={handlePanCardChange}
-                  placeholder="e.g. CSNPM9874A"
-                  placeholderTextColor={FIGMA.colors.placeholder}
-                  autoCapitalize="characters"
-                  editable={!verifyBank.isPending}
-                />
-              </View>
-            </View>
-
-            {/* Submit Button - Figma: width 297, height 56, borderRadius 12 */}
-            <TouchableOpacity
-              style={[
-                styles.button,
-                isFormValid && !verifyBank.isPending && { backgroundColor: FIGMA.colors.buttonActiveBg },
-              ]}
+            <PrimaryButton
+              title="Proceed"
               onPress={handleSubmit}
-              disabled={!isFormValid || verifyBank.isPending}
-            >
-              {verifyBank.isPending ? (
-                <ActivityIndicator size="small" color={FIGMA.colors.buttonActiveText} />
-              ) : (
-                <Text
-                  style={[
-                    styles.buttonText,
-                    isFormValid && { color: FIGMA.colors.buttonActiveText },
-                  ]}
-                >
-                  Proceed
-                </Text>
-              )}
-            </TouchableOpacity>
+              disabled={!isFormValid}
+              loading={verifyBank.isPending}
+            />
 
             {/* Footer */}
             <Text style={styles.footerText}>
               You may get a verification message from Cashfree to verify your profile and unlock benefits.
             </Text>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -462,118 +373,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: scaled(6), // Figma: 6px gap between label and input
-  },
-  label: {
-    // Figma: fontSize 12, fontWeight 500, lineHeight 20, color #A9A9A9
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(12),
-    lineHeight: scaledFont(20),
-    letterSpacing: 0,
-    color: '#A9A9A9',
-    textAlign: 'left', // Explicit alignment for Figma parity
-  },
-  editLink: {
-    // Figma: fontSize 14, fontWeight 400, lineHeight 20, color #878787, textAlign right
-    // Figma Nodes: I1:31561;99:1464, I1:31562;99:1501
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(14),
-    lineHeight: scaledFont(20),
-    letterSpacing: 0,
-    color: '#878787',
-    textAlign: 'right', // Fix applied per pixel feedback
-  },
-  inputContainer: {
-    // Figma: width 297, height 64, borderColor #4D4D4D, borderWidth 1, borderRadius 12
-    width: '100%',
-    height: scaled(64),
-    borderWidth: 1,
-    borderColor: '#4D4D4D',
-    borderRadius: scaled(12),
-    paddingHorizontal: scaled(16),
-    justifyContent: 'center',
-  },
-  inputError: {
-    borderColor: '#E5484D',
-  },
-  input: {
-    // Figma: fontSize 20, fontWeight 400, lineHeight 32, color #FFFFFF (or #444444 for placeholder)
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(20),
-    lineHeight: scaledFont(32),
-    letterSpacing: 0,
-    color: '#FFFFFF',
-    height: '100%',
-    textAlign: 'left', // Explicit alignment for Figma parity
-  },
-  button: {
-    // Figma: width 297, height 56, backgroundColor #202020, borderRadius 12
-    width: '100%',
-    height: scaled(56),
-    backgroundColor: '#202020',
-    borderRadius: scaled(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: scaled(16),
-  },
-  buttonText: {
-    // Figma: fontSize 16, fontWeight 500, lineHeight 24, color #444444 (disabled)
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(16),
-    lineHeight: scaledFont(24),
-    letterSpacing: 0,
-    color: '#444444',
-    textAlign: 'center', // Explicit alignment for Figma parity
-  },
+  // Form fields and button use shared TextInput/PrimaryButton — styles handled internally
   footerText: {
     // Figma: fontSize 12, fontWeight 400, lineHeight 20, color #A9A9A9
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(12),
-    lineHeight: scaledFont(20),
-    letterSpacing: 0,
-    color: '#A9A9A9',
-    marginTop: scaled(16),
-    textAlign: 'left', // Explicit alignment for Figma parity
-  },
-  errorHint: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(14),
-    lineHeight: scaledFont(20),
-    color: '#E5484D',
-    textAlign: 'right' as const,
+    fontSize: 12,
+    lineHeight: 20,
+    color: colors.neutral[500],        // #A9A9A9
+    marginTop: 16,
+    textAlign: 'left',
   },
   errorBanner: {
     backgroundColor: 'rgba(229, 72, 77, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(229, 72, 77, 0.3)',
-    borderRadius: scaled(8),
-    padding: scaled(12),
-    marginBottom: scaled(16),
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
   },
   errorBannerText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(13),
-    lineHeight: scaledFont(18),
-    color: '#E5484D',
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.error.radix,          // #E5484D
     textAlign: 'left' as const,
   },
   successBanner: {
     backgroundColor: 'rgba(70, 167, 88, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(70, 167, 88, 0.3)',
-    borderRadius: scaled(8),
-    padding: scaled(12),
-    marginBottom: scaled(16),
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
   },
   successBannerText: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(13),
-    lineHeight: scaledFont(18),
-    color: '#46A758',
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.success.dark,         // #27803B (closest token)
     textAlign: 'left' as const,
   },
 });

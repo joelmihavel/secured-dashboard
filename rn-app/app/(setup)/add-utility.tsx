@@ -22,7 +22,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  TextInput as RNTextInput,
   ActivityIndicator,
   Modal,
   FlatList,
@@ -32,7 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useVerifyUtility, useUtilityOperators, useDashboard, validateConsumerNumber } from '@/src/hooks';
 import type { UtilityOperator, SetupError } from '@/src/types/setup';
 import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
@@ -213,12 +212,8 @@ export default function AddUtilityScreen() {
                 <Ionicons name="arrow-back" size={scaled(24)} color="white" />
               </TouchableOpacity>
 
-              {/* Title - Figma: "Verify your" (#A9A9A9) + "address" (#FF9A6D) */}
-              {/* Using nested Text for multi-style single-line text per analysis report */}
-              <Text style={styles.titleGray}>
-                Verify your{'\n'}
-                <Text style={styles.titleAccent}>address</Text>
-              </Text>
+              {/* Title */}
+              <ScreenTitle gray="Verify your" accent="address" />
 
               {/* Description */}
               <Text style={styles.description}>
@@ -273,49 +268,26 @@ export default function AddUtilityScreen() {
                 </View>
 
                 {/* Consumer Number Input */}
-                <View>
-                  <View style={styles.labelRow}>
-                    <Text style={styles.label}>
-                      Enter {selectedOperator?.operatorName ?? 'Account'} Number
-                    </Text>
-                    {errors.consumerNumber ? (
-                      <Text style={styles.errorHint}>{errors.consumerNumber}</Text>
-                    ) : (
-                      <TouchableOpacity>
-                        <Text style={styles.editLink}>edit</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <View style={[styles.inputContainer, errors.consumerNumber && styles.inputError]}>
-                    <RNTextInput
-                      style={[styles.input, { flex: 1 }]}
-                      value={consumerNumber}
-                      onChangeText={handleConsumerNumberChange}
-                      placeholder="e.g. 1234567890"
-                      placeholderTextColor={FIGMA.colors.placeholder}
-                      keyboardType="number-pad"
-                      editable={!verifyUtility.isPending}
-                    />
-                  </View>
-                </View>
+                <TextInput
+                  label={`Enter ${selectedOperator?.operatorName ?? 'Account'} Number`}
+                  value={consumerNumber}
+                  onChangeText={handleConsumerNumberChange}
+                  placeholder="e.g. 1234567890"
+                  error={errors.consumerNumber}
+                  hintText="edit"
+                  disabled={verifyUtility.isPending}
+                  keyboardType="number-pad"
+                />
               </View>
 
               {/* Button Section - Figma: gap: 16 */}
               <View style={styles.buttonSection}>
-                {/* Submit Button */}
-                <TouchableOpacity
-                  style={[styles.button, isFormValid && !verifyUtility.isPending && styles.buttonActive]}
+                <PrimaryButton
+                  title="Proceed"
                   onPress={handleSubmit}
-                  disabled={!isFormValid || verifyUtility.isPending}
-                >
-                  {verifyUtility.isPending ? (
-                    <ActivityIndicator size="small" color={FIGMA.colors.buttonTextActive} />
-                  ) : (
-                    <Text style={[styles.buttonText, isFormValid && styles.buttonTextActive]}>
-                      Proceed
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                  disabled={!isFormValid}
+                  loading={verifyUtility.isPending}
+                />
 
                 {/* Skip Button */}
                 <TouchableOpacity onPress={handleSkip} style={styles.skipButton} disabled={verifyUtility.isPending}>

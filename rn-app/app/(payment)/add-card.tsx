@@ -38,15 +38,13 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
-  TextInput as RNTextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle } from 'react-native-svg';
 
-import { Screen, Text, PrimaryButton } from '@/src/components';
+import { Screen, Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
 import { useAddPaymentMethod, useAddCardToken, useDashboard } from '@/src/hooks';
 import type { AddCardTokenRequest } from '@/src/services/api/payments';
 
@@ -249,116 +247,65 @@ export default function AddCardScreen() {
             <BackArrow />
           </TouchableOpacity>
 
-          {/* Title Section - Figma: h1 48px, lineHeight 64, letterSpacing -2 */}
-          <View style={styles.titleSection}>
-            <Text style={styles.titleWhite}>Add your</Text>
-            <Text style={styles.titleAccent}>Credit Card</Text>
-          </View>
+          {/* Title Section */}
+          <ScreenTitle white="Add your" accent="Credit Card" />
 
           {/* Cardholder Name Field */}
-          <View style={styles.fieldContainer}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Cardholder name</Text>
-              <Pressable>
-                <Text style={styles.editLink}>edit</Text>
-              </Pressable>
-            </View>
-            <RNTextInput
-              style={[
-                styles.input,
-                cardholderName ? styles.inputFilled : styles.inputPlaceholder,
-              ]}
-              value={cardholderName}
-              onChangeText={setCardholderName}
-              placeholder="e.g. John Smith"
-              placeholderTextColor={FIGMA_COLORS.inputPlaceholder}
-              autoCapitalize="words"
-              testID="cardholder-input"
-            />
-            <View style={styles.inputUnderline} />
-          </View>
+          <TextInput
+            label="Cardholder name"
+            value={cardholderName}
+            onChangeText={setCardholderName}
+            placeholder="e.g. John Smith"
+            hintText="edit"
+            autoCapitalize="words"
+            testID="cardholder-input"
+          />
 
           {/* Card Number Field */}
-          <View style={styles.fieldContainer}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Card number</Text>
-              <Pressable>
-                <Text style={styles.editLink}>edit</Text>
-              </Pressable>
-            </View>
-            <RNTextInput
-              style={[
-                styles.input,
-                cardNumber ? styles.inputFilled : styles.inputPlaceholder,
-              ]}
-              value={cardNumber}
-              onChangeText={(text) => {
-                setCardNumber(formatCardNumber(text));
-                setError('');
-              }}
-              placeholder="e.g. 1234 5678 9012 3456"
-              placeholderTextColor={FIGMA_COLORS.inputPlaceholder}
-              keyboardType="number-pad"
-              maxLength={19}
-              testID="card-number-input"
-            />
-            <View style={styles.inputUnderline} />
-          </View>
+          <TextInput
+            label="Card number"
+            value={cardNumber}
+            onChangeText={(text) => {
+              setCardNumber(formatCardNumber(text));
+              setError('');
+            }}
+            placeholder="e.g. 1234 5678 9012 3456"
+            hintText="edit"
+            keyboardType="number-pad"
+            maxLength={19}
+            testID="card-number-input"
+          />
 
           {/* Expiry Date Field */}
-          <View style={styles.fieldContainer}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Expiry date</Text>
-              <Pressable>
-                <Text style={styles.editLink}>edit</Text>
-              </Pressable>
-            </View>
-            <RNTextInput
-              style={[
-                styles.input,
-                expiryDate ? styles.inputFilled : styles.inputPlaceholder,
-              ]}
-              value={expiryDate}
-              onChangeText={(text) => {
-                setExpiryDate(formatExpiryDate(text));
-                setError('');
-              }}
-              placeholder="e.g. MM/YY"
-              placeholderTextColor={FIGMA_COLORS.inputPlaceholder}
-              keyboardType="number-pad"
-              maxLength={5}
-              testID="expiry-input"
-            />
-            <View style={styles.inputUnderline} />
-          </View>
+          <TextInput
+            label="Expiry date"
+            value={expiryDate}
+            onChangeText={(text) => {
+              setExpiryDate(formatExpiryDate(text));
+              setError('');
+            }}
+            placeholder="e.g. MM/YY"
+            hintText="edit"
+            keyboardType="number-pad"
+            maxLength={5}
+            testID="expiry-input"
+          />
 
           {/* CVV Field */}
-          <View style={styles.fieldContainer}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>CVV</Text>
-              <Pressable>
-                <Text style={styles.editLink}>edit</Text>
-              </Pressable>
-            </View>
-            <RNTextInput
-              style={[
-                styles.input,
-                cvv ? styles.inputFilled : styles.inputPlaceholder,
-              ]}
-              value={cvv}
-              onChangeText={(text) => {
-                setCvv(text.replace(/\D/g, ''));
-                setError('');
-              }}
-              placeholder="e.g. ***"
-              placeholderTextColor={FIGMA_COLORS.inputPlaceholder}
-              keyboardType="number-pad"
-              maxLength={4}
-              secureTextEntry
-              testID="cvv-input"
-            />
-            <View style={styles.inputUnderline} />
-          </View>
+          <TextInput
+            label="CVV"
+            value={cvv}
+            onChangeText={(text) => {
+              setCvv(text.replace(/\D/g, ''));
+              setError('');
+            }}
+            placeholder="e.g. ***"
+            hintText="edit"
+            keyboardType="number-pad"
+            maxLength={4}
+            secureTextEntry
+            testID="cvv-input"
+          />
 
           {/* Error Message */}
           {error ? (
@@ -571,67 +518,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 40,
   },
-  titleSection: {
-    marginBottom: 48,
-  },
-  // Figma: h1 - 48px, lineHeight 64, letterSpacing -2, weight 400, textAlign LEFT
-  titleWhite: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,
-    lineHeight: 64,
-    letterSpacing: -2,
-    color: FIGMA_COLORS.titleWhite,
-  },
-  titleAccent: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,
-    lineHeight: 64,
-    letterSpacing: -2,
-    color: FIGMA_COLORS.titleAccent,
-  },
-  fieldContainer: {
-    marginBottom: 16, // Figma: 16px gap between form fields
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8, // Figma: 8px gap between label and input
-  },
-  // Figma: Label - bodyXsMedium, 12px, fontWeight 500, #A9A9A9, textAlign LEFT
-  label: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA_COLORS.labelText,
-  },
-  // Figma: "Hint text" (I41:8526;99:1464) - bodySm, 14px, fontWeight 400, #878787, textAlign RIGHT
-  editLink: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.editLinkText,
-    textAlign: 'right',
-  },
-  // Figma: "Text" input value - bodyLg, 20px, fontWeight 400, #DDDDDD, textAlign LEFT
-  input: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20,
-    lineHeight: 32,
-    paddingVertical: 0,
-  },
-  inputPlaceholder: {
-    color: FIGMA_COLORS.inputPlaceholder,
-  },
-  inputFilled: {
-    color: FIGMA_COLORS.inputValue,
-  },
-  // Figma: underline/border - #4D4D4D
-  inputUnderline: {
-    height: 1,
-    backgroundColor: FIGMA_COLORS.inputBorder,
-    marginTop: 12,
-  },
+  // Title uses shared ScreenTitle component
+  // Form fields use shared TextInput component — styles handled internally
   errorText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,

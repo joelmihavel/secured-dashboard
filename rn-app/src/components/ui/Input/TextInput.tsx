@@ -2,19 +2,24 @@
  * Text Input Component
  * Figma: Form input with label
  *
- * EXACT Figma Values (Dark theme):
- * - Label: Plus Jakarta Sans Medium (500), 12px, line-height 20px, #a9a9a9
+ * EXACT Figma Values (Dark theme) — verified from blueprint data:
+ * - Label: Plus Jakarta Sans Regular (400), 12px, line-height 20px, #A9A9A9
  * - Label to input gap: 6px
- * - Input text: Plus Jakarta Sans Regular, 20px, line-height 32px
- * - Placeholder color: #444444 (neutral/800)
- * - Filled text color: #dddddd (neutral/200)
+ * - Input text: Plus Jakarta Sans Regular (400), 20px, line-height 32px
+ * - Placeholder color: #444444 (neutral/800) — confirmed from Figma text node fills
+ * - Filled text color: #DDDDDD (neutral/200)
  * - Input padding: 16px vertical, 0px horizontal
- * - No visible border by default
+ * - No visible border by default (Figma: stroke visible:false in empty state)
+ * - Focus border: #FF9A6D (brand accent)
+ * - Error border: #E5484D
  *
  * Light theme variant (for white backgrounds like bottom sheets):
  * - Placeholder: #797979
  * - Filled text: #131313
  * - Border: #CBCBCB
+ *
+ * NOTE: #222222 is the INPUT CONTAINER background fill (invisible), NOT the placeholder text color.
+ * All screens use this same component — do NOT rebuild inputs per screen.
  */
 
 import React, { memo, useState, useCallback, forwardRef } from 'react';
@@ -28,16 +33,17 @@ import {
 import { Text } from '../Typography';
 
 // Exact Figma color values - Dark theme
-// Verified from Figma extraction 1-29108: Name input node I90:2897;47:5569
+// Verified from Figma blueprints: text node fills confirm #444444 for placeholder text.
+// #222222 was the CONTAINER background fill (visible:false), NOT the text color.
 const INPUT_COLORS_DARK = {
-  label: '#a9a9a9',
+  label: '#A9A9A9',                // Figma: neutral/500
   labelError: '#E5484D',
-  placeholder: '#222222',          // Figma REST API: #222222 (node I90:2897;47:5569)
-  hintText: '#878787',             // Figma hint text color (neutral/600)
-  textFilled: '#dddddd',
-  textError: '#E5484D',             // Figma: error text color (matches labelError/borderError)
-  border: '#4D4D4D',              // Figma: I90:2897;47:5566 borderColor #4D4D4D (full border box)
-  borderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
+  placeholder: '#444444',          // Figma blueprint: text fill #444444 (neutral/800)
+  hintText: '#878787',             // Figma: hint text color (neutral/600)
+  textFilled: '#DDDDDD',           // Figma: neutral/200
+  textError: '#E5484D',            // Figma: error text color
+  border: '#4D4D4D',              // Figma: stroke (visible:false in empty state, used on focus)
+  borderFocus: '#FF9A6D',         // Figma: brand accent on focus
   borderError: '#E5484D',
 } as const;
 

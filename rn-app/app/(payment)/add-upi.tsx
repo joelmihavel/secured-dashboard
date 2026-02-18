@@ -46,15 +46,13 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
-  TextInput as RNTextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text, PrimaryButton } from '@/src/components';
+import { Screen, Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
 import { useAddUpiVpa, useVerifyUpi } from '@/src/hooks';
 import { colors, spacing, typography } from '@/src/theme';
 
@@ -123,8 +121,6 @@ export default function AddUpiScreen() {
 
   const [accountName, setAccountName] = useState('');
   const [upiId, setUpiId] = useState('');
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingUpi, setIsEditingUpi] = useState(false);
   const [error, setError] = useState('');
   const [isVerified, setIsVerified] = useState(false);
 
@@ -235,62 +231,35 @@ export default function AddUpiScreen() {
             <BackArrow />
           </TouchableOpacity>
 
-          {/* Title Section - h1 typography (48px/64px) */}
-          <View style={styles.titleSection}>
-            <Text style={styles.titleWhite}>Add your</Text>
-            <Text style={styles.titleAccent}>UPI Method</Text>
-          </View>
+          {/* Title Section */}
+          <ScreenTitle white="Add your" accent="UPI Method" />
 
           {/* Form Section */}
           <View style={styles.formSection}>
-            {/* Account Holder Name Field */}
-            <View style={styles.fieldContainer}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Account holder name</Text>
-                <Pressable onPress={() => setIsEditingName(true)}>
-                  <Text style={styles.editLink}>edit</Text>
-                </Pressable>
-              </View>
-              <RNTextInput
-                style={[
-                  styles.input,
-                  accountName ? styles.inputFilled : styles.inputPlaceholder,
-                ]}
-                value={accountName}
-                onChangeText={setAccountName}
-                placeholder="e.g. John Smith"
-                placeholderTextColor={FIGMA.colors.inputPlaceholder}
-                autoCapitalize="words"
-                testID="account-name-input"
-              />
-            </View>
+            <TextInput
+              label="Account holder name"
+              value={accountName}
+              onChangeText={setAccountName}
+              placeholder="e.g. John Smith"
+              hintText="edit"
+              autoCapitalize="words"
+              testID="account-name-input"
+            />
 
-            {/* UPI ID Field */}
-            <View style={styles.fieldContainer}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>UPI ID</Text>
-                <Pressable onPress={() => setIsEditingUpi(true)}>
-                  <Text style={styles.editLink}>edit</Text>
-                </Pressable>
-              </View>
-              <RNTextInput
-                style={[
-                  styles.input,
-                  upiId ? styles.inputFilled : styles.inputPlaceholder,
-                ]}
-                value={upiId}
-                onChangeText={(text) => {
-                  setUpiId(text.toLowerCase());
-                  setError('');
-                }}
-                placeholder="e.g. john@oksbi"
-                placeholderTextColor={FIGMA.colors.inputPlaceholder}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                testID="upi-id-input"
-              />
-            </View>
+            <TextInput
+              label="UPI ID"
+              value={upiId}
+              onChangeText={(text) => {
+                setUpiId(text.toLowerCase());
+                setError('');
+              }}
+              placeholder="e.g. john@oksbi"
+              hintText="edit"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              testID="upi-id-input"
+            />
 
             {/* Error Message */}
             {error ? (
@@ -356,92 +325,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
 
-  // Title section - h1 typography from design tokens
-  titleSection: {
-    gap: 0, // No gap between title lines
-  },
-  // Title white part: h1 typography (48px/64px, letterSpacing -2)
-  titleWhite: {
-    fontFamily: typography.h1.fontFamily,
-    fontSize: typography.h1.fontSize,         // 48px
-    lineHeight: typography.h1.lineHeight,     // 64px
-    letterSpacing: typography.h1.letterSpacing, // -2
-    fontWeight: typography.h1.fontWeight,     // 400
-    color: FIGMA.colors.titleWhite,          // #FFFFFF
-    textAlign: 'left' as const,              // Figma: LEFT alignment
-  },
-  // Title accent part: same h1 typography with accent color
-  titleAccent: {
-    fontFamily: typography.h1.fontFamily,
-    fontSize: typography.h1.fontSize,         // 48px
-    lineHeight: typography.h1.lineHeight,     // 64px
-    letterSpacing: typography.h1.letterSpacing, // -2
-    fontWeight: typography.h1.fontWeight,     // 400
-    color: FIGMA.colors.titleAccent,         // #FF9A6D
-    textAlign: 'left' as const,              // Figma: LEFT alignment
-  },
+  // Title uses shared ScreenTitle component
 
   // Form section with field gaps (Figma: 16px gap from Frame 2095586311)
   formSection: {
     gap: FIGMA.layout.fieldGap, // 16px between fields
-  },
-
-  // Field container
-  fieldContainer: {
-    gap: FIGMA.layout.labelInputGap, // 8px between label row and input
-  },
-
-  // Label row with edit link - justified
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  // Label text: bodySmMedium (12px/20px, weight 500) - Figma: #A9A9A9
-  label: {
-    fontFamily: typography.bodySmMedium.fontFamily,
-    fontSize: typography.bodySmMedium.fontSize,    // 12px
-    lineHeight: typography.bodySmMedium.lineHeight, // 20px
-    letterSpacing: typography.bodySmMedium.letterSpacing,
-    fontWeight: typography.bodySmMedium.fontWeight, // 500
-    color: FIGMA.colors.labelText,                 // #A9A9A9
-    textAlign: 'left' as const,                    // Figma: LEFT alignment
-  },
-
-  // Edit link: bodySm (12px/20px)
-  editLink: {
-    fontFamily: typography.bodySm.fontFamily,
-    fontSize: typography.bodySm.fontSize,
-    lineHeight: typography.bodySm.lineHeight,
-    letterSpacing: typography.bodySm.letterSpacing,
-    fontWeight: typography.bodySm.fontWeight,
-    color: FIGMA.colors.editLinkText,
-    textAlign: 'right', // Figma: RIGHT alignment for hint text
-  },
-
-  // Input field: bodyLg (20px/32px) - Figma: 20px input text
-  input: {
-    fontFamily: typography.bodyLg.fontFamily,
-    fontSize: typography.bodyLg.fontSize,           // 20px (was 14px - FIXED)
-    lineHeight: typography.bodyLg.lineHeight,       // 32px
-    letterSpacing: typography.bodyLg.letterSpacing,
-    fontWeight: typography.bodyLg.fontWeight,       // 400
-    paddingVertical: spacing.xs,
-    paddingHorizontal: 0,
-    textAlign: 'left' as const,                    // Figma: LEFT alignment
-  },
-  inputPlaceholder: {
-    color: FIGMA.colors.inputPlaceholder,          // #444444
-  },
-  inputFilled: {
-    color: colors.neutral[200],                    // #DDDDDD (was #FFFFFF - FIXED per Figma)
-  },
-
-  // Input underline (NOTE: no visible underlines in Figma design)
-  inputUnderline: {
-    height: 1,
-    backgroundColor: colors.neutral[300],          // #CBCBCB fallback
   },
 
   // Error text: bodySm (12px/20px)

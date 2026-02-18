@@ -22,18 +22,16 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  TextInput as RNTextInput,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Text } from '@/src/components';
+import { Screen, Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useSendLandlordInvite, useDashboard, validateEmail } from '@/src/hooks';
 import type { SetupError } from '@/src/types/setup';
-import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
+// Scaling removed — use raw Figma pixel values for consistency
 
 // Figma exact values from 1-31671 (extraction.json)
 // Screen: "auth / sign up --error 2" - mapped to invite landlord form
@@ -201,24 +199,21 @@ export default function InviteLandlordScreen() {
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
-            paddingHorizontal: scaledSpacing(FIGMA.dimensions.containerPadding), // 48px from Figma
-            paddingTop: insets.top + scaledSpacing(16),
-            paddingBottom: insets.bottom + scaledSpacing(32),
+            paddingHorizontal: 48,
+            paddingTop: insets.top + 16,
+            paddingBottom: insets.bottom + 32,
           }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Back button - Figma: 32x38.4 back arrow */}
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={scaled(24)} color={FIGMA.colors.title} />
+            <Ionicons name="arrow-back" size={24} color={FIGMA.colors.title} />
           </TouchableOpacity>
 
-          {/* Title - Figma: fontSize 48, lineHeight 64, letterSpacing -2 */}
+          {/* Title */}
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>
-              Invite your{'\n'}
-              <Text style={styles.titleAccent}>Landlord</Text>
-            </Text>
+            <ScreenTitle white="Invite your" accent="Landlord" />
           </View>
 
           {/* Progress Bar - visual indicator for step 1 of 3 */}
@@ -246,71 +241,38 @@ export default function InviteLandlordScreen() {
 
           {/* Form - Figma gap: 16px from extraction */}
           <View style={styles.formContainer}>
-            {/* Landlord Name Input */}
-            <View style={styles.inputGroup}>
-              {/* Label row with space-between - Figma: justifyContent: space-between */}
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Name</Text>
-                {errors.landlordName && (
-                  <Text style={styles.errorHint}>{errors.landlordName}</Text>
-                )}
-              </View>
-              <View style={[styles.inputContainer, errors.landlordName && styles.inputError]}>
-                <RNTextInput
-                  style={[styles.input, errors.landlordName && styles.inputTextError]}
-                  value={landlordName}
-                  onChangeText={handleLandlordNameChange}
-                  placeholder="e.g. John Smith"
-                  placeholderTextColor={FIGMA.colors.placeholder}
-                  autoCapitalize="words"
-                  editable={!sendLandlordInvite.isPending}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="Name"
+              value={landlordName}
+              onChangeText={handleLandlordNameChange}
+              placeholder="e.g. John Smith"
+              error={errors.landlordName}
+              disabled={sendLandlordInvite.isPending}
+              autoCapitalize="words"
+            />
 
-            {/* Email Input */}
-            <View style={styles.inputGroup}>
-              {/* Label row with space-between */}
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Email</Text>
-                {errors.landlordEmail && (
-                  <Text style={styles.errorHint}>{errors.landlordEmail}</Text>
-                )}
-              </View>
-              <View style={[styles.inputContainer, errors.landlordEmail && styles.inputError]}>
-                <RNTextInput
-                  style={[styles.input, errors.landlordEmail && styles.inputTextError]}
-                  value={landlordEmail}
-                  onChangeText={handleLandlordEmailChange}
-                  placeholder="e.g. landlord@email.com"
-                  placeholderTextColor={FIGMA.colors.placeholder}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  editable={!sendLandlordInvite.isPending}
-                />
-              </View>
-            </View>
+            <TextInput
+              label="Email"
+              value={landlordEmail}
+              onChangeText={handleLandlordEmailChange}
+              placeholder="e.g. landlord@email.com"
+              error={errors.landlordEmail}
+              disabled={sendLandlordInvite.isPending}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
           </View>
 
           {/* Button and Footer Container - Figma: gap 16 */}
           <View style={styles.buttonSection}>
-            {/* Submit Button - Figma: 297x56, borderRadius 12 */}
-            <TouchableOpacity
-              style={[styles.button, isFormValid && !sendLandlordInvite.isPending && styles.buttonActive]}
+            <PrimaryButton
+              title="Get Started"
               onPress={handleSubmit}
-              disabled={!isFormValid || sendLandlordInvite.isPending}
-            >
-              {sendLandlordInvite.isPending ? (
-                <ActivityIndicator size="small" color={FIGMA.colors.buttonTextActive} />
-              ) : (
-                <Text style={[styles.buttonText, isFormValid && styles.buttonTextActive]}>
-                  Get Started
-                </Text>
-              )}
-            </TouchableOpacity>
+              disabled={!isFormValid}
+              loading={sendLandlordInvite.isPending}
+            />
 
-            {/* Footer - Figma: fontSize 12, lineHeight 20, color #A9A9A9 */}
             <Text style={styles.footerText}>
               We will send an invite email to your landlord to approve the tenancy.
             </Text>
@@ -327,141 +289,42 @@ const styles = StyleSheet.create({
   },
   // Back button - positioned at top
   backButton: {
-    marginBottom: scaledSpacing(40),
+    marginBottom: 40,
   },
   // Title container - Figma: marginBottom 48 (sectionGap)
   titleContainer: {
-    marginBottom: scaledSpacing(FIGMA.dimensions.sectionGap), // 48px from extraction
+    marginBottom: 48,
   },
-  // Title text - Figma: fontSize 48, lineHeight 64, letterSpacing -2, fontWeight 400
-  title: {
-    fontFamily: FIGMA.typography.title.fontFamily,
-    fontSize: scaledFont(FIGMA.typography.title.fontSize), // 48
-    lineHeight: scaledFont(FIGMA.typography.title.lineHeight), // 64
-    letterSpacing: FIGMA.typography.title.letterSpacing, // -2
-    color: FIGMA.colors.title, // #FFFFFF
-  },
-  // Title accent - Figma: highlighted word in accent color
-  titleAccent: {
-    color: FIGMA.colors.accent, // #FF9A6D
-  },
+  // Title uses shared ScreenTitle component
   // Progress bar container - Figma: marginBottom 48
   progressContainer: {
-    marginBottom: scaledSpacing(FIGMA.dimensions.sectionGap), // 48px
+    marginBottom: 48,
     width: '100%',
   },
-  // Progress track - Figma: height 12, backgroundColor #4D4D4D
   progressTrack: {
-    height: scaled(12),
-    backgroundColor: FIGMA.colors.progressTrack, // #4D4D4D
+    height: 12,
+    backgroundColor: FIGMA.colors.progressTrack,
     width: '100%',
   },
-  // Progress fill - Figma: ~1/3 width for step 1
   progressFill: {
-    width: scaled(131), // 1/3 fill for Step 1 of 3
+    width: 131,
     height: '100%',
-    backgroundColor: FIGMA.colors.progressFill, // #CC7B57
+    backgroundColor: FIGMA.colors.progressFill,
   },
   // Form container - Figma: gap 16
   formContainer: {
-    gap: scaledSpacing(FIGMA.dimensions.formGap), // 16px from extraction
+    gap: 16,
   },
-  // Input group wrapper
-  inputGroup: {
-    // Each input field with label
-  },
-  // Label row - Figma: flexDirection row, justifyContent space-between, alignItems center
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: scaledSpacing(FIGMA.dimensions.labelInputGap), // 6px from extraction
-  },
-  // Label text - Figma: fontSize 12, lineHeight 20, fontWeight 400, color #A9A9A9
-  label: {
-    fontFamily: FIGMA.typography.label.fontFamily,
-    fontSize: scaledFont(FIGMA.typography.label.fontSize), // 12
-    lineHeight: scaledFont(FIGMA.typography.label.lineHeight), // 20
-    color: FIGMA.colors.label, // #A9A9A9
-  },
-  // Error hint text - Figma: fontSize 14, lineHeight 20, fontWeight 400, color #E5484D, textAlign right
-  errorHint: {
-    fontFamily: FIGMA.typography.errorHint.fontFamily,
-    fontSize: scaledFont(FIGMA.typography.errorHint.fontSize), // 14
-    lineHeight: scaledFont(FIGMA.typography.errorHint.lineHeight), // 20
-    color: FIGMA.colors.errorText, // #E5484D
-    textAlign: 'right' as const,
-  },
-  // Input container - Figma: width 297, height 64, border 1px #4D4D4D, borderRadius 12
-  inputContainer: {
-    width: scaled(FIGMA.dimensions.inputWidth), // 297px
-    height: scaled(FIGMA.dimensions.inputHeight), // 64px
-    borderWidth: 1,
-    borderColor: FIGMA.colors.inputBorder, // #4D4D4D
-    borderRadius: scaled(FIGMA.dimensions.inputRadius), // 12px
-    paddingVertical: scaledSpacing(16),
-    paddingHorizontal: scaledSpacing(16),
-    gap: scaledSpacing(16),
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-  },
-  // Input error state - Figma: borderColor #E5484D
-  inputError: {
-    borderColor: FIGMA.colors.inputBorderError, // #E5484D
-  },
-  // Input text - Figma: fontSize 20, lineHeight 32, fontWeight 400, color #DDDDDD
-  input: {
-    flex: 1,
-    fontFamily: FIGMA.typography.inputText.fontFamily,
-    fontSize: scaledFont(FIGMA.typography.inputText.fontSize), // 20
-    lineHeight: scaledFont(FIGMA.typography.inputText.lineHeight), // 32
-    color: FIGMA.colors.inputText, // #DDDDDD
-  },
-  // Input text error state - Figma: color #E5484D
-  inputTextError: {
-    color: FIGMA.colors.errorText, // #E5484D
-  },
-  // Button section - Figma: gap 16, marginTop 16
+  // Form fields and button use shared TextInput/PrimaryButton — styles handled internally
   buttonSection: {
-    gap: scaledSpacing(FIGMA.dimensions.formGap), // 16px
-    marginTop: scaledSpacing(FIGMA.dimensions.formGap), // 16px
+    gap: 16,
+    marginTop: 16,
   },
-  // Button - Figma: width 297, height 56, backgroundColor #202020, borderRadius 12
-  button: {
-    width: scaled(FIGMA.dimensions.buttonWidth), // 297px
-    height: scaled(FIGMA.dimensions.buttonHeight), // 56px
-    backgroundColor: FIGMA.colors.buttonBg, // #202020
-    borderColor: FIGMA.colors.buttonBorder, // #202020
-    borderWidth: 1,
-    borderRadius: scaled(FIGMA.dimensions.buttonRadius), // 12px
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: scaledSpacing(16),
-    paddingVertical: scaledSpacing(16),
-  },
-  // Button active state - Figma: backgroundColor accent
-  buttonActive: {
-    backgroundColor: FIGMA.colors.buttonBgActive, // #FF9A6D
-    borderColor: FIGMA.colors.buttonBgActive,
-  },
-  // Button text - Figma: fontSize 16, lineHeight 24, fontWeight 500, color #444444
-  buttonText: {
-    fontFamily: FIGMA.typography.buttonText.fontFamily,
-    fontSize: scaledFont(FIGMA.typography.buttonText.fontSize), // 16
-    lineHeight: scaledFont(FIGMA.typography.buttonText.lineHeight), // 24
-    color: FIGMA.colors.buttonText, // #444444
-    textAlign: 'center' as const,
-  },
-  // Button text active state
-  buttonTextActive: {
-    color: FIGMA.colors.buttonTextActive, // #000000
-  },
-  // Footer text - Figma: fontSize 12, lineHeight 20, fontWeight 400, color #A9A9A9
   footerText: {
-    fontFamily: FIGMA.typography.footer.fontFamily,
-    fontSize: scaledFont(FIGMA.typography.footer.fontSize), // 12
-    lineHeight: scaledFont(FIGMA.typography.footer.lineHeight), // 20
-    color: FIGMA.colors.footer, // #A9A9A9
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA.colors.footer,
     textAlign: 'left' as const,
   },
   // Error banner
@@ -469,14 +332,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(229, 72, 77, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(229, 72, 77, 0.3)',
-    borderRadius: scaled(8),
-    padding: scaled(12),
-    marginBottom: scaledSpacing(FIGMA.dimensions.formGap),
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
   },
   errorBannerText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(13),
-    lineHeight: scaledFont(18),
+    fontSize: 13,
+    lineHeight: 18,
     color: '#E5484D',
     textAlign: 'left' as const,
   },
@@ -485,14 +348,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(70, 167, 88, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(70, 167, 88, 0.3)',
-    borderRadius: scaled(8),
-    padding: scaled(12),
-    marginBottom: scaledSpacing(FIGMA.dimensions.formGap),
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
   },
   successBannerText: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(13),
-    lineHeight: scaledFont(18),
+    fontSize: 13,
+    lineHeight: 18,
     color: '#46A758',
     textAlign: 'left' as const,
   },
