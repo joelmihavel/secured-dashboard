@@ -1,0 +1,50 @@
+# =============================================================================
+# TE-122: Maestro Cloud CI Configuration
+#
+# This file defines the Maestro Cloud execution configuration for CI/CD
+# integration. It specifies which flows to run, in what order, and with
+# what settings when triggered from the CI pipeline.
+#
+# Maestro Cloud docs: https://cloud.mobile.dev/
+#
+# Usage:
+#   maestro cloud --config maestro/ci.yaml <app-binary>
+#
+# The run-cloud.sh script wraps this with environment setup and
+# app binary resolution.
+# =============================================================================
+
+appId: com.flent.secured
+
+# Execution configuration for CI runs
+name: "Flent Secured CI E2E"
+
+# Include all flows and journeys
+flows:
+  # Screen-level functional flows (TE-120)
+  - "flows/**/*.yaml"
+  # End-to-end journey flows (TE-121)
+  - "journeys/**/*.yaml"
+
+# Environment variables for CI runs
+env:
+  APP_ID: "com.flent.secured"
+  DEEP_LINK_SCHEME: "flentsecured"
+  TEST_PHONE: "9876543210"
+  TEST_NAME: "Test User"
+  TEST_OTP: "123456"
+  CI: "true"
+
+# Execution order and failure handling
+executionOrder:
+  continueOnFailure: true
+
+# Device configuration for Maestro Cloud
+# Uncomment the platform you want to target
+# devices:
+#   - platform: iOS
+#     model: iPhone 15
+#     osVersion: "17"
+#   - platform: Android
+#     model: Pixel 7
+#     osVersion: "34"

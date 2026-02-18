@@ -42,6 +42,8 @@ function PaymentSetupCardComponent({
       style={styles.card}
       onPress={onAddPayment}
       activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel="Setup your payment method"
     >
       {/* Top content area */}
       <View style={[styles.topSection, isAddMore ? styles.topSectionAddMore : styles.topSectionStandalone]}>

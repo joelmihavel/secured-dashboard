@@ -1,14 +1,33 @@
 /**
- * Flent Secured v2 - Calculate Cashback Edge Function
+ * Flent Secured v2 - Calculate Cashback Edge Function (BE-083)
  *
- * Calculates cashback for a payment and manages the ledger.
- * Called after successful payments or for cashback queries.
+ * Calculates cashback for a payment, manages the cashback ledger,
+ * and supports cashback redemption (deduct from available balance).
  *
  * Endpoints:
- * - POST /functions/v1/calculate-cashback - Calculate for a payment
- * - GET /functions/v1/calculate-cashback?user_id=xxx - Get balance/history
+ * - GET  /functions/v1/calculate-cashback - Get cashback summary (balance, history, expiring)
+ * - POST /functions/v1/calculate-cashback - Calculate/credit cashback for a payment
+ *                                           OR redeem cashback
  *
- * Auth: Service role (POST) or User JWT (GET)
+ * Auth: Service role (POST credit) or User JWT (GET, POST redeem)
+ *
+ * POST body (credit - service role):
+ * {
+ *   action: "credit",
+ *   payment_id: string,
+ *   user_id: string,
+ *   amount_paise: number,
+ *   tenancy_id: string,
+ *   rent_month: string
+ * }
+ *
+ * POST body (redeem - user JWT):
+ * {
+ *   action: "redeem",
+ *   amount_paise: number,
+ *   tenancy_id: string,
+ *   payment_id?: string
+ * }
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -16,11 +35,13 @@ import {
   createServiceClient,
   createAuthenticatedClient,
   verifyServiceRole,
+  hasServiceRoleAuth,
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
-import { validateSchema } from "../_shared/validation.ts";
+import { validateSchema, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { isTestMode, mockData } from "../_shared/test-mode.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -29,12 +50,14 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 const CASHBACK_RATE = 0.01; // 1%
 const CASHBACK_EXPIRY_DAYS = 90;
 const MAX_CASHBACK_PER_PAYMENT = 10000_00; // Rs 10,000 in paise
+const MIN_REDEEM_PAISE = 100; // Rs 1 minimum redemption
 
 // ==============================================
 // TYPES
 // ==============================================
 
-interface CalculateCashbackRequest {
+interface CreditCashbackRequest {
+  action: "credit";
   payment_id: string;
   user_id: string;
   amount_paise: number;
@@ -42,26 +65,35 @@ interface CalculateCashbackRequest {
   rent_month: string;
 }
 
-interface CashbackHistory {
-  id: string;
-  type: string;
-  amount: number;
-  balance_after: number;
-  description: string;
-  created_at: string;
-  expires_at: string | null;
+interface RedeemCashbackRequest {
+  action: "redeem";
+  amount_paise: number;
+  tenancy_id: string;
+  payment_id?: string;
 }
 
 // ==============================================
-// VALIDATION SCHEMA
+// VALIDATION SCHEMAS
 // ==============================================
 
-const requestSchema = {
+const creditSchema = {
+  action: { required: true, type: "string" as const, enum: ["credit"] as unknown[] },
   payment_id: { required: true, type: "string" as const },
   user_id: { required: true, type: "string" as const },
   amount_paise: { required: true, type: "number" as const, min: 100 },
   tenancy_id: { required: true, type: "string" as const },
   rent_month: { required: true, type: "string" as const },
+};
+
+const redeemSchema = {
+  action: { required: true, type: "string" as const, enum: ["redeem"] as unknown[] },
+  amount_paise: { required: true, type: "number" as const, min: MIN_REDEEM_PAISE },
+  tenancy_id: {
+    required: true,
+    type: "string" as const,
+    custom: (v: unknown) => isValidUuid(v) || "Invalid tenancy ID",
+  },
+  payment_id: { required: false, type: "string" as const },
 };
 
 // ==============================================
@@ -73,17 +105,32 @@ serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  // MD-131: Test mode support
+  if (isTestMode(req)) {
+    return handleTestMode(req);
+  }
+
   const supabase = createServiceClient();
 
   try {
-    // GET - Fetch cashback balance and history
+    // GET - Fetch cashback summary
     if (req.method === "GET") {
-      return await handleGetCashback(req, supabase);
+      return await handleGetCashbackSummary(req, supabase);
     }
 
-    // POST - Calculate and credit cashback
+    // POST - Credit or Redeem cashback
     if (req.method === "POST") {
-      return await handleCalculateCashback(req, supabase);
+      const body = await req.json();
+      const action = body?.action;
+
+      if (action === "credit") {
+        return await handleCreditCashback(req, body, supabase);
+      } else if (action === "redeem") {
+        return await handleRedeemCashback(req, body, supabase);
+      } else {
+        // Legacy: if no action field, assume credit (backward compat)
+        return await handleCreditCashback(req, { ...body, action: "credit" }, supabase);
+      }
     }
 
     return errorResponse("Method not allowed", 405);
@@ -93,10 +140,10 @@ serve(async (req: Request) => {
 });
 
 // ==============================================
-// GET CASHBACK HANDLER
+// GET CASHBACK SUMMARY
 // ==============================================
 
-async function handleGetCashback(
+async function handleGetCashbackSummary(
   req: Request,
   supabase: ReturnType<typeof createServiceClient>
 ): Promise<Response> {
@@ -104,75 +151,128 @@ async function handleGetCashback(
   const authHeader = req.headers.get("Authorization");
   const { userId } = await createAuthenticatedClient(authHeader);
 
-  // Get available balance
-  const { data: availableBalance } = await supabase.rpc("get_available_cashback", {
-    p_user_id: userId,
-  });
+  // Run queries in parallel for performance
+  const [
+    availableBalanceResult,
+    currentBalanceResult,
+    historyResult,
+    expiringSoonResult,
+    statsResult,
+  ] = await Promise.all([
+    // Available (non-expired) balance
+    supabase.rpc("get_available_cashback", { p_user_id: userId }),
+    // Current running balance
+    supabase.rpc("get_cashback_balance", { p_user_id: userId }),
+    // Recent history
+    supabase
+      .from("cashback_ledger")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    // Expiring within 30 days
+    (() => {
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      return supabase
+        .from("cashback_ledger")
+        .select("amount_paise, expires_at")
+        .eq("user_id", userId)
+        .eq("transaction_type", "earned")
+        .is("expired_at", null)
+        .lt("expires_at", thirtyDaysFromNow.toISOString())
+        .gt("expires_at", new Date().toISOString());
+    })(),
+    // Lifetime stats
+    supabase
+      .from("cashback_ledger")
+      .select("transaction_type, amount_paise")
+      .eq("user_id", userId),
+  ]);
 
-  // Get current balance (including pending)
-  const { data: currentBalance } = await supabase.rpc("get_cashback_balance", {
-    p_user_id: userId,
-  });
+  const availableBalance = availableBalanceResult.data ?? 0;
+  const currentBalance = currentBalanceResult.data ?? 0;
+  const history = historyResult.data ?? [];
+  const expiringSoon = expiringSoonResult.data ?? [];
+  const stats = statsResult.data ?? [];
 
-  // Get history
-  const { data: history } = await supabase
-    .from("cashback_ledger")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(20);
+  // Calculate stats
+  let totalEarned = 0;
+  let totalRedeemed = 0;
+  let totalExpired = 0;
 
-  const formattedHistory: CashbackHistory[] = (history ?? []).map((entry) => ({
-    id: entry.id,
-    type: entry.transaction_type,
-    amount: entry.amount_paise / 100,
-    balance_after: entry.balance_after_paise / 100,
-    description: entry.description,
-    created_at: entry.created_at,
-    expires_at: entry.expires_at,
-  }));
+  for (const entry of stats) {
+    switch (entry.transaction_type) {
+      case "earned":
+      case "bonus":
+        totalEarned += entry.amount_paise;
+        break;
+      case "applied":
+        totalRedeemed += entry.amount_paise;
+        break;
+      case "expired":
+        totalExpired += entry.amount_paise;
+        break;
+    }
+  }
 
-  // Get expiring soon (next 30 days)
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-  const { data: expiringSoon } = await supabase
-    .from("cashback_ledger")
-    .select("amount_paise, expires_at")
-    .eq("user_id", userId)
-    .eq("transaction_type", "earned")
-    .is("expired_at", null)
-    .lt("expires_at", thirtyDaysFromNow.toISOString())
-    .gt("expires_at", new Date().toISOString());
-
-  const expiringAmount = (expiringSoon ?? []).reduce(
-    (sum, entry) => sum + entry.amount_paise,
+  const expiringAmount = expiringSoon.reduce(
+    (sum: number, entry: any) => sum + entry.amount_paise,
     0
   );
+
+  // Format history entries
+  const formattedHistory = history.map((entry: any) => ({
+    id: entry.id,
+    transaction_type: entry.transaction_type,
+    amount_paise: entry.amount_paise,
+    amount: entry.amount_paise / 100,
+    balance_after_paise: entry.balance_after_paise,
+    balance_after: entry.balance_after_paise / 100,
+    description: entry.description,
+    payment_id: entry.payment_id,
+    tenancy_id: entry.tenancy_id,
+    expires_at: entry.expires_at,
+    created_at: entry.created_at,
+  }));
 
   return jsonResponse({
     success: true,
     data: {
-      available_balance: (availableBalance ?? 0) / 100,
-      current_balance: (currentBalance ?? 0) / 100,
+      // Summary in paise (for precise calculations)
+      total_earned_paise: totalEarned,
+      available_balance_paise: availableBalance,
+      total_redeemed_paise: totalRedeemed,
+      total_expired_paise: totalExpired,
+      // Summary in rupees (for display)
+      total_earned: totalEarned / 100,
+      available_balance: availableBalance / 100,
+      total_redeemed: totalRedeemed / 100,
+      total_expired: totalExpired / 100,
+      current_balance: currentBalance / 100,
+      // Expiring soon
       expiring_soon: {
+        amount_paise: expiringAmount,
         amount: expiringAmount / 100,
         within_days: 30,
+        entries_count: expiringSoon.length,
       },
+      // History
       history: formattedHistory,
     },
   });
 }
 
 // ==============================================
-// CALCULATE CASHBACK HANDLER
+// CREDIT CASHBACK
 // ==============================================
 
-async function handleCalculateCashback(
+async function handleCreditCashback(
   req: Request,
+  body: unknown,
   supabase: ReturnType<typeof createServiceClient>
 ): Promise<Response> {
-  // Verify service role authorization (strict equality check)
+  // Verify service role authorization
   const authHeader = req.headers.get("Authorization");
   verifyServiceRole(authHeader);
 
@@ -182,17 +282,11 @@ async function handleCalculateCashback(
     requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
   });
 
-  // Parse and validate request
-  const body = await req.json();
-  const validatedBody = validateSchema<CalculateCashbackRequest>(
-    body,
-    requestSchema,
-    true
-  );
+  // Validate request
+  const validated = validateSchema<CreditCashbackRequest>(body, creditSchema, true);
+  const { payment_id, user_id, amount_paise, tenancy_id, rent_month } = validated;
 
-  const { payment_id, user_id, amount_paise, tenancy_id, rent_month } = validatedBody;
-
-  // Check if cashback already credited for this payment
+  // Check if cashback already credited for this payment (idempotent)
   const { data: existing } = await supabase
     .from("cashback_ledger")
     .select("id")
@@ -218,6 +312,7 @@ async function handleCalculateCashback(
     return jsonResponse({
       success: true,
       data: {
+        cashback_amount_paise: 0,
         cashback_amount: 0,
         message: "No cashback for this payment",
       },
@@ -273,10 +368,180 @@ async function handleCalculateCashback(
   return jsonResponse({
     success: true,
     data: {
+      cashback_amount_paise: cashbackPaise,
       cashback_amount: cashbackPaise / 100,
+      new_balance_paise: newBalance,
       new_balance: newBalance / 100,
       expires_at: expiresAt.toISOString(),
       ledger_entry_id: ledgerEntry.id,
+      rate: `${CASHBACK_RATE * 100}%`,
+    },
+  });
+}
+
+// ==============================================
+// REDEEM CASHBACK
+// ==============================================
+
+async function handleRedeemCashback(
+  req: Request,
+  body: unknown,
+  supabase: ReturnType<typeof createServiceClient>
+): Promise<Response> {
+  // Authenticate user
+  const authHeader = req.headers.get("Authorization");
+  const { userId } = await createAuthenticatedClient(authHeader);
+
+  const audit = AuditLogger.fromRequest(supabase, req, userId, "calculate-cashback");
+
+  // Validate request
+  const validated = validateSchema<RedeemCashbackRequest>(body, redeemSchema, true);
+  const { amount_paise, tenancy_id, payment_id } = validated;
+
+  // Verify tenancy ownership
+  const { data: tenancy, error: tenancyError } = await supabase
+    .from("tenancies")
+    .select("id, user_id, status")
+    .eq("id", tenancy_id)
+    .eq("user_id", userId)
+    .single();
+
+  if (tenancyError || !tenancy) {
+    throw new NotFoundError("Tenancy", tenancy_id);
+  }
+
+  // Check available balance
+  const { data: availableBalance } = await supabase.rpc("get_available_cashback", {
+    p_user_id: userId,
+  });
+
+  const available = availableBalance ?? 0;
+
+  if (amount_paise > available) {
+    throw new AppError(
+      `Insufficient cashback balance. Available: Rs ${(available / 100).toFixed(2)}, Requested: Rs ${(amount_paise / 100).toFixed(2)}`,
+      "INSUFFICIENT_BALANCE",
+      400
+    );
+  }
+
+  // Get current running balance
+  const { data: currentBalance } = await supabase.rpc("get_cashback_balance", {
+    p_user_id: userId,
+  });
+
+  const newBalance = (currentBalance ?? 0) - amount_paise;
+
+  // Create redemption ledger entry
+  const { data: ledgerEntry, error: insertError } = await supabase
+    .from("cashback_ledger")
+    .insert({
+      user_id: userId,
+      transaction_type: "applied",
+      amount_paise,
+      balance_after_paise: newBalance,
+      payment_id: payment_id ?? null,
+      tenancy_id,
+      description: payment_id
+        ? `Cashback redeemed against payment`
+        : `Cashback redeemed`,
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    console.error("Failed to create redemption entry:", insertError);
+    throw new AppError("Failed to redeem cashback", "DB_ERROR", 500);
+  }
+
+  // If linked to a payment, update the payment's cashback_applied
+  if (payment_id) {
+    const { data: payment } = await supabase
+      .from("payments")
+      .select("cashback_applied_paise")
+      .eq("id", payment_id)
+      .eq("user_id", userId)
+      .single();
+
+    if (payment) {
+      await supabase
+        .from("payments")
+        .update({
+          cashback_applied_paise: (payment.cashback_applied_paise ?? 0) + amount_paise,
+        })
+        .eq("id", payment_id);
+    }
+  }
+
+  await audit.logSuccess(AuditActions.CASHBACK_APPLIED, "cashback", "cashback_ledger", ledgerEntry.id, {
+    amount_paise,
+    payment_id,
+    tenancy_id,
+    previous_balance: currentBalance,
+    new_balance: newBalance,
+  });
+
+  return jsonResponse({
+    success: true,
+    data: {
+      redeemed_amount_paise: amount_paise,
+      redeemed_amount: amount_paise / 100,
+      new_balance_paise: newBalance,
+      new_balance: newBalance / 100,
+      ledger_entry_id: ledgerEntry.id,
+    },
+  });
+}
+
+// ==============================================
+// MISSING IMPORT - NotFoundError
+// ==============================================
+
+class NotFoundError extends AppError {
+  constructor(resource: string, id?: string) {
+    super(
+      id ? `${resource} with id ${id} not found` : `${resource} not found`,
+      "NOT_FOUND",
+      404
+    );
+  }
+}
+
+// ==============================================
+// TEST MODE HANDLER
+// ==============================================
+
+function handleTestMode(req: Request): Response {
+  if (req.method === "GET") {
+    return jsonResponse({
+      success: true,
+      data: {
+        total_earned_paise: mockData.cashback.total_earned_paise,
+        available_balance_paise: mockData.cashback.available_balance_paise,
+        total_redeemed_paise: mockData.cashback.total_redeemed_paise,
+        total_expired_paise: 0,
+        total_earned: mockData.cashback.total_earned_paise / 100,
+        available_balance: mockData.cashback.available_balance_paise / 100,
+        total_redeemed: mockData.cashback.total_redeemed_paise / 100,
+        total_expired: 0,
+        current_balance: mockData.cashback.available_balance_paise / 100,
+        expiring_soon: { amount_paise: 0, amount: 0, within_days: 30, entries_count: 0 },
+        history: mockData.cashback.entries,
+      },
+    });
+  }
+
+  // POST (credit or redeem)
+  return jsonResponse({
+    success: true,
+    data: {
+      cashback_amount_paise: 25000,
+      cashback_amount: 250,
+      new_balance_paise: 175000,
+      new_balance: 1750,
+      expires_at: "2026-05-18T10:00:00.000Z",
+      ledger_entry_id: "00000000-0000-0000-0000-000000000035",
+      rate: "1%",
     },
   });
 }

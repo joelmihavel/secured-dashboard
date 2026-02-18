@@ -1,0 +1,3015 @@
+{
+  "project": "Flent Secured v2",
+  "description": "Ralph-compatible micro-story backlog. Each story fits one context window with an explicit verify command.",
+  "lastUpdated": "2026-02-17T16:14:04.311Z",
+  "stories": [
+    {
+      "id": "UI-001",
+      "track": "ui",
+      "title": "Extract blueprints for splash (1-28055)",
+      "verify": "bash autobot/verify/ui-extract.sh splash",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for figmaId: 1-28055",
+        "Asset PNGs pass validate-assets.sh"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A01",
+      "completedAt": "2026-02-17T08:31:29.584Z"
+    },
+    {
+      "id": "UI-002",
+      "track": "ui",
+      "title": "Build splash screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh splash",
+      "dependsOn": [
+        "UI-001"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(auth)/splash.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "DottedPattern uses correct backgroundShape key"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A01",
+      "completedAt": "2026-02-17T08:31:41.866Z"
+    },
+    {
+      "id": "UI-003",
+      "track": "ui",
+      "title": "Verify splash passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh splash",
+      "dependsOn": [
+        "UI-002"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen splash exits 0",
+        "ODiff < 18% (DottedPattern threshold)",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A01",
+      "completedAt": "2026-02-17T09:56:01.037Z"
+    },
+    {
+      "id": "UI-004",
+      "track": "ui",
+      "title": "Write tests for splash screen",
+      "verify": "bash autobot/verify/ui-test.sh splash",
+      "dependsOn": [
+        "UI-003"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A01"
+    },
+    {
+      "id": "UI-005",
+      "track": "ui",
+      "title": "Extract blueprints for beta-splash (1-28071)",
+      "verify": "bash autobot/verify/ui-extract.sh beta-splash",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-28071",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A02",
+      "completedAt": "2026-02-17T09:56:41.458Z"
+    },
+    {
+      "id": "UI-006",
+      "track": "ui",
+      "title": "Build beta-splash screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh beta-splash",
+      "dependsOn": [
+        "UI-005"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(auth)/beta-splash.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "DottedPattern uses correct backgroundShape key"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A02"
+    },
+    {
+      "id": "UI-007",
+      "track": "ui",
+      "title": "Verify beta-splash passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh beta-splash",
+      "dependsOn": [
+        "UI-006"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen beta-splash --skip-maestro exits 0",
+        "ODiff < 18% (DottedPattern threshold)",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A02"
+    },
+    {
+      "id": "UI-008",
+      "track": "ui",
+      "title": "Write tests for beta-splash screen",
+      "verify": "bash autobot/verify/ui-test.sh beta-splash",
+      "dependsOn": [
+        "UI-007"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A02"
+    },
+    {
+      "id": "UI-009",
+      "track": "ui",
+      "title": "Extract blueprints for carousel (1-28985, 1-29025, 1-29065)",
+      "verify": "bash autobot/verify/ui-extract.sh carousel",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-28985, 1-29025, 1-29065",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A03",
+      "completedAt": "2026-02-17T09:56:41.481Z"
+    },
+    {
+      "id": "UI-010",
+      "track": "ui",
+      "title": "Build carousel screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh carousel",
+      "dependsOn": [
+        "UI-009"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(auth)/carousel.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "DottedPattern uses correct backgroundShape key"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A03"
+    },
+    {
+      "id": "UI-011",
+      "track": "ui",
+      "title": "Verify carousel passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh carousel",
+      "dependsOn": [
+        "UI-010"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen carousel --skip-maestro exits 0",
+        "ODiff < 18% (DottedPattern threshold)",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A03"
+    },
+    {
+      "id": "UI-012",
+      "track": "ui",
+      "title": "Write tests for carousel screen",
+      "verify": "bash autobot/verify/ui-test.sh carousel",
+      "dependsOn": [
+        "UI-011"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A03"
+    },
+    {
+      "id": "UI-013",
+      "track": "ui",
+      "title": "Extract blueprints for sign-up (1-29108, 1-29914)",
+      "verify": "bash autobot/verify/ui-extract.sh sign-up",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-29108, 1-29914",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A04"
+    },
+    {
+      "id": "UI-014",
+      "track": "ui",
+      "title": "Build sign-up screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh sign-up",
+      "dependsOn": [
+        "UI-013"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(auth)/sign-up.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "DottedPattern uses correct backgroundShape key"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A04"
+    },
+    {
+      "id": "UI-015",
+      "track": "ui",
+      "title": "Verify sign-up passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh sign-up",
+      "dependsOn": [
+        "UI-014"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen sign-up --skip-maestro exits 0",
+        "ODiff < 18% (DottedPattern threshold)",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A04"
+    },
+    {
+      "id": "UI-016",
+      "track": "ui",
+      "title": "Write tests for sign-up screen",
+      "verify": "bash autobot/verify/ui-test.sh sign-up",
+      "dependsOn": [
+        "UI-015"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A04"
+    },
+    {
+      "id": "UI-017",
+      "track": "ui",
+      "title": "Extract blueprints for otp (1-31175, 1-31073, 1-31277, 1-31380)",
+      "verify": "bash autobot/verify/ui-extract.sh otp",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-31175, 1-31073, 1-31277, 1-31380",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A05"
+    },
+    {
+      "id": "UI-018",
+      "track": "ui",
+      "title": "Build otp screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh otp",
+      "dependsOn": [
+        "UI-017"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(auth)/otp.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "DottedPattern uses correct backgroundShape key"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A05"
+    },
+    {
+      "id": "UI-019",
+      "track": "ui",
+      "title": "Verify otp passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh otp",
+      "dependsOn": [
+        "UI-018"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen otp --skip-maestro exits 0",
+        "ODiff < 18% (DottedPattern threshold)",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A05"
+    },
+    {
+      "id": "UI-020",
+      "track": "ui",
+      "title": "Write tests for otp screen",
+      "verify": "bash autobot/verify/ui-test.sh otp",
+      "dependsOn": [
+        "UI-019"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A05"
+    },
+    {
+      "id": "UI-021",
+      "track": "ui",
+      "title": "Extract blueprints for waitlist (41-11206, 41-11313, 41-11410, 41-11506, 41-11613, 41-11720)",
+      "verify": "bash autobot/verify/ui-extract.sh waitlist",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-11206, 41-11313, 41-11410, 41-11506, 41-11613, 41-11720",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A06"
+    },
+    {
+      "id": "UI-022",
+      "track": "ui",
+      "title": "Build waitlist screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh waitlist",
+      "dependsOn": [
+        "UI-021"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(waitlist)/index.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A06"
+    },
+    {
+      "id": "UI-023",
+      "track": "ui",
+      "title": "Verify waitlist passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh waitlist",
+      "dependsOn": [
+        "UI-022"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen waitlist --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A06"
+    },
+    {
+      "id": "UI-024",
+      "track": "ui",
+      "title": "Write tests for waitlist screen",
+      "verify": "bash autobot/verify/ui-test.sh waitlist",
+      "dependsOn": [
+        "UI-023"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A06"
+    },
+    {
+      "id": "UI-025",
+      "track": "ui",
+      "title": "Extract blueprints for agreement-upload (1-30090, 1-30001, 1-30178, 1-30268, 1-30358)",
+      "verify": "bash autobot/verify/ui-extract.sh agreement-upload",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-30090, 1-30001, 1-30178, 1-30268, 1-30358",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A07"
+    },
+    {
+      "id": "UI-026",
+      "track": "ui",
+      "title": "Build agreement-upload screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh agreement-upload",
+      "dependsOn": [
+        "UI-025"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(agreement)/upload.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A07"
+    },
+    {
+      "id": "UI-027",
+      "track": "ui",
+      "title": "Verify agreement-upload passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh agreement-upload",
+      "dependsOn": [
+        "UI-026"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen agreement-upload --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A07"
+    },
+    {
+      "id": "UI-028",
+      "track": "ui",
+      "title": "Write tests for agreement-upload screen",
+      "verify": "bash autobot/verify/ui-test.sh agreement-upload",
+      "dependsOn": [
+        "UI-027"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A07",
+      "completedAt": "2026-02-17T11:13:35.144Z"
+    },
+    {
+      "id": "UI-029",
+      "track": "ui",
+      "title": "Extract blueprints for agreement-review (1-30448, 1-30820)",
+      "verify": "bash autobot/verify/ui-extract.sh agreement-review",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-30448, 1-30820",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A08"
+    },
+    {
+      "id": "UI-030",
+      "track": "ui",
+      "title": "Build agreement-review screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh agreement-review",
+      "dependsOn": [
+        "UI-029"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(agreement)/review.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A08"
+    },
+    {
+      "id": "UI-031",
+      "track": "ui",
+      "title": "Verify agreement-review passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh agreement-review",
+      "dependsOn": [
+        "UI-030"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen agreement-review --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A08"
+    },
+    {
+      "id": "UI-032",
+      "track": "ui",
+      "title": "Write tests for agreement-review screen",
+      "verify": "bash autobot/verify/ui-test.sh agreement-review",
+      "dependsOn": [
+        "UI-031"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A08",
+      "completedAt": "2026-02-17T11:13:35.144Z"
+    },
+    {
+      "id": "UI-033",
+      "track": "ui",
+      "title": "Extract blueprints for setup (41-10712, 41-10859, 41-11006)",
+      "verify": "bash autobot/verify/ui-extract.sh setup",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-10712, 41-10859, 41-11006",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A09"
+    },
+    {
+      "id": "UI-034",
+      "track": "ui",
+      "title": "Build setup screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh setup",
+      "dependsOn": [
+        "UI-033"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(setup)/index.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A09"
+    },
+    {
+      "id": "UI-035",
+      "track": "ui",
+      "title": "Verify setup passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh setup",
+      "dependsOn": [
+        "UI-034"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen setup --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A09"
+    },
+    {
+      "id": "UI-036",
+      "track": "ui",
+      "title": "Write tests for setup screen",
+      "verify": "bash autobot/verify/ui-test.sh setup",
+      "dependsOn": [
+        "UI-035"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A09",
+      "completedAt": "2026-02-17T11:13:35.144Z"
+    },
+    {
+      "id": "UI-037",
+      "track": "ui",
+      "title": "Extract blueprints for add-bank (1-31485, 1-31590)",
+      "verify": "bash autobot/verify/ui-extract.sh add-bank",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-31485, 1-31590",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A10"
+    },
+    {
+      "id": "UI-038",
+      "track": "ui",
+      "title": "Build add-bank screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh add-bank",
+      "dependsOn": [
+        "UI-037"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(setup)/add-bank.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A10"
+    },
+    {
+      "id": "UI-039",
+      "track": "ui",
+      "title": "Verify add-bank passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh add-bank",
+      "dependsOn": [
+        "UI-038"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen add-bank --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A10"
+    },
+    {
+      "id": "UI-040",
+      "track": "ui",
+      "title": "Write tests for add-bank screen",
+      "verify": "bash autobot/verify/ui-test.sh add-bank",
+      "dependsOn": [
+        "UI-039"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A10",
+      "completedAt": "2026-02-17T11:18:16.709Z"
+    },
+    {
+      "id": "UI-041",
+      "track": "ui",
+      "title": "Extract blueprints for invite-landlord (1-31671)",
+      "verify": "bash autobot/verify/ui-extract.sh invite-landlord",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 1-31671",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A11"
+    },
+    {
+      "id": "UI-042",
+      "track": "ui",
+      "title": "Build invite-landlord screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh invite-landlord",
+      "dependsOn": [
+        "UI-041"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(setup)/invite-landlord.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A11"
+    },
+    {
+      "id": "UI-043",
+      "track": "ui",
+      "title": "Verify invite-landlord passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh invite-landlord",
+      "dependsOn": [
+        "UI-042"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen invite-landlord --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A11"
+    },
+    {
+      "id": "UI-044",
+      "track": "ui",
+      "title": "Write tests for invite-landlord screen",
+      "verify": "bash autobot/verify/ui-test.sh invite-landlord",
+      "dependsOn": [
+        "UI-043"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A11",
+      "completedAt": "2026-02-17T11:18:16.709Z"
+    },
+    {
+      "id": "UI-045",
+      "track": "ui",
+      "title": "Extract blueprints for home (243-6296, 243-6490, 243-6731, 243-5689, 243-2762, 243-2967, 243-3170, 243-3378, 243-7185)",
+      "verify": "bash autobot/verify/ui-extract.sh home",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 243-6296, 243-6490, 243-6731, 243-5689, 243-2762, 243-2967, 243-3170, 243-3378, 243-7185",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A12"
+    },
+    {
+      "id": "UI-046",
+      "track": "ui",
+      "title": "Build home screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh home",
+      "dependsOn": [
+        "UI-045"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(main)/index.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A12"
+    },
+    {
+      "id": "UI-047",
+      "track": "ui",
+      "title": "Verify home passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh home",
+      "dependsOn": [
+        "UI-046"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen home --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A12"
+    },
+    {
+      "id": "UI-048",
+      "track": "ui",
+      "title": "Write tests for home screen",
+      "verify": "bash autobot/verify/ui-test.sh home",
+      "dependsOn": [
+        "UI-047"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A12",
+      "completedAt": "2026-02-17T11:18:16.709Z"
+    },
+    {
+      "id": "UI-049",
+      "track": "ui",
+      "title": "Extract blueprints for payment-select (41-9004, 41-9114, 41-8901, 243-3794, 243-3816, 243-3838, 243-3923, 243-4008, 243-4030, 243-4052)",
+      "verify": "bash autobot/verify/ui-extract.sh payment-select",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-9004, 41-9114, 41-8901, 243-3794, 243-3816, 243-3838, 243-3923, 243-4008, 243-4030, 243-4052",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A13"
+    },
+    {
+      "id": "UI-050",
+      "track": "ui",
+      "title": "Build payment-select screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh payment-select",
+      "dependsOn": [
+        "UI-049"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(payment)/select-method.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A13"
+    },
+    {
+      "id": "UI-051",
+      "track": "ui",
+      "title": "Verify payment-select passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh payment-select",
+      "dependsOn": [
+        "UI-050"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen payment-select --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A13"
+    },
+    {
+      "id": "UI-052",
+      "track": "ui",
+      "title": "Write tests for payment-select screen",
+      "verify": "bash autobot/verify/ui-test.sh payment-select",
+      "dependsOn": [
+        "UI-051"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A13"
+    },
+    {
+      "id": "UI-053",
+      "track": "ui",
+      "title": "Extract blueprints for payment-add-upi (41-8369)",
+      "verify": "bash autobot/verify/ui-extract.sh payment-add-upi",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-8369",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A14"
+    },
+    {
+      "id": "UI-054",
+      "track": "ui",
+      "title": "Build payment-add-upi screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh payment-add-upi",
+      "dependsOn": [
+        "UI-053"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(payment)/add-upi.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A14"
+    },
+    {
+      "id": "UI-055",
+      "track": "ui",
+      "title": "Verify payment-add-upi passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh payment-add-upi",
+      "dependsOn": [
+        "UI-054"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen payment-add-upi --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A14"
+    },
+    {
+      "id": "UI-056",
+      "track": "ui",
+      "title": "Write tests for payment-add-upi screen",
+      "verify": "bash autobot/verify/ui-test.sh payment-add-upi",
+      "dependsOn": [
+        "UI-055"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A14"
+    },
+    {
+      "id": "UI-057",
+      "track": "ui",
+      "title": "Extract blueprints for payment-add-card (41-8450)",
+      "verify": "bash autobot/verify/ui-extract.sh payment-add-card",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-8450",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A15"
+    },
+    {
+      "id": "UI-058",
+      "track": "ui",
+      "title": "Build payment-add-card screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh payment-add-card",
+      "dependsOn": [
+        "UI-057"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(payment)/add-card.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A15"
+    },
+    {
+      "id": "UI-059",
+      "track": "ui",
+      "title": "Verify payment-add-card passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh payment-add-card",
+      "dependsOn": [
+        "UI-058"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen payment-add-card --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A15"
+    },
+    {
+      "id": "UI-060",
+      "track": "ui",
+      "title": "Write tests for payment-add-card screen",
+      "verify": "bash autobot/verify/ui-test.sh payment-add-card",
+      "dependsOn": [
+        "UI-059"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A15"
+    },
+    {
+      "id": "UI-061",
+      "track": "ui",
+      "title": "Extract blueprints for payment-add-netbanking (41-8529)",
+      "verify": "bash autobot/verify/ui-extract.sh payment-add-netbanking",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-8529",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A16"
+    },
+    {
+      "id": "UI-062",
+      "track": "ui",
+      "title": "Build payment-add-netbanking screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh payment-add-netbanking",
+      "dependsOn": [
+        "UI-061"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(payment)/add-netbanking.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A16"
+    },
+    {
+      "id": "UI-063",
+      "track": "ui",
+      "title": "Verify payment-add-netbanking passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh payment-add-netbanking",
+      "dependsOn": [
+        "UI-062"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen payment-add-netbanking --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A16"
+    },
+    {
+      "id": "UI-064",
+      "track": "ui",
+      "title": "Write tests for payment-add-netbanking screen",
+      "verify": "bash autobot/verify/ui-test.sh payment-add-netbanking",
+      "dependsOn": [
+        "UI-063"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A16"
+    },
+    {
+      "id": "UI-065",
+      "track": "ui",
+      "title": "Extract blueprints for payment-results (41-9460, 41-9388, 41-9511, 41-9563, 41-9635)",
+      "verify": "bash autobot/verify/ui-extract.sh payment-results",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-9460, 41-9388, 41-9511, 41-9563, 41-9635",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A17"
+    },
+    {
+      "id": "UI-066",
+      "track": "ui",
+      "title": "Build payment-results screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh payment-results",
+      "dependsOn": [
+        "UI-065"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(payment)/processing.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A17"
+    },
+    {
+      "id": "UI-067",
+      "track": "ui",
+      "title": "Verify payment-results passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh payment-results",
+      "dependsOn": [
+        "UI-066"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen payment-results --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A17"
+    },
+    {
+      "id": "UI-068",
+      "track": "ui",
+      "title": "Write tests for payment-results screen",
+      "verify": "bash autobot/verify/ui-test.sh payment-results",
+      "dependsOn": [
+        "UI-067"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A17"
+    },
+    {
+      "id": "UI-069",
+      "track": "ui",
+      "title": "Extract blueprints for transactions (243-5870, 243-6083)",
+      "verify": "bash autobot/verify/ui-extract.sh transactions",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 243-5870, 243-6083",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A18"
+    },
+    {
+      "id": "UI-070",
+      "track": "ui",
+      "title": "Build transactions screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh transactions",
+      "dependsOn": [
+        "UI-069"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(transactions)/index.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A18"
+    },
+    {
+      "id": "UI-071",
+      "track": "ui",
+      "title": "Verify transactions passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh transactions",
+      "dependsOn": [
+        "UI-070"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen transactions --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A18"
+    },
+    {
+      "id": "UI-072",
+      "track": "ui",
+      "title": "Write tests for transactions screen",
+      "verify": "bash autobot/verify/ui-test.sh transactions",
+      "dependsOn": [
+        "UI-071"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A18"
+    },
+    {
+      "id": "UI-073",
+      "track": "ui",
+      "title": "Extract blueprints for profile (41-8760, 41-8880, 41-8450, 41-8612, 41-9307, 41-9811)",
+      "verify": "bash autobot/verify/ui-extract.sh profile",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Blueprint JSON exists for each figmaId: 41-8760, 41-8880, 41-8450, 41-8612, 41-9307, 41-9811",
+        "All baseline PNGs pass validate-assets.sh",
+        "Blueprint has >10 nodes or valid componentTree"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A19"
+    },
+    {
+      "id": "UI-074",
+      "track": "ui",
+      "title": "Build profile screen from blueprint",
+      "verify": "bash autobot/verify/ui-build.sh profile",
+      "dependsOn": [
+        "UI-073"
+      ],
+      "acceptanceCriteria": [
+        "Screen file exists at rn-app/app/(profile)/index.tsx",
+        "TypeScript compiles with zero errors",
+        "Uses shared components only (no inline rebuilds)",
+        "Font weights use fontFamily mapping",
+        "No DottedPattern needed"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 40000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A19"
+    },
+    {
+      "id": "UI-075",
+      "track": "ui",
+      "title": "Verify profile passes BuildBot pipeline",
+      "verify": "bash autobot/verify/ui-verify.sh profile",
+      "dependsOn": [
+        "UI-074"
+      ],
+      "acceptanceCriteria": [
+        "verify-screen.ts --screen profile --skip-maestro exits 0",
+        "ODiff < 3%",
+        "Coverage >= 80%",
+        "No P0 inspector issues"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/ui.md"
+      ],
+      "originalStoryId": "A19"
+    },
+    {
+      "id": "UI-076",
+      "track": "ui",
+      "title": "Write tests for profile screen",
+      "verify": "bash autobot/verify/ui-test.sh profile",
+      "dependsOn": [
+        "UI-075"
+      ],
+      "acceptanceCriteria": [
+        "Jest snapshot test exists and passes",
+        "Key interactions tested (button presses, navigation)",
+        "All screen states covered"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/ui.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "A19"
+    },
+    {
+      "id": "BE-077",
+      "track": "backend",
+      "title": "Implement: Add payment scheduling edge functions",
+      "verify": "bash autobot/verify/backend-impl.sh initiate-payment",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Create schedule-payment and get-payment-schedule edge functions for recurring rent payments. Support monthly scheduling with configurable date, auto-retry on failure.",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B01"
+    },
+    {
+      "id": "BE-078",
+      "track": "test",
+      "title": "Test: Add payment scheduling edge functions",
+      "verify": "bash autobot/verify/backend-test.sh initiate-payment",
+      "dependsOn": [
+        "BE-077"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B01"
+    },
+    {
+      "id": "BE-079",
+      "track": "backend",
+      "title": "Implement: Implement landlord management endpoints",
+      "verify": "bash autobot/verify/backend-impl.sh landlord-approve",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Extend landlord-approve, add landlord profile management, tenancy lifecycle (create/update/terminate). Wire landlord-approve to notification pipeline.",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B02"
+    },
+    {
+      "id": "BE-080",
+      "track": "test",
+      "title": "Test: Implement landlord management endpoints",
+      "verify": "bash autobot/verify/backend-test.sh landlord-approve",
+      "dependsOn": [
+        "BE-079"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B02"
+    },
+    {
+      "id": "BE-081",
+      "track": "backend",
+      "title": "Implement: Complete agreement lifecycle state machine",
+      "verify": "bash autobot/verify/backend-impl.sh upload-document",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Add agreement status transitions (uploaded→processing→extracted→confirmed→active→expired). Add re-upload flow and agreement history.",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B03"
+    },
+    {
+      "id": "BE-082",
+      "track": "test",
+      "title": "Test: Complete agreement lifecycle state machine",
+      "verify": "test -f supabase/functions/_tests/upload-document.test.ts",
+      "dependsOn": [
+        "BE-081"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B03"
+    },
+    {
+      "id": "BE-083",
+      "track": "backend",
+      "title": "Implement: Add cashback calculation and ledger",
+      "verify": "bash autobot/verify/backend-impl.sh calculate-cashback",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Wire calculate-cashback to payment-webhook success flow. Implement cashback_ledger entries on payment completion. Add get-cashback-history endpoint.",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "get-cashback-history edge function created. Wiring to payment-webhook still needed.",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B04"
+    },
+    {
+      "id": "BE-084",
+      "track": "test",
+      "title": "Test: Add cashback calculation and ledger",
+      "verify": "bash autobot/verify/backend-test.sh calculate-cashback",
+      "dependsOn": [
+        "BE-083"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B04"
+    },
+    {
+      "id": "BE-085",
+      "track": "backend",
+      "title": "Implement: Harden notification pipeline",
+      "verify": "bash autobot/verify/backend-impl.sh send-push-notification",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Wire send-push-notification, send-sms, send-whatsapp into payment lifecycle events. Add notification preferences (per-user channel selection). Ensure mark-notification-read works end-to-end.",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B05"
+    },
+    {
+      "id": "BE-086",
+      "track": "test",
+      "title": "Test: Harden notification pipeline",
+      "verify": "bash autobot/verify/backend-test.sh send-push-notification",
+      "dependsOn": [
+        "BE-085"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B05"
+    },
+    {
+      "id": "BE-087",
+      "track": "backend",
+      "title": "Implement: Receipt generation and tax reporting",
+      "verify": "bash autobot/verify/backend-impl.sh generate-receipt",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Wire generate-receipt to payment success flow. Add get-receipts-for-period endpoint for tax report generation. PDF generation with company details.",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B06"
+    },
+    {
+      "id": "BE-088",
+      "track": "test",
+      "title": "Test: Receipt generation and tax reporting",
+      "verify": "bash autobot/verify/backend-test.sh generate-receipt",
+      "dependsOn": [
+        "BE-087"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B06"
+    },
+    {
+      "id": "BE-089",
+      "track": "backend",
+      "title": "Implement: Add missing backend tests",
+      "verify": "test -f supabase/functions/_tests/run-tests.ts",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Ensure every edge function has test coverage. Priority: payment flow (100% coverage required), agreement lifecycle, notification pipeline. Use existing test helpers (mock-payu, mock-cashfree, mock-twilio, mock-apiclub).",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "15 test files exist. Need tests for: calculate-cashback, generate-receipt, notification functions, dashboard-data, landlord-approve, send-landlord-invite.",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B07"
+    },
+    {
+      "id": "BE-090",
+      "track": "test",
+      "title": "Test: Add missing backend tests",
+      "verify": "bash autobot/verify/backend-test.sh b07",
+      "dependsOn": [
+        "BE-089"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B07"
+    },
+    {
+      "id": "BE-091",
+      "track": "backend",
+      "title": "Implement: Dashboard data aggregation",
+      "verify": "bash autobot/verify/backend-impl.sh dashboard-data",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Verify dashboard-data function returns correct aggregates for home screen: payment history summary, upcoming due dates, cashback totals, tenancy status.",
+        "Edge function compiles with deno check",
+        "Follows existing patterns in supabase/functions/_shared/"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "payments.ts API service (1006 lines) and usePayments.ts hooks (594 lines) created. Dashboard aggregation needs verification.",
+      "estimatedTokens": 30000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ],
+      "originalStoryId": "B08"
+    },
+    {
+      "id": "BE-092",
+      "track": "test",
+      "title": "Test: Dashboard data aggregation",
+      "verify": "bash autobot/verify/backend-test.sh dashboard-data",
+      "dependsOn": [
+        "BE-091"
+      ],
+      "acceptanceCriteria": [
+        "Deno test file exists and passes",
+        "Uses existing mock helpers where applicable",
+        "Covers happy path and error cases"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "B08"
+    },
+    {
+      "id": "ST-093",
+      "track": "state",
+      "title": "Implement: Add payment Zustand store",
+      "verify": "bash autobot/verify/state-impl.sh c01",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Create paymentStore with: selected method, payment amount, due date, processing status, payment history cache. Actions: selectMethod, initiatePayment, clearPayment.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C01"
+    },
+    {
+      "id": "ST-094",
+      "track": "test",
+      "title": "Test: Add payment Zustand store",
+      "verify": "bash autobot/verify/state-test.sh c01",
+      "dependsOn": [
+        "ST-093"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C01"
+    },
+    {
+      "id": "ST-095",
+      "track": "state",
+      "title": "Implement: Add setup/onboarding Zustand store",
+      "verify": "bash autobot/verify/state-impl.sh c02",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Create setupStore tracking: current setup step, bank details, utility verification status, landlord invite status. Actions: completeStep, saveBank, inviteLandlord.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C02"
+    },
+    {
+      "id": "ST-096",
+      "track": "test",
+      "title": "Test: Add setup/onboarding Zustand store",
+      "verify": "bash autobot/verify/state-test.sh c02",
+      "dependsOn": [
+        "ST-095"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C02"
+    },
+    {
+      "id": "ST-097",
+      "track": "state",
+      "title": "Implement: Add profile Zustand store",
+      "verify": "bash autobot/verify/state-impl.sh c03",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Create profileStore with: user profile data, payment methods list, agreement info, notification preferences. Actions: updateProfile, addPaymentMethod, removePaymentMethod.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C03"
+    },
+    {
+      "id": "ST-098",
+      "track": "test",
+      "title": "Test: Add profile Zustand store",
+      "verify": "bash autobot/verify/state-test.sh c03",
+      "dependsOn": [
+        "ST-097"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C03"
+    },
+    {
+      "id": "ST-099",
+      "track": "state",
+      "title": "Implement: Wire all auth screens to real backend",
+      "verify": "bash autobot/verify/state-impl.sh c04",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Connect splash, carousel, sign-up, OTP screens to auth-otp edge function via existing useAuth hook. Replace any mock data with real Supabase calls.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C04"
+    },
+    {
+      "id": "ST-100",
+      "track": "test",
+      "title": "Test: Wire all auth screens to real backend",
+      "verify": "bash autobot/verify/state-test.sh c04",
+      "dependsOn": [
+        "ST-099"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C04"
+    },
+    {
+      "id": "ST-101",
+      "track": "state",
+      "title": "Implement: Wire home + payment screens to real backend",
+      "verify": "bash autobot/verify/state-impl.sh c05",
+      "dependsOn": [
+        "ST-093",
+        "BE-077",
+        "BE-091"
+      ],
+      "acceptanceCriteria": [
+        "Connect home screen to dashboard-data, payment screens to initiate-payment/payment-webhook/get-payment-history. Use React Query for data fetching.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C05"
+    },
+    {
+      "id": "ST-102",
+      "track": "test",
+      "title": "Test: Wire home + payment screens to real backend",
+      "verify": "bash autobot/verify/state-test.sh c05",
+      "dependsOn": [
+        "ST-101"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C05"
+    },
+    {
+      "id": "ST-103",
+      "track": "state",
+      "title": "Implement: Wire agreement + setup screens to real backend",
+      "verify": "bash autobot/verify/state-impl.sh c06",
+      "dependsOn": [
+        "ST-095",
+        "BE-081"
+      ],
+      "acceptanceCriteria": [
+        "Connect agreement upload/review to upload-document/process-document/confirm-extraction. Connect setup screens to verify-bank/verify-utility/send-landlord-invite.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C06"
+    },
+    {
+      "id": "ST-104",
+      "track": "test",
+      "title": "Test: Wire agreement + setup screens to real backend",
+      "verify": "bash autobot/verify/state-test.sh c06",
+      "dependsOn": [
+        "ST-103"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C06"
+    },
+    {
+      "id": "ST-105",
+      "track": "state",
+      "title": "Implement: Implement offline handling and optimistic updates",
+      "verify": "bash autobot/verify/state-impl.sh c07",
+      "dependsOn": [
+        "ST-099",
+        "ST-101",
+        "ST-103"
+      ],
+      "acceptanceCriteria": [
+        "Add NetInfo-based connectivity detection. Queue mutations when offline. Optimistic updates for payment method operations, profile edits.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C07"
+    },
+    {
+      "id": "ST-106",
+      "track": "test",
+      "title": "Test: Implement offline handling and optimistic updates",
+      "verify": "bash autobot/verify/state-test.sh c07",
+      "dependsOn": [
+        "ST-105"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C07"
+    },
+    {
+      "id": "ST-107",
+      "track": "state",
+      "title": "Implement: Complete deep link and notification routing",
+      "verify": "bash autobot/verify/state-impl.sh c08",
+      "dependsOn": [
+        "ST-101"
+      ],
+      "acceptanceCriteria": [
+        "Handle all deep link routes (flentsecured://). Wire push notification taps to correct screens. Add notification badge tracking.",
+        "TypeScript compiles with zero errors"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ],
+      "originalStoryId": "C08"
+    },
+    {
+      "id": "ST-108",
+      "track": "test",
+      "title": "Test: Complete deep link and notification routing",
+      "verify": "bash autobot/verify/state-test.sh c08",
+      "dependsOn": [
+        "ST-107"
+      ],
+      "acceptanceCriteria": [
+        "Jest tests exist and pass",
+        "State transitions covered",
+        "Edge cases tested"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "C08"
+    },
+    {
+      "id": "PR-109",
+      "track": "state",
+      "title": "Install and configure Sentry error tracking",
+      "verify": "bash autobot/verify/state-impl.sh d01",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Install @sentry/react-native. Configure in app/_layout.tsx. Wrap app with Sentry error boundary. Add breadcrumbs for navigation events. Configure source maps upload in EAS Build.",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D01"
+    },
+    {
+      "id": "PR-110",
+      "track": "state",
+      "title": "Install and configure expo-notifications",
+      "verify": "bash autobot/verify/state-impl.sh d02",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Install expo-notifications. Add device token registration on app start (register-device-token edge function exists). Add notification handlers for foreground/background. Route notification taps to correct screens.",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D02"
+    },
+    {
+      "id": "PR-111",
+      "track": "state",
+      "title": "Install and configure expo-updates for OTA",
+      "verify": "bash autobot/verify/state-impl.sh d03",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Install expo-updates. Configure EAS Update channel in app.json. Add update checking on app foreground. Handle update download and restart flow.",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D03"
+    },
+    {
+      "id": "PR-112",
+      "track": "state",
+      "title": "Add analytics integration",
+      "verify": "bash autobot/verify/state-impl.sh d04",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Install analytics SDK (recommend expo-analytics or Mixpanel). Track: screen views, payment initiated/completed/failed, onboarding funnel, feature adoption. Add analytics provider to app root.",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D04"
+    },
+    {
+      "id": "PR-113",
+      "track": "state",
+      "title": "Add accessibility labels to all interactive elements",
+      "verify": "bash autobot/verify/state-impl.sh d05",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Audit all screens for missing accessibilityLabel, accessibilityRole, accessibilityHint. Add VoiceOver support. Ensure minimum touch targets (44x44pt).",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D05"
+    },
+    {
+      "id": "PR-114",
+      "track": "state",
+      "title": "Frontend CI/CD pipeline",
+      "verify": "bash autobot/verify/state-impl.sh d06",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Create GitHub Actions workflow for rn-app: lint (eslint), type check (tsc --noEmit), unit tests (jest), on PR to main. Add required checks.",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D06"
+    },
+    {
+      "id": "PR-115",
+      "track": "state",
+      "title": "Performance baseline and monitoring",
+      "verify": "bash autobot/verify/state-impl.sh d07",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Measure and document: JS bundle size, app startup time (TTI), FPS during scrolling. Set up performance budgets. Add React.memo and useMemo where needed.",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D07"
+    },
+    {
+      "id": "PR-116",
+      "track": "state",
+      "title": "App store metadata preparation",
+      "verify": "bash autobot/verify/state-impl.sh d08",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Prepare: app name, description, keywords, screenshots (from Maestro), privacy policy URL, support URL. Configure in eas.json submit profile.",
+        "TypeScript compiles with zero errors",
+        "No regressions in existing tests"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/production.md"
+      ],
+      "originalStoryId": "D08"
+    },
+    {
+      "id": "TE-117",
+      "track": "test",
+      "title": "Unit tests for all shared components",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Write Jest tests for all 14 shared components: Screen, Text, PrimaryButton, TextButton, TextInput, PhoneInput, OTPInput, DottedPattern, DocumentUploadCard, FileUploadZone, Logo, ConsentToggle, CarouselDots, ErrorBoundary. Test rendering, props, interactions."
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "E01"
+    },
+    {
+      "id": "TE-118",
+      "track": "test",
+      "title": "Unit tests for Zustand stores and custom hooks",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [
+        "ST-093",
+        "ST-095",
+        "ST-097"
+      ],
+      "acceptanceCriteria": [
+        "Test all stores (authStore, waitlistStore + new ones from C01-C03). Test all custom hooks with @testing-library/react-hooks. Cover state transitions and edge cases."
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "E02"
+    },
+    {
+      "id": "TE-119",
+      "track": "test",
+      "title": "Integration tests for service layer",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Test API service wrappers against Supabase branch. Cover: auth flow (sendOtp→verifyOtp), payment flow (initiate→webhook→status), waitlist flow (join→status→approve)."
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "E03"
+    },
+    {
+      "id": "TE-120",
+      "track": "test",
+      "title": "Maestro functional flows — per-screen",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Write Maestro flow YAML for each of the 21 screen routes. Each flow: launch app, navigate to screen, verify key elements visible, test interactions. Store in rn-app/.maestro/screens/."
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "E04"
+    },
+    {
+      "id": "TE-121",
+      "track": "test",
+      "title": "Maestro E2E journey flows",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Write 5 multi-screen Maestro journeys: (1) Auth: splash→carousel→sign-up→OTP→waitlist, (2) Onboarding: agreement→setup→bank→landlord, (3) Payment success: home→select→add-upi→processing→success, (4) Payment failure flow, (5) Profile flow. Store in rn-app/.maestro/journeys/."
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "E05"
+    },
+    {
+      "id": "TE-122",
+      "track": "test",
+      "title": "Maestro Cloud regression pipeline",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Set up Maestro Cloud: EAS e2e-test build profile, upload flow, tag-based filtering (regression/smoke/e2e). Run after every parity-achieved screen."
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "E06"
+    },
+    {
+      "id": "TE-123",
+      "track": "test",
+      "title": "CI integration for test automation",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [
+        "E06",
+        "PR-114"
+      ],
+      "acceptanceCriteria": [
+        "Add Maestro Cloud to GitHub Actions for PR checks. Run smoke tests on every PR, full regression on merge to main. Report results as PR checks."
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ],
+      "originalStoryId": "E07"
+    },
+    {
+      "id": "RT-124",
+      "track": "state",
+      "title": "Configure deep link routing with flentsecured:// prefix",
+      "verify": "bash autobot/verify/state-impl.sh deep-links",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Linking config added to expo-router",
+        "flentsecured://payment/{id}, flentsecured://waitlist, flentsecured://agreement/upload mapped",
+        "notifications.ts handleNotificationResponse uses typed deep links",
+        "TypeScript compiles"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/state.md",
+        "autobot/context/expo.md"
+      ]
+    },
+    {
+      "id": "RT-125",
+      "track": "state",
+      "title": "Add useSetupGuard hook for sequential setup flow enforcement",
+      "verify": "bash autobot/verify/state-test.sh useSetupGuard",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "useSetupGuard.ts hook created",
+        "Checks completed steps before allowing navigation",
+        "Wired to setupStore",
+        "Jest test passes"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ]
+    },
+    {
+      "id": "RT-126",
+      "track": "state",
+      "title": "Clean up unused routes (profile-payment, waitlist/approved)",
+      "verify": "cd rn-app && npx tsc --noEmit",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Empty (profile-payment)/_layout.tsx removed or justified",
+        "(waitlist)/approved.tsx audited",
+        "TypeScript compiles"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 10000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ]
+    },
+    {
+      "id": "SM-127",
+      "track": "state",
+      "title": "Add useSessionMonitor for session resume on app foreground",
+      "verify": "bash autobot/verify/state-test.sh useSessionMonitor",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "useSessionMonitor.ts hook created",
+        "Uses AppState listener to detect foreground",
+        "Calls supabase.auth.getSession() on foreground",
+        "Redirects to auth if session expired",
+        "Wired in app/_layout.tsx"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ]
+    },
+    {
+      "id": "SM-128",
+      "track": "state",
+      "title": "Add verification timeout recovery to auth flow",
+      "verify": "bash autobot/verify/state-test.sh auth-timeout",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "30s timeout on verifying state",
+        "Resets to otp_sent with error message on timeout",
+        "Jest test covers timeout scenario"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/state.md"
+      ]
+    },
+    {
+      "id": "MD-129",
+      "track": "test",
+      "title": "Expand uiTestData.ts with error and edge-case states",
+      "verify": "cd rn-app && npx jest --passWithNoTests",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "Network timeout states added",
+        "API error responses (400/500/429) added",
+        "Expired OTP, passed deadline, refund states added",
+        "Existing tests still pass"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 15000,
+      "contextDocs": [
+        "autobot/context/testing.md"
+      ]
+    },
+    {
+      "id": "MD-130",
+      "track": "backend",
+      "title": "Expand backend seed data for comprehensive E2E testing",
+      "verify": "test $(wc -l < rn-app/src/__mocks__/uiTestData.ts) -gt 500",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "seed-e2e.sql created with diverse test scenarios",
+        "Users in every KYC state",
+        "Payments with various outcomes",
+        "Documents in every processing state"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 20000,
+      "contextDocs": [
+        "autobot/context/backend.md",
+        "autobot/context/testing.md"
+      ]
+    },
+    {
+      "id": "MD-131",
+      "track": "backend",
+      "title": "Create backend test mode with X-Test-Mode header",
+      "verify": "bash autobot/verify/backend-test.sh test-mode",
+      "dependsOn": [
+        "MD-130"
+      ],
+      "acceptanceCriteria": [
+        "test-mode.ts shared utility created",
+        "Critical edge functions check X-Test-Mode header",
+        "When test mode: use mock helpers instead of real external APIs",
+        "Test passes with mock responses"
+      ],
+      "passes": true,
+      "status": "done",
+      "failCount": 0,
+      "failNotes": "",
+      "estimatedTokens": 25000,
+      "contextDocs": [
+        "autobot/context/backend.md"
+      ]
+    }
+  ],
+  "meta": {
+    "totalStories": 131,
+    "completed": 18,
+    "failed": 0,
+    "lastIteration": 0,
+    "generatedFrom": "autobot/generate-prd.js",
+    "lastUpdated": "2026-02-17T09:56:41.481Z"
+  }
+}

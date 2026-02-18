@@ -12,16 +12,16 @@
  *
  * Usage:
  *   # Single screen
- *   npx ts-node scripts/universal-converter.ts convert 243-2762
+ *   npx tsx scripts/universal-converter.ts convert 243-2762
  *
  *   # Batch process
- *   npx ts-node scripts/universal-converter.ts batch --config ./config/batch-screens.json
+ *   npx tsx scripts/universal-converter.ts batch --config ./config/batch-screens.json
  *
  *   # List available screens
- *   npx ts-node scripts/universal-converter.ts list
+ *   npx tsx scripts/universal-converter.ts list
  *
  *   # Generate component from existing data
- *   npx ts-node scripts/universal-converter.ts generate 243-2762
+ *   npx tsx scripts/universal-converter.ts generate 243-2762
  */
 
 import * as fs from 'fs';
@@ -950,7 +950,7 @@ async function main(): Promise<void> {
   switch (command) {
     case 'convert':
       if (!args[1]) {
-        console.log('Usage: npx ts-node scripts/universal-converter.ts convert <screenId>');
+        console.log('Usage: npx tsx scripts/universal-converter.ts convert <screenId>');
         process.exit(1);
       }
       await converter.convert(args[1]);
@@ -973,7 +973,7 @@ async function main(): Promise<void> {
 
     case 'generate':
       if (!args[1]) {
-        console.log('Usage: npx ts-node scripts/universal-converter.ts generate <screenId>');
+        console.log('Usage: npx tsx scripts/universal-converter.ts generate <screenId>');
         process.exit(1);
       }
       // Just generate component from existing data
@@ -985,7 +985,7 @@ async function main(): Promise<void> {
 Universal Figma-to-React-Native Converter
 
 Usage:
-  npx ts-node scripts/universal-converter.ts <command> [options]
+  npx tsx scripts/universal-converter.ts <command> [options]
 
 Commands:
   convert <screenId>    Convert a single screen
@@ -994,9 +994,9 @@ Commands:
   generate <screenId>   Generate component from existing data
 
 Examples:
-  npx ts-node scripts/universal-converter.ts convert 243-2762
-  npx ts-node scripts/universal-converter.ts batch 243-2762 1-28055 41-4569
-  npx ts-node scripts/universal-converter.ts list
+  npx tsx scripts/universal-converter.ts convert 243-2762
+  npx tsx scripts/universal-converter.ts batch 243-2762 1-28055 41-4569
+  npx tsx scripts/universal-converter.ts list
 `);
   }
 }

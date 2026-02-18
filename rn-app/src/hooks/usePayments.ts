@@ -15,6 +15,10 @@ import {
   addCardToken,
   deletePaymentMethod,
   generateReceipt,
+  createPaymentSchedule,
+  managePaymentSchedule,
+  getPaymentSchedules,
+  getCashbackHistory,
   InitiatePaymentRequest,
   InitiatePaymentData,
   PaymentHistoryItem,
@@ -24,6 +28,11 @@ import {
   PaymentErrorCode,
   ReceiptData,
   AddCardTokenRequest,
+  CreateScheduleRequest,
+  PaymentSchedule,
+  ManageScheduleRequest,
+  CashbackEntry,
+  CashbackHistoryData,
 } from '../services/api/payments';
 import { dashboardKeys } from './useDashboard';
 
@@ -36,6 +45,8 @@ export const paymentKeys = {
   history: () => [...paymentKeys.all, 'history'] as const,
   methods: () => [...paymentKeys.all, 'methods'] as const,
   receipt: (paymentId: string) => [...paymentKeys.all, 'receipt', paymentId] as const,
+  schedules: () => [...paymentKeys.all, 'schedules'] as const,
+  cashback: () => [...paymentKeys.all, 'cashback'] as const,
 };
 
 // ==============================================
@@ -257,7 +268,32 @@ export function useDeletePaymentMethod() {
         throw new Error(error ?? 'Failed to delete payment method');
       }
     },
-    onSuccess: () => {
+    // Optimistic update: remove the method from cache immediately for responsive UI
+    onMutate: async (methodId: string) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: paymentKeys.methods() });
+
+      // Snapshot the previous value for rollback
+      const previousMethods = queryClient.getQueryData<SavedPaymentMethod[]>(paymentKeys.methods());
+
+      // Optimistically remove the method from cache
+      if (previousMethods) {
+        queryClient.setQueryData<SavedPaymentMethod[]>(
+          paymentKeys.methods(),
+          previousMethods.filter((m) => m.id !== methodId)
+        );
+      }
+
+      return { previousMethods };
+    },
+    onError: (_error, _methodId, context) => {
+      // Rollback to the previous value on error
+      if (context?.previousMethods) {
+        queryClient.setQueryData(paymentKeys.methods(), context.previousMethods);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure cache is in sync with server
       queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
     },
   });
@@ -445,6 +481,70 @@ export function useVerifyUpi() {
         vpa: upiId,
       };
     },
+  });
+}
+
+// ==============================================
+// PAYMENT SCHEDULE HOOKS
+// ==============================================
+
+export function usePaymentSchedules(tenancyId?: string) {
+  return useQuery({
+    queryKey: [...paymentKeys.schedules(), tenancyId],
+    queryFn: async () => {
+      const { data, error } = await getPaymentSchedules(tenancyId, 'active');
+      if (error) throw new Error(error);
+      return data ?? [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useCreateSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (request: CreateScheduleRequest) => {
+      const { data, error } = await createPaymentSchedule(request);
+      if (error) throw new Error(error);
+      return data!;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.schedules() });
+    },
+  });
+}
+
+export function useManageSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (request: ManageScheduleRequest) => {
+      const { data, error } = await managePaymentSchedule(request);
+      if (error) throw new Error(error);
+      return data!;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.schedules() });
+    },
+  });
+}
+
+// ==============================================
+// CASHBACK HISTORY HOOK
+// ==============================================
+
+export function useCashbackHistory(
+  page = 1,
+  limit = 20,
+  filters?: { tenancy_id?: string; type?: string }
+) {
+  return useQuery({
+    queryKey: [...paymentKeys.cashback(), page, limit, filters],
+    queryFn: async () => {
+      const { data, error } = await getCashbackHistory(page, limit, filters);
+      if (error) throw new Error(error);
+      return data!;
+    },
+    staleTime: 1000 * 60 * 5,
   });
 }
 

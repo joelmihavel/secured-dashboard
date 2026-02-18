@@ -166,6 +166,8 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
             editable={!disabled}
             keyboardType="phone-pad"
             maxLength={11}
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: !!disabled }}
             style={[
               styles.input,
               hasValue && styles.inputFilled,

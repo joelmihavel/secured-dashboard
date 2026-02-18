@@ -145,6 +145,8 @@ function OTPInputComponent({
         maxLength={OTP_LENGTH}
         caretHidden
         editable={!disabled}
+        accessibilityLabel="OTP verification code"
+        accessibilityState={{ disabled: !!disabled }}
         style={styles.hiddenInput}
         testID={testID}
         // iOS native OTP autofill - automatically fetches SMS OTP codes
@@ -153,7 +155,7 @@ function OTPInputComponent({
       />
 
       {/* Visible boxes */}
-      <Pressable onPress={handlePress} style={styles.boxesContainer}>
+      <Pressable onPress={handlePress} style={styles.boxesContainer} accessibilityRole="none" accessibilityLabel={`OTP input, ${digits.length} of ${OTP_LENGTH} digits entered`}>
         {/* First group (0-2) */}
         <View style={styles.group}>
           {[0, 1, 2].map((index) => (

@@ -1,0 +1,58 @@
+# =============================================================================
+# TE-120: Transactions Screen Functional Flow
+# Route: /(transactions)/index
+# Figma: 243-5870 (no-cashback), 243-6083 (with-cashback)
+# testIDs: pay-now-button, notifications-button, help-button,
+#          payment-card-add-new
+# =============================================================================
+#
+# Validates:
+#   - Transactions screen renders with payment history
+#   - Payment method cards carousel is displayed
+#   - Notifications and help buttons are in the header
+#   - Transaction list items show date, amount, status
+#   - "Pay Now" button is visible at the bottom
+#   - No-cashback state hides cashback column
+#   - With-cashback state shows cashback earned per transaction
+#   - Tapping a transaction navigates to detail view
+# =============================================================================
+
+appId: com.flent.secured
+---
+# -- Test no-cashback state --
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///transactions/index?state=no-cashback"
+- waitForAnimationToEnd
+
+# Verify header actions
+- assertVisible:
+    id: "notifications-button"
+- assertVisible:
+    id: "help-button"
+
+# Verify payment card carousel
+- assertVisible:
+    id: "payment-card-add-new"
+    optional: true
+
+# Scroll to see Pay Now button
+- scrollUntilVisible:
+    element:
+      id: "pay-now-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "pay-now-button"
+
+# -- Test with-cashback state --
+- openLink: "flentsecured:///transactions/index?state=with-cashback"
+- waitForAnimationToEnd
+
+# Verify cashback-related elements are visible
+- assertVisible: "Cashback"
+    optional: true
+
+- assertVisible:
+    id: "notifications-button"

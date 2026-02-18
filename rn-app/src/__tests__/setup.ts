@@ -1,5 +1,21 @@
 import '@testing-library/react-native/extend-expect';
 
+// Mock @sentry/react-native (ESM module that Jest cannot transform)
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  wrap: jest.fn((component: unknown) => component),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  setUser: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  withScope: jest.fn((callback: (scope: unknown) => void) =>
+    callback({ setExtra: jest.fn() })
+  ),
+  Scope: jest.fn(),
+  ReactNativeTracing: jest.fn(),
+  ReactNavigationInstrumentation: jest.fn(),
+}));
+
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');

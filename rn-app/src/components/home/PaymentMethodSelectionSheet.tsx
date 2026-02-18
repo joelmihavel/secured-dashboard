@@ -148,6 +148,9 @@ function PaymentMethodSelectionSheetComponent({
         ]}
         onPress={() => handleMethodPress(method)}
         activeOpacity={0.8}
+        accessibilityRole="radio"
+        accessibilityState={{ selected: isSelected }}
+        accessibilityLabel={`${method.label}${isSelected ? ', selected' : ''}`}
       >
         <View style={styles.methodIcon}>
           {method.type === 'upi' && (
@@ -240,6 +243,8 @@ function PaymentMethodSelectionSheetComponent({
             style={styles.overlayTouchable}
             onPress={onClose}
             activeOpacity={1}
+            accessibilityRole="button"
+            accessibilityLabel="Close payment method selection"
           />
         </Animated.View>
 
@@ -276,6 +281,8 @@ function PaymentMethodSelectionSheetComponent({
                 style={styles.addNewButton}
                 onPress={onAddNewMethod}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Add new payment method"
               >
                 <View style={styles.addNewIcon}>
                   <Ionicons name="add" size={24} color={colors.brand[500]} />

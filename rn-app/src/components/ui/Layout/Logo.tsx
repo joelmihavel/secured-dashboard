@@ -24,7 +24,7 @@ function LogoComponent({ size = 48, color = colors.white }: LogoProps) {
   const height = FIGMA_HEIGHT * scale;
 
   return (
-    <View style={[styles.container, { width, height }]}>
+    <View style={[styles.container, { width, height }]} accessibilityRole="image" accessibilityLabel="Flent logo">
       <Svg width={width} height={height} viewBox="0 0 34 40" fill="none">
         {/* Flent logo - exact path from Figma asset */}
         <Path

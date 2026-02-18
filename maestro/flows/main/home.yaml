@@ -1,0 +1,71 @@
+# =============================================================================
+# TE-120: Home Screen Functional Flow
+# Route: /(main)/index
+# Figma: 243-2762 (bank-upi), 243-2967 (all-methods), 243-3170 (late),
+#         243-3378 (missed), 243-6296 (empty-upi), 243-6490 (setup-payment)
+# testIDs: home-screen, home-screen-loading, home-screen-error
+# =============================================================================
+#
+# Validates:
+#   - Home screen renders with user greeting
+#   - Payment method carousel shows configured methods
+#   - Tab switcher (Payments / Cashbacks) is interactive
+#   - Recent payments list or empty state displays
+#   - Bottom footer/navigation is visible
+#   - Empty state prompts payment setup
+#   - Active state shows upcoming/recent payment info
+#   - Late payment state shows warning banner
+#   - Missed payment state shows alert banner
+# =============================================================================
+
+appId: com.flent.secured
+---
+# -- Test active state with all methods --
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///main/index?state=all-methods"
+- waitForAnimationToEnd
+
+# Verify home screen rendered
+- assertVisible:
+    id: "home-screen"
+
+# Verify core home screen elements
+- assertVisible: "Home"
+    optional: true
+
+# -- Test empty state (setup payment) --
+- openLink: "flentsecured:///main/index?state=setup-payment"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# -- Test bank/UPI only state --
+- openLink: "flentsecured:///main/index?state=bank-upi"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# -- Test late payment state --
+- openLink: "flentsecured:///main/index?state=late-payment"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# Late payment state should show warning
+- assertVisible: "late"
+    optional: true
+
+# -- Test missed payment state --
+- openLink: "flentsecured:///main/index?state=missed-payment"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# Missed payment state should show alert
+- assertVisible: "missed"
+    optional: true

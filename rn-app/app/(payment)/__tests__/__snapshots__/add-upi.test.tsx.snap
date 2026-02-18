@@ -1,0 +1,636 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AddUpiScreen matches snapshot 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+  testID="add-upi-screen"
+>
+  <View
+    edges={
+      [
+        "top",
+        "bottom",
+        "left",
+        "right",
+      ]
+    }
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          false,
+          {
+            "backgroundColor": "#131313",
+          },
+        ]
+      }
+    >
+      <View
+        onLayout={[Function]}
+        style={
+          [
+            {
+              "flex": 1,
+            },
+            {
+              "paddingBottom": 0,
+            },
+          ]
+        }
+      >
+        <RCTScrollView
+          contentContainerStyle={
+            [
+              {
+                "flexGrow": 1,
+                "gap": 40,
+                "paddingHorizontal": 48,
+              },
+              {
+                "paddingBottom": 58,
+                "paddingTop": 164,
+              },
+            ]
+          }
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={
+            {
+              "flex": 1,
+            }
+          }
+        >
+          <View>
+            <View
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": undefined,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              hitSlop={
+                {
+                  "bottom": 12,
+                  "left": 12,
+                  "right": 12,
+                  "top": 12,
+                }
+              }
+              onClick={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                {
+                  "alignItems": "flex-start",
+                  "height": 40,
+                  "justifyContent": "center",
+                  "opacity": 1,
+                  "width": 40,
+                }
+              }
+            >
+              <RNSVGSvgView
+                align="xMidYMid"
+                bbHeight={24}
+                bbWidth={24}
+                fill="none"
+                focusable={false}
+                height={24}
+                meetOrSlice={0}
+                minX={0}
+                minY={0}
+                style={
+                  [
+                    {
+                      "backgroundColor": "transparent",
+                      "borderWidth": 0,
+                    },
+                    {
+                      "flex": 0,
+                      "height": 24,
+                      "width": 24,
+                    },
+                  ]
+                }
+                vbHeight={24}
+                vbWidth={24}
+                width={24}
+              >
+                <RNSVGGroup
+                  fill={null}
+                  propList={
+                    [
+                      "fill",
+                    ]
+                  }
+                >
+                  <RNSVGPath
+                    d="M15 18L9 12L15 6"
+                    fill={
+                      {
+                        "payload": 4278190080,
+                        "type": 0,
+                      }
+                    }
+                    propList={
+                      [
+                        "stroke",
+                        "strokeWidth",
+                        "strokeLinecap",
+                        "strokeLinejoin",
+                      ]
+                    }
+                    stroke={
+                      {
+                        "payload": 4294967295,
+                        "type": 0,
+                      }
+                    }
+                    strokeLinecap={1}
+                    strokeLinejoin={1}
+                    strokeWidth={2}
+                  />
+                </RNSVGGroup>
+              </RNSVGSvgView>
+            </View>
+            <View
+              style={
+                {
+                  "gap": 0,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 48,
+                      "fontWeight": "400",
+                      "letterSpacing": -2,
+                      "lineHeight": 64,
+                      "textAlign": "left",
+                    },
+                  ]
+                }
+              >
+                Add your
+              </Text>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#FF9A6D",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 48,
+                      "fontWeight": "400",
+                      "letterSpacing": -2,
+                      "lineHeight": 64,
+                      "textAlign": "left",
+                    },
+                  ]
+                }
+              >
+                UPI Method
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "gap": 16,
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#A9A9A9",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 12,
+                          "fontWeight": "500",
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Account holder name
+                  </Text>
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                  >
+                    <Text
+                      style={
+                        [
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 16,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 24,
+                            "textAlign": "left",
+                          },
+                          {
+                            "color": "#878787",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 12,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 20,
+                            "textAlign": "right",
+                          },
+                        ]
+                      }
+                    >
+                      edit
+                    </Text>
+                  </View>
+                </View>
+                <TextInput
+                  autoCapitalize="words"
+                  onChangeText={[Function]}
+                  placeholder="e.g. John Smith"
+                  placeholderTextColor="#444444"
+                  style={
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 20,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 32,
+                        "paddingHorizontal": 0,
+                        "paddingVertical": 8,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ]
+                  }
+                  testID="account-name-input"
+                  value=""
+                />
+              </View>
+              <View
+                style={
+                  {
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#A9A9A9",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 12,
+                          "fontWeight": "500",
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    UPI ID
+                  </Text>
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                  >
+                    <Text
+                      style={
+                        [
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 16,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 24,
+                            "textAlign": "left",
+                          },
+                          {
+                            "color": "#878787",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 12,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 20,
+                            "textAlign": "right",
+                          },
+                        ]
+                      }
+                    >
+                      edit
+                    </Text>
+                  </View>
+                </View>
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  onChangeText={[Function]}
+                  placeholder="e.g. john@oksbi"
+                  placeholderTextColor="#444444"
+                  style={
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 20,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 32,
+                        "paddingHorizontal": 0,
+                        "paddingVertical": 8,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ]
+                  }
+                  testID="upi-id-input"
+                  value=""
+                />
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "flex": 1,
+                  "minHeight": 40,
+                }
+              }
+            />
+            <View
+              accessibilityLabel="Proceed"
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": true,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              onBlur={[Function]}
+              onClick={[Function]}
+              onFocus={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                  },
+                  {
+                    "width": "100%",
+                  },
+                  undefined,
+                ]
+              }
+              testID="proceed-button"
+            >
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "gap": 8,
+                    "width": "100%",
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "backgroundColor": "#202020",
+                      "borderColor": "#202020",
+                      "borderRadius": 12,
+                      "borderWidth": 1,
+                      "justifyContent": "center",
+                      "padding": 16,
+                      "width": "100%",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#444444",
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                        "textAlign": "center",
+                      }
+                    }
+                  >
+                    Proceed
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  {
+                    "color": "#A9A9A9",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 12,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 20,
+                    "marginTop": 16,
+                    "textAlign": "left",
+                  },
+                ]
+              }
+            >
+              This will be used to make rent payments and earn cashback.
+            </Text>
+          </View>
+        </RCTScrollView>
+      </View>
+    </View>
+  </View>
+</View>
+`;

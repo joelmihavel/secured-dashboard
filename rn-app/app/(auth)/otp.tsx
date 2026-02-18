@@ -151,6 +151,11 @@ export default function OTPScreen() {
   const [mockError, setMockError] = React.useState<string | undefined>(getMockError);
   const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
 
+  // OTP expiration timer -- Supabase OTPs expire after 5 minutes (300s)
+  const OTP_VALIDITY_SECONDS = 300;
+  const [otpExpirySeconds, setOtpExpirySeconds] = React.useState(OTP_VALIDITY_SECONDS);
+  const [isOtpExpired, setIsOtpExpired] = React.useState(false);
+
   // Animation values
   const translateY = useSharedValue(0);
   const overlayOpacity = useSharedValue(0);
@@ -187,6 +192,20 @@ export default function OTPScreen() {
     }, 1000);
     return () => clearTimeout(timer);
   }, [cooldownRemaining]);
+
+  // OTP expiration countdown -- ticks every second when not in mock mode
+  useEffect(() => {
+    if (state) return; // Skip for mock/testing states
+    if (isOtpExpired) return;
+    if (otpExpirySeconds <= 0) {
+      setIsOtpExpired(true);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setOtpExpirySeconds((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [otpExpirySeconds, isOtpExpired, state]);
 
   // Map error codes to user-friendly messages
   const getErrorMessage = (): string | undefined => {
@@ -259,9 +278,12 @@ export default function OTPScreen() {
     // Enforce exponential backoff cooldown between retries
     if (cooldownRemaining > 0) return;
 
+    // Prevent submission if OTP has expired -- user must resend
+    if (isOtpExpired) return;
+
     isSubmittingRef.current = true;
     verifyCode(code, userName || undefined);
-  }, [otp, verifyCode, userName, isVerifyingOtp, cooldownRemaining]);
+  }, [otp, verifyCode, userName, isVerifyingOtp, cooldownRemaining, isOtpExpired]);
 
   const handleResend = useCallback(() => {
     setOtp('');
@@ -269,6 +291,9 @@ export default function OTPScreen() {
     failureCountRef.current = 0;
     lastFailureTimeRef.current = 0;
     setCooldownRemaining(0);
+    // Reset OTP expiration timer for the new code
+    setOtpExpirySeconds(OTP_VALIDITY_SECONDS);
+    setIsOtpExpired(false);
     if (error) clearError();
     resendCode();
   }, [resendCode, error, clearError]);
@@ -349,27 +374,48 @@ export default function OTPScreen() {
             <View style={styles.footerBlock}>
               {/* Proceed Button - Figma: "Proceed" with 12px border radius */}
               <PrimaryButton
-                title={cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Proceed'}
+                title={
+                  isOtpExpired
+                    ? 'Code Expired'
+                    : cooldownRemaining > 0
+                      ? `Wait ${cooldownRemaining}s`
+                      : 'Proceed'
+                }
                 onPress={handleProceed}
-                disabled={!isOtpComplete || !!error || cooldownRemaining > 0}
+                disabled={!isOtpComplete || !!error || cooldownRemaining > 0 || isOtpExpired}
                 loading={isVerifyingOtp}
                 showDivider={true}
                 testID="proceed-button"
               />
 
-              {/* Resend Link - Figma: "Didn't receive the code? Resend" */}
+              {/* Resend / Expiry Link */}
               {/* Using RNText directly to bypass custom Text component's default styles */}
               <View style={styles.resendContainer}>
-                <RNText style={styles.resendText}>
-                  Didn't receive the code?{' '}
-                  <RNText
-                    style={styles.resendLink}
-                    onPress={handleResend}
-                    disabled={isResendingOtp}
-                  >
-                    {isResendingOtp ? 'Sending...' : 'Resend'}
+                {isOtpExpired ? (
+                  <RNText style={styles.resendText}>
+                    Code expired.{' '}
+                    <RNText
+                      style={styles.resendLink}
+                      onPress={handleResend}
+                      disabled={isResendingOtp}
+                    >
+                      {isResendingOtp ? 'Sending...' : 'Send a new code'}
+                    </RNText>
                   </RNText>
-                </RNText>
+                ) : (
+                  <RNText style={styles.resendText}>
+                    {!state && otpExpirySeconds > 0 && otpExpirySeconds <= 60
+                      ? `Code expires in ${otpExpirySeconds}s. `
+                      : "Didn't receive the code? "}
+                    <RNText
+                      style={styles.resendLink}
+                      onPress={handleResend}
+                      disabled={isResendingOtp}
+                    >
+                      {isResendingOtp ? 'Sending...' : 'Resend'}
+                    </RNText>
+                  </RNText>
+                )}
               </View>
 
               {/* Cashfree text removed - belongs to underlying sign-up screen, not OTP sheet (Gemini feedback) */}

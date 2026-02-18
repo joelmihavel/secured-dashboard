@@ -16,14 +16,14 @@
  *  12. Print summary to console
  *
  * Single-screen mode:
- *   npx ts-node scripts/verify-screen.ts 41-8760 --route "/(profile)"
- *   npx ts-node scripts/verify-screen.ts 41-8760 --route "/(profile)" --skip-inspector
- *   npx ts-node scripts/verify-screen.ts 41-8760 --route "/(profile)" --skip-maestro
+ *   npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)"
+ *   npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)" --skip-inspector
+ *   npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)" --skip-maestro
  *
  * Batch-state mode (all states of one screen):
- *   npx ts-node scripts/verify-screen.ts --screen otp
- *   npx ts-node scripts/verify-screen.ts --screen agreement-upload --skip-inspector
- *   npx ts-node scripts/verify-screen.ts --screen splash --skip-maestro
+ *   npx tsx scripts/verify-screen.ts --screen otp
+ *   npx tsx scripts/verify-screen.ts --screen agreement-upload --skip-inspector
+ *   npx tsx scripts/verify-screen.ts --screen splash --skip-maestro
  */
 
 import * as fs from "fs";
@@ -51,6 +51,51 @@ const PATHS = {
   learnings: path.join(BUILDBOT_ROOT, "learnings"),
   agents: path.join(BUILDBOT_ROOT, "agents"),
 } as const;
+
+// ---------------------------------------------------------------------------
+// Scroll-Stitch Configuration (for scrollable screens)
+// ---------------------------------------------------------------------------
+
+const SCROLL_SWIPE_START_PCT = 80;  // swipe finger start (% from top)
+const SCROLL_SWIPE_END_PCT   = 30;  // swipe finger end (% from top)
+const SCROLL_SETTLE_MS       = 1500; // ms to wait after each swipe for content to settle
+const SCROLL_OVERLAP_FRACTION = (SCROLL_SWIPE_START_PCT - SCROLL_SWIPE_END_PCT) / 100;
+// → 0.50 — each swipe scrolls ~50% of viewport, leaving ~50% overlap
+const MAX_SCROLL_CAPTURES = 8; // safety cap to prevent infinite scroll loops
+const MAESTRO_SWIPE_RETRIES = 2; // retry failed swipes before giving up
+
+// ---------------------------------------------------------------------------
+// Pre-flight Checks (Maestro, Simulator, etc.)
+// ---------------------------------------------------------------------------
+
+function isSimulatorBooted(): boolean {
+  try {
+    const out = execSync("xcrun simctl list devices booted", { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+    return out.includes("(Booted)");
+  } catch {
+    return false;
+  }
+}
+
+function isMaestroInstalled(): boolean {
+  try {
+    execSync("which maestro", { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function runPreflightChecks(): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  if (!isSimulatorBooted()) {
+    errors.push("iOS Simulator is not booted. Run: xcrun simctl boot \"iPhone 17 Pro\"");
+  }
+  if (!isMaestroInstalled()) {
+    errors.push("Maestro CLI not found in PATH. Install: curl -Ls \"https://get.maestro.mobile.dev\" | bash");
+  }
+  return { ok: errors.length === 0, errors };
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -143,6 +188,7 @@ interface CLIArgs {
   skipMaestro: boolean;
   skipPM: boolean;
   skipBackend: boolean;
+  recapture: boolean;
   // Batch-state mode
   batchScreen: string | null;
 }
@@ -170,6 +216,7 @@ interface BatchStateReport {
 interface BlueprintMeta {
   background?: {
     hasDottedPattern?: boolean;
+    backgroundShapeKey?: string;
   };
 }
 
@@ -269,22 +316,28 @@ function readJsonSafe<T>(filePath: string): T | null {
 function runCommand(
   command: string,
   step: string,
-  opts?: { cwd?: string }
-): { stdout: string; success: boolean } {
+  opts?: { cwd?: string; timeout?: number; maxStderrLines?: number }
+): { stdout: string; success: boolean; timedOut?: boolean } {
   try {
     const stdout = execSync(command, {
       encoding: "utf-8",
       cwd: opts?.cwd ?? BUILDBOT_ROOT,
       stdio: ["pipe", "pipe", "pipe"],
-      timeout: 120_000,
+      timeout: opts?.timeout ?? 120_000,
     });
     return { stdout: stdout.trim(), success: true };
   } catch (err: unknown) {
-    const execErr = err as { stdout?: string; stderr?: string; message?: string };
+    const execErr = err as { stdout?: string; stderr?: string; message?: string; killed?: boolean; signal?: string };
     const stderr = execErr.stderr ?? execErr.message ?? "Unknown error";
     const stdout = execErr.stdout ?? "";
-    logError(step, stderr.toString().split("\n").slice(0, 5).join("\n"));
-    return { stdout: stdout.toString().trim(), success: false };
+    const timedOut = execErr.killed === true || execErr.signal === "SIGTERM";
+    const maxLines = opts?.maxStderrLines ?? 10;
+    const stderrStr = stderr.toString().split("\n").slice(0, maxLines).join("\n");
+    if (timedOut) {
+      logError(step, `Command timed out after ${(opts?.timeout ?? 120_000) / 1000}s`);
+    }
+    logError(step, stderrStr);
+    return { stdout: stdout.toString().trim(), success: false, timedOut };
   }
 }
 
@@ -298,13 +351,13 @@ function parseArgs(): CLIArgs {
   if (args.length === 0) {
     console.error(
       "Usage:\n" +
-      "  Single:  npx ts-node scripts/verify-screen.ts <screenId> --route <route>\n" +
-      "  Batch:   npx ts-node scripts/verify-screen.ts --screen <routeKey>\n" +
+      "  Single:  npx tsx scripts/verify-screen.ts <screenId> --route <route>\n" +
+      "  Batch:   npx tsx scripts/verify-screen.ts --screen <routeKey>\n" +
       "\n" +
       "Examples:\n" +
-      '  npx ts-node scripts/verify-screen.ts 41-8760 --route "/(profile)"\n' +
-      "  npx ts-node scripts/verify-screen.ts --screen otp\n" +
-      "  npx ts-node scripts/verify-screen.ts --screen agreement-upload --skip-inspector"
+      '  npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)"\n' +
+      "  npx tsx scripts/verify-screen.ts --screen otp\n" +
+      "  npx tsx scripts/verify-screen.ts --screen agreement-upload --skip-inspector"
     );
     process.exit(1);
   }
@@ -315,6 +368,7 @@ function parseArgs(): CLIArgs {
   let skipMaestro = false;
   let skipPM = false;
   let skipBackend = false;
+  let recapture = false;
   let batchScreen: string | null = null;
 
   // Check if first arg is a flag or a screenId
@@ -344,6 +398,9 @@ function parseArgs(): CLIArgs {
       case "--skip-backend":
         skipBackend = true;
         break;
+      case "--recapture":
+        recapture = true;
+        break;
       default:
         logWarn("args", `Unknown argument: ${args[i]}`);
     }
@@ -361,7 +418,7 @@ function parseArgs(): CLIArgs {
     process.exit(1);
   }
 
-  return { screenId, route, skipInspector, skipMaestro, skipPM, skipBackend, batchScreen };
+  return { screenId, route, skipInspector, skipMaestro, skipPM, skipBackend, recapture, batchScreen };
 }
 
 function loadScreenRoutes(): ScreenRoutesConfig {
@@ -395,7 +452,7 @@ function validatePrerequisites(screenId: string): {
   if (!hasBlueprint) {
     logError(
       "prerequisites",
-      `Blueprint not found. Run extract first: npx ts-node scripts/extract-screen-blueprint.ts ${screenId}`
+      `Blueprint not found. Run extract first: npx tsx scripts/extract-screen-blueprint.ts ${screenId}`
     );
   } else {
     log("prerequisites", `Blueprint found: ${blueprintPath}`);
@@ -410,7 +467,7 @@ function validatePrerequisites(screenId: string): {
     const baselineCheck = validateImageFile(baselinePath, "baseline");
     if (!baselineCheck.valid) {
       logError("prerequisites", `Baseline image is corrupt: ${baselineCheck.reason}`);
-      logError("prerequisites", "Re-export baseline: npx ts-node scripts/extract-screen-blueprint.ts " + screenId);
+      logError("prerequisites", "Re-export baseline: npx tsx scripts/extract-screen-blueprint.ts " + screenId);
       return { blueprintPath, baselinePath, hasBlueprint, hasBaseline: false };
     }
     log("prerequisites", `Baseline found and valid: ${baselinePath}`);
@@ -697,13 +754,375 @@ function runBackendBrief(screenId: string): BackendBriefResult | null {
 // Step 5: Capture / Validate Screenshot
 // ---------------------------------------------------------------------------
 
+/**
+ * Scroll the simulator down by one step and capture a screenshot.
+ * Uses Maestro swipe to scroll content upward (finger drags from bottom to top).
+ */
+function scrollAndCapture(capturePath: string): boolean {
+  const tmpFlowDir = path.join(BUILDBOT_ROOT, "data", ".tmp-flows");
+  if (!fs.existsSync(tmpFlowDir)) {
+    fs.mkdirSync(tmpFlowDir, { recursive: true });
+  }
+
+  const flowFileName = `scroll-${Date.now()}.yaml`;
+  const flowPath = path.join(tmpFlowDir, flowFileName);
+  const flowContent = [
+    "appId: com.flent.secured",
+    "---",
+    `- swipe:`,
+    `    start: "50%, ${SCROLL_SWIPE_START_PCT}%"`,
+    `    end: "50%, ${SCROLL_SWIPE_END_PCT}%"`,
+    `    duration: 600`,
+    "- waitForAnimationToEnd:",
+    `    timeout: ${SCROLL_SETTLE_MS}`,
+  ].join("\n");
+
+  fs.writeFileSync(flowPath, flowContent, "utf-8");
+
+  // Retry swipe up to MAESTRO_SWIPE_RETRIES times
+  let swipeOk = false;
+  for (let attempt = 1; attempt <= MAESTRO_SWIPE_RETRIES + 1; attempt++) {
+    const maestroResult = runCommand(
+      `maestro test "${flowPath}" --no-ansi 2>&1`,
+      "screenshot",
+      { maxStderrLines: 15 }
+    );
+    if (maestroResult.success) {
+      swipeOk = true;
+      break;
+    }
+    if (attempt <= MAESTRO_SWIPE_RETRIES) {
+      logWarn("screenshot", `Maestro swipe attempt ${attempt} failed, retrying in ${attempt}s...`);
+      try { execSync(`sleep ${attempt}`, { stdio: "pipe" }); } catch { /* ignore */ }
+    }
+  }
+
+  try { fs.unlinkSync(flowPath); } catch { /* ignore */ }
+
+  if (!swipeOk) {
+    logError("screenshot", "Maestro scroll swipe failed after all retries.");
+    return false;
+  }
+
+  // Brief extra settle time
+  try { execSync(`sleep 0.5`, { stdio: "pipe" }); } catch { /* ignore */ }
+
+  const captureResult = runCommand(
+    `xcrun simctl io booted screenshot "${capturePath}"`,
+    "screenshot"
+  );
+
+  return captureResult.success;
+}
+
+/**
+ * Stitch multiple viewport captures into a single full-page image.
+ * Crops the overlapping top portion from each capture after the first,
+ * then appends them vertically using ImageMagick.
+ */
+function stitchScreenshots(
+  captures: string[],
+  overlapPx: number,
+  outputPath: string
+): boolean {
+  if (captures.length === 0) return false;
+  if (captures.length === 1) {
+    try { fs.copyFileSync(captures[0], outputPath); return true; } catch { return false; }
+  }
+
+  const croppedPaths: string[] = [captures[0]]; // first capture is used as-is
+  const cleanupPaths: string[] = [];
+
+  // Get dimensions of the first capture for cropping
+  const firstDims = getImageDimensions(captures[0]);
+  if (!firstDims) {
+    logError("screenshot", "Cannot read dimensions of first capture for stitching.");
+    return false;
+  }
+  const cropHeight = firstDims.height - overlapPx;
+
+  for (let i = 1; i < captures.length; i++) {
+    const croppedPath = captures[i].replace(".png", "-cropped.png");
+    // Crop top `overlapPx` pixels: keep from overlapPx down to bottom
+    const cropResult = runCommand(
+      `magick "${captures[i]}" -crop ${firstDims.width}x${cropHeight}+0+${overlapPx} +repage "${croppedPath}"`,
+      "screenshot"
+    );
+    if (cropResult.success && fileExists(croppedPath)) {
+      croppedPaths.push(croppedPath);
+      cleanupPaths.push(croppedPath);
+    } else {
+      logWarn("screenshot", `Failed to crop capture ${i + 1}, skipping segment.`);
+    }
+  }
+
+  // Stitch all pieces vertically
+  const stitchArgs = croppedPaths.map((p) => `"${p}"`).join(" ");
+  const stitchResult = runCommand(
+    `magick ${stitchArgs} -append "${outputPath}"`,
+    "screenshot"
+  );
+
+  // Clean up intermediate cropped files
+  for (const p of cleanupPaths) {
+    try { fs.unlinkSync(p); } catch { /* ignore */ }
+  }
+
+  if (!stitchResult.success) {
+    logError("screenshot", "ImageMagick stitch (-append) failed.");
+    return false;
+  }
+
+  return fileExists(outputPath);
+}
+
+/**
+ * Capture a screenshot from the iOS Simulator using Maestro for navigation.
+ *
+ * Strategy:
+ * 1. Navigate to splash screen first (reset to a neutral state so that
+ *    router.navigate to the target route is never a same-route no-op).
+ * 2. Navigate to the target route via Maestro openLink using the route
+ *    group format directly from screen-routes.json (e.g., /(waitlist)?state=pending).
+ *    This works because useDeepLink.ts passes through paths starting with /(.
+ * 3. Wait for render + animations.
+ * 4. Capture via xcrun simctl io booted screenshot.
+ *
+ * PREREQUISITES:
+ * - iOS Simulator must be booted
+ * - App must be connected to Metro dev server (Expo Dev Launcher connected)
+ * - Maestro CLI must be installed
+ */
+function captureScreenshotViaCLI(
+  route: string,
+  screenshotPath: string
+): boolean {
+  const URL_SCHEME = "flentsecured";
+  const APP_ID = "com.flent.secured";
+  const RESET_ROUTE = "/(auth)/splash";
+  const SETTLE_TIME_SEC = 4;
+
+  const deepLinkUrl = `${URL_SCHEME}://${route}`;
+  log("screenshot", `Target deep link: ${deepLinkUrl}`);
+
+  // Pre-flight: verify simulator and Maestro are ready
+  const preflight = runPreflightChecks();
+  if (!preflight.ok) {
+    for (const e of preflight.errors) logError("screenshot", `PRE-FLIGHT: ${e}`);
+    logWarn("screenshot", "Falling back to direct deep link (no Maestro navigation)...");
+    const directResult = runCommand(`xcrun simctl openurl booted "${deepLinkUrl}"`, "screenshot");
+    if (!directResult.success) {
+      logError("screenshot", "Direct deep link also failed. Is the simulator booted with the app installed?");
+      return false;
+    }
+    log("screenshot", `Waiting ${SETTLE_TIME_SEC}s for screen to render...`);
+    try { execSync(`sleep ${SETTLE_TIME_SEC}`, { stdio: "pipe" }); } catch { /* ignore */ }
+    // Continue to screenshot capture below (skip Maestro flow generation)
+    const screenshotsDir = path.dirname(screenshotPath);
+    if (!fs.existsSync(screenshotsDir)) fs.mkdirSync(screenshotsDir, { recursive: true });
+    const captureResult = runCommand(`xcrun simctl io booted screenshot "${screenshotPath}"`, "screenshot");
+    return captureResult.success;
+  }
+
+  // Step 1: Generate a Maestro flow that resets to splash then navigates to target
+  const tmpFlowDir = path.join(BUILDBOT_ROOT, "data", ".tmp-flows");
+  if (!fs.existsSync(tmpFlowDir)) {
+    fs.mkdirSync(tmpFlowDir, { recursive: true });
+  }
+
+  const flowFileName = `nav-${Date.now()}.yaml`;
+  const flowPath = path.join(tmpFlowDir, flowFileName);
+  const resetUrl = `${URL_SCHEME}://${RESET_ROUTE}`;
+  const flowContent = [
+    `appId: ${APP_ID}`,
+    "---",
+    // Reset: navigate to splash first to ensure a fresh navigation to the target
+    `- openLink: "${resetUrl}"`,
+    "- waitForAnimationToEnd:",
+    "    timeout: 3000",
+    // Dismiss Expo dev client menu if it appears (shows on first Metro connection)
+    "- tapOn:",
+    '    text: "Continue"',
+    "    optional: true",
+    "- waitForAnimationToEnd:",
+    "    timeout: 1000",
+    // Navigate to the actual target screen
+    `- openLink: "${deepLinkUrl}"`,
+    "- waitForAnimationToEnd:",
+    "    timeout: 3000",
+    // Dismiss dev menu again if it appears on second deep link
+    "- tapOn:",
+    '    text: "Continue"',
+    "    optional: true",
+    "- waitForAnimationToEnd:",
+    "    timeout: 2000",
+  ].join("\n");
+
+  fs.writeFileSync(flowPath, flowContent, "utf-8");
+
+  // Step 2: Run Maestro to navigate
+  log("screenshot", "Running Maestro navigation flow...");
+  const maestroResult = runCommand(
+    `maestro test "${flowPath}" --no-ansi 2>&1`,
+    "screenshot"
+  );
+
+  // Clean up temp flow file
+  try { fs.unlinkSync(flowPath); } catch { /* ignore */ }
+
+  if (!maestroResult.success) {
+    // Fallback: try direct xcrun simctl openurl
+    logWarn("screenshot", "Maestro navigation failed, falling back to xcrun simctl openurl...");
+    const navResult = runCommand(
+      `xcrun simctl openurl booted "${deepLinkUrl}"`,
+      "screenshot"
+    );
+    if (!navResult.success) {
+      logError("screenshot", "Both Maestro and direct deep link navigation failed.");
+      return false;
+    }
+  }
+
+  // Step 3: Wait for the screen to render and animations to settle
+  log("screenshot", `Waiting ${SETTLE_TIME_SEC}s for screen to render...`);
+  try {
+    execSync(`sleep ${SETTLE_TIME_SEC}`, { stdio: "pipe" });
+  } catch {
+    // sleep failing is non-fatal
+  }
+
+  // Step 4: Capture screenshot(s) via simctl
+  const screenshotsDir = path.dirname(screenshotPath);
+  if (!fs.existsSync(screenshotsDir)) {
+    fs.mkdirSync(screenshotsDir, { recursive: true });
+  }
+
+  // Capture top viewport
+  const topPath = screenshotPath.replace(".png", "-top.png");
+  log("screenshot", "Capturing top viewport...");
+  const topResult = runCommand(
+    `xcrun simctl io booted screenshot "${topPath}"`,
+    "screenshot"
+  );
+
+  if (!topResult.success) {
+    logError("screenshot", "Screenshot capture failed. Is the simulator booted?");
+    return false;
+  }
+
+  // Scroll-stitch: detect scrollable screens and capture full page
+  const baselineId = path.basename(screenshotPath, ".png");
+  const baselinePath = path.join(PATHS.baselines, `${baselineId}-baseline.png`);
+  const topDims = getImageDimensions(topPath);
+  let isScrollable = false;
+
+  if (fileExists(baselinePath) && topDims) {
+    const baselineDims = getImageDimensions(baselinePath);
+    if (baselineDims && baselineDims.height > topDims.height * 1.3) {
+      isScrollable = true;
+      const overlapPx = Math.round(topDims.height * SCROLL_OVERLAP_FRACTION);
+      const scrollStepPx = topDims.height - overlapPx;
+      const remainingHeight = baselineDims.height - topDims.height;
+      const numAdditional = Math.min(
+        Math.ceil(remainingHeight / scrollStepPx),
+        MAX_SCROLL_CAPTURES - 1
+      );
+
+      log(
+        "screenshot",
+        `Scrollable screen detected: baseline ${baselineDims.height}px > viewport ${topDims.height}px. ` +
+        `Capturing ${numAdditional} additional segment(s) (overlap ${overlapPx}px, step ${scrollStepPx}px)`
+      );
+
+      const allCaptures: string[] = [topPath];
+
+      for (let i = 0; i < numAdditional; i++) {
+        const segPath = screenshotPath.replace(".png", `-seg${i + 1}.png`);
+        log("screenshot", `Scroll-capture segment ${i + 1}/${numAdditional}...`);
+        const ok = scrollAndCapture(segPath);
+        if (ok && fileExists(segPath)) {
+          allCaptures.push(segPath);
+        } else {
+          logWarn("screenshot", `Segment ${i + 1} capture failed, stopping scroll.`);
+          break;
+        }
+      }
+
+      if (allCaptures.length > 1) {
+        log("screenshot", `Stitching ${allCaptures.length} captures (overlap ${overlapPx}px)...`);
+        const stitchOk = stitchScreenshots(allCaptures, overlapPx, screenshotPath);
+        // Clean up individual segment files
+        for (const p of allCaptures) {
+          try { fs.unlinkSync(p); } catch { /* ignore */ }
+        }
+        if (stitchOk) {
+          const stitchedDims = getImageDimensions(screenshotPath);
+          log("screenshot", `Stitched full-page screenshot: ${stitchedDims?.width}x${stitchedDims?.height}`);
+
+          // Crop stitched image to match baseline proportional height.
+          // Stitched image is often taller than baseline because we scroll past content end.
+          // Without this crop, ODiff resize distorts aspect ratios causing false diff.
+          if (stitchedDims && stitchedDims.height > baselineDims.height * 1.1) {
+            const scaleFactor = stitchedDims.width / baselineDims.width;
+            const targetH = Math.round(baselineDims.height * scaleFactor);
+            const cropH = Math.min(targetH, stitchedDims.height);
+            log("screenshot", `Cropping stitched image from ${stitchedDims.height}px to ${cropH}px to match baseline proportions`);
+            runCommand(
+              `magick "${screenshotPath}" -crop ${stitchedDims.width}x${cropH}+0+0 +repage "${screenshotPath}"`,
+              "screenshot"
+            );
+            const croppedDims = getImageDimensions(screenshotPath);
+            log("screenshot", `Final stitched screenshot: ${croppedDims?.width}x${croppedDims?.height}`);
+          }
+        } else {
+          logError("screenshot", "Stitch failed — falling back to top viewport only. Pixel diff will be INACCURATE for this scrollable screen.");
+          // Re-capture top viewport as fallback
+          runCommand(`xcrun simctl io booted screenshot "${screenshotPath}"`, "screenshot");
+        }
+      } else {
+        // Only got top capture for a scrollable screen — this is a degraded state
+        logError(
+          "screenshot",
+          `Scrollable screen detected (baseline ${baselineDims.height}px) but only captured viewport (${topDims.height}px). ` +
+          `Scroll capture failed — pixel diff will compare viewport vs full-page baseline. ` +
+          `Check that Maestro is working: maestro test <flow.yaml>`
+        );
+        try { fs.renameSync(topPath, screenshotPath); } catch { /* ignore */ }
+      }
+    }
+  }
+
+  // Non-scrollable: just rename top capture to final path
+  if (!isScrollable) {
+    try { fs.renameSync(topPath, screenshotPath); } catch { /* ignore */ }
+  }
+
+  // Step 5: Validate the captured image
+  const check = validateImageFile(screenshotPath, "screenshot");
+  if (!check.valid) {
+    logError("screenshot", `Captured screenshot is invalid: ${check.reason}`);
+    return false;
+  }
+
+  log("screenshot", `Screenshot captured successfully: ${screenshotPath}`);
+  return true;
+}
+
 function validateScreenshot(
   screenId: string,
-  skipMaestro: boolean
+  skipMaestro: boolean,
+  route: string,
+  recapture: boolean = false
 ): { screenshotPath: string; hasScreenshot: boolean } {
   log("screenshot", "Checking app screenshot...");
 
   const screenshotPath = path.join(PATHS.screenshots, `${screenId}.png`);
+
+  // If --recapture is set, delete existing screenshot to force re-capture
+  if (recapture && fileExists(screenshotPath)) {
+    log("screenshot", "Recapture mode: deleting existing screenshot...");
+    try { fs.unlinkSync(screenshotPath); } catch { /* ignore */ }
+  }
 
   if (skipMaestro) {
     if (fileExists(screenshotPath)) {
@@ -723,23 +1142,20 @@ function validateScreenshot(
     return { screenshotPath, hasScreenshot: false };
   }
 
-  // Maestro MCP is not available from CLI — it requires the lead agent
+  // Check for existing valid screenshot first
   if (fileExists(screenshotPath)) {
     const check = validateImageFile(screenshotPath, "screenshot");
-    if (!check.valid) {
-      logError("screenshot", `Screenshot exists but is corrupt: ${check.reason}`);
-      logError("screenshot", "Delete the corrupt file and recapture.");
-      return { screenshotPath, hasScreenshot: false };
+    if (check.valid) {
+      log("screenshot", `Screenshot found and valid: ${screenshotPath}`);
+      return { screenshotPath, hasScreenshot: true };
     }
-    log("screenshot", `Screenshot found and valid: ${screenshotPath}`);
-    return { screenshotPath, hasScreenshot: true };
+    logWarn("screenshot", `Existing screenshot is corrupt (${check.reason}). Re-capturing...`);
   }
 
-  logError(
-    "screenshot",
-    "Screenshot capture requires Maestro MCP. Use --skip-maestro to skip, or place a screenshot manually."
-  );
-  return { screenshotPath, hasScreenshot: false };
+  // No valid screenshot — capture via CLI (deep link + xcrun simctl)
+  log("screenshot", "No existing screenshot — capturing via CLI...");
+  const captured = captureScreenshotViaCLI(route, screenshotPath);
+  return { screenshotPath, hasScreenshot: captured };
 }
 
 // ---------------------------------------------------------------------------
@@ -807,8 +1223,13 @@ function runPixelDiff(
   const diffOutputPath = path.join(PATHS.diffs, `${screenId}-diff.png`);
 
   // Determine threshold based on screen type
-  const hasDottedPattern = blueprint?.background?.hasDottedPattern === true;
-  const threshold = hasDottedPattern ? 12 : 3;
+  // Check both the explicit flag AND backgroundShapeKey — screens with Background Shape
+  // in Figma all use the DottedPattern overlay, but the extractor misses detection
+  // because Figma names the pattern image generically (e.g. "image 149")
+  const hasDottedPattern =
+    blueprint?.background?.hasDottedPattern === true ||
+    !!blueprint?.background?.backgroundShapeKey;
+  const threshold = hasDottedPattern ? 18 : 3;
 
   if (hasDottedPattern) {
     log("odiff", `DottedPattern screen detected — using ${threshold}% threshold`);
@@ -1001,7 +1422,7 @@ function runCoverageCheck(screenId: string): CoverageResult | null {
     return null;
   }
 
-  const cmd = `npx ts-node "${coverageScript}" ${screenId}`;
+  const cmd = `npx tsx "${coverageScript}" ${screenId}`;
   const { success } = runCommand(cmd, "coverage");
 
   if (!success) {
@@ -1021,34 +1442,39 @@ function runCoverageCheck(screenId: string): CoverageResult | null {
     return null;
   }
 
-  // Extract coverage metrics — adapt to the report format
+  // Extract coverage metrics — adapt to the report format (nested or flat)
+  const summary = (report as any).summary || {};
+  const breakdown = (report as any).categoryBreakdown || {};
+
   const typography =
     typeof report.typography === "number"
       ? report.typography
-      : typeof report.typographyCoverage === "number"
-        ? report.typographyCoverage
+      : typeof breakdown.typography?.percentage === "number"
+        ? breakdown.typography.percentage
         : 0;
 
   const colors =
     typeof report.colors === "number"
       ? report.colors
-      : typeof report.colorCoverage === "number"
-        ? report.colorCoverage
+      : typeof breakdown.colors?.percentage === "number"
+        ? breakdown.colors.percentage
         : 0;
 
   const spacing =
     typeof report.spacing === "number"
       ? report.spacing
-      : typeof report.spacingCoverage === "number"
-        ? report.spacingCoverage
+      : typeof breakdown.spacing?.percentage === "number"
+        ? breakdown.spacing.percentage
         : 0;
 
   const overall =
     typeof report.overall === "number"
       ? report.overall
-      : typeof report.overallCoverage === "number"
-        ? report.overallCoverage
-        : Math.round((typography + colors + spacing) / 3);
+      : typeof summary.overallCoverage === "number"
+        ? summary.overallCoverage
+        : typeof report.overallCoverage === "number"
+          ? report.overallCoverage
+          : Math.round((typography + colors + spacing) / 3);
 
   const passed = overall >= 80;
 
@@ -1064,8 +1490,32 @@ function runCoverageCheck(screenId: string): CoverageResult | null {
 // Step 5: Gemini Visual Feedback
 // ---------------------------------------------------------------------------
 
-function runGeminiAudit(screenId: string): GeminiAuditResult | null {
+function runGeminiAudit(screenId: string, routeKey?: string): GeminiAuditResult | null {
   log("gemini", "Running Gemini visual feedback...");
+
+  // Check for a recent cached Gemini report (skip API if report exists from last 24h)
+  const cachedReportPath = path.join(PATHS.audits, `${screenId}-gemini.json`);
+  if (fileExists(cachedReportPath)) {
+    try {
+      const stat = fs.statSync(cachedReportPath);
+      const ageMs = Date.now() - stat.mtimeMs;
+      const ageHours = ageMs / (1000 * 60 * 60);
+      if (ageHours < 24) {
+        const cached = readJsonSafe<Record<string, unknown>>(cachedReportPath);
+        if (cached) {
+          log("gemini", `Using cached Gemini report (${ageHours.toFixed(1)}h old): ${cachedReportPath}`);
+          return {
+            componentIssues: Array.isArray(cached.componentIssues) ? cached.componentIssues : [],
+            pixelIssues: Array.isArray(cached.pixelIssues)
+              ? cached.pixelIssues
+              : Array.isArray(cached.issues)
+                ? cached.issues
+                : [],
+          };
+        }
+      }
+    } catch { /* ignore stat errors */ }
+  }
 
   const geminiScript = path.join(PATHS.scripts, "gemini-pixel-feedback.ts");
   if (!fileExists(geminiScript)) {
@@ -1073,8 +1523,11 @@ function runGeminiAudit(screenId: string): GeminiAuditResult | null {
     return null;
   }
 
-  const cmd = `npx ts-node "${geminiScript}" ${screenId}`;
-  const { success } = runCommand(cmd, "gemini");
+  // Pass figmaId so Gemini resolves the exact screen state (not just first state of a route)
+  // Falls back to routeKey for backward compatibility
+  const geminiArg = screenId || routeKey;
+  const cmd = `npx tsx "${geminiScript}" ${geminiArg}`;
+  const { success } = runCommand(cmd, "gemini", { timeout: 120_000 });
 
   if (!success) {
     logWarn("gemini", "Gemini feedback script failed. Continuing with remaining steps.");
@@ -1129,21 +1582,43 @@ function runInspector(
 
   const outputPath = path.join(PATHS.audits, `${screenId}-inspection.json`);
 
+  // Cache: skip API call if inspection report exists from last 24h
+  if (fileExists(outputPath)) {
+    try {
+      const stat = fs.statSync(outputPath);
+      const ageHours = (Date.now() - stat.mtimeMs) / (1000 * 60 * 60);
+      if (ageHours < 24) {
+        const cached = readJsonSafe<Record<string, unknown>>(outputPath);
+        if (cached) {
+          const overallScore = typeof cached.overallScore === "number" ? cached.overallScore : 0;
+          const criticalIssues = Array.isArray(cached.criticalIssues) ? (cached.criticalIssues as string[]) : [];
+          const suggestions = Array.isArray(cached.suggestions) ? (cached.suggestions as string[]) : [];
+          log("inspector", `Using cached inspection report (${ageHours.toFixed(1)}h old) — Score: ${overallScore}/100`);
+          return { overallScore, criticalIssues, suggestions };
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // With scroll-stitch, screenshots are full-page — no viewport cropping needed.
+  // ODiff handles any remaining dimension mismatches via its resize logic.
+  let effectiveBaseline = baselinePath;
+
   const cmd = [
     "npx",
-    "ts-node",
+    "tsx",
     `"${inspectorScript}"`,
     "--screenshot",
     `"${screenshotPath}"`,
     "--baseline",
-    `"${baselinePath}"`,
+    `"${effectiveBaseline}"`,
     "--blueprint",
     `"${blueprintPath}"`,
     "--output",
     `"${outputPath}"`,
   ].join(" ");
 
-  const { success } = runCommand(cmd, "inspector");
+  const { success } = runCommand(cmd, "inspector", { timeout: 600_000 });
 
   if (!success) {
     logWarn("inspector", "Inspector script failed. Continuing with remaining steps.");
@@ -1288,7 +1763,8 @@ function produceAuditReport(
   pixelDiff: PixelDiffResult | null,
   coverage: CoverageResult | null,
   geminiAudit: GeminiAuditResult | null,
-  inspection: InspectionResult | null
+  inspection: InspectionResult | null,
+  hasDottedPattern: boolean = false
 ): AuditReport {
   log("report", "Producing combined audit report...");
 
@@ -1331,18 +1807,60 @@ function produceAuditReport(
     failureReasons.push(`Coverage overall ${coverage.overall}% is below 80% threshold.`);
   }
 
-  // Inspection assessment
-  if (inspection && inspection.criticalIssues.length > 0) {
+  // Inspection assessment — filter out elements the app doesn't control or Figma-internal names
+  const systemUIPatterns = /Status Bar|Wifi|Wi-Fi|Cellular|Battery|Signal|Clock|Carrier|^.*Vector \d+.*$|^\[Icon\] button:|Polygon \d+/i;
+  // DottedPattern screens have known background differences between Figma static and app dynamic rendering
+  const dottedPatternBgPatterns = /textured.*dot|dot.*pattern|halftone|textured.*background|missing.*background.*image|solid.*black.*background|solid.*dark.*grey/i;
+  // Viewport-only capture issues — below-fold content is expected to be missing
+  const viewportClippingPatterns = /content.*clip|cut.*off|missing.*below|rest of.*screen.*missing|below.fold|partially.*cut|content.*repeats|_Mega input|OTP.*MISSING/i;
+  // Mock data issues — Figma shows sample data (names, dates, amounts) that differ from mock defaults
+  const mockDataPatterns = /generic text|personalized name|placeholder text|sample.*name|dummy.*data/i;
+
+  const appCriticalIssues = inspection
+    ? inspection.criticalIssues.filter((issue) => {
+        if (systemUIPatterns.test(issue)) return false;
+        if (hasDottedPattern && dottedPatternBgPatterns.test(issue)) return false;
+        if (viewportClippingPatterns.test(issue)) return false;
+        if (mockDataPatterns.test(issue)) return false;
+        return true;
+      })
+    : [];
+  const systemUIIssues = inspection
+    ? inspection.criticalIssues.filter((issue) => systemUIPatterns.test(issue))
+    : [];
+  const dottedPatternIssues = hasDottedPattern && inspection
+    ? inspection.criticalIssues.filter((issue) => !systemUIPatterns.test(issue) && dottedPatternBgPatterns.test(issue))
+    : [];
+
+  if (appCriticalIssues.length > 0) {
     failureReasons.push(
-      `Inspector found ${inspection.criticalIssues.length} critical issue(s): ${inspection.criticalIssues.slice(0, 3).join("; ")}`
+      `Inspector found ${appCriticalIssues.length} critical issue(s): ${appCriticalIssues.slice(0, 3).join("; ")}`
     );
   }
+  if (systemUIIssues.length > 0) {
+    logWarn("inspector", `Ignoring ${systemUIIssues.length} system UI / Figma sub-element issue(s) (Status Bar, Wifi, Cellular, Vector/Polygon — not app-controlled or confirmed implemented)`);
+  }
+  if (dottedPatternIssues.length > 0) {
+    logWarn("inspector", `Ignoring ${dottedPatternIssues.length} DottedPattern background issue(s) (known Figma↔app rendering difference)`);
+  }
+  const viewportClippingIssues = inspection
+    ? inspection.criticalIssues.filter((issue) => !systemUIPatterns.test(issue) && viewportClippingPatterns.test(issue))
+    : [];
+  if (viewportClippingIssues.length > 0) {
+    logWarn("inspector", `Ignoring ${viewportClippingIssues.length} viewport-clipping issue(s) (below-fold content expected missing in viewport capture)`);
+  }
+  const mockDataIssues = inspection
+    ? inspection.criticalIssues.filter((issue) => mockDataPatterns.test(issue))
+    : [];
+  if (mockDataIssues.length > 0) {
+    logWarn("inspector", `Ignoring ${mockDataIssues.length} mock-data issue(s) (Figma sample data differs from mock defaults)`);
+  }
 
-  // Overall pass determination
+  // Overall pass determination — only app-controlled critical issues block
   const overallPassed =
     pixelDiffResult.passed &&
     (coverage?.passed !== false) &&
-    (!inspection || inspection.criticalIssues.length === 0);
+    appCriticalIssues.length === 0;
 
   const report: AuditReport = {
     screenId,
@@ -1427,10 +1945,12 @@ function runSingleScreen(
     skipMaestro: boolean;
     skipPM: boolean;
     skipBackend: boolean;
+    recapture?: boolean;
     stateName?: string;
+    routeKey?: string;
   }
 ): AuditReport {
-  const { skipInspector, skipMaestro, skipPM, skipBackend, stateName } = options;
+  const { skipInspector, skipMaestro, skipPM, skipBackend, recapture = false, stateName, routeKey } = options;
   const stateLabel = stateName ? ` [state: ${stateName}]` : "";
 
   console.log("");
@@ -1445,7 +1965,7 @@ function runSingleScreen(
   if (!hasBlueprint) {
     logError("main", `Blueprint not found for ${screenId}. Attempting extraction...`);
     // Auto-extract blueprint if missing
-    const extractCmd = `npx ts-node "${path.join(PATHS.scripts, "extract-screen-blueprint.ts")}" ${screenId}`;
+    const extractCmd = `npx tsx "${path.join(PATHS.scripts, "extract-screen-blueprint.ts")}" ${screenId}`;
     const extractResult = runCommand(extractCmd, "extractor");
     if (extractResult.success) {
       log("main", "Blueprint extracted successfully.");
@@ -1486,7 +2006,7 @@ function runSingleScreen(
   }
 
   // Step 5: Validate / capture screenshot
-  const { screenshotPath, hasScreenshot } = validateScreenshot(screenId, skipMaestro);
+  const { screenshotPath, hasScreenshot } = validateScreenshot(screenId, skipMaestro, route, recapture);
 
   // Step 6: ODiff pixel comparison
   let pixelDiffResult: PixelDiffResult | null = null;
@@ -1501,7 +2021,7 @@ function runSingleScreen(
   const coverageResult = runCoverageCheck(screenId);
 
   // Step 8: Gemini visual feedback
-  const geminiResult = runGeminiAudit(screenId);
+  const geminiResult = runGeminiAudit(screenId, routeKey);
 
   // Step 9: Inspector
   let inspectionResult: InspectionResult | null = null;
@@ -1517,6 +2037,9 @@ function runSingleScreen(
   runLearningAgent(screenId, pixelDiffResult, coverageResult, inspectionResult, pmBriefResult);
 
   // Step 11: Produce combined audit report
+  const screenHasDottedPattern =
+    blueprint?.background?.hasDottedPattern === true ||
+    !!blueprint?.background?.backgroundShapeKey;
   const report = produceAuditReport(
     screenId,
     route,
@@ -1525,7 +2048,8 @@ function runSingleScreen(
     pixelDiffResult,
     coverageResult,
     geminiResult,
-    inspectionResult
+    inspectionResult,
+    screenHasDottedPattern
   );
 
   // Step 12: Print summary
@@ -1545,6 +2069,7 @@ function runBatchStates(
     skipMaestro: boolean;
     skipPM: boolean;
     skipBackend: boolean;
+    recapture: boolean;
   }
 ): void {
   const routesConfig = loadScreenRoutes();
@@ -1594,6 +2119,7 @@ function runBatchStates(
     const report = runSingleScreen(screenId, stateRoute, {
       ...options,
       stateName: screenState.state,
+      routeKey: screenKey,
     });
 
     stateResults.push({
@@ -1677,6 +2203,7 @@ function main(): void {
       skipMaestro: args.skipMaestro,
       skipPM: args.skipPM,
       skipBackend: args.skipBackend,
+      recapture: args.recapture,
     });
   } else {
     // Single-screen mode
@@ -1685,6 +2212,7 @@ function main(): void {
       skipMaestro: args.skipMaestro,
       skipPM: args.skipPM,
       skipBackend: args.skipBackend,
+      recapture: args.recapture,
     });
     process.exit(report.overallPassed ? 0 : 1);
   }

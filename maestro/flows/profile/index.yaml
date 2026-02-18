@@ -1,0 +1,99 @@
+# =============================================================================
+# TE-120: Profile Screen Functional Flow
+# Route: /(profile)/index
+# Figma: 41-8760 (main), 41-8880 (edit-profile)
+# testIDs: profile-screen, view-agreement-button, edit-upi-button,
+#          edit-credit-card-button, edit-bank-account-button,
+#          contact-support-button, rate-app-button, sign-out-button,
+#          delete-account-button
+# =============================================================================
+#
+# Validates:
+#   - Profile screen renders with user info header
+#   - User name and phone number display
+#   - Menu items are visible and tappable:
+#     - View Agreement
+#     - Edit UPI
+#     - Edit Credit Card
+#     - Edit Bank Account
+#     - Contact Support
+#     - Rate App
+#     - Sign Out
+#     - Delete Account
+#   - Tapping menu items navigates to sub-screens
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to profile screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+# Verify profile screen rendered
+- assertVisible:
+    id: "profile-screen"
+
+# Verify profile header content
+- assertVisible: "Profile"
+    optional: true
+
+# Verify menu items
+- assertVisible:
+    id: "view-agreement-button"
+
+# Scroll to see all menu items
+- scrollUntilVisible:
+    element:
+      id: "contact-support-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "contact-support-button"
+
+# Continue scrolling to bottom items
+- scrollUntilVisible:
+    element:
+      id: "sign-out-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "sign-out-button"
+
+- scrollUntilVisible:
+    element:
+      id: "delete-account-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "delete-account-button"
+
+# -- Test navigation to edit profile --
+- scrollUntilVisible:
+    element:
+      id: "edit-upi-button"
+    direction: UP
+    timeout: 5000
+
+- tapOn:
+    id: "edit-upi-button"
+
+- waitForAnimationToEnd
+
+# Verify navigated to payment methods screen
+- assertVisible:
+    id: "payment-methods-screen"
+    optional: true
+
+# Go back to profile
+- back
+
+- waitForAnimationToEnd
+
+# Verify we are back on profile
+- assertVisible:
+    id: "profile-screen"

@@ -121,6 +121,8 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
                 <TouchableOpacity
                   onPress={onHintPress}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${hintText} for ${label}`}
                 >
                   <Text style={[styles.hintText, { color: INPUT_COLORS.hintText }]}>
                     {hintText}
@@ -145,6 +147,8 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
             placeholder={placeholder}
             placeholderTextColor={INPUT_COLORS.placeholder}
             editable={!disabled}
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: !!disabled }}
             style={[
               styles.input,
               dynamicStyles.input,

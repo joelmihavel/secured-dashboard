@@ -1,0 +1,49 @@
+# =============================================================================
+# TE-120: Payment Select Method Screen Functional Flow
+# Route: /(payment)/select-method
+# Figma: 41-9004 (before-7th), 41-9114 (after-7th), 41-8901 (no-setup)
+# testIDs: select-method-screen, pay-now-button
+# =============================================================================
+#
+# Validates:
+#   - Select method screen renders with available payment options
+#   - Payment method cards (UPI, Credit Card, Net Banking) are displayed
+#   - "Pay Now" button is visible
+#   - Before 7th state shows all methods without late fee
+#   - After 7th state shows late fee warning
+#   - No-setup state shows setup prompt
+#   - Tapping a payment card selects it (visual highlight)
+# =============================================================================
+
+appId: com.flent.secured
+---
+# -- Test before-7th state (all methods available, no late fee) --
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/select-method?state=before-7th"
+- waitForAnimationToEnd
+
+# Verify select method screen rendered
+- assertVisible:
+    id: "select-method-screen"
+
+# Verify payment method options
+- assertVisible: "Pay"
+
+# Verify Pay Now button
+- assertVisible:
+    id: "pay-now-button"
+
+# -- Test after-7th state (late fee warning) --
+- openLink: "flentsecured:///payment/select-method?state=after-7th"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "select-method-screen"
+
+# -- Test no-setup state --
+- openLink: "flentsecured:///payment/select-method?state=no-setup"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "select-method-screen"

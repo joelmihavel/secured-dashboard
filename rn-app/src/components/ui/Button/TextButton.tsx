@@ -57,6 +57,7 @@ function TextButtonComponent({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={title}
+      accessibilityState={{ disabled }}
       style={style}
     >
       <Animated.View style={animatedStyle}>

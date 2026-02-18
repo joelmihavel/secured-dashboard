@@ -1,0 +1,57 @@
+# =============================================================================
+# Maestro E2E Test Configuration
+# Story: TE-122 (Maestro Cloud pipeline)
+# =============================================================================
+#
+# Global configuration for all Maestro flows in this project.
+# Reference: https://maestro.mobile.dev/reference/configuration
+#
+# App Details:
+#   Bundle ID (iOS): com.flent.secured
+#   Package (Android): com.flent.secured
+#   Deep link scheme: flentsecured://
+#
+# Usage:
+#   maestro test maestro/flows/         # Run all screen flows
+#   maestro test maestro/journeys/      # Run all journey flows
+#   maestro test maestro/flows/auth/    # Run auth flows only
+# =============================================================================
+
+appId: com.flent.secured
+
+# Default flow execution settings
+name: "Flent Secured E2E Tests"
+
+# Tags for filtering test runs
+tags:
+  - e2e
+  - flent-secured
+
+# Environment variables available to all flows
+env:
+  APP_ID: "com.flent.secured"
+  DEEP_LINK_SCHEME: "flentsecured"
+  # Test phone number for sign-up flows (non-production)
+  TEST_PHONE: "9876543210"
+  TEST_NAME: "Test User"
+  # Mock OTP for verification
+  TEST_OTP: "123456"
+
+# Execution settings
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - "flows/auth/splash.yaml"
+    - "flows/auth/sign-up.yaml"
+    - "flows/auth/otp.yaml"
+    - "flows/waitlist/index.yaml"
+    - "flows/agreement/upload.yaml"
+    - "flows/agreement/review.yaml"
+    - "flows/setup/index.yaml"
+    - "flows/setup/add-bank.yaml"
+    - "flows/setup/invite-landlord.yaml"
+    - "flows/payment/select-method.yaml"
+    - "flows/payment/initiate.yaml"
+    - "flows/main/home.yaml"
+    - "flows/profile/index.yaml"
+    - "flows/transactions/index.yaml"

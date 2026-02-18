@@ -31,7 +31,7 @@ export interface TabSwitcherProps {
 
 function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityRole="tablist">
       <TouchableOpacity
         style={[
           styles.tab,
@@ -39,6 +39,9 @@ function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
         ]}
         onPress={() => onTabChange('recent_payments')}
         activeOpacity={0.8}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: activeTab === 'recent_payments' }}
+        accessibilityLabel="Recent Payments"
       >
         <Text
           style={[
@@ -57,6 +60,9 @@ function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
         ]}
         onPress={() => onTabChange('cashbacks')}
         activeOpacity={0.8}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: activeTab === 'cashbacks' }}
+        accessibilityLabel="Cashbacks"
       >
         <Text
           style={[

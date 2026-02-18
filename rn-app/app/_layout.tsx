@@ -15,11 +15,20 @@ import '../global.css';
 import { colors } from '@/src/theme';
 import { QueryProvider } from '@/src/providers';
 import { ErrorBoundary } from '@/src/components/ui';
+import { initSentry, Sentry } from '@/src/config/sentry';
+import { setupNotificationHandlers } from '@/src/services/notifications';
+import { setupAutoUpdateCheck } from '@/src/config/updates';
+import { OfflineBanner } from '@/src/components/ui';
+import { useDeepLink } from '@/src/hooks/useDeepLink';
+import { markAppReady } from '@/src/services/performance';
+
+// Initialize Sentry before app renders
+initSentry();
 
 // Keep splash screen visible while loading resources
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutInner() {
   const [fontsLoaded, fontError] = useFonts({
     // Plus Jakarta Sans
     'PlusJakartaSans-Regular': require('@/assets/fonts/PlusJakartaSans-Regular.ttf'),
@@ -36,6 +45,28 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  // Set up push notification handlers
+  useEffect(() => {
+    const cleanup = setupNotificationHandlers();
+    return cleanup;
+  }, []);
+
+  // Check for OTA updates on foreground
+  useEffect(() => {
+    const cleanup = setupAutoUpdateCheck();
+    return cleanup;
+  }, []);
+
+  // Handle deep links (ST-107)
+  useDeepLink();
+
+  // Mark app as ready for performance tracking (PR-115)
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      markAppReady();
+    }
+  }, [fontsLoaded, fontError]);
+
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -46,6 +77,7 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
           <SafeAreaProvider>
             <StatusBar style="light" backgroundColor={colors.black[700]} />
+            <OfflineBanner />
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -71,3 +103,6 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+// Wrap with Sentry for performance monitoring and error tracking
+export default Sentry.wrap(RootLayoutInner);

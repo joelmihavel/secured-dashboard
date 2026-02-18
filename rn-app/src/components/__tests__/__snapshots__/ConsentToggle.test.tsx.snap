@@ -1,0 +1,921 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ConsentToggle renders correctly - disabled off 1`] = `
+<View
+  style={
+    {
+      "alignItems": "flex-start",
+      "flexDirection": "row",
+      "gap": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Consent to verification"
+    accessibilityRole="switch"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": false,
+        "disabled": true,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "height": 24,
+          "justifyContent": "center",
+          "width": 46.49,
+        },
+        {
+          "opacity": 0.5,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#131313",
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+    />
+    <LinearGradient
+      colors={
+        [
+          "#171717",
+          "#2b2b2d",
+        ]
+      }
+      end={
+        {
+          "x": 0,
+          "y": 1,
+        }
+      }
+      start={
+        {
+          "x": 0,
+          "y": 0,
+        }
+      }
+      style={
+        {
+          "borderRadius": 5.075,
+          "height": 10.15,
+          "position": "absolute",
+          "shadowColor": "#0f0f0f",
+          "shadowOffset": {
+            "height": -0.23,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 0.586,
+          "width": 38.7,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "backgroundColor": "transparent",
+          "borderColor": "rgba(0,0,0,0.3)",
+          "borderRadius": 4.075,
+          "borderWidth": 0.5,
+          "height": 8.15,
+          "position": "absolute",
+          "width": 34.7,
+        }
+      }
+    />
+    <View
+      style={
+        [
+          {
+            "left": 5,
+            "position": "absolute",
+          },
+          {
+            "transform": [
+              {
+                "translateX": undefined,
+              },
+            ],
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "backgroundColor": "#141618",
+              "borderColor": "rgba(255,255,255,0.12)",
+              "borderRadius": 4.585,
+              "borderWidth": 0.5,
+              "height": 9.17,
+              "shadowColor": "#000",
+              "shadowOffset": {
+                "height": 0.52,
+                "width": 0.04,
+              },
+              "shadowOpacity": 0.68,
+              "shadowRadius": 0.25,
+              "width": 20.8,
+            },
+            false,
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(255,255,255,0.1)",
+              "borderRadius": 1,
+              "height": 2,
+              "left": 1,
+              "position": "absolute",
+              "right": 1,
+              "top": 1,
+            }
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#a9a9a9",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 12,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      I consent to a one-time verification to confirm my profile details. Verification is securely handled via
+       
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            {
+              "color": "#eeeeee",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+              "textDecorationLine": "underline",
+            },
+          ]
+        }
+      >
+        Cashfree
+      </Text>
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ConsentToggle renders correctly - disabled on 1`] = `
+<View
+  style={
+    {
+      "alignItems": "flex-start",
+      "flexDirection": "row",
+      "gap": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Consent to verification"
+    accessibilityRole="switch"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": true,
+        "disabled": true,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "height": 24,
+          "justifyContent": "center",
+          "width": 46.49,
+        },
+        {
+          "opacity": 0.5,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#131313",
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+    />
+    <LinearGradient
+      colors={
+        [
+          "#171717",
+          "#2b2b2d",
+        ]
+      }
+      end={
+        {
+          "x": 0,
+          "y": 1,
+        }
+      }
+      start={
+        {
+          "x": 0,
+          "y": 0,
+        }
+      }
+      style={
+        {
+          "borderRadius": 5.075,
+          "height": 10.15,
+          "position": "absolute",
+          "shadowColor": "#0f0f0f",
+          "shadowOffset": {
+            "height": -0.23,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 0.586,
+          "width": 38.7,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "backgroundColor": "transparent",
+          "borderColor": "rgba(0,0,0,0.3)",
+          "borderRadius": 4.075,
+          "borderWidth": 0.5,
+          "height": 8.15,
+          "position": "absolute",
+          "width": 34.7,
+        }
+      }
+    />
+    <View
+      style={
+        [
+          {
+            "left": 5,
+            "position": "absolute",
+          },
+          {
+            "transform": [
+              {
+                "translateX": undefined,
+              },
+            ],
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "backgroundColor": "#141618",
+              "borderColor": "rgba(255,255,255,0.12)",
+              "borderRadius": 4.585,
+              "borderWidth": 0.5,
+              "height": 9.17,
+              "shadowColor": "#000",
+              "shadowOffset": {
+                "height": 0.52,
+                "width": 0.04,
+              },
+              "shadowOpacity": 0.68,
+              "shadowRadius": 0.25,
+              "width": 20.8,
+            },
+            {
+              "backgroundColor": "#ff9a6d",
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(255,255,255,0.1)",
+              "borderRadius": 1,
+              "height": 2,
+              "left": 1,
+              "position": "absolute",
+              "right": 1,
+              "top": 1,
+            }
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#a9a9a9",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 12,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      I consent to a one-time verification to confirm my profile details. Verification is securely handled via
+       
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            {
+              "color": "#eeeeee",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+              "textDecorationLine": "underline",
+            },
+          ]
+        }
+      >
+        Cashfree
+      </Text>
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ConsentToggle renders correctly - off state 1`] = `
+<View
+  style={
+    {
+      "alignItems": "flex-start",
+      "flexDirection": "row",
+      "gap": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Consent to verification"
+    accessibilityRole="switch"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": false,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "height": 24,
+          "justifyContent": "center",
+          "width": 46.49,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#131313",
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+    />
+    <LinearGradient
+      colors={
+        [
+          "#171717",
+          "#2b2b2d",
+        ]
+      }
+      end={
+        {
+          "x": 0,
+          "y": 1,
+        }
+      }
+      start={
+        {
+          "x": 0,
+          "y": 0,
+        }
+      }
+      style={
+        {
+          "borderRadius": 5.075,
+          "height": 10.15,
+          "position": "absolute",
+          "shadowColor": "#0f0f0f",
+          "shadowOffset": {
+            "height": -0.23,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 0.586,
+          "width": 38.7,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "backgroundColor": "transparent",
+          "borderColor": "rgba(0,0,0,0.3)",
+          "borderRadius": 4.075,
+          "borderWidth": 0.5,
+          "height": 8.15,
+          "position": "absolute",
+          "width": 34.7,
+        }
+      }
+    />
+    <View
+      style={
+        [
+          {
+            "left": 5,
+            "position": "absolute",
+          },
+          {
+            "transform": [
+              {
+                "translateX": undefined,
+              },
+            ],
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "backgroundColor": "#141618",
+              "borderColor": "rgba(255,255,255,0.12)",
+              "borderRadius": 4.585,
+              "borderWidth": 0.5,
+              "height": 9.17,
+              "shadowColor": "#000",
+              "shadowOffset": {
+                "height": 0.52,
+                "width": 0.04,
+              },
+              "shadowOpacity": 0.68,
+              "shadowRadius": 0.25,
+              "width": 20.8,
+            },
+            false,
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(255,255,255,0.1)",
+              "borderRadius": 1,
+              "height": 2,
+              "left": 1,
+              "position": "absolute",
+              "right": 1,
+              "top": 1,
+            }
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#a9a9a9",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 12,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      I consent to a one-time verification to confirm my profile details. Verification is securely handled via
+       
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            {
+              "color": "#eeeeee",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+              "textDecorationLine": "underline",
+            },
+          ]
+        }
+      >
+        Cashfree
+      </Text>
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ConsentToggle renders correctly - on state 1`] = `
+<View
+  style={
+    {
+      "alignItems": "flex-start",
+      "flexDirection": "row",
+      "gap": 16,
+    }
+  }
+>
+  <View
+    accessibilityLabel="Consent to verification"
+    accessibilityRole="switch"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": true,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+          "height": 24,
+          "justifyContent": "center",
+          "width": 46.49,
+        },
+        undefined,
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#131313",
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+    />
+    <LinearGradient
+      colors={
+        [
+          "#171717",
+          "#2b2b2d",
+        ]
+      }
+      end={
+        {
+          "x": 0,
+          "y": 1,
+        }
+      }
+      start={
+        {
+          "x": 0,
+          "y": 0,
+        }
+      }
+      style={
+        {
+          "borderRadius": 5.075,
+          "height": 10.15,
+          "position": "absolute",
+          "shadowColor": "#0f0f0f",
+          "shadowOffset": {
+            "height": -0.23,
+            "width": 0,
+          },
+          "shadowOpacity": 1,
+          "shadowRadius": 0.586,
+          "width": 38.7,
+        }
+      }
+    />
+    <View
+      style={
+        {
+          "backgroundColor": "transparent",
+          "borderColor": "rgba(0,0,0,0.3)",
+          "borderRadius": 4.075,
+          "borderWidth": 0.5,
+          "height": 8.15,
+          "position": "absolute",
+          "width": 34.7,
+        }
+      }
+    />
+    <View
+      style={
+        [
+          {
+            "left": 5,
+            "position": "absolute",
+          },
+          {
+            "transform": [
+              {
+                "translateX": undefined,
+              },
+            ],
+          },
+        ]
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "backgroundColor": "#141618",
+              "borderColor": "rgba(255,255,255,0.12)",
+              "borderRadius": 4.585,
+              "borderWidth": 0.5,
+              "height": 9.17,
+              "shadowColor": "#000",
+              "shadowOffset": {
+                "height": 0.52,
+                "width": 0.04,
+              },
+              "shadowOpacity": 0.68,
+              "shadowRadius": 0.25,
+              "width": 20.8,
+            },
+            {
+              "backgroundColor": "#ff9a6d",
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(255,255,255,0.1)",
+              "borderRadius": 1,
+              "height": 2,
+              "left": 1,
+              "position": "absolute",
+              "right": 1,
+              "top": 1,
+            }
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#a9a9a9",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 12,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      I consent to a one-time verification to confirm my profile details. Verification is securely handled via
+       
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            {
+              "color": "#eeeeee",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "lineHeight": 20,
+              "textDecorationLine": "underline",
+            },
+          ]
+        }
+      >
+        Cashfree
+      </Text>
+    </Text>
+  </View>
+</View>
+`;

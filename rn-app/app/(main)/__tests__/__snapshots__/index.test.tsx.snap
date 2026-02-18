@@ -1,0 +1,136 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`HomeScreen matches snapshot (active state) 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+  testID="home-screen"
+>
+  <View
+    edges={
+      [
+        "bottom",
+        "left",
+        "right",
+      ]
+    }
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          false,
+          undefined,
+        ]
+      }
+    >
+      <RCTScrollView
+        contentContainerStyle={
+          [
+            {
+              "flexGrow": 1,
+              "gap": 24,
+              "paddingBottom": 48,
+            },
+            {
+              "paddingTop": 47,
+            },
+            {
+              "paddingBottom": 166,
+            },
+          ]
+        }
+        refreshControl={
+          <RefreshControlMock
+            onRefresh={[Function]}
+            refreshing={false}
+            tintColor="#FF9A6D"
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        style={
+          {
+            "backgroundColor": "#131313",
+            "flex": 1,
+          }
+        }
+      >
+        <RCTRefreshControl />
+        <View>
+          <View
+            testID="home-header"
+          />
+          <View
+            style={
+              {
+                "flex": 1,
+                "gap": 24,
+              }
+            }
+          >
+            <View
+              testID="headline-section"
+            >
+              <Text />
+            </View>
+            <View
+              testID="payment-carousel"
+            />
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "marginBottom": 24,
+                  "paddingHorizontal": 32,
+                  "paddingTop": 8,
+                }
+              }
+            >
+              <View
+                testID="tab-switcher"
+              />
+            </View>
+            <View
+              style={
+                {
+                  "flex": 1,
+                }
+              }
+            >
+              <View
+                testID="empty-payments"
+              />
+            </View>
+          </View>
+        </View>
+      </RCTScrollView>
+      <View
+        style={
+          {
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "zIndex": 10,
+          }
+        }
+      >
+        <View
+          testID="bottom-footer"
+        />
+      </View>
+    </View>
+  </View>
+</View>
+`;

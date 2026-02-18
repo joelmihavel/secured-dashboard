@@ -1,11 +1,16 @@
 /**
- * Flent Secured v2 - Dashboard Data Edge Function
+ * Flent Secured v2 - Dashboard Data Aggregation Edge Function (BE-091)
  *
- * Aggregates data for the home screen dashboard.
- * Returns tenancy info, upcoming payment, cashback balance, payment history.
+ * Aggregates all data for the home screen dashboard in a single call.
+ * Optimized with parallel queries and 5-minute caching.
+ *
+ * Returns: user profile, active tenancy, next payment, cashback summary,
+ *          recent payments, and notifications.
  *
  * Endpoint: GET /functions/v1/dashboard-data
  * Auth: Required (JWT)
+ *
+ * Cache: Results are cached for 5 minutes per user via Cache-Control headers.
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -15,6 +20,13 @@ import {
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
+import { isTestMode, mockData } from "../_shared/test-mode.ts";
+
+// ==============================================
+// CONFIGURATION
+// ==============================================
+
+const CACHE_TTL_SECONDS = 300; // 5 minutes
 
 // ==============================================
 // TYPES
@@ -99,45 +111,107 @@ serve(async (req: Request) => {
     return errorResponse("Method not allowed", 405);
   }
 
+  // MD-131: Test mode support
+  if (isTestMode(req)) {
+    return jsonResponse(
+      { success: true, data: mockData.dashboard },
+      200,
+      { "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}` }
+    );
+  }
+
   const supabase = createServiceClient();
 
   try {
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
-    const { userId, user } = await createAuthenticatedClient(authHeader);
+    const { userId } = await createAuthenticatedClient(authHeader);
 
-    // Fetch user profile (include all fields iOS expects)
-    const { data: userProfile } = await supabase
-      .from("users")
-      .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, created_at")
-      .eq("id", userId)
-      .single();
+    // ============================================
+    // PHASE 1: Parallel independent queries
+    // ============================================
+    const [
+      userProfileResult,
+      tenancyResult,
+      cashbackBalanceResult,
+      cashbackStatsResult,
+      paymentsResult,
+      notificationsResult,
+      unreadCountResult,
+    ] = await Promise.all([
+      // 1. User profile
+      supabase
+        .from("users")
+        .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, created_at")
+        .eq("id", userId)
+        .single(),
 
-    // Fetch active tenancy
-    const { data: tenancy } = await supabase
-      .from("tenancies")
-      .select(`
-        id, status, property_address, property_city,
-        monthly_rent_paise, rent_due_day, lease_end_date,
-        landlord_name, bank_verified, utility_verified, landlord_approved
-      `)
-      .eq("user_id", userId)
-      .in("status", ["active", "pending_verification"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      // 2. Active tenancy
+      supabase
+        .from("tenancies")
+        .select(`
+          id, status, property_address, property_city,
+          monthly_rent_paise, rent_due_day, lease_end_date,
+          landlord_name, bank_verified, utility_verified, landlord_approved
+        `)
+        .eq("user_id", userId)
+        .in("status", ["active", "pending_verification"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
 
-    // Calculate upcoming payment
+      // 3. Available cashback balance
+      supabase.rpc("get_available_cashback", { p_user_id: userId }),
+
+      // 4. Cashback stats (earned/used totals)
+      supabase
+        .from("cashback_ledger")
+        .select("transaction_type, amount_paise")
+        .eq("user_id", userId),
+
+      // 5. Recent payments (last 5)
+      supabase
+        .from("payments")
+        .select("id, amount_paise, status, rent_month, paid_at, cashback_earned_paise")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(5),
+
+      // 6. Notifications (last 10, active only)
+      supabase
+        .from("notifications")
+        .select("id, title, body, notification_type, action_type, action_data, is_read, created_at")
+        .eq("user_id", userId)
+        .lte("scheduled_for", new Date().toISOString())
+        .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(10),
+
+      // 7. Unread notification count
+      supabase.rpc("get_unread_notification_count", { p_user_id: userId }),
+    ]);
+
+    const userProfile = userProfileResult.data;
+    const tenancy = tenancyResult.data;
+    const availableBalance = cashbackBalanceResult.data ?? 0;
+    const cashbackStats = cashbackStatsResult.data ?? [];
+    const payments = paymentsResult.data ?? [];
+    const notifications = notificationsResult.data ?? [];
+    const unreadCount = unreadCountResult.data ?? 0;
+
+    // ============================================
+    // PHASE 2: Dependent calculations
+    // ============================================
+
+    // Calculate upcoming payment (depends on tenancy)
     let upcomingPayment = null;
     if (tenancy) {
       const today = new Date();
       const currentMonth = today.getMonth();
       const currentYear = today.getFullYear();
 
-      // Due date this month or next
       let dueDate = new Date(currentYear, currentMonth, tenancy.rent_due_day);
       if (dueDate < today) {
-        // If past due date this month, show next month
         dueDate = new Date(currentYear, currentMonth + 1, tenancy.rent_due_day);
       }
 
@@ -145,8 +219,9 @@ serve(async (req: Request) => {
         (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      // Check if already paid for this month
       const rentMonthStr = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-01`;
+
+      // Check if already paid (secondary query only when tenancy exists)
       const { data: existingPayment } = await supabase
         .from("payments")
         .select("id, status")
@@ -168,22 +243,12 @@ serve(async (req: Request) => {
       }
     }
 
-    // Fetch cashback balance
-    const { data: availableBalance } = await supabase.rpc("get_available_cashback", {
-      p_user_id: userId,
-    });
-
-    // Fetch cashback stats
-    const { data: cashbackStats } = await supabase
-      .from("cashback_ledger")
-      .select("transaction_type, amount_paise")
-      .eq("user_id", userId);
-
+    // Calculate cashback summary
     let totalEarned = 0;
     let totalUsed = 0;
     let pendingBalance = 0;
 
-    for (const entry of cashbackStats ?? []) {
+    for (const entry of cashbackStats) {
       if (entry.transaction_type === "earned" || entry.transaction_type === "bonus") {
         totalEarned += entry.amount_paise;
       } else if (entry.transaction_type === "applied") {
@@ -191,20 +256,12 @@ serve(async (req: Request) => {
       }
     }
 
-    // Calculate pending (earned but not yet redeemable due to landlord approval)
     if (tenancy && !tenancy.landlord_approved) {
-      pendingBalance = (availableBalance ?? 0);
+      pendingBalance = availableBalance;
     }
 
-    // Fetch recent payments
-    const { data: payments } = await supabase
-      .from("payments")
-      .select("id, amount_paise, status, rent_month, paid_at, cashback_earned_paise")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    const recentPayments = (payments ?? []).map((p) => ({
+    // Format recent payments
+    const recentPayments = payments.map((p: any) => ({
       id: p.id,
       amount: p.amount_paise / 100,
       status: p.status,
@@ -213,17 +270,8 @@ serve(async (req: Request) => {
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
     }));
 
-    // Fetch notifications
-    const { data: notifications } = await supabase
-      .from("notifications")
-      .select("id, title, body, notification_type, action_type, action_data, is_read, created_at")
-      .eq("user_id", userId)
-      .lte("scheduled_for", new Date().toISOString())
-      .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    const formattedNotifications = (notifications ?? []).map((n) => ({
+    // Format notifications
+    const formattedNotifications = notifications.map((n: any) => ({
       id: n.id,
       type: n.notification_type,
       title: n.title,
@@ -234,12 +282,9 @@ serve(async (req: Request) => {
       read: n.is_read,
     }));
 
-    // Get unread count
-    const { data: unreadCount } = await supabase.rpc("get_unread_notification_count", {
-      p_user_id: userId,
-    });
-
-    // Build dashboard response
+    // ============================================
+    // Build response
+    // ============================================
     const dashboardData: DashboardData = {
       user: {
         id: userProfile?.id ?? userId,
@@ -273,20 +318,21 @@ serve(async (req: Request) => {
         : null,
       upcoming_payment: upcomingPayment,
       cashback: {
-        available_balance: (availableBalance ?? 0) / 100,
+        available_balance: availableBalance / 100,
         pending_balance: pendingBalance / 100,
         total_earned: totalEarned / 100,
         total_used: totalUsed / 100,
       },
       recent_payments: recentPayments,
       notifications: formattedNotifications,
-      unread_notification_count: unreadCount ?? 0,
+      unread_notification_count: unreadCount,
     };
 
-    return jsonResponse({
-      success: true,
-      data: dashboardData,
-    });
+    return jsonResponse(
+      { success: true, data: dashboardData },
+      200,
+      { "Cache-Control": `private, max-age=${CACHE_TTL_SECONDS}` }
+    );
   } catch (error) {
     return handleError(error, req.headers.get("x-request-id") ?? undefined);
   }

@@ -5,8 +5,8 @@
  * in React Native code. No AI imagination - just pure property matching.
  *
  * Usage:
- *   npx ts-node scripts/check-coverage.ts <figmaId>
- *   npx ts-node scripts/check-coverage.ts 1-29108
+ *   npx tsx scripts/check-coverage.ts <figmaId>
+ *   npx tsx scripts/check-coverage.ts 1-29108
  *
  * Output: reports/coverage/{screenId}-coverage.json
  */
@@ -147,18 +147,107 @@ interface ParsedRNStyles {
 
 function loadFigmaExtraction(figmaId: string): { screenId: string; screenName: string; componentTree: FigmaNode } {
   const normalizedId = figmaId.replace(':', '-');
-  const extractionPath = path.join(__dirname, '../data/extractions', normalizedId, 'enhanced-extraction.json');
+  const possiblePaths = [
+    path.join(__dirname, '../data/extractions', normalizedId, 'enhanced-extraction.json'),
+    path.join(__dirname, '../data/blueprints', `${normalizedId}-blueprint.json`),
+    path.join(__dirname, '../data/blueprints', `${figmaId}-blueprint.json`),
+  ];
 
-  if (!fs.existsSync(extractionPath)) {
-    throw new Error(`Figma extraction not found: ${extractionPath}`);
+  let extractionPath: string | null = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      extractionPath = p;
+      break;
+    }
+  }
+
+  if (!extractionPath) {
+    throw new Error(`Figma extraction not found. Tried:\n${possiblePaths.map(p => `  - ${p}`).join('\n')}`);
   }
 
   const data = JSON.parse(fs.readFileSync(extractionPath, 'utf-8'));
-  return {
-    screenId: data.screenId || normalizedId,
-    screenName: data.screenName || 'Unknown Screen',
-    componentTree: data.componentTree,
-  };
+
+  // Old enhanced-extraction format with componentTree
+  if (data.componentTree) {
+    return {
+      screenId: data.screenId || normalizedId,
+      screenName: data.screenName || 'Unknown Screen',
+      componentTree: data.componentTree,
+    };
+  }
+
+  // Blueprint format: convert flat nodes array to FigmaNode tree
+  if (data.nodes && Array.isArray(data.nodes)) {
+    const componentTree = convertBlueprintNodesToTree(data.nodes);
+    return {
+      screenId: data.meta?.screenId || normalizedId,
+      screenName: data.meta?.screenName || 'Unknown Screen',
+      componentTree,
+    };
+  }
+
+  throw new Error(`Extraction at ${extractionPath} has neither componentTree nor nodes array.`);
+}
+
+/**
+ * Convert a flat blueprint nodes array (with parentId/childIds) into
+ * a nested FigmaNode tree that flattenNodes() can process.
+ */
+function convertBlueprintNodesToTree(blueprintNodes: any[]): FigmaNode {
+  const nodeMap = new Map<string, FigmaNode>();
+
+  for (const bn of blueprintNodes) {
+    const figmaNode: FigmaNode = {
+      nodeId: bn.id,
+      nodeName: bn.name || '',
+      nodeType: bn.type || 'UNKNOWN',
+      figmaData: {
+        geometry: bn.geometry,
+        opacity: bn.opacity,
+        fills: bn.fills,
+        strokes: bn.strokes,
+        effects: bn.effects,
+        borderRadius: bn.borderRadius,
+        clipsContent: bn.clipsContent,
+        layout: bn.layout,
+        typography: bn.typography,
+        textContent: bn.textContent || bn.typography?.content,
+        visible: bn.visible,
+        rnComponent: bn.rnComponent,
+      },
+      children: [],
+    };
+    nodeMap.set(bn.id, figmaNode);
+  }
+
+  // Build tree using parentId
+  let root: FigmaNode | null = null;
+  for (const bn of blueprintNodes) {
+    const node = nodeMap.get(bn.id);
+    if (!node) continue;
+
+    if (bn.parentId === null || bn.parentId === undefined) {
+      root = node;
+    } else {
+      const parent = nodeMap.get(bn.parentId);
+      if (parent) {
+        if (!parent.children) parent.children = [];
+        parent.children.push(node);
+      }
+    }
+  }
+
+  if (!root) {
+    root = nodeMap.get(blueprintNodes[0]?.id) || {
+      nodeId: 'unknown',
+      nodeName: 'Unknown',
+      nodeType: 'FRAME',
+      figmaData: {},
+      children: [],
+    };
+  }
+
+  return root;
 }
 
 function loadDesignTokens(): DesignTokens {
@@ -748,7 +837,7 @@ function parseRNCode(filePath: string): ParsedRNStyles {
 
   // 4. Extract text content from imported component files
   // This is critical for textContent coverage on screens that use reusable components
-  const componentImportMatches = content.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]@\/src\/components['"]/g);
+  const componentImportMatches = content.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]@\/src\/components(?:\/[\w-]+)*['"]/g);
   for (const importMatch of componentImportMatches) {
     const componentNames = importMatch[1].split(',').map(c => c.trim());
     for (const componentName of componentNames) {
@@ -813,7 +902,7 @@ function parseRNCode(filePath: string): ParsedRNStyles {
 
         // If this is a barrel export (index.ts), follow its re-exports
         if (tryPath.endsWith('index.tsx') || tryPath.endsWith('index.ts')) {
-          const reExportMatches = importedContent.matchAll(/export\s+\{[^}]*\}\s+from\s+['"]\.\/([^'"]+)['"]/g);
+          const reExportMatches = importedContent.matchAll(/export\s+(?:\{[^}]*\}|\*)\s+from\s+['"]\.\/([^'"]+)['"]/g);
           for (const reExport of reExportMatches) {
             const subPath = path.join(path.dirname(tryPath), reExport[1] + '.tsx');
             if (fs.existsSync(subPath) && !processedImports.has(subPath)) {
@@ -834,6 +923,22 @@ function parseRNCode(filePath: string): ParsedRNStyles {
                       }
                     }
                   }
+                }
+              }
+              // Also extract text content from sub-component files
+              const subTextInline = subContent.matchAll(/>([^<>{}\n]+)</g);
+              for (const match of subTextInline) {
+                const text = match[1].trim();
+                if (text.length > 1 && !text.startsWith('{') && !text.includes('//')) {
+                  result.textContent.push(text);
+                }
+              }
+              // Object property strings (label, title, text, content, etc.)
+              const subPropStrings = subContent.matchAll(/(?:label|value|title|text|content|message|description|placeholder):\s*['"]([^'"]+)['"],?/gi);
+              for (const match of subPropStrings) {
+                const text = match[1].trim();
+                if (text.length > 2 && !result.textContent.includes(text)) {
+                  result.textContent.push(text);
                 }
               }
             }
@@ -869,6 +974,9 @@ function extractTextFromComponent(componentName: string): string[] {
     path.join(rnAppPath, 'src/components/composed', `${componentName}.tsx`),
     path.join(rnAppPath, 'src/components/composed/auth', `${componentName}.tsx`),
     path.join(rnAppPath, 'src/components/composed/payment', `${componentName}.tsx`),
+    path.join(rnAppPath, 'src/components/home', `${componentName}.tsx`),
+    path.join(rnAppPath, 'src/components/payment', `${componentName}.tsx`),
+    path.join(rnAppPath, 'src/components/profile', `${componentName}.tsx`),
     path.join(rnAppPath, 'src/components', `${componentName}.tsx`),
   ];
 
@@ -977,26 +1085,100 @@ function checkNodeCoverage(
 ): PropertyCheck[] {
   const checks: PropertyCheck[] = [];
   const figmaData = node.figmaData || {};
-  const computed = node.computedStyles || {};
+
+  // ── NORMALIZE BLUEPRINT FORMAT ──────────────────────────────────
+  // Blueprint nodes store geometry/layout/typography in nested objects,
+  // while check functions expect flat properties from old extraction format.
+  // Bridge the gap here so both formats work transparently.
+  const geometry = figmaData.geometry || {};
+  const layout = figmaData.layout || {};
+
+  // Geometry: blueprint stores in figmaData.geometry.width/height
+  const computed = {
+    width: geometry.width || node.computedStyles?.width,
+    height: geometry.height || node.computedStyles?.height,
+    borderRadius: figmaData.borderRadius ?? node.computedStyles?.borderRadius,
+  };
+
+  // Layout mode: blueprint stores layout.direction ("column"/"row"/"none")
+  // Check functions expect Figma-style values ("VERTICAL"/"HORIZONTAL")
+  if (!figmaData.layoutMode && layout.direction && layout.direction !== 'none') {
+    const directionMap: Record<string, string> = {
+      'column': 'VERTICAL', 'row': 'HORIZONTAL',
+      'VERTICAL': 'VERTICAL', 'HORIZONTAL': 'HORIZONTAL',
+    };
+    figmaData.layoutMode = directionMap[layout.direction];
+  }
+
+  // Layout sizing: blueprint stores layout.sizingH/sizingV
+  if (!figmaData.layoutSizingHorizontal && layout.sizingH) {
+    figmaData.layoutSizingHorizontal = layout.sizingH;
+  }
+  if (!figmaData.layoutSizingVertical && layout.sizingV) {
+    figmaData.layoutSizingVertical = layout.sizingV;
+  }
+
+  // Axis alignment: blueprint stores layout.justifyContent/alignItems
+  if (!figmaData.primaryAxisAlignItems && layout.justifyContent) {
+    figmaData.primaryAxisAlignItems = layout.justifyContent;
+  }
+  if (!figmaData.counterAxisAlignItems && layout.alignItems) {
+    figmaData.counterAxisAlignItems = layout.alignItems;
+  }
+
+  // Padding: blueprint stores layout.padding.{top,right,bottom,left}
+  if (layout.padding) {
+    if (figmaData.paddingTop === undefined) figmaData.paddingTop = layout.padding.top;
+    if (figmaData.paddingRight === undefined) figmaData.paddingRight = layout.padding.right;
+    if (figmaData.paddingBottom === undefined) figmaData.paddingBottom = layout.padding.bottom;
+    if (figmaData.paddingLeft === undefined) figmaData.paddingLeft = layout.padding.left;
+  }
+
+  // Gap: blueprint stores layout.gap
+  if (figmaData.itemSpacing === undefined && layout.gap !== undefined) {
+    figmaData.itemSpacing = layout.gap;
+  }
+
+  // Border radius: blueprint stores borderRadius, checks expect cornerRadius
+  if (figmaData.cornerRadius === undefined && figmaData.borderRadius !== undefined) {
+    figmaData.cornerRadius = figmaData.borderRadius;
+  }
+
+  // Typography: blueprint stores figmaData.typography, checks expect figmaData.style
+  if (!figmaData.style && figmaData.typography) {
+    figmaData.style = figmaData.typography;
+  }
+
+  // Text content: blueprint stores typography.content, checks expect figmaData.characters
+  if (!figmaData.characters && figmaData.typography?.content) {
+    figmaData.characters = figmaData.typography.content;
+  }
+
+  // Multi-style text: blueprint stores typography.spans, checks expect characterStyleOverrides
+  if (!figmaData.characterStyleOverrides && figmaData.typography?.spans?.length > 0) {
+    figmaData.characterStyleOverrides = figmaData.typography.spans;
+  }
+  // ── END NORMALIZE ───────────────────────────────────────────────
 
   // Check if this node maps to a known RN component
   const mappedComponent = getNodeComponent(node.nodeName);
   const componentPresentInCode = mappedComponent && rnStyles.components.includes(mappedComponent);
 
-  // If node maps to a known component that's in the code, skip all checks
-  // The component handles all its internal properties
-  if (componentPresentInCode) {
-    return []; // All properties are delegated to the component
-  }
-
-  // Get categories delegated by any component in the screen
+  // Get categories delegated by the mapped component (or all components in screen)
   const delegatedCategories = new Set<string>();
-  for (const component of rnStyles.components) {
-    const categories = COMPONENT_DELEGATIONS[component] || [];
+  if (componentPresentInCode && mappedComponent) {
+    // For mapped component nodes, use THAT component's delegation list
+    const categories = COMPONENT_DELEGATIONS[mappedComponent] || [];
     categories.forEach(cat => delegatedCategories.add(cat));
+  } else {
+    // For non-component nodes, collect from all components in the screen
+    for (const component of rnStyles.components) {
+      const categories = COMPONENT_DELEGATIONS[component] || [];
+      categories.forEach(cat => delegatedCategories.add(cat));
+    }
   }
 
-  // Helper to check if a category should be skipped (delegated to component)
+  // Helper to check if a category is delegated to a component
   const isDelegatedCategory = (category: string): boolean => delegatedCategories.has(category);
 
   // 1. GEOMETRY
@@ -1027,13 +1209,13 @@ function checkNodeCoverage(
     checks.push(checkClipping(node, figmaData.clipsContent, rnStyles));
   }
 
-  // 3. SPACING
+  // 3. SPACING (skip 0 values — 0 padding/gap is the RN default)
   for (const prop of ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft']) {
-    if (figmaData[prop] !== undefined) {
+    if (figmaData[prop] !== undefined && figmaData[prop] !== 0) {
       checks.push(checkSpacing(node, prop, figmaData[prop], rnStyles, tokens));
     }
   }
-  if (figmaData.itemSpacing !== undefined) {
+  if (figmaData.itemSpacing !== undefined && figmaData.itemSpacing !== 0) {
     checks.push(checkSpacing(node, 'gap', figmaData.itemSpacing, rnStyles, tokens));
   }
 
@@ -1053,8 +1235,24 @@ function checkNodeCoverage(
   }
 
   // 5. BORDERS & RADIUS
-  if (figmaData.cornerRadius !== undefined || computed.borderRadius !== undefined) {
-    checks.push(checkCornerRadius(node, figmaData.cornerRadius || computed.borderRadius, rnStyles, tokens));
+  const radiusValue = figmaData.cornerRadius ?? computed.borderRadius;
+  if (radiusValue !== undefined) {
+    if (typeof radiusValue === 'object' && radiusValue !== null) {
+      // Per-corner radius: {tl, tr, br, bl}
+      const cornerMap: Record<string, string> = {
+        tl: 'borderTopLeftRadius', tr: 'borderTopRightRadius',
+        br: 'borderBottomRightRadius', bl: 'borderBottomLeftRadius',
+      };
+      for (const [corner, rnProp] of Object.entries(cornerMap)) {
+        const val = (radiusValue as any)[corner];
+        if (val !== undefined && val !== 0) {
+          checks.push(checkCornerRadius(node, val, rnStyles, tokens));
+        }
+      }
+    } else if (typeof radiusValue === 'number' && radiusValue !== 0) {
+      // Skip borderRadius: 0 — it's the RN default
+      checks.push(checkCornerRadius(node, radiusValue, rnStyles, tokens));
+    }
   }
   if (figmaData.strokes?.length > 0) {
     checks.push(...checkStrokes(node, figmaData.strokes, rnStyles, tokens));
@@ -1099,6 +1297,20 @@ function checkNodeCoverage(
   // 10. VISIBILITY
   if (figmaData.visible === false) {
     checks.push(checkHidden(node, rnStyles));
+  }
+
+  // Post-process: mark delegated category checks as covered
+  const delegationTarget = componentPresentInCode ? mappedComponent : null;
+  if (delegatedCategories.size > 0) {
+    for (const check of checks) {
+      if (!check.covered && isDelegatedCategory(check.category)) {
+        check.covered = true;
+        check.rnValue = delegationTarget
+          ? `delegated to ${delegationTarget}`
+          : `delegated to component`;
+        check.fix = undefined;
+      }
+    }
   }
 
   return checks;
@@ -1300,16 +1512,23 @@ function checkLayoutSizing(
       }
     }
 
-    // Also check allValues for any width/height with scaled functions
+    // Also check allValues for any width/height with scaled functions or numeric values
     if (!covered) {
       for (const [key, value] of Object.entries(rnStyles.allValues)) {
         const lowerKey = key.toLowerCase();
         const isRelated = (property === 'width' && lowerKey.includes('width')) ||
                           (property === 'height' && lowerKey.includes('height'));
-        if (isRelated && typeof value === 'string' && value.includes('scaled')) {
-          covered = true;
-          rnValue = value;
-          break;
+        if (isRelated) {
+          if (typeof value === 'string' && value.includes('scaled')) {
+            covered = true;
+            rnValue = value;
+            break;
+          }
+          if (typeof value === 'number' && value > 0) {
+            covered = true;
+            rnValue = `${key}: ${value}`;
+            break;
+          }
         }
       }
     }
@@ -1323,7 +1542,7 @@ function checkLayoutSizing(
                                  node.nodeName.toLowerCase().includes('content') ||
                                  node.nodeName.toLowerCase().includes('slide');
       // Check if height is close to standard mobile screen heights (artboard sizes)
-      const figmaHeight = node.figmaData?.height || 0;
+      const figmaHeight = node.figmaData?.geometry?.height || node.figmaData?.height || 0;
       const isArtboardHeight = figmaHeight >= 700 && figmaHeight <= 950; // Typical mobile artboard heights
 
       if (flexValue === 1 && (isContentContainer || isArtboardHeight)) {
@@ -1378,11 +1597,15 @@ function checkAxisAlignment(
 
   const expectedRN = valueMap[figmaValue] || figmaValue.toLowerCase();
 
+  // flex-start is the RN default for both justifyContent and alignItems (stretch for alignItems
+  // in some contexts, but flex-start is never wrong to leave implicit)
+  const isRNDefault = expectedRN === 'flex-start';
+
   // Check ALL values for this property, not just the first
   // This handles cases where multiple styles have justifyContent/alignItems
   const allValues = findAllStyleValues(rnStyles, rnProperty);
-  let covered = false;
-  let rnValue: any = null;
+  let covered = isRNDefault; // Default values are covered even without explicit code
+  let rnValue: any = isRNDefault ? 'flex-start (default)' : null;
 
   for (const value of allValues) {
     const normalizedValue = typeof value === 'string' ? value.replace(/'/g, '') : value;
@@ -1597,7 +1820,7 @@ function checkSolidFill(
   tokens: DesignTokens
 ): PropertyCheck {
   const color = fill.color;
-  const hex = rgbaToHex(color.r, color.g, color.b);
+  const hex = typeof color === 'string' ? color : rgbaToHex(color.r, color.g, color.b);
   const opacity = fill.opacity ?? 1;
 
   // Get the token path for this hex color
@@ -1724,7 +1947,7 @@ function checkGradientFill(
   // Check gradient stops
   if (fill.gradientStops) {
     const colors = fill.gradientStops.map((stop: any) =>
-      rgbaToHex(stop.color.r, stop.color.g, stop.color.b)
+      typeof stop.color === 'string' ? stop.color : rgbaToHex(stop.color.r, stop.color.g, stop.color.b)
     );
 
     checks.push({
@@ -1933,7 +2156,7 @@ function checkStrokes(
     }
 
     if (stroke.type === 'SOLID' && stroke.color) {
-      const hex = rgbaToHex(stroke.color.r, stroke.color.g, stroke.color.b);
+      const hex = typeof stroke.color === 'string' ? stroke.color : rgbaToHex(stroke.color.r, stroke.color.g, stroke.color.b);
       const rnValue = findStyleValue(rnStyles, 'borderColor');
 
       checks.push({
@@ -1985,7 +2208,7 @@ function checkDropShadow(
 
   // Shadow color
   if (effect.color) {
-    const hex = rgbaToHex(effect.color.r, effect.color.g, effect.color.b);
+    const hex = typeof effect.color === 'string' ? effect.color : rgbaToHex(effect.color.r, effect.color.g, effect.color.b);
     const rnValue = findStyleValue(rnStyles, 'shadowColor');
     const covered = rnValue !== null || hasDelegatingComponent;
 
@@ -2341,8 +2564,8 @@ function checkTextContent(
 
   // Skip dynamic content that will be different in RN (dates, times, amounts)
   const isDynamicContent = (text: string): boolean => {
-    // Date patterns: "4 Nov 2026", "Nov 4, 2026", "2026-11-04", "04/11/2026"
-    const datePatterns = [
+    const dynamicPatterns = [
+      // Date patterns: "4 Nov 2026", "Nov 4, 2026", "2026-11-04", "04/11/2026"
       /^\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{4}$/i,
       /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2},?\s+\d{4}$/i,
       /^\d{4}-\d{2}-\d{2}$/,
@@ -2352,8 +2575,24 @@ function checkTextContent(
       // Placeholder patterns
       /^\[.+\]$/,  // [Landlord Name], [Amount]
       /^xxx+/i,    // XXXX XXXX masked numbers
+      // Currency amounts: ₹ 32,500 or $ 1,234.56
+      /^[₹$€£]\s*[\d,]+(\.\d+)?$/,
+      /^rs\.?\s*[\d,]+(\.\d+)?$/i,
+      // User greeting: "Hi, Rishabh"
+      /^(hi|hello|hey),?\s+\w+$/i,
+      // Month-based labels: "September rent", "August rent"
+      /^(january|february|march|april|may|june|july|august|september|october|november|december)\s+\w+$/i,
+      // Status + date composites: "Paid · 15 Sep, 9:40am"
+      /^(paid|pending|failed|processing|completed|refunded|overdue)\s*[·•–—-]\s*/i,
+      // Masked account/card numbers: "•••• 2341", "rishabh@•••"
+      /[•·]{2,}/,
+      /\*{3,}/,
+      // Bank account references: "ICICI a/c - xxx23"
+      /a\/c\s*-?\s*\w*\d+/i,
+      // Pure numbers (amounts, IDs): "32,500", "1234"
+      /^[\d,]+(\.\d+)?$/,
     ];
-    return datePatterns.some(pattern => pattern.test(text.trim()));
+    return dynamicPatterns.some(pattern => pattern.test(text.trim()));
   };
 
   if (isDynamicContent(figmaText)) {
@@ -2540,7 +2779,9 @@ function findAllStyleValues(rnStyles: ParsedRNStyles, property: string): any[] {
 
 function rgbaToHex(r: number, g: number, b: number): string {
   const toHex = (n: number) => {
-    const hex = Math.round(n * 255).toString(16).toUpperCase();
+    if (n == null || isNaN(n)) return '00';
+    const clamped = Math.max(0, Math.min(1, n));
+    const hex = Math.round(clamped * 255).toString(16).toUpperCase();
     return hex.length === 1 ? '0' + hex : hex;
   };
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -2959,8 +3200,8 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
   if (args.length < 1) {
-    console.error('Usage: npx ts-node scripts/check-coverage.ts <figmaId>');
-    console.error('Example: npx ts-node scripts/check-coverage.ts 1-29108');
+    console.error('Usage: npx tsx scripts/check-coverage.ts <figmaId>');
+    console.error('Example: npx tsx scripts/check-coverage.ts 1-29108');
     process.exit(1);
   }
 

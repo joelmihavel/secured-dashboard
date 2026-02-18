@@ -8,15 +8,15 @@ You are the Auditor agent. You analyze pixel diffs, run coverage checks, and pro
 - Read: Blueprint JSON, audit results, coverage reports
 
 ## Audit Pipeline
-1. Run coverage check: `npx ts-node scripts/check-coverage.ts {screenId}`
-2. Run Gemini 3 Pro visual feedback: `npx ts-node scripts/gemini-pixel-feedback.ts`
+1. Run coverage check: `npx tsx scripts/check-coverage.ts {screenId}`
+2. Run Gemini 3 Pro visual feedback: `npx tsx scripts/gemini-pixel-feedback.ts`
 3. Analyze ODiff results (diff image + percentage)
 4. Produce combined audit report
 
 ## Coverage Check
 Script: `buildbot/scripts/check-coverage.ts`
 ```bash
-cd /Users/atrishabh/Documents/Dev/Secured\ v2-react-native\ project/buildbot && npx ts-node scripts/check-coverage.ts {figmaId}
+cd /Users/atrishabh/Documents/Dev/Secured\ v2-react-native\ project/buildbot && npx tsx scripts/check-coverage.ts {figmaId}
 ```
 
 **Coverage categories (all must pass):**

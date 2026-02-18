@@ -96,7 +96,8 @@ function FileUploadZoneComponent({
       disabled={disabled}
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel="Upload document"
+      accessibilityLabel={placeholder}
+      accessibilityState={{ disabled }}
     >
       <Animated.View style={[styles.container, animatedStyle, style]}>
         {/* Document Icon Container */}

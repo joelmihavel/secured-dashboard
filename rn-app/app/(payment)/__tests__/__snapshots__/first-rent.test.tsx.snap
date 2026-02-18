@@ -1,0 +1,670 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FirstRentPaymentScreen matches snapshot 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+  testID="first-rent-payment-screen"
+>
+  <View
+    edges={
+      [
+        "top",
+        "bottom",
+        "left",
+        "right",
+      ]
+    }
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <View
+        className="absolute top-0 left-0 right-0 overflow-hidden"
+        style={
+          {
+            "height": 634,
+          }
+        }
+      />
+      <RCTScrollView
+        className="flex-1"
+        contentContainerStyle={
+          {
+            "flexGrow": 1,
+            "paddingBottom": 74,
+            "paddingTop": 67,
+          }
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <View>
+          <View
+            style={
+              {
+                "marginBottom": 30,
+                "paddingHorizontal": 30,
+              }
+            }
+          >
+            <View
+              accessibilityLabel="Flent logo"
+              accessibilityRole="image"
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                  },
+                  {
+                    "height": 62.5,
+                    "width": 52.1484375,
+                  },
+                ]
+              }
+            >
+              <View
+                fill="none"
+                height={62.5}
+                viewBox="0 0 34 40"
+                width={52.1484375}
+              >
+                <View
+                  d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                  fill="#FFFFFF"
+                />
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "paddingHorizontal": 30,
+              }
+            }
+          >
+            <Text
+              className="text-white font-jakarta-regular text-left mb-8"
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  {
+                    "fontSize": 32.199999999999996,
+                    "lineHeight": 46,
+                  },
+                ]
+              }
+            >
+              Pay Rent
+            </Text>
+          </View>
+          <View
+            className="bg-white rounded-t-3xl items-center w-full flex-1"
+            style={
+              {
+                "borderTopLeftRadius": 37.5,
+                "borderTopRightRadius": 37.5,
+                "marginTop": 30,
+                "paddingBottom": 60,
+                "paddingTop": 20,
+              }
+            }
+          >
+            <View
+              className="bg-neutral-200 rounded-full mb-8"
+              style={
+                {
+                  "height": 6.5,
+                  "width": 44,
+                }
+              }
+            />
+            <View
+              className="flex-row items-center justify-center w-full px-6 mb-8 gap-4"
+            >
+              <View
+                className="flex-row items-center gap-4"
+              >
+                <View
+                  className="bg-neutral-100 items-center justify-center rounded-full"
+                  style={
+                    {
+                      "height": 62.5,
+                      "width": 62.5,
+                    }
+                  }
+                >
+                  <View
+                    fill="none"
+                    height={37.5}
+                    viewBox="0 0 24 24"
+                    width={37.5}
+                  >
+                    <View
+                      d="M4.77419 4.77419V12C4.77419 12.5475 4.9917 13.0727 5.37888 13.4598C5.76605 13.847 6.29117 14.0645 6.83871 14.0645H17.1613C17.7088 14.0645 18.234 13.847 18.6211 13.4598C19.0083 13.0727 19.2258 12.5475 19.2258 12V4.77419"
+                      stroke="black"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                    />
+                    <View
+                      d="M8.78947 8.21053V1.89474C8.78947 1.33639 9.01128 0.8009 9.40609 0.40609C9.8009 0.01128 10.3364 -0.210526 10.8947 -0.210526H13C13.5583 -0.210526 14.0938 0.01128 14.4886 0.40609C14.8835 0.8009 15.1053 1.33639 15.1053 1.89474V8.21053"
+                      stroke="black"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      transform="translate(0 2)"
+                    />
+                  </View>
+                </View>
+                <View>
+                  <Text
+                    className="text-neutral-500 font-jakarta-medium uppercase text-center"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "fontSize": 13.799999999999999,
+                          "lineHeight": 25.299999999999997,
+                        },
+                      ]
+                    }
+                  >
+                    Total payable rent
+                  </Text>
+                  <Text
+                    className="text-black font-jakarta-semibold"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "fontSize": 18.4,
+                          "lineHeight": 19.549999999999997,
+                        },
+                      ]
+                    }
+                  >
+                    ₹ 40,000
+                  </Text>
+                </View>
+              </View>
+              <View
+                style={
+                  {
+                    "height": 51.5,
+                    "width": 1.5,
+                  }
+                }
+              >
+                <View
+                  fill="none"
+                  height={51.5}
+                  viewBox="0 0 1 33"
+                  width={1.5}
+                >
+                  <View
+                    d="M0.253846 0V33"
+                    stroke="#1A1A1A"
+                    strokeDasharray="8 8"
+                    strokeWidth={0.5}
+                  />
+                </View>
+              </View>
+              <View
+                className="flex-row items-center gap-4"
+              >
+                <View
+                  className="bg-neutral-100 items-center justify-center rounded-full"
+                  style={
+                    {
+                      "height": 62.5,
+                      "width": 62.5,
+                    }
+                  }
+                >
+                  <View
+                    fill="none"
+                    height={31.5}
+                    viewBox="0 0 17 20"
+                    width={25}
+                  >
+                    <View
+                      d="M6.23758 20.0001H1.86316V10.6031H0V8.0109H1.86316C0.82626 3.99289 3.75334 1.58428 5.3465 0.882227C10.0125 -1.58041 14.8514 1.69229 16.6876 3.63647V20.0001H12.3132V5.82368C9.78572 1.67608 6.61562 2.63738 5.3465 3.63647C3.72634 6.42314 6.02156 7.71387 7.37169 8.0109H9.63991V10.6031H6.23758V20.0001Z"
+                      fill="black"
+                    />
+                  </View>
+                </View>
+                <View>
+                  <Text
+                    className="text-success font-jakarta-medium"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "fontSize": 13.799999999999999,
+                          "lineHeight": 19.549999999999997,
+                        },
+                      ]
+                    }
+                  >
+                    saved ₹ 325 →
+                  </Text>
+                  <Text
+                    className="text-neutral-500 font-jakarta-medium text-center"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "fontSize": 13.799999999999999,
+                          "lineHeight": 25.299999999999997,
+                        },
+                      ]
+                    }
+                  >
+                    using flent cashback
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View
+              className="w-full px-6 gap-2 mb-8"
+            >
+              <View
+                className="flex-col gap-2"
+              >
+                <View
+                  className="flex-row justify-between items-center w-full"
+                >
+                  <Text
+                    className="text-black font-jakarta-medium text-xs"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        undefined,
+                      ]
+                    }
+                  >
+                    Paying to
+                  </Text>
+                  <Text
+                    className="text-black font-jakarta-medium text-xs"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        undefined,
+                      ]
+                    }
+                  >
+                    Test Landlord
+                  </Text>
+                </View>
+                <View
+                  className="flex-row gap-4 items-center"
+                >
+                  <View
+                    className="bg-gray-200 rounded-md"
+                    style={
+                      {
+                        "height": 75,
+                        "width": 75,
+                      }
+                    }
+                  />
+                  <View>
+                    <Text
+                      className="text-black font-jakarta-medium text-base"
+                      style={
+                        [
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 16,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 24,
+                            "textAlign": "left",
+                          },
+                          undefined,
+                        ]
+                      }
+                    >
+                      ICICI
+                    </Text>
+                    <Text
+                      className="text-black font-jakarta-medium text-xs"
+                      style={
+                        [
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 16,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 24,
+                            "textAlign": "left",
+                          },
+                          undefined,
+                        ]
+                      }
+                    >
+                      XXXX XXXX XXXX 2003
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "borderColor": "#878787",
+                    "borderRadius": 313,
+                    "borderWidth": 2,
+                    "elevation": 6,
+                    "height": 64,
+                    "opacity": 1,
+                    "paddingHorizontal": 40,
+                    "shadowColor": "#995C41",
+                    "shadowOffset": {
+                      "height": 6,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.24,
+                    "shadowRadius": 12,
+                    "width": 540,
+                  }
+                }
+              >
+                <Text
+                  className="text-white font-jakarta-semibold text-sm"
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Pay Now
+                </Text>
+              </View>
+              <Text
+                className="text-black font-jakarta-medium text-center text-xs mt-2"
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    undefined,
+                  ]
+                }
+              >
+                All payments are 100% secure
+              </Text>
+            </View>
+            <View
+              className="w-full mb-6"
+            >
+              <View
+                fill="none"
+                height={1.5}
+                viewBox="0 0 393 1"
+                width="100%"
+              >
+                <View
+                  d="M0 0.25H393"
+                  stroke="#EEEEEE"
+                  strokeWidth={0.5}
+                />
+              </View>
+            </View>
+            <View
+              className="items-center gap-4 px-6 w-full"
+            >
+              <View
+                className="flex-row items-center gap-2"
+              >
+                <View
+                  className="bg-gray-300 w-10 h-8 rounded"
+                />
+                <Text
+                  className="text-neutral-600 font-jakarta-semibold text-xs uppercase"
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  PAY BY ANY APP INSTEAD
+                </Text>
+              </View>
+              <View
+                className="flex-row gap-8 w-full justify-center"
+              >
+                <View
+                  className="items-center gap-2"
+                >
+                  <View
+                    className="bg-gray-200 rounded-full"
+                    style={
+                      {
+                        "height": 62.5,
+                        "width": 62.5,
+                      }
+                    }
+                  />
+                  <Text
+                    className="text-black font-jakarta-regular text-xs"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        undefined,
+                      ]
+                    }
+                  >
+                    Google Pay
+                  </Text>
+                </View>
+                <View
+                  className="items-center gap-2"
+                >
+                  <View
+                    className="bg-gray-200 rounded-full"
+                    style={
+                      {
+                        "height": 62.5,
+                        "width": 62.5,
+                      }
+                    }
+                  />
+                  <Text
+                    className="text-black font-jakarta-regular text-xs"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        undefined,
+                      ]
+                    }
+                  >
+                    PayTM
+                  </Text>
+                </View>
+                <View
+                  className="items-center gap-2"
+                >
+                  <View
+                    className="bg-gray-200 rounded-full"
+                    style={
+                      {
+                        "height": 62.5,
+                        "width": 62.5,
+                      }
+                    }
+                  />
+                  <Text
+                    className="text-black font-jakarta-regular text-xs"
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        undefined,
+                      ]
+                    }
+                  >
+                    PhonePe
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</View>
+`;

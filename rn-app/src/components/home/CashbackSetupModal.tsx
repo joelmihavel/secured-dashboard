@@ -15,7 +15,8 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 
-import { Text, PrimaryButton } from '@/src/components';
+import { Text } from '@/src/components/ui/Typography/Text';
+import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 

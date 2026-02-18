@@ -5,8 +5,7 @@
       "figmaPatterns": ["Splash", "get-started"],
       "route": "/(auth)/splash",
       "screens": [
-        { "figmaId": "1-28053", "name": "Splash / get-started", "state": "default" },
-        { "figmaId": "1-28055", "name": "Splash / get-started --animation", "state": "animation" }
+        { "figmaId": "1-28055", "name": "Splash / get-started", "state": "default" }
       ]
     },
     "beta-splash": {
@@ -20,9 +19,9 @@
       "figmaPatterns": ["carousel"],
       "route": "/(auth)/carousel",
       "screens": [
-        { "figmaId": "1-28985", "name": "Splash / get-started --carousel 4", "state": "page4", "routeWithState": "/(auth)/carousel?page=4" },
-        { "figmaId": "1-29025", "name": "Splash / get-started --carousel 5", "state": "page5", "routeWithState": "/(auth)/carousel?page=5" },
-        { "figmaId": "1-29065", "name": "Splash / get-started --carousel 6", "state": "page6", "routeWithState": "/(auth)/carousel?page=6" }
+        { "figmaId": "1-28985", "name": "Splash / get-started --carousel slide 1", "state": "page1", "routeWithState": "/(auth)/carousel?page=1" },
+        { "figmaId": "1-29025", "name": "Splash / get-started --carousel slide 2", "state": "page2", "routeWithState": "/(auth)/carousel?page=2" },
+        { "figmaId": "1-29065", "name": "Splash / get-started --carousel slide 3", "state": "page3", "routeWithState": "/(auth)/carousel?page=3" }
       ]
     },
     "sign-up": {
@@ -45,14 +44,14 @@
     },
     "waitlist": {
       "figmaPatterns": ["Waitlist"],
-      "route": "/(waitlist)/index",
+      "route": "/(waitlist)",
       "screens": [
-        { "figmaId": "41-11206", "name": "Onboarding / Waitlist Screen", "state": "default", "routeWithState": "/(waitlist)/index?state=pending" },
-        { "figmaId": "41-11313", "name": "Onboarding / Waitlist Screen --accepted", "state": "accepted", "routeWithState": "/(waitlist)/index?state=accepted" },
-        { "figmaId": "41-11410", "name": "Onboarding / Waitlist Screen --rejected", "state": "rejected", "routeWithState": "/(waitlist)/index?state=rejected" },
-        { "figmaId": "41-11506", "name": "Onboarding / Waitlist Screen --more than 24hrs", "state": "24hrs", "routeWithState": "/(waitlist)/index?state=pending_long" },
-        { "figmaId": "41-11613", "name": "Onboarding / Waitlist Screen --referral code entry", "state": "referral", "routeWithState": "/(waitlist)/index?state=referral" },
-        { "figmaId": "41-11720", "name": "Onboarding / Waitlist Screen --referral code entry --invalid", "state": "referral-invalid", "routeWithState": "/(waitlist)/index?state=referral_invalid" }
+        { "figmaId": "41-11206", "name": "Onboarding / Waitlist Screen", "state": "default", "routeWithState": "/waitlist/state/pending" },
+        { "figmaId": "41-11313", "name": "Onboarding / Waitlist Screen --accepted", "state": "accepted", "routeWithState": "/waitlist/state/accepted" },
+        { "figmaId": "41-11410", "name": "Onboarding / Waitlist Screen --rejected", "state": "rejected", "routeWithState": "/waitlist/state/rejected" },
+        { "figmaId": "41-11506", "name": "Onboarding / Waitlist Screen --more than 24hrs", "state": "24hrs", "routeWithState": "/waitlist/state/pending_long" },
+        { "figmaId": "41-11613", "name": "Onboarding / Waitlist Screen --referral code entry", "state": "referral", "routeWithState": "/waitlist/state/referral" },
+        { "figmaId": "41-11720", "name": "Onboarding / Waitlist Screen --referral code entry --invalid", "state": "referral-invalid", "routeWithState": "/waitlist/state/referral_invalid" }
       ]
     },
     "agreement-upload": {

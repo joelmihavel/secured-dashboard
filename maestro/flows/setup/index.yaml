@@ -1,0 +1,70 @@
+# =============================================================================
+# TE-120: Setup Index Screen Functional Flow
+# Route: /(setup)/index
+# Figma: 41-10712 (step1), 41-10859 (step2), 41-11006 (step3)
+# testIDs: setup-index-screen, start-flenting-button
+# =============================================================================
+#
+# Validates:
+#   - Setup carousel renders with 3 steps
+#   - Step 1: Add landlord's bank details content
+#   - Step 2: Upload address proof content
+#   - Step 3: Invite landlord content
+#   - "Start Flenting" button is visible
+#   - Carousel dot indicators are present
+#   - Swiping navigates between steps
+# =============================================================================
+
+appId: com.flent.secured
+---
+# -- Test step 1 (default) --
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///setup/index?step=1"
+- waitForAnimationToEnd
+
+# Verify setup screen rendered
+- assertVisible:
+    id: "setup-index-screen"
+
+# Verify step 1 content (bank details)
+- assertVisible: "bank"
+    optional: true
+
+# Verify Start Flenting button
+- assertVisible:
+    id: "start-flenting-button"
+
+# -- Swipe to step 2 --
+- swipe:
+    direction: LEFT
+    duration: 500
+
+- waitForAnimationToEnd
+
+# -- Swipe to step 3 --
+- swipe:
+    direction: LEFT
+    duration: 500
+
+- waitForAnimationToEnd
+
+# -- Test step 2 via deep link --
+- openLink: "flentsecured:///setup/index?step=2"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "setup-index-screen"
+
+# -- Test step 3 via deep link --
+- openLink: "flentsecured:///setup/index?step=3"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "setup-index-screen"
+
+# Tap Start Flenting to proceed
+- tapOn:
+    id: "start-flenting-button"
+
+- waitForAnimationToEnd

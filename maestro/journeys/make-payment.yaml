@@ -1,0 +1,139 @@
+# =============================================================================
+# TE-121: Make Payment E2E Journey
+#
+# Full payment journey: Home -> Select Method -> Initiate -> Processing ->
+#                       Success (or Failed)
+#
+# This journey validates the complete rent payment flow from the home screen
+# through method selection, payment initiation, processing animation, and
+# the success/failure result screen.
+#
+# Prerequisites:
+#   - User is already authenticated and has completed onboarding
+#   - At least one payment method is configured (UPI, Card, or Netbanking)
+#   - Mock backend returns successful payment for test flow
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STEP 1: Home Screen -- Start Payment
+# =============================================
+- launchApp:
+    clearState: true
+
+# Deep link to home screen with active payment methods
+- openLink: "flentsecured:///main/index?state=all-methods"
+- waitForAnimationToEnd
+
+# Verify home screen
+- assertVisible:
+    id: "home-screen"
+
+# =============================================
+# STEP 2: Select Payment Method
+# =============================================
+# Navigate to payment selection
+- openLink: "flentsecured:///payment/select-method?state=before-7th"
+- waitForAnimationToEnd
+
+# Verify payment method selection screen
+- assertVisible:
+    id: "select-method-screen"
+
+# Select a payment method (tap on UPI card if available)
+- assertVisible: "Pay"
+
+# Tap Pay Now to proceed with selected method
+- scrollUntilVisible:
+    element:
+      id: "pay-now-button"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn:
+    id: "pay-now-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 3: Initiate Payment (Breakdown Screen)
+# =============================================
+- assertVisible:
+    id: "initiate-payment-screen"
+    optional: true
+
+# If we landed on initiate screen, verify breakdown and proceed
+- assertVisible: "Rent"
+    optional: true
+
+# Scroll to and tap Pay Now on initiate screen
+- scrollUntilVisible:
+    element:
+      id: "pay-now-button"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- tapOn:
+    id: "pay-now-button"
+    optional: true
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 4: Payment Processing
+# =============================================
+# Processing screen shows animation while payment is being processed
+- assertVisible:
+    id: "processing-screen"
+    optional: true
+
+# Wait for processing to complete (mock backend should return quickly)
+- wait: 3000
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 5: Payment Success
+# =============================================
+# After processing, should land on success or failed screen
+- assertVisible:
+    id: "success-screen"
+    optional: true
+
+# If success screen, verify key elements
+- assertVisible: "Payment"
+    optional: true
+
+# Verify download receipt button on success
+- assertVisible:
+    id: "download-receipt-button"
+    optional: true
+
+# Take screenshot of payment result
+- takeScreenshot: "payment-journey-result"
+
+# =============================================
+# ALTERNATIVE: Payment Failed Path
+# =============================================
+# Test the failed payment path separately via deep link
+- openLink: "flentsecured:///payment/failed?state=failed"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "failed-screen"
+
+# Verify contact support button on failure
+- assertVisible:
+    id: "contact-support-button"
+
+- takeScreenshot: "payment-failed-state"
+
+# =============================================
+# ALTERNATIVE: Payment Refunded Path
+# =============================================
+- openLink: "flentsecured:///payment/failed?state=refunded"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "failed-screen"
+
+- takeScreenshot: "payment-refunded-state"

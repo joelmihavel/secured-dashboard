@@ -1,0 +1,2186 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProfileScreen matches snapshot 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+  testID="profile-screen"
+>
+  <View
+    edges={
+      [
+        "top",
+        "bottom",
+        "left",
+        "right",
+      ]
+    }
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          false,
+          undefined,
+        ]
+      }
+    >
+      <RCTScrollView
+        contentContainerStyle={{}}
+        showsVerticalScrollIndicator={false}
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <View>
+          <View
+            style={
+              {
+                "flexDirection": "column",
+                "gap": 40,
+                "paddingBottom": 48,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "flexDirection": "column",
+                  "gap": 24,
+                  "paddingHorizontal": 40,
+                }
+              }
+            >
+              <View
+                accessibilityLabel="Go back"
+                accessibilityRole="button"
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "height": 32,
+                    "justifyContent": "center",
+                    "opacity": 1,
+                    "width": 32,
+                  }
+                }
+              >
+                <View
+                  color="#FFFFFF"
+                  name="arrow-back"
+                  size={24}
+                />
+              </View>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 48,
+                      "letterSpacing": -2,
+                      "lineHeight": 64,
+                      "maxWidth": 313,
+                    },
+                  ]
+                }
+              >
+                <Text
+                  style={
+                    [
+                      undefined,
+                      {
+                        "color": "#A9A9A9",
+                      },
+                    ]
+                  }
+                >
+                  My 
+                </Text>
+                <Text
+                  style={
+                    [
+                      undefined,
+                      {
+                        "color": "#FFFFFF",
+                      },
+                    ]
+                  }
+                >
+                   
+                </Text>
+                <Text
+                  style={
+                    [
+                      undefined,
+                      {
+                        "color": "#FF9A6D",
+                      },
+                    ]
+                  }
+                >
+                  Profile
+                </Text>
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "flexDirection": "column",
+                  "gap": 24,
+                  "paddingHorizontal": 40,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#878787",
+                      "fontFamily": "PlusJakartaSans-SemiBold",
+                      "fontSize": 12,
+                      "letterSpacing": 0,
+                      "lineHeight": 16.92,
+                      "textAlign": "left",
+                      "textTransform": "uppercase",
+                    },
+                  ]
+                }
+              >
+                Your payment history
+              </Text>
+              <View
+                style={
+                  {
+                    "flexDirection": "column",
+                    "gap": 24,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "overflow": "hidden",
+                    }
+                  }
+                >
+                  <RCTScrollView
+                    contentContainerStyle={
+                      {
+                        "paddingHorizontal": 0,
+                      }
+                    }
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                  >
+                    <View>
+                      <View
+                        style={
+                          [
+                            {
+                              "alignItems": "flex-end",
+                              "flexDirection": "row",
+                              "height": 161,
+                            },
+                            {
+                              "width": 496,
+                            },
+                          ]
+                        }
+                      >
+                        <View
+                          style={
+                            {
+                              "flexDirection": "row",
+                              "gap": 10,
+                              "left": 16,
+                              "position": "absolute",
+                              "top": 6,
+                              "zIndex": 1,
+                            }
+                          }
+                        >
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "backgroundColor": "#FFFFFF",
+                                "borderRadius": 40,
+                                "flexDirection": "row",
+                                "justifyContent": "center",
+                                "paddingHorizontal": 8,
+                                "paddingVertical": 4,
+                              }
+                            }
+                          >
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  {
+                                    "color": "#000000",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 12,
+                                    "letterSpacing": -0.24,
+                                    "lineHeight": 16.92,
+                                    "textAlign": "center",
+                                  },
+                                ]
+                              }
+                            >
+                              on time
+                            </Text>
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "backgroundColor": "#FFFFFF",
+                                "borderRadius": 40,
+                                "flexDirection": "row",
+                                "justifyContent": "center",
+                                "paddingHorizontal": 8,
+                                "paddingVertical": 4,
+                              }
+                            }
+                          >
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  {
+                                    "color": "#000000",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 12,
+                                    "letterSpacing": -0.24,
+                                    "lineHeight": 16.92,
+                                    "textAlign": "center",
+                                  },
+                                ]
+                              }
+                            >
+                              Paid late
+                            </Text>
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "backgroundColor": "#FFFFFF",
+                                "borderRadius": 40,
+                                "flexDirection": "row",
+                                "justifyContent": "center",
+                                "paddingHorizontal": 8,
+                                "paddingVertical": 4,
+                              }
+                            }
+                          >
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  {
+                                    "color": "#000000",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 12,
+                                    "letterSpacing": -0.24,
+                                    "lineHeight": 16.92,
+                                    "textAlign": "center",
+                                  },
+                                ]
+                              }
+                            >
+                              Not Paid
+                            </Text>
+                          </View>
+                        </View>
+                        <View
+                          style={
+                            {
+                              "backgroundColor": "#4D4D4D",
+                              "borderRadius": 8,
+                              "bottom": 0,
+                              "left": 16,
+                              "position": "absolute",
+                              "top": 0,
+                              "width": 0.5,
+                            }
+                          }
+                        />
+                        <View
+                          style={
+                            {
+                              "alignItems": "flex-end",
+                              "flexDirection": "row",
+                              "gap": 16,
+                              "height": 161,
+                              "paddingHorizontal": 16,
+                            }
+                          }
+                        >
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#FFFFFF",
+                                    "height": 99,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              JAN
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#FFFFFF",
+                                    "height": 56,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              FEB
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    {
+                                      "color": "#FF9A6D",
+                                    },
+                                  ],
+                                ]
+                              }
+                            >
+                              MAR
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              APR
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              MAY
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              JUN
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              JUL
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              AUG
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              SEP
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              OCT
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              NOV
+                            </Text>
+                            <View
+                              style={
+                                {
+                                  "backgroundColor": "#4D4D4D",
+                                  "bottom": 0,
+                                  "position": "absolute",
+                                  "right": -8.25,
+                                  "top": 0,
+                                  "width": 0.5,
+                                }
+                              }
+                            />
+                          </View>
+                          <View
+                            style={
+                              {
+                                "alignItems": "center",
+                                "gap": 9,
+                                "justifyContent": "flex-end",
+                                "width": 24,
+                              }
+                            }
+                          >
+                            <View
+                              style={
+                                [
+                                  {
+                                    "borderRadius": 2,
+                                    "width": 16,
+                                  },
+                                  {
+                                    "backgroundColor": "#4D4D4D",
+                                    "height": 1,
+                                  },
+                                ]
+                              }
+                            />
+                            <Text
+                              style={
+                                [
+                                  {
+                                    "color": "#FFFFFF",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 16,
+                                    "fontWeight": "400",
+                                    "letterSpacing": 0,
+                                    "lineHeight": 24,
+                                    "textAlign": "left",
+                                  },
+                                  [
+                                    {
+                                      "color": "#878787",
+                                      "fontFamily": "PlusJakartaSans-Regular",
+                                      "fontSize": 12,
+                                      "letterSpacing": -0.24,
+                                      "lineHeight": 16.92,
+                                      "textAlign": "center",
+                                    },
+                                    false,
+                                  ],
+                                ]
+                              }
+                            >
+                              DEC
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </RCTScrollView>
+                </View>
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#4D4D4D",
+                        "borderRadius": 100,
+                        "height": 2,
+                        "overflow": "hidden",
+                        "width": 24,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "backgroundColor": "#FF9A6D",
+                          "height": 2,
+                          "width": 7,
+                        }
+                      }
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "flexDirection": "column",
+                  "gap": 24,
+                  "paddingHorizontal": 40,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#878787",
+                      "fontFamily": "PlusJakartaSans-SemiBold",
+                      "fontSize": 12,
+                      "letterSpacing": 0,
+                      "lineHeight": 16.92,
+                      "textAlign": "left",
+                      "textTransform": "uppercase",
+                    },
+                  ]
+                }
+              >
+                Secured Account
+              </Text>
+              <View
+                style={
+                  {
+                    "gap": 4,
+                  }
+                }
+              >
+                <View
+                  accessibilityLabel="View profile for Test User"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "backgroundColor": "#202020",
+                      "borderRadius": 12,
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "borderRadius": 24,
+                        "height": 48,
+                        "overflow": "hidden",
+                        "width": 48,
+                      }
+                    }
+                  >
+                    <Image
+                      onError={[Function]}
+                      resizeMode="cover"
+                      source={
+                        {
+                          "testUri": "../../../assets/images/profile-avatar.png",
+                        }
+                      }
+                      style={
+                        {
+                          "borderRadius": 24,
+                          "height": 48,
+                          "width": 48,
+                        }
+                      }
+                    />
+                  </View>
+                  <View
+                    style={
+                      {
+                        "flex": 1,
+                        "gap": 4,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        [
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 16,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 24,
+                            "textAlign": "left",
+                          },
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Medium",
+                            "fontSize": 14,
+                            "letterSpacing": -0.56,
+                            "lineHeight": 19.74,
+                          },
+                        ]
+                      }
+                    >
+                      Test User
+                    </Text>
+                    <Text
+                      style={
+                        [
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 16,
+                            "fontWeight": "400",
+                            "letterSpacing": 0,
+                            "lineHeight": 24,
+                            "textAlign": "left",
+                          },
+                          {
+                            "color": "#878787",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 12,
+                            "letterSpacing": -0.24,
+                            "lineHeight": 16.92,
+                          },
+                        ]
+                      }
+                    >
+                      15th sept 9:40am
+                    </Text>
+                  </View>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+                <View
+                  accessibilityLabel="View Agreement"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "backgroundColor": "#202020",
+                      "borderRadius": 12,
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "flex-start",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="view-agreement-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    View Agreement
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "flexDirection": "column",
+                  "gap": 24,
+                  "paddingHorizontal": 40,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#878787",
+                      "fontFamily": "PlusJakartaSans-SemiBold",
+                      "fontSize": 12,
+                      "letterSpacing": 0,
+                      "lineHeight": 16.92,
+                      "textAlign": "left",
+                      "textTransform": "uppercase",
+                    },
+                  ]
+                }
+              >
+                Payment Information
+              </Text>
+              <View
+                style={
+                  {
+                    "backgroundColor": "#202020",
+                    "borderRadius": 12,
+                    "elevation": 4,
+                    "gap": 8,
+                    "shadowColor": "#000000",
+                    "shadowOffset": {
+                      "height": 9,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.1,
+                    "shadowRadius": 9.5,
+                  }
+                }
+              >
+                <View
+                  accessibilityLabel="Edit UPI Method"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "space-between",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="edit-upi-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Edit UPI Method
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#4D4D4D",
+                      "height": 0.25,
+                    }
+                  }
+                />
+                <View
+                  accessibilityLabel="Edit Credit Card"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "space-between",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="edit-credit-card-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Edit Credit Card
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#4D4D4D",
+                      "height": 0.25,
+                    }
+                  }
+                />
+                <View
+                  accessibilityLabel="Edit Bank Account"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "space-between",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="edit-bank-account-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Edit Bank Account
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "flexDirection": "column",
+                  "gap": 24,
+                  "paddingHorizontal": 40,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#878787",
+                      "fontFamily": "PlusJakartaSans-SemiBold",
+                      "fontSize": 12,
+                      "letterSpacing": 0,
+                      "lineHeight": 16.92,
+                      "textAlign": "left",
+                      "textTransform": "uppercase",
+                    },
+                  ]
+                }
+              >
+                support
+              </Text>
+              <View
+                style={
+                  {
+                    "backgroundColor": "#202020",
+                    "borderRadius": 12,
+                    "elevation": 4,
+                    "gap": 8,
+                    "shadowColor": "#000000",
+                    "shadowOffset": {
+                      "height": 9,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.1,
+                    "shadowRadius": 9.5,
+                  }
+                }
+              >
+                <View
+                  accessibilityLabel="Contact Support"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "space-between",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="contact-support-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Contact Support
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#4D4D4D",
+                      "height": 0.25,
+                    }
+                  }
+                />
+                <View
+                  accessibilityLabel="Rate the App"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "space-between",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="rate-app-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Rate the App
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "flexDirection": "column",
+                  "gap": 24,
+                  "paddingHorizontal": 40,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#878787",
+                      "fontFamily": "PlusJakartaSans-SemiBold",
+                      "fontSize": 12,
+                      "letterSpacing": 0,
+                      "lineHeight": 16.92,
+                      "textAlign": "left",
+                      "textTransform": "uppercase",
+                    },
+                  ]
+                }
+              >
+                App
+              </Text>
+              <View
+                style={
+                  {
+                    "backgroundColor": "#202020",
+                    "borderRadius": 12,
+                    "elevation": 4,
+                    "gap": 8,
+                    "shadowColor": "#000000",
+                    "shadowOffset": {
+                      "height": 9,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.1,
+                    "shadowRadius": 9.5,
+                  }
+                }
+              >
+                <View
+                  accessibilityLabel="Sign Out"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "space-between",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="sign-out-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Sign Out
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#4D4D4D",
+                      "height": 0.25,
+                    }
+                  }
+                />
+                <View
+                  accessibilityLabel="Delete Account"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessibilityValue={
+                    {
+                      "max": undefined,
+                      "min": undefined,
+                      "now": undefined,
+                      "text": undefined,
+                    }
+                  }
+                  accessible={true}
+                  collapsable={false}
+                  focusable={true}
+                  onClick={[Function]}
+                  onResponderGrant={[Function]}
+                  onResponderMove={[Function]}
+                  onResponderRelease={[Function]}
+                  onResponderTerminate={[Function]}
+                  onResponderTerminationRequest={[Function]}
+                  onStartShouldSetResponder={[Function]}
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 16,
+                      "justifyContent": "space-between",
+                      "opacity": 1,
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
+                    }
+                  }
+                  testID="delete-account-button"
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "fontWeight": "400",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#CBCBCB",
+                          "flex": 1,
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 14,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                          "textAlign": "left",
+                        },
+                      ]
+                    }
+                  >
+                    Delete Account
+                  </Text>
+                  <View
+                    color="#FF9A6D"
+                    name="arrow-forward"
+                    size={16}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</View>
+`;

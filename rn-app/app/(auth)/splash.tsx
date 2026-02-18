@@ -118,6 +118,8 @@ export default function SplashScreen() {
               onPress={handleLogin}
               style={styles.loginContainer}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="link"
+              accessibilityLabel="Already a user? Log in"
             >
               <Text style={styles.loginText}>
                 Already a user? <Text style={styles.loginLink}>Log in</Text>

@@ -1,0 +1,591 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Text BodyText renders correctly 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Body text content
+</Text>
+`;
+
+exports[`Text Caption renders correctly 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 12,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 16,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Caption content
+</Text>
+`;
+
+exports[`Text Heading1 renders correctly 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 48,
+        "fontWeight": "400",
+        "letterSpacing": -2,
+        "lineHeight": 64,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  H1 Title
+</Text>
+`;
+
+exports[`Text Heading2 renders correctly 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 40,
+        "fontWeight": "400",
+        "letterSpacing": -1.5,
+        "lineHeight": 52,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  H2 Title
+</Text>
+`;
+
+exports[`Text Heading3 renders correctly 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 32,
+        "fontWeight": "400",
+        "letterSpacing": -1,
+        "lineHeight": 44,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  H3 Title
+</Text>
+`;
+
+exports[`Text Heading5 renders correctly 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 20,
+        "fontWeight": "400",
+        "letterSpacing": -0.5,
+        "lineHeight": 32,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  H5 Title
+</Text>
+`;
+
+exports[`Text applies custom style prop 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      {
+        "fontWeight": "bold",
+        "marginBottom": 8,
+      },
+    ]
+  }
+>
+  Styled text
+</Text>
+`;
+
+exports[`Text renders correctly - caption variant 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 12,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 16,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Caption text
+</Text>
+`;
+
+exports[`Text renders correctly - default variant (bodyMdRegular) 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Hello World
+</Text>
+`;
+
+exports[`Text renders correctly - h1 variant 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 48,
+        "fontWeight": "400",
+        "letterSpacing": -2,
+        "lineHeight": 64,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Heading 1
+</Text>
+`;
+
+exports[`Text renders correctly - h2 variant 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 40,
+        "fontWeight": "400",
+        "letterSpacing": -1.5,
+        "lineHeight": 52,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Heading 2
+</Text>
+`;
+
+exports[`Text renders correctly - h3 variant 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 32,
+        "fontWeight": "400",
+        "letterSpacing": -1,
+        "lineHeight": 44,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Heading 3
+</Text>
+`;
+
+exports[`Text renders in inherit mode - skips variant defaults 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 48,
+        "fontWeight": "400",
+        "letterSpacing": -2,
+        "lineHeight": 64,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Parent text 
+  <Text
+    style={
+      [
+        {
+          "color": "#FF9A6D",
+        },
+        undefined,
+      ]
+    }
+  >
+    nested span
+  </Text>
+</Text>
+`;
+
+exports[`Text renders in inherit mode with color override 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FF8080",
+      },
+      undefined,
+    ]
+  }
+>
+  Error span
+</Text>
+`;
+
+exports[`Text renders in inherit mode without color 1`] = `
+<Text
+  style={
+    [
+      undefined,
+      undefined,
+    ]
+  }
+>
+  Inherited text
+</Text>
+`;
+
+exports[`Text renders with accent color 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FF9A6D",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Accent text
+</Text>
+`;
+
+exports[`Text renders with center alignment 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "center",
+      },
+      undefined,
+    ]
+  }
+>
+  Centered
+</Text>
+`;
+
+exports[`Text renders with disabled color 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#797979",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Disabled
+</Text>
+`;
+
+exports[`Text renders with empty children 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+/>
+`;
+
+exports[`Text renders with error color 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FF8080",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Error text
+</Text>
+`;
+
+exports[`Text renders with multiple children 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Hello 
+  world
+   
+  123
+</Text>
+`;
+
+exports[`Text renders with muted color 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#797979",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Muted
+</Text>
+`;
+
+exports[`Text renders with number children 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  42
+</Text>
+`;
+
+exports[`Text renders with onAccent color 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#131313",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  On Accent
+</Text>
+`;
+
+exports[`Text renders with primary color (default) 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Primary text
+</Text>
+`;
+
+exports[`Text renders with right alignment 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#FFFFFF",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "right",
+      },
+      undefined,
+    ]
+  }
+>
+  Right aligned
+</Text>
+`;
+
+exports[`Text renders with secondary color 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#A6A6A6",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Secondary
+</Text>
+`;
+
+exports[`Text renders with success color 1`] = `
+<Text
+  style={
+    [
+      {
+        "color": "#70BF73",
+        "fontFamily": "PlusJakartaSans-Regular",
+        "fontSize": 16,
+        "fontWeight": "400",
+        "letterSpacing": 0,
+        "lineHeight": 24,
+        "textAlign": "left",
+      },
+      undefined,
+    ]
+  }
+>
+  Success
+</Text>
+`;

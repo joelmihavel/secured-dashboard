@@ -5,8 +5,8 @@
  * NO AI imagination - only Figma extraction values.
  *
  * Usage:
- *   npx ts-node scripts/apply-figma-fixes.ts <screenId>
- *   npx ts-node scripts/apply-figma-fixes.ts 1-31485 --dry-run
+ *   npx tsx scripts/apply-figma-fixes.ts <screenId>
+ *   npx tsx scripts/apply-figma-fixes.ts 1-31485 --dry-run
  */
 
 import * as fs from 'fs';
@@ -430,8 +430,8 @@ function main(): void {
   const dryRun = args.includes('--dry-run');
 
   if (!screenId) {
-    console.log('Usage: npx ts-node scripts/apply-figma-fixes.ts <screenId> [--dry-run]');
-    console.log('Example: npx ts-node scripts/apply-figma-fixes.ts 1-31485');
+    console.log('Usage: npx tsx scripts/apply-figma-fixes.ts <screenId> [--dry-run]');
+    console.log('Example: npx tsx scripts/apply-figma-fixes.ts 1-31485');
     process.exit(1);
   }
 

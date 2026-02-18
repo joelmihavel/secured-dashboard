@@ -12,7 +12,7 @@
  *   5. State Check (conditional)  — multi-state verification notes
  *
  * Usage:
- *   npx ts-node scripts/inspector-flash.ts \
+ *   npx tsx scripts/inspector-flash.ts \
  *     --screenshot data/screenshots/41-8760.png \
  *     --baseline data/baselines/41-8760-baseline.png \
  *     --blueprint data/blueprints/41-8760-blueprint.json \
@@ -338,17 +338,22 @@ async function callGemini(
       return parseJsonFromText(textContent);
     } catch (err) {
       const isLast = attempt === maxRetries;
+      const errStr = String(err);
+      const is429 = errStr.includes('HTTP_429');
+
       if (isLast) {
         // On final retry, if JSON parsing failed, try again with strict JSON instruction
-        if (!retryJsonStrict && String(err).includes('JSON')) {
+        if (!retryJsonStrict && errStr.includes('JSON')) {
           log('JSON parse failed, retrying with strict JSON instruction...');
           return callGemini(prompt, images, 1, true);
         }
         throw err;
       }
 
-      const backoff = attempt * 10_000;
-      logError(`Attempt ${attempt}/${maxRetries} failed: ${err}. Retrying in ${backoff / 1000}s...`);
+      // 429 rate limit: wait much longer (30s, 60s) before retrying
+      const backoff = is429 ? attempt * 30_000 : attempt * 10_000;
+      const reason = is429 ? 'rate limited (429)' : 'error';
+      logError(`Attempt ${attempt}/${maxRetries} ${reason}: ${errStr.slice(0, 120)}. Retrying in ${backoff / 1000}s...`);
       await sleep(backoff);
     }
   }
@@ -380,7 +385,8 @@ function httpsPost(url: string, body: string): Promise<string> {
       res.on('end', () => {
         const data = Buffer.concat(chunks).toString('utf-8');
         if (res.statusCode && res.statusCode >= 400) {
-          reject(new Error(`HTTP ${res.statusCode}: ${data.slice(0, 500)}`));
+          // Embed status code in a detectable format for callers (e.g. 429 rate limit)
+          reject(new Error(`HTTP_${res.statusCode}: ${data.slice(0, 500)}`));
         } else {
           resolve(data);
         }
@@ -1216,7 +1222,7 @@ Gemini 3 Flash Deep Visual Inspector
 =====================================
 
 Usage:
-  npx ts-node scripts/inspector-flash.ts \\
+  npx tsx scripts/inspector-flash.ts \\
     --screenshot data/screenshots/41-8760.png \\
     --baseline data/baselines/41-8760-baseline.png \\
     --blueprint data/blueprints/41-8760-blueprint.json \\

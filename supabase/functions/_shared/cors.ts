@@ -52,7 +52,7 @@ export function getCorsHeaders(request: Request): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-idempotency-key, x-request-id, x-admin-key",
+      "authorization, x-client-info, apikey, content-type, x-idempotency-key, x-request-id, x-admin-key, x-test-mode",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Max-Age": "86400",
     "Access-Control-Allow-Credentials": "true",
@@ -66,7 +66,7 @@ export function getCorsHeaders(request: Request): Record<string, string> {
 export const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-idempotency-key, x-request-id, x-admin-key",
+    "authorization, x-client-info, apikey, content-type, x-idempotency-key, x-request-id, x-admin-key, x-test-mode",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Max-Age": "86400",
 };

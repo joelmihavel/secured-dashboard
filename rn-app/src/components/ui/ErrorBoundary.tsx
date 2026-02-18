@@ -22,10 +22,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log to crash reporting service in production
     if (!__DEV__) {
-      // TODO: Send to Sentry/Bugsnag
-      console.error('Uncaught error:', error, errorInfo);
+      const { captureError } = require('../../config/sentry');
+      captureError(error, { componentStack: errorInfo.componentStack });
     }
   }
 
@@ -45,7 +44,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <Text style={styles.message}>
             {__DEV__ ? this.state.error?.message : 'Please try again'}
           </Text>
-          <TouchableOpacity style={styles.button} onPress={this.handleReset}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={this.handleReset}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+          >
             <Text style={styles.buttonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -65,8 +69,10 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 28,
+    lineHeight: 40,
+    fontWeight: '400',
+    fontFamily: 'PlusJakartaSans-Regular',
     color: '#FFFFFF',
     marginBottom: 12,
   },

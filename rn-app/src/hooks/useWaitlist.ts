@@ -103,12 +103,17 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
     };
   }, [enabled, useMock, queryClient]);
 
+  // Include mockState in the query key so React Query refetches when the
+  // dev mock state changes (e.g., BuildBot switching from pending → accepted).
+  const queryKey = useMock
+    ? [...waitlistKeys.status(), 'mock', mockState]
+    : waitlistKeys.status();
+
   const query = useQuery({
-    queryKey: waitlistKeys.status(),
+    queryKey,
     queryFn: async (): Promise<WaitlistStatusData> => {
       // Use mock data only when explicitly requested
       if (useMock) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
         return getMockWaitlistStatus(mockState);
       }
 
@@ -301,8 +306,8 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
   // Join waitlist mutation
   const joinWaitlistMutation = useJoinWaitlist();
 
-  // My referral code query
-  const myReferralCodeQuery = useMyReferralCode(options.enabled !== false);
+  // My referral code query (skip when using mock data — no auth session available)
+  const myReferralCodeQuery = useMyReferralCode(options.enabled !== false && !options.useMock);
 
   // Apply referral mutation
   const applyReferralMutation = useApplyReferral();

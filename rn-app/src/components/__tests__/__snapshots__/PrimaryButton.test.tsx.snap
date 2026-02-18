@@ -47,54 +47,42 @@ exports[`PrimaryButton renders correctly - default 1`] = `
 >
   <View
     style={
-      [
-        {
-          "alignItems": "center",
-          "gap": 8,
-          "width": "100%",
-        },
-        {
-          "transform": [
-            {
-              "scale": 1,
-            },
-          ],
-        },
-        {
-          "opacity": 1,
-        },
-      ]
+      {
+        "alignItems": "center",
+        "gap": 8,
+        "width": "100%",
+      }
     }
   >
     <View
       style={
-        {
-          "backgroundColor": "#4d4d4d",
-          "borderRadius": 200,
-          "height": 2,
-          "width": 24,
-        }
-      }
-    />
-    <View
-      style={
         [
           {
-            "borderColor": "#202020",
-            "borderRadius": 8,
-            "borderWidth": 0.1,
-            "elevation": 6,
-            "shadowColor": "rgb(153, 92, 65)",
+            "elevation": 8,
+            "shadowColor": "#995C41",
             "shadowOffset": {
               "height": 6,
               "width": 0,
             },
             "shadowOpacity": 0.24,
-            "shadowRadius": 12,
+            "shadowRadius": 10,
             "width": "100%",
           },
           {
-            "borderColor": "#ff9a6d",
+            "shadowOffset": {
+              "height": undefined,
+              "width": 0,
+            },
+            "shadowOpacity": undefined,
+            "shadowRadius": undefined,
+            "transform": [
+              {
+                "translateY": undefined,
+              },
+              {
+                "scale": undefined,
+              },
+            ],
           },
         ]
       }
@@ -127,49 +115,104 @@ exports[`PrimaryButton renders correctly - default 1`] = `
         style={
           {
             "alignItems": "center",
+            "borderColor": "rgba(255, 154, 109, 0.25)",
             "borderRadius": 8,
-            "height": 56,
+            "borderWidth": 0.5,
             "justifyContent": "center",
             "overflow": "hidden",
-            "paddingHorizontal": 16,
+            "padding": 16,
+            "width": "100%",
           }
         }
       >
         <Text
           style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-SemiBold",
-                "fontSize": 16,
-                "fontWeight": "600",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              {
-                "fontFamily": "PlusJakartaSans-Medium",
-                "fontSize": 16,
-                "lineHeight": 24,
-              },
-            ]
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "textAlign": "center",
+            }
           }
         >
           Pay Now
         </Text>
         <View
           style={
+            [
+              {
+                "borderBottomLeftRadius": 7,
+                "borderBottomRightRadius": 7,
+                "bottom": 0,
+                "height": 8,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        >
+          <LinearGradient
+            colors={
+              [
+                "transparent",
+                "rgba(255, 255, 255, 0.04)",
+                "rgba(255, 255, 255, 0.12)",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            locations={
+              [
+                0,
+                0.4,
+                1,
+              ]
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderBottomLeftRadius": 7,
+                "borderBottomRightRadius": 7,
+                "flex": 1,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
             {
-              "borderBottomColor": "rgba(0, 0, 0, 0.3)",
-              "borderBottomWidth": 1,
-              "borderRadius": 8,
-              "borderTopColor": "rgba(255, 255, 255, 0.08)",
-              "borderTopWidth": 0.5,
+              "backgroundColor": "rgba(0, 0, 0, 0.6)",
               "bottom": 0,
+              "height": 1,
               "left": 0,
               "position": "absolute",
+              "right": 2,
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(0, 0, 0, 0.4)",
+              "bottom": 0,
+              "position": "absolute",
               "right": 0,
-              "top": 0,
+              "top": 4,
+              "width": 1,
             }
           }
         />
@@ -226,115 +269,40 @@ exports[`PrimaryButton renders correctly - disabled 1`] = `
 >
   <View
     style={
-      [
-        {
-          "alignItems": "center",
-          "gap": 8,
-          "width": "100%",
-        },
-        {
-          "transform": [
-            {
-              "scale": 1,
-            },
-          ],
-        },
-        {
-          "opacity": 1,
-        },
-      ]
+      {
+        "alignItems": "center",
+        "gap": 8,
+        "width": "100%",
+      }
     }
   >
     <View
       style={
         {
-          "backgroundColor": "#4d4d4d",
-          "borderRadius": 200,
-          "height": 2,
-          "width": 24,
+          "alignItems": "center",
+          "backgroundColor": "#202020",
+          "borderColor": "#202020",
+          "borderRadius": 12,
+          "borderWidth": 1,
+          "justifyContent": "center",
+          "padding": 16,
+          "width": "100%",
         }
-      }
-    />
-    <View
-      style={
-        [
-          {
-            "borderColor": "#202020",
-            "borderRadius": 8,
-            "borderWidth": 0.1,
-            "elevation": 6,
-            "shadowColor": "rgb(153, 92, 65)",
-            "shadowOffset": {
-              "height": 6,
-              "width": 0,
-            },
-            "shadowOpacity": 0.24,
-            "shadowRadius": 12,
-            "width": "100%",
-          },
-          false,
-        ]
       }
     >
-      <LinearGradient
-        colors={
-          [
-            "#202020",
-            "#0d0d0d",
-          ]
-        }
-        end={
-          {
-            "x": 0,
-            "y": 1,
-          }
-        }
-        locations={
-          [
-            0,
-            0.9018,
-          ]
-        }
-        start={
-          {
-            "x": 0,
-            "y": 0,
-          }
-        }
+      <Text
         style={
           {
-            "alignItems": "center",
-            "borderRadius": 8,
-            "height": 56,
-            "justifyContent": "center",
-            "overflow": "hidden",
-            "paddingHorizontal": 16,
+            "color": "#444444",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 16,
+            "lineHeight": 24,
+            "textAlign": "center",
           }
         }
       >
-        <Text
-          style={
-            [
-              {
-                "color": "#797979",
-                "fontFamily": "PlusJakartaSans-SemiBold",
-                "fontSize": 16,
-                "fontWeight": "600",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              {
-                "fontFamily": "PlusJakartaSans-Medium",
-                "fontSize": 16,
-                "lineHeight": 24,
-              },
-            ]
-          }
-        >
-          Pay Now
-        </Text>
-      </LinearGradient>
+        Pay Now
+      </Text>
     </View>
   </View>
 </View>
@@ -387,97 +355,31 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
 >
   <View
     style={
-      [
-        {
-          "alignItems": "center",
-          "gap": 8,
-          "width": "100%",
-        },
-        {
-          "transform": [
-            {
-              "scale": 1,
-            },
-          ],
-        },
-        {
-          "opacity": 1,
-        },
-      ]
+      {
+        "alignItems": "center",
+        "gap": 8,
+        "width": "100%",
+      }
     }
   >
     <View
       style={
         {
-          "backgroundColor": "#4d4d4d",
-          "borderRadius": 200,
-          "height": 2,
-          "width": 24,
+          "alignItems": "center",
+          "backgroundColor": "#202020",
+          "borderColor": "#202020",
+          "borderRadius": 12,
+          "borderWidth": 1,
+          "justifyContent": "center",
+          "padding": 16,
+          "width": "100%",
         }
-      }
-    />
-    <View
-      style={
-        [
-          {
-            "borderColor": "#202020",
-            "borderRadius": 8,
-            "borderWidth": 0.1,
-            "elevation": 6,
-            "shadowColor": "rgb(153, 92, 65)",
-            "shadowOffset": {
-              "height": 6,
-              "width": 0,
-            },
-            "shadowOpacity": 0.24,
-            "shadowRadius": 12,
-            "width": "100%",
-          },
-          false,
-        ]
       }
     >
-      <LinearGradient
-        colors={
-          [
-            "#202020",
-            "#0d0d0d",
-          ]
-        }
-        end={
-          {
-            "x": 0,
-            "y": 1,
-          }
-        }
-        locations={
-          [
-            0,
-            0.9018,
-          ]
-        }
-        start={
-          {
-            "x": 0,
-            "y": 0,
-          }
-        }
-        style={
-          {
-            "alignItems": "center",
-            "borderRadius": 8,
-            "height": 56,
-            "justifyContent": "center",
-            "overflow": "hidden",
-            "paddingHorizontal": 16,
-          }
-        }
-      >
-        <ActivityIndicator
-          color="#FFFFFF"
-          size="small"
-        />
-      </LinearGradient>
+      <ActivityIndicator
+        color="#444444"
+        size="small"
+      />
     </View>
   </View>
 </View>
@@ -528,54 +430,42 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
 >
   <View
     style={
-      [
-        {
-          "alignItems": "center",
-          "gap": 8,
-          "width": "100%",
-        },
-        {
-          "transform": [
-            {
-              "scale": 1,
-            },
-          ],
-        },
-        {
-          "opacity": 1,
-        },
-      ]
+      {
+        "alignItems": "center",
+        "gap": 8,
+        "width": "100%",
+      }
     }
   >
     <View
       style={
-        {
-          "backgroundColor": "#4d4d4d",
-          "borderRadius": 200,
-          "height": 2,
-          "width": 24,
-        }
-      }
-    />
-    <View
-      style={
         [
           {
-            "borderColor": "#202020",
-            "borderRadius": 8,
-            "borderWidth": 0.1,
-            "elevation": 6,
-            "shadowColor": "rgb(153, 92, 65)",
+            "elevation": 8,
+            "shadowColor": "#995C41",
             "shadowOffset": {
               "height": 6,
               "width": 0,
             },
             "shadowOpacity": 0.24,
-            "shadowRadius": 12,
+            "shadowRadius": 10,
             "width": "100%",
           },
           {
-            "borderColor": "#ff9a6d",
+            "shadowOffset": {
+              "height": undefined,
+              "width": 0,
+            },
+            "shadowOpacity": undefined,
+            "shadowRadius": undefined,
+            "transform": [
+              {
+                "translateY": undefined,
+              },
+              {
+                "scale": undefined,
+              },
+            ],
           },
         ]
       }
@@ -608,49 +498,104 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
         style={
           {
             "alignItems": "center",
+            "borderColor": "rgba(255, 154, 109, 0.25)",
             "borderRadius": 8,
-            "height": 56,
+            "borderWidth": 0.5,
             "justifyContent": "center",
             "overflow": "hidden",
-            "paddingHorizontal": 16,
+            "padding": 16,
+            "width": "100%",
           }
         }
       >
         <Text
           style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-SemiBold",
-                "fontSize": 16,
-                "fontWeight": "600",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              {
-                "fontFamily": "PlusJakartaSans-Medium",
-                "fontSize": 16,
-                "lineHeight": 24,
-              },
-            ]
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "textAlign": "center",
+            }
           }
         >
           Submit
         </Text>
         <View
           style={
+            [
+              {
+                "borderBottomLeftRadius": 7,
+                "borderBottomRightRadius": 7,
+                "bottom": 0,
+                "height": 8,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        >
+          <LinearGradient
+            colors={
+              [
+                "transparent",
+                "rgba(255, 255, 255, 0.04)",
+                "rgba(255, 255, 255, 0.12)",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            locations={
+              [
+                0,
+                0.4,
+                1,
+              ]
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderBottomLeftRadius": 7,
+                "borderBottomRightRadius": 7,
+                "flex": 1,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
             {
-              "borderBottomColor": "rgba(0, 0, 0, 0.3)",
-              "borderBottomWidth": 1,
-              "borderRadius": 8,
-              "borderTopColor": "rgba(255, 255, 255, 0.08)",
-              "borderTopWidth": 0.5,
+              "backgroundColor": "rgba(0, 0, 0, 0.6)",
               "bottom": 0,
+              "height": 1,
               "left": 0,
               "position": "absolute",
+              "right": 2,
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(0, 0, 0, 0.4)",
+              "bottom": 0,
+              "position": "absolute",
               "right": 0,
-              "top": 0,
+              "top": 4,
+              "width": 1,
             }
           }
         />
@@ -707,44 +652,42 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
 >
   <View
     style={
-      [
-        {
-          "alignItems": "center",
-          "gap": 8,
-          "width": "100%",
-        },
-        {
-          "transform": [
-            {
-              "scale": 1,
-            },
-          ],
-        },
-        {
-          "opacity": 1,
-        },
-      ]
+      {
+        "alignItems": "center",
+        "gap": 8,
+        "width": "100%",
+      }
     }
   >
     <View
       style={
         [
           {
-            "borderColor": "#202020",
-            "borderRadius": 8,
-            "borderWidth": 0.1,
-            "elevation": 6,
-            "shadowColor": "rgb(153, 92, 65)",
+            "elevation": 8,
+            "shadowColor": "#995C41",
             "shadowOffset": {
               "height": 6,
               "width": 0,
             },
             "shadowOpacity": 0.24,
-            "shadowRadius": 12,
+            "shadowRadius": 10,
             "width": "100%",
           },
           {
-            "borderColor": "#ff9a6d",
+            "shadowOffset": {
+              "height": undefined,
+              "width": 0,
+            },
+            "shadowOpacity": undefined,
+            "shadowRadius": undefined,
+            "transform": [
+              {
+                "translateY": undefined,
+              },
+              {
+                "scale": undefined,
+              },
+            ],
           },
         ]
       }
@@ -777,49 +720,104 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
         style={
           {
             "alignItems": "center",
+            "borderColor": "rgba(255, 154, 109, 0.25)",
             "borderRadius": 8,
-            "height": 56,
+            "borderWidth": 0.5,
             "justifyContent": "center",
             "overflow": "hidden",
-            "paddingHorizontal": 16,
+            "padding": 16,
+            "width": "100%",
           }
         }
       >
         <Text
           style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-SemiBold",
-                "fontSize": 16,
-                "fontWeight": "600",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              {
-                "fontFamily": "PlusJakartaSans-Medium",
-                "fontSize": 16,
-                "lineHeight": 24,
-              },
-            ]
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "textAlign": "center",
+            }
           }
         >
           Continue
         </Text>
         <View
           style={
+            [
+              {
+                "borderBottomLeftRadius": 7,
+                "borderBottomRightRadius": 7,
+                "bottom": 0,
+                "height": 8,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        >
+          <LinearGradient
+            colors={
+              [
+                "transparent",
+                "rgba(255, 255, 255, 0.04)",
+                "rgba(255, 255, 255, 0.12)",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            locations={
+              [
+                0,
+                0.4,
+                1,
+              ]
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderBottomLeftRadius": 7,
+                "borderBottomRightRadius": 7,
+                "flex": 1,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
             {
-              "borderBottomColor": "rgba(0, 0, 0, 0.3)",
-              "borderBottomWidth": 1,
-              "borderRadius": 8,
-              "borderTopColor": "rgba(255, 255, 255, 0.08)",
-              "borderTopWidth": 0.5,
+              "backgroundColor": "rgba(0, 0, 0, 0.6)",
               "bottom": 0,
+              "height": 1,
               "left": 0,
               "position": "absolute",
+              "right": 2,
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "rgba(0, 0, 0, 0.4)",
+              "bottom": 0,
+              "position": "absolute",
               "right": 0,
-              "top": 0,
+              "top": 4,
+              "width": 1,
             }
           }
         />

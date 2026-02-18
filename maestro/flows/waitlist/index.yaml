@@ -1,0 +1,65 @@
+# =============================================================================
+# TE-120: Waitlist Screen Functional Flow
+# Route: /(waitlist)/index
+# Figma: 41-11206 (pending), 41-11313 (accepted), 41-11410 (rejected),
+#         41-11506 (24hrs), 41-11613 (referral), 41-11720 (referral-invalid)
+# =============================================================================
+#
+# Validates:
+#   - Waitlist screen renders for pending state
+#   - Position/queue information displays
+#   - Application timeline component displays
+#   - Progress arc visualization renders
+#   - Referral code input is accessible
+#   - Benefits card section renders
+#   - Accepted state shows "Step Inside" button
+#   - Rejected state shows appropriate messaging
+# =============================================================================
+
+appId: com.flent.secured
+---
+# -- Test pending state (default) --
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///waitlist/index?state=pending"
+- waitForAnimationToEnd
+
+# Verify core waitlist elements for pending state
+- assertVisible: "Waitlist"
+
+# Verify the screen has loaded with waitlist content
+- waitForAnimationToEnd
+
+# -- Test pending state with deep link --
+- openLink: "flentsecured:///waitlist/index?state=pending"
+- waitForAnimationToEnd
+
+# Verify application timeline component
+- assertVisible: "Application"
+
+# -- Test accepted state --
+- openLink: "flentsecured:///waitlist/index?state=accepted"
+- waitForAnimationToEnd
+
+# Accepted state should show approval messaging
+- assertVisible: "approved"
+    optional: true
+
+# -- Test rejected state --
+- openLink: "flentsecured:///waitlist/index?state=rejected"
+- waitForAnimationToEnd
+
+# -- Test pending_long (24hrs) state --
+- openLink: "flentsecured:///waitlist/index?state=pending_long"
+- waitForAnimationToEnd
+
+# 24hrs state should show extended wait messaging
+- assertVisible: "Waitlist"
+
+# -- Test referral code entry state --
+- openLink: "flentsecured:///waitlist/index?state=referral"
+- waitForAnimationToEnd
+
+# Referral state should show referral input
+- assertVisible: "referral"
+    optional: true

@@ -55,7 +55,7 @@ function checkRNFileExists(route: string): boolean {
 function runCoverageCheck(figmaId: string): { coverage: number; status: string } | null {
   try {
     const result = execSync(
-      `npx ts-node scripts/check-coverage.ts ${figmaId}`,
+      `npx tsx scripts/check-coverage.ts ${figmaId}`,
       {
         cwd: path.join(__dirname, '..'),
         encoding: 'utf-8',

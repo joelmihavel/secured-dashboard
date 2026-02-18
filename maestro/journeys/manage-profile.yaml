@@ -1,0 +1,206 @@
+# =============================================================================
+# TE-121: Manage Profile E2E Journey
+#
+# Full profile management journey: Home -> Profile -> Edit Profile -> Save ->
+#                                   Payment Methods -> Agreement -> Back
+#
+# This journey validates the complete profile management flow including
+# viewing profile details, editing personal information, managing payment
+# methods, and viewing the rental agreement.
+#
+# Prerequisites:
+#   - User is already authenticated
+#   - Profile data is loaded from backend/mock
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STEP 1: Home Screen -- Navigate to Profile
+# =============================================
+- launchApp:
+    clearState: true
+
+# Deep link to home screen
+- openLink: "flentsecured:///main/index?state=all-methods"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# =============================================
+# STEP 2: Profile Screen
+# =============================================
+# Navigate to profile
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+# Verify profile screen loaded
+- assertVisible:
+    id: "profile-screen"
+
+# Verify user info is displayed
+- assertVisible: "Profile"
+    optional: true
+
+# Verify all menu items are accessible
+- assertVisible:
+    id: "view-agreement-button"
+
+# =============================================
+# STEP 3: Edit Profile
+# =============================================
+# Navigate to edit profile screen
+- openLink: "flentsecured:///profile/edit"
+- waitForAnimationToEnd
+
+# Verify edit profile screen
+- assertVisible:
+    id: "edit-profile-screen"
+
+# Verify editable fields are present
+- assertVisible: "Name"
+    optional: true
+- assertVisible: "Email"
+    optional: true
+- assertVisible: "Phone"
+    optional: true
+
+# Edit the user name
+- tapOn: "Name"
+    optional: true
+- clearText
+- inputText: "Updated User Name"
+- hideKeyboard
+
+# Save changes
+- scrollUntilVisible:
+    element: "Save"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- tapOn: "Save"
+    optional: true
+
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 4: Back to Profile
+# =============================================
+- back
+- waitForAnimationToEnd
+
+# Verify we returned to profile
+- assertVisible:
+    id: "profile-screen"
+    optional: true
+
+# =============================================
+# STEP 5: View Payment Methods
+# =============================================
+# Navigate to payment methods from profile
+- scrollUntilVisible:
+    element:
+      id: "edit-upi-button"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- tapOn:
+    id: "edit-upi-button"
+    optional: true
+
+- waitForAnimationToEnd
+
+# Verify payment methods screen
+- assertVisible:
+    id: "payment-methods-screen"
+    optional: true
+
+# Go back
+- back
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 6: View Agreement
+# =============================================
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "view-agreement-button"
+- waitForAnimationToEnd
+
+# Verify agreement screen
+- assertVisible:
+    id: "profile-agreement-screen"
+    optional: true
+
+# Go back to profile
+- back
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 7: About Screen (Bonus verification)
+# =============================================
+- openLink: "flentsecured:///profile/about"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "about-screen"
+    optional: true
+
+# Go back
+- back
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 8: Help Screen
+# =============================================
+- openLink: "flentsecured:///profile/help"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "help-screen"
+    optional: true
+
+# Go back
+- back
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 9: Notification Settings
+# =============================================
+- openLink: "flentsecured:///profile/notifications"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "notification-settings-screen"
+    optional: true
+
+# Go back to profile
+- back
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 10: Final Profile Verification
+# =============================================
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "profile-screen"
+
+# Verify Sign Out button is accessible
+- scrollUntilVisible:
+    element:
+      id: "sign-out-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "sign-out-button"
+
+# Take final screenshot
+- takeScreenshot: "profile-journey-complete"

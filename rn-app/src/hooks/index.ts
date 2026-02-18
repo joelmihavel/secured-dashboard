@@ -36,6 +36,10 @@ export {
   useDeletePaymentMethod,
   useGenerateReceipt,
   usePayments,
+  usePaymentSchedules,
+  useCreateSchedule,
+  useManageSchedule,
+  useCashbackHistory,
   paymentKeys,
 } from './usePayments';
 
@@ -72,6 +76,42 @@ export { useIdentityFetch } from './useIdentityVerification';
 
 // Auth Guard
 export { useRequireAuth } from './useRequireAuth';
+
+// Setup Guard
+export { useSetupGuard } from './useSetupGuard';
+export type { SetupGuardResult } from './useSetupGuard';
+
+// Session Monitor
+export { useSessionMonitor } from './useSessionMonitor';
+
+// Network Status (ST-105)
+export {
+  useNetworkStatus,
+  queueMutation,
+  getQueueLength,
+  clearMutationQueue,
+  getNetworkStatus,
+} from './useNetworkStatus';
+export type { NetworkStatus, QueuedMutation } from './useNetworkStatus';
+
+// Optimistic Updates (ST-106)
+export {
+  useOptimisticPaymentMethod,
+  useOptimisticProfile,
+  useOptimisticNotification,
+} from './useOptimistic';
+
+// Deep Links (ST-107)
+export {
+  useDeepLink,
+  resolveDeepLink,
+  handleDeepLinkUrl,
+  consumeDeepLinkParams,
+  peekDeepLinkParams,
+} from './useDeepLink';
+
+// Analytics (PR-112)
+export { useAnalytics, useScreenAnalytics } from './useAnalytics';
 
 // Waitlist
 export {

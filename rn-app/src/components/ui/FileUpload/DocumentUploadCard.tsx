@@ -180,6 +180,8 @@ function DocumentUploadCardComponent({
               onRetry();
             }}
             style={styles.actionButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Retry uploading ${filename}`}
           >
             <Text style={styles.actionText}>Retry</Text>
           </Pressable>
@@ -191,6 +193,8 @@ function DocumentUploadCardComponent({
               onRemove();
             }}
             style={styles.actionButton}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${filename}`}
           >
             <View style={styles.removeIcon}>
               <View style={styles.removeIconLine} />

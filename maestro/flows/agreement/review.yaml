@@ -1,0 +1,46 @@
+# =============================================================================
+# TE-120: Agreement Review Screen Functional Flow
+# Route: /(agreement)/review
+# Figma: 1-30448 (verify), 1-30820 (modify)
+# testIDs: review-screen
+# =============================================================================
+#
+# Validates:
+#   - Review screen renders correctly
+#   - Agreement details are displayed (address, rent, dates, etc.)
+#   - Verify state shows read-only agreement details
+#   - Modify state shows editable fields
+#   - Confirmation/approval controls are present
+# =============================================================================
+
+appId: com.flent.secured
+---
+# -- Test verify state --
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///agreement/review?state=verify"
+- waitForAnimationToEnd
+
+# Verify review screen rendered
+- assertVisible:
+    id: "review-screen"
+
+# Verify agreement details section is displayed
+- assertVisible: "Agreement"
+
+# Scroll to see all agreement details
+- scrollUntilVisible:
+    element: "Confirm"
+    direction: DOWN
+    timeout: 10000
+    optional: true
+
+# -- Test modify state --
+- openLink: "flentsecured:///agreement/review?state=modify"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "review-screen"
+
+# Modify state should show editable fields
+- assertVisible: "Agreement"

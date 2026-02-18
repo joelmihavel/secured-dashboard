@@ -1,0 +1,54 @@
+# =============================================================================
+# TE-120: Splash Screen Functional Flow
+# Route: /(auth)/splash
+# Figma: 1-28055 (Splash / get-started)
+# testID: splash-screen, get-started-button
+# =============================================================================
+#
+# Validates:
+#   - Splash screen renders with background pattern
+#   - Logo is visible
+#   - Hero heading text "Make your rent work for you" displays
+#   - Subheading text displays
+#   - "Get Started" button is visible and tappable
+#   - "Already a user? Log in" link is visible
+#   - Tapping "Get Started" navigates to the carousel screen
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Launch app fresh to land on splash
+- launchApp:
+    clearState: true
+
+- waitForAnimationToEnd
+
+# -- Verify splash screen is rendered --
+- assertVisible:
+    id: "splash-screen"
+
+# -- Verify hero heading text --
+- assertVisible: "Make"
+- assertVisible: "your rent"
+- assertVisible: "work for you"
+
+# -- Verify subheading --
+- assertVisible: "Secured is India"
+
+# -- Verify Get Started button --
+- assertVisible:
+    id: "get-started-button"
+- assertVisible: "Get Started"
+
+# -- Verify login link --
+- assertVisible: "Already a user?"
+- assertVisible: "Log in"
+
+# -- Tap Get Started and verify navigation to carousel --
+- tapOn:
+    id: "get-started-button"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "carousel-screen"

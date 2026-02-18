@@ -1,0 +1,1635 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DocumentUploadCard renders correctly - error state 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+    <View
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            [
+              {
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 12,
+                "lineHeight": 16,
+              },
+              {
+                "color": "#E5484D",
+              },
+            ],
+          ]
+        }
+      >
+        File is expired
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`DocumentUploadCard renders correctly - idle state 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`DocumentUploadCard renders correctly - processing state 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+    <View
+      style={
+        {
+          "marginTop": 4,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 100,
+            "height": 2,
+            "overflow": "hidden",
+          }
+        }
+      >
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#FF9A6D",
+                "borderRadius": 100,
+                "height": "100%",
+              },
+              {
+                "width": "0%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            [
+              {
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 12,
+                "lineHeight": 16,
+              },
+              {
+                "color": "#FF9A6D",
+              },
+            ],
+          ]
+        }
+      >
+        Processing document...
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`DocumentUploadCard renders correctly - success state 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+    <View
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            [
+              {
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 12,
+                "lineHeight": 16,
+              },
+              {
+                "color": "#06C270",
+              },
+            ],
+          ]
+        }
+      >
+        Upload complete
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`DocumentUploadCard renders correctly - uploading state 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+    <View
+      style={
+        {
+          "marginTop": 4,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 100,
+            "height": 2,
+            "overflow": "hidden",
+          }
+        }
+      >
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#FF9A6D",
+                "borderRadius": 100,
+                "height": "100%",
+              },
+              {
+                "width": "0%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            [
+              {
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 12,
+                "lineHeight": 16,
+              },
+              {
+                "color": "#FF9A6D",
+              },
+            ],
+          ]
+        }
+      >
+        Uploading... 45%
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`DocumentUploadCard renders correctly - with custom style 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      {
+        "marginTop": 16,
+      },
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  />
+</View>
+`;
+
+exports[`DocumentUploadCard shows remove button in idle state 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Remove Agreement.pdf"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "padding": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "height": 20,
+            "justifyContent": "center",
+            "width": 20,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#4D4D4D",
+              "borderRadius": 1,
+              "height": 2,
+              "width": 12,
+            }
+          }
+        />
+      </View>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`DocumentUploadCard shows remove button in success state and calls onRemove 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      Agreement.pdf
+    </Text>
+    <View
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            [
+              {
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 12,
+                "lineHeight": 16,
+              },
+              {
+                "color": "#06C270",
+              },
+            ],
+          ]
+        }
+      >
+        Upload complete
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  >
+    <View
+      accessibilityLabel="Remove Agreement.pdf"
+      accessibilityRole="button"
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onBlur={[Function]}
+      onClick={[Function]}
+      onFocus={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "padding": 8,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "height": 20,
+            "justifyContent": "center",
+            "width": 20,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#4D4D4D",
+              "borderRadius": 1,
+              "height": 2,
+              "width": 12,
+            }
+          }
+        />
+      </View>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`DocumentUploadCard truncates long filenames 1`] = `
+<View
+  style={
+    [
+      {
+        "alignItems": "center",
+        "backgroundColor": "#202020",
+        "borderRadius": 12,
+        "flexDirection": "row",
+        "gap": 12,
+        "padding": 16,
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#131313",
+        "borderRadius": 8,
+        "height": 48,
+        "justifyContent": "center",
+        "width": 48,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "height": 28,
+          "position": "relative",
+          "width": 24,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "backgroundColor": "#4D4D4D",
+            "borderRadius": 2,
+            "height": "100%",
+            "position": "absolute",
+            "width": "100%",
+          }
+        }
+      />
+      <View
+        style={
+          {
+            "gap": 3,
+            "left": 4,
+            "position": "absolute",
+            "right": 4,
+            "top": 8,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            {
+              "backgroundColor": "#202020",
+              "borderRadius": 1,
+              "height": 2,
+              "width": "100%",
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#202020",
+                "borderRadius": 1,
+                "height": 2,
+                "width": "100%",
+              },
+              {
+                "width": "60%",
+              },
+            ]
+          }
+        />
+      </View>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "flex": 1,
+        "gap": 4,
+      }
+    }
+  >
+    <Text
+      numberOfLines={1}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 16,
+            "fontWeight": "400",
+            "letterSpacing": 0,
+            "lineHeight": 24,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 14,
+            "lineHeight": 20,
+          },
+        ]
+      }
+    >
+      This_is_a_very_long_agreemen...pdf
+    </Text>
+  </View>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      }
+    }
+  />
+</View>
+`;

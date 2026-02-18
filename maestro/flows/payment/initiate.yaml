@@ -1,0 +1,55 @@
+# =============================================================================
+# TE-120: Payment Initiation Screen Functional Flow
+# Route: /(payment)/initiate
+# Figma: 41-8695 (Payment Breakdown - Cashback Applied)
+# testIDs: initiate-payment-screen, pay-now-button
+# =============================================================================
+#
+# Validates:
+#   - Initiate payment screen renders with payment breakdown
+#   - Rent amount is displayed
+#   - Cashback deduction line item shows (if applicable)
+#   - Platform fee/convenience fee displays
+#   - Total payable amount is calculated correctly
+#   - Selected payment method summary is shown
+#   - "Pay Now" button with amount is visible and tappable
+#   - Tapping Pay Now navigates to processing screen
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to initiate payment screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/initiate"
+- waitForAnimationToEnd
+
+# Verify initiate payment screen rendered
+- assertVisible:
+    id: "initiate-payment-screen"
+
+# Verify payment breakdown elements
+- assertVisible: "Rent"
+    optional: true
+
+# Scroll to see full breakdown
+- scrollUntilVisible:
+    element:
+      id: "pay-now-button"
+    direction: DOWN
+    timeout: 5000
+
+# Verify Pay Now button
+- assertVisible:
+    id: "pay-now-button"
+
+# Tap Pay Now to initiate payment
+- tapOn:
+    id: "pay-now-button"
+
+- waitForAnimationToEnd
+
+# Verify navigation to processing screen
+- assertVisible:
+    id: "processing-screen"
+    optional: true

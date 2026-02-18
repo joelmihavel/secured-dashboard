@@ -60,8 +60,8 @@ const FIGMA = {
 
   // Colors from Figma with design token mappings
   colors: {
-    // Input background: #202020 → colors.black[500]
-    inputBackground: colors.black[500],
+    // Input background: #222222 per Figma node
+    inputBackground: '#222222',
 
     // Input border: #444444 → colors.neutral[800]
     inputBorder: colors.neutral[800],
@@ -181,6 +181,7 @@ function ReferralCodeInputComponent({
               placeholder="0"
               placeholderTextColor={FIGMA.colors.textPlaceholder}
               editable={!disabled}
+              accessibilityLabel={`Referral code digit ${index + 1} of ${CODE_LENGTH}`}
               testID={`${testID}-box-${index}`}
             />
           </View>

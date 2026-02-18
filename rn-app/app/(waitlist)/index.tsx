@@ -17,12 +17,12 @@
  * - All values are exact Figma pixels with design tokens
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text as RNText } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+
 
 import {
   Text,
@@ -32,8 +32,10 @@ import {
   ReferralCodeInput,
   ProgressArc,
   BenefitsCard,
+  DottedPattern,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
+import { consumeDeepLinkParams, useDevMockState } from '@/src/hooks/useDeepLink';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
 import { spacing, radius } from '@/src/theme';
@@ -243,6 +245,33 @@ const FIGMA = {
 export default function WaitlistScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { state: stateParam } = useLocalSearchParams<{ state?: string }>();
+
+  // Reactive dev mock state — highest priority for BuildBot batch mode.
+  // When a deep link like /waitlist/state/accepted arrives while this screen
+  // is already mounted, router.navigate is a no-op. The pub/sub system in
+  // useDeepLink.ts publishes the new state, and this hook re-renders us.
+  const devMockReactiveState = useDevMockState();
+
+  // Deep link params — consumed once on mount for cold-start deep links.
+  const [deepLinkState] = useState<string | undefined>(() => {
+    return consumeDeepLinkParams()?.state;
+  });
+
+  // Priority: reactive pub/sub > URL search params > initial deep link params
+  const effectiveStateParam = devMockReactiveState || stateParam || deepLinkState;
+
+  // Map Figma state names to API state names
+  const apiStateMapping: Record<string, string> = {
+    accepted: 'approved',
+    referral: 'pending',
+    referral_invalid: 'pending',
+  };
+  const apiMockState = apiStateMapping[effectiveStateParam || ''] || effectiveStateParam;
+
+  // In dev mode, use mock data when ?state= param is provided (default to 'pending' for BuildBot)
+  const devMockState = __DEV__ ? (apiMockState || 'pending') as import('@/src/services/api/waitlist').WaitlistState : undefined;
+
   const {
     status,
     viewState,
@@ -260,14 +289,22 @@ export default function WaitlistScreen() {
     isJoiningWaitlist,
     setReferralCharacter,
     refresh,
-  } = useWaitlist();
+  } = useWaitlist(devMockState ? { useMock: true, mockState: devMockState } : {});
 
-  // Redirect to approved screen when approved
+  // Redirect to approved screen when approved.
+  // In dev mock mode: skip redirect when explicitly testing "accepted" state inline,
+  // AND skip redirect when the approved viewState is stale from a previous mock state
+  // (i.e., the current mock state doesn't map to 'approved').
   useEffect(() => {
     if (viewState === 'approved') {
+      if (__DEV__ && devMockState) {
+        // Only redirect if the current mock state is actually 'approved' and
+        // the user didn't explicitly request the 'accepted' inline view
+        if (devMockState !== 'approved' || effectiveStateParam === 'accepted') return;
+      }
       router.replace('/(waitlist)/approved');
     }
-  }, [viewState, router]);
+  }, [viewState, router, devMockState, effectiveStateParam]);
 
   // Auto-join waitlist on first visit if no entry exists
   useEffect(() => {
@@ -276,8 +313,8 @@ export default function WaitlistScreen() {
     }
   }, [isLoading, viewState, status?.position]);
 
-  // Data from API
-  const displayName = userName || 'there';
+  // Data from API — in dev mock mode, use Figma sample name when no auth session
+  const displayName = userName || (__DEV__ && devMockState ? 'Rishabh Agnihotri' : 'there');
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';
   const membersOnboarded = status?.currentOnboarded ?? 0;
@@ -286,16 +323,13 @@ export default function WaitlistScreen() {
   // ============================================
   // LOADING STATE
   // ============================================
-  if (viewState === 'loading' || isLoading) {
+  // In dev mock mode, skip the loading skeleton — mock data resolves synchronously
+  // so isLoading is only true for 1 render frame. Showing the skeleton causes BuildBot
+  // to capture it instead of the actual content.
+  if ((viewState === 'loading' || isLoading) && !(__DEV__ && effectiveStateParam)) {
     return (
       <View style={styles.screen}>
-        <LinearGradient
-          colors={[...FIGMA.background.gradientColors]}
-          locations={[...FIGMA.background.gradientLocations]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.794 }}
-          style={styles.backgroundGradient}
-        />
+        <DottedPattern backgroundShape="default" />
         <View style={styles.loadingContainer}>
           {/* Skeleton header */}
           <Animated.View
@@ -341,13 +375,7 @@ export default function WaitlistScreen() {
   if (viewState === 'error') {
     return (
       <View style={styles.screen}>
-        <LinearGradient
-          colors={[...FIGMA.background.gradientColors]}
-          locations={[...FIGMA.background.gradientLocations]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.794 }}
-          style={styles.backgroundGradient}
-        />
+        <DottedPattern backgroundShape="default" />
         <View style={[styles.errorContainer, { paddingTop: insets.top + spacing.huge }]}>
           <Animated.View
             entering={FadeInDown.duration(FIGMA.animation.duration)}
@@ -397,6 +425,99 @@ export default function WaitlistScreen() {
   }
 
   // ============================================
+  // ACCEPTED STATE (dev mock mode only)
+  // Figma: 41-11313 "Onboarding / Waitlist Screen -- Accepted"
+  // Shows congratulatory content when user is approved
+  // ============================================
+  if (viewState === 'approved' && __DEV__ && effectiveStateParam === 'accepted') {
+    const acceptedTimelineItems: TimelineItemData[] = [
+      {
+        label: 'Application Sent',
+        value: `Submitted on ${submissionDate}`,
+        status: 'complete',
+      },
+      {
+        label: 'In Review',
+        value: reviewTime,
+        status: 'complete',
+      },
+      {
+        label: 'Account Status',
+        value: 'Accepted',
+        status: 'accepted',
+      },
+    ];
+
+    return (
+      <View style={styles.screen}>
+        <DottedPattern backgroundShape="default" />
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + spacing.huge,
+              paddingBottom: insets.bottom + spacing.xl,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Section */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
+            style={styles.headerSection}
+          >
+            <View style={styles.logoContainer}>
+              <Logo size={38} color={FIGMA.colors.textPrimary} />
+            </View>
+
+            {/* Text Block - Figma node 41:11324 */}
+            <View style={styles.textBlock}>
+              {/* Title: "Rishabh Agnihotri, you're all set." */}
+              {/* Figma 41-11313: name in light grey #A9A9A9, "you're all set." in orange #FF9A6D */}
+              <Text style={styles.titleBase}>
+                <RNText style={styles.titleGray}>{displayName},</RNText>
+                {'\n'}
+                <RNText style={styles.titleAccent}>you're all set.</RNText>
+              </Text>
+
+              {/* Subtitle */}
+              <Text style={styles.subtitle}>
+                Welcome to the right side of renting.
+              </Text>
+            </View>
+          </Animated.View>
+
+          <View style={styles.contentWrapper}>
+            {/* Timeline Card */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
+              style={styles.timelineCard}
+            >
+              <ApplicationTimeline items={acceptedTimelineItems} />
+            </Animated.View>
+
+            {/* "What do you get" Card - Figma node 160:3027 */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+            >
+              <BenefitsCard variant="benefits" />
+            </Animated.View>
+
+            {/* "What's Coming your way" Card */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
+            >
+              <BenefitsCard variant="benefits" />
+            </Animated.View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ============================================
   // REJECTED STATE
   // Figma: 41-11410 "Onboarding / Waitlist Screen -- Rejected"
   // ============================================
@@ -426,13 +547,7 @@ export default function WaitlistScreen() {
 
     return (
       <View style={styles.screen}>
-        <LinearGradient
-          colors={[...FIGMA.background.gradientColors]}
-          locations={[...FIGMA.background.gradientLocations]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.794 }}
-          style={styles.backgroundGradient}
-        />
+        <DottedPattern backgroundShape="default" />
 
         <ScrollView
           style={styles.scrollView}
@@ -460,9 +575,10 @@ export default function WaitlistScreen() {
             {/* Text Block - Figma node 41:11421 */}
             <View style={styles.textBlock}>
               {/* Title: "We can't approve you right now" */}
-              {/* Figma: #FFFFFF, fontSize 48, lineHeight 64, fontWeight 400 */}
-              <Text style={[styles.titleBase, { color: FIGMA.colors.textPrimary }]}>
-                We can't approve you right now
+              {/* Figma: #FFFFFF base, "right now" in orange #FF9A6D */}
+              <Text style={styles.titleBase}>
+                <RNText style={{ color: FIGMA.colors.textPrimary }}>We can't approve you </RNText>
+                <RNText style={styles.titleAccent}>right now</RNText>
               </Text>
 
               {/* Subtitle: "We're opening access in batches. Stay tuned." */}
@@ -493,9 +609,10 @@ export default function WaitlistScreen() {
                 {/* Title section - node 160:3053 */}
                 <View style={styles.rejectionTitleSection}>
                   {/* "Why was I Rejected?" */}
-                  {/* Figma: #FFFFFF, fontSize 28, lineHeight 40, fontWeight 400 */}
+                  {/* Figma: #FFFFFF base, "Rejected?" in orange #FF9A6D, two-line layout */}
                   <Text style={styles.rejectionTitle}>
-                    Why was I Rejected?
+                    <RNText style={{ color: FIGMA.colors.textPrimary }}>Why was I{'\n'}</RNText>
+                    <RNText style={{ color: FIGMA.colors.textAccent }}>Rejected?</RNText>
                   </Text>
                 </View>
 
@@ -577,15 +694,9 @@ export default function WaitlistScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* Background Shape - gradient overlay (node 41:11207) */}
-      {/* Figma: 481x405, gradient from transparent to #131313 */}
-      <LinearGradient
-        colors={[...FIGMA.background.gradientColors]}
-        locations={[...FIGMA.background.gradientLocations]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.794 }}
-        style={styles.backgroundGradient}
-      />
+      {/* Background Pattern + Shape (nodes 237:2761, 41:11207) */}
+      {/* DottedPattern renders: dotted image (8% opacity) + background shape (40%) + gradient */}
+      <DottedPattern backgroundShape="default" />
 
       <ScrollView
         style={styles.scrollView}
@@ -644,23 +755,6 @@ export default function WaitlistScreen() {
           >
             <ApplicationTimeline items={timelineItems} />
           </Animated.View>
-
-          {/* Pending Long: Additional info card */}
-          {isPendingLong && (
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 2.5).duration(FIGMA.animation.duration)}
-              style={styles.pendingLongCard}
-            >
-              {/* Figma: same card styling as timeline card */}
-              {/* Info text: #A6A6A6 (textSecondary), fontSize 14 */}
-              <Text style={styles.pendingLongTitle}>
-                We're experiencing high demand
-              </Text>
-              <Text style={styles.pendingLongDescription}>
-                Your application is still being reviewed. We'll notify you as soon as there's an update. Estimated wait: {status?.estimatedReviewTime || 'Approximately 24-48 hrs'}.
-              </Text>
-            </Animated.View>
-          )}
 
           {/* Progress & Invite Card - Frame 2095586389 (node 41:11236) */}
           <Animated.View
@@ -732,17 +826,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: FIGMA.colors.screenBackground,
-  },
-
-  // Background Shape - node 41:11207
-  // Figma: 481x405, centered horizontally, gradient overlay
-  backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: -44, // (481 - 393) / 2 to center
-    width: 481,
-    height: FIGMA.background.gradientHeight,
-    zIndex: 0,
   },
 
   scrollView: {
@@ -1065,35 +1148,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ============================================
-  // PENDING_LONG STATE STYLES
-  // Additional card for extended wait messaging
-  // ============================================
-
-  // Info card for pending_long - uses same card tokens as timeline card
-  pendingLongCard: {
-    backgroundColor: FIGMA.colors.cardBackground,
-    borderRadius: FIGMA.card.borderRadius, // 12
-    paddingVertical: FIGMA.card.paddingVertical, // 24
-    paddingHorizontal: FIGMA.card.paddingHorizontal, // 16
-    gap: spacing.sm, // 12
-    // Orange left border to indicate attention
-    borderLeftWidth: 3,
-    borderLeftColor: FIGMA.colors.textAccent, // #FF9A6D
-  },
-
-  // Pending long title
-  // Uses same label style as timeline, but with accent color
-  pendingLongTitle: {
-    ...FIGMA.typography.value, // fontSize 14, lineHeight 20
-    color: FIGMA.colors.textAccent, // #FF9A6D
-    fontWeight: '500',
-  },
-
-  // Pending long description
-  // Uses textSecondary for subdued messaging
-  pendingLongDescription: {
-    ...FIGMA.typography.value, // fontSize 14, lineHeight 20
-    color: FIGMA.colors.textSecondary, // #A6A6A6
-  },
 });

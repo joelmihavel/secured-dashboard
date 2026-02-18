@@ -32,14 +32,13 @@ exports[`TextInput renders correctly - disabled 1`] = `
           },
           [
             {
-              "fontFamily": "PlusJakartaSans-Medium",
+              "fontFamily": "PlusJakartaSans-Regular",
               "fontSize": 12,
               "lineHeight": 20,
             },
             {
               "color": "#a9a9a9",
             },
-            false,
           ],
         ]
       }
@@ -51,20 +50,28 @@ exports[`TextInput renders correctly - disabled 1`] = `
     style={
       [
         {
-          "borderBottomWidth": 1,
+          "borderColor": "transparent",
+          "borderRadius": 12,
+          "borderWidth": 1,
         },
         {
-          "borderBottomColor": "#4d4d4d",
+          "borderColor": "transparent",
         },
       ]
     }
   >
     <TextInput
+      accessibilityLabel="Username"
+      accessibilityState={
+        {
+          "disabled": true,
+        }
+      }
       editable={false}
       onBlur={[Function]}
       onChangeText={[MockFunction]}
       onFocus={[Function]}
-      placeholderTextColor="#444444"
+      placeholderTextColor="#222222"
       style={
         [
           {
@@ -75,7 +82,7 @@ exports[`TextInput renders correctly - disabled 1`] = `
             "paddingVertical": 16,
           },
           {
-            "color": "#444444",
+            "color": "#222222",
           },
           {
             "color": "#dddddd",
@@ -124,14 +131,13 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
           },
           [
             {
-              "fontFamily": "PlusJakartaSans-Medium",
+              "fontFamily": "PlusJakartaSans-Regular",
               "fontSize": 12,
               "lineHeight": 20,
             },
             {
               "color": "#a9a9a9",
             },
-            false,
           ],
         ]
       }
@@ -143,21 +149,29 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
     style={
       [
         {
-          "borderBottomWidth": 1,
+          "borderColor": "transparent",
+          "borderRadius": 12,
+          "borderWidth": 1,
         },
         {
-          "borderBottomColor": "#4d4d4d",
+          "borderColor": "transparent",
         },
       ]
     }
   >
     <TextInput
+      accessibilityLabel="Full Name"
+      accessibilityState={
+        {
+          "disabled": false,
+        }
+      }
       editable={true}
       onBlur={[Function]}
       onChangeText={[MockFunction]}
       onFocus={[Function]}
       placeholder="Enter your name"
-      placeholderTextColor="#444444"
+      placeholderTextColor="#222222"
       style={
         [
           {
@@ -168,7 +182,7 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
             "paddingVertical": 16,
           },
           {
-            "color": "#444444",
+            "color": "#222222",
           },
           false,
           false,
@@ -213,14 +227,13 @@ exports[`TextInput renders correctly - light variant empty 1`] = `
           },
           [
             {
-              "fontFamily": "PlusJakartaSans-Medium",
+              "fontFamily": "PlusJakartaSans-Regular",
               "fontSize": 12,
               "lineHeight": 20,
             },
             {
               "color": "#797979",
             },
-            false,
           ],
         ]
       }
@@ -232,15 +245,23 @@ exports[`TextInput renders correctly - light variant empty 1`] = `
     style={
       [
         {
-          "borderBottomWidth": 1,
+          "borderColor": "transparent",
+          "borderRadius": 12,
+          "borderWidth": 1,
         },
         {
-          "borderBottomColor": "#cbcbcb",
+          "borderColor": "transparent",
         },
       ]
     }
   >
     <TextInput
+      accessibilityLabel="Address"
+      accessibilityState={
+        {
+          "disabled": false,
+        }
+      }
       editable={true}
       onBlur={[Function]}
       onChangeText={[MockFunction]}
@@ -302,14 +323,13 @@ exports[`TextInput renders correctly - light variant with value 1`] = `
           },
           [
             {
-              "fontFamily": "PlusJakartaSans-Medium",
+              "fontFamily": "PlusJakartaSans-Regular",
               "fontSize": 12,
               "lineHeight": 20,
             },
             {
               "color": "#797979",
             },
-            false,
           ],
         ]
       }
@@ -321,15 +341,23 @@ exports[`TextInput renders correctly - light variant with value 1`] = `
     style={
       [
         {
-          "borderBottomWidth": 1,
+          "borderColor": "transparent",
+          "borderRadius": 12,
+          "borderWidth": 1,
         },
         {
-          "borderBottomColor": "#cbcbcb",
+          "borderColor": "transparent",
         },
       ]
     }
   >
     <TextInput
+      accessibilityLabel="City"
+      accessibilityState={
+        {
+          "disabled": false,
+        }
+      }
       editable={true}
       onBlur={[Function]}
       onChangeText={[MockFunction]}
@@ -392,15 +420,12 @@ exports[`TextInput renders correctly - with error 1`] = `
           },
           [
             {
-              "fontFamily": "PlusJakartaSans-Medium",
+              "fontFamily": "PlusJakartaSans-Regular",
               "fontSize": 12,
               "lineHeight": 20,
             },
             {
               "color": "#a9a9a9",
-            },
-            {
-              "color": "#ff8080",
             },
           ],
         ]
@@ -422,12 +447,13 @@ exports[`TextInput renders correctly - with error 1`] = `
           },
           [
             {
-              "fontFamily": "PlusJakartaSans-Medium",
-              "fontSize": 12,
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 14,
               "lineHeight": 20,
+              "textAlign": "right",
             },
             {
-              "color": "#ff8080",
+              "color": "#E5484D",
             },
           ],
         ]
@@ -440,20 +466,28 @@ exports[`TextInput renders correctly - with error 1`] = `
     style={
       [
         {
-          "borderBottomWidth": 1,
+          "borderColor": "transparent",
+          "borderRadius": 12,
+          "borderWidth": 1,
         },
         {
-          "borderBottomColor": "#ff8080",
+          "borderColor": "#E5484D",
         },
       ]
     }
   >
     <TextInput
+      accessibilityLabel="Email"
+      accessibilityState={
+        {
+          "disabled": false,
+        }
+      }
       editable={true}
       onBlur={[Function]}
       onChangeText={[MockFunction]}
       onFocus={[Function]}
-      placeholderTextColor="#444444"
+      placeholderTextColor="#222222"
       style={
         [
           {
@@ -464,13 +498,13 @@ exports[`TextInput renders correctly - with error 1`] = `
             "paddingVertical": 16,
           },
           {
-            "color": "#444444",
+            "color": "#222222",
           },
           {
             "color": "#dddddd",
           },
           {
-            "color": "#ff9a6d",
+            "color": "#E5484D",
           },
           undefined,
         ]
@@ -513,14 +547,13 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
           },
           [
             {
-              "fontFamily": "PlusJakartaSans-Medium",
+              "fontFamily": "PlusJakartaSans-Regular",
               "fontSize": 12,
               "lineHeight": 20,
             },
             {
               "color": "#a9a9a9",
             },
-            false,
           ],
         ]
       }
@@ -532,20 +565,28 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
     style={
       [
         {
-          "borderBottomWidth": 1,
+          "borderColor": "transparent",
+          "borderRadius": 12,
+          "borderWidth": 1,
         },
         {
-          "borderBottomColor": "#4d4d4d",
+          "borderColor": "transparent",
         },
       ]
     }
   >
     <TextInput
+      accessibilityLabel="Full Name"
+      accessibilityState={
+        {
+          "disabled": false,
+        }
+      }
       editable={true}
       onBlur={[Function]}
       onChangeText={[MockFunction]}
       onFocus={[Function]}
-      placeholderTextColor="#444444"
+      placeholderTextColor="#222222"
       style={
         [
           {
@@ -556,7 +597,7 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
             "paddingVertical": 16,
           },
           {
-            "color": "#444444",
+            "color": "#222222",
           },
           {
             "color": "#dddddd",

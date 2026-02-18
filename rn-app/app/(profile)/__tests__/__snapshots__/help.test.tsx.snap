@@ -1,0 +1,868 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`HelpScreen matches snapshot 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+  testID="help-screen"
+>
+  <View
+    edges={
+      [
+        "top",
+        "bottom",
+        "left",
+        "right",
+      ]
+    }
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <RCTScrollView
+        contentContainerStyle={
+          [
+            {
+              "flexGrow": 1,
+              "paddingHorizontal": 32,
+            },
+            {
+              "paddingBottom": 66,
+              "paddingTop": 63,
+            },
+          ]
+        }
+        showsVerticalScrollIndicator={false}
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+                "marginBottom": 32,
+              }
+            }
+          >
+            <View
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": undefined,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              onClick={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                {
+                  "alignItems": "flex-start",
+                  "height": 40,
+                  "justifyContent": "center",
+                  "opacity": 1,
+                  "width": 40,
+                }
+              }
+            >
+              <View
+                color="#FFFFFF"
+                name="chevron-back"
+                size={24}
+              />
+            </View>
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Medium",
+                    "fontSize": 16,
+                    "fontWeight": "500",
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  undefined,
+                ]
+              }
+            >
+              Help & Support
+            </Text>
+            <View
+              style={
+                {
+                  "alignItems": "flex-start",
+                  "height": 40,
+                  "justifyContent": "center",
+                  "width": 40,
+                }
+              }
+            />
+          </View>
+          <View
+            style={
+              {
+                "marginBottom": 32,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "color": "#797979",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 12,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 20,
+                    "textAlign": "left",
+                  },
+                  {
+                    "letterSpacing": 1,
+                    "marginBottom": 16,
+                    "textTransform": "uppercase",
+                  },
+                ]
+              }
+            >
+              CONTACT US
+            </Text>
+            <View
+              style={
+                {
+                  "flexDirection": "row",
+                  "gap": 16,
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "flex": 1,
+                    "gap": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    [
+                      {
+                        "alignItems": "center",
+                        "backgroundColor": "#FF9A6D20",
+                        "borderRadius": 24,
+                        "height": 48,
+                        "justifyContent": "center",
+                        "width": 48,
+                      },
+                      {
+                        "backgroundColor": "#25D36620",
+                      },
+                    ]
+                  }
+                >
+                  <View
+                    color="#25D366"
+                    name="logo-whatsapp"
+                    size={24}
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  WhatsApp
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "flex": 1,
+                    "gap": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "backgroundColor": "#FF9A6D20",
+                      "borderRadius": 24,
+                      "height": 48,
+                      "justifyContent": "center",
+                      "width": 48,
+                    }
+                  }
+                >
+                  <View
+                    color="#FF9A6D"
+                    name="mail-outline"
+                    size={24}
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Email
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "flex": 1,
+                    "gap": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "backgroundColor": "#FF9A6D20",
+                      "borderRadius": 24,
+                      "height": 48,
+                      "justifyContent": "center",
+                      "width": 48,
+                    }
+                  }
+                >
+                  <View
+                    color="#FF9A6D"
+                    name="call-outline"
+                    size={24}
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Call
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "marginBottom": 32,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "color": "#797979",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 12,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 20,
+                    "textAlign": "left",
+                  },
+                  {
+                    "letterSpacing": 1,
+                    "marginBottom": 16,
+                    "textTransform": "uppercase",
+                  },
+                ]
+              }
+            >
+              FREQUENTLY ASKED QUESTIONS
+            </Text>
+            <View
+              style={
+                {
+                  "gap": 12,
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "flex-start",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 16,
+                          "fontWeight": "500",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "flex": 1,
+                          "marginRight": 12,
+                        },
+                      ]
+                    }
+                  >
+                    How do I pay rent using Flent?
+                  </Text>
+                  <View
+                    color="#A9A9A9"
+                    name="chevron-down"
+                    size={20}
+                  />
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "flex-start",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 16,
+                          "fontWeight": "500",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "flex": 1,
+                          "marginRight": 12,
+                        },
+                      ]
+                    }
+                  >
+                    Is my payment information secure?
+                  </Text>
+                  <View
+                    color="#A9A9A9"
+                    name="chevron-down"
+                    size={20}
+                  />
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "flex-start",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 16,
+                          "fontWeight": "500",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "flex": 1,
+                          "marginRight": 12,
+                        },
+                      ]
+                    }
+                  >
+                    How does cashback work?
+                  </Text>
+                  <View
+                    color="#A9A9A9"
+                    name="chevron-down"
+                    size={20}
+                  />
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "flex-start",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 16,
+                          "fontWeight": "500",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "flex": 1,
+                          "marginRight": 12,
+                        },
+                      ]
+                    }
+                  >
+                    What if my payment fails?
+                  </Text>
+                  <View
+                    color="#A9A9A9"
+                    name="chevron-down"
+                    size={20}
+                  />
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 12,
+                    "opacity": 1,
+                    "padding": 16,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "flex-start",
+                      "flexDirection": "row",
+                      "justifyContent": "space-between",
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 16,
+                          "fontWeight": "500",
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "flex": 1,
+                          "marginRight": 12,
+                        },
+                      ]
+                    }
+                  >
+                    How do I add my landlord?
+                  </Text>
+                  <View
+                    color="#A9A9A9"
+                    name="chevron-down"
+                    size={20}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "gap": 12,
+                "justifyContent": "center",
+                "padding": 16,
+              }
+            }
+          >
+            <View
+              color="#A9A9A9"
+              name="time-outline"
+              size={20}
+            />
+            <Text
+              style={
+                [
+                  {
+                    "color": "#797979",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 12,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 20,
+                    "textAlign": "left",
+                  },
+                  undefined,
+                ]
+              }
+            >
+              Support available Mon-Sat, 9 AM - 6 PM IST
+            </Text>
+          </View>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</View>
+`;

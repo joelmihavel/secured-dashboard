@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "BuildBot - Autonomous pixel-perfect screen builder for Flent Secured",
   "scripts": {
-    "extract": "npx ts-node scripts/extract-screen-blueprint.ts",
-    "verify": "npx ts-node scripts/verify-screen.ts",
-    "inspect": "npx ts-node scripts/inspector-flash.ts",
+    "extract": "npx tsx scripts/extract-screen-blueprint.ts",
+    "verify": "npx tsx scripts/verify-screen.ts",
+    "inspect": "npx tsx scripts/inspector-flash.ts",
     "maestro": "./scripts/maestro-run.sh",
-    "coverage": "npx ts-node scripts/check-coverage.ts",
-    "feedback": "npx ts-node scripts/gemini-pixel-feedback.ts",
-    "tokens": "npx ts-node scripts/export-figma-tokens.ts",
-    "convert": "npx ts-node scripts/universal-converter.ts"
+    "coverage": "npx tsx scripts/check-coverage.ts",
+    "feedback": "npx tsx scripts/gemini-pixel-feedback.ts",
+    "tokens": "npx tsx scripts/export-figma-tokens.ts",
+    "convert": "npx tsx scripts/universal-converter.ts"
   },
   "dependencies": {
     "dotenv": "^16.3.1",

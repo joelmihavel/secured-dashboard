@@ -16,8 +16,8 @@
  * - Text line structure: single vs multi-line text from characterStyleOverrides
  *
  * Usage:
- *   GEMINI_API_KEY=xxx npx ts-node scripts/gemini-pixel-feedback.ts waitlist
- *   GEMINI_API_KEY=xxx npx ts-node scripts/gemini-pixel-feedback.ts --screen 41-11206
+ *   GEMINI_API_KEY=xxx npx tsx scripts/gemini-pixel-feedback.ts waitlist
+ *   GEMINI_API_KEY=xxx npx tsx scripts/gemini-pixel-feedback.ts --screen 41-11206
  */
 
 import * as fs from 'fs';
@@ -530,9 +530,9 @@ async function callGemini(
         console.error(`  API error: ${response.status} - ${error}`);
 
         if (response.status === 429) {
-          // Rate limited - wait longer
-          const waitTime = (attempt + 1) * 10000;
-          console.log(`  Rate limited. Waiting ${waitTime / 1000}s...`);
+          // Rate limited — exponential backoff: 30s, 60s, 120s
+          const waitTime = Math.pow(2, attempt) * 15_000;
+          console.log(`  Rate limited (429). Waiting ${waitTime / 1000}s before retry...`);
           await sleep(waitTime);
           continue;
         }
@@ -598,11 +598,11 @@ function extractTextNodes(node: any, parentId?: string): FigmaTextNode[] {
                      node.type === 'TEXT';
 
   if (isTextNode) {
-    const style = node.figmaData?.style || node.typography || node.style || {};
+    const style = node.figmaData?.style || node.figmaData?.typography || node.typography || node.style || {};
     const textNode: FigmaTextNode = {
       nodeId: node.nodeId || node.id,
       nodeName: node.nodeName || node.name || '',
-      characters: node.figmaData?.characters || node.text || node.characters || '',
+      characters: node.figmaData?.characters || node.figmaData?.typography?.content || node.text || node.characters || '',
       textAlignHorizontal: style.textAlignHorizontal || style.textAlign || null,
       textAlignVertical: style.textAlignVertical || null,
       fontSize: style.fontSize || node.computedStyles?.fontSize || node.rnStyles?.fontSize || 0,
@@ -610,7 +610,7 @@ function extractTextNodes(node: any, parentId?: string): FigmaTextNode[] {
       fontWeight: style.fontWeight || node.computedStyles?.fontWeight || node.rnStyles?.fontWeight || 400,
       fontFamily: style.fontFamily || node.computedStyles?.fontFamily || node.rnStyles?.fontFamily || '',
       fills: node.figmaData?.fills || node.fills || [],
-      characterStyleOverrides: node.figmaData?.characterStyleOverrides || node.characterStyleOverrides || [],
+      characterStyleOverrides: node.figmaData?.characterStyleOverrides || node.figmaData?.typography?.spans || node.characterStyleOverrides || [],
       styleOverrideTable: node.figmaData?.styleOverrideTable || node.styleOverrideTable || {},
       geometry: node.figmaData?.geometry || node.geometry || { x: 0, y: 0, width: 0, height: 0 },
       parentNodeId: parentId,
@@ -674,11 +674,19 @@ function detectButtonWithFill(node: any): { type: string; fillColor: string | nu
 
   const solidFill = fills.find((f: any) => f.type === 'SOLID' && f.visible !== false);
   if (solidFill?.color) {
-    const { r, g, b } = solidFill.color;
-    // Convert to hex
-    const toHex = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
-    fillHex = `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-    fillColor = `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${solidFill.opacity ?? 1})`;
+    if (typeof solidFill.color === 'string') {
+      // Blueprint format: color is already a hex string like "#131313"
+      fillHex = solidFill.color.toUpperCase();
+      fillColor = fillHex;
+    } else if (typeof solidFill.color === 'object') {
+      // Old extraction format: color is {r, g, b} in 0-1 range
+      const { r, g, b } = solidFill.color;
+      if (typeof r === 'number' && typeof g === 'number' && typeof b === 'number') {
+        const toHex = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
+        fillHex = `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+        fillColor = `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${solidFill.opacity ?? 1})`;
+      }
+    }
   }
 
   // Button detection based on node name
@@ -809,7 +817,8 @@ function runStructuralAnalysis(
   extractionData: any,
   rnCode: string,
   componentCodes: Map<string, string>,
-  route: string
+  route: string,
+  componentPaths: Map<string, string> = new Map()
 ): StructuralAnalysisResult {
   console.log('\n========================================');
   console.log('  BATCH 0: Structural Analysis (Deterministic)');
@@ -856,7 +865,7 @@ function runStructuralAnalysis(
     for (const [name, code] of componentCodes.entries()) {
       if (code.includes(textContent) || code.toLowerCase().includes(textContent.toLowerCase())) {
         foundInCode = true;
-        componentFile = `src/components/${route}/${name}.tsx`;
+        componentFile = componentPaths.get(name) || `src/components/${name}.tsx`;
         break;
       }
     }
@@ -907,7 +916,7 @@ function runStructuralAnalysis(
           styleSegments: structure.styleSegments.length,
         },
         expectedRNValue: 'Single <Text> with nested <Text> spans for different colors',
-        file: `src/components/${route}/*.tsx`,
+        file: `app/(${route})/index.tsx`,
         explanation: `Text "${textPreview}..." is ONE LINE in Figma with ${structure.styleSegments.length} style segments (mixed colors). Should be single <Text> with nested spans, NOT separate lines.`,
         suggestedFix: `<Text style={styles.base}>
   <Text style={styles.gray}>{grayPart}</Text>
@@ -929,7 +938,7 @@ function runStructuralAnalysis(
       const textChild = (node.children || []).find((c: any) =>
         c.nodeType === 'TEXT' || c.figmaData?.type === 'TEXT'
       );
-      const buttonText = textChild?.figmaData?.characters || textChild?.characters || nodeName;
+      const buttonText = textChild?.figmaData?.characters || textChild?.figmaData?.typography?.content || textChild?.characters || nodeName;
 
       result.componentVariantIssues.push({
         type: 'component-variant',
@@ -938,7 +947,7 @@ function runStructuralAnalysis(
         nodeName: nodeName,
         figmaValue: { type: 'button', text: buttonText, fill: buttonInfo.fillHex },
         expectedRNValue: `Button with backgroundColor: '${buttonInfo.fillHex}'`,
-        file: `src/components/${route}/*.tsx or app/(${route})/index.tsx`,
+        file: `app/(${route})/index.tsx`,
         explanation: `Button "${buttonText}" has fill ${buttonInfo.fillHex} in Figma. Verify RN backgroundColor matches.`,
         suggestedFix: `Verify button has backgroundColor: '${buttonInfo.fillHex}' or equivalent design token`,
       });
@@ -995,7 +1004,7 @@ function runStructuralAnalysis(
             parentId,
           },
           expectedRNValue: `position: 'absolute', left: ${relativeLeft.toFixed(1)}, top: ${relativeTop.toFixed(1)}`,
-          file: `src/components/${route}/*.tsx`,
+          file: `app/(${route})/index.tsx`,
           explanation: `"${child.nodeName}" is positioned at (${relativeLeft.toFixed(1)}, ${relativeTop.toFixed(1)}) relative to "${parentNode.nodeName}". This requires absolute positioning.`,
           suggestedFix: `position: 'absolute',
 left: ${relativeLeft.toFixed(1)},
@@ -1027,6 +1036,7 @@ top: ${relativeTop.toFixed(1)},`,
  */
 function convertStructuralToCodeFixes(structural: StructuralAnalysisResult): CodeFix[] {
   const fixes: CodeFix[] = [];
+  const seen = new Set<string>(); // Dedup key: file+property+figmaValue
 
   // Convert alignment issues
   for (const issue of structural.alignmentIssues) {
@@ -1080,27 +1090,48 @@ function convertStructuralToCodeFixes(structural: StructuralAnalysisResult): Cod
     });
   }
 
-  return fixes;
+  // Deduplicate fixes by file+property+figmaValue
+  const dedupedFixes: CodeFix[] = [];
+  for (const fix of fixes) {
+    const key = `${fix.file}|${fix.property}|${fix.figmaValue}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      dedupedFixes.push(fix);
+    }
+  }
+
+  return dedupedFixes;
 }
 
-// Load screen configuration
+// Load screen configuration — supports both route keys ("waitlist") and figmaIds ("41-11206")
 function loadScreenConfig(screenRoute: string): { route: RouteConfig; screen: ScreenConfig } | null {
   const routesPath = path.join(CONFIG_DIR, 'screen-routes.json');
   const routesConfig = JSON.parse(fs.readFileSync(routesPath, 'utf-8'));
 
-  // Find the route
+  // First try: direct route key match (e.g., "waitlist", "splash")
   const routeConfig = routesConfig.routes[screenRoute];
-  if (!routeConfig) {
-    console.error(`Route not found: ${screenRoute}`);
-    console.log('Available routes:', Object.keys(routesConfig.routes).join(', '));
-    return null;
+  if (routeConfig) {
+    return {
+      route: routeConfig,
+      screen: routeConfig.screens[0],
+    };
   }
 
-  // Return first screen by default
-  return {
-    route: routeConfig,
-    screen: routeConfig.screens[0],
-  };
+  // Second try: figmaId lookup — search all routes for a matching screen state
+  const normalizedId = screenRoute.replace(':', '-');
+  for (const [routeKey, config] of Object.entries(routesConfig.routes) as [string, RouteConfig][]) {
+    for (const screen of config.screens) {
+      const screenFigmaId = screen.figmaId.replace(':', '-');
+      if (screenFigmaId === normalizedId) {
+        console.log(`  Resolved figmaId ${screenRoute} → route "${routeKey}", state "${screen.state}"`);
+        return { route: config, screen };
+      }
+    }
+  }
+
+  console.error(`Route not found: ${screenRoute}`);
+  console.log('Available routes:', Object.keys(routesConfig.routes).join(', '));
+  return null;
 }
 
 // Convert flat nodes array to tree structure
@@ -1109,17 +1140,17 @@ function convertNodesToTree(nodes: any[]): any {
     return { children: [] };
   }
 
-  // Map nodes to the expected tree format
+  // Map nodes to the expected tree format (handles both blueprint and extraction node formats)
   const treeNodes = nodes.map(node => ({
-    nodeId: node.nodeId,
-    nodeName: node.name,
-    nodeType: node.type,
+    nodeId: node.nodeId || node.id || '',
+    nodeName: node.nodeName || node.name || '',
+    nodeType: node.nodeType || node.type || '',
     figmaData: {
-      type: node.type,
-      characters: node.text || node.characters || '',
+      type: node.nodeType || node.type || '',
+      characters: node.text || node.characters || node.typography?.content || '',
       geometry: node.geometry,
       fills: node.fills || [],
-      style: node.typography || {},
+      style: node.typography || node.style || {},
       children: [],
       characterStyleOverrides: node.characterStyleOverrides || [],
       styleOverrideTable: node.styleOverrideTable || {},
@@ -1147,7 +1178,10 @@ function loadExtractionData(figmaId: string): any {
 
   // Define all possible extraction paths in order of preference
   const possiblePaths = [
-    // 1. AI-enhanced extraction (primary)
+    // 0. Blueprint extraction (new primary)
+    path.join(DATA_DIR, 'blueprints', `${normalizedId}-blueprint.json`),
+    path.join(DATA_DIR, 'blueprints', `${figmaId}-blueprint.json`),
+    // 1. AI-enhanced extraction
     path.join(DATA_DIR, 'extractions', figmaId, 'enhanced-extraction.json'),
     path.join(DATA_DIR, 'extractions', normalizedId, 'enhanced-extraction.json'),
     // 2. Full extraction from style-maps
@@ -1169,7 +1203,17 @@ function loadExtractionData(figmaId: string): any {
       console.log(`  Found extraction data at: ${extractionPath}`);
       const data = JSON.parse(fs.readFileSync(extractionPath, 'utf-8'));
 
-      // Normalize the data structure if needed
+      // Normalize the data structure based on source format
+      if (extractionPath.includes('-blueprint.json')) {
+        // Blueprint format: flat `nodes` array, convert to componentTree
+        const componentTree = convertNodesToTree(data.nodes || []);
+        return {
+          version: 'blueprint',
+          ...data,
+          componentTree,
+        };
+      }
+
       if (extractionPath.includes('extraction.json') || extractionPath.includes('local-extraction.json')) {
         // Full extraction format from buildbot - has flat `nodes` array
         // Convert to componentTree structure for compatibility
@@ -1217,7 +1261,7 @@ function loadDesignTokens(): any {
 }
 
 // Find React Native code for a screen
-function findReactNativeCode(route: string): { screenCode: string; componentCodes: Map<string, string> } {
+function findReactNativeCode(route: string): { screenCode: string; componentCodes: Map<string, string>; componentPaths: Map<string, string> } {
   const rnAppDir = path.join(BASE_DIR, '..', 'rn-app');
 
   // Map route to file path - COMPLETE mapping for all Figma screens
@@ -1282,6 +1326,7 @@ function findReactNativeCode(route: string): { screenCode: string; componentCode
 
   // Find related components
   const componentCodes = new Map<string, string>();
+  const componentPaths = new Map<string, string>(); // name → actual relative path
   const componentsDir = path.join(rnAppDir, 'src', 'components');
 
   // Map route to component directories - COMPLETE mapping
@@ -1348,13 +1393,15 @@ function findReactNativeCode(route: string): { screenCode: string; componentCode
       for (const file of files) {
         const code = readFileSafe(path.join(dirPath, file));
         if (code) {
-          componentCodes.set(file.replace('.tsx', ''), code);
+          const name = file.replace('.tsx', '');
+          componentCodes.set(name, code);
+          componentPaths.set(name, `src/components/${dir}/${file}`);
         }
       }
     }
   }
 
-  return { screenCode, componentCodes };
+  return { screenCode, componentCodes, componentPaths };
 }
 
 // Extract components from extraction data
@@ -1419,9 +1466,11 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
   const designTokens = loadDesignTokens();
   console.log('  Design tokens loaded');
 
-  // Load React Native code
+  // Load React Native code — derive route key from resolved config
+  // route.route is e.g. "/(waitlist)", we need the key like "waitlist"
+  const resolvedRouteKey = route.route.replace(/^\/?\(/, '').replace(/\).*$/, '') || screenRoute;
   console.log('\nStep 4: Loading React Native code...');
-  const { screenCode, componentCodes } = findReactNativeCode(screenRoute);
+  const { screenCode, componentCodes, componentPaths } = findReactNativeCode(resolvedRouteKey);
   console.log(`  Screen code: ${screenCode.length} chars`);
   console.log(`  Components found: ${componentCodes.size}`);
 
@@ -1439,7 +1488,8 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
     extractionData,
     screenCode,
     componentCodes,
-    screenRoute
+    resolvedRouteKey,
+    componentPaths
   );
 
   batches.push({
@@ -1449,35 +1499,35 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
     feedback: structuralResult,
   });
 
-  // Load Figma screenshots
-  console.log('\nStep 5: Loading Figma screenshots...');
-  const screenshotsDir = path.join(DATA_DIR, 'extractions', screen.figmaId, 'screenshots');
-  const fullScreenshot = path.join(screenshotsDir, `node_${screen.figmaId.replace('-', '_')}.png`);
-  const fullScreenshotBase64 = loadImageBase64(fullScreenshot);
-  console.log(`  Full screen: ${fullScreenshotBase64 ? 'loaded' : 'not found'}`);
+  // Load Figma baseline image (rendered from Figma)
+  console.log('\nStep 5: Loading images...');
+  const normalizedFigmaId = screen.figmaId.replace(':', '-');
+  const baselinePath = path.join(DATA_DIR, 'baselines', `${normalizedFigmaId}-baseline.png`);
+  const fullScreenshotBase64 = loadImageBase64(baselinePath);
+  console.log(`  Figma baseline: ${fullScreenshotBase64 ? 'loaded' : 'not found'} (${baselinePath})`);
 
-  // Map component screenshots
+  // Load component-level assets from data/assets/ (Figma node exports)
   const componentScreenshots = new Map<string, string>();
-  if (fs.existsSync(screenshotsDir)) {
-    const screenshotFiles = fs.readdirSync(screenshotsDir).filter(f => f.endsWith('.png'));
-    for (const file of screenshotFiles) {
-      const nodeId = file.replace('node_', '').replace('.png', '').replace('_', ':');
-      const base64 = loadImageBase64(path.join(screenshotsDir, file));
+  const assetsDir = path.join(DATA_DIR, 'assets');
+  if (fs.existsSync(assetsDir)) {
+    const assetPrefix = `${normalizedFigmaId}_`;
+    const assetFiles = fs.readdirSync(assetsDir).filter(f => f.startsWith(assetPrefix) && f.endsWith('.png'));
+    for (const file of assetFiles) {
+      // Asset files are named {figmaId}_{nodeName}.png — extract node name as key
+      const nodeName = file.replace(assetPrefix, '').replace('.png', '');
+      const base64 = loadImageBase64(path.join(assetsDir, file));
       if (base64) {
-        componentScreenshots.set(nodeId, base64);
+        componentScreenshots.set(nodeName, base64);
       }
     }
-    console.log(`  Component screenshots: ${componentScreenshots.size}`);
+    console.log(`  Component assets: ${componentScreenshots.size}`);
   }
 
-  // Capture simulator screenshot (optional — gracefully skips if no simulator)
-  console.log('\nStep 5b: Capturing simulator screenshot...');
-  const simScreenshotDir = path.join(DATA_DIR, 'simulator-screenshots', screen.figmaId);
-  fs.mkdirSync(simScreenshotDir, { recursive: true });
-  const simScreenshotPath = path.join(simScreenshotDir, 'current.png');
-  const simCaptured = await captureSimulatorScreenshot(route.route, simScreenshotPath);
-  const simScreenshotBase64 = simCaptured ? loadImageBase64(simScreenshotPath) : null;
-  console.log(`  Simulator screenshot: ${simScreenshotBase64 ? 'captured' : 'not available (pipeline continues without it)'}`);
+  // Load app screenshot (already captured by verify-screen pipeline)
+  console.log('\nStep 5b: Loading app screenshot...');
+  const appScreenshotPath = path.join(DATA_DIR, 'screenshots', `${normalizedFigmaId}.png`);
+  const simScreenshotBase64 = loadImageBase64(appScreenshotPath);
+  console.log(`  App screenshot: ${simScreenshotBase64 ? 'loaded' : 'not found'} (${appScreenshotPath})`);
 
   // ========================================
   // BATCH 1: Component-level analysis
@@ -1499,9 +1549,9 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
 
     const componentExtraction = figmaComponent || { note: 'No direct Figma match found' };
 
-    // Get component screenshot if available
-    const componentScreenshotBase64 = figmaComponent?.nodeId
-      ? componentScreenshots.get(figmaComponent.nodeId)
+    // Get component screenshot if available (assets keyed by node name)
+    const componentScreenshotBase64 = figmaComponent?.nodeName
+      ? componentScreenshots.get(figmaComponent.nodeName.toLowerCase().replace(/\s+/g, '-'))
       : null;
 
     try {
@@ -1641,11 +1691,18 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
     },
   };
 
-  // Save report
+  // Save report to analysis output directory
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   const reportPath = path.join(OUTPUT_DIR, `${screenRoute}-${Date.now()}.json`);
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
   console.log(`\nReport saved: ${reportPath}`);
+
+  // Also save to reports/audits/ where verify-screen.ts looks for it
+  const auditsDir = path.join(BASE_DIR, 'reports', 'audits');
+  fs.mkdirSync(auditsDir, { recursive: true });
+  const auditPath = path.join(auditsDir, `${screen.figmaId.replace(':', '-')}-gemini.json`);
+  fs.writeFileSync(auditPath, JSON.stringify(report, null, 2));
+  console.log(`Audit report: ${auditPath}`);
 
   // Generate markdown report
   const markdownReport = generateMarkdownReport(report);
@@ -1799,11 +1856,11 @@ async function main() {
     console.log('Gemini Pixel-Perfect Feedback System');
     console.log('');
     console.log('Usage:');
-    console.log('  GEMINI_API_KEY=xxx npx ts-node scripts/gemini-pixel-feedback.ts <screen-route>');
+    console.log('  GEMINI_API_KEY=xxx npx tsx scripts/gemini-pixel-feedback.ts <screen-route>');
     console.log('');
     console.log('Examples:');
-    console.log('  GEMINI_API_KEY=xxx npx ts-node scripts/gemini-pixel-feedback.ts waitlist');
-    console.log('  GEMINI_API_KEY=xxx npx ts-node scripts/gemini-pixel-feedback.ts sign-up');
+    console.log('  GEMINI_API_KEY=xxx npx tsx scripts/gemini-pixel-feedback.ts waitlist');
+    console.log('  GEMINI_API_KEY=xxx npx tsx scripts/gemini-pixel-feedback.ts sign-up');
     console.log('');
     console.log('Available screens: waitlist, sign-up, otp, splash, home-empty, home-active');
     process.exit(1);

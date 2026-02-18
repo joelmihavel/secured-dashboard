@@ -96,6 +96,7 @@ function MenuItem({ title, onPress, testID }: MenuItemProps) {
       onPress={onPress}
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={title}
     >
       <Text
         style={styles.menuItemText}
@@ -120,6 +121,7 @@ function CardMenuItem({ title, onPress, testID }: MenuItemProps) {
       onPress={onPress}
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={title}
     >
       <Text style={styles.menuItemText}>{title}</Text>
       <Ionicons name="arrow-forward" size={16} color={PROFILE_COLORS.accentOrange} />
@@ -383,6 +385,7 @@ export default function ProfileScreen() {
                 style={styles.userInfoRow}
                 onPress={handleUserProfile}
                 accessibilityRole="button"
+                accessibilityLabel={`View profile for ${fullName}`}
               >
                 <View style={styles.avatarContainer}>
                   {avatarError ? (

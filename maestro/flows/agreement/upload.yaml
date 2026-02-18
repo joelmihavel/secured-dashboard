@@ -1,0 +1,72 @@
+# =============================================================================
+# TE-120: Agreement Upload Screen Functional Flow
+# Route: /(agreement)/upload
+# Figma: 1-30090 (idle), 1-30001 (uploading), 1-30178 (expired),
+#         1-30268 (too-large), 1-30358 (manual-review)
+# testIDs: upload-screen, proceed-button
+# =============================================================================
+#
+# Validates:
+#   - Upload screen renders with dark background
+#   - Upload zone/dropzone area is visible
+#   - "Proceed" button is present
+#   - Multiple states render correctly via deep links:
+#     - idle: default upload zone
+#     - uploading: shows upload progress
+#     - expired: shows expired agreement error
+#     - too-large: shows file size error
+#     - manual-review: shows manual review message
+# =============================================================================
+
+appId: com.flent.secured
+---
+# -- Test idle/default state --
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///agreement/upload?state=idle"
+- waitForAnimationToEnd
+
+# Verify upload screen rendered
+- assertVisible:
+    id: "upload-screen"
+
+# Verify upload zone content
+- assertVisible: "Upload"
+
+# Verify proceed button exists
+- assertVisible:
+    id: "proceed-button"
+
+# -- Test uploading state --
+- openLink: "flentsecured:///agreement/upload?state=uploading"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "upload-screen"
+
+# -- Test expired agreement state --
+- openLink: "flentsecured:///agreement/upload?state=expired"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "upload-screen"
+# Expired state should show error messaging
+- assertVisible: "expired"
+    optional: true
+
+# -- Test file too large state --
+- openLink: "flentsecured:///agreement/upload?state=too-large"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "upload-screen"
+# Too-large state should show size error
+- assertVisible: "large"
+    optional: true
+
+# -- Test manual review state --
+- openLink: "flentsecured:///agreement/upload?state=manual-review"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "upload-screen"

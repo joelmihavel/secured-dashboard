@@ -1,0 +1,72 @@
+# =============================================================================
+# TE-120: OTP Verification Screen Functional Flow
+# Route: /(auth)/otp
+# Figma: 1-31175 (empty), 1-31073 (filled), 1-31277 (error1), 1-31380 (error2)
+# testIDs: otp-input, proceed-button
+# =============================================================================
+#
+# Validates:
+#   - OTP bottom sheet renders as overlay
+#   - Title "Let's verify your number" displays
+#   - Subtitle with instructions displays
+#   - "Secure code" label is visible
+#   - 6-digit OTP input boxes are visible
+#   - "Proceed" button is visible (disabled until OTP complete)
+#   - "Resend" link is visible
+#   - Entering 6 digits enables the Proceed button
+#
+# Note: This flow uses the ?state=filled query param to pre-fill OTP
+#       for deterministic testing without real SMS delivery.
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to OTP screen with pre-filled state for testing
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///sign-up"
+- waitForAnimationToEnd
+
+# Navigate to OTP by submitting sign-up form
+- tapOn:
+    id: "phone-input"
+- inputText: ${TEST_PHONE}
+- tapOn:
+    id: "name-input"
+- inputText: ${TEST_NAME}
+- hideKeyboard
+- tapOn:
+    id: "consent-toggle"
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# -- Verify OTP sheet is rendered --
+- assertVisible: "verify your number"
+- assertVisible: "6-digit code"
+- assertVisible: "Secure code"
+
+# -- Verify OTP input --
+- assertVisible:
+    id: "otp-input"
+
+# -- Verify Proceed button --
+- assertVisible:
+    id: "proceed-button"
+- assertVisible: "Proceed"
+
+# -- Verify Resend link --
+- assertVisible: "Resend"
+
+# -- Enter OTP digits --
+- tapOn:
+    id: "otp-input"
+- inputText: ${TEST_OTP}
+
+- waitForAnimationToEnd
+
+# -- Verify Proceed button is now actionable (OTP complete) --
+- tapOn:
+    id: "proceed-button"
+
+- waitForAnimationToEnd

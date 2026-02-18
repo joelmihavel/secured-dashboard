@@ -1,0 +1,66 @@
+# =============================================================================
+# TE-120: Add Bank Screen Functional Flow
+# Route: /(setup)/add-bank
+# Figma: 1-31485 (default), 1-31590 (bescom)
+# =============================================================================
+#
+# Validates:
+#   - Add bank screen renders with form fields
+#   - Account number input is visible and accepts input
+#   - IFSC code input is visible and accepts input
+#   - Account holder name input is present
+#   - "Bank Details" heading/accent text is displayed
+#   - Progress indicator shows current setup step
+#   - Form validation works (empty fields, invalid IFSC)
+#   - Submit/proceed button is present
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to add-bank screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///setup/add-bank"
+- waitForAnimationToEnd
+
+# Verify the screen has rendered
+- assertVisible: "Bank"
+
+# Verify form fields are present
+- assertVisible: "Account"
+    optional: true
+- assertVisible: "IFSC"
+    optional: true
+
+# Test form input
+- scrollUntilVisible:
+    element: "Account"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+# Enter account number
+- tapOn: "Account"
+    optional: true
+- inputText: "1234567890"
+- hideKeyboard
+
+# Enter IFSC code
+- tapOn: "IFSC"
+    optional: true
+- inputText: "SBIN0001234"
+- hideKeyboard
+
+# Scroll down to find submit/proceed action
+- scrollUntilVisible:
+    element: "Proceed"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+# -- Test BESCOM variant --
+- openLink: "flentsecured:///setup/add-bank?state=bescom"
+- waitForAnimationToEnd
+
+# BESCOM state should show utility number input
+- assertVisible: "Bank"

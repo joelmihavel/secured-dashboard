@@ -167,6 +167,7 @@ function PaymentCardComponent({
       testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected }}
+      accessibilityLabel={`${getTypeLabel()}${lastFourDigits ? ` ending in ${lastFourDigits}` : ''}${upiId ? ` ${upiId}` : ''}${bankName ? ` ${bankName}` : ''}${selected ? ', selected' : ''}`}
     >
       <Animated.View
         style={[

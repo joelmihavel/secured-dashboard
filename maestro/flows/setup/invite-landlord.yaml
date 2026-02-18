@@ -1,0 +1,67 @@
+# =============================================================================
+# TE-120: Invite Landlord Screen Functional Flow
+# Route: /(setup)/invite-landlord
+# Figma: 1-31671
+# =============================================================================
+#
+# Validates:
+#   - Invite landlord screen renders
+#   - Landlord name input is visible
+#   - Landlord email input is visible
+#   - Progress indicator shows current setup step
+#   - Form validation works (empty fields, invalid email)
+#   - Submit/proceed button is present
+#   - Error states display properly for invalid email
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to invite-landlord screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///setup/invite-landlord"
+- waitForAnimationToEnd
+
+# Verify the screen has rendered with landlord-related content
+- assertVisible: "Landlord"
+    optional: true
+- assertVisible: "Invite"
+    optional: true
+
+# Verify form fields are present
+- assertVisible: "Name"
+    optional: true
+- assertVisible: "Email"
+    optional: true
+
+# Test form input - enter landlord name
+- tapOn: "Name"
+    optional: true
+- inputText: "John Doe"
+- hideKeyboard
+
+# Enter landlord email
+- tapOn: "Email"
+    optional: true
+- inputText: "landlord@example.com"
+- hideKeyboard
+
+# Scroll down to find submit action
+- scrollUntilVisible:
+    element: "Proceed"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+# Test invalid email error state
+- tapOn: "Email"
+    optional: true
+- clearText
+- inputText: "not-an-email"
+- hideKeyboard
+
+# Try to proceed to trigger validation
+- tapOn: "Proceed"
+    optional: true
+
+- waitForAnimationToEnd

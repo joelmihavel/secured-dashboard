@@ -6,8 +6,8 @@
  * value in the output is derived directly from the Figma node tree.
  *
  * Usage:
- *   npx ts-node scripts/extract-screen-blueprint.ts 41-8760
- *   npx ts-node scripts/extract-screen-blueprint.ts 1:29914
+ *   npx tsx scripts/extract-screen-blueprint.ts 41-8760
+ *   npx tsx scripts/extract-screen-blueprint.ts 1:29914
  *
  * Both hyphen and colon ID formats are accepted.
  *   - Internally: colon for API calls, hyphen for filenames.
@@ -188,6 +188,10 @@ interface BlueprintNode {
   // INSTANCE / COMPONENT
   componentId?: string;
   componentProperties?: Record<string, unknown>;
+  // Constraints (responsive sizing)
+  constraints?: { horizontal: string; vertical: string };
+  // Blend mode
+  blendMode?: string;
   // Auto-mapping
   rnComponent?: string;
   rnProps?: Record<string, unknown>;
@@ -1166,6 +1170,21 @@ function traverseNodeTree(
     blueprintNode.componentProperties = node.componentProperties as Record<string, unknown>;
   }
 
+  // Constraints (responsive sizing)
+  const constraints = node.constraints as { horizontal?: string; vertical?: string } | undefined;
+  if (constraints && (constraints.horizontal || constraints.vertical)) {
+    blueprintNode.constraints = {
+      horizontal: constraints.horizontal || 'LEFT',
+      vertical: constraints.vertical || 'TOP',
+    };
+  }
+
+  // Blend mode (skip NORMAL — it's the default)
+  const blendMode = node.blendMode as string | undefined;
+  if (blendMode && blendMode !== 'NORMAL' && blendMode !== 'PASS_THROUGH') {
+    blueprintNode.blendMode = blendMode;
+  }
+
   // Auto-mapping
   if (isScreen) {
     blueprintNode.rnComponent = 'Screen';
@@ -1246,8 +1265,10 @@ function detectBackground(
     if (dottedPatternNames.some((p) => name.includes(p))) {
       hasDottedPattern = true;
     }
-    // Background shape detection
+    // Background shape detection — screens with a "Background Shape" node
+    // always use the DottedPattern overlay in the React Native implementation
     if (name.includes('background') && name.includes('shape')) {
+      hasDottedPattern = true;
       if (screenName.includes('splash')) backgroundShapeKey = 'splash';
       else if (screenName.includes('carousel')) {
         // Try to detect carousel page from name
@@ -1628,7 +1649,7 @@ function printUsage(): void {
 BuildBot - Screen Blueprint Extractor
 --------------------------------------
 Usage:
-  npx ts-node scripts/extract-screen-blueprint.ts <screenId>
+  npx tsx scripts/extract-screen-blueprint.ts <screenId>
 
 Arguments:
   screenId   Figma node ID (accepts both formats):
@@ -1640,9 +1661,9 @@ Output:
   data/baselines/{screenId}-baseline.png
 
 Examples:
-  npx ts-node scripts/extract-screen-blueprint.ts 41-8760
-  npx ts-node scripts/extract-screen-blueprint.ts 1:29914
-  npx ts-node scripts/extract-screen-blueprint.ts 1-29914
+  npx tsx scripts/extract-screen-blueprint.ts 41-8760
+  npx tsx scripts/extract-screen-blueprint.ts 1:29914
+  npx tsx scripts/extract-screen-blueprint.ts 1-29914
 `);
 }
 

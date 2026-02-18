@@ -1,0 +1,346 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Screen renders correctly - compact padding variant 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 24,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text>
+        Compact content
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders correctly - default (padded, safe area top+bottom) 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text>
+        Screen content
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders correctly - no safe areas 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text>
+        No safe areas
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders correctly - not padded 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          false,
+          undefined,
+        ]
+      }
+    >
+      <Text>
+        Full width content
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders correctly - with custom style 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          {
+            "alignItems": "center",
+            "justifyContent": "center",
+          },
+        ]
+      }
+    >
+      <Text>
+        Centered content
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders correctly - without safe area bottom 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text>
+        No bottom safe area
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders correctly - without safe area top 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text>
+        No top safe area
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders with empty children 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <View />
+    </View>
+  </View>
+</View>
+`;
+
+exports[`Screen renders with nested Views 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="safe-area-view"
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <View>
+        <View>
+          <Text>
+            Deeply nested
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+</View>
+`;

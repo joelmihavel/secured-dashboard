@@ -1,0 +1,70 @@
+# =============================================================================
+# TE-120: Sign-Up Screen Functional Flow
+# Route: /(auth)/sign-up
+# Figma: 1-29108 (empty), 1-29914 (filled)
+# testIDs: sign-up-screen, phone-input, name-input, get-started-button,
+#          consent-toggle
+# =============================================================================
+#
+# Validates:
+#   - Sign-up screen renders correctly
+#   - Phone number input is visible and accepts input
+#   - Name input is visible and accepts input
+#   - Consent toggle is visible and can be toggled
+#   - "Get Started" button is visible
+#   - Submitting valid phone number triggers OTP sheet
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link directly to the sign-up screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///sign-up"
+- waitForAnimationToEnd
+
+# -- Verify sign-up screen is rendered --
+- assertVisible:
+    id: "sign-up-screen"
+
+# -- Verify phone input --
+- assertVisible:
+    id: "phone-input"
+
+# -- Verify name input --
+- assertVisible:
+    id: "name-input"
+
+# -- Verify consent toggle --
+- assertVisible:
+    id: "consent-toggle"
+
+# -- Verify Get Started button --
+- assertVisible:
+    id: "get-started-button"
+- assertVisible: "Get Started"
+
+# -- Enter phone number --
+- tapOn:
+    id: "phone-input"
+- inputText: ${TEST_PHONE}
+
+# -- Enter name --
+- tapOn:
+    id: "name-input"
+- inputText: ${TEST_NAME}
+
+- hideKeyboard
+
+# -- Toggle consent --
+- tapOn:
+    id: "consent-toggle"
+
+# -- Tap Get Started to submit --
+- tapOn:
+    id: "get-started-button"
+
+- waitForAnimationToEnd
+
+# -- Verify OTP bottom sheet appears --
+- assertVisible: "verify your number"

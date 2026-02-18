@@ -1,0 +1,813 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AddBankScreen matches snapshot 1`] = `
+<View
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#131313",
+      },
+    ]
+  }
+>
+  <View
+    onLayout={[Function]}
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingBottom": 0,
+        },
+      ]
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "paddingBottom": 74,
+          "paddingHorizontal": 60,
+          "paddingTop": 67,
+        }
+      }
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      style={
+        {
+          "flex": 1,
+        }
+      }
+    >
+      <View>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onClick={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "marginBottom": 50,
+              "opacity": 1,
+            }
+          }
+        >
+          <View
+            color="#FFFFFF"
+            name="arrow-back"
+            size={37.5}
+          />
+        </View>
+        <View
+          style={
+            {
+              "marginBottom": 60,
+            }
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "color": "#FFFFFF",
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 16,
+                  "fontWeight": "400",
+                  "letterSpacing": 0,
+                  "lineHeight": 24,
+                  "textAlign": "left",
+                },
+                {
+                  "color": "#FFFFFF",
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 55.199999999999996,
+                  "letterSpacing": -2,
+                  "lineHeight": 73.6,
+                },
+              ]
+            }
+          >
+            Add your Landlord's
+            
+
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  {
+                    "color": "#FF9A6D",
+                  },
+                ]
+              }
+            >
+              Bank Details
+            </Text>
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "marginBottom": 60,
+              "width": "100%",
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#4D4D4D",
+                "height": 19,
+                "width": "100%",
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "backgroundColor": "#CC7B57",
+                  "height": "100%",
+                  "width": 205,
+                }
+              }
+            />
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "gap": 25,
+            }
+          }
+        >
+          <View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "marginBottom": 9.5,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#A9A9A9",
+                      "fontFamily": "PlusJakartaSans-Medium",
+                      "fontSize": 13.799999999999999,
+                      "letterSpacing": 0,
+                      "lineHeight": 23,
+                      "textAlign": "left",
+                    },
+                  ]
+                }
+              >
+                Account Holder Name
+              </Text>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={false}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "opacity": 1,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16.099999999999998,
+                        "letterSpacing": 0,
+                        "lineHeight": 23,
+                        "textAlign": "right",
+                      },
+                    ]
+                  }
+                >
+                  edit
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                [
+                  {
+                    "borderColor": "#4D4D4D",
+                    "borderRadius": 19,
+                    "borderWidth": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 25,
+                    "width": "100%",
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <TextInput
+                autoCapitalize="words"
+                editable={true}
+                onChangeText={[Function]}
+                placeholder="e.g. John Smith"
+                placeholderTextColor="#444444"
+                style={
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 23,
+                    "height": "100%",
+                    "letterSpacing": 0,
+                    "lineHeight": 36.8,
+                    "textAlign": "left",
+                  }
+                }
+                value=""
+              />
+            </View>
+          </View>
+          <View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "marginBottom": 9.5,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#A9A9A9",
+                      "fontFamily": "PlusJakartaSans-Medium",
+                      "fontSize": 13.799999999999999,
+                      "letterSpacing": 0,
+                      "lineHeight": 23,
+                      "textAlign": "left",
+                    },
+                  ]
+                }
+              >
+                Account holder number
+              </Text>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={false}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "opacity": 1,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16.099999999999998,
+                        "letterSpacing": 0,
+                        "lineHeight": 23,
+                        "textAlign": "right",
+                      },
+                    ]
+                  }
+                >
+                  edit
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                [
+                  {
+                    "borderColor": "#4D4D4D",
+                    "borderRadius": 19,
+                    "borderWidth": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 25,
+                    "width": "100%",
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <TextInput
+                editable={true}
+                keyboardType="number-pad"
+                onChangeText={[Function]}
+                placeholder="e.g. 1234567890"
+                placeholderTextColor="#444444"
+                style={
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 23,
+                    "height": "100%",
+                    "letterSpacing": 0,
+                    "lineHeight": 36.8,
+                    "textAlign": "left",
+                  }
+                }
+                value=""
+              />
+            </View>
+          </View>
+          <View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "marginBottom": 9.5,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#A9A9A9",
+                      "fontFamily": "PlusJakartaSans-Medium",
+                      "fontSize": 13.799999999999999,
+                      "letterSpacing": 0,
+                      "lineHeight": 23,
+                      "textAlign": "left",
+                    },
+                  ]
+                }
+              >
+                IFSC Code
+              </Text>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={false}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "opacity": 1,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16.099999999999998,
+                        "letterSpacing": 0,
+                        "lineHeight": 23,
+                        "textAlign": "right",
+                      },
+                    ]
+                  }
+                >
+                  edit
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                [
+                  {
+                    "borderColor": "#4D4D4D",
+                    "borderRadius": 19,
+                    "borderWidth": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 25,
+                    "width": "100%",
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <TextInput
+                autoCapitalize="characters"
+                editable={true}
+                onChangeText={[Function]}
+                placeholder="e.g. SBIN0002125"
+                placeholderTextColor="#444444"
+                style={
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 23,
+                    "height": "100%",
+                    "letterSpacing": 0,
+                    "lineHeight": 36.8,
+                    "textAlign": "left",
+                  }
+                }
+                value=""
+              />
+            </View>
+          </View>
+          <View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "marginBottom": 9.5,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#A9A9A9",
+                      "fontFamily": "PlusJakartaSans-Medium",
+                      "fontSize": 13.799999999999999,
+                      "letterSpacing": 0,
+                      "lineHeight": 23,
+                      "textAlign": "left",
+                    },
+                  ]
+                }
+              >
+                PAN CARD
+              </Text>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={false}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "opacity": 1,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16.099999999999998,
+                        "letterSpacing": 0,
+                        "lineHeight": 23,
+                        "textAlign": "right",
+                      },
+                    ]
+                  }
+                >
+                  edit
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                [
+                  {
+                    "borderColor": "#4D4D4D",
+                    "borderRadius": 19,
+                    "borderWidth": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 25,
+                    "width": "100%",
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <TextInput
+                autoCapitalize="characters"
+                editable={true}
+                onChangeText={[Function]}
+                placeholder="e.g. CSNPM9874A"
+                placeholderTextColor="#444444"
+                style={
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 23,
+                    "height": "100%",
+                    "letterSpacing": 0,
+                    "lineHeight": 36.8,
+                    "textAlign": "left",
+                  }
+                }
+                value=""
+              />
+            </View>
+          </View>
+          <View
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": true,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={false}
+            onClick={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#202020",
+                "borderRadius": 19,
+                "height": 87.5,
+                "justifyContent": "center",
+                "marginTop": 25,
+                "opacity": 1,
+                "width": "100%",
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  [
+                    {
+                      "color": "#444444",
+                      "fontFamily": "PlusJakartaSans-Medium",
+                      "fontSize": 18.4,
+                      "letterSpacing": 0,
+                      "lineHeight": 27.599999999999998,
+                      "textAlign": "center",
+                    },
+                    false,
+                  ],
+                ]
+              }
+            >
+              Proceed
+            </Text>
+          </View>
+          <Text
+            style={
+              [
+                {
+                  "color": "#FFFFFF",
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 16,
+                  "fontWeight": "400",
+                  "letterSpacing": 0,
+                  "lineHeight": 24,
+                  "textAlign": "left",
+                },
+                {
+                  "color": "#A9A9A9",
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 13.799999999999999,
+                  "letterSpacing": 0,
+                  "lineHeight": 23,
+                  "marginTop": 25,
+                  "textAlign": "left",
+                },
+              ]
+            }
+          >
+            You may get a verification message from Cashfree to verify your profile and unlock benefits.
+          </Text>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</View>
+`;

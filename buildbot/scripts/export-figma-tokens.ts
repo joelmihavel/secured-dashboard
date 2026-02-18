@@ -5,8 +5,8 @@
  * Figma is the SINGLE SOURCE OF TRUTH - no fallbacks.
  *
  * Usage:
- *   npx ts-node scripts/export-figma-tokens.ts
- *   npx ts-node scripts/export-figma-tokens.ts --validate-only
+ *   npx tsx scripts/export-figma-tokens.ts
+ *   npx tsx scripts/export-figma-tokens.ts --validate-only
  *
  * To refresh Figma data, use Claude with Figma MCP:
  *   mcp__figma__get_variable_defs(fileKey, nodeId) -> save to config/figma-variables-raw.json
@@ -422,7 +422,7 @@ async function main(): Promise<void> {
   console.log(`\n✅ Done!`);
   console.log(`\nTo refresh Figma data:`);
   console.log(`  1. Ask Claude: "Fetch Figma variables and save to figma-variables-raw.json"`);
-  console.log(`  2. Run: npx ts-node scripts/export-figma-tokens.ts`);
+  console.log(`  2. Run: npx tsx scripts/export-figma-tokens.ts`);
 }
 
 main().catch(err => {

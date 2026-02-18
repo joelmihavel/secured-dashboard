@@ -181,6 +181,7 @@ function FilmstripBracket({ side }: FilmstripBracketProps) {
       width={FIGMA.bracket.width}
       height={FIGMA.bracket.height}
       viewBox={`0 0 ${FIGMA.bracket.width} ${FIGMA.bracket.height}`}
+      style={{ overflow: 'visible' }}
     >
       <Path
         d={path}

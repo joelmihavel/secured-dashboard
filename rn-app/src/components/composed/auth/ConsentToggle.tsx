@@ -96,7 +96,8 @@ function ConsentToggleComponent({
         style={[styles.toggle, disabled && styles.disabled]}
         testID={testID}
         accessibilityRole="switch"
-        accessibilityState={{ checked: value }}
+        accessibilityState={{ checked: value, disabled: !!disabled }}
+        accessibilityLabel="Consent to verification"
       >
         {/* Base background */}
         <View style={styles.background} />

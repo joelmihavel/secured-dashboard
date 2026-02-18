@@ -1,0 +1,76 @@
+{
+  "flows": [
+    {
+      "id": "auth",
+      "name": "Authentication Flow",
+      "priority": 0,
+      "screens": ["splash", "beta-splash", "carousel", "sign-up", "otp"],
+      "backendDeps": [],
+      "stateDeps": ["C01", "C02"],
+      "contextDocs": ["autobot/context/ui.md", "autobot/context/state.md"]
+    },
+    {
+      "id": "waitlist",
+      "name": "Waitlist Flow",
+      "priority": 0,
+      "screens": ["waitlist"],
+      "backendDeps": [],
+      "stateDeps": ["C03"],
+      "contextDocs": ["autobot/context/ui.md"]
+    },
+    {
+      "id": "agreement",
+      "name": "Agreement Flow",
+      "priority": 1,
+      "screens": ["agreement-upload", "agreement-review"],
+      "backendDeps": ["B03"],
+      "stateDeps": [],
+      "contextDocs": ["autobot/context/ui.md", "autobot/context/backend.md"]
+    },
+    {
+      "id": "setup",
+      "name": "Post-Approval Setup Flow",
+      "priority": 1,
+      "screens": ["setup", "add-bank", "invite-landlord"],
+      "backendDeps": ["B04", "B05"],
+      "stateDeps": ["C04"],
+      "contextDocs": ["autobot/context/ui.md", "autobot/context/backend.md"]
+    },
+    {
+      "id": "payment",
+      "name": "Payment Flow",
+      "priority": 2,
+      "screens": ["payment-select", "payment-add-upi", "payment-add-card", "payment-add-netbanking", "payment-processing", "payment-success", "payment-failed"],
+      "backendDeps": ["B08"],
+      "stateDeps": ["C05"],
+      "contextDocs": ["autobot/context/ui.md", "autobot/context/backend.md"]
+    },
+    {
+      "id": "main",
+      "name": "Home & Transactions Flow",
+      "priority": 2,
+      "screens": ["home-empty", "home-active", "transactions"],
+      "backendDeps": ["B06", "B07"],
+      "stateDeps": ["C06"],
+      "contextDocs": ["autobot/context/ui.md", "autobot/context/backend.md"]
+    },
+    {
+      "id": "profile",
+      "name": "Profile Flow",
+      "priority": 3,
+      "screens": ["profile"],
+      "backendDeps": [],
+      "stateDeps": [],
+      "contextDocs": ["autobot/context/ui.md"]
+    },
+    {
+      "id": "components",
+      "name": "Payment Card Components",
+      "priority": 3,
+      "screens": ["payment-cards"],
+      "backendDeps": [],
+      "stateDeps": [],
+      "contextDocs": ["autobot/context/ui.md"]
+    }
+  ]
+}

@@ -430,6 +430,12 @@ export default function SelectPaymentMethodScreen() {
 
             {/* Payment Method Cards */}
             <View style={styles.methodsList}>
+              {isLoadingMethods && (
+                <View style={styles.loadingMethodsRow}>
+                  <ActivityIndicator size="small" color={FIGMA_COLORS.accent} />
+                  <Text style={styles.loadingMethodsText}>Loading saved methods...</Text>
+                </View>
+              )}
               {paymentMethods.map((method) => (
                 <PaymentMethodCard
                   key={method.id}
@@ -628,6 +634,19 @@ const styles = StyleSheet.create({
   },
   methodsList: {
     gap: 12,
+  },
+  loadingMethodsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  loadingMethodsText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16,
+    color: FIGMA_COLORS.textSecondary,
   },
 
   // Payment Method Card

@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { SummaryRow, DashedDivider } from '@/src/components/payment';
 import { useDashboard } from '@/src/hooks';
+import { usePaymentStore } from '@/src/stores';
 import {
   initiatePayUPayment,
   launchPayUCheckout,
@@ -111,6 +112,9 @@ export default function InitiatePaymentScreen() {
   const [useCashback, setUseCashback] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Sync payment flow state to Zustand store for cross-screen coordination
+  const { setConfirming, setProcessing, setFailed, setAmount, setTenancyId, reset: resetPaymentStore } = usePaymentStore();
+
   // Validate payment method from URL params
   const validatedParams = useMemo((): ValidatedPaymentParams => {
     const result = PaymentParamsSchema.safeParse({ method: rawParams.method });
@@ -160,6 +164,11 @@ export default function InitiatePaymentScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsProcessing(true);
 
+    // Sync payment state to Zustand store
+    setConfirming();
+    setAmount(totalAmount);
+    setTenancyId(tenancy?.id ?? '');
+
     try {
       const { data, error } = await initiatePayUPayment({
         tenancyId: tenancy?.id ?? '',
@@ -173,6 +182,9 @@ export default function InitiatePaymentScreen() {
         throw new Error(error ?? 'Failed to initiate payment');
       }
 
+      // Update store with transaction ID for cross-screen tracking
+      setProcessing(data.paymentId);
+
       const checkoutResult = isExpoGo
         ? await mockPayUCheckout(data.payuParams)
         : await launchPayUCheckout(data.payuParams);
@@ -183,6 +195,7 @@ export default function InitiatePaymentScreen() {
       }
 
       if (checkoutResult.status === 'cancelled') {
+        resetPaymentStore();
         setIsProcessing(false);
         return;
       }
@@ -198,14 +211,13 @@ export default function InitiatePaymentScreen() {
       } as never);
     } catch (error) {
       console.error('Payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while processing payment';
+      setFailed('PAYMENT_ERROR', errorMessage);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        'Payment Error',
-        error instanceof Error ? error.message : 'An error occurred while processing payment'
-      );
+      Alert.alert('Payment Error', errorMessage);
       setIsProcessing(false);
     }
-  }, [tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router]);
+  }, [tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setAmount, setTenancyId, resetPaymentStore]);
 
   return (
     <Screen testID="initiate-payment-screen" style={styles.screen}>

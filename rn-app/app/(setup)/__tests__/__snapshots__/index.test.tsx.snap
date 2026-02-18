@@ -1,0 +1,1644 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SetupIndexScreen matches snapshot 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+  testID="setup-index-screen"
+>
+  <View
+    edges={
+      [
+        "top",
+        "left",
+        "right",
+      ]
+    }
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          false,
+          undefined,
+        ]
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "flex": 1,
+            },
+            {
+              "paddingTop": 112,
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "marginBottom": 34,
+              "marginLeft": 48,
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Flent logo"
+            accessibilityRole="image"
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                },
+                {
+                  "height": 40,
+                  "width": 33.375,
+                },
+              ]
+            }
+          >
+            <RNSVGSvgView
+              align="xMidYMid"
+              bbHeight={40}
+              bbWidth={33.375}
+              fill="none"
+              focusable={false}
+              height={40}
+              meetOrSlice={0}
+              minX={0}
+              minY={0}
+              style={
+                [
+                  {
+                    "backgroundColor": "transparent",
+                    "borderWidth": 0,
+                  },
+                  {
+                    "flex": 0,
+                    "height": 40,
+                    "width": 33,
+                  },
+                ]
+              }
+              vbHeight={40}
+              vbWidth={34}
+              width={33.375}
+            >
+              <RNSVGGroup
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+              >
+                <RNSVGPath
+                  d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                  fill={
+                    {
+                      "payload": 4294967295,
+                      "type": 0,
+                    }
+                  }
+                  propList={
+                    [
+                      "fill",
+                    ]
+                  }
+                />
+              </RNSVGGroup>
+            </RNSVGSvgView>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "marginBottom": 28,
+              "marginLeft": 48,
+            }
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "color": "#FFFFFF",
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 16,
+                  "fontWeight": "400",
+                  "letterSpacing": 0,
+                  "lineHeight": 24,
+                  "textAlign": "left",
+                },
+                {
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 32,
+                  "letterSpacing": -1,
+                  "lineHeight": 48,
+                  "textAlign": "left",
+                  "width": 310,
+                },
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  undefined,
+                  {
+                    "color": "#A9A9A9",
+                  },
+                ]
+              }
+            >
+              Let's get
+
+            </Text>
+            <Text
+              style={
+                [
+                  undefined,
+                  {
+                    "color": "#FF9A6D",
+                  },
+                ]
+              }
+            >
+              you set up
+            </Text>
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "height": 321,
+            }
+          }
+        >
+          <RCTScrollView
+            bounces={false}
+            data={
+              [
+                {
+                  "description": "Add your landlord's bank details ||to enable payouts",
+                  "id": "bank",
+                  "title": "Let's get you set up",
+                },
+                {
+                  "description": "Upload address proof ||to verify your tenancy",
+                  "id": "address",
+                  "title": "Let's get you set up",
+                },
+                {
+                  "description": "Invite your landlord ||to finish setup",
+                  "id": "landlord",
+                  "title": "Let's get you set up",
+                },
+              ]
+            }
+            decelerationRate="fast"
+            getItem={[Function]}
+            getItemCount={[Function]}
+            horizontal={true}
+            keyExtractor={[Function]}
+            onContentSizeChange={[Function]}
+            onLayout={[Function]}
+            onMomentumScrollBegin={[Function]}
+            onMomentumScrollEnd={[Function]}
+            onScroll={[Function]}
+            onScrollBeginDrag={[Function]}
+            onScrollEndDrag={[Function]}
+            onViewableItemsChanged={[Function]}
+            pagingEnabled={true}
+            removeClippedSubviews={false}
+            renderItem={[Function]}
+            scrollEventThrottle={0.0001}
+            showsHorizontalScrollIndicator={false}
+            snapToAlignment="center"
+            stickyHeaderIndices={[]}
+            viewabilityConfig={
+              {
+                "itemVisiblePercentThreshold": 50,
+              }
+            }
+            viewabilityConfigCallbackPairs={
+              [
+                {
+                  "onViewableItemsChanged": [Function],
+                  "viewabilityConfig": {
+                    "itemVisiblePercentThreshold": 50,
+                  },
+                },
+              ]
+            }
+          >
+            <View>
+              <View
+                onFocusCapture={[Function]}
+                onLayout={[Function]}
+                style={
+                  [
+                    {
+                      "flexDirection": "row",
+                    },
+                    null,
+                  ]
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                      "width": 750,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#202020",
+                        "borderRadius": 0,
+                        "elevation": 10,
+                        "height": 321,
+                        "overflow": "hidden",
+                        "shadowColor": "#000000",
+                        "shadowOffset": {
+                          "height": 9,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 1,
+                        "shadowRadius": 19,
+                        "width": 270,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "flexDirection": "row",
+                          "justifyContent": "space-evenly",
+                          "marginTop": -5.6,
+                          "paddingVertical": 8,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "paddingHorizontal": 24,
+                          "paddingTop": 16,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#FF9A6D",
+                            "borderRadius": 3.2,
+                            "height": 17.6,
+                            "width": 46.4,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "flex": 1,
+                          "padding": 24,
+                          "paddingTop": 16,
+                        }
+                      }
+                    >
+                      <View
+                        accessibilityLabel="Flent logo"
+                        accessibilityRole="image"
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "justifyContent": "center",
+                            },
+                            {
+                              "height": 32,
+                              "width": 26.700000000000003,
+                            },
+                          ]
+                        }
+                      >
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          bbHeight={32}
+                          bbWidth={26.700000000000003}
+                          fill="none"
+                          focusable={false}
+                          height={32}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {
+                                "flex": 0,
+                                "height": 32,
+                                "width": 26,
+                              },
+                            ]
+                          }
+                          vbHeight={40}
+                          vbWidth={34}
+                          width={26.700000000000003}
+                        >
+                          <RNSVGGroup
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                              ]
+                            }
+                          >
+                            <RNSVGPath
+                              d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                              fill={
+                                {
+                                  "payload": 4294967295,
+                                  "type": 0,
+                                }
+                              }
+                              propList={
+                                [
+                                  "fill",
+                                ]
+                              }
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                      <View
+                        style={
+                          {
+                            "marginTop": 40,
+                            "width": 204,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "#FFFFFF",
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 16,
+                                "fontWeight": "400",
+                                "letterSpacing": 0,
+                                "lineHeight": 24,
+                                "textAlign": "left",
+                              },
+                              {
+                                "color": "#CBCBCB",
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 20,
+                                "lineHeight": 32,
+                                "textAlign": "left",
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                undefined,
+                                [
+                                  {
+                                    "color": "#CBCBCB",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 20,
+                                    "lineHeight": 32,
+                                    "textAlign": "left",
+                                  },
+                                  {
+                                    "color": "#FF9A6D",
+                                  },
+                                ],
+                              ]
+                            }
+                          >
+                            Add your landlord's bank details 
+                          </Text>
+                          <Text
+                            style={
+                              [
+                                undefined,
+                                {
+                                  "color": "#CBCBCB",
+                                  "fontFamily": "PlusJakartaSans-Regular",
+                                  "fontSize": 20,
+                                  "lineHeight": 32,
+                                  "textAlign": "left",
+                                },
+                              ]
+                            }
+                          >
+                            to enable payouts
+                          </Text>
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      style={
+                        {
+                          "bottom": 32,
+                          "flexDirection": "row",
+                          "justifyContent": "space-between",
+                          "left": 0,
+                          "paddingHorizontal": 0,
+                          "position": "absolute",
+                          "right": 0,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "backgroundColor": "#131313",
+                              "borderRadius": 7,
+                              "height": 14,
+                              "width": 14,
+                            },
+                            {
+                              "marginLeft": -7,
+                            },
+                          ]
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          [
+                            {
+                              "backgroundColor": "#131313",
+                              "borderRadius": 7,
+                              "height": 14,
+                              "width": 14,
+                            },
+                            {
+                              "marginRight": -7,
+                            },
+                          ]
+                        }
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+              <View
+                onFocusCapture={[Function]}
+                onLayout={[Function]}
+                style={
+                  [
+                    {
+                      "flexDirection": "row",
+                    },
+                    null,
+                  ]
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                      "width": 750,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#202020",
+                        "borderRadius": 0,
+                        "elevation": 10,
+                        "height": 321,
+                        "overflow": "hidden",
+                        "shadowColor": "#000000",
+                        "shadowOffset": {
+                          "height": 9,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 1,
+                        "shadowRadius": 19,
+                        "width": 270,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "flexDirection": "row",
+                          "justifyContent": "space-evenly",
+                          "marginTop": -5.6,
+                          "paddingVertical": 8,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "paddingHorizontal": 24,
+                          "paddingTop": 16,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#FF9A6D",
+                            "borderRadius": 3.2,
+                            "height": 17.6,
+                            "width": 46.4,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "flex": 1,
+                          "padding": 24,
+                          "paddingTop": 16,
+                        }
+                      }
+                    >
+                      <View
+                        accessibilityLabel="Flent logo"
+                        accessibilityRole="image"
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "justifyContent": "center",
+                            },
+                            {
+                              "height": 32,
+                              "width": 26.700000000000003,
+                            },
+                          ]
+                        }
+                      >
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          bbHeight={32}
+                          bbWidth={26.700000000000003}
+                          fill="none"
+                          focusable={false}
+                          height={32}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {
+                                "flex": 0,
+                                "height": 32,
+                                "width": 26,
+                              },
+                            ]
+                          }
+                          vbHeight={40}
+                          vbWidth={34}
+                          width={26.700000000000003}
+                        >
+                          <RNSVGGroup
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                              ]
+                            }
+                          >
+                            <RNSVGPath
+                              d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                              fill={
+                                {
+                                  "payload": 4294967295,
+                                  "type": 0,
+                                }
+                              }
+                              propList={
+                                [
+                                  "fill",
+                                ]
+                              }
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                      <View
+                        style={
+                          {
+                            "marginTop": 40,
+                            "width": 204,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "#FFFFFF",
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 16,
+                                "fontWeight": "400",
+                                "letterSpacing": 0,
+                                "lineHeight": 24,
+                                "textAlign": "left",
+                              },
+                              {
+                                "color": "#CBCBCB",
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 20,
+                                "lineHeight": 32,
+                                "textAlign": "left",
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                undefined,
+                                [
+                                  {
+                                    "color": "#CBCBCB",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 20,
+                                    "lineHeight": 32,
+                                    "textAlign": "left",
+                                  },
+                                  {
+                                    "color": "#FF9A6D",
+                                  },
+                                ],
+                              ]
+                            }
+                          >
+                            Upload address proof 
+                          </Text>
+                          <Text
+                            style={
+                              [
+                                undefined,
+                                {
+                                  "color": "#CBCBCB",
+                                  "fontFamily": "PlusJakartaSans-Regular",
+                                  "fontSize": 20,
+                                  "lineHeight": 32,
+                                  "textAlign": "left",
+                                },
+                              ]
+                            }
+                          >
+                            to verify your tenancy
+                          </Text>
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      style={
+                        {
+                          "bottom": 32,
+                          "flexDirection": "row",
+                          "justifyContent": "space-between",
+                          "left": 0,
+                          "paddingHorizontal": 0,
+                          "position": "absolute",
+                          "right": 0,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "backgroundColor": "#131313",
+                              "borderRadius": 7,
+                              "height": 14,
+                              "width": 14,
+                            },
+                            {
+                              "marginLeft": -7,
+                            },
+                          ]
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          [
+                            {
+                              "backgroundColor": "#131313",
+                              "borderRadius": 7,
+                              "height": 14,
+                              "width": 14,
+                            },
+                            {
+                              "marginRight": -7,
+                            },
+                          ]
+                        }
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+              <View
+                onFocusCapture={[Function]}
+                onLayout={[Function]}
+                style={
+                  [
+                    {
+                      "flexDirection": "row",
+                    },
+                    null,
+                  ]
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                      "width": 750,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#202020",
+                        "borderRadius": 0,
+                        "elevation": 10,
+                        "height": 321,
+                        "overflow": "hidden",
+                        "shadowColor": "#000000",
+                        "shadowOffset": {
+                          "height": 9,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 1,
+                        "shadowRadius": 19,
+                        "width": 270,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "flexDirection": "row",
+                          "justifyContent": "space-evenly",
+                          "marginTop": -5.6,
+                          "paddingVertical": 8,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 5.6,
+                            "height": 11.2,
+                            "width": 11.2,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "paddingHorizontal": 24,
+                          "paddingTop": 16,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#FF9A6D",
+                            "borderRadius": 3.2,
+                            "height": 17.6,
+                            "width": 46.4,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "flex": 1,
+                          "padding": 24,
+                          "paddingTop": 16,
+                        }
+                      }
+                    >
+                      <View
+                        accessibilityLabel="Flent logo"
+                        accessibilityRole="image"
+                        style={
+                          [
+                            {
+                              "alignItems": "center",
+                              "justifyContent": "center",
+                            },
+                            {
+                              "height": 32,
+                              "width": 26.700000000000003,
+                            },
+                          ]
+                        }
+                      >
+                        <RNSVGSvgView
+                          align="xMidYMid"
+                          bbHeight={32}
+                          bbWidth={26.700000000000003}
+                          fill="none"
+                          focusable={false}
+                          height={32}
+                          meetOrSlice={0}
+                          minX={0}
+                          minY={0}
+                          style={
+                            [
+                              {
+                                "backgroundColor": "transparent",
+                                "borderWidth": 0,
+                              },
+                              {
+                                "flex": 0,
+                                "height": 32,
+                                "width": 26,
+                              },
+                            ]
+                          }
+                          vbHeight={40}
+                          vbWidth={34}
+                          width={26.700000000000003}
+                        >
+                          <RNSVGGroup
+                            fill={null}
+                            propList={
+                              [
+                                "fill",
+                              ]
+                            }
+                          >
+                            <RNSVGPath
+                              d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                              fill={
+                                {
+                                  "payload": 4294967295,
+                                  "type": 0,
+                                }
+                              }
+                              propList={
+                                [
+                                  "fill",
+                                ]
+                              }
+                            />
+                          </RNSVGGroup>
+                        </RNSVGSvgView>
+                      </View>
+                      <View
+                        style={
+                          {
+                            "marginTop": 40,
+                            "width": 204,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            [
+                              {
+                                "color": "#FFFFFF",
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 16,
+                                "fontWeight": "400",
+                                "letterSpacing": 0,
+                                "lineHeight": 24,
+                                "textAlign": "left",
+                              },
+                              {
+                                "color": "#CBCBCB",
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 20,
+                                "lineHeight": 32,
+                                "textAlign": "left",
+                              },
+                            ]
+                          }
+                        >
+                          <Text
+                            style={
+                              [
+                                undefined,
+                                [
+                                  {
+                                    "color": "#CBCBCB",
+                                    "fontFamily": "PlusJakartaSans-Regular",
+                                    "fontSize": 20,
+                                    "lineHeight": 32,
+                                    "textAlign": "left",
+                                  },
+                                  {
+                                    "color": "#FF9A6D",
+                                  },
+                                ],
+                              ]
+                            }
+                          >
+                            Invite your landlord 
+                          </Text>
+                          <Text
+                            style={
+                              [
+                                undefined,
+                                {
+                                  "color": "#CBCBCB",
+                                  "fontFamily": "PlusJakartaSans-Regular",
+                                  "fontSize": 20,
+                                  "lineHeight": 32,
+                                  "textAlign": "left",
+                                },
+                              ]
+                            }
+                          >
+                            to finish setup
+                          </Text>
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      style={
+                        {
+                          "bottom": 32,
+                          "flexDirection": "row",
+                          "justifyContent": "space-between",
+                          "left": 0,
+                          "paddingHorizontal": 0,
+                          "position": "absolute",
+                          "right": 0,
+                        }
+                      }
+                    >
+                      <View
+                        style={
+                          [
+                            {
+                              "backgroundColor": "#131313",
+                              "borderRadius": 7,
+                              "height": 14,
+                              "width": 14,
+                            },
+                            {
+                              "marginLeft": -7,
+                            },
+                          ]
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          {
+                            "backgroundColor": "#131313",
+                            "borderRadius": 7,
+                            "height": 14,
+                            "width": 14,
+                          }
+                        }
+                      />
+                      <View
+                        style={
+                          [
+                            {
+                              "backgroundColor": "#131313",
+                              "borderRadius": 7,
+                              "height": 14,
+                              "width": 14,
+                            },
+                            {
+                              "marginRight": -7,
+                            },
+                          ]
+                        }
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </RCTScrollView>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "gap": 4,
+              "justifyContent": "center",
+              "marginTop": 30,
+            }
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "backgroundColor": "#202020",
+                  "borderRadius": 4,
+                  "height": 8,
+                  "width": 8,
+                },
+                {
+                  "backgroundColor": "#FF9A6D",
+                },
+              ]
+            }
+          />
+          <View
+            style={
+              [
+                {
+                  "backgroundColor": "#202020",
+                  "borderRadius": 4,
+                  "height": 8,
+                  "width": 8,
+                },
+                false,
+              ]
+            }
+          />
+          <View
+            style={
+              [
+                {
+                  "backgroundColor": "#202020",
+                  "borderRadius": 4,
+                  "height": 8,
+                  "width": 8,
+                },
+                false,
+              ]
+            }
+          />
+        </View>
+        <View
+          style={
+            {
+              "flex": 1,
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "alignItems": "center",
+                "paddingHorizontal": 40,
+              },
+              {
+                "paddingBottom": 91,
+              },
+            ]
+          }
+        >
+          <View
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onClick={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#202020",
+                "borderRadius": 12,
+                "flexDirection": "row",
+                "gap": 10,
+                "height": 56,
+                "justifyContent": "center",
+                "opacity": 1,
+                "overflow": "visible",
+                "paddingHorizontal": 16,
+                "paddingVertical": 16,
+                "width": 313,
+              }
+            }
+            testID="start-flenting-button"
+          >
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  {
+                    "color": "#444444",
+                    "fontFamily": "PlusJakartaSans-Medium",
+                    "fontSize": 16,
+                    "lineHeight": 24,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              Start Flenting →
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  </View>
+</View>
+`;

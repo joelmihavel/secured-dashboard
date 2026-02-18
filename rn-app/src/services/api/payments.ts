@@ -870,3 +870,136 @@ export function getCurrentRentMonth(): string {
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
 }
+
+// ==============================================
+// PAYMENT SCHEDULING
+// ==============================================
+
+export interface CreateScheduleRequest {
+  tenancy_id: string;
+  payment_method: PaymentMethod;
+  scheduled_day: number;
+  auto_apply_cashback?: boolean;
+  upi_vpa?: string;
+  card_token?: string;
+  bank_code?: string;
+}
+
+export interface PaymentSchedule {
+  schedule_id: string;
+  tenancy_id: string;
+  payment_method: string;
+  scheduled_day: number;
+  auto_apply_cashback: boolean;
+  status: 'active' | 'paused' | 'cancelled';
+  next_execution_date: string | null;
+  monthly_rent_paise: number;
+  property_address?: string;
+  landlord_name?: string;
+  created_at: string;
+}
+
+export interface ManageScheduleRequest {
+  action: 'cancel' | 'pause' | 'resume';
+  schedule_id: string;
+}
+
+export async function createPaymentSchedule(
+  request: CreateScheduleRequest
+): Promise<{ data: PaymentSchedule | null; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{ data: PaymentSchedule }>(
+    'schedule-payment',
+    request as unknown as Record<string, unknown>,
+    true,
+    'POST'
+  );
+  if (error) return { data: null, error };
+  return { data: data?.data ?? null, error: null };
+}
+
+export async function managePaymentSchedule(
+  request: ManageScheduleRequest
+): Promise<{ data: { schedule_id: string; new_status: string } | null; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{ data: { schedule_id: string; new_status: string } }>(
+    'schedule-payment',
+    request as unknown as Record<string, unknown>,
+    true,
+    'POST'
+  );
+  if (error) return { data: null, error };
+  return { data: data?.data ?? null, error: null };
+}
+
+export async function getPaymentSchedules(
+  tenancyId?: string,
+  status?: string
+): Promise<{ data: PaymentSchedule[] | null; error: string | null }> {
+  const queryParams: Record<string, unknown> = {};
+  if (tenancyId) queryParams.tenancy_id = tenancyId;
+  if (status) queryParams.status = status;
+
+  const { data, error } = await callEdgeFunction<{ data: { schedules: PaymentSchedule[] } }>(
+    'get-payment-schedule',
+    queryParams,
+    true,
+    'GET'
+  );
+  if (error) return { data: null, error };
+  return { data: data?.data?.schedules ?? [], error: null };
+}
+
+// ==============================================
+// CASHBACK HISTORY
+// ==============================================
+
+export interface CashbackEntry {
+  id: string;
+  transaction_type: 'earned' | 'redeemed' | 'reversed' | 'expired';
+  amount_paise: number;
+  balance_after_paise: number;
+  description: string;
+  payment_id: string | null;
+  tenancy_id: string | null;
+  created_at: string;
+}
+
+export interface CashbackHistoryData {
+  current_balance_paise: number;
+  entries: CashbackEntry[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+  };
+}
+
+export async function getCashbackHistory(
+  page = 1,
+  limit = 20,
+  filters?: { tenancy_id?: string; type?: string }
+): Promise<{ data: CashbackHistoryData | null; error: string | null }> {
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+  if (filters?.tenancy_id) params.set('tenancy_id', filters.tenancy_id);
+  if (filters?.type) params.set('type', filters.type);
+
+  const queryParams: Record<string, unknown> = {
+    page: String(page),
+    limit: String(limit),
+  };
+  if (filters?.tenancy_id) queryParams.tenancy_id = filters.tenancy_id;
+  if (filters?.type) queryParams.type = filters.type;
+
+  const { data, error } = await callEdgeFunction<{ data: CashbackHistoryData }>(
+    'get-cashback-history',
+    queryParams,
+    true,
+    'GET'
+  );
+  if (error) return { data: null, error };
+  return { data: data?.data ?? null, error: null };
+}

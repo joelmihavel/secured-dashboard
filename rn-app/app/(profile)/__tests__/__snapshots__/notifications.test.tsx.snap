@@ -1,0 +1,698 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NotificationSettingsScreen matches snapshot 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "#131313",
+      "flex": 1,
+    }
+  }
+  testID="notification-settings-screen"
+>
+  <View
+    edges={
+      [
+        "top",
+        "bottom",
+        "left",
+        "right",
+      ]
+    }
+    style={
+      {
+        "flex": 1,
+      }
+    }
+  >
+    <View
+      style={
+        [
+          {
+            "flex": 1,
+          },
+          {
+            "paddingHorizontal": 40,
+          },
+          undefined,
+        ]
+      }
+    >
+      <RCTScrollView
+        contentContainerStyle={
+          [
+            {
+              "flexGrow": 1,
+              "paddingHorizontal": 32,
+            },
+            {
+              "paddingBottom": 66,
+              "paddingTop": 63,
+            },
+          ]
+        }
+        showsVerticalScrollIndicator={false}
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "justifyContent": "space-between",
+                "marginBottom": 24,
+              }
+            }
+          >
+            <View
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": undefined,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              onClick={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                {
+                  "alignItems": "flex-start",
+                  "height": 40,
+                  "justifyContent": "center",
+                  "opacity": 1,
+                  "width": 40,
+                }
+              }
+            >
+              <View
+                color="#FFFFFF"
+                name="chevron-back"
+                size={24}
+              />
+            </View>
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Medium",
+                    "fontSize": 16,
+                    "fontWeight": "500",
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  undefined,
+                ]
+              }
+            >
+              Notifications
+            </Text>
+            <View
+              style={
+                {
+                  "alignItems": "flex-start",
+                  "height": 40,
+                  "justifyContent": "center",
+                  "width": 40,
+                }
+              }
+            />
+          </View>
+          <Text
+            style={
+              [
+                {
+                  "color": "#797979",
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "letterSpacing": 0,
+                  "lineHeight": 20,
+                  "textAlign": "left",
+                },
+                {
+                  "marginBottom": 32,
+                },
+              ]
+            }
+          >
+            Choose which notifications you'd like to receive
+          </Text>
+          <View
+            style={
+              {
+                "gap": 8,
+                "marginBottom": 32,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#1A1A1A",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "padding": 16,
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "flex": 1,
+                    "gap": 2,
+                    "marginRight": 16,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 16,
+                        "fontWeight": "500",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Payment Reminders
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#797979",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Get reminded before rent is due
+                </Text>
+              </View>
+              <RCTSwitch
+                accessibilityRole="switch"
+                onChange={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                onTintColor="#70BF7380"
+                style={
+                  {
+                    "height": 31,
+                    "width": 51,
+                  }
+                }
+                thumbTintColor="#70BF73"
+                tintColor="#4D4D4D"
+                value={true}
+              />
+            </View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#1A1A1A",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "padding": 16,
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "flex": 1,
+                    "gap": 2,
+                    "marginRight": 16,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 16,
+                        "fontWeight": "500",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Payment Confirmations
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#797979",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Notification when payment succeeds
+                </Text>
+              </View>
+              <RCTSwitch
+                accessibilityRole="switch"
+                onChange={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                onTintColor="#70BF7380"
+                style={
+                  {
+                    "height": 31,
+                    "width": 51,
+                  }
+                }
+                thumbTintColor="#70BF73"
+                tintColor="#4D4D4D"
+                value={true}
+              />
+            </View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#1A1A1A",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "padding": 16,
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "flex": 1,
+                    "gap": 2,
+                    "marginRight": 16,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 16,
+                        "fontWeight": "500",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Cashback Alerts
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#797979",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  When you earn or can redeem cashback
+                </Text>
+              </View>
+              <RCTSwitch
+                accessibilityRole="switch"
+                onChange={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                onTintColor="#70BF7380"
+                style={
+                  {
+                    "height": 31,
+                    "width": 51,
+                  }
+                }
+                thumbTintColor="#70BF73"
+                tintColor="#4D4D4D"
+                value={true}
+              />
+            </View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#1A1A1A",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "padding": 16,
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "flex": 1,
+                    "gap": 2,
+                    "marginRight": 16,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 16,
+                        "fontWeight": "500",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Landlord Updates
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#797979",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  When landlord verifies or updates details
+                </Text>
+              </View>
+              <RCTSwitch
+                accessibilityRole="switch"
+                onChange={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                onTintColor="#70BF7380"
+                style={
+                  {
+                    "height": 31,
+                    "width": 51,
+                  }
+                }
+                thumbTintColor="#70BF73"
+                tintColor="#4D4D4D"
+                value={true}
+              />
+            </View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#1A1A1A",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "padding": 16,
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "flex": 1,
+                    "gap": 2,
+                    "marginRight": 16,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 16,
+                        "fontWeight": "500",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Offers & Promotions
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#797979",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Special offers and new features
+                </Text>
+              </View>
+              <RCTSwitch
+                accessibilityRole="switch"
+                onChange={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                onTintColor="#70BF7380"
+                style={
+                  {
+                    "height": 31,
+                    "width": 51,
+                  }
+                }
+                thumbTintColor="#A9A9A9"
+                tintColor="#4D4D4D"
+                value={false}
+              />
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "marginBottom": 32,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "color": "#797979",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 12,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 20,
+                    "textAlign": "left",
+                  },
+                  {
+                    "letterSpacing": 1,
+                    "marginBottom": 12,
+                    "textTransform": "uppercase",
+                  },
+                ]
+              }
+            >
+              SMS NOTIFICATIONS
+            </Text>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#1A1A1A",
+                  "borderRadius": 12,
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                  "padding": 16,
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "flex": 1,
+                    "gap": 2,
+                    "marginRight": 16,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 16,
+                        "fontWeight": "500",
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  SMS Alerts
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#797979",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "fontWeight": "400",
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "left",
+                      },
+                      undefined,
+                    ]
+                  }
+                >
+                  Receive important updates via SMS
+                </Text>
+              </View>
+              <RCTSwitch
+                accessibilityRole="switch"
+                onChange={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                onTintColor="#70BF7380"
+                style={
+                  {
+                    "height": 31,
+                    "width": 51,
+                  }
+                }
+                thumbTintColor="#70BF73"
+                tintColor="#4D4D4D"
+                value={true}
+              />
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "alignItems": "flex-start",
+                "backgroundColor": "#1A1A1A",
+                "borderRadius": 12,
+                "flexDirection": "row",
+                "gap": 12,
+                "padding": 16,
+              }
+            }
+          >
+            <View
+              color="#A9A9A9"
+              name="information-circle-outline"
+              size={20}
+            />
+            <Text
+              style={
+                [
+                  {
+                    "color": "#797979",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 12,
+                    "fontWeight": "400",
+                    "letterSpacing": 0,
+                    "lineHeight": 20,
+                    "textAlign": "left",
+                  },
+                  {
+                    "flex": 1,
+                    "lineHeight": 20,
+                  },
+                ]
+              }
+            >
+              Critical payment and security notifications cannot be disabled
+            </Text>
+          </View>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</View>
+`;
