@@ -1,0 +1,119 @@
+element_num,depth,bounds,attributes,parent_num
+0,0,"[0,0][0,0]","",
+1,1,"[0,0][402,874]","accessibilityText=Flent Secured; enabled=true",0
+2,2,"[0,0][402,874]","enabled=true",1
+3,3,"[0,0][402,874]","enabled=true",2
+4,4,"[0,0][402,874]","enabled=true",3
+5,5,"[0,0][402,874]","enabled=true",4
+6,6,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",5
+7,7,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",6
+8,8,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",7
+9,9,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",8
+10,10,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",9
+11,11,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",10
+12,12,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",11
+13,13,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",12
+14,14,"[0,0][402,874]","enabled=true",13
+15,15,"[0,0][402,874]","enabled=true",14
+16,16,"[0,0][402,874]","enabled=true",15
+17,17,"[0,0][402,874]","enabled=true",16
+18,18,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",17
+19,19,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",18
+20,20,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",19
+21,21,"[0,0][402,874]","enabled=true",20
+22,22,"[0,0][402,874]","enabled=true",21
+23,23,"[0,0][402,874]","enabled=true",22
+24,24,"[0,0][402,874]","enabled=true",23
+25,25,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",24
+26,26,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",25
+27,27,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; resource-id=splash-screen; enabled=true",26
+28,28,"[0,0][402,874]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",27
+29,29,"[0,62][402,840]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",28
+30,30,"[0,62][402,840]","enabled=true",29
+31,31,"[-458,-674][860,1672]","enabled=true",30
+32,32,"[-458,-673][860,1672]","enabled=true",31
+33,33,"[-458,-673][860,1672]","enabled=true",32
+34,31,"[-39,62][441,467]","enabled=true",30
+35,32,"[-76,-40][659,449]","enabled=true",34
+36,33,"[-76,-40][659,449]","enabled=true",35
+37,32,"[-39,62][441,467]","enabled=true",34
+38,33,"[-39,62][441,467]","enabled=true",37
+39,34,"[-39,62][441,467]","enabled=true",38
+40,31,"[188,62][522,462]","enabled=true",30
+41,32,"[189,62][522,462]","enabled=true",40
+42,33,"[189,62][522,493]","enabled=true",41
+43,34,"[189,62][522,493]","enabled=true",42
+44,30,"[0,62][402,840]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",29
+45,31,"[0,211][402,840]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants. Get Started Already a user? Log in; enabled=true",44
+46,32,"[0,211][402,539]","accessibilityText=Flent logo Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants.; enabled=true",45
+47,33,"[48,211][354,251]","accessibilityText=Flent logo; enabled=true",46
+48,34,"[48,211][81,251]","accessibilityText=Flent logo; enabled=true",47
+49,35,"[48,211][81,251]","enabled=true",48
+50,36,"[48,208][80,250]","enabled=true",49
+51,37,"[48,208][80,250]","enabled=true",50
+52,33,"[48,291][354,539]","accessibilityText=Make
+your rent
+work for you→ Secured is India’s first rent payment app built to reward reliable tenants.; enabled=true",46
+53,34,"[48,291][354,483]","accessibilityText=Make
+your rent
+work for you→; enabled=true",52
+54,34,"[48,499][354,539]","accessibilityText=Secured is India’s first rent payment app built to reward reliable tenants.; enabled=true",52
+55,32,"[0,665][402,776]","accessibilityText=Get Started Already a user? Log in; enabled=true",45
+56,33,"[48,665][354,732]","accessibilityText=Get Started; resource-id=get-started-button; enabled=true",55
+57,33,"[48,756][354,776]","accessibilityText=Already a user? Log in; enabled=true",55
+58,23,"[0,0][402,874]","enabled=true",22
+59,24,"[0,0][402,874]","enabled=true",58
+60,16,"[0,0][402,874]","enabled=true",15
+61,17,"[0,0][402,874]","enabled=true",60
+62,8,"[0,0][402,874]","enabled=true",7
+63,9,"[0,0][402,874]","enabled=true",62
+64,2,"[0,0][402,874]","enabled=true",1
+65,3,"[0,0][402,874]","enabled=true",64
+66,4,"[0,0][402,874]","enabled=true",65
+67,1,"[0,0][0,0]","",0
+68,2,"[0,0][402,54]","enabled=true",67
+69,2,"[0,0][402,54]","enabled=true",67
+70,3,"[0,0][402,54]","enabled=true",69
+71,4,"[0,0][402,54]","enabled=true",70
+72,5,"[53,22][95,42]","accessibilityText=1:43 AM; enabled=true",71
+73,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",71
+74,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",71
+75,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",71

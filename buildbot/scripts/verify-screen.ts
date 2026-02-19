@@ -2108,9 +2108,11 @@ function runSingleScreen(
   const coverageResult = runCoverageCheck(screenId);
 
   // Step 7.5: Maestro Structural Verification (deterministic, no AI)
+  // NOTE: Structural verification runs if hierarchy CSV exists, regardless of --skip-maestro.
+  // The hierarchy CSV is captured externally via Maestro MCP's inspect_view_hierarchy tool.
   let maestroStructuralResult: AuditReport["maestroStructural"] | undefined;
   const hierarchyCsvPath = path.join(BUILDBOT_ROOT, "data", "hierarchies", `${screenId}-hierarchy.csv`);
-  if (!skipMaestro && fileExists(hierarchyCsvPath)) {
+  if (fileExists(hierarchyCsvPath)) {
     log("structural", "Running Maestro structural verification...");
     const structuralScript = path.join(PATHS.scripts, "maestro-structural-verify.ts");
     if (fileExists(structuralScript)) {
@@ -2136,10 +2138,8 @@ function runSingleScreen(
     } else {
       logWarn("structural", "maestro-structural-verify.ts not found. Skipping.");
     }
-  } else if (skipMaestro) {
-    log("structural", "Skipped (--skip-maestro flag set).");
   } else {
-    log("structural", `No hierarchy CSV at ${hierarchyCsvPath}. Skipping structural verification.`);
+    log("structural", `No hierarchy CSV at ${hierarchyCsvPath}. Capture via Maestro MCP inspect_view_hierarchy.`);
   }
 
   // Step 7.7: Auto-heal (optional — patch code from structural report)
