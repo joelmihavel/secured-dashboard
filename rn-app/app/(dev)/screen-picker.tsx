@@ -25,7 +25,7 @@ import { colors, typography } from '@/src/theme';
 
 // Set to true to bypass screen picker and go straight to the app
 // (useful during parity testing when auto-heal navigates via deep links)
-export const DISABLE_SCREEN_PICKER = false;
+export const DISABLE_SCREEN_PICKER = true;
 
 // Set to a route path to jump directly to that screen on launch (e.g. '/(auth)/splash')
 // The app will boot straight to this screen, bypassing the screen picker.
@@ -72,11 +72,11 @@ const SECTIONS: Section[] = [
       { name: 'First Rent', path: '/(payment)/first-rent' },
       { name: 'Initiate Payment', path: '/(payment)/initiate' },
       { name: 'Add UPI', path: '/(payment)/add-upi', figmaNode: '41:8369' },
-      { name: 'Add Card', path: '/(payment)/add-card', figmaNode: '41:8529' },
+      { name: 'Add Card', path: '/(payment)/add-card', figmaNode: '41:8450' },
       { name: 'Add Netbanking', path: '/(payment)/add-netbanking', figmaNode: '41:9224' },
       { name: 'Processing', path: '/(payment)/processing', figmaNode: '41:9460' },
       { name: 'Success', path: '/(payment)/success', figmaNode: '41:9388' },
-      { name: 'Failed', path: '/(payment)/failed', figmaNode: '41:9511' },
+      { name: 'Failed', path: '/(payment)/failed', figmaNode: '41:9563' },
     ],
   },
   {

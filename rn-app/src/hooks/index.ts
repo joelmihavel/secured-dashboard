@@ -104,6 +104,7 @@ export {
 // Deep Links (ST-107)
 export {
   useDeepLink,
+  useDeepLinkParams,
   resolveDeepLink,
   handleDeepLinkUrl,
   consumeDeepLinkParams,

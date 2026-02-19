@@ -340,7 +340,10 @@ const EditField = ({
 export default function ReviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { extractionId } = useLocalSearchParams<{ extractionId?: string }>();
+  const { extractionId, state: stateParam } = useLocalSearchParams<{
+    extractionId?: string;
+    state?: string;
+  }>();
 
   const useMock = !extractionId;
   const {
@@ -355,8 +358,12 @@ export default function ReviewScreen() {
     extractionId: extractionId ?? null,
   });
 
-  // Mode: verify (read-only detail rows) or edit (input fields)
-  const [mode, setMode] = useState<'verify' | 'edit'>('verify');
+  // Mode: verify (read-only detail rows) or edit (input fields).
+  // Defaults to 'verify'; can be overridden by:
+  //   ?state=verify  → 'verify' mode (read-only)
+  //   ?state=modify  → 'edit' mode (input fields)
+  const initialMode = stateParam === 'modify' ? 'edit' : 'verify';
+  const [mode, setMode] = useState<'verify' | 'edit'>(initialMode);
 
   // Per-field editing state (which fields user has tapped "Edit" on)
   const [editingFields, setEditingFields] = useState<Set<string>>(new Set());

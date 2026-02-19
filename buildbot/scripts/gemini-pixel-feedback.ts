@@ -22,9 +22,15 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Configuration
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyDdiHYz0g2P1cVd5HrU5Dwh7ALKPNLVqOM';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+  console.error('ERROR: GEMINI_API_KEY not set. Add it to buildbot/.env');
+  process.exit(1);
+}
 const GEMINI_MODEL = 'gemini-3-pro-preview'; // Gemini 3 Pro for visual analysis
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 

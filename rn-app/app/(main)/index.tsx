@@ -41,7 +41,7 @@
 
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
@@ -81,7 +81,13 @@ import { useSavedPaymentMethods } from '@/src/hooks/usePayments';
 // Import colors from theme
 import { colors } from '@/src/theme';
 
-// Mock data removed -- useDashboard now provides UI-mapped recentPayments and cashbackEntries
+// Import mock data for BuildBot screenshot capture mode
+import {
+  getMockDashboardData,
+  getMockSavedPaymentMethods,
+  type HomeScreenState,
+} from '@/src/hooks/useScreenshotMockData';
+import { mapRecentPayments, deriveCashbackEntries, getDashboardState } from '@/src/services/api/dashboard';
 
 // ==============================================
 // MAIN COMPONENT
@@ -90,27 +96,88 @@ import { colors } from '@/src/theme';
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Read optional ?state= URL param for BuildBot screenshot capture mode.
+  // When present, mock data for the named state is used instead of (or as
+  // fallback for) real Supabase data so every Figma variant can be screenshotted.
+  const { state: stateParam } = useLocalSearchParams<{ state?: string }>();
+
+  const dashboardResult = useDashboard();
   const {
-    dashboardState,
-    user,
-    tenancy,
-    upcomingPayment,
-    cashback,
-    recentPayments,
-    cashbackEntries,
-    unreadCount,
     isLoading,
     isRefetching,
     error,
-  } = useDashboard();
+  } = dashboardResult;
   const refresh = useRefreshDashboard();
+
+  // ─── Mock data injection ───
+  // When ?state=<preset> is present AND the screen is loading, errored, or has
+  // no real data yet, inject the corresponding mock preset so BuildBot can
+  // screenshot every variant without needing a live Supabase session.
+  // Real data always wins when available to avoid disrupting the logged-in user.
+  const mockData = useMemo(() => {
+    if (!stateParam) return null;
+    const knownStates: HomeScreenState[] = [
+      'bank-upi', 'all-methods', 'late-payment', 'missed-payment',
+      'complete', 'upi-no-cashbacks', 'setup-payment', 'setup-upi', 'no-cashback',
+    ];
+    if (knownStates.includes(stateParam as HomeScreenState)) {
+      return getMockDashboardData(stateParam as HomeScreenState);
+    }
+    return null;
+  }, [stateParam]);
+
+  // Determine whether mock data should be active:
+  // - a valid ?state= param was supplied, AND
+  // - real data is unavailable (loading, error, or no tenancy data)
+  const useMockData = mockData !== null && (
+    isLoading || !!error || dashboardResult.data == null
+  );
+
+  // Resolve final data values from real query or mock
+  const resolvedData = useMockData ? mockData! : dashboardResult.data ?? null;
+  const dashboardState: DashboardState = getDashboardState(resolvedData);
+  const user = resolvedData?.user ?? null;
+  const tenancy = resolvedData?.tenancy ?? null;
+  const upcomingPayment = resolvedData?.upcoming_payment ?? null;
+  const cashback = resolvedData?.cashback ?? null;
+  const unreadCount = resolvedData?.unread_notification_count ?? 0;
+
+  const recentPayments = useMemo(
+    () => mapRecentPayments(resolvedData?.recent_payments ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resolvedData?.recent_payments]
+  );
+  const cashbackEntries = useMemo(
+    () => deriveCashbackEntries(resolvedData?.recent_payments ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resolvedData?.recent_payments]
+  );
 
   // Tab state for Recent Payments / Cashbacks
   const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
   const [showCashbackModal, setShowCashbackModal] = useState(false);
 
-  // Get saved payment methods
-  const { data: savedMethods } = useSavedPaymentMethods();
+  // Get saved payment methods — use mock methods when in mock mode
+  const { data: realSavedMethods } = useSavedPaymentMethods();
+  const mockSavedMethods = useMemo(() => {
+    if (!useMockData || !stateParam) return null;
+    const methodStateMap: Record<string, 'bank-upi' | 'all-methods' | 'upi-only' | 'none'> = {
+      'bank-upi': 'bank-upi',
+      'all-methods': 'all-methods',
+      'late-payment': 'bank-upi',
+      'missed-payment': 'bank-upi',
+      'complete': 'all-methods',
+      'upi-no-cashbacks': 'upi-only',
+      'setup-payment': 'none',
+      'setup-upi': 'upi-only',
+      'no-cashback': 'upi-only',
+    };
+    const methodState = methodStateMap[stateParam] ?? 'bank-upi';
+    return getMockSavedPaymentMethods(methodState);
+  }, [useMockData, stateParam]);
+
+  const savedMethods = useMockData ? mockSavedMethods : realSavedMethods;
 
   // ==============================================
   // DERIVED VALUES
@@ -314,7 +381,8 @@ export default function HomeScreen() {
   // LOADING STATE
   // ==============================================
 
-  if (isLoading) {
+  // Skip loading spinner when mock data is active (BuildBot screenshot mode)
+  if (isLoading && !useMockData) {
     return (
       <Screen testID="home-screen-loading" padded={false}>
         <View style={styles.loadingContainer}>
@@ -332,7 +400,8 @@ export default function HomeScreen() {
   // ERROR STATE
   // ==============================================
 
-  if (error) {
+  // Skip error screen when mock data is active
+  if (error && !useMockData) {
     return (
       <Screen testID="home-screen-error" padded={false}>
         <View style={styles.errorContainer}>

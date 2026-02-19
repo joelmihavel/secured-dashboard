@@ -3303,6 +3303,7 @@ async function main(): Promise<void> {
   // Save report
   const normalizedId = figmaId.replace(':', '-');
   const reportPath = path.join(__dirname, '../reports/coverage', `${normalizedId}-coverage.json`);
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
   console.log(`   Report saved: ${reportPath}`);
 

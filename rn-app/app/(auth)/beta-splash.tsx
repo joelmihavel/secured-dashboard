@@ -21,7 +21,7 @@
 
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -49,6 +49,7 @@ const FIGMA_DIMENSIONS = {
 
 export default function BetaSplashScreen() {
   const router = useRouter();
+  const { preview } = useLocalSearchParams<{ preview?: string }>();
 
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.8);
@@ -65,6 +66,8 @@ export default function BetaSplashScreen() {
     badgeTranslateY.value = withDelay(300, withTiming(0, { duration: duration.normal }));
 
     // Navigate to splash (Get Started) screen after animation completes
+    // Skip auto-navigate in preview mode (used by buildbot pipeline for screenshots)
+    if (preview === 'true') return;
     const timeout = setTimeout(() => {
       router.replace('/(auth)/splash');
     }, 2500);

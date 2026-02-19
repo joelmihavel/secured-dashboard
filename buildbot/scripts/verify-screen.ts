@@ -36,7 +36,7 @@ import * as dotenv from "dotenv";
 // ---------------------------------------------------------------------------
 
 const BUILDBOT_ROOT = path.join(__dirname, "..");
-dotenv.config({ path: path.join(BUILDBOT_ROOT, "..", ".env") });
+dotenv.config({ path: path.join(BUILDBOT_ROOT, ".env") });
 
 const PATHS = {
   blueprints: path.join(BUILDBOT_ROOT, "data", "blueprints"),
@@ -761,7 +761,7 @@ function runBackendBrief(screenId: string): BackendBriefResult | null {
   }
 
   // Check if mock data exists for this screen
-  const mockDataPopulated = requiredHooks.length > 0 && screenSource.includes("DEMO_") || screenSource.includes("MOCK_");
+  const mockDataPopulated = requiredHooks.length > 0 && (screenSource.includes("DEMO_") || screenSource.includes("MOCK_"));
 
   const backendBrief = {
     screenId,
@@ -942,7 +942,12 @@ function captureScreenshotViaCLI(
   const RESET_ROUTE = "/(auth)/splash";
   const SETTLE_TIME_SEC = 4;
 
-  const deepLinkUrl = `${URL_SCHEME}://${route}`;
+  // Screens with auto-transition timers need ?preview=true to stay visible for screenshot
+  const PREVIEW_ROUTES = ["/(auth)/beta-splash"];
+  const routeWithPreview = PREVIEW_ROUTES.includes(route)
+    ? `${route}?preview=true`
+    : route;
+  const deepLinkUrl = `${URL_SCHEME}://${routeWithPreview}`;
   log("screenshot", `Target deep link: ${deepLinkUrl}`);
 
   // Pre-flight: verify simulator and Maestro are ready
@@ -964,63 +969,64 @@ function captureScreenshotViaCLI(
     return captureResult.success;
   }
 
-  // Step 1: Generate a Maestro flow that resets to splash then navigates to target
+  // Step 1: Two-phase navigation for Expo Development Build
+  //
+  // Expo Dev Launcher intercepts custom scheme URLs and shows a "Deep link received"
+  // dialog. To bypass this:
+  // Phase A (Maestro warmup): Launch app → tap "Flent Secured" → tap "http://localhost:8081"
+  //   This connects the app to Metro without using deep links.
+  // Phase B (xcrun): Once connected, xcrun simctl openurl goes directly to the app
+  //   without triggering the dialog.
   const tmpFlowDir = path.join(BUILDBOT_ROOT, "data", ".tmp-flows");
-  if (!fs.existsSync(tmpFlowDir)) {
-    fs.mkdirSync(tmpFlowDir, { recursive: true });
-  }
+  if (!fs.existsSync(tmpFlowDir)) fs.mkdirSync(tmpFlowDir, { recursive: true });
 
-  const flowFileName = `nav-${Date.now()}.yaml`;
-  const flowPath = path.join(tmpFlowDir, flowFileName);
-  const resetUrl = `${URL_SCHEME}://${RESET_ROUTE}`;
-  const flowContent = [
+  log("screenshot", "Phase A: Connecting app to Metro via Maestro warmup...");
+  const warmupFlowPath = path.join(tmpFlowDir, `warmup-${Date.now()}.yaml`);
+  const warmupFlow = [
     `appId: ${APP_ID}`,
     "---",
-    // Reset: navigate to splash first to ensure a fresh navigation to the target
-    `- openLink: "${resetUrl}"`,
+    // Bring app to foreground (don't stop existing session)
+    "- launchApp:",
+    "    stopApp: false",
     "- waitForAnimationToEnd:",
-    "    timeout: 3000",
-    // Dismiss Expo dev client menu if it appears (shows on first Metro connection)
+    "    timeout: 2000",
+    // If Dev Launcher home is showing, tap the app entry to navigate into app context
     "- tapOn:",
-    '    text: "Continue"',
+    '    text: "Flent Secured"',
     "    optional: true",
     "- waitForAnimationToEnd:",
     "    timeout: 1000",
-    // Navigate to the actual target screen
-    `- openLink: "${deepLinkUrl}"`,
-    "- waitForAnimationToEnd:",
-    "    timeout: 3000",
-    // Dismiss dev menu again if it appears on second deep link
+    // If Metro connection picker is showing, tap localhost to connect
     "- tapOn:",
-    '    text: "Continue"',
+    '    text: "http://localhost:8081"',
     "    optional: true",
     "- waitForAnimationToEnd:",
-    "    timeout: 2000",
+    "    timeout: 3000",
   ].join("\n");
 
-  fs.writeFileSync(flowPath, flowContent, "utf-8");
-
-  // Step 2: Run Maestro to navigate
-  log("screenshot", "Running Maestro navigation flow...");
-  const maestroResult = runCommand(
-    `maestro test "${flowPath}" --no-ansi 2>&1`,
-    "screenshot"
+  fs.writeFileSync(warmupFlowPath, warmupFlow, "utf-8");
+  const warmupResult = runCommand(
+    `maestro test "${warmupFlowPath}" --no-ansi 2>&1`,
+    "screenshot",
+    { timeout: 45_000 }
   );
+  try { fs.unlinkSync(warmupFlowPath); } catch { /* ignore */ }
 
-  // Clean up temp flow file
-  try { fs.unlinkSync(flowPath); } catch { /* ignore */ }
+  if (!warmupResult.success) {
+    logWarn("screenshot", "Warmup flow failed — app may not be connected to Metro. Proceeding anyway.");
+  }
 
-  if (!maestroResult.success) {
-    // Fallback: try direct xcrun simctl openurl
-    logWarn("screenshot", "Maestro navigation failed, falling back to xcrun simctl openurl...");
-    const navResult = runCommand(
-      `xcrun simctl openurl booted "${deepLinkUrl}"`,
-      "screenshot"
-    );
-    if (!navResult.success) {
-      logError("screenshot", "Both Maestro and direct deep link navigation failed.");
-      return false;
-    }
+  // Phase B: Navigate to reset route, then to target via xcrun simctl openurl
+  // After warmup, xcrun openurl goes directly to the running app without dialog
+  log("screenshot", "Phase B: Navigating to target screen via xcrun simctl openurl...");
+  const resetUrl = `${URL_SCHEME}://${RESET_ROUTE}`;
+  runCommand(`xcrun simctl openurl booted "${resetUrl}"`, "screenshot");
+  try { execSync("sleep 2", { stdio: "pipe" }); } catch { /* ignore */ }
+
+  const navResult = runCommand(`xcrun simctl openurl booted "${deepLinkUrl}"`, "screenshot");
+  if (!navResult.success) {
+    logError("screenshot", "Navigation failed. Is the simulator booted with the app installed?");
+    return false;
   }
 
   // Step 3: Wait for the screen to render and animations to settle

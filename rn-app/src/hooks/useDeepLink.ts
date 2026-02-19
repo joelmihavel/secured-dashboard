@@ -19,7 +19,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { addBreadcrumb } from '../config/sentry';
 
 // ==============================================
@@ -262,6 +262,39 @@ export function handleDeepLinkUrl(url: string): boolean {
 // ==============================================
 // HOOK
 // ==============================================
+
+/**
+ * Hook that merges URL search params with pending deep link params.
+ *
+ * Expo Router v4 strips query params when navigating to route group paths
+ * (e.g., /(auth)/otp?state=filled). This hook recovers those params from
+ * the module-level store and merges them with any URL params that did land.
+ *
+ * Priority: URL params (useLocalSearchParams) win over deep link params,
+ * so real navigation always overrides BuildBot-injected mock state.
+ *
+ * Usage:
+ *   const { state } = useDeepLinkParams<{ state?: string }>();
+ */
+export function useDeepLinkParams<
+  T extends Record<string, string | string[]> = Record<string, string>
+>(): T {
+  const urlParams = useLocalSearchParams<T>();
+
+  // Check if URL params have any non-empty values
+  const hasUrlParams = Object.values(urlParams as Record<string, string | string[]>).some(
+    (v) => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)
+  );
+
+  if (!hasUrlParams) {
+    const pending = consumeDeepLinkParams();
+    if (pending) {
+      return { ...urlParams, ...(pending as unknown as T) };
+    }
+  }
+
+  return urlParams;
+}
 
 /**
  * Hook to handle incoming deep links.
