@@ -167,9 +167,9 @@ describe('OTPScreen', () => {
     expect(getByTestId('proceed-button')).toBeTruthy();
   });
 
-  it('renders "Secure code" label', () => {
-    const { getByText } = render(<OTPScreen />);
-    expect(getByText('Secure code')).toBeTruthy();
+  it('does not render "Secure code" label (Figma Label#67:0 = false)', () => {
+    const { queryByText } = render(<OTPScreen />);
+    expect(queryByText('Secure code')).toBeNull();
   });
 
   it('renders resend text', () => {

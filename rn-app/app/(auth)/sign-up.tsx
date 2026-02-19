@@ -105,7 +105,7 @@ export default function SignUpScreen() {
   // Initialize state based on query parameter for automated testing
   const getInitialPhone = () => (state === 'filled' ? mockData.phone : '');
   const getInitialName = () => (state === 'filled' ? mockData.name : '');
-  const getInitialConsent = () => true; // Consent enabled by default
+  const getInitialConsent = () => state === 'filled'; // Figma 1:29108: toggle "Off State" by default
 
   const [phone, setPhone] = useState(getInitialPhone);
   const [name, setName] = useState(getInitialName);
@@ -206,29 +206,31 @@ export default function SignUpScreen() {
           <View style={styles.container}>
             {/* Inner Stack - Figma Frame 1686557318 with gap: 48 */}
             <View style={styles.innerStack}>
-              {/* Logo - Figma: 32x38.4 (Frame 1686557264) */}
-              <Logo size={38} />
+              {/* Logo - Figma: 32.04x38.4 (Frame 1686557264) */}
+              <Logo size={38.4} />
 
               {/* Title - Figma 1:29183: "Let's get to " in #A9A9A9, "know you" in #FF9A6D */}
               <Text style={styles.headingGray}>
                 Let's get to{'\n'}
-                <Text style={styles.headingAccent}>know you</Text>
+                <Text inherit style={styles.headingAccent}>know you</Text>
               </Text>
 
               {/* Form - Figma Frame 90:2928 with gap: 16 */}
               <View style={styles.formContainer}>
                 {/* Phone Input - Figma placeholder: "Enter Number" */}
+                {/* Figma 1:29108: Hint Text#48:17 = false in empty state; show only when filled */}
                 <PhoneInput
                   label="Phone"
                   value={phone}
                   onChangeText={handlePhoneChange}
                   error={getPhoneErrorMessage()}
                   placeholder="Enter Number"
-                  hintText="edit"
+                  hintText={phone.length > 0 ? 'edit' : undefined}
                   testID="phone-input"
                 />
 
                 {/* Name Input - Figma placeholder: "e.g. John Appleseed" */}
+                {/* Figma 1:29108: Hint Text = hidden in empty state; show only when filled */}
                 <TextInput
                   ref={nameInputRef}
                   label="Name"
@@ -237,7 +239,7 @@ export default function SignUpScreen() {
                   placeholder="e.g. John Appleseed"
                   keyboardType="default"
                   autoCapitalize="words"
-                  hintText="edit"
+                  hintText={name.length > 0 ? 'edit' : undefined}
                   testID="name-input"
                 />
               </View>
@@ -301,10 +303,8 @@ const styles = StyleSheet.create({
     width: FIGMA_DIMENSIONS.headingWidth, // 297px per Figma
   },
   headingAccent: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,
-    lineHeight: 64,
-    letterSpacing: -2,
+    // Only color override needed - fontSize/lineHeight/fontFamily/letterSpacing
+    // inherited from parent Text via `inherit` prop
     color: FIGMA_COLORS.headingAccent,    // #FF9A6D - "know you" orange accent
   },
   formContainer: {

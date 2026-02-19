@@ -44,31 +44,64 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
               "backgroundShape": "carousel1",
               "description": "For every timely payment made via UPI, netbanking or credit cards.",
               "descriptionColor": "#A6A6A6",
+              "headingContent": "Earn 1% back on your rent",
+              "headingSegments": [
+                {
+                  "color": "#FF9A6D",
+                  "text": "Earn 1% back ",
+                },
+                {
+                  "color": "#A9A9A9",
+                  "text": "on your rent",
+                },
+              ],
               "id": "1",
-              "titleLine1": "Earn 1% back ",
-              "titleLine1Color": "#FF9A6D",
-              "titleLine2": "on your rent",
-              "titleLine2Color": "#A9A9A9",
             },
             {
               "backgroundShape": "carousel2",
               "description": "Keep paying via Secured to unlock exclusive renting benefits over time",
               "descriptionColor": "#A9A9A9",
+              "headingContent": "More than  just cashback",
+              "headingSegments": [
+                {
+                  "color": "#A9A9A9",
+                  "text": "More than ",
+                },
+                {
+                  "color": "#FF9A6D",
+                  "text": " just cashback",
+                },
+              ],
               "id": "2",
-              "titleLine1": "More than ",
-              "titleLine1Color": "#A9A9A9",
-              "titleLine2": "just cashback",
-              "titleLine2Color": "#FF9A6D",
             },
             {
               "backgroundShape": "carousel3",
               "description": "3 months of rent payments unlock a free vacancy cover for your landlord",
               "descriptionColor": "#A9A9A9",
+              "headingContent": "Your landlord benefits too",
+              "headingSegments": [
+                {
+                  "color": "#A9A9A9",
+                  "text": "Your",
+                },
+                {
+                  "color": "#A9A9A9",
+                  "text": " ",
+                },
+                {
+                  "color": "#A9A9A9",
+                  "text": "landlord",
+                },
+                {
+                  "color": "#FFFFFF",
+                  "text": " ",
+                },
+                {
+                  "color": "#FF9A6D",
+                  "text": "benefits too",
+                },
+              ],
               "id": "3",
-              "titleLine1": "Your landlord",
-              "titleLine1Color": "#A9A9A9",
-              "titleLine2": "benefits too",
-              "titleLine2Color": "#FF9A6D",
             },
           ]
         }
@@ -130,7 +163,7 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
             <View
               style={
                 {
-                  "flexGrow": 1,
+                  "flex": 1,
                   "width": 750,
                 }
               }
@@ -138,9 +171,9 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
               <View
                 style={
                   {
-                    "flexGrow": 1,
+                    "flex": 1,
+                    "justifyContent": "center",
                     "paddingBottom": 64,
-                    "paddingHorizontal": 48,
                     "paddingTop": 80,
                   }
                 }
@@ -148,7 +181,9 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                 <View
                   style={
                     {
-                      "marginBottom": 40,
+                      "flex": 1,
+                      "gap": 40,
+                      "paddingHorizontal": 48,
                     }
                   }
                 >
@@ -180,45 +215,41 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                       />
                     </View>
                   </View>
-                </View>
-                <View
-                  style={
-                    {
-                      "gap": 16,
-                    }
-                  }
-                >
                   <View
-                    style={{}}
+                    style={
+                      {
+                        "gap": 16,
+                      }
+                    }
                   >
                     <Text
                       style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "fontWeight": "400",
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 48,
-                              "letterSpacing": -2,
-                              "lineHeight": 64,
-                              "width": 297,
-                            },
-                            {
-                              "color": "#FF9A6D",
-                            },
-                          ],
-                        ]
+                        {
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 48,
+                          "letterSpacing": -2,
+                          "lineHeight": 64,
+                        }
                       }
                     >
-                      Earn 1% back 
+                      <Text
+                        style={
+                          {
+                            "color": "#FF9A6D",
+                          }
+                        }
+                      >
+                        Earn 1% back 
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#A9A9A9",
+                          }
+                        }
+                      >
+                        on your rent
+                      </Text>
                     </Text>
                     <Text
                       style={
@@ -227,7 +258,6 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -235,141 +265,97 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                           [
                             {
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 48,
-                              "letterSpacing": -2,
-                              "lineHeight": 64,
-                              "width": 297,
+                              "fontSize": 14,
+                              "lineHeight": 20,
                             },
                             {
-                              "color": "#A9A9A9",
+                              "color": "#A6A6A6",
                             },
                           ],
                         ]
                       }
                     >
-                      on your rent
+                      For every timely payment made via UPI, netbanking or credit cards.
                     </Text>
                   </View>
-                  <Text
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    hitSlop={
+                      {
+                        "bottom": 12,
+                        "left": 12,
+                        "right": 12,
+                        "top": 12,
+                      }
+                    }
+                    onClick={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
                     style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
-                          "fontWeight": "400",
-                          "letterSpacing": 0,
-                          "lineHeight": 24,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                            "width": 297,
-                          },
-                          {
-                            "color": "#A6A6A6",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    For every timely payment made via UPI, netbanking or credit cards.
-                  </Text>
-                </View>
-                <View
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": undefined,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={true}
-                  hitSlop={
-                    {
-                      "bottom": 12,
-                      "left": 12,
-                      "right": 12,
-                      "top": 12,
-                    }
-                  }
-                  onClick={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  style={
-                    {
-                      "marginTop": 40,
-                      "opacity": 1,
-                    }
-                  }
-                >
-                  <Text
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
-                          "fontWeight": "400",
-                          "letterSpacing": 0,
-                          "lineHeight": 24,
-                          "textAlign": "left",
-                        },
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 14,
-                          "lineHeight": 20,
-                          "width": 297,
-                        },
-                      ]
+                      {
+                        "opacity": 1,
+                      }
                     }
                   >
                     <Text
                       style={
                         [
-                          undefined,
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 16,
+                            "letterSpacing": 0,
+                            "lineHeight": 24,
+                            "textAlign": "left",
+                          },
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 14,
                             "lineHeight": 20,
-                            "textDecorationLine": "underline",
                           },
                         ]
                       }
                     >
-                      Skip
+                      <Text
+                        style={
+                          [
+                            undefined,
+                            {
+                              "textDecorationLine": "underline",
+                            },
+                          ]
+                        }
+                      >
+                        Skip
+                      </Text>
+                       →
                     </Text>
-                     →
-                  </Text>
+                  </View>
                 </View>
-                <View
-                  style={
-                    {
-                      "marginTop": 40,
-                    }
-                  }
-                />
               </View>
             </View>
           </View>
@@ -388,7 +374,7 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
             <View
               style={
                 {
-                  "flexGrow": 1,
+                  "flex": 1,
                   "width": 750,
                 }
               }
@@ -396,9 +382,9 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
               <View
                 style={
                   {
-                    "flexGrow": 1,
+                    "flex": 1,
+                    "justifyContent": "center",
                     "paddingBottom": 64,
-                    "paddingHorizontal": 48,
                     "paddingTop": 80,
                   }
                 }
@@ -406,7 +392,9 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                 <View
                   style={
                     {
-                      "marginBottom": 40,
+                      "flex": 1,
+                      "gap": 40,
+                      "paddingHorizontal": 48,
                     }
                   }
                 >
@@ -438,17 +426,42 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                       />
                     </View>
                   </View>
-                </View>
-                <View
-                  style={
-                    {
-                      "gap": 16,
-                    }
-                  }
-                >
                   <View
-                    style={{}}
+                    style={
+                      {
+                        "gap": 16,
+                      }
+                    }
                   >
+                    <Text
+                      style={
+                        {
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 48,
+                          "letterSpacing": -2,
+                          "lineHeight": 64,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#A9A9A9",
+                          }
+                        }
+                      >
+                        More than 
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#FF9A6D",
+                          }
+                        }
+                      >
+                         just cashback
+                      </Text>
+                    </Text>
                     <Text
                       style={
                         [
@@ -456,7 +469,6 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -464,10 +476,8 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                           [
                             {
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 48,
-                              "letterSpacing": -2,
-                              "lineHeight": 64,
-                              "width": 297,
+                              "fontSize": 14,
+                              "lineHeight": 20,
                             },
                             {
                               "color": "#A9A9A9",
@@ -476,8 +486,51 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                         ]
                       }
                     >
-                      More than 
+                      Keep paying via Secured to unlock exclusive renting benefits over time
                     </Text>
+                  </View>
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    hitSlop={
+                      {
+                        "bottom": 12,
+                        "left": 12,
+                        "right": 12,
+                        "top": 12,
+                      }
+                    }
+                    onClick={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    style={
+                      {
+                        "opacity": 1,
+                      }
+                    }
+                  >
                     <Text
                       style={
                         [
@@ -485,149 +538,35 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
                           },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 48,
-                              "letterSpacing": -2,
-                              "lineHeight": 64,
-                              "width": 297,
-                            },
-                            {
-                              "color": "#FF9A6D",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      just cashback
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
-                          "fontWeight": "400",
-                          "letterSpacing": 0,
-                          "lineHeight": 24,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                            "width": 297,
-                          },
-                          {
-                            "color": "#A9A9A9",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    Keep paying via Secured to unlock exclusive renting benefits over time
-                  </Text>
-                </View>
-                <View
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": undefined,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={true}
-                  hitSlop={
-                    {
-                      "bottom": 12,
-                      "left": 12,
-                      "right": 12,
-                      "top": 12,
-                    }
-                  }
-                  onClick={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  style={
-                    {
-                      "marginTop": 40,
-                      "opacity": 1,
-                    }
-                  }
-                >
-                  <Text
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
-                          "fontWeight": "400",
-                          "letterSpacing": 0,
-                          "lineHeight": 24,
-                          "textAlign": "left",
-                        },
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 14,
-                          "lineHeight": 20,
-                          "width": 297,
-                        },
-                      ]
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          undefined,
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 14,
                             "lineHeight": 20,
-                            "textDecorationLine": "underline",
                           },
                         ]
                       }
                     >
-                      Skip
+                      <Text
+                        style={
+                          [
+                            undefined,
+                            {
+                              "textDecorationLine": "underline",
+                            },
+                          ]
+                        }
+                      >
+                        Skip
+                      </Text>
+                       →
                     </Text>
-                     →
-                  </Text>
+                  </View>
                 </View>
-                <View
-                  style={
-                    {
-                      "marginTop": 40,
-                    }
-                  }
-                />
               </View>
             </View>
           </View>
@@ -646,7 +585,7 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
             <View
               style={
                 {
-                  "flexGrow": 1,
+                  "flex": 1,
                   "width": 750,
                 }
               }
@@ -654,9 +593,9 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
               <View
                 style={
                   {
-                    "flexGrow": 1,
+                    "flex": 1,
+                    "justifyContent": "center",
                     "paddingBottom": 64,
-                    "paddingHorizontal": 48,
                     "paddingTop": 80,
                   }
                 }
@@ -664,7 +603,9 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                 <View
                   style={
                     {
-                      "marginBottom": 40,
+                      "flex": 1,
+                      "gap": 40,
+                      "paddingHorizontal": 48,
                     }
                   }
                 >
@@ -696,17 +637,69 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                       />
                     </View>
                   </View>
-                </View>
-                <View
-                  style={
-                    {
-                      "gap": 16,
-                    }
-                  }
-                >
                   <View
-                    style={{}}
+                    style={
+                      {
+                        "gap": 16,
+                      }
+                    }
                   >
+                    <Text
+                      style={
+                        {
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 48,
+                          "letterSpacing": -2,
+                          "lineHeight": 64,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#A9A9A9",
+                          }
+                        }
+                      >
+                        Your
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#A9A9A9",
+                          }
+                        }
+                      >
+                         
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#A9A9A9",
+                          }
+                        }
+                      >
+                        landlord
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#FFFFFF",
+                          }
+                        }
+                      >
+                         
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#FF9A6D",
+                          }
+                        }
+                      >
+                        benefits too
+                      </Text>
+                    </Text>
                     <Text
                       style={
                         [
@@ -714,7 +707,6 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -722,10 +714,8 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                           [
                             {
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 48,
-                              "letterSpacing": -2,
-                              "lineHeight": 64,
-                              "width": 297,
+                              "fontSize": 14,
+                              "lineHeight": 20,
                             },
                             {
                               "color": "#A9A9A9",
@@ -734,8 +724,51 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                         ]
                       }
                     >
-                      Your landlord
+                      3 months of rent payments unlock a free vacancy cover for your landlord
                     </Text>
+                  </View>
+                  <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    hitSlop={
+                      {
+                        "bottom": 12,
+                        "left": 12,
+                        "right": 12,
+                        "top": 12,
+                      }
+                    }
+                    onClick={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
+                    style={
+                      {
+                        "opacity": 1,
+                      }
+                    }
+                  >
                     <Text
                       style={
                         [
@@ -743,149 +776,35 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
                           },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 48,
-                              "letterSpacing": -2,
-                              "lineHeight": 64,
-                              "width": 297,
-                            },
-                            {
-                              "color": "#FF9A6D",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      benefits too
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
-                          "fontWeight": "400",
-                          "letterSpacing": 0,
-                          "lineHeight": 24,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                            "width": 297,
-                          },
-                          {
-                            "color": "#A9A9A9",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    3 months of rent payments unlock a free vacancy cover for your landlord
-                  </Text>
-                </View>
-                <View
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": undefined,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={true}
-                  hitSlop={
-                    {
-                      "bottom": 12,
-                      "left": 12,
-                      "right": 12,
-                      "top": 12,
-                    }
-                  }
-                  onClick={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  style={
-                    {
-                      "marginTop": 40,
-                      "opacity": 1,
-                    }
-                  }
-                >
-                  <Text
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
-                          "fontWeight": "400",
-                          "letterSpacing": 0,
-                          "lineHeight": 24,
-                          "textAlign": "left",
-                        },
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 14,
-                          "lineHeight": 20,
-                          "width": 297,
-                        },
-                      ]
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          undefined,
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 14,
                             "lineHeight": 20,
-                            "textDecorationLine": "underline",
                           },
                         ]
                       }
                     >
-                      Skip
+                      <Text
+                        style={
+                          [
+                            undefined,
+                            {
+                              "textDecorationLine": "underline",
+                            },
+                          ]
+                        }
+                      >
+                        Skip
+                      </Text>
+                       →
                     </Text>
-                     →
-                  </Text>
+                  </View>
                 </View>
-                <View
-                  style={
-                    {
-                      "marginTop": 40,
-                    }
-                  }
-                />
               </View>
             </View>
           </View>

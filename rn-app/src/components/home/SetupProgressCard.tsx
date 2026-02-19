@@ -187,15 +187,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   titleText: {
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   countdownText: {
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '500', // Figma: fontWeight 500
     color: '#FF9A6D', // Figma: #FF9A6D (brand[500]) for emphasis
     textDecorationLine: 'underline',
   },
@@ -223,15 +223,15 @@ const styles = StyleSheet.create({
     gap: 4, // Figma: gap between title and subtitle
   },
   itemTitle: {
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   itemSubtitle: {
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 12, // Figma: fontSize 12
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#878787', // Figma: #878787 (neutral[600])
     // Note: textAlign LEFT (default) per Figma -- subtitle text is left-aligned within the list item
   },
@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   buttonText: {
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
     color: colors.white, // Figma: #FFFFFF
     textAlign: 'center',

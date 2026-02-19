@@ -1,18 +1,36 @@
 /**
  * Payment Failed Screen
- * Figma Reference: 41-9511 (Payment Failed)
+ * Figma Reference: 41-9511 (Payment Failed), 41-9635 (Payment Refunded)
  *
- * Pixel-perfect implementation:
- * - Receipt-style card with notch cutouts and top perforations (14 holes, 14x14px)
- * - Card width: fixed 270px, height 481px
- * - FAILED stamp badge (rotated -15deg), color #FF8080
- * - Title "Payment" - fontSize 20, lineHeight 32, color #FFFFFF
- * - "Failed" - fontSize 20, lineHeight 32, color #FF9A6D (brand orange)
- * - Three info rows with credit card icons, gap 24px, paddingHorizontal 32px
+ * Pixel-perfect implementation per Figma blueprint extraction:
+ * - Screen: 393x852, bg #131313
+ * - Receipt card frame (Frame 2095586361): x:61, y:183, 270x481
+ * - Card bg: #202020 (Rectangle 136)
+ * - Perforated top: 14 ellipses, 14x14px each
+ * - Side notches: 14x14px at vertical center
+ *
+ * FAILED state (41-9511):
+ * - FAILED stamp: rotated -15deg, color #FF8080, Inter ExtraBold 13.51px
+ * - Title: "Payment\nFailed" - "Payment" #FFFFFF, "Failed" #FF9A6D (span start:8)
+ * - Info rows (3):
+ *   1. "Something didn't go through this time."
+ *   2. "Your money is safe and hasn't been deducted."
+ *   3. "If money was debited, it will automatically be refunded within 3-5 business days"
+ * - Button: "Contact Support" + "Try Again" link
+ *
+ * REFUNDED state (41-9635):
+ * - REFUNDED stamp: rotated -15deg, color #C7C9D9, Inter ExtraBold 13.51px
+ * - Title: "Payment\nRefunded" - "Payment" #FFFFFF, "Refunded" #FF9A6D (span start:8)
+ * - Info rows (2):
+ *   1. "Your payment was not completed and the amount has been returned to your account."
+ *   2. "Refunds usually reflect within 3-5 business days."
+ * - Button: "Contact Support" + "Try Again" link
+ *
+ * Common:
+ * - Info rows: container gap 24, paddingHorizontal 32 inside card
  * - Info text: fontSize 12, lineHeight 20, color #A9A9A9
- * - "Contact Support" button: fixed 313px container, centered
- * - "Try Again" link: fontSize 12, lineHeight 20, color #A9A9A9, textAlign center
- * - Horizontal padding: 40px
+ * - Button container (Frame 2095586363): x:40, y:704, width 313, gap 16
+ * - "Try Again": fontSize 12, lineHeight 20, color #A9A9A9, textAlign center
  */
 
 import React, { useEffect, useCallback } from 'react';
@@ -20,68 +38,41 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { colors } from '@/src/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const FIGMA_SCREEN_WIDTH = 393;
-const FIGMA_CARD_WIDTH = 270;
-const FIGMA_BUTTON_WIDTH = 313;
-const SCALE = SCREEN_WIDTH / FIGMA_SCREEN_WIDTH;
-const CARD_WIDTH = Math.round(FIGMA_CARD_WIDTH * SCALE);
-const BUTTON_WIDTH = Math.round(FIGMA_BUTTON_WIDTH * SCALE);
-
-// Exact Figma colors - from 41-9511 analysis
+// Exact Figma colors - from 41-9511 / 41-9635 blueprint extraction
 const FIGMA_COLORS = {
   background: '#131313',           // black.700
   cardBackground: '#202020',       // black.500 - Rectangle 136
   titleWhite: '#FFFFFF',           // white - "Payment"
-  titleAccent: '#FF9A6D',          // Figma 41:9536: text-[#ff9a6d] - "Failed" in brand orange
-  stampColor: '#FF8080',           // Figma: FAILED stamp color
-  infoText: '#A9A9A9',            // neutral.500 - info row text
-  iconColor: '#4D4D4D',           // black.400 - paperclip/decorative
-  contactSupportLink: '#A9A9A9',   // neutral.500 - "Try Again" text
+  titleAccent: '#FF9A6D',          // brand.500 - "Failed"/"Refunded" (span start:8)
+  failedStampColor: '#FF8080',     // Figma 41-9511: FAILED stamp color
+  refundedStampColor: '#C7C9D9',   // Figma 41-9635: REFUNDED stamp color
+  infoText: '#A9A9A9',             // neutral.500 - info row text
+  iconColor: '#4D4D4D',            // black.400 - credit card icon
+  paperclipColor: '#4D4D4D',       // black.400 - paperclip
+  tryAgainText: '#A9A9A9',         // neutral.500 - "Try Again" text
 };
-
-// Perforation Edge - 14 circular holes at top of receipt card
-const PERFORATION_COUNT = 14;
-const PERFORATION_SIZE = 14;
-const PERFORATION_RADIUS = 7;
-
-// Back Arrow Icon
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={FIGMA_COLORS.titleWhite}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 // Paperclip decoration
 const Paperclip = () => (
   <Svg width={24} height={48} viewBox="0 0 24 48" fill="none">
     <Path
       d="M12 4V44M12 4C12 4 20 4 20 12V36C20 44 12 44 12 44M12 4C12 4 4 4 4 12V28"
-      stroke={FIGMA_COLORS.iconColor}
+      stroke={FIGMA_COLORS.paperclipColor}
       strokeWidth={1.5}
       strokeLinecap="round"
     />
   </Svg>
 );
 
-// Credit card icon for info rows - matches processing.tsx
+// Credit card icon for info rows
 const CreditCardIcon = () => (
   <Svg width={32} height={24} viewBox="0 0 32 24" fill="none">
     <Rect x="1" y="1" width="30" height="22" rx="4" stroke={FIGMA_COLORS.iconColor} strokeWidth="1.5" fill="none" />
@@ -90,8 +81,9 @@ const CreditCardIcon = () => (
   </Svg>
 );
 
+// Perforation Edge - 14 circular holes at top of receipt card
 const PerforationEdge = () => {
-  const holes = Array.from({ length: PERFORATION_COUNT }, (_, i) => i);
+  const holes = Array.from({ length: 14 }, (_, i) => i);
   return (
     <View style={styles.perforationContainer}>
       {holes.map((i) => (
@@ -101,21 +93,26 @@ const PerforationEdge = () => {
   );
 };
 
-// FAILED Stamp Component
-const FailedStamp = () => (
+// Stamp Component - reusable for FAILED and REFUNDED
+interface StampProps {
+  text: string;
+  color: string;
+}
+
+const PaymentStamp = ({ text, color }: StampProps) => (
   <View style={styles.stampContainer}>
-    <View style={styles.stampOuter}>
-      <View style={styles.stampInner}>
+    <View style={[styles.stampOuter, { borderColor: color }]}>
+      <View style={[styles.stampInner, { borderColor: `${color}80` }]}>
         <View style={styles.starsRow}>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
+          <Text style={[styles.star, { color }]}>*</Text>
+          <Text style={[styles.star, { color }]}>*</Text>
+          <Text style={[styles.star, { color }]}>*</Text>
         </View>
-        <Text style={styles.stampText}>FAILED</Text>
+        <Text style={[styles.stampText, { color }]}>{text}</Text>
         <View style={styles.starsRow}>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
+          <Text style={[styles.star, { color }]}>*</Text>
+          <Text style={[styles.star, { color }]}>*</Text>
+          <Text style={[styles.star, { color }]}>*</Text>
         </View>
       </View>
     </View>
@@ -126,6 +123,7 @@ interface InfoRowProps {
   text: string;
 }
 
+// Info row - Figma: row direction, gap 16, paddingHorizontal 32
 const InfoRow = ({ text }: InfoRowProps) => (
   <View style={styles.infoRow}>
     <CreditCardIcon />
@@ -133,26 +131,39 @@ const InfoRow = ({ text }: InfoRowProps) => (
   </View>
 );
 
+// Failed state info rows per Figma 41-9511
+const FAILED_INFO_ROWS = [
+  "Something didn't go through this time.",
+  "Your money is safe and hasn't been deducted.",
+  "If money was debited, it will automatically be refunded within 3-5 business days",
+];
+
+// Refunded state info rows per Figma 41-9635
+const REFUNDED_INFO_ROWS = [
+  "Your payment was not completed and the amount has been returned to your account.",
+  "Refunds usually reflect within 3\u20135 business days.",
+];
+
 export default function FailedScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     paymentId?: string;
     amount?: string;
     method?: string;
     error?: string;
+    state?: string;
   }>();
 
-  const errorMessage = params.error ?? '';
+  // Determine if this is a refunded state
+  const isRefunded = params.state === 'refunded';
+  const stampText = isRefunded ? 'REFUNDED' : 'FAILED';
+  const stampColor = isRefunded ? FIGMA_COLORS.refundedStampColor : FIGMA_COLORS.failedStampColor;
+  const titleAccentText = isRefunded ? 'Refunded' : 'Failed';
+  const infoRows = isRefunded ? REFUNDED_INFO_ROWS : FAILED_INFO_ROWS;
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   }, []);
-
-  const handleBack = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -161,22 +172,12 @@ export default function FailedScreen() {
 
   const handleTryAgain = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navigate back to select-method to retry the payment flow
     router.replace('/(payment)/select-method' as never);
   }, [router]);
 
   return (
     <Screen testID="failed-screen" padded={false} style={styles.screen}>
-      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <BackArrow />
-        </TouchableOpacity>
-
+      <View style={styles.container}>
         {/* Receipt Card */}
         <View style={styles.receiptContainer}>
           {/* Paperclip decoration */}
@@ -186,7 +187,6 @@ export default function FailedScreen() {
 
           {/* Card with notches and perforations */}
           <View style={styles.receiptCard}>
-            {/* Top perforations - 14 circular holes */}
             <PerforationEdge />
 
             {/* Left notch */}
@@ -194,22 +194,22 @@ export default function FailedScreen() {
             {/* Right notch */}
             <View style={[styles.notch, styles.notchRight]} />
 
-            {/* Stamp */}
+            {/* Stamp - FAILED or REFUNDED */}
             <View style={styles.stampPosition}>
-              <FailedStamp />
+              <PaymentStamp text={stampText} color={stampColor} />
             </View>
 
-            {/* Title */}
+            {/* Title - Figma: "Payment\n{Failed|Refunded}", textAlign left */}
             <View style={styles.titleSection}>
               <Text style={styles.titleWhite}>Payment</Text>
-              <Text style={styles.titleAccent}>Failed</Text>
+              <Text style={styles.titleAccent}>{titleAccentText}</Text>
             </View>
 
-            {/* Info Rows - Figma 41:9537: gap 24, px 32 */}
+            {/* Info Rows - Figma: gap 24, paddingHorizontal 32 */}
             <View style={styles.infoSection}>
-              <InfoRow text={errorMessage || "Something didn't go through this time."} />
-              <InfoRow text="Your money is safe and hasn't been deducted." />
-              <InfoRow text="If money was debited, it will automatically be refunded within 3-5 business days" />
+              {infoRows.map((text, index) => (
+                <InfoRow key={index} text={text} />
+              ))}
             </View>
           </View>
         </View>
@@ -217,15 +217,13 @@ export default function FailedScreen() {
         {/* Spacer */}
         <View style={styles.spacer} />
 
-        {/* Buttons - Figma 41:9556: gap 16, width 313 */}
-        <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 24 }]}>
-          <View style={styles.buttonInner}>
-            <PrimaryButton
-              title="Contact Support"
-              onPress={handleContactSupport}
-              testID="contact-support-button"
-            />
-          </View>
+        {/* Button Container - Figma Frame 2095586363: x:40, y:704, width:313, gap:16 */}
+        <View style={styles.buttonContainer}>
+          <PrimaryButton
+            title="Contact Support"
+            onPress={handleContactSupport}
+            testID="contact-support-button"
+          />
 
           <TouchableOpacity
             onPress={handleTryAgain}
@@ -245,27 +243,22 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 40, // Figma 41-9511: 40px horizontal padding
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginBottom: 24,
+    // Figma: button container at x:40, card at x:61
+    paddingHorizontal: 40,
   },
   receiptContainer: {
     position: 'relative',
     alignItems: 'center',
+    marginTop: 12,
   },
   paperclipContainer: {
     position: 'absolute',
     top: -20,
-    left: 24,
+    left: -16,
     zIndex: 10,
   },
   receiptCard: {
-    width: CARD_WIDTH,
+    width: 270,                        // Figma: Frame 2095586361 width: 270
     backgroundColor: FIGMA_COLORS.cardBackground,
     borderRadius: 16,
     padding: 24,
@@ -275,18 +268,17 @@ const styles = StyleSheet.create({
   },
   perforationContainer: {
     position: 'absolute',
-    top: -PERFORATION_RADIUS,
-    left: 0,
-    right: 0,
+    top: -7,                           // Half above card edge
+    left: 4,
+    right: 4,
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
+    justifyContent: 'space-between',
     zIndex: 5,
   },
   perforationHole: {
-    width: PERFORATION_SIZE,
-    height: PERFORATION_SIZE,
-    borderRadius: PERFORATION_RADIUS,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: FIGMA_COLORS.background,
   },
   notch: {
@@ -318,7 +310,6 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: FIGMA_COLORS.stampColor,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -327,7 +318,6 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     borderWidth: 1,
-    borderColor: `${FIGMA_COLORS.stampColor}80`,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -336,19 +326,19 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   star: {
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 8,
-    color: FIGMA_COLORS.stampColor,
+    textAlign: 'center',
   },
   stampText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 10,
-    color: FIGMA_COLORS.stampColor,
-    letterSpacing: 0.5,
-    marginVertical: 2,
+    fontFamily: 'Inter-ExtraBold',     // Figma: fontPostScriptName Inter-ExtraBold
+    fontSize: 13.51,                   // Figma: fontSize 13.51
+    lineHeight: 16.35,                 // Figma: lineHeightPx 16.35
     textAlign: 'center',
     textTransform: 'uppercase',
+    marginVertical: 2,
   },
+  // Title - Figma: textAlign left
   titleSection: {
     marginBottom: 32,
   },
@@ -357,44 +347,51 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 32,
     color: FIGMA_COLORS.titleWhite,
+    textAlign: 'left',
   },
   titleAccent: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
     lineHeight: 32,
     color: FIGMA_COLORS.titleAccent,
+    textAlign: 'left',
   },
+  // Info section - Figma: column, gap 24
   infoSection: {
-    gap: 24, // Figma 41:9537: gap 24
+    gap: 24,
   },
+  // Info row - Figma: row, gap 16, paddingHorizontal 32, alignItems center
   infoRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16, // Figma: gap 16 between icon and text
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 8,              // Card has 24px padding, Figma row has 32px = 8px additional
   },
   infoText: {
     flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.infoText,
+    color: FIGMA_COLORS.infoText,      // #A9A9A9
+    textAlign: 'left',
   },
   spacer: {
     flex: 1,
   },
+  // Button container - Figma Frame 2095586363: x:40, y:704, width:313, gap:16
   buttonContainer: {
-    paddingTop: 24,
+    width: 313,
+    alignSelf: 'center',
+    gap: 16,
     alignItems: 'center',
-    gap: 16, // Figma 41:9556: gap 16
+    paddingBottom: 24,
   },
-  buttonInner: {
-    width: BUTTON_WIDTH,
-  },
+  // Try Again - Figma 41:9558/41:9676: fontSize 12, lineHeight 20, color #A9A9A9, textAlign center
   tryAgainText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.contactSupportLink,
+    color: FIGMA_COLORS.tryAgainText,  // #A9A9A9
     textAlign: 'center',
   },
 });

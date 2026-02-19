@@ -95,10 +95,9 @@ const styles = StyleSheet.create({
     gap: 12, // Figma: gap 12px
   },
   greeting: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   avatarContainer: {
@@ -120,7 +119,6 @@ const styles = StyleSheet.create({
   avatarText: {
     fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '600', // Figma: fontWeight 600
     color: colors.white,
   },
   badge: {
@@ -136,9 +134,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
+    fontFamily: 'PlusJakartaSans-SemiBold', // fontWeight 600
     color: colors.white,
     fontSize: 10,
-    fontWeight: '600',
   },
 });
 

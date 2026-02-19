@@ -134,29 +134,25 @@ const styles = StyleSheet.create({
   },
   // Figma: fontSize 20, lineHeight 32, fontWeight 400
   titleLine: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 20, // Figma: fontSize 20
     lineHeight: 32, // Figma: lineHeight 32
-    fontWeight: '400', // Figma: fontWeight 400
   },
   accentText: {
     color: '#FF9A6D', // Figma: #FF9A6D (brand[500])
     fontSize: 20,
     lineHeight: 32,
-    fontWeight: '400',
   },
   grayText: {
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
     fontSize: 20,
     lineHeight: 32,
-    fontWeight: '400',
   },
   // Figma 243-4062: subtitle
   subtitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#878787', // Figma: #878787 (neutral[600])
   },
   // Figma: footer section — common to both variants
@@ -172,18 +168,16 @@ const styles = StyleSheet.create({
   },
   // Figma 243-4062: "NEW PAYMENT" in #CBCBCB
   footerLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   // Figma 243-4052: "+ NEW PAYMENT" in #FF9A6D
   footerLabelAddMore: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#FF9A6D', // Figma: #FF9A6D (brand[500])
   },
 });

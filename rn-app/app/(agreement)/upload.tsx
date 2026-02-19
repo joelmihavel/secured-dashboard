@@ -236,11 +236,14 @@ interface SelectedDocument {
   size?: number;
 }
 
-// State configuration from Figma text-content.json for each screen
-// 1-30358 (manual_review): borderColor #FFB020, hint text outside card
+// State configuration from Figma blueprint-verified values for each screen
+// Verified against: 1-30090 (success), 1-30001 (uploading), 1-30178 (expired),
+// 1-30268 (file too large), 1-30358 (manual review)
 const STATE_CONFIG = {
   idle: {
-    borderColor: FIGMA.colors.cardBorder,
+    borderColor: FIGMA.colors.cardBorder, // #202020
+    borderWidth: 0, // Figma: no strokes on idle card
+    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
     buttonTitle: 'Proceed',
@@ -251,6 +254,8 @@ const STATE_CONFIG = {
   },
   uploading: {
     borderColor: FIGMA.colors.cardBorder,
+    borderWidth: 0, // Figma: no strokes on uploading card
+    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke,
 
     buttonTitle: 'Proceed',
@@ -260,9 +265,11 @@ const STATE_CONFIG = {
     fileNameColor: FIGMA.colors.fileName,
   },
   success: {
-    // From Figma 1:30090 - no colored border, just default card
+    // From Figma 1:30090 - no border stroke, card has empty strokes array
     borderColor: FIGMA.colors.cardBorder,
-    foldCornerStroke: FIGMA.colors.foldCornerStroke,
+    borderWidth: 0, // Figma 1:30090: strokes: [] (no border)
+    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A (Figma 1:30090 Vector 44)
+    foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
     buttonTitle: 'Proceed',
     buttonEnabled: true,
@@ -271,7 +278,9 @@ const STATE_CONFIG = {
     fileNameColor: '#4D4D4D', // Figma 1:30090: dimmer filename color
   },
   error_expired: {
-    borderColor: FIGMA.colors.iconError,
+    borderColor: FIGMA.colors.iconError, // #E5484D
+    borderWidth: 1, // Figma 1:30178: stroke weight 1, align INSIDE
+    foldCornerFill: FIGMA.colors.cardBackground, // #202020 (Figma 1:30178 Vector 44 fill)
     foldCornerStroke: FIGMA.colors.iconError, // #E5484D - matches card border
 
     buttonTitle: 'Upload Again',
@@ -283,6 +292,8 @@ const STATE_CONFIG = {
   },
   error_size: {
     borderColor: FIGMA.colors.iconError,
+    borderWidth: 1,
+    foldCornerFill: FIGMA.colors.cardBackground, // #202020
     foldCornerStroke: FIGMA.colors.iconError,
 
     buttonTitle: 'Upload Again',
@@ -294,6 +305,8 @@ const STATE_CONFIG = {
   },
   manual_review: {
     borderColor: FIGMA.colors.iconWarning, // #FFB020
+    borderWidth: 1,
+    foldCornerFill: FIGMA.colors.cardBackground, // #202020
     foldCornerStroke: FIGMA.colors.iconWarning, // #FFB020 - matches card border
 
     buttonTitle: 'Get Notified',
@@ -342,45 +355,49 @@ function UploadIcon({ size = 24 }: { size?: number }) {
 }
 
 // Trash Icon - for file selected states (delete action)
-// From Figma Outline Icon Library - standard 24x24 trash icon
-function TrashIcon({ size = 24 }: { size?: number }) {
+// From Figma Outline Icon Library (component 1:1804, variant "trash")
+// Figma 1-30090/30178/30268/30358: all use #E5484D stroke (icons/error/default variable)
+// 16x16 icon with 1.33px stroke weight at that size
+function TrashIcon({ size = 16, color = FIGMA.colors.iconError }: { size?: number; color?: string }) {
+  // Figma uses 1.33px stroke at 16px size (scales proportionally from 2px at 24px)
+  const strokeW = size === 16 ? 1.333 : 2;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Lid */}
       <Path
         d="M4 7H20"
-        stroke={FIGMA.colors.uploadIcon}
-        strokeWidth={2}
+        stroke={color}
+        strokeWidth={strokeW}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       {/* Handle */}
       <Path
         d="M10 3H14"
-        stroke={FIGMA.colors.uploadIcon}
-        strokeWidth={2}
+        stroke={color}
+        strokeWidth={strokeW}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       {/* Bin body */}
       <Path
         d="M6 7V19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19V7"
-        stroke={FIGMA.colors.uploadIcon}
-        strokeWidth={2}
+        stroke={color}
+        strokeWidth={strokeW}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       {/* Lines inside */}
       <Path
         d="M10 11V17"
-        stroke={FIGMA.colors.uploadIcon}
-        strokeWidth={2}
+        stroke={color}
+        strokeWidth={strokeW}
         strokeLinecap="round"
       />
       <Path
         d="M14 11V17"
-        stroke={FIGMA.colors.uploadIcon}
-        strokeWidth={2}
+        stroke={color}
+        strokeWidth={strokeW}
         strokeLinecap="round"
       />
     </Svg>
@@ -413,8 +430,19 @@ function PaperclipIcon() {
 // Fold Corner Effect - composed of Rectangle 120 + Vector 44
 // The card is a COMPLETE rectangle - fold effect is created by:
 // 1. Rectangle 120 (#131313, same as background) covers the card corner
-// 2. Vector 44 (#1A1A1A fold shape) creates the visual fold
-function FoldCorner() {
+// 2. Vector 44 fold shape creates the visual fold
+//
+// Figma state differences:
+// - idle/uploading/success (1-30090): fill #1A1A1A, stroke #202020, curved path
+// - error (1-30178/30268): fill #202020, stroke #E5484D, simple triangle path
+// - warning (1-30358): fill #202020, stroke #FFB020, simple triangle path
+function FoldCorner({ fill, stroke }: { fill: string; stroke: string }) {
+  // Use curved path when fill is default (#1A1A1A), simple triangle for error/warning
+  const isDefault = fill === FIGMA.colors.foldCornerFill;
+  const svgPath = isDefault
+    ? 'M65.6924 59.5H12C5.64873 59.5 0.5 54.3513 0.5 48V1.11816L65.6924 59.5Z'
+    : 'M66.5 59.5H0.5V0.705078L66.5 59.5Z'; // Simple triangle for error/warning states
+
   return (
     <View style={styles.foldCornerContainer}>
       {/* Rectangle 120 (node 1:29997) - background-colored cutout */}
@@ -426,9 +454,9 @@ function FoldCorner() {
       <View style={styles.foldCornerShape}>
         <Svg width={FIGMA.foldCorner.shape.width} height={FIGMA.foldCorner.shape.height} viewBox="0 0 67 60" fill="none">
           <Path
-            d="M65.6924 59.5H12C5.64873 59.5 0.5 54.3513 0.5 48V1.11816L65.6924 59.5Z"
-            fill={FIGMA.colors.foldCornerFill}
-            stroke={FIGMA.colors.foldCornerStroke}
+            d={svgPath}
+            fill={fill}
+            stroke={stroke}
           />
         </Svg>
       </View>
@@ -972,48 +1000,48 @@ export default function UploadScreen() {
                 entering={FadeIn.duration(FIGMA.animation.duration)}
                 style={[
                   styles.uploadCard,
-                  {
-                    borderWidth: 1,
+                  config.borderWidth > 0 && {
+                    borderWidth: config.borderWidth,
                     borderColor: config.borderColor,
                   },
                 ]}
               >
                 {/* Fold Corner - positioned at top-right of card */}
-                <FoldCorner />
+                <FoldCorner fill={config.foldCornerFill} stroke={config.foldCornerStroke} />
 
                 {/* Paperclip - positioned at top-left of card */}
                 <PaperclipIcon />
 
                 {/* Content container - differs by state */}
-                <View style={styles.cardContent}>
-                  {uploadState === 'uploading' ? (
-                    /* Uploading: Figma 1:30001 - only centered % + progress bar */
-                    <>
-                      <Text style={styles.progressPercent}>{uploadProgress}%</Text>
-                      <ProgressBar progress={uploadProgress} />
-                    </>
-                  ) : (
-                    /* File selected: Figma 1:30090/30268/30178/30358 - small trash icon + filename */
-                    <>
-                      <TouchableOpacity
-                        onPress={handleRemoveDocument}
-                        activeOpacity={0.7}
-                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                      >
-                        <TrashIcon size={16} />
-                      </TouchableOpacity>
-                      <Text
-                        style={[styles.fileName, { color: config.fileNameColor }]}
-                        numberOfLines={2}
-                      >
-                        {document.name}
-                      </Text>
-                    </>
-                  )}
-                </View>
+                {uploadState === 'uploading' ? (
+                  /* Uploading: Figma 1:30001 - centered % + progress bar */
+                  <View style={styles.cardContentUploading}>
+                    <Text style={styles.progressPercent}>{uploadProgress}%</Text>
+                    <ProgressBar progress={uploadProgress} />
+                  </View>
+                ) : (
+                  /* File selected: Figma Frame 130 (1:30173) - 167x68, gap 12 */
+                  /* Trash icon 16x16 (#E5484D) + filename text 167x40 */
+                  <View style={styles.cardContentFile}>
+                    <TouchableOpacity
+                      onPress={handleRemoveDocument}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    >
+                      <TrashIcon size={16} />
+                    </TouchableOpacity>
+                    <Text
+                      style={[styles.fileName, { color: config.fileNameColor }]}
+                      numberOfLines={2}
+                    >
+                      {document.name}
+                    </Text>
+                  </View>
+                )}
               </Animated.View>
 
               {/* Error/Warning message - OUTSIDE the card per Figma */}
+              {/* Figma: Frame 2095586377 wraps card + error text, gap: 32, width: 297 (FILL) */}
               {/* errorOverrideMessage takes priority (dynamic backend errors) */}
               {(errorOverrideMessage || config.errorMessage) && (
                 <Text
@@ -1033,7 +1061,7 @@ export default function UploadScreen() {
               style={styles.uploadCard}
             >
               {/* Fold Corner - positioned at top-right of card */}
-              <FoldCorner />
+              <FoldCorner fill={FIGMA.colors.foldCornerFill} stroke={FIGMA.colors.foldCornerStroke} />
 
               {/* Paperclip - positioned at top-left of card */}
               <PaperclipIcon />
@@ -1128,24 +1156,44 @@ const styles = StyleSheet.create({
   },
 
   // Upload card - Frame 1686557325 (node 1:29992)
-  // Extraction: 297x160, cornerRadius 12, padding 24/16/24/16
-  // AI Analysis: "CRITICAL: Must have overflow='visible' for paperclip and fold corner"
+  // Figma: 297x160, cornerRadius 12, padding 24/16/24/16
+  // Layout: VERTICAL, justifyContent CENTER, alignItems CENTER, gap 16
+  // CRITICAL: overflow visible for paperclip and fold corner to extend outside card
   uploadCard: {
     backgroundColor: FIGMA.colors.cardBackground, // #202020
     borderRadius: FIGMA.card.borderRadius,        // 12
     width: FIGMA.card.width,                      // 297 (explicit width)
-    minHeight: FIGMA.card.height,                 // 160 (min to allow content expansion)
+    height: FIGMA.card.height,                    // 160 (FIXED, not min - Figma sizingV: FIXED)
     paddingTop: FIGMA.card.paddingTop,            // 24
     paddingBottom: FIGMA.card.paddingBottom,      // 24
     paddingHorizontal: FIGMA.card.paddingHorizontal, // 16
+    justifyContent: 'center',                     // Figma: justifyContent center
+    alignItems: 'center',                         // Figma: alignItems center
     position: 'relative',
     overflow: 'visible', // CRITICAL for paperclip and fold corner
   },
 
-  // Card content - vertical layout with centered items
+  // Card content - idle state: upload icon + hint text
+  // Figma: VERTICAL, CENTER items, gap 16
   cardContent: {
     alignItems: 'center',
-    gap: FIGMA.card.gap,
+    gap: FIGMA.card.gap, // 16
+  },
+
+  // Card content - file selected state: Figma Frame 130 (node 1:30173)
+  // 167x68, VERTICAL, CENTER items/justify, gap 12
+  cardContentFile: {
+    width: 167,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12, // Figma Frame 130: itemSpacing 12
+  },
+
+  // Card content - uploading state: centered % + progress bar
+  // Figma: card justifyContent CENTER handles vertical centering
+  cardContentUploading: {
+    alignItems: 'center',
+    gap: FIGMA.card.gap, // 16
   },
 
   // Fold corner container - positioned at top-right of card
@@ -1214,13 +1262,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // File name - Figma: centered, bodySmMedium
+  // File name - Figma node 1:30176: 167x40, bodySmMedium (12/20, Medium)
   // Color varies by state (set inline)
+  // Parent Frame 130 constrains width to 167px via cardContentFile style
   fileName: {
     ...FIGMA.typography.fileName, // bodySmMedium design token
     color: FIGMA.colors.fileName,
     textAlign: 'center' as const,
-    maxWidth: 167, // Figma: 167px width for filename text
   },
 
   // Progress percent - Figma 1:30001: centered "30%" text
@@ -1245,13 +1293,14 @@ const styles = StyleSheet.create({
     borderRadius: FIGMA.progressBar.borderRadius,
   },
 
-  // Error text OUTSIDE card - Figma: centered, bodyMd2 (14/20), #E5484D
-  // Node 1:30356 (error_size) / 1:30266 (expired) / 1:30446 (manual_review)
+  // Error text OUTSIDE card - Figma node 1:30266 (expired): 297x40, FILL width
+  // Typography: 14/20 Regular (bodyMd2), #E5484D, centered
+  // layoutSizingHorizontal: FILL (stretches to parent 297px width)
   errorTextOutside: {
     ...typography.bodyMd2,
     color: FIGMA.colors.iconError,
     textAlign: 'center' as const,
-    maxWidth: 255, // Figma: 255px width constraint
+    width: FIGMA.layout.contentWidth, // 297 - Figma: FILL parent width
   },
 
   warningTextOutside: {

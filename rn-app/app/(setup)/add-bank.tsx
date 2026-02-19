@@ -1,16 +1,29 @@
 /**
  * Add Bank Screen
  * Figma Reference: 1-33737 (onboarding / Add Bank Details)
- * Figma ID for Parity: 1-31485
- * Style tokens mapped from Figma extraction
  *
- * Pixel Parity Fixes Applied:
- * - Text alignment fixes for "edit" links (textAlign: 'right')
- * - Explicit textAlign for all text elements for consistency
+ * EXACT Figma Blueprint Values (1-33737-blueprint.json):
  *
- * Note: Many items in pixel-feedback reports (Total payable rent, Pay Now,
- * Google Pay, PayTM, PhonePe, etc.) are from a payment bottom sheet overlay
- * and are NOT part of this screen file.
+ * Layout hierarchy:
+ * - Frame 2095586335: gap 64 (statusbar to content)
+ * - Frame 1686557268: padding 48 L/R, gap 40, alignItems center
+ * - Frame 1686557318: width 297, gap 48 (main sections)
+ *
+ * Title: "Add your Landlord's  Bank Details"
+ * - Spans [0,20] = #A9A9A9 gray ("Add your Landlord's ")
+ * - Spans [21,33] = #FF9A6D accent ("Bank Details")
+ * - fontSize 48, lineHeight 64, letterSpacing -2, PlusJakartaSans-Regular
+ *
+ * Form inputs: 4 fields (Account Holder Name, Account Number, IFSC, PAN CARD)
+ * - Label: 12px/20px PlusJakartaSans-Medium #A9A9A9
+ * - Hint: 14px/20px PlusJakartaSans-Regular #878787 textAlign right
+ * - Input: 20px/32px PlusJakartaSans-Regular placeholder #444444
+ * - Form gap: 16px (from Frame 1686557317 layout)
+ *
+ * Button: "Proceed" 16px/24px PlusJakartaSans-Medium
+ * - Disabled: bg #202020, text #444444
+ *
+ * Footer: 12px/20px PlusJakartaSans-Regular #A9A9A9
  */
 
 import React, { useCallback, useState } from 'react';
@@ -27,116 +40,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useVerifyBank, useDashboard, validateAccountNumber, validateIfscCode } from '@/src/hooks';
 import type { BankVerificationResponse, SetupError } from '@/src/types/setup';
-import { colors } from '@/src/theme/colors';
 
-// Figma exact values from 1-33737 extraction mapped to design tokens
-const FIGMA = {
-  colors: {
-    // Background: #131313
-    background: '#131313',
-    // Card/surface: #202020
-    card: '#202020',
-    // Title: #FFFFFF
-    title: '#FFFFFF',
-    // Accent (Bank Details text): #CC7B57 per extraction, but brand orange for visual appeal
-    accent: colors.brand[500],
-    // Progress track: #4D4D4D
-    progressTrack: '#4D4D4D',
-    // Progress fill: #CC7B57
-    progressFill: '#CC7B57',
-    // Label: #A9A9A9
-    label: '#A9A9A9',
-    // Edit link (Hint text): #878787
-    editLink: '#878787',
-    // Input border: #4D4D4D
-    inputBorder: '#4D4D4D',
-    // Input text: #FFFFFF
-    inputText: '#FFFFFF',
-    // Placeholder: #444444
-    placeholder: '#444444',
-    // Button background (disabled): #202020
-    buttonBg: '#202020',
-    // Button text (disabled): #444444
-    buttonText: '#444444',
-    // Footer: #A9A9A9
-    footer: '#A9A9A9',
-    // Error: #E5484D
-    error: '#E5484D',
-    // Button active background (form valid): brand orange
-    buttonActiveBg: colors.brand[500],
-    // Button active text: dark for contrast
-    buttonActiveText: '#131313',
-  },
-  // Typography from Figma extraction
-  typography: {
-    // Title: 48_400
-    title: {
-      fontSize: 48,
-      fontWeight: '400',
-      lineHeight: 64,
-      letterSpacing: -2,
-    },
-    // Label: 12_500
-    label: {
-      fontSize: 12,
-      fontWeight: '500',
-      lineHeight: 20,
-      letterSpacing: 0,
-    },
-    // Edit link: 14_400
-    editLink: {
-      fontSize: 14,
-      fontWeight: '400',
-      lineHeight: 20,
-      letterSpacing: 0,
-    },
-    // Input placeholder: 20_400
-    input: {
-      fontSize: 20,
-      fontWeight: '400',
-      lineHeight: 32,
-      letterSpacing: 0,
-    },
-    // Button text: 16_500
-    button: {
-      fontSize: 16,
-      fontWeight: '500',
-      lineHeight: 24,
-      letterSpacing: 0,
-    },
-    // Footer: 12_400
-    footer: {
-      fontSize: 12,
-      fontWeight: '400',
-      lineHeight: 20,
-      letterSpacing: 0,
-    },
-  },
-  // Layout from Figma extraction
-  layout: {
-    // Screen width: 393
-    screenWidth: 393,
-    // Content padding: 48 (x=1479 relative to screen at x=1431)
-    contentPadding: 48,
-    // Input container: width 297, height 64, borderRadius 12
-    inputWidth: 297,
-    inputHeight: 64,
-    inputBorderRadius: 12,
-    // Button: width 297, height 56, borderRadius 12
-    buttonWidth: 297,
-    buttonHeight: 56,
-    buttonBorderRadius: 12,
-    // Progress bar: height 12, fill width 131
-    progressBarHeight: 12,
-    progressFillWidth: 131,
-    // Form section gap: 16
-    formGap: 16,
-    // Label row to input gap: 6
-    labelToInputGap: 6,
-  },
+// Figma exact color values from 1-33737 blueprint
+const FIGMA_COLORS = {
+  background: '#131313',
+  progressTrack: '#4D4D4D',
+  progressFill: '#CC7B57',
+  footer: '#A9A9A9',
+  white: '#FFFFFF',
 } as const;
 
 export default function AddBankScreen() {
@@ -222,10 +136,8 @@ export default function AddBankScreen() {
           setVerificationResult(data);
           if (data.verified) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            // Brief delay to show success state before navigating back
             setTimeout(() => router.back(), 1200);
           } else {
-            // Penny drop returned but name did not match
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             setApiError(
               data.message ||
@@ -248,13 +160,13 @@ export default function AddBankScreen() {
     panCard.length > 0;
 
   return (
-    <View style={[styles.container, { backgroundColor: FIGMA.colors.background }]}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          style={{ flex: 1 }}
+          style={styles.flex}
           contentContainerStyle={{
             paddingHorizontal: 48,
             paddingTop: insets.top + 16,
@@ -264,27 +176,19 @@ export default function AddBankScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Back button */}
-          <TouchableOpacity onPress={handleBack} style={{ marginBottom: 40 }}>
-            <Ionicons name="arrow-back" size={24} color={colors.white} />
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.white} />
           </TouchableOpacity>
 
-          {/* Title */}
-          <View style={{ marginBottom: 48 }}>
-            <ScreenTitle white="Add your Landlord's" accent="Bank Details" />
+          {/* Title - Figma: gray="Add your Landlord's " accent="Bank Details" */}
+          <View style={styles.titleContainer}>
+            <ScreenTitle gray="Add your Landlord's " accent="Bank Details" />
           </View>
 
-          {/* Progress Bar - Figma: height 12, track #4D4D4D, fill #CC7B57 width 131 */}
-          <View style={{ marginBottom: 48, width: '100%' }}>
-            <View style={{
-              height: 12,
-              backgroundColor: FIGMA.colors.progressTrack,
-              width: '100%',
-            }}>
-              <View style={{
-                width: 131,
-                height: '100%',
-                backgroundColor: FIGMA.colors.progressFill,
-              }} />
+          {/* Progress Bar - Figma: height 12, track #4D4D4D, fill #CC7B57 width ~44% (step 2/3) */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressTrack}>
+              <View style={styles.progressFill} />
             </View>
           </View>
 
@@ -306,7 +210,7 @@ export default function AddBankScreen() {
           )}
 
           {/* Form - Figma: gap 16 between fields */}
-          <View style={{ gap: 16 }}>
+          <View style={styles.formContainer}>
             <TextInput
               label="Account Holder Name"
               value={accountHolderName}
@@ -350,7 +254,10 @@ export default function AddBankScreen() {
               disabled={verifyBank.isPending}
               autoCapitalize="characters"
             />
+          </View>
 
+          {/* Button + Footer section - Figma: gap 16 */}
+          <View style={styles.buttonSection}>
             <PrimaryButton
               title="Proceed"
               onPress={handleSubmit}
@@ -372,17 +279,54 @@ export default function AddBankScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: FIGMA_COLORS.background,
   },
-  // Form fields and button use shared TextInput/PrimaryButton — styles handled internally
+  flex: {
+    flex: 1,
+  },
+  // Back button - Figma: back arrow icon
+  backButton: {
+    marginBottom: 40,
+  },
+  // Title container - Figma: sectionGap 48 below title
+  titleContainer: {
+    marginBottom: 48,
+  },
+  // Progress bar - Figma: marginBottom 48 (sectionGap)
+  progressContainer: {
+    marginBottom: 48,
+    width: '100%',
+  },
+  // Figma: height 12, #4D4D4D track
+  progressTrack: {
+    height: 12,
+    backgroundColor: FIGMA_COLORS.progressTrack,
+    width: '100%',
+  },
+  // Figma: fill width 131px (~44% of 297px content, step 2 of 3)
+  progressFill: {
+    width: 131,
+    height: '100%',
+    backgroundColor: FIGMA_COLORS.progressFill,
+  },
+  // Form container - Figma: gap 16
+  formContainer: {
+    gap: 16,
+  },
+  // Button + footer section - Figma: gap 16
+  buttonSection: {
+    gap: 16,
+    marginTop: 16,
+  },
+  // Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9
   footerText: {
-    // Figma: fontSize 12, fontWeight 400, lineHeight 20, color #A9A9A9
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: colors.neutral[500],        // #A9A9A9
-    marginTop: 16,
+    color: FIGMA_COLORS.footer,
     textAlign: 'left',
   },
+  // Error banner
   errorBanner: {
     backgroundColor: 'rgba(229, 72, 77, 0.12)',
     borderWidth: 1,
@@ -395,9 +339,10 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 13,
     lineHeight: 18,
-    color: colors.error.radix,          // #E5484D
+    color: '#E5484D',
     textAlign: 'left' as const,
   },
+  // Success banner
   successBanner: {
     backgroundColor: 'rgba(70, 167, 88, 0.12)',
     borderWidth: 1,
@@ -410,7 +355,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 13,
     lineHeight: 18,
-    color: colors.success.dark,         // #27803B (closest token)
+    color: '#46A758',
     textAlign: 'left' as const,
   },
 });

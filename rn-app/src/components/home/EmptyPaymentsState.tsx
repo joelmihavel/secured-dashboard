@@ -46,6 +46,7 @@ function EmptyPaymentsStateComponent({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    alignSelf: 'stretch', // Ensure full width in centered parent
     paddingVertical: 48, // Figma: 48px vertical padding
     paddingHorizontal: 32, // Figma: 32px horizontal padding
     gap: 16, // Figma: 16px gap between avatar and text
@@ -72,17 +73,15 @@ const styles = StyleSheet.create({
     gap: 8, // Figma: 8px gap between title and description
   },
   title: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
     color: '#FFFFFF', // Figma: #FFFFFF (white)
     textAlign: 'center', // Figma: textAlignHorizontal CENTER
   },
   description: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 12, // Figma: fontSize 12
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeight 20
     color: '#878787', // Figma: #878787 (neutral[600])
     textAlign: 'center', // Figma: textAlignHorizontal CENTER

@@ -3,12 +3,23 @@
  *
  * Figma Reference: 41-11313 (Waitlist Screen -- Accepted)
  *
- * Celebration screen when user gets off waitlist.
- * Shows success state with timeline completion and "Step Inside" CTA.
+ * Structure (from blueprint):
+ * - 41:11313 root (393x1333, #131313)
+ *   - 237:2758 dotted pattern (image 149, 8% opacity)
+ *   - 41:11314 background shape (481x405, gradient overlay)
+ *   - 41:11317 main frame (gap 64)
+ *     - 41:11318 status bar (53px)
+ *     - 41:11319 content container (gap 48, paddingH 40, alignItems center)
+ *       - 41:11320 inner content (313w, gap 40)
+ *         - 41:11321 header section (gap 48): logo + text block
+ *         - 41:11327 timeline card (#202020, r12, p24/16)
+ *         - 160:3027 benefits card
+ *         - 41:11372 button wrapper (gap 16)
+ *   - 41:11375 bottom sheet section (separate)
  */
 
 import React, { useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Text as RNText } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -28,97 +39,72 @@ import {
   PrimaryButton,
   ApplicationTimeline,
   BenefitsCard,
+  DottedPattern,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
-import { spacing, fontFamily } from '@/src/theme';
+import { colors } from '@/src/theme/colors';
+import { typography } from '@/src/theme/typography';
+import { spacing, radius } from '@/src/theme';
 import type { TimelineItemData } from '@/src/components/waitlist/ApplicationTimeline';
 
 // ============================================
-// CONSTANTS - EXACT FIGMA VALUES (41-11313)
+// FIGMA EXTRACTED CONSTANTS (41-11313)
+// All values from blueprint, no fontWeight - use fontFamily per builder rules
 // ============================================
 
 const FIGMA = {
-  // Colors from analysis
   colors: {
-    screenBackground: '#131313',    // black.700
-    cardBackground: '#202020',      // black.500
-    cardBackgroundSecondary: '#1A1A1A', // black.600
-    textPrimary: '#FFFFFF',         // white
-    textSecondary: '#A6A6A6',       // black.200
-    textMuted: '#878787',           // neutral.600
-    textValue: '#CBCBCB',           // neutral.300
-    textAccent: '#FF9A6D',          // brand.500
-    divider: '#4D4D4D',             // black.400
-    benefitIcon: '#A9A9A9',         // neutral.500
-    buttonBorder: '#FF9A6D',        // brand.500
-    buttonShadow: '#995C41',        // brand shadow
-    timelineComplete: '#70BF73',    // success.default
-    timelineConnector: '#FFAE8A',   // brand.400
+    screenBackground: colors.black[700],      // #131313
+    cardBackground: colors.black[500],         // #202020
+    textPrimary: colors.white,                 // #FFFFFF
+    textSecondary: colors.black[200],          // #A6A6A6
+    textGray: colors.neutral[500],             // #A9A9A9
+    textAccent: colors.brand[500],             // #FF9A6D
+    divider: colors.black[400],                // #4D4D4D
   },
-  // Typography from analysis
+
   typography: {
-    headline: {
-      fontSize: 48,
-      lineHeight: 64,
-      letterSpacing: -2,
-      fontWeight: '400' as const,
-    },
-    subtitle: {
-      fontSize: 14,
-      lineHeight: 20,
-      fontWeight: '400' as const,
-    },
-    timelineLabel: {
-      fontSize: 12,
-      lineHeight: 20,
-      fontWeight: '400' as const,
-    },
-    timelineValue: {
-      fontSize: 14,
-      lineHeight: 20,
-      fontWeight: '400' as const,
-    },
-    benefitTitle: {
-      fontSize: 28,
-      lineHeight: 40,
-      letterSpacing: -1,
-      fontWeight: '400' as const,
-    },
-    benefitItem: {
-      fontSize: 12,
-      lineHeight: 20,
-      fontWeight: '400' as const,
-    },
-    buttonText: {
-      fontSize: 16,
-      lineHeight: 24,
-      fontWeight: '500' as const,
-    },
+    // Title: fontSize 48, lineHeight 64, letterSpacing -2
+    // fontWeight 400 -> PlusJakartaSans-Regular
+    title: typography.h1,
+
+    // Subtitle: fontSize 14, lineHeight 20
+    // fontWeight 400 -> PlusJakartaSans-Regular
+    subtitle: typography.bodyMd2,
   },
-  // Layout dimensions
+
   layout: {
-    screenPadding: 40,
-    cardRadius: 12,
-    buttonRadius: 8,
-    timelineCardPadding: { top: 24, right: 16, bottom: 24, left: 16 },
-    timelineCardGap: 24,
-    benefitsCardPadding: { top: 32, right: 24, bottom: 32, left: 24 },
-    buttonHeight: 56,
-    buttonPadding: 16,
-    dividerWidth: 24,
-    dividerHeight: 2,
-    timelineConnectorHeight: 47,
-    timelineDotSize: 12,
-    backgroundShapeHeight: 405,
+    // Content padding (node 41:11319)
+    containerPadding: spacing.xxl, // 40
+
+    // Content width (node 41:11320)
+    contentWidth: 313,
+
+    // Gap between all sections in 41:11320
+    contentGap: spacing.xxl, // 40
+
+    // Header gap (node 41:11321)
+    headerGap: spacing.xxxl, // 48
+
+    // Text block gap (node 41:11324)
+    textGap: spacing.md, // 16
   },
-  // Shadows
-  shadows: {
-    button: {
-      shadowColor: '#995C41',
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 12,
-      shadowOpacity: 1,
-    },
+
+  card: {
+    borderRadius: radius.md, // 12
+    paddingVertical: spacing.lg, // 24
+    paddingHorizontal: spacing.md, // 16
+  },
+
+  divider: {
+    width: 24,
+    height: 2,
+    borderRadius: 200,
+  },
+
+  animation: {
+    duration: 400,
+    stagger: 100,
   },
 } as const;
 
@@ -168,18 +154,14 @@ export default function WaitlistApprovedScreen() {
 
   // Trigger celebration on mount
   useEffect(() => {
-    // Play haptic celebration
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Animate header
     headerScale.value = withSpring(1, { damping: 12, stiffness: 100 });
-    headerOpacity.value = withTiming(1, { duration: 400 });
+    headerOpacity.value = withTiming(1, { duration: FIGMA.animation.duration });
 
-    // Animate timeline with delay
     timelineTranslate.value = withDelay(200, withSpring(0, { damping: 15 }));
-    timelineOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
+    timelineOpacity.value = withDelay(200, withTiming(1, { duration: FIGMA.animation.duration }));
 
-    // Play confetti animation
     setTimeout(() => {
       confettiRef.current?.play();
     }, 300);
@@ -202,7 +184,10 @@ export default function WaitlistApprovedScreen() {
   }, [router]);
 
   return (
-    <View style={[styles.container, { backgroundColor: FIGMA.colors.screenBackground }]}>
+    <View style={styles.screen}>
+      {/* Background Pattern + Shape (nodes 237:2758, 41:11314) */}
+      <DottedPattern backgroundShape="default" />
+
       {/* Confetti Animation Overlay */}
       {showConfetti && (
         <LottieView
@@ -218,69 +203,92 @@ export default function WaitlistApprovedScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+          {
+            paddingTop: insets.top + spacing.huge, // matches Figma status bar + gap
+            paddingBottom: insets.bottom + spacing.xl,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Background gradient placeholder */}
-        <View style={styles.backgroundGradient} />
+        {/* All content - Frame 1686557318 (node 41:11320) */}
+        {/* Single wrapper with gap 40 matching Figma structure */}
+        <View style={styles.contentWrapper}>
+          {/* Header Section - Frame 2095586325 (node 41:11321) */}
+          {/* gap 48 between logo and text block */}
+          <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
+            {/* Logo - Frame 1686557264 (node 41:11322) */}
+            <View style={styles.logoContainer}>
+              <Logo size={38} color={FIGMA.colors.textPrimary} />
+            </View>
 
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Logo size={40} color={FIGMA.colors.textPrimary} />
+            {/* Text Block - node 41:11324, gap 16 */}
+            <View style={styles.textBlock}>
+              {/* Title: "{name}," in gray, "you're all set." in orange */}
+              {/* Node 41:11325: fontSize 48, lineHeight 64, letterSpacing -2 */}
+              {/* Spans: 0-17 #A9A9A9, 19+ #FF9A6D */}
+              <Text style={styles.titleBase}>
+                <RNText style={styles.titleGray}>{displayName},</RNText>
+                {'\n'}
+                <RNText style={styles.titleAccent}>you're all set.</RNText>
+              </Text>
+
+              {/* Subtitle - node 41:11326 */}
+              {/* fontSize 14, lineHeight 20, color #A6A6A6 */}
+              <Text style={styles.subtitle}>
+                Welcome to the right side of renting.
+              </Text>
+            </View>
+          </Animated.View>
+
+          {/* Timeline Card - Frame 2095586388 (node 41:11327) */}
+          {/* #202020, borderRadius 12, padding 24/16, gap 24 */}
+          <Animated.View style={[styles.timelineCard, timelineAnimatedStyle]}>
+            <ApplicationTimeline
+              items={timelineItems}
+              testID="approved-timeline"
+            />
+          </Animated.View>
+
+          {/* Benefits Card - node 160:3027 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+          >
+            <BenefitsCard
+              variant="benefits"
+              testID="approved-benefits"
+            />
+          </Animated.View>
+
+          {/* Button Section - Frame 2095586333 (node 41:11372) */}
+          {/* gap 16 between children, contains button instance */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
+            style={styles.buttonWrapper}
+          >
+            <View style={styles.buttonDivider} />
+            <PrimaryButton
+              title="Step Inside"
+              onPress={handleStepInside}
+              testID="step-inside-button"
+            />
+          </Animated.View>
         </View>
-
-        {/* Header Text */}
-        <Animated.View style={[styles.headerSection, headerAnimatedStyle]}>
-          <Text style={styles.headlineText}>
-            <Text inherit style={styles.headlineWhite}>{displayName},{'\n'}</Text>
-            <Text inherit style={styles.headlineAccent}>you're all set.</Text>
-          </Text>
-          <Text style={styles.subtitleText}>
-            Welcome to the right side of renting.
-          </Text>
-        </Animated.View>
-
-        {/* Status Timeline Card - All Complete with green dots */}
-        <Animated.View style={[styles.timelineSection, timelineAnimatedStyle]}>
-          <ApplicationTimeline
-            items={timelineItems}
-            testID="approved-timeline"
-          />
-        </Animated.View>
-
-        {/* Benefits Section */}
-        <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.benefitsSection}>
-          <BenefitsCard
-            variant="benefits"
-            testID="approved-benefits"
-          />
-        </Animated.View>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* CTA Button */}
-        <Animated.View entering={FadeInDown.delay(500).duration(400)} style={styles.ctaContainer}>
-          <PrimaryButton
-            title="Step Inside"
-            onPress={handleStepInside}
-            testID="step-inside-button"
-          />
-        </Animated.View>
       </ScrollView>
     </View>
   );
 }
 
 // ============================================
-// STYLES - PIXEL PERFECT FIGMA VALUES
+// STYLES - Exact Figma values, no fontWeight
 // ============================================
 
 const styles = StyleSheet.create({
-  container: {
+  // Root screen - node 41:11313
+  screen: {
     flex: 1,
+    backgroundColor: FIGMA.colors.screenBackground,
   },
+
   confetti: {
     position: 'absolute',
     top: 0,
@@ -290,74 +298,101 @@ const styles = StyleSheet.create({
     zIndex: 100,
     pointerEvents: 'none',
   },
+
   scrollView: {
     flex: 1,
   },
+
+  // Container - Frame 1686557268 (node 41:11319)
+  // Figma: paddingH 40, alignItems center
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: FIGMA.layout.screenPadding, // 40px
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: FIGMA.layout.backgroundShapeHeight, // 405px
-    opacity: 0.5,
+    paddingHorizontal: FIGMA.layout.containerPadding,
   },
 
-  // Logo
-  logoContainer: {
-    alignItems: 'flex-start',
-    marginBottom: 24,
-  },
-
-  // Header - Figma: 48/64/-2
-  headerSection: {
-    marginBottom: 24,
-  },
-  headlineText: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.headline.fontSize, // 48
-    lineHeight: FIGMA.typography.headline.lineHeight, // 64
-    letterSpacing: FIGMA.typography.headline.letterSpacing, // -2
-  },
-  headlineWhite: {
-    color: FIGMA.colors.textPrimary, // #FFFFFF
-  },
-  headlineAccent: {
-    color: FIGMA.colors.textAccent, // #FF9A6D
-  },
-  subtitleText: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.subtitle.fontSize, // 14
-    lineHeight: FIGMA.typography.subtitle.lineHeight, // 20
-    color: FIGMA.colors.textSecondary, // #A6A6A6
-    marginTop: 16,
-  },
-
-  // Timeline
-  timelineSection: {
-    marginBottom: 24,
-  },
-
-  // Benefits Section
-  benefitsSection: {
-    marginBottom: 24,
-  },
-
-  // Divider
-  divider: {
-    width: FIGMA.layout.dividerWidth, // 24
-    height: FIGMA.layout.dividerHeight, // 2
-    backgroundColor: FIGMA.colors.divider, // #4D4D4D
-    borderRadius: 200,
+  // Content wrapper - Frame 1686557318 (node 41:11320)
+  // Figma: 313w, column, gap 40
+  contentWrapper: {
+    width: FIGMA.layout.contentWidth,
     alignSelf: 'center',
-    marginBottom: 24,
+    gap: FIGMA.layout.contentGap,
   },
 
-  // CTA
-  ctaContainer: {
-    marginTop: 'auto',
+  // Header section - Frame 2095586325 (node 41:11321)
+  // Figma: 313w, column, gap 48
+  headerSection: {
+    width: FIGMA.layout.contentWidth,
+    gap: FIGMA.layout.headerGap,
+  },
+
+  // Logo container - Frame 1686557264 (node 41:11322)
+  logoContainer: {
+    width: 32,
+    height: 38,
+  },
+
+  // Text block - node 41:11324, gap 16
+  textBlock: {
+    width: FIGMA.layout.contentWidth,
+    gap: FIGMA.layout.textGap,
+  },
+
+  // Title base - node 41:11325
+  // fontSize 48, lineHeight 64, letterSpacing -2
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
+  titleBase: {
+    fontFamily: FIGMA.typography.title.fontFamily,
+    fontSize: FIGMA.typography.title.fontSize,
+    lineHeight: FIGMA.typography.title.lineHeight,
+    letterSpacing: FIGMA.typography.title.letterSpacing,
+  },
+
+  // Title gray part - "{name},"
+  // Spans 0-17: color #A9A9A9
+  titleGray: {
+    color: FIGMA.colors.textGray,
+  },
+
+  // Title accent part - "you're all set."
+  // Spans 19+: color #FF9A6D
+  titleAccent: {
+    color: FIGMA.colors.textAccent,
+  },
+
+  // Subtitle - node 41:11326
+  // fontSize 14, lineHeight 20, color #A6A6A6
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
+  subtitle: {
+    fontFamily: FIGMA.typography.subtitle.fontFamily,
+    fontSize: FIGMA.typography.subtitle.fontSize,
+    lineHeight: FIGMA.typography.subtitle.lineHeight,
+    color: FIGMA.colors.textSecondary,
+  },
+
+  // Timeline card - Frame 2095586388 (node 41:11327)
+  // #202020, borderRadius 12, padding 24/16
+  timelineCard: {
+    backgroundColor: FIGMA.colors.cardBackground,
+    borderRadius: FIGMA.card.borderRadius,
+    paddingVertical: FIGMA.card.paddingVertical,
+    paddingHorizontal: FIGMA.card.paddingHorizontal,
+  },
+
+  // Button wrapper - Frame 2095586333 (node 41:11372)
+  // Figma: column, gap 16, alignItems flex-start, FILL width
+  // Contains divider (inside button component) + button
+  buttonWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    gap: spacing.xs, // 8px gap between divider and button per button component
+  },
+
+  // Divider inside button group
+  // Node I41:11373;137:37: 24x2, #4D4D4D, borderRadius 200
+  buttonDivider: {
+    width: FIGMA.divider.width,
+    height: FIGMA.divider.height,
+    backgroundColor: FIGMA.colors.divider,
+    borderRadius: FIGMA.divider.borderRadius,
   },
 });

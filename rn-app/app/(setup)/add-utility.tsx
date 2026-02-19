@@ -1,17 +1,31 @@
 /**
  * Add Utility / Verify Address Screen
- * Figma Reference: 1-31590 (Onboarding / Add BESCOM number)
+ * Figma Reference: 1-34343 (onboarding / Add BESCOM Number)
  *
- * PIXEL-PERFECT Figma Values from enhanced-extraction.json:
- * - Background: #131313 (colors.black[700])
- * - Container padding: 48px horizontal (Figma: paddingLeft=48, paddingRight=48)
- * - Main content gap: 48px (Figma: Frame 1686557318 itemSpacing: 48)
- * - Form inputs gap: 16px (Figma: Frame 90:2928 itemSpacing: 16)
- * - Title: "Verify your" (#A9A9A9 neutral.500) + "address" (#FF9A6D brand.500)
- * - Label: 12px, line-height 20px, #A9A9A9
- * - Input: 297px width, 64px height, border #4D4D4D, radius 12px
- * - Button disabled: #202020, text #444444
- * - Button active: #FF9A6D, text #000000
+ * EXACT Figma Blueprint Values (1-34343-blueprint.json):
+ *
+ * Layout hierarchy:
+ * - Frame 2095586335: gap 64 (statusbar to content)
+ * - Frame 1686557268: padding 48 L/R, gap 40, alignItems center
+ * - Frame 1686557318: width 297, gap 48 (main sections)
+ *
+ * Title: "Verify your address"
+ * - Spans [0,6] = #A9A9A9 gray ("Verify")
+ * - Spans [7,19] = #FF9A6D accent ("your address")
+ * - fontSize 48, lineHeight 64, letterSpacing -2, PlusJakartaSans-Regular
+ *
+ * Description: "Your electricity bill helps us verify your residence."
+ * - 12px/20px PlusJakartaSans-Regular #A9A9A9
+ *
+ * Input: "Enter BESCOM Account Number"
+ * - Label: 12px/20px PlusJakartaSans-Medium #A9A9A9
+ * - Hint: 14px/20px PlusJakartaSans-Regular #878787
+ * - Placeholder: 20px/32px PlusJakartaSans-Regular #444444
+ *
+ * Button: "Proceed" 16px/24px PlusJakartaSans-Medium disabled:#444444
+ * Skip: 14px/20px PlusJakartaSans-Medium #FFFFFF
+ *
+ * Progress: height 12, track #4D4D4D, fill ~88% #CC7B57
  */
 
 import React, { useCallback, useState } from 'react';
@@ -31,70 +45,24 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useVerifyUtility, useUtilityOperators, useDashboard, validateConsumerNumber } from '@/src/hooks';
 import type { UtilityOperator, SetupError } from '@/src/types/setup';
-import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
 
-// Figma exact values from 1-31590 enhanced-extraction.json
-const FIGMA = {
-  colors: {
-    // Background: colors.black[700] from _designTokens
-    background: '#131313',
-    // Title gray: colors.neutral[500] - matches sign-up heading pattern from Figma
-    titleGray: '#A9A9A9',
-    // Accent: brand.500 (r=1, g=0.6039, b=0.4274)
-    accent: '#FF9A6D',
-    // Description: colors.neutral[500]
-    description: '#A9A9A9',
-    // Progress track: colors.black[400]
-    progressTrack: '#4D4D4D',
-    // Progress fill: brand accent (slightly darker for progress)
-    progressFill: '#CC7B57',
-    // Label: colors.neutral[500]
-    label: '#A9A9A9',
-    // Edit link: colors.neutral[600]
-    editLink: '#878787',
-    // Input border default: colors.black[400]
-    inputBorder: '#4D4D4D',
-    // Input border error: Radix error red
-    inputBorderError: '#E5484D',
-    // Input text: colors.neutral[200]
-    inputText: '#DDDDDD',
-    // Placeholder: colors.neutral[800]
-    placeholder: '#444444',
-    // Button background disabled: colors.black[500]
-    buttonBg: '#202020',
-    // Button text disabled: colors.neutral[800]
-    buttonText: '#444444',
-    // Skip text: colors.white
-    skipText: '#FFFFFF',
-    // Active button background: brand.500
-    buttonBgActive: '#FF9A6D',
-    // Active button text: colors.black
-    buttonTextActive: '#000000',
-  },
-  // Figma layout dimensions from enhanced-extraction
-  dimensions: {
-    contentWidth: 297,       // Figma: main content width
-    containerPadding: 48,    // Figma: (393 - 297) / 2 = 48
-    inputHeight: 64,         // Figma: input field height
-    inputRadius: 12,         // Figma: input border radius
-    buttonHeight: 56,        // Figma: button height
-    buttonRadius: 12,        // Figma: button border radius
-    progressHeight: 12,      // Figma: progress bar height
-  },
-  // Figma spacing/gaps from enhanced-extraction itemSpacing values
-  gaps: {
-    mainStack: 48,           // Figma: Frame 1686557318 itemSpacing: 48
-    formInputs: 16,          // Figma: Frame 90:2928 itemSpacing: 16
-    labelToInput: 6,         // Figma: label to input gap
-    buttonSection: 16,       // Figma: button to skip gap
-  },
-  // Figma layout offset
-  layout: {
-    contentTopOffset: 48,    // Figma: 101px total - 53px safe area = 48px
-  },
+// Figma exact color values from 1-34343 blueprint
+const FIGMA_COLORS = {
+  background: '#131313',
+  description: '#A9A9A9',
+  progressTrack: '#4D4D4D',
+  progressFill: '#CC7B57',
+  inputBorder: '#4D4D4D',
+  inputBorderError: '#E5484D',
+  inputText: '#DDDDDD',
+  placeholder: '#444444',
+  editLink: '#878787',
+  skipText: '#FFFFFF',
+  accent: '#FF9A6D',
+  white: '#FFFFFF',
 } as const;
 
 export default function AddUtilityScreen() {
@@ -186,162 +154,155 @@ export default function AddUtilityScreen() {
   const operatorDisplayName = selectedOperator?.operatorName ?? 'Select Operator';
 
   return (
-    <View style={[styles.container, { backgroundColor: FIGMA.colors.background }]}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
-        style={styles.keyboardView}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: insets.top + scaledSpacing(FIGMA.layout.contentTopOffset),
-              paddingBottom: insets.bottom + scaledSpacing(32),
-            },
-          ]}
+          style={styles.flex}
+          contentContainerStyle={{
+            paddingHorizontal: 48,
+            paddingTop: insets.top + 16,
+            paddingBottom: insets.bottom + 32,
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Main Content Container - Figma: paddingHorizontal=48, alignItems=center */}
-          <View style={styles.contentContainer}>
-            {/* Inner Stack - Figma: Frame 1686557318 with gap: 48 */}
-            <View style={styles.innerStack}>
-              {/* Back button */}
-              <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={scaled(24)} color="white" />
-              </TouchableOpacity>
+          {/* Back button */}
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.white} />
+          </TouchableOpacity>
 
-              {/* Title */}
-              <ScreenTitle gray="Verify your" accent="address" />
+          {/* Title - Figma: gray="Verify" accent="your address" */}
+          <View style={styles.titleContainer}>
+            <ScreenTitle gray="Verify" accent="your address" />
+          </View>
 
-              {/* Description */}
-              <Text style={styles.description}>
-                Your electricity bill helps us verify your residence.
-              </Text>
+          {/* Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9 */}
+          <Text style={styles.description}>
+            Your electricity bill helps us verify your residence.
+          </Text>
 
-              {/* Progress Bar - Figma: 297px track width, ~88% fill (262/297) */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressTrack}>
-                  <View style={styles.progressFill} />
-                </View>
-              </View>
-
-              {/* API Error Banner */}
-              {apiError && (
-                <View style={styles.errorBanner}>
-                  <Text style={styles.errorBannerText}>{apiError}</Text>
-                </View>
-              )}
-
-              {/* Form - Figma: Frame 90:2928 with gap: 16 */}
-              <View style={styles.formContainer}>
-                {/* Operator Selector */}
-                <View>
-                  <View style={styles.labelRow}>
-                    <Text style={styles.label}>Electricity Operator</Text>
-                    {errors.operator && (
-                      <Text style={styles.errorHint}>{errors.operator}</Text>
-                    )}
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.inputContainer, errors.operator && styles.inputError]}
-                    onPress={() => setShowOperatorPicker(true)}
-                    disabled={verifyUtility.isPending}
-                  >
-                    <Text
-                      style={[
-                        styles.input,
-                        { lineHeight: scaled(FIGMA.dimensions.inputHeight) - scaledSpacing(32) },
-                        !selectedOperator && { color: FIGMA.colors.placeholder },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {operatorDisplayName}
-                    </Text>
-                    <Ionicons
-                      name="chevron-down"
-                      size={scaled(20)}
-                      color={FIGMA.colors.editLink}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Consumer Number Input */}
-                <TextInput
-                  label={`Enter ${selectedOperator?.operatorName ?? 'Account'} Number`}
-                  value={consumerNumber}
-                  onChangeText={handleConsumerNumberChange}
-                  placeholder="e.g. 1234567890"
-                  error={errors.consumerNumber}
-                  hintText="edit"
-                  disabled={verifyUtility.isPending}
-                  keyboardType="number-pad"
-                />
-              </View>
-
-              {/* Button Section - Figma: gap: 16 */}
-              <View style={styles.buttonSection}>
-                <PrimaryButton
-                  title="Proceed"
-                  onPress={handleSubmit}
-                  disabled={!isFormValid}
-                  loading={verifyUtility.isPending}
-                />
-
-                {/* Skip Button */}
-                <TouchableOpacity onPress={handleSkip} style={styles.skipButton} disabled={verifyUtility.isPending}>
-                  <Text style={styles.skipText}>Skip</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Operator Picker Modal */}
-              <Modal
-                visible={showOperatorPicker}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowOperatorPicker(false)}
-              >
-                <TouchableOpacity
-                  style={styles.modalOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowOperatorPicker(false)}
-                >
-                  <View style={styles.modalContent}>
-                    <View style={styles.modalHeader}>
-                      <Text style={styles.modalTitle}>Select Operator</Text>
-                      <TouchableOpacity onPress={() => setShowOperatorPicker(false)}>
-                        <Ionicons name="close" size={scaled(24)} color="#FFFFFF" />
-                      </TouchableOpacity>
-                    </View>
-                    {operatorsLoading ? (
-                      <View style={styles.modalLoading}>
-                        <ActivityIndicator size="large" color={FIGMA.colors.accent} />
-                      </View>
-                    ) : (
-                      <FlatList
-                        data={operators ?? []}
-                        keyExtractor={(item) => item.operatorCode}
-                        renderItem={({ item }) => (
-                          <TouchableOpacity
-                            style={[
-                              styles.operatorItem,
-                              selectedOperator?.operatorCode === item.operatorCode && styles.operatorItemSelected,
-                            ]}
-                            onPress={() => handleSelectOperator(item)}
-                          >
-                            <Text style={styles.operatorName}>{item.operatorName}</Text>
-                            {item.state && <Text style={styles.operatorState}>{item.state}</Text>}
-                          </TouchableOpacity>
-                        )}
-                        showsVerticalScrollIndicator={false}
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              </Modal>
+          {/* Progress Bar - Figma: height 12, ~88% fill (step 3/3) */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressTrack}>
+              <View style={styles.progressFill} />
             </View>
           </View>
+
+          {/* API Error Banner */}
+          {apiError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{apiError}</Text>
+            </View>
+          )}
+
+          {/* Form - Figma: gap 16 */}
+          <View style={styles.formContainer}>
+            {/* Operator Selector */}
+            <View>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Electricity Operator</Text>
+                {errors.operator && (
+                  <Text style={styles.errorHint}>{errors.operator}</Text>
+                )}
+              </View>
+              <TouchableOpacity
+                style={[styles.inputContainer, errors.operator && styles.inputError]}
+                onPress={() => setShowOperatorPicker(true)}
+                disabled={verifyUtility.isPending}
+              >
+                <Text
+                  style={[
+                    styles.inputText,
+                    !selectedOperator && styles.inputPlaceholder,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {operatorDisplayName}
+                </Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={20}
+                  color={FIGMA_COLORS.editLink}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Consumer Number Input */}
+            <TextInput
+              label={`Enter ${selectedOperator?.operatorName ?? 'Account'} Number`}
+              value={consumerNumber}
+              onChangeText={handleConsumerNumberChange}
+              placeholder="e.g. 1234567890"
+              error={errors.consumerNumber}
+              hintText="edit"
+              disabled={verifyUtility.isPending}
+              keyboardType="number-pad"
+            />
+          </View>
+
+          {/* Button Section - Figma: gap 16 */}
+          <View style={styles.buttonSection}>
+            <PrimaryButton
+              title="Proceed"
+              onPress={handleSubmit}
+              disabled={!isFormValid}
+              loading={verifyUtility.isPending}
+            />
+
+            {/* Skip Button - Figma: 14px/20px PlusJakartaSans-Medium #FFFFFF */}
+            <TouchableOpacity onPress={handleSkip} style={styles.skipButton} disabled={verifyUtility.isPending}>
+              <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Operator Picker Modal */}
+          <Modal
+            visible={showOperatorPicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowOperatorPicker(false)}
+          >
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setShowOperatorPicker(false)}
+            >
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Select Operator</Text>
+                  <TouchableOpacity onPress={() => setShowOperatorPicker(false)}>
+                    <Ionicons name="close" size={24} color={FIGMA_COLORS.white} />
+                  </TouchableOpacity>
+                </View>
+                {operatorsLoading ? (
+                  <View style={styles.modalLoading}>
+                    <ActivityIndicator size="large" color={FIGMA_COLORS.accent} />
+                  </View>
+                ) : (
+                  <FlatList
+                    data={operators ?? []}
+                    keyExtractor={(item) => item.operatorCode}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.operatorItem,
+                          selectedOperator?.operatorCode === item.operatorCode && styles.operatorItemSelected,
+                        ]}
+                        onPress={() => handleSelectOperator(item)}
+                      >
+                        <Text style={styles.operatorName}>{item.operatorName}</Text>
+                        {item.state && <Text style={styles.operatorState}>{item.state}</Text>}
+                      </TouchableOpacity>
+                    )}
+                    showsVerticalScrollIndicator={false}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
+          </Modal>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -351,180 +312,127 @@ export default function AddUtilityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: FIGMA_COLORS.background,
   },
-  keyboardView: {
+  flex: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  // Main content container - Figma: paddingHorizontal=48, counterAxisAlignItems=CENTER
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: scaledSpacing(FIGMA.dimensions.containerPadding), // 48px
-    alignItems: 'center',
-  },
-  // Inner stack - Figma: Frame 1686557318 with itemSpacing: 48
-  innerStack: {
-    width: scaled(FIGMA.dimensions.contentWidth), // 297px
-    gap: scaledSpacing(FIGMA.gaps.mainStack), // 48px - main sections gap
   },
   // Back button
   backButton: {
-    alignSelf: 'flex-start',
+    marginBottom: 40,
   },
-  // Title gray text - Figma: #A9A9A9 (colors.neutral[500])
-  titleGray: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(48),
-    lineHeight: scaledFont(64),
-    letterSpacing: -2,
-    color: FIGMA.colors.titleGray, // #A9A9A9 per Figma heading pattern
-    width: scaled(FIGMA.dimensions.contentWidth), // 297px
+  // Title container - Figma: sectionGap 48
+  titleContainer: {
+    marginBottom: 48,
   },
-  // Title accent text - Figma: #FF9A6D (brand.500)
-  titleAccent: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(48),
-    lineHeight: scaledFont(64),
-    letterSpacing: -2,
-    color: FIGMA.colors.accent, // #FF9A6D
-  },
-  // Description - Figma: 12px, line-height 20px, #A9A9A9
+  // Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9
   description: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(12),
-    lineHeight: scaledFont(20),
-    color: FIGMA.colors.description, // #A9A9A9
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.description,
+    marginBottom: 48,
   },
-  // Progress container - Figma: 297px width
+  // Progress bar - Figma: marginBottom 48
   progressContainer: {
-    width: scaled(FIGMA.dimensions.contentWidth), // 297px
-  },
-  // Progress track - Figma: height 12, backgroundColor #4D4D4D
-  progressTrack: {
-    height: scaled(FIGMA.dimensions.progressHeight), // 12px
-    backgroundColor: FIGMA.colors.progressTrack, // #4D4D4D
+    marginBottom: 48,
     width: '100%',
   },
-  // Progress fill - Figma: ~88% fill (262/297)
+  // Figma: height 12, #4D4D4D track
+  progressTrack: {
+    height: 12,
+    backgroundColor: FIGMA_COLORS.progressTrack,
+    width: '100%',
+  },
+  // Figma: ~88% fill (step 3 of 3)
   progressFill: {
-    width: '88%', // 262/297 = ~88%
+    width: '88%',
     height: '100%',
-    backgroundColor: FIGMA.colors.progressFill, // #CC7B57
+    backgroundColor: FIGMA_COLORS.progressFill,
   },
-  // Form container - Figma: Frame 90:2928 with gap: 16
+  // Form container - Figma: gap 16
   formContainer: {
-    gap: scaledSpacing(FIGMA.gaps.formInputs), // 16px
+    gap: 16,
   },
-  // Label row
+  // Label row - Figma: flexDirection row, justifyContent space-between
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: scaledSpacing(FIGMA.gaps.labelToInput), // 6px
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  // Label - Figma: 12px, line-height 20px, #A9A9A9, fontWeight 500
+  // Label - Figma: 12px/20px PlusJakartaSans-Medium #A9A9A9
   label: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(12),
-    lineHeight: scaledFont(20),
-    color: FIGMA.colors.label, // #A9A9A9
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#A9A9A9',
     textAlign: 'left',
   },
-  // Edit link - Figma: 14px, line-height 20px, #878787
-  editLink: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(14),
-    lineHeight: scaledFont(20),
-    color: FIGMA.colors.editLink, // #878787
-  },
-  // Input container - Figma: 297px width, 64px height, border #4D4D4D, radius 12
+  // Input container - Figma: border #4D4D4D, radius 12
   inputContainer: {
-    width: scaled(FIGMA.dimensions.contentWidth), // 297px
-    height: scaled(FIGMA.dimensions.inputHeight), // 64px
     borderWidth: 1,
-    borderColor: FIGMA.colors.inputBorder, // #4D4D4D
-    borderRadius: scaled(FIGMA.dimensions.inputRadius), // 12px
-    paddingVertical: scaledSpacing(16),
-    paddingHorizontal: scaledSpacing(16),
+    borderColor: FIGMA_COLORS.inputBorder,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 0,
     flexDirection: 'row',
     alignItems: 'center',
   },
   // Input error state
   inputError: {
-    borderColor: FIGMA.colors.inputBorderError, // #E5484D
+    borderColor: FIGMA_COLORS.inputBorderError,
   },
-  // Input text - Figma: 20px, line-height 32px
-  input: {
+  // Input text - Figma: 20px/32px PlusJakartaSans-Regular #DDDDDD
+  inputText: {
     flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(20),
-    lineHeight: scaledFont(32),
-    color: FIGMA.colors.inputText, // #DDDDDD
+    fontSize: 20,
+    lineHeight: 32,
+    color: FIGMA_COLORS.inputText,
   },
-  // Button section - Figma: gap: 16
-  buttonSection: {
-    gap: scaledSpacing(FIGMA.gaps.buttonSection), // 16px
-    alignItems: 'center',
+  // Placeholder state
+  inputPlaceholder: {
+    color: FIGMA_COLORS.placeholder,
   },
-  // Button disabled - Figma: 297px width, 56px height, #202020 bg, radius 12
-  button: {
-    width: scaled(FIGMA.dimensions.contentWidth), // 297px
-    height: scaled(FIGMA.dimensions.buttonHeight), // 56px
-    backgroundColor: FIGMA.colors.buttonBg, // #202020
-    borderRadius: scaled(FIGMA.dimensions.buttonRadius), // 12px
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Button active state
-  buttonActive: {
-    backgroundColor: FIGMA.colors.buttonBgActive, // #FF9A6D
-  },
-  // Button text disabled - Figma: 16px, line-height 24px, #444444
-  buttonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(16),
-    lineHeight: scaledFont(24),
-    color: FIGMA.colors.buttonText, // #444444
-  },
-  // Button text active
-  buttonTextActive: {
-    color: FIGMA.colors.buttonTextActive, // #000000
-  },
-  // Skip button
-  skipButton: {
-    padding: scaledSpacing(12),
-  },
-  // Skip text - Figma: 14px, line-height 20px, #FFFFFF
-  skipText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(14),
-    lineHeight: scaledFont(20),
-    color: FIGMA.colors.skipText, // #FFFFFF
-  },
-  // Error hint text for inline label errors
+  // Error hint
   errorHint: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(14),
-    lineHeight: scaledFont(20),
+    fontSize: 14,
+    lineHeight: 20,
     color: '#E5484D',
     textAlign: 'right' as const,
+  },
+  // Button section - Figma: gap 16
+  buttonSection: {
+    gap: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  // Skip button - Figma: padding 12
+  skipButton: {
+    padding: 12,
+  },
+  // Skip text - Figma: 14px/20px PlusJakartaSans-Medium #FFFFFF
+  skipText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14,
+    lineHeight: 20,
+    color: FIGMA_COLORS.skipText,
   },
   // Error banner
   errorBanner: {
     backgroundColor: 'rgba(229, 72, 77, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(229, 72, 77, 0.3)',
-    borderRadius: scaled(8),
-    padding: scaled(12),
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
   },
   errorBannerText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(13),
-    lineHeight: scaledFont(18),
+    fontSize: 13,
+    lineHeight: 18,
     color: '#E5484D',
     textAlign: 'left' as const,
   },
@@ -536,33 +444,33 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#1A1A1A',
-    borderTopLeftRadius: scaled(16),
-    borderTopRightRadius: scaled(16),
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     maxHeight: '60%',
-    paddingBottom: scaledSpacing(32),
+    paddingBottom: 32,
   },
   modalHeader: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
-    paddingHorizontal: scaledSpacing(24),
-    paddingVertical: scaledSpacing(16),
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#333333',
   },
   modalTitle: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: scaledFont(18),
-    lineHeight: scaledFont(24),
+    fontSize: 18,
+    lineHeight: 24,
     color: '#FFFFFF',
   },
   modalLoading: {
-    paddingVertical: scaledSpacing(40),
+    paddingVertical: 40,
     alignItems: 'center' as const,
   },
   operatorItem: {
-    paddingHorizontal: scaledSpacing(24),
-    paddingVertical: scaledSpacing(14),
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#262626',
   },
@@ -571,15 +479,15 @@ const styles = StyleSheet.create({
   },
   operatorName: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(16),
-    lineHeight: scaledFont(22),
+    fontSize: 16,
+    lineHeight: 22,
     color: '#DDDDDD',
   },
   operatorState: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(12),
-    lineHeight: scaledFont(16),
+    fontSize: 12,
+    lineHeight: 16,
     color: '#878787',
-    marginTop: scaledSpacing(2),
+    marginTop: 2,
   },
 });

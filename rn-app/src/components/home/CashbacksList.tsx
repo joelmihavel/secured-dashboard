@@ -138,6 +138,7 @@ function CashbacksListComponent({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 32, // Figma 243:7337: paddingLeft 32, paddingRight 32
+    alignSelf: 'stretch', // Ensure full width in centered parent
   },
   // Figma 243:7342: VERTICAL, gap=16
   balanceSection: {
@@ -145,9 +146,8 @@ const styles = StyleSheet.create({
   },
   // Figma 243:7344: fontSize 12, weight 500, lineHeight 20, color #A9A9A9
   balanceLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 12,
-    fontWeight: '500',
     lineHeight: 20,
     color: '#A9A9A9',
   },
@@ -157,27 +157,24 @@ const styles = StyleSheet.create({
   },
   // Figma 243:7345 override[41]: fontSize 14, color #444444
   rupeeSymbol: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14,
-    fontWeight: '400',
     lineHeight: 40,
     letterSpacing: -1,
     color: '#444444',
   },
   // Figma 243:7345 override[42]: fontSize 32, color #FF9A6D
   balanceAmount: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 32,
-    fontWeight: '400',
     lineHeight: 40,
     letterSpacing: -1,
     color: '#FF9A6D',
   },
   // Figma 243:7345 override[24]: fontSize 14, color #444444
   balanceDecimal: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14,
-    fontWeight: '400',
     color: '#444444',
   },
   // Figma 243:7347/7351: HORIZONTAL, SPACE_BETWEEN, CENTER, gap=16
@@ -188,10 +185,9 @@ const styles = StyleSheet.create({
   },
   // Figma 243:7348/7352: fontSize 14, weight 400, lineHeight 20, color #DDDDDD
   statLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '400',
     color: '#DDDDDD',
   },
   statValueRow: {
@@ -200,16 +196,14 @@ const styles = StyleSheet.create({
   },
   // Figma 243:7349 override[41]: fontSize 14, color #444444
   statRupee: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14,
-    fontWeight: '400',
     color: '#444444',
   },
   // Figma 243:7349 override[43]: fontSize 16, color #FF9A6D
   statValue: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 16,
-    fontWeight: '400',
     color: '#FF9A6D',
   },
   // Figma 243:7349 override[24]: fontSize 14, color #444444
@@ -220,9 +214,8 @@ const styles = StyleSheet.create({
   },
   // Figma 243:7353 override[43]: fontSize 16, color #FF9A6D
   rateValue: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 16,
-    fontWeight: '400',
     color: '#FF9A6D',
   },
   // Figma 243:7353 override[24]: fontSize 14, color #444444
@@ -257,9 +250,8 @@ const styles = StyleSheet.create({
     gap: 8, // Figma: itemSpacing 8 between title and status row
   },
   historyTitle: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 19.74, // Figma: lineHeight ~19.74
     letterSpacing: -0.56, // Figma: letterSpacing -0.56
     color: '#FFFFFF', // Figma: #FFFFFF
@@ -288,26 +280,23 @@ const styles = StyleSheet.create({
   },
   // Figma 243:7364 override[1]: fontSize 12 for rupee symbol
   historyRupee: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     fontSize: 12, // Figma: override[1] fontSize 12
-    fontWeight: '600',
     lineHeight: 22.56,
     letterSpacing: -0.64,
     color: '#FFFFFF',
     marginRight: 2,
   },
   historyAmount: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     fontSize: 16, // Figma: fontSize 16
-    fontWeight: '600', // Figma: fontWeight 600
     lineHeight: 22.56, // Figma: lineHeight ~22.56
     letterSpacing: -0.64, // Figma: letterSpacing -0.64
     color: '#FFFFFF', // Figma: #FFFFFF
   },
   historyNA: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     fontSize: 12, // Figma: fontSize 12
-    fontWeight: '600', // Figma: fontWeight 600
     lineHeight: 16.92, // Figma: lineHeight ~16.92
     letterSpacing: -0.48, // Figma: letterSpacing -0.48
     color: '#FFFFFF', // Figma: #FFFFFF

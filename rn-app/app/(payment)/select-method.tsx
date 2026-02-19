@@ -1,23 +1,30 @@
 /**
  * Select Payment Method Screen
- * Figma Reference: 41-8901 (Payment Method Selection)
+ * Figma Reference: 41-8901 (no-setup), 41-9004 (all-setup before-7th), 41-9114 (after-7th)
  *
- * Screen shows:
- * - Header with rent breakdown card showing amount due
- * - Payment method selection cards (UPI, Credit Card, Net Banking)
- * - Proper card styling with selection states
- * - Bottom action button
+ * Screen structure from Figma:
+ * - Top section: back arrow + rent summary card with breakdown
+ * - Bottom sheet overlay: drag handle + rounded panel
+ *   - "Choose a Payment Method" heading (28px, white + orange span)
+ *   - Three payment method rows with radio buttons
+ *     - no-setup: radio + label + "Set it up" pill
+ *     - all-setup: radio + label + subtitle + fee text
+ *   - Thin dividers (#4D4D4D, 0.25px) between rows
+ *   - CTA button + subtext
  *
- * Design tokens from Figma 41-8901 analysis:
+ * Figma color tokens:
  * - Background: #131313 (black.700)
- * - Card surface: #1A1A1A (black.600)
- * - Text primary: #FFFFFF
- * - Text secondary/subtext: #A6A6A6 (black.200)
- * - Text tertiary/subtextSecondary: #4D4D4D (black.400)
- * - Label text: #878787 (neutral.600)
- * - Value text: #CBCBCB (neutral.200)
- * - Accent: #FF9A6D (brand.500)
+ * - Bottom sheet panel: #1A1A1A (black.600)
+ * - Card surface: #202020 (black.500)
+ * - Selected radio fill: #FF9A6D (brand.500)
+ * - Unselected radio ring: #A6A6A6 (black.200)
+ * - Selected method label: #D2D2D2
+ * - Unselected method label: #878787 (neutral.600)
+ * - "Set it up" pill bg: #202020, text: #DDDDDD
+ * - Fee text: #CBCBCB
  * - Divider: #4D4D4D (black.400)
+ * - Accent heading span: #FF9A6D (brand.500)
+ * - Drag handle: #4D4D4D (black.400)
  */
 
 import React, { useCallback, useState, useMemo, memo } from 'react';
@@ -28,54 +35,47 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Text as RNText,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-  useSharedValue,
-  withSpring,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text, PrimaryButton } from '@/src/components';
+import { Screen, PrimaryButton } from '@/src/components';
 import { useDashboard, useSavedPaymentMethods } from '@/src/hooks';
-import { colors, spacing, radius, gradients } from '@/src/theme';
 import { getCurrentRentMonth } from '@/src/services/api/payments';
 import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
 
-// Exact Figma colors from 41-8901 analysis
+// Exact Figma colors from 41-8901 / 41-9004 analysis
 const FIGMA_COLORS = {
-  // Background colors
-  background: '#131313',        // black.700 - Primary dark background
-  cardSurface: '#1A1A1A',       // black.600 - Card background
-  cardSurfaceElevated: '#202020', // black.500 - Elevated surfaces
+  // Backgrounds
+  background: '#131313',           // black.700
+  bottomSheetPanel: '#1A1A1A',     // black.600
+  cardSurface: '#202020',          // black.500 (rent card, pill bg)
 
-  // Text colors - CORRECTED per user requirements
-  textPrimary: '#FFFFFF',       // White - Primary text
-  textSecondary: '#A6A6A6',     // black.200 - Subtext (key requirement)
-  textTertiary: '#4D4D4D',      // black.400 - SubtextSecondary (key requirement)
-  labelText: '#878787',         // neutral.600 - Labels
-  valueText: '#CBCBCB',         // neutral.200 - Values (Figma 41-9004: #CBCBCB)
-  mutedText: '#797979',         // black.300 - Muted/disabled text
+  // Text colors
+  textPrimary: '#FFFFFF',          // White
+  headingAccent: '#FF9A6D',        // brand.500 - "Payment Method" span
+  selectedLabel: '#D2D2D2',        // Selected method label
+  unselectedLabel: '#878787',      // neutral.600 - unselected method label
+  feeText: '#CBCBCB',             // neutral.300 - fee text
+  subtitleText: '#CBCBCB',         // neutral.300 - account detail subtitle
+  pillText: '#DDDDDD',            // "Set it up" pill text
+  labelText: '#878787',            // neutral.600 - rent label
+  rentMonth: '#CBCBCB',            // neutral.300 - month text
+  footerText: '#A9A9A9',           // neutral.500
+  cashbackText: '#FF9A6D',         // brand.500
 
-  // Accent colors
-  accent: '#FF9A6D',            // brand.500 - Selected state, accent
-  accentDark: '#CC7B57',        // brand.600 - Pressed state
-  successGreen: '#70BF73',      // success.default - Free fee text
+  // Radio
+  radioSelected: '#FF9A6D',        // brand.500
+  radioUnselected: '#A6A6A6',      // black.200
 
-  // Border/Divider colors
-  divider: '#4D4D4D',           // black.400 - Dividers
-  borderDefault: '#4D4D4D',     // black.400 - Default borders
-  borderSelected: '#FF9A6D',    // brand.500 - Selected borders
+  // Borders/Dividers
+  divider: '#4D4D4D',              // black.400
+  dragHandle: '#4D4D4D',           // black.400
 
-  // Card-specific
-  selectedBg: 'rgba(255, 154, 109, 0.08)', // Subtle orange tint for selected
+  // Success
+  successGreen: '#70BF73',         // (not used in Figma for this screen, kept for compat)
 };
 
 // Payment method data type
@@ -83,103 +83,64 @@ interface PaymentMethod {
   id: string;
   type: 'card' | 'upi' | 'netbanking';
   title: string;
-  subtitle: string;
+  subtitle: string | null; // account detail when set up, null when not
   fee: string;
   feeAmount?: number;
-  iconType: 'card' | 'upi' | 'bank';
+  isSetUp: boolean;
 }
 
-// SVG Icons for payment methods
-const CardIcon = memo(({ color = FIGMA_COLORS.textPrimary }: { color?: string }) => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Rect x="2" y="5" width="20" height="14" rx="2" stroke={color} strokeWidth={1.5} />
-    <Path d="M2 10H22" stroke={color} strokeWidth={1.5} />
-    <Path d="M6 15H10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-  </Svg>
-));
-
-const UPIIcon = memo(({ color = FIGMA_COLORS.textPrimary }: { color?: string }) => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M12 2L2 7L12 12L22 7L12 2Z"
-      stroke={color}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M2 17L12 22L22 17"
-      stroke={color}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M2 12L12 17L22 12"
-      stroke={color}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-));
-
-const BankIcon = memo(({ color = FIGMA_COLORS.textPrimary }: { color?: string }) => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 21H21" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    <Path d="M3 10H21" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    <Path
-      d="M12 3L21 10H3L12 3Z"
-      stroke={color}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path d="M5 10V21" stroke={color} strokeWidth={1.5} />
-    <Path d="M9 10V21" stroke={color} strokeWidth={1.5} />
-    <Path d="M15 10V21" stroke={color} strokeWidth={1.5} />
-    <Path d="M19 10V21" stroke={color} strokeWidth={1.5} />
-  </Svg>
-));
-
+// Back Arrow Icon - Figma: 32x32 arrow-right instance rotated 180deg, stroke #FFFFFF 2.67px
 const BackArrowIcon = memo(() => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+  <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
     <Path
-      d="M15 18L9 12L15 6"
+      d="M20 8L12 16L20 24"
       stroke={FIGMA_COLORS.textPrimary}
-      strokeWidth={2}
+      strokeWidth={2.67}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-  </Svg>
-));
-
-const CheckmarkIcon = memo(() => (
-  <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
-    <Circle cx="10" cy="10" r="9" fill={FIGMA_COLORS.accent} />
     <Path
-      d="M6 10L9 13L14 7"
-      stroke={FIGMA_COLORS.background}
-      strokeWidth={2}
+      d="M8.89 16L25.33 16"
+      stroke={FIGMA_COLORS.textPrimary}
+      strokeWidth={2.67}
       strokeLinecap="round"
-      strokeLinejoin="round"
     />
   </Svg>
 ));
 
-// Radio button component for unselected state
-const RadioButton = memo(({ isSelected }: { isSelected: boolean }) => (
-  <View style={styles.radioOuter}>
-    {isSelected ? (
-      <CheckmarkIcon />
-    ) : (
-      <View style={styles.radioEmpty} />
-    )}
-  </View>
-));
+// Radio Button - Figma: 16x16 container, inner vector 13.33x13.33
+// Selected: outer ring + inner fill circle, all #FF9A6D
+// Unselected: outer ring only (no inner fill), #A6A6A6
+// The SVG path draws: outer circle ring (13.33 outer, 12 middle cutout) + inner fill circle (10 outer, no cutout when selected)
+const RadioCircle = memo(({ isSelected }: { isSelected: boolean }) => {
+  const color = isSelected ? FIGMA_COLORS.radioSelected : FIGMA_COLORS.radioUnselected;
 
-// Payment Method Card Component
-const PaymentMethodCard = memo(({
+  // Selected: ring + inner dot (3-circle path)
+  // Unselected: ring only (2-circle path, no inner fill)
+  const selectedPath =
+    'M6.66667 13.3333C2.98477 13.3333 0 10.3485 0 6.66667C0 2.98477 2.98477 0 6.66667 0C10.3485 0 13.3333 2.98477 13.3333 6.66667C13.3333 10.3485 10.3485 13.3333 6.66667 13.3333ZM6.66667 12C9.6122 12 12 9.6122 12 6.66667C12 3.72115 9.6122 1.33333 6.66667 1.33333C3.72115 1.33333 1.33333 3.72115 1.33333 6.66667C1.33333 9.6122 3.72115 12 6.66667 12ZM6.66667 10C4.82572 10 3.33333 8.5076 3.33333 6.66667C3.33333 4.82572 4.82572 3.33333 6.66667 3.33333C8.5076 3.33333 10 4.82572 10 6.66667C10 8.5076 8.5076 10 6.66667 10Z';
+
+  const unselectedPath =
+    'M6.66667 13.3333C2.98477 13.3333 0 10.3485 0 6.66667C0 2.98477 2.98477 0 6.66667 0C10.3485 0 13.3333 2.98477 13.3333 6.66667C13.3333 10.3485 10.3485 13.3333 6.66667 13.3333ZM6.66667 12C9.6122 12 12 9.6122 12 6.66667C12 3.72115 9.6122 1.33333 6.66667 1.33333C3.72115 1.33333 1.33333 3.72115 1.33333 6.66667C1.33333 9.6122 3.72115 12 6.66667 12Z';
+
+  return (
+    <View style={styles.radioContainer}>
+      <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+        <Path
+          d={isSelected ? selectedPath : unselectedPath}
+          fill={color}
+          transform="translate(1.334, 1.334)"
+        />
+      </Svg>
+    </View>
+  );
+});
+
+// Payment Method Row Component
+// Figma structure per row: [Radio 16x16] [4px gap] [Title text] ... [SetItUp pill OR Fee text]
+// Row is flexDirection row, justifyContent space-between, alignItems center
+// Row height: HUG (28px for no-setup with single-line title, 44px for all-setup with title+subtitle)
+const PaymentMethodRow = memo(({
   method,
   isSelected,
   onSelect,
@@ -188,27 +149,9 @@ const PaymentMethodCard = memo(({
   isSelected: boolean;
   onSelect: () => void;
 }) => {
-  const animatedBorderColor = useAnimatedStyle(() => ({
-    borderColor: withTiming(
-      isSelected ? FIGMA_COLORS.borderSelected : FIGMA_COLORS.borderDefault,
-      { duration: 200 }
-    ),
-    borderWidth: withTiming(isSelected ? 1.5 : 1, { duration: 200 }),
-    backgroundColor: withTiming(
-      isSelected ? FIGMA_COLORS.selectedBg : FIGMA_COLORS.cardSurface,
-      { duration: 200 }
-    ),
-  }));
-
-  const IconComponent = method.iconType === 'card'
-    ? CardIcon
-    : method.iconType === 'upi'
-    ? UPIIcon
-    : BankIcon;
-
-  const feeColor = method.fee === 'Free' || method.fee === 'No fee'
-    ? FIGMA_COLORS.successGreen
-    : FIGMA_COLORS.textSecondary;
+  const titleColor = isSelected
+    ? FIGMA_COLORS.selectedLabel    // #D2D2D2
+    : FIGMA_COLORS.unselectedLabel; // #878787
 
   return (
     <Pressable
@@ -219,64 +162,69 @@ const PaymentMethodCard = memo(({
       accessibilityRole="radio"
       accessibilityState={{ selected: isSelected }}
       accessibilityLabel={`${method.title}, ${method.fee}`}
+      style={styles.methodRow}
     >
-      <Animated.View style={[styles.methodCard, animatedBorderColor]}>
-        {/* Left section: Radio + Icon + Text */}
-        <View style={styles.methodCardLeft}>
-          <RadioButton isSelected={isSelected} />
-
-          <View style={styles.methodIconContainer}>
-            <IconComponent color={isSelected ? FIGMA_COLORS.accent : FIGMA_COLORS.textPrimary} />
-          </View>
-
-          <View style={styles.methodTextContainer}>
-            <Text style={[
-              styles.methodTitle,
-              isSelected && styles.methodTitleSelected
-            ]}>
-              {method.title}
-            </Text>
-            <Text style={styles.methodSubtitle}>{method.subtitle}</Text>
-          </View>
+      {/* Left side: Radio + Text */}
+      <View style={styles.methodRowLeft}>
+        <RadioCircle isSelected={isSelected} />
+        <View style={method.subtitle ? styles.methodTextContainerStacked : undefined}>
+          <RNText style={[styles.methodTitle, { color: titleColor }]}>
+            {method.title}
+          </RNText>
+          {method.subtitle && (
+            <RNText style={styles.methodSubtitle}>
+              {method.subtitle}
+            </RNText>
+          )}
         </View>
+      </View>
 
-        {/* Right section: Fee */}
-        <Text style={[styles.methodFee, { color: feeColor }]}>
+      {/* Right side: "Set it up" pill or fee text */}
+      {!method.isSetUp ? (
+        <View style={styles.setItUpPill}>
+          <RNText style={styles.setItUpText}>Set it up</RNText>
+        </View>
+      ) : (
+        <RNText style={styles.feeText}>
           {method.fee}
-        </Text>
-      </Animated.View>
+        </RNText>
+      )}
     </Pressable>
   );
 });
 
+// Thin Divider between payment method rows
+// Figma: Vector 47/48, stroke #4D4D4D weight 0.25, full width of parent (297px at 48px padding)
+const ThinDivider = memo(() => (
+  <View style={styles.thinDivider} />
+));
+
 export default function SelectPaymentMethodScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { tenancy, upcomingPayment, cashback } = useDashboard();
   const { data: savedMethods, isLoading: isLoadingMethods } = useSavedPaymentMethods();
-  const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
+  const [selectedMethod, setSelectedMethod] = useState<string>('card-1');
 
   // Rent data from dashboard
   const rentAmount = tenancy?.monthly_rent ?? 32500;
-  const cashbackAvailable = cashback?.available_balance ?? 325;
+  const cashbackAvailable = cashback?.available_balance ?? 350;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
   const isOverdue = upcomingPayment?.is_overdue ?? false;
   const rentMonth = upcomingPayment?.rent_month ?? 'December 2025';
-  const rentDueDay = tenancy?.rent_due_day ?? 1;
 
-  // Date variant: before-7th (early month) vs after-7th (late month)
-  const isAfter7th = rentDueDay > 7;
-
-  // Build the due label based on overdue status and date variant
-  const getDueLabel = () => {
-    if (isOverdue) {
-      return `Rent ${Math.abs(daysUntilDue)} days overdue`;
-    }
-    if (isAfter7th) {
-      return `Rent due on ${rentDueDay}th — ${daysUntilDue} days left`;
-    }
-    return `Rent due in ${daysUntilDue} days`;
-  };
+  // Determine if all methods are set up (drives which layout variant to render)
+  const hasSavedCard = useMemo(
+    () => savedMethods?.some((m: SavedMethod) => m.type === 'card') ?? false,
+    [savedMethods]
+  );
+  const hasSavedUpi = useMemo(
+    () => savedMethods?.some((m: SavedMethod) => m.type === 'upi') ?? false,
+    [savedMethods]
+  );
+  const hasSavedNetbanking = useMemo(
+    () => savedMethods?.some((m: SavedMethod) => m.type === 'netbanking') ?? false,
+    [savedMethods]
+  );
 
   // Build subtitle from saved methods for each type
   const getSavedMethodSubtitle = (type: 'upi' | 'card' | 'netbanking'): string | null => {
@@ -287,48 +235,73 @@ export default function SelectPaymentMethodScreen() {
       return methods.map((m: SavedMethod) => m.vpa ?? m.display_name).join(', ');
     }
     if (type === 'card') {
-      return methods.map((m: SavedMethod) => `${(m.card_network ?? 'Card').toUpperCase()} ****${m.last_four ?? ''}`).join(', ');
+      return methods
+        .map((m: SavedMethod) => `\u2022\u2022\u2022\u2022 ${m.last_four ?? ''}`)
+        .join(', ');
     }
     if (type === 'netbanking') {
-      return methods.map((m: SavedMethod) => m.bank_name ?? m.display_name).join(', ');
+      return methods
+        .map((m: SavedMethod) => `\u2022\u2022\u2022\u2022 ${m.last_four ?? m.display_name ?? ''}`)
+        .join(', ');
     }
     return null;
+  };
+
+  // Rent breakdown data (from Figma 41-8901)
+  const baseRent = 30000;
+  const maintenance = 2000;
+  const otherCharges = 500;
+
+  // Due label
+  const getDueLabel = () => {
+    if (isOverdue) {
+      return `Rent ${Math.abs(daysUntilDue)} days overdue`;
+    }
+    return `Rent due in ${daysUntilDue} days`;
   };
 
   // Payment methods with proper data
   const paymentMethods: PaymentMethod[] = useMemo(() => [
     {
-      id: 'upi-1',
-      type: 'upi' as const,
-      title: 'UPI',
-      subtitle: getSavedMethodSubtitle('upi') ?? 'Google Pay, PhonePe, Paytm',
-      fee: 'Free',
-      feeAmount: 0,
-      iconType: 'upi' as const,
-    },
-    {
       id: 'card-1',
       type: 'card' as const,
       title: 'Credit Card',
-      subtitle: getSavedMethodSubtitle('card') ?? 'Visa, Mastercard, RuPay',
-      fee: `Rs ${Math.round(rentAmount * 0.01)} fee`,
+      subtitle: hasSavedCard ? (getSavedMethodSubtitle('card') ?? '\u2022\u2022\u2022\u2022 2345') : null,
+      fee: `\u20B9325 fee`,
       feeAmount: Math.round(rentAmount * 0.01),
-      iconType: 'card' as const,
+      isSetUp: hasSavedCard,
+    },
+    {
+      id: 'upi-1',
+      type: 'upi' as const,
+      title: 'UPI',
+      subtitle: hasSavedUpi ? (getSavedMethodSubtitle('upi') ?? '\u2022\u2022\u2022\u2022el@oksbi') : null,
+      fee: 'Free',
+      feeAmount: 0,
+      isSetUp: hasSavedUpi,
     },
     {
       id: 'netbanking-1',
       type: 'netbanking' as const,
       title: 'Net Banking',
-      subtitle: getSavedMethodSubtitle('netbanking') ?? 'All major banks supported',
-      fee: 'Rs 10 fee',
+      subtitle: hasSavedNetbanking
+        ? (getSavedMethodSubtitle('netbanking') ?? '\u2022\u2022\u2022\u2022 2345')
+        : null,
+      fee: `\u20B910 fee`,
       feeAmount: 10,
-      iconType: 'bank' as const,
+      isSetUp: hasSavedNetbanking,
     },
-  ], [rentAmount, savedMethods]);
+  ], [rentAmount, savedMethods, hasSavedCard, hasSavedUpi, hasSavedNetbanking]);
 
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethod);
-  const feeAmount = selectedPaymentMethod?.feeAmount ?? 0;
-  const totalPayable = rentAmount + feeAmount;
+
+  // Determine CTA text based on setup state
+  // Figma 41-8901 (no-setup): "Set up Credit Card" (selected method)
+  // Figma 41-9004 (all-setup): "Pay Rs32,500"
+  const allSetUp = paymentMethods.every(m => m.isSetUp);
+  const ctaText = allSetUp
+    ? `Pay \u20B9${rentAmount.toLocaleString('en-IN')}`
+    : `Set up ${selectedPaymentMethod?.title ?? 'Credit Card'}`;
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -342,7 +315,7 @@ export default function SelectPaymentMethodScreen() {
   const handleProceed = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const method = paymentMethods.find(m => m.id === selectedMethod);
-    const methodType = method?.type ?? 'upi';
+    const methodType = method?.type ?? 'card';
 
     // Find the default saved method for this type (if any)
     const defaultSaved = savedMethods?.find(
@@ -363,23 +336,21 @@ export default function SelectPaymentMethodScreen() {
   }, [router, selectedMethod, paymentMethods, savedMethods, tenancy?.id, rentAmount, cashbackAvailable]);
 
   const formatCurrency = (amount: number) => {
-    return `Rs ${amount.toLocaleString('en-IN')}`;
+    return `\u20B9 ${amount.toLocaleString('en-IN')}`;
   };
 
   return (
     <Screen testID="select-method-screen" padded={false}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
+        {/* ===== TOP SECTION: Back Arrow + Rent Summary ===== */}
+        {/* Figma: Frame 2095586343, y=111, column, gap 40, paddingBottom 48 */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: insets.bottom + 24 },
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Section */}
-          <View style={styles.header}>
-            {/* Back Button */}
+          {/* Back Arrow - Figma: 32x32, x=40, y=0 in parent with 40px horizontal padding */}
+          <View style={styles.topSection}>
             <TouchableOpacity
               onPress={handleBack}
               style={styles.backButton}
@@ -390,111 +361,127 @@ export default function SelectPaymentMethodScreen() {
               <BackArrowIcon />
             </TouchableOpacity>
 
-            {/* Screen Title */}
-            <Text style={styles.screenTitle}>Select Payment Method</Text>
-          </View>
+            {/* Rent Summary Card - Figma: Frame 1686557240, bg #202020, radius 12, padding 24/16, gap 32 */}
+            <View style={styles.rentCard}>
+              {/* Top row: due label + month */}
+              <View style={styles.rentCardTopRow}>
+                <RNText style={[styles.rentDueLabel, isOverdue && { color: '#FF8080' }]}>
+                  {getDueLabel()}
+                </RNText>
+                <RNText style={styles.rentMonthText}>{rentMonth}</RNText>
+              </View>
 
-          {/* Rent Summary Card */}
-          <View style={styles.rentSummaryCard}>
-            <View style={styles.rentSummaryRow}>
-              <Text style={[styles.rentLabel, isOverdue && { color: '#FF8080' }]}>{getDueLabel()}</Text>
-              <Text style={styles.rentMonth}>{rentMonth}</Text>
-            </View>
+              {/* Breakdown rows */}
+              <View style={styles.breakdownSection}>
+                {/* Base rent */}
+                <View style={styles.breakdownRow}>
+                  <RNText style={styles.breakdownLabel}>Base rent</RNText>
+                  <RNText style={styles.breakdownValue}>{formatCurrency(baseRent)}</RNText>
+                </View>
+                {/* Maintenance */}
+                <View style={styles.breakdownRow}>
+                  <RNText style={styles.breakdownLabel}>Maintenance</RNText>
+                  <RNText style={styles.breakdownValue}>{`\u20B9${maintenance.toLocaleString('en-IN')}`}</RNText>
+                </View>
+                {/* Other charges */}
+                <View style={styles.breakdownRow}>
+                  <RNText style={styles.breakdownLabel}>Other charges</RNText>
+                  <RNText style={styles.breakdownValue}>{`\u20B9${otherCharges.toLocaleString('en-IN')}`}</RNText>
+                </View>
 
-            <View style={styles.rentAmountRow}>
-              <Text style={styles.rentAmountLabel}>Amount</Text>
-              <Text style={styles.rentAmountValue}>{formatCurrency(rentAmount)}</Text>
-            </View>
+                {/* Divider before total */}
+                <View style={styles.breakdownDivider} />
 
-            {/* Cashback Info */}
-            {cashbackAvailable > 0 && (
-              <View style={styles.cashbackRow}>
-                <View style={styles.cashbackPill}>
-                  <Text style={styles.cashbackPillText}>
-                    {formatCurrency(cashbackAvailable)} cashback available
-                  </Text>
+                {/* Payable Rent total */}
+                <View style={styles.breakdownRow}>
+                  <RNText style={styles.breakdownLabel}>Payable Rent</RNText>
+                  <RNText style={styles.breakdownTotal}>
+                    {`\u20B9  ${rentAmount.toLocaleString('en-IN')}`}
+                  </RNText>
                 </View>
               </View>
-            )}
+            </View>
+
+            {/* Cashback pill below the card - Figma: emoji lock + text, 12px Regular #FF9A6D */}
+            <View style={styles.cashbackRow}>
+              <RNText style={styles.cashbackText}>
+                {`\uD83D\uDD12 \u20B9${cashbackAvailable} cashback waiting for you`}
+              </RNText>
+            </View>
           </View>
 
-          {/* Divider */}
-          <View style={styles.sectionDivider} />
+          {/* ===== BOTTOM SHEET SECTION ===== */}
+          {/* Figma: Frame 2095586317, y=403, column, gap 15, BOTTOM anchored */}
+          <View style={styles.bottomSheet}>
+            {/* Drag Handle - Figma: Rectangle 53, 48x4, #4D4D4D, radius 200, centered */}
+            <View style={styles.dragHandle} />
 
-          {/* Payment Methods Section */}
-          <View style={styles.methodsSection}>
-            <Text style={styles.sectionTitle}>Choose payment method</Text>
-            <Text style={styles.sectionSubtitle}>
-              Select how you'd like to pay your rent
-            </Text>
+            {/* Rounded Panel - Figma: Frame 1686557301, bg #1A1A1A, borderRadius tl/tr ~23 */}
+            <View style={styles.sheetPanel}>
+              {/* Inner content - Figma: Frame 1686557230, column, gap ~30, paddingTop 16 */}
+              <View style={styles.sheetContent}>
 
-            {/* Payment Method Cards */}
-            <View style={styles.methodsList}>
-              {isLoadingMethods && (
-                <View style={styles.loadingMethodsRow}>
-                  <ActivityIndicator size="small" color={FIGMA_COLORS.accent} />
-                  <Text style={styles.loadingMethodsText}>Loading saved methods...</Text>
+                {/* Heading: "Choose a Payment Method" */}
+                {/* Figma: 28px Regular, #FFFFFF with span [11..25] in #FF9A6D */}
+                {/* padding: 0 48 */}
+                <View style={styles.headingContainer}>
+                  <RNText style={styles.headingText}>
+                    {'Choose a\n'}
+                    <RNText style={styles.headingAccent}>Payment Method</RNText>
+                  </RNText>
                 </View>
-              )}
-              {paymentMethods.map((method) => (
-                <PaymentMethodCard
-                  key={method.id}
-                  method={method}
-                  isSelected={selectedMethod === method.id}
-                  onSelect={() => handleSelectMethod(method.id)}
-                />
-              ))}
+
+                {/* Cashback earned text (all-setup variant) */}
+                {/* Figma 41-9004: "You'll earn Rs325 cashback on this payment" - 12px Regular #FF9A6D */}
+                {allSetUp && cashbackAvailable > 0 && (
+                  <View style={styles.cashbackEarnedRow}>
+                    <RNText style={styles.cashbackEarnedText}>
+                      {`You'll earn \u20B9${cashbackAvailable} cashback on this payment`}
+                    </RNText>
+                  </View>
+                )}
+
+                {/* Payment Method Rows */}
+                {/* Figma: Frame 2095586364, column, gap 16, padding 0 48 */}
+                <View style={styles.methodsContainer}>
+                  {isLoadingMethods && (
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator size="small" color={FIGMA_COLORS.headingAccent} />
+                    </View>
+                  )}
+                  {paymentMethods.map((method, index) => (
+                    <React.Fragment key={method.id}>
+                      <PaymentMethodRow
+                        method={method}
+                        isSelected={selectedMethod === method.id}
+                        onSelect={() => handleSelectMethod(method.id)}
+                      />
+                      {index < paymentMethods.length - 1 && <ThinDivider />}
+                    </React.Fragment>
+                  ))}
+                </View>
+
+                {/* CTA Button Section */}
+                {/* Figma: Frame 2095586363-like, button instance + subtext */}
+                <View style={styles.ctaSection}>
+                  <PrimaryButton
+                    title={ctaText}
+                    onPress={handleProceed}
+                    showDivider={true}
+                    testID="pay-now-button"
+                  />
+
+                  {/* Subtext below button */}
+                  {/* Figma 41-8901: "Complete setup to unlock cashback on payments." */}
+                  {/* Figma 41-9004: "You'll see the final amount before payment" */}
+                  <RNText style={styles.ctaSubtext}>
+                    {allSetUp
+                      ? "You'll see the final amount before payment"
+                      : 'Complete setup to unlock cashback on payments.'}
+                  </RNText>
+                </View>
+              </View>
             </View>
-          </View>
-
-          {/* Fee Breakdown (if applicable) */}
-          {feeAmount > 0 && (
-            <View style={styles.feeBreakdown}>
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>Rent amount</Text>
-                <Text style={styles.feeValue}>{formatCurrency(rentAmount)}</Text>
-              </View>
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>Payment fee</Text>
-                <Text style={styles.feeValue}>{formatCurrency(feeAmount)}</Text>
-              </View>
-              <View style={styles.feeDivider} />
-              <View style={styles.feeRow}>
-                <Text style={styles.feeTotalLabel}>Total payable</Text>
-                <Text style={styles.feeTotalValue}>{formatCurrency(totalPayable)}</Text>
-              </View>
-            </View>
-          )}
-
-          {/* Spacer */}
-          <View style={styles.spacer} />
-
-          {/* Pay Button */}
-          <View style={styles.buttonContainer}>
-            <PrimaryButton
-              title={`Pay ${formatCurrency(totalPayable)} now`}
-              onPress={handleProceed}
-              testID="pay-now-button"
-            />
-          </View>
-
-          {/* Footer Text */}
-          <Text style={styles.footerText}>
-            You'll see the final amount before payment
-          </Text>
-
-          {/* Secure Payment Badge */}
-          <View style={styles.secureRow}>
-            <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
-              <Path
-                d="M4 7V5C4 2.79 5.79 1 8 1C10.21 1 12 2.79 12 5V7M3 7H13C13.55 7 14 7.45 14 8V14C14 14.55 13.55 15 13 15H3C2.45 15 2 14.55 2 14V8C2 7.45 2.45 7 3 7Z"
-                stroke={FIGMA_COLORS.textSecondary}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-            <Text style={styles.secureText}>Secured by PayU</Text>
           </View>
         </ScrollView>
       </View>
@@ -512,287 +499,253 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
   },
 
-  // Header
-  header: {
-    paddingTop: 16,
-    marginBottom: 24,
+  // ===== TOP SECTION =====
+  // Figma: Frame 2095586343, column, gap 40, paddingH 40, paddingBottom 48
+  topSection: {
+    paddingHorizontal: 40,
+    gap: 40,
+    paddingBottom: 48,
   },
+
+  // Back Arrow
+  // Figma: Outline Icon Library, 32x32
   backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  screenTitle: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 24,
-    lineHeight: 32,
-    letterSpacing: -0.5,
-    color: FIGMA_COLORS.textPrimary,
-    textAlign: 'center' as const, // Figma: textAlignHorizontal CENTER
-  },
-
-  // Rent Summary Card
-  rentSummaryCard: {
-    backgroundColor: FIGMA_COLORS.cardSurface,
-    borderRadius: 16,
-    padding: 20,
-    gap: 16,
-  },
-  rentSummaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  rentLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 17,   // Figma: lineHeightPx 16.92
-    letterSpacing: -0.24,  // Figma: letterSpacing -0.24
-    color: FIGMA_COLORS.labelText, // #878787
-    textAlign: 'left' as const, // Left-aligned in row layout
-  },
-  rentMonth: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,     // Figma: 14px (was 12)
-    lineHeight: 20,   // Figma: ~19.74 ≈ 20
-    letterSpacing: -0.56,  // Figma: letterSpacing -0.56
-    color: '#CBCBCB', // Figma: #CBCBCB (was #A6A6A6)
-    textAlign: 'right' as const, // Right side of row
-  },
-  rentAmountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  rentAmountLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.labelText, // #878787
-    textAlign: 'left' as const, // Left side of row
-  },
-  rentAmountValue: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 24,
-    lineHeight: 32,
-    letterSpacing: -0.5,
-    color: FIGMA_COLORS.textPrimary,
-    textAlign: 'right' as const, // Right side of row
-  },
-  cashbackRow: {
-    alignItems: 'flex-start',
-  },
-  cashbackPill: {
-    backgroundColor: 'rgba(255, 154, 109, 0.1)',
-    borderRadius: 100,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: FIGMA_COLORS.accent,
-  },
-  cashbackPillText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 16,
-    color: FIGMA_COLORS.accent,
-    textAlign: 'center' as const, // Centered in pill
-  },
-
-  // Section Divider
-  sectionDivider: {
-    height: 1,
-    backgroundColor: FIGMA_COLORS.divider, // #4D4D4D
-    marginVertical: 24,
-  },
-
-  // Methods Section
-  methodsSection: {
-    gap: 16,
-  },
-  sectionTitle: {
-    // PRODUCT DECISION: Figma 41:8901 shows section title at 28px, but implementation uses
-    // 16px as part of a richer layout with subtitle, radio cards, and fee breakdown.
-    // The Figma design is simpler; the code intentionally diverges for better UX.
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    lineHeight: 24,
-    color: FIGMA_COLORS.textPrimary,
-    textAlign: 'center' as const, // Figma 41:9078 textAlignHorizontal CENTER
-  },
-  sectionSubtitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.textSecondary, // #A6A6A6 - subtext per Figma
-    textAlign: 'center' as const, // Figma 41:9060 textAlignHorizontal CENTER
-    marginBottom: 8,
-  },
-  methodsList: {
-    gap: 12,
-  },
-  loadingMethodsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 8,
-  },
-  loadingMethodsText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 16,
-    color: FIGMA_COLORS.textSecondary,
-  },
-
-  // Payment Method Card
-  methodCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: FIGMA_COLORS.cardSurface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: FIGMA_COLORS.borderDefault, // #4D4D4D
-    padding: 16,
-  },
-  methodCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioEmpty: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    borderColor: FIGMA_COLORS.textTertiary, // #4D4D4D - subtextSecondary
-  },
-  methodIconContainer: {
     width: 32,
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  methodTextContainer: {
-    flex: 1,
-    gap: 2,
-  },
-  methodTitle: {
-    fontFamily: 'PlusJakartaSans-Regular',  // Figma: fontWeight 400 (was Medium/500)
-    fontSize: 12,     // Figma: 12px (was 14)
-    lineHeight: 20,
-    color: FIGMA_COLORS.valueText, // #CBCBCB
-    textAlign: 'left' as const, // Left-aligned in card row
-  },
-  methodTitleSelected: {
-    color: '#D2D2D2', // Figma: selected card title is #D2D2D2 (not pure white)
-  },
-  methodSubtitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 16,
-    color: FIGMA_COLORS.textSecondary, // #A6A6A6 - subtext per Figma
-    textAlign: 'left' as const, // Left-aligned in card row
-  },
-  methodFee: {
-    fontFamily: 'PlusJakartaSans-Regular',  // Figma: fontWeight 400 (was Medium/500)
-    fontSize: 14,     // Figma: 14px (was 12)
-    lineHeight: 20,
-    color: '#CBCBCB', // Figma: #CBCBCB (was #A6A6A6)
-    textAlign: 'right' as const, // Right-aligned fee label
-  },
 
-  // Fee Breakdown
-  feeBreakdown: {
+  // Rent Card
+  // Figma: Frame 1686557240, bg #202020, radius 12, padding 24/16, gap 32
+  rentCard: {
     backgroundColor: FIGMA_COLORS.cardSurface,
     borderRadius: 12,
-    padding: 16,
-    marginTop: 24,
-    gap: 12,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    gap: 32,
   },
-  feeRow: {
+
+  // Rent card top row: due label + month
+  rentCardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  feeLabel: {
+  rentDueLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 17,
+    letterSpacing: -0.24,
+    color: FIGMA_COLORS.labelText, // #878787
+  },
+  rentMonthText: {
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: -0.56,
+    color: FIGMA_COLORS.rentMonth, // #CBCBCB
+  },
+
+  // Breakdown section - Figma: column, gap varies
+  breakdownSection: {
+    gap: 12,
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  breakdownLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
     lineHeight: 20,
     color: FIGMA_COLORS.labelText, // #878787
-    textAlign: 'left' as const, // Left side of row
   },
-  feeValue: {
+  breakdownValue: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: FIGMA_COLORS.valueText, // #CBCBCB
-    textAlign: 'right' as const, // Right side of row
+    color: FIGMA_COLORS.feeText, // #CBCBCB
   },
-  feeDivider: {
-    height: 1,
+  breakdownDivider: {
+    height: StyleSheet.hairlineWidth,
     backgroundColor: FIGMA_COLORS.divider, // #4D4D4D
-    marginVertical: 4,
   },
-  feeTotalLabel: {
+  breakdownTotal: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 14,
     lineHeight: 20,
-    color: FIGMA_COLORS.textPrimary,
-    textAlign: 'left' as const, // Left side of row
-  },
-  feeTotalValue: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 16,
-    lineHeight: 24,
-    color: FIGMA_COLORS.textPrimary,
-    textAlign: 'right' as const, // Right side of row
+    color: FIGMA_COLORS.feeText, // #CBCBCB
   },
 
-  // Spacer
-  spacer: {
-    flex: 1,
-    minHeight: 32,
+  // Cashback row below card
+  cashbackRow: {
+    alignItems: 'center',
   },
-
-  // Button Container
-  buttonContainer: {
-    marginTop: 24,
-  },
-
-  // Footer
-  footerText: {
+  cashbackText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: '#A9A9A9', // Figma: #A9A9A9 (neutral.500) per payment-select JSON
-    textAlign: 'center',
-    marginTop: 16,
+    color: FIGMA_COLORS.cashbackText, // #FF9A6D
   },
-  secureRow: {
+
+  // ===== BOTTOM SHEET =====
+  // Figma: Frame 2095586317, column, gap 15, anchored BOTTOM
+  bottomSheet: {
+    alignItems: 'center',
+    gap: 15,
+  },
+
+  // Drag Handle - Figma: Rectangle 53, 48x4, #4D4D4D, radius 200
+  dragHandle: {
+    width: 48,
+    height: 4,
+    backgroundColor: FIGMA_COLORS.dragHandle,
+    borderRadius: 200,
+  },
+
+  // Sheet Panel - Figma: Frame 1686557301, bg #1A1A1A, borderRadius tl/tr 23
+  sheetPanel: {
+    width: '100%',
+    backgroundColor: FIGMA_COLORS.bottomSheetPanel,
+    borderTopLeftRadius: 23,
+    borderTopRightRadius: 23,
+    paddingTop: 15,
+  },
+
+  // Sheet Content - Figma: Frame 1686557230, column, gap ~30, paddingTop 16
+  sheetContent: {
+    paddingTop: 16,
+    gap: 30,
+  },
+
+  // Heading Container - Figma: padding 0 48
+  headingContainer: {
+    paddingHorizontal: 48,
+  },
+  // Heading Text - Figma: 28px Regular, lineHeight 40, letterSpacing -1, #FFFFFF, left aligned
+  headingText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 28,
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: FIGMA_COLORS.textPrimary,
+  },
+  // Orange span - Figma: "Payment Method" portion in #FF9A6D
+  headingAccent: {
+    color: FIGMA_COLORS.headingAccent,
+  },
+
+  // Cashback earned row (all-setup variant)
+  cashbackEarnedRow: {
+    paddingHorizontal: 48,
+  },
+  cashbackEarnedText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.cashbackText, // #FF9A6D
+  },
+
+  // Methods Container - Figma: Frame 2095586364, column, gap 16, padding 0 48
+  methodsContainer: {
+    paddingHorizontal: 48,
+    gap: 16,
+  },
+
+  // Loading row
+  loadingRow: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+
+  // Payment Method Row - Figma: row, space-between, center, gap 4, height HUG (28 or 44)
+  methodRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  methodRowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 12,
+    gap: 4,
+    flex: 1,
   },
-  secureText: {
+
+  // Radio Container - Figma: Frame 16x16
+  radioContainer: {
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Method text container (stacked title + subtitle)
+  methodTextContainerStacked: {
+    gap: 4,
+  },
+
+  // Method Title - Figma: 12px Regular, lineHeight 20
+  // Color varies: #D2D2D2 selected, #878787 unselected
+  methodTitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.textSecondary, // #A6A6A6 - subtext per Figma
-    textAlign: 'center' as const, // Centered with lock icon
+  },
+
+  // Method Subtitle (account detail) - Figma: 12px Regular, lineHeight 20, #CBCBCB
+  methodSubtitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.subtitleText, // #CBCBCB
+  },
+
+  // "Set it up" pill - Figma: bg #202020, radius 40, padding 4/12, gap 10
+  setItUpPill: {
+    backgroundColor: FIGMA_COLORS.cardSurface, // #202020
+    borderRadius: 40,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  setItUpText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.pillText, // #DDDDDD
+    textAlign: 'center',
+  },
+
+  // Fee text (all-setup variant) - Figma: 14px Regular, lineHeight 20, #CBCBCB
+  feeText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: FIGMA_COLORS.feeText, // #CBCBCB
+  },
+
+  // Thin divider between rows - Figma: Vector, stroke #4D4D4D weight 0.25
+  thinDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: FIGMA_COLORS.divider, // #4D4D4D
+  },
+
+  // CTA Section - Figma: padding 0 48, gap 16
+  ctaSection: {
+    paddingHorizontal: 48,
+    gap: 16,
+    paddingBottom: 24,
+  },
+
+  // CTA Subtext - Figma: 12px Regular, lineHeight 20, #A9A9A9, center
+  ctaSubtext: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.footerText, // #A9A9A9
+    textAlign: 'center',
   },
 });

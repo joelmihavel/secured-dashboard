@@ -23,11 +23,6 @@ jest.mock('@/src/components/patterns', () => ({
   DottedPattern: () => null,
 }));
 
-jest.mock('@expo/vector-icons', () => {
-  const { View } = require('react-native');
-  return { Ionicons: (props: any) => <View {...props} /> };
-});
-
 jest.mock('react-native-svg', () => {
   const { View, Text: RNText } = require('react-native');
   return {
@@ -42,17 +37,17 @@ jest.mock('react-native-svg', () => {
   };
 });
 
-jest.mock('@/src/hooks', () => ({
+jest.mock('@/src/hooks/usePayments', () => ({
   usePaymentHistory: () => ({
     data: {
       payments: [{
         id: 'txn-123',
-        amount: 40000,
+        amount: 32500,
         pg_fee: 200,
         cashback_applied: 0,
         cashback_earned: 200,
-        net_amount: 40000,
-        amount_paise: 4000000,
+        net_amount: 32500,
+        amount_paise: 3250000,
         pg_fee_paise: 20000,
         cashback_applied_paise: 0,
         status: 'success',
@@ -73,19 +68,6 @@ jest.mock('@/src/hooks', () => ({
     isLoading: false,
   }),
   useGenerateReceipt: () => ({ mutate: jest.fn(), isPending: false }),
-}));
-
-jest.mock('@/src/services/supabase/client', () => ({
-  supabase: {
-    auth: { getSession: jest.fn().mockResolvedValue({ data: { session: null } }) },
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn().mockResolvedValue({ data: null }),
-        })),
-      })),
-    })),
-  },
 }));
 
 describe('TransactionDetailScreen', () => {
@@ -127,15 +109,14 @@ describe('TransactionDetailScreen', () => {
     expect(getByText(/Pay by the 7th to earn cashback/)).toBeTruthy();
   });
 
-  it('shows loading state when data is not ready', () => {
-    const usePaymentHistory = require('@/src/hooks').usePaymentHistory;
-    jest.spyOn(require('@/src/hooks'), 'usePaymentHistory').mockReturnValueOnce({
-      data: null,
-      isLoading: true,
-    });
-
+  it('renders back button', () => {
     const { getByTestId } = render(<TransactionDetailScreen />);
-    expect(getByTestId('transaction-detail-loading')).toBeTruthy();
+    expect(getByTestId('back-button')).toBeTruthy();
+  });
+
+  it('renders Payable Rent row', () => {
+    const { getByText } = render(<TransactionDetailScreen />);
+    expect(getByText('Payable Rent')).toBeTruthy();
   });
 
   it('matches snapshot', () => {

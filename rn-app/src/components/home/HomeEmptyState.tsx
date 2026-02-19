@@ -135,8 +135,14 @@ function HomeEmptyStateComponent({
 
   return (
     <View style={styles.container}>
-      {/* Headline: "Your rent is due in X days" */}
-      <HeadlineSection variant="due" daysUntilDue={daysUntilDue} />
+      {/* Headline: "Your rent is due in X days"
+          Figma 243-4062: Empty state headline does NOT show "Paying with:" label
+          Only show "Paying with:" when payment carousel is visible */}
+      <HeadlineSection
+        variant="due"
+        daysUntilDue={daysUntilDue}
+        showPayingWith={showPaymentCarousel}
+      />
 
       {/* Payment Method Carousel (for UPI variants) */}
       {showPaymentCarousel && (
@@ -157,16 +163,12 @@ function HomeEmptyStateComponent({
         </View>
       )}
 
-      {/* Tab Switcher: Recent Payments / Cashbacks */}
+      {/* Tab Section: Toggle + content wrapped together
+          Figma 243-5689: same structure as active state Frame 1686557297
+          gap 48, paddingTop 8, alignItems center */}
       {showTabSwitcher && (
         <View style={styles.tabSection}>
           <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
-        </View>
-      )}
-
-      {/* Tab Content */}
-      {showTabSwitcher && (
-        <View style={styles.tabContent}>
           {activeTab === 'recent_payments' ? (
             <EmptyPaymentsState />
           ) : (
@@ -218,17 +220,14 @@ const styles = StyleSheet.create({
   section: {
     // Figma 243-5689: sections aligned to container gap
   },
+  // Figma: Tab section wraps toggle + content together
+  // Same structure as active state Frame 1686557297
+  // gap 48, paddingTop 8, alignItems center
   tabSection: {
-    // Figma 243-5689: container gap handles 24px between sections
-    // No extra marginTop needed -- parent gap: 24 provides the spacing
-    paddingHorizontal: 32, // Figma: paddingHorizontal 32 (matches active state tabContainer)
-    alignItems: 'center', // Figma: counterAxisAlignItems CENTER for tab switcher
-    paddingTop: 8, // Figma 243:3327: paddingTop 8 (matches active state tabContainer)
-  },
-  tabContent: {
-    flex: 1,
-    // Figma 243-5689: parent gap: 24 handles spacing after tabs
-    // Sub-components handle their own paddingHorizontal: 32
+    gap: 48, // Figma: itemSpacing 48 between toggle and content
+    paddingTop: 8, // Figma: paddingTop 8
+    alignItems: 'center', // Figma: counterAxisAlignItems CENTER
+    overflow: 'hidden', // Figma: clipsContent true
   },
 });
 

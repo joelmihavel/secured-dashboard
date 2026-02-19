@@ -56,9 +56,8 @@ const styles = StyleSheet.create({
     gap: 16, // Figma: gap 16
   },
   sectionLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 12, // Figma: fontSize 12
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
     color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
     letterSpacing: 0.5, // Figma: letterSpacing 0.5

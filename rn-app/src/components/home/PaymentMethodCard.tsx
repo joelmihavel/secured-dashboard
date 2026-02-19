@@ -189,8 +189,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   upiLogoText: {
+    fontFamily: 'PlusJakartaSans-Bold', // Figma: fontWeight 700
     fontSize: 12, // Figma: exact
-    fontWeight: '700',
     color: '#27803B',
   },
   upiLogoIcon: {
@@ -202,20 +202,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   upiIconText: {
+    fontFamily: 'PlusJakartaSans-Bold', // Figma: fontWeight 700
     fontSize: 8,
-    fontWeight: '700',
     color: colors.white,
   },
   visaText: {
+    fontFamily: 'PlusJakartaSans-Bold', // Figma: fontWeight 700
     fontSize: 20, // Figma: exact
-    fontWeight: '700',
     color: colors.white,
     fontStyle: 'italic',
     letterSpacing: 1,
   },
   bankText: {
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 16, // Figma: exact
-    fontWeight: '500',
     color: colors.white,
   },
   // Selected Badge

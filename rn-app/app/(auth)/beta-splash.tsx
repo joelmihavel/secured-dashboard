@@ -1,23 +1,22 @@
 /**
  * Beta Splash Screen
- * Figma Node: 1-28071
+ * Figma Node: 1-28071 (Splash / get-started --animation 2)
  *
- * PIXEL-PERFECT Figma Values (CORRECTED 2026-02-05):
+ * PIXEL-PERFECT Figma Values:
  * - Background: #131313 (black.700)
- * - Swatch pattern opacity: 8% (opacity-8 per Figma)
- * - Logo Container (176:2750): 33.375x40px at Y=756 (lower portion of screen)
- * - Badge Frame (176:2752): 96x28px at Y=809
- * - Logo to Badge gap: 13px (calculated: 809 - 796 = 13)
- * - Badge: background #FF9A6D (brand.500)
- * - Badge padding: 8px horizontal, 4px vertical
- * - Badge border radius: 4px
- * - Badge text: Plus Jakarta Sans Medium, 12px, line-height 20px
- * - Badge text color: #000000 (black.900)
- * - Badge text tracking: -0.2px
- * - Badge width: auto (content-based per Figma)
- *
- * Layout: Logo and badge are positioned in lower portion of screen,
- * not centered. Y=756 out of 852 total = ~89% from top.
+ * - Dotted pattern: 8% opacity, no background shape
+ * - Logo Container (176:2750): 33.375x40px at y=406 in 852-height frame
+ *   -> vertically centered (center at y=426 = 50% of 852)
+ *   -> constraints: horizontal CENTER, vertical CENTER
+ * - Badge Frame (176:2752): HUG content, at y=458
+ *   -> background #FF9A6D (brand.500), borderRadius 4px (radius.xs)
+ *   -> padding: 8px horizontal (spacing.xs), 4px vertical (spacing.xxs)
+ *   -> layout: row, justifyContent center, alignItems center, gap 10
+ *   -> constraints: horizontal CENTER
+ * - Badge Text (176:2753): "BETA LAUNCH"
+ *   -> fontSize 12, lineHeight 20, fontFamily PlusJakartaSans-Medium
+ *   -> letterSpacing -0.2, color #000000, textAlign center
+ * - Logo-to-badge gap: 12px (458 - 446 = 12)
  */
 
 import React, { useEffect } from 'react';
@@ -31,7 +30,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Screen, Logo, Text, DottedPattern } from '@/src/components';
-import { colors, duration, spacing, radius, typography, scaledSpacing } from '@/src/theme';
+import { colors, duration, spacing, radius } from '@/src/theme';
 
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
@@ -40,25 +39,12 @@ const FIGMA_COLORS = {
   badgeText: colors.black[900],        // #000000
 } as const;
 
-// Exact Figma dimensions (from node 1-28071, extracted 2026-02-05)
+// Exact Figma dimensions (from blueprint 1-28071)
 const FIGMA_DIMENSIONS = {
-  // Logo Container (176:2750): 33.375 x 40px at Y=756
-  logoWidth: 33.375,
+  // Logo Container (176:2750): 33.375 x 40px
   logoHeight: 40,
-  // Badge Frame (176:2752): 96 x 28px at Y=809
-  badgeWidth: 96,                      // Figma: frame_1686557110 width
-  badgeHeight: 28,                     // Figma: frame_1686557110 height
-  badgePaddingHorizontal: 8,           // Figma: paddingLeft/Right = 8
-  badgePaddingVertical: 4,             // Figma: paddingTop/Bottom = 4
-  badgeBorderRadius: 4,                // Figma: borderRadius = 4
-  badgeTextWidth: 80,                  // Figma: login_Prompt width
-  // Gap: Logo bottom (y=756+40=796) to Badge top (y=809) = 13px
-  logoToBadgeGap: 13,                  // Figma exact: 809 - 796 = 13px
-  // Screen dimensions for positioning calculation
-  screenHeight: 852,                   // Figma frame height
-  logoTopY: 756,                       // Logo Y position from Figma
-  // Bottom padding: Screen height (852) - Badge bottom (809+28=837) = 15px
-  bottomPadding: 15,
+  // Gap: Logo bottom (y=406+40=446) to Badge top (y=458) = 12px
+  logoToBadgeGap: 12,
 } as const;
 
 export default function BetaSplashScreen() {
@@ -101,27 +87,25 @@ export default function BetaSplashScreen() {
       style={{ backgroundColor: FIGMA_COLORS.background }}
       testID="beta-splash-screen"
     >
-      {/* Background Pattern - 8% opacity per Figma (opacity-8) */}
-      {/* No Background Shape on this screen - only dotted pattern */}
+      {/* Background Pattern - 8% opacity, no background shape on this screen */}
       <DottedPattern showShape={false} />
 
-      {/* Content positioned in lower portion of screen per Figma */}
-      {/* Figma shows logo at Y=756/852 (~89% from top) */}
+      {/* Content centered vertically per Figma constraints (CENTER/CENTER) */}
+      {/* Logo center at y=426 in 852-height frame = exactly 50% */}
       <View style={styles.container}>
-        <View style={styles.spacer} />
+        <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
+          <Logo size={FIGMA_DIMENSIONS.logoHeight} />
+        </Animated.View>
 
-        <View style={styles.contentWrapper}>
-          <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-            <Logo size={FIGMA_DIMENSIONS.logoHeight} />
-          </Animated.View>
-
-          {/* Badge - Figma: frame_1686557110 */}
-          <Animated.View style={[styles.badge, badgeAnimatedStyle]}>
-            <Text style={styles.badgeText}>
-              BETA LAUNCH
-            </Text>
-          </Animated.View>
-        </View>
+        {/* Badge - Figma: Frame 1686557110 (176:2752) */}
+        <Animated.View style={[styles.badge, badgeAnimatedStyle]}>
+          <Text
+            variant="bodySmMedium"
+            style={styles.badgeText}
+          >
+            BETA LAUNCH
+          </Text>
+        </Animated.View>
       </View>
     </Screen>
   );
@@ -130,39 +114,29 @@ export default function BetaSplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  spacer: {
-    flex: 1,
-  },
-  contentWrapper: {
-    alignItems: 'center',
-    // Bottom padding: Figma shows 15px from badge bottom to screen bottom
-    paddingBottom: FIGMA_DIMENSIONS.bottomPadding,
   },
   logoContainer: {
-    // 13px gap is custom (not in spacing tokens), so scale it proportionally
-    marginBottom: scaledSpacing(FIGMA_DIMENSIONS.logoToBadgeGap),
+    // 12px gap below logo to badge (Figma: 458 - 446 = 12)
+    marginBottom: FIGMA_DIMENSIONS.logoToBadgeGap,
   },
   badge: {
-    // Width is auto (content-based), NOT fixed per Figma
+    // HUG content sizing (no fixed width)
     backgroundColor: FIGMA_COLORS.badgeBackground,
-    // Using design tokens instead of hardcoded values:
-    borderRadius: radius.xs,                    // 4pt (Figma: borderRadius = 4)
+    borderRadius: radius.xs,                    // 4px (Figma: borderRadius = 4)
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xs,              // 8pt (Figma: paddingLeft/Right = 8)
-    paddingVertical: spacing.xxs,               // 4pt (Figma: paddingTop/Bottom = 4)
+    paddingHorizontal: spacing.xs,              // 8px (Figma: paddingLeft/Right = 8)
+    paddingVertical: spacing.xxs,               // 4px (Figma: paddingTop/Bottom = 4)
   },
   badgeText: {
-    // Using typography.bodySmMedium as base (12px Medium)
-    // with custom letterSpacing override per Figma (-0.2px)
-    ...typography.bodySmMedium,
-    letterSpacing: -0.2,                        // Figma: tracking = -0.2px
-    color: FIGMA_COLORS.badgeText,
+    // typography.bodySmMedium provides: fontSize 12, lineHeight 20,
+    // fontFamily PlusJakartaSans-Medium - matches Figma exactly
+    // Override letterSpacing and color per Figma blueprint
+    letterSpacing: -0.2,                        // Figma: -0.2px
+    color: FIGMA_COLORS.badgeText,              // #000000
     textAlign: 'center',
-    textTransform: 'uppercase',
   },
 });

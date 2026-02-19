@@ -2,40 +2,26 @@
  * Add UPI Screen
  * Figma Reference: 41-8369 (Pay Rent / Add UPI Payment)
  *
- * PIXEL-PERFECT implementation based on Figma extraction (verified from extracted-values.json):
+ * PIXEL-PERFECT implementation from Figma blueprint:
  *
  * Screen Layout:
  * - Background: #131313 (black.700)
- * - Content paddingHorizontal: 48px (xxxl) - content x: 12018, screen x: 11970, diff: 48
- * - Content paddingTop: 117px (from safe area to back arrow)
- * - Form section gap: 16px between input fields (from layout.gap in Frame 2095586311)
+ * - Content paddingHorizontal: 48px
+ * - Content y offset: 117px (from top of screen to content frame)
+ * - Content gap: 40px between major sections
+ * - Inner content gap: 48px between title/form/button groups
  *
- * Typography (EXACT from Figma extraction):
- * - Title "Add your / UPI Method": 48px/64px, weight 400, letterSpacing -2, textAlign LEFT
- * - Labels: 12px/20px, weight 500, color #A9A9A9, textAlign LEFT
- * - Input text: 20px/32px, weight 400 (bodyLg), color #DDDDDD (filled), #444444 (placeholder)
- * - Edit link: 12px/20px, weight 400 (bodySm), color #878787, textAlign RIGHT
- * - Button text: 16px/24px, weight 500 (Medium), textAlign CENTER
- * - Button disabled: bg #202020, text #444444
- * - Button active: bg #FF9A6D, text #131313
- * - Footer text: 12px/20px, weight 400, color #A9A9A9, textAlign CENTER
+ * Title: "Add your  UPI Method"
+ * - "Add your " (chars 0-9): #A9A9A9 (gray), NOT white
+ * - "UPI Method" (chars 10-20): #FF9A6D (accent)
+ * - Font: PlusJakartaSans-Regular, 48px/64px, letterSpacing -2
  *
- * Colors (EXACT from Figma):
- * - Background: #131313 (colors.black[700])
- * - Title white: #FFFFFF (colors.white)
- * - Title accent: #FF9A6D (colors.brand[500]) - verified from screenshot
- * - Labels: #A9A9A9 (colors.neutral[500])
- * - Edit link: #878787 (colors.neutral[600])
- * - Input placeholder: #444444 (colors.neutral[800])
- * - Input value: #DDDDDD (colors.neutral[200]) - CORRECTED from #FFFFFF
- * - Footer text: #A9A9A9 (colors.neutral[500]) - NOT #CBCBCB
- * - Error text: #FF8080 (colors.error.default)
- * - Button disabled bg: #202020 (colors.black[500])
- * - Button disabled text: #444444 (colors.neutral[800])
- * - Button active bg: #FF9A6D (colors.brand[500])
- * - Button active text: #131313 (colors.black[700])
- *
- * NOTE: No visible underlines in Figma design - inputs have clean appearance
+ * Labels: PlusJakartaSans-Medium, 12px/20px, #A9A9A9
+ * Hint "edit": PlusJakartaSans-Regular, 14px/20px, #878787, textAlign RIGHT
+ * Input placeholder: PlusJakartaSans-Regular, 20px/32px, #444444
+ * Input value: PlusJakartaSans-Regular, 20px/32px, #DDDDDD
+ * Button text: PlusJakartaSans-Medium, 16px/24px, #444444 (disabled), textAlign CENTER
+ * Footer: PlusJakartaSans-Regular, 12px/20px, #A9A9A9, textAlign LEFT
  */
 
 import React, { useState, useCallback } from 'react';
@@ -54,50 +40,21 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
 import { useAddUpiVpa, useVerifyUpi } from '@/src/hooks';
-import { colors, spacing, typography } from '@/src/theme';
 
-// Design tokens from Figma 41-8369 (VERIFIED from extracted-values.json)
-const FIGMA = {
-  // Screen dimensions
-  screen: {
-    width: 393,
-    height: 852,
-  },
-  // Colors mapped to design tokens (EXACT hex values from Figma)
-  colors: {
-    background: colors.black[700],         // #131313
-    titleWhite: colors.white,              // #FFFFFF
-    titleAccent: colors.brand[500],        // #FF9A6D
-    labelText: colors.neutral[500],        // #A9A9A9
-    editLinkText: colors.neutral[600],     // #878787 (from "Hint text" node)
-    inputPlaceholder: colors.neutral[800], // #444444 (from "Text" nodes)
-    inputValue: colors.neutral[200],        // #DDDDDD (Figma verified)
-    footerText: colors.neutral[500],       // #A9A9A9 (CORRECTED - from footer text node)
-    errorText: colors.error.default,       // #FF8080
-  },
-  // Layout values from Figma extraction (VERIFIED)
-  layout: {
-    paddingHorizontal: spacing.xxxl,       // 48px (content at x:12018, screen at x:11970)
-    paddingTop: 117,                       // From Figma position analysis
-    contentGap: spacing.xxl,               // 40px between major sections
-    fieldGap: spacing.md,                  // 16px between form fields (from Frame 2095586311)
-    labelInputGap: spacing.xs,             // 8px between label and input
-  },
-  // Typography from Figma (EXACT values)
-  typography: {
-    inputPlaceholder: {
-      fontSize: 20,                        // From "Text" nodes: e.g. John Smith
-      lineHeight: 32,
-      fontWeight: '400' as const,
-    },
-  },
-  // Button states (for disabled/active overrides on PrimaryButton)
-  button: {
-    disabledBg: colors.black[500],         // #202020
-    disabledText: colors.neutral[800],     // #444444
-    activeBg: colors.brand[500],           // #FF9A6D
-    activeText: colors.black[700],         // #131313
-  },
+// Figma-exact color constants from blueprint 41-8369
+const FIGMA_COLORS = {
+  background: '#131313',
+  titleGray: '#A9A9A9',
+  titleAccent: '#FF9A6D',
+  labelText: '#A9A9A9',
+  editLinkText: '#878787',
+  inputPlaceholder: '#444444',
+  inputValue: '#DDDDDD',
+  footerText: '#A9A9A9',
+  errorText: '#FF8080',
+  buttonDisabledBg: '#202020',
+  buttonDisabledText: '#444444',
+  white: '#FFFFFF',
 } as const;
 
 // Back Arrow Icon
@@ -105,7 +62,7 @@ const BackArrow = () => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
     <Path
       d="M15 18L9 12L15 6"
-      stroke={FIGMA.colors.titleWhite}
+      stroke={FIGMA_COLORS.white}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -134,7 +91,6 @@ export default function AddUpiScreen() {
     return upiRegex.test(id);
   };
 
-  // Verify UPI VPA before adding
   const handleVerify = useCallback(async () => {
     if (!validateUpiId(upiId)) {
       setError('Please enter a valid UPI ID (e.g., name@upi)');
@@ -148,7 +104,6 @@ export default function AddUpiScreen() {
         onSuccess: (data) => {
           if (data.verified) {
             setIsVerified(true);
-            // Auto-fill account name from verification if empty
             if (!accountName && data.name) {
               setAccountName(data.name);
             }
@@ -215,8 +170,8 @@ export default function AddUpiScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             {
-              paddingTop: insets.top + FIGMA.layout.paddingTop,
-              paddingBottom: insets.bottom + spacing.lg,
+              paddingTop: insets.top + 117,
+              paddingBottom: insets.bottom + 24,
             },
           ]}
           keyboardShouldPersistTaps="handled"
@@ -231,10 +186,10 @@ export default function AddUpiScreen() {
             <BackArrow />
           </TouchableOpacity>
 
-          {/* Title Section */}
-          <ScreenTitle white="Add your" accent="UPI Method" />
+          {/* Title Section - Figma: "Add your " is #A9A9A9 (gray), NOT white */}
+          <ScreenTitle gray="Add your " accent="UPI Method" />
 
-          {/* Form Section */}
+          {/* Form Section - Figma: 16px gap between fields */}
           <View style={styles.formSection}>
             <TextInput
               label="Account holder name"
@@ -267,7 +222,7 @@ export default function AddUpiScreen() {
             ) : null}
           </View>
 
-          {/* Spacer */}
+          {/* Spacer pushes button to bottom */}
           <View style={styles.spacer} />
 
           {/* Verify + Proceed Buttons */}
@@ -289,7 +244,7 @@ export default function AddUpiScreen() {
             />
           )}
 
-          {/* Footer Text - centered per Figma */}
+          {/* Footer Text - Figma: 12px/20px, Regular, #A9A9A9, textAlign LEFT */}
           <Text style={styles.footerText}>
             This will be used to make rent payments and earn cashback.
           </Text>
@@ -300,9 +255,8 @@ export default function AddUpiScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Screen container with dark background
   screen: {
-    backgroundColor: FIGMA.colors.background,
+    backgroundColor: FIGMA_COLORS.background,
   },
   container: {
     flex: 1,
@@ -310,11 +264,11 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  // Content padding from Figma: px-48, gap-40
+  // Figma: paddingHorizontal 48px, gap 40px between major sections
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: FIGMA.layout.paddingHorizontal, // 48px
-    gap: FIGMA.layout.contentGap, // 40px
+    paddingHorizontal: 48,
+    gap: 40,
   },
 
   // Back button
@@ -325,39 +279,33 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
 
-  // Title uses shared ScreenTitle component
-
-  // Form section with field gaps (Figma: 16px gap from Frame 2095586311)
+  // Form section: Figma gap 16px between fields (from Frame 1686557311 layout.gap)
   formSection: {
-    gap: FIGMA.layout.fieldGap, // 16px between fields
+    gap: 16,
   },
 
-  // Error text: bodySm (12px/20px)
+  // Error text: 12px/20px, Regular, #FF8080
   errorText: {
-    fontFamily: typography.bodySm.fontFamily,
-    fontSize: typography.bodySm.fontSize,           // 12px
-    lineHeight: typography.bodySm.lineHeight,       // 20px
-    letterSpacing: typography.bodySm.letterSpacing,
-    fontWeight: typography.bodySm.fontWeight,
-    color: FIGMA.colors.errorText,                 // #FF8080
-    textAlign: 'left' as const,                    // Figma: LEFT alignment
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.errorText,
+    textAlign: 'left',
   },
 
   // Spacer pushes button to bottom
   spacer: {
     flex: 1,
-    minHeight: spacing.xxl, // Minimum 40px
+    minHeight: 40,
   },
 
-  // Footer text: bodySm (12px/20px), left-aligned - Figma: #A9A9A9
+  // Footer text: Figma 12px/20px, Regular, #A9A9A9, textAlign LEFT
   footerText: {
-    fontFamily: typography.bodySm.fontFamily,
-    fontSize: typography.bodySm.fontSize,           // 12px (Figma: 12px/20px footer text)
-    lineHeight: typography.bodySm.lineHeight,       // 20px
-    letterSpacing: typography.bodySm.letterSpacing,
-    fontWeight: typography.bodySm.fontWeight,       // 400
-    color: FIGMA.colors.footerText,                // #A9A9A9
-    marginTop: spacing.md,
-    textAlign: 'left' as const,                    // Figma: LEFT alignment (fresh JSON extraction)
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.footerText,
+    marginTop: 16,
+    textAlign: 'left',
   },
 });

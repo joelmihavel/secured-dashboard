@@ -49,15 +49,15 @@ import { useDashboard, useAuth, usePaymentHistory } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
 // Blueprint colors (verified against 41-8760-blueprint.json)
-const PROFILE_COLORS = {
-  background: colors.black[700],         // #131313
-  cardBackground: colors.black[500],     // #202020
-  sectionTitle: colors.neutral[600],     // #878787
-  accentOrange: colors.brand[500],       // #FF9A6D
-  titleGray: colors.neutral[500],        // #A9A9A9
-  textPrimary: colors.white,             // #FFFFFF
-  menuItemText: colors.neutral[300],     // #CBCBCB
-  divider: colors.black[400],            // #4D4D4D
+const FIGMA_COLORS = {
+  background: '#131313',       // colors.black[700]
+  cardBackground: '#202020',   // colors.black[500]
+  sectionTitle: '#878787',     // colors.neutral[600]
+  accentOrange: '#FF9A6D',     // colors.brand[500]
+  titleGray: '#A9A9A9',        // colors.neutral[500]
+  textPrimary: '#FFFFFF',      // colors.white
+  menuItemText: '#CBCBCB',     // colors.neutral[300]
+  divider: '#4D4D4D',          // colors.black[400]
 } as const;
 
 // Demo chart data matching Figma design exactly (verified via Figma REST API node 41:8769)
@@ -103,7 +103,7 @@ function MenuItem({ title, onPress, testID }: MenuItemProps) {
       >
         {title}
       </Text>
-      <Ionicons name="arrow-forward" size={16} color={PROFILE_COLORS.accentOrange} />
+      <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
     </TouchableOpacity>
   );
 }
@@ -124,7 +124,7 @@ function CardMenuItem({ title, onPress, testID }: MenuItemProps) {
       accessibilityLabel={title}
     >
       <Text style={styles.menuItemText}>{title}</Text>
-      <Ionicons name="arrow-forward" size={16} color={PROFILE_COLORS.accentOrange} />
+      <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
     </TouchableOpacity>
   );
 }
@@ -187,7 +187,7 @@ function PaymentHistoryChart({ data, selectedMonth = 'MAR' }: PaymentHistoryChar
                 const barHeight = item.status === 'ontime' ? 99 : item.status === 'late' ? 56 : 1;
                 const isSelected = item.month === selectedMonth;
                 // Unpaid bars use #4D4D4D (41:8784), others use #FFFFFF (41:8772)
-                const barColor = item.status === 'unpaid' ? PROFILE_COLORS.divider : colors.white;
+                const barColor = item.status === 'unpaid' ? FIGMA_COLORS.divider : colors.white;
 
                 return (
                   <View key={item.month} style={styles.chartColumn}>
@@ -352,11 +352,11 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="arrow-back" size={24} color={PROFILE_COLORS.textPrimary} />
+              <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.textPrimary} />
             </TouchableOpacity>
 
             {/* Title (41:8764): "My  Profile" single text with spans */}
-            {/* Blueprint: width=313, height=128 (2 lines × 64px lineHeight) */}
+            {/* Blueprint: width=313, height=128 (2 lines x 64px lineHeight) */}
             <Text style={styles.titleBase}>
               <Text inherit style={styles.titleMy}>{'My '}</Text>
               <Text inherit style={styles.titleSpace}>{' '}</Text>
@@ -402,12 +402,12 @@ export default function ProfileScreen() {
                   )}
                 </View>
                 {/* User details (41:8833): column, gap=4, flex=1 */}
-                {/* Note: Credit Card XX25 (41:8837) has fill.visible=false in Figma — NOT shown */}
+                {/* Note: Credit Card XX25 (41:8837) has fill.visible=false in Figma -- NOT shown */}
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{fullName}</Text>
                   <Text style={styles.userJoinDate}>{joinDate}</Text>
                 </View>
-                <Ionicons name="arrow-forward" size={16} color={PROFILE_COLORS.accentOrange} />
+                <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
               </TouchableOpacity>
 
               {/* View Agreement (41:8839) */}
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   // Title base: 48px/64 Regular, letterSpacing -2
-  // Blueprint (41:8764): width=313, height=128 → forces 2-line wrap on "My  Profile"
+  // Blueprint (41:8764): width=313, height=128 -> forces 2-line wrap on "My  Profile"
   titleBase: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 0.5,
-    backgroundColor: PROFILE_COLORS.divider,
+    backgroundColor: FIGMA_COLORS.divider,
     borderRadius: 8,
   },
   // Bar columns container
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
   // Bar rectangle: width=16
   chartBar: {
     width: CHART_BAR_WIDTH,
-    borderRadius: 2,  // Slight rounding for visual polish
+    borderRadius: 2,
   },
   // Month label: 12px/16.92 Regular #878787, letterSpacing -0.24, center
   chartMonthLabel: {
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 0.5,
-    backgroundColor: PROFILE_COLORS.divider,
+    backgroundColor: FIGMA_COLORS.divider,
   },
   // Scroll indicator (41:8825): centered
   scrollIndicatorContainer: {

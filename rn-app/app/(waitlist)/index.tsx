@@ -132,13 +132,14 @@ const FIGMA = {
     // _designToken: "typography.bodyMd2"
     value: typography.bodyMd2,
 
-    // Card heading: fontSize 28, lineHeight 40, fontWeight 400, letterSpacing -1
+    // Card heading: fontSize 28, lineHeight 40, letterSpacing -1
     // From Figma node 160:3054 "Why was I Rejected?" text
+    // fontWeight 400 -> PlusJakartaSans-Regular
     cardHeading: {
       fontSize: 28,
       lineHeight: 40,
       letterSpacing: -1,
-      fontWeight: '400' as const,
+      fontFamily: 'PlusJakartaSans-Regular',
     },
   },
 
@@ -463,33 +464,34 @@ export default function WaitlistScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Section */}
-          <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-            style={styles.headerSection}
-          >
-            <View style={styles.logoContainer}>
-              <Logo size={38} color={FIGMA.colors.textPrimary} />
-            </View>
-
-            {/* Text Block - Figma node 41:11324 */}
-            <View style={styles.textBlock}>
-              {/* Title: "Rishabh Agnihotri, you're all set." */}
-              {/* Figma 41-11313: name in light grey #A9A9A9, "you're all set." in orange #FF9A6D */}
-              <Text style={styles.titleBase}>
-                <RNText style={styles.titleGray}>{displayName},</RNText>
-                {'\n'}
-                <RNText style={styles.titleAccent}>you're all set.</RNText>
-              </Text>
-
-              {/* Subtitle */}
-              <Text style={styles.subtitle}>
-                Welcome to the right side of renting.
-              </Text>
-            </View>
-          </Animated.View>
-
+          {/* All content - single wrapper with gap 40 matching Figma */}
           <View style={styles.contentWrapper}>
+            {/* Header Section */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
+              style={styles.headerSection}
+            >
+              <View style={styles.logoContainer}>
+                <Logo size={38} color={FIGMA.colors.textPrimary} />
+              </View>
+
+              {/* Text Block - Figma node 41:11324 */}
+              <View style={styles.textBlock}>
+                {/* Title: "Rishabh Agnihotri, you're all set." */}
+                {/* Figma 41-11313: name in gray #A9A9A9, "you're all set." in orange #FF9A6D */}
+                <Text style={styles.titleBase}>
+                  <RNText style={styles.titleGray}>{displayName},</RNText>
+                  {'\n'}
+                  <RNText style={styles.titleAccent}>you're all set.</RNText>
+                </Text>
+
+                {/* Subtitle */}
+                <Text style={styles.subtitle}>
+                  Welcome to the right side of renting.
+                </Text>
+              </View>
+            </Animated.View>
+
             {/* Timeline Card */}
             <Animated.View
               entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
@@ -563,33 +565,34 @@ export default function WaitlistScreen() {
             <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
           }
         >
-          {/* Header Section */}
-          <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-            style={styles.headerSection}
-          >
-            <View style={styles.logoContainer}>
-              <Logo size={38} color={FIGMA.colors.textPrimary} />
-            </View>
-
-            {/* Text Block - Figma node 41:11421 */}
-            <View style={styles.textBlock}>
-              {/* Title: "We can't approve you right now" */}
-              {/* Figma: #FFFFFF base, "right now" in orange #FF9A6D */}
-              <Text style={styles.titleBase}>
-                <RNText style={{ color: FIGMA.colors.textPrimary }}>We can't approve you </RNText>
-                <RNText style={styles.titleAccent}>right now</RNText>
-              </Text>
-
-              {/* Subtitle: "We're opening access in batches. Stay tuned." */}
-              {/* Figma: #A6A6A6, fontSize 14, lineHeight 20 */}
-              <Text style={styles.subtitle}>
-                We're opening access in batches. Stay tuned.
-              </Text>
-            </View>
-          </Animated.View>
-
+          {/* All content - single wrapper with gap 40 matching Figma */}
           <View style={styles.contentWrapper}>
+            {/* Header Section */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
+              style={styles.headerSection}
+            >
+              <View style={styles.logoContainer}>
+                <Logo size={38} color={FIGMA.colors.textPrimary} />
+              </View>
+
+              {/* Text Block - Figma node 41:11421 */}
+              <View style={styles.textBlock}>
+                {/* Title: "We can't approve you right now" */}
+                {/* Figma: #FFFFFF base, "right now" in orange #FF9A6D */}
+                <Text style={styles.titleBase}>
+                  <RNText style={{ color: FIGMA.colors.textPrimary }}>We can't approve you </RNText>
+                  <RNText style={styles.titleAccent}>right now</RNText>
+                </Text>
+
+                {/* Subtitle: "We're opening access in batches. Stay tuned." */}
+                {/* Figma: #A6A6A6, fontSize 14, lineHeight 20 */}
+                <Text style={styles.subtitle}>
+                  We're opening access in batches. Stay tuned.
+                </Text>
+              </View>
+            </Animated.View>
+
             {/* Timeline Card - same structure as pending */}
             {/* Figma node 41:11424: fill=#202020, radius=12, padding 24/16, gap 24 */}
             <Animated.View
@@ -712,41 +715,42 @@ export default function WaitlistScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
         }
       >
-        {/* Header Section - Frame 2095586325 (node 41:11214) */}
-        <Animated.View
-          entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-          style={styles.headerSection}
-        >
-          {/* Logo - Frame 1686557264 (node 41:11215) */}
-          {/* Extraction: width 32.04, height 38.4 */}
-          <View style={styles.logoContainer}>
-            <Logo size={38} color={FIGMA.colors.textPrimary} />
-          </View>
-
-          {/* Text Block - Frame 2095586319 (node 41:11217) */}
-          <View style={styles.textBlock}>
-            {/* Welcome Title - node 41:11218 */}
-            {/* Text: "Welcome,   Rishabh Agnihotri" - 313x192, single text with nested styles */}
-            {/* characterStyleOverrides: 0-9 (37): gray #A9A9A9, 11+ (36): orange #FF9A6D */}
-            {/* Uses RNText for inner spans so they inherit parent h1 fontSize/lineHeight */}
-            <Text style={styles.titleBase}>
-              <RNText style={styles.titleGray}>Welcome,</RNText>
-              {'\n'}
-              <RNText style={styles.titleAccent}>{displayName}</RNText>
-            </Text>
-
-            {/* Subtitle - node 41:11219 */}
-            {/* computedStyles: fontSize 14, lineHeight 20, color #A6A6A6 */}
-            <Text style={styles.subtitle}>
-              {isPendingLong
-                ? 'Taking a bit longer than usual. Hang tight!'
-                : 'Your application is in review'}
-            </Text>
-          </View>
-        </Animated.View>
-
-        {/* Content Wrapper - gap from layout.contentGap (40) */}
+        {/* All content - Frame 1686557318 (node 41:11213) */}
+        {/* Single wrapper with gap 40 matching Figma structure */}
         <View style={styles.contentWrapper}>
+          {/* Header Section - Frame 2095586325 (node 41:11214) */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
+            style={styles.headerSection}
+          >
+            {/* Logo - Frame 1686557264 (node 41:11215) */}
+            {/* Extraction: width 32.04, height 38.4 */}
+            <View style={styles.logoContainer}>
+              <Logo size={38} color={FIGMA.colors.textPrimary} />
+            </View>
+
+            {/* Text Block - Frame 2095586319 (node 41:11217) */}
+            <View style={styles.textBlock}>
+              {/* Welcome Title - node 41:11218 */}
+              {/* Text: "Welcome,   Rishabh Agnihotri" - 313x192, single text with nested styles */}
+              {/* characterStyleOverrides: 0-9 (37): gray #A9A9A9, 11+ (36): orange #FF9A6D */}
+              {/* Uses RNText for inner spans so they inherit parent h1 fontSize/lineHeight */}
+              <Text style={styles.titleBase}>
+                <RNText style={styles.titleGray}>Welcome,</RNText>
+                {'\n'}
+                <RNText style={styles.titleAccent}>{displayName}</RNText>
+              </Text>
+
+              {/* Subtitle - node 41:11219 */}
+              {/* computedStyles: fontSize 14, lineHeight 20, color #A6A6A6 */}
+              <Text style={styles.subtitle}>
+                {isPendingLong
+                  ? 'Taking a bit longer than usual. Hang tight!'
+                  : 'Your application is in review'}
+              </Text>
+            </View>
+          </Animated.View>
+
           {/* Timeline Card - Frame 2095586388 (node 41:11220) */}
           {/* computedStyles: borderRadius 12, padding 24/16, gap 24 */}
           <Animated.View
@@ -756,7 +760,7 @@ export default function WaitlistScreen() {
             <ApplicationTimeline items={timelineItems} />
           </Animated.View>
 
-          {/* Progress & Invite Card - Frame 2095586389 (node 41:11236) */}
+          {/* Progress & Invite Card - Frame 2095586389 (node 41:11242) */}
           <Animated.View
             entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
             style={styles.inviteCard}
@@ -768,16 +772,16 @@ export default function WaitlistScreen() {
             />
 
             {/* Text Block - Frame 1686557332 (node 41:11250) */}
-            {/* Contains label + description with gap: 4 (line 3553) */}
+            {/* Contains label + description with gap: 4 */}
             <View style={styles.inviteTextBlock}>
               {/* Label - "Have an Invite Code?" */}
-              {/* From extraction: fontSize 12, lineHeight 20, color #878787 */}
+              {/* Node 41:11251: fontSize 12, lineHeight 20, color #878787 */}
               <Text style={styles.inviteLabel}>
                 Have an Invite Code?
               </Text>
 
               {/* Description */}
-              {/* From extraction: fontSize 14, lineHeight 20, color #CBCBCB */}
+              {/* Node 41:11252: fontSize 14, lineHeight 20, color #CBCBCB, textAlign left, FILL */}
               <Text style={styles.inviteDescription}>
                 Get priority access to the platform if you use a referral code
               </Text>
@@ -793,7 +797,7 @@ export default function WaitlistScreen() {
             {/* Hint text - only shown when there's an error */}
             {referralError ? <Text style={styles.hintText}>{referralError}</Text> : null}
 
-            {/* Button group — Figma node 41:11554: gap 8px between divider and button */}
+            {/* Button group — Figma node 41:11254: gap 8px between divider and button */}
             <View style={styles.buttonGroup}>
               <View style={styles.divider} />
               <PrimaryButton
@@ -832,12 +836,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Main container - Frame 1686557268 (node 41:11212)
-  // computedStyles: paddingLeft/Right 40, gap 48, alignItems center
+  // Main container - maps to Frame 1686557268 (node 41:11212)
+  // Figma: paddingH 40, alignItems center
+  // The single child 41:11213 uses gap 40 for all sections
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: FIGMA.layout.containerPadding,
-    gap: FIGMA.layout.sectionGap, // 48px (spacing.xxxl) per Figma
   },
 
   // Header section - Frame 2095586325 (node 41:11214)
@@ -863,9 +867,13 @@ const styles = StyleSheet.create({
 
   // Title base - node 41:11218
   // Container text for nested styling with line break
-  // Figma: 313x192, fontSize 48, lineHeight 64
+  // Figma: 313x192, fontSize 48, lineHeight 64, letterSpacing -2
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   titleBase: {
-    ...FIGMA.typography.title,
+    fontFamily: FIGMA.typography.title.fontFamily,
+    fontSize: FIGMA.typography.title.fontSize,
+    lineHeight: FIGMA.typography.title.lineHeight,
+    letterSpacing: FIGMA.typography.title.letterSpacing,
   },
 
   // Title gray part - "Welcome,"
@@ -881,9 +889,12 @@ const styles = StyleSheet.create({
   },
 
   // Subtitle - node 41:11219
-  // computedStyles._textStyles: fontSize 14, lineHeight 20, color #A6A6A6
+  // fontSize 14, lineHeight 20, color #A6A6A6
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   subtitle: {
-    ...FIGMA.typography.subtitle,
+    fontFamily: FIGMA.typography.subtitle.fontFamily,
+    fontSize: FIGMA.typography.subtitle.fontSize,
+    lineHeight: FIGMA.typography.subtitle.lineHeight,
     color: FIGMA.colors.textSecondary,
   },
 
@@ -905,49 +916,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: FIGMA.card.paddingHorizontal,
   },
 
-  // Invite Card - Frame 2095586389 (node 41:11236)
-  // From Figma extraction line 2901-2921:
-  // paddingTop: 48, paddingBottom: 24, paddingHorizontal: 16, gap: 24
+  // Invite Card - Frame 2095586389 (node 41:11242)
+  // Figma: paddingTop 48, paddingBottom 24, paddingH 16, gap 24, alignItems flex-start
   inviteCard: {
     backgroundColor: FIGMA.colors.cardBackground,
     borderRadius: FIGMA.card.borderRadius,
-    paddingTop: spacing.xxxl, // 48px per Figma (line 2901, 2917)
+    paddingTop: spacing.xxxl, // 48px per Figma
     paddingBottom: FIGMA.card.paddingVertical, // 24px
     paddingHorizontal: FIGMA.card.paddingHorizontal, // 16px
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: FIGMA.card.gap, // 24px between children
   },
 
   // Invite text block - Frame 1686557332 (node 41:11250)
-  // From Figma extraction line 3553: itemSpacing: 4
-  // This contains label + description with gap: 4
+  // Figma: alignItems flex-start, justifyContent center, gap 4
+  // Contains label (HUG width) + description (FILL width)
   inviteTextBlock: {
     width: '100%',
-    alignItems: 'center',
-    gap: spacing.xxs, // 4px between label and description (line 3564)
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: spacing.xxs, // 4px between label and description
   },
 
   // Invite label - "Have an Invite Code?"
-  // From extraction: fontSize 12, color #878787
+  // Node 41:11251: fontSize 12, lineHeight 20, color #878787
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   inviteLabel: {
-    ...FIGMA.typography.label,
+    fontFamily: FIGMA.typography.label.fontFamily,
+    fontSize: FIGMA.typography.label.fontSize,
+    lineHeight: FIGMA.typography.label.lineHeight,
     color: FIGMA.colors.textLabel,
-    textAlign: 'center',
   },
 
   // Invite description
-  // From extraction: fontSize 14, color #CBCBCB
-  // Node 41:11252: width 281, textAlignHorizontal: LEFT
+  // Node 41:11252: fontSize 14, lineHeight 20, color #CBCBCB, textAlign left, FILL width
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   inviteDescription: {
-    ...FIGMA.typography.value,
+    fontFamily: FIGMA.typography.value.fontFamily,
+    fontSize: FIGMA.typography.value.fontSize,
+    lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textValue,
     textAlign: 'left',
     width: '100%',
   },
 
   // Hint text
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   hintText: {
-    ...FIGMA.typography.value,
+    fontFamily: FIGMA.typography.value.fontFamily,
+    fontSize: FIGMA.typography.value.fontSize,
+    lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textHint,
     width: '100%',
     marginTop: spacing.sm,
@@ -1058,14 +1076,18 @@ const styles = StyleSheet.create({
   },
 
   errorCardTitle: {
-    ...FIGMA.typography.label,
+    fontFamily: FIGMA.typography.label.fontFamily,
+    fontSize: FIGMA.typography.label.fontSize,
+    lineHeight: FIGMA.typography.label.lineHeight,
     color: FIGMA.colors.errorRed,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
 
   errorCardDescription: {
-    ...FIGMA.typography.value,
+    fontFamily: FIGMA.typography.value.fontFamily,
+    fontSize: FIGMA.typography.value.fontSize,
+    lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textSecondary,
   },
 
@@ -1099,9 +1121,13 @@ const styles = StyleSheet.create({
   },
 
   // "Why was I Rejected?" - node 160:3054
-  // Figma: #FFFFFF, fontSize 28, lineHeight 40, fontWeight 400, letterSpacing -1
+  // Figma: #FFFFFF, fontSize 28, lineHeight 40, letterSpacing -1
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   rejectionTitle: {
-    ...FIGMA.typography.cardHeading,
+    fontFamily: FIGMA.typography.cardHeading.fontFamily,
+    fontSize: FIGMA.typography.cardHeading.fontSize,
+    lineHeight: FIGMA.typography.cardHeading.lineHeight,
+    letterSpacing: FIGMA.typography.cardHeading.letterSpacing,
     color: FIGMA.colors.textPrimary,
   },
 
@@ -1127,9 +1153,12 @@ const styles = StyleSheet.create({
   },
 
   // Reason text - node 160:3081, etc.
-  // Figma: #A9A9A9, fontSize 12, lineHeight 20, fontWeight 400
+  // Figma: #A9A9A9, fontSize 12, lineHeight 20
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   rejectionReasonText: {
-    ...FIGMA.typography.label,
+    fontFamily: FIGMA.typography.label.fontFamily,
+    fontSize: FIGMA.typography.label.fontSize,
+    lineHeight: FIGMA.typography.label.lineHeight,
     color: FIGMA.colors.textGray, // #A9A9A9
     flex: 1,
   },
@@ -1142,8 +1171,11 @@ const styles = StyleSheet.create({
   // Countdown text - node 41:11470
   // Figma: "Next applications open in 28:24:24"
   // Color: #797979, fontSize 14, lineHeight 20
+  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   countdownText: {
-    ...FIGMA.typography.value,
+    fontFamily: FIGMA.typography.value.fontFamily,
+    fontSize: FIGMA.typography.value.fontSize,
+    lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textHint, // #797979
     textAlign: 'center',
   },

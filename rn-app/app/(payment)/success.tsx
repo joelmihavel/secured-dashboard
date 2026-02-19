@@ -1,107 +1,62 @@
 /**
  * Payment Success Screen
- * Figma Reference: 41-9388 (with cashback), 41-9511 (no cashback)
+ * Figma Reference: 41-9388 (with cashback), 41-9563 (no cashback)
  *
- * Pixel-perfect implementation per Figma extraction:
+ * Pixel-perfect implementation per Figma blueprint extraction:
  * - Screen: 393x852, bg #131313
- * - Receipt card: 270x481, bg #202020, shadow 0,9,19 #000000
- * - Perforated top: 14 ellipses, 14x14px each, spaced evenly
+ * - Receipt card frame (Frame 2095586361): x:61, y:183, 270x481
+ * - Card bg: #202020 (Rectangle 136)
+ * - Perforated top: 14 ellipses, 14x14px each
  * - Side notches: 14x14px at vertical center
- * - PAID stamp: 85.42x80, rotated -15deg, color #06C270, Inter ExtraBold 13.51px
- * - Title: "Payment" (white #FFFFFF) + "Succesful" (orange #FF9A6D), fontSize 20, lineHeight 32
- * - Receipt rows: 222px wide, gap 16px, icon 16x16, labels #878787, values #CBCBCB
- * - Payable Rent value: fontSize 14, fontWeight 600, color #DDDDDD
- * - Cashback pill: 222x28, bg #1A1A1A, borderRadius 40, text #DDDDDD
- * - Button: 313x52, text "Download Receipt", fontSize 14, fontWeight 500
- * - Contact Support: fontSize 12, color #A9A9A9, textAlign center
+ * - PAID stamp: rotated -15deg, color #06C270, Inter ExtraBold 13.51px
+ * - Title: single text node "Payment\nSuccesful" - "Payment" #FFFFFF, "Succesful" #FF9A6D
+ *   fontSize 20, lineHeight 32, fontFamily PlusJakartaSans-Regular, textAlign left
+ * - Receipt rows: 222px wide, gap 16px, icon 16x16 (#A6A6A6), labels #878787, values #CBCBCB
+ * - Payable Rent value: fontSize 14, fontWeight 600 (SemiBold), color #DDDDDD
+ * - Cashback pill (41-9388): bg #1A1A1A, borderRadius 40, text #DDDDDD "R350 cashback applied"
+ * - No-cashback pill (41-9563): same bg, text "Pay by the 7th to earn cashback."
+ * - Button container (Frame 2095586363): x:40, y:704, width 313, gap 16, column, center
+ * - PrimaryButton: "Download Receipt" fontSize 14, fontWeight 500
+ * - Contact Support: fontSize 12, lineHeight 20, color #A9A9A9, textAlign center
  */
 
-import React, { useEffect, useCallback, useState, memo } from 'react';
+import React, { useEffect, useCallback, memo } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   Linking,
   Share,
-  ScrollView,
-  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { DashedDivider } from '@/src/components/payment';
 import { useGenerateReceipt } from '@/src/hooks';
-import { colors, spacing } from '@/src/theme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-// Figma 41-9388: card width 270px on 393px screen width
-const FIGMA_SCREEN_WIDTH = 393;
-const FIGMA_SCREEN_HEIGHT = 852;
-const FIGMA_CARD_WIDTH = 270;
-const FIGMA_CARD_HEIGHT = 481;
-const FIGMA_BUTTON_WIDTH = 313;
-
-// Scale factor for responsive sizing
-const SCALE = SCREEN_WIDTH / FIGMA_SCREEN_WIDTH;
-const CARD_WIDTH = Math.round(FIGMA_CARD_WIDTH * SCALE);
-const CARD_HEIGHT = Math.round(FIGMA_CARD_HEIGHT * SCALE);
-const BUTTON_WIDTH = Math.round(FIGMA_BUTTON_WIDTH * SCALE);
-
-// Exact Figma colors - from 41-9388 extraction
+// Exact Figma colors - from 41-9388 / 41-9563 blueprint extraction
 const FIGMA_COLORS = {
   background: '#131313',           // black.700 - screen bg
   cardBackground: '#202020',       // black.500 - Rectangle 136
   frameBackground: '#1A1A1A',      // black.600 - Frame 1686557297
   titleWhite: '#FFFFFF',           // white - "Payment" text
-  titleSuccess: '#FF9A6D',         // brand.500 - "Succesful" text (Figma 41:9452 styleOverrideTable[2])
+  titleAccent: '#FF9A6D',          // brand.500 - "Succesful" text (span start:8)
   stampColor: '#06C270',           // success.approved - PAID stamp
   labelText: '#878787',            // neutral.600 - row labels
   valueText: '#CBCBCB',            // neutral.300 - row values
   payableRentValue: '#DDDDDD',     // neutral.200 - Payable Rent value
-  hashColor: '#FF9A6D',            // brand.500
-  infoText: '#DDDDDD',             // neutral.200 - cashback text
+  iconColor: '#A6A6A6',            // black.200 - hash icon
   dividerColor: '#4D4D4D',         // black.400 - dashed dividers
   paperclipColor: '#4D4D4D',       // black.400 - paperclip vector
-  iconColor: '#A6A6A6',            // black.200 - hash icon
   cashbackBg: '#1A1A1A',           // black.600 - cashback pill bg
   cashbackText: '#DDDDDD',         // neutral.200 - cashback text
   contactSupportText: '#A9A9A9',   // neutral.500 - Contact Support
-  buttonBorder: '#FF9A6D',         // brand.500 - button border
-  buttonShadow: '#995C41',         // button shadow color
 };
 
 // Figma card inner width for receipt rows and cashback pill
 const FIGMA_CARD_INNER_WIDTH = 222;
-
-// Back Arrow Icon
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={FIGMA_COLORS.titleWhite}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-// Perforated top edge (14 ellipses per Figma 41:9436-41:9449)
-const PerforatedEdge = () => {
-  const holes = Array.from({ length: 14 }, (_, i) => i);
-  return (
-    <View style={styles.perforatedEdge}>
-      {holes.map((i) => (
-        <View key={i} style={styles.punchHole} />
-      ))}
-    </View>
-  );
-};
 
 // Paperclip decoration
 const Paperclip = () => (
@@ -115,7 +70,19 @@ const Paperclip = () => (
   </Svg>
 );
 
-// PAID Stamp Component
+// Perforated top edge (14 ellipses per Figma)
+const PerforatedEdge = () => {
+  const holes = Array.from({ length: 14 }, (_, i) => i);
+  return (
+    <View style={styles.perforatedEdge}>
+      {holes.map((i) => (
+        <View key={i} style={styles.punchHole} />
+      ))}
+    </View>
+  );
+};
+
+// PAID Stamp Component - Inter ExtraBold per Figma
 const PaidStamp = () => (
   <View style={styles.stampContainer}>
     <View style={styles.stampOuter}>
@@ -136,14 +103,7 @@ const PaidStamp = () => (
   </View>
 );
 
-// Receipt row with # prefix
-interface ReceiptRowProps {
-  label: string;
-  value: string;
-  isPayableRent?: boolean; // Payable Rent has different styling per Figma
-}
-
-// Receipt Icon - 16x16 container with icon vector per Figma
+// Receipt Icon - 16x16 container with hash icon
 const ReceiptIcon = () => (
   <View style={styles.hashIcon}>
     <Svg width={11} height={12} viewBox="0 0 11 12" fill="none">
@@ -158,6 +118,13 @@ const ReceiptIcon = () => (
   </View>
 );
 
+// Receipt row with hash icon prefix
+interface ReceiptRowProps {
+  label: string;
+  value: string;
+  isPayableRent?: boolean;
+}
+
 const ReceiptRow = memo(({ label, value, isPayableRent }: ReceiptRowProps) => (
   <View style={styles.receiptRow}>
     <View style={styles.labelContainer}>
@@ -169,8 +136,7 @@ const ReceiptRow = memo(({ label, value, isPayableRent }: ReceiptRowProps) => (
 ));
 ReceiptRow.displayName = 'ReceiptRow';
 
-// Cashback Pill - styled per Figma 41-9388 (Frame 1686557297)
-// Background: #1A1A1A (black.600), borderRadius: 40, padding: 4/12
+// Cashback / info pill
 interface CashbackPillProps {
   text: string;
 }
@@ -184,7 +150,6 @@ CashbackPill.displayName = 'CashbackPill';
 
 export default function SuccessScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { mutateAsync: generateReceiptAsync, isPending: isGeneratingReceipt } = useGenerateReceipt();
   const params = useLocalSearchParams<{
     paymentId?: string;
@@ -206,20 +171,12 @@ export default function SuccessScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
 
-  const handleBack = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
-
   const handleDownloadReceipt = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Try to generate a real receipt if we have a paymentId
     if (paymentId) {
       try {
         const receipt = await generateReceiptAsync(paymentId);
-
-        // Share the rich receipt data
         const receiptText = [
           `Payment Receipt - ${receipt.receiptNumber}`,
           '',
@@ -255,7 +212,6 @@ export default function SuccessScreen() {
       }
     }
 
-    // Fallback: share basic receipt info
     try {
       await Share.share({
         message: `Payment Receipt\n\nAmount: \u20B9${amount}\nDate: ${new Date().toLocaleDateString()}\nTransaction ID: ${transactionId}\nMethod: ${method}`,
@@ -273,23 +229,9 @@ export default function SuccessScreen() {
     Linking.openURL('mailto:support@flentsecured.com');
   }, []);
 
-  const handleDone = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(main)' as never);
-  }, [router]);
-
   return (
-    <Screen testID="success-screen" style={styles.screen}>
-      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <BackArrow />
-        </TouchableOpacity>
-
+    <Screen testID="success-screen" padded={false} style={styles.screen}>
+      <View style={styles.container}>
         {/* Receipt Card */}
         <View style={styles.receiptContainer}>
           {/* Paperclip decoration */}
@@ -312,15 +254,15 @@ export default function SuccessScreen() {
               <PaidStamp />
             </View>
 
-            {/* Title */}
+            {/* Title - Figma: single text node with span, "Payment" white + "Succesful" orange */}
             <View style={styles.titleSection}>
               <Text style={styles.titleWhite}>Payment</Text>
-              <Text style={styles.titleSuccess}>Succesful</Text>
+              <Text style={styles.titleAccent}>Succesful</Text>
             </View>
 
             {/* Receipt Details */}
             <View style={styles.receiptDetails}>
-              <ReceiptRow label="Amount paid" value={`\u20B9 ${amount}`} />
+              <ReceiptRow label="Amount paid" value={`\u20B9  ${amount}`} />
 
               <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
 
@@ -334,7 +276,7 @@ export default function SuccessScreen() {
 
               <ReceiptRow label="Transaction ID" value={transactionId} />
 
-              {/* Cashback section - per Figma 41-9388 */}
+              {/* Cashback section - 41-9388 vs 41-9563 */}
               {hasCashback ? (
                 <CashbackPill text={`\u20B9${cashback} cashback applied`} />
               ) : (
@@ -343,7 +285,7 @@ export default function SuccessScreen() {
 
               <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
 
-              <ReceiptRow label="Payable Rent" value={`\u20B9 ${amount}`} isPayableRent />
+              <ReceiptRow label="Payable Rent" value={`\u20B9  ${amount}`} isPayableRent />
             </View>
           </View>
         </View>
@@ -351,8 +293,8 @@ export default function SuccessScreen() {
         {/* Spacer */}
         <View style={styles.spacer} />
 
-        {/* Buttons */}
-        <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 24 }]}>
+        {/* Button Container - Figma Frame 2095586363: x:40, y:704, width:313, gap:16 */}
+        <View style={styles.buttonContainer}>
           <PrimaryButton
             title={isGeneratingReceipt ? 'Generating...' : 'Download Receipt'}
             onPress={handleDownloadReceipt}
@@ -375,27 +317,25 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginBottom: 24,
+    // Figma: button container at x:40, card at x:61
+    // Screen padded=false, so no double-pad
+    paddingHorizontal: 40,
   },
   receiptContainer: {
     position: 'relative',
     alignItems: 'center',
+    // Figma: card frame at y:183, top section at y:111
+    // With safe area ~59px, card offset from top section ~72px
+    marginTop: 12,
   },
   paperclipContainer: {
     position: 'absolute',
     top: -20,
-    left: 24,
+    left: -16, // Offset from 40px padding to match card edge
     zIndex: 10,
   },
   receiptCard: {
-    width: CARD_WIDTH,
+    width: 270,                    // Figma: Frame 2095586361 width: 270
     backgroundColor: FIGMA_COLORS.cardBackground,
     borderRadius: 16,
     padding: 24,
@@ -406,16 +346,16 @@ const styles = StyleSheet.create({
   // Perforated edge - row of punch holes at top
   perforatedEdge: {
     position: 'absolute',
-    top: -7,                        // Half outside the card (14/2)
+    top: -7,                       // Half outside the card (14/2)
     left: 4,
     right: 4,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   punchHole: {
-    width: 14,                      // Figma: Ellipse width: 14
-    height: 14,                     // Figma: Ellipse height: 14
-    borderRadius: 7,                // Circular
+    width: 14,                     // Figma: Ellipse width: 14
+    height: 14,                    // Figma: Ellipse height: 14
+    borderRadius: 7,               // Circular
     backgroundColor: FIGMA_COLORS.background,
   },
   notch: {
@@ -465,114 +405,115 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   star: {
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 8,
     color: FIGMA_COLORS.stampColor,
-    textAlign: 'center',               // Figma: textAlignHorizontal: CENTER
+    textAlign: 'center',
   },
   stampText: {
-    fontFamily: 'Inter-ExtraBold',  // Figma: Inter fontWeight 800
-    fontSize: 13.51,                // Figma I41:9451;5:396: fontSize: 13.51
-    lineHeight: 16.35,              // Figma: lineHeightPx: 16.35
+    fontFamily: 'Inter-ExtraBold',     // Figma: Inter fontWeight 800
+    fontSize: 13.51,                   // Figma: fontSize: 13.51
+    lineHeight: 16.35,                 // Figma: lineHeightPx: 16.35
     color: FIGMA_COLORS.stampColor,
-    textAlign: 'center',            // Figma: textAlignHorizontal: CENTER
-    textTransform: 'uppercase',     // Figma: textCase: UPPER
+    textAlign: 'center',
+    textTransform: 'uppercase',
     marginVertical: 2,
   },
+  // Title - Figma 41:9452: "Payment\nSuccesful", textAlign left, x:19, y:68
   titleSection: {
     marginBottom: 24,
-    alignItems: 'center',          // Figma: counterAxisAlignItems: CENTER
+    // Figma: text node at x:19 inside 270px card with 24px padding = left-aligned
   },
   titleWhite: {
-    fontFamily: 'PlusJakartaSans-Regular',  // bodyLg per Figma - weight 400
-    fontSize: 20,
-    lineHeight: 32,    // bodyLg lineHeight
-    color: FIGMA_COLORS.titleWhite,
-    // Figma raw node shows LEFT textAlign, but parent frame has counterAxisAlignItems: CENTER.
-    // The text is single-line and narrower than the card, so parent centering handles alignment.
-    // Using 'center' for consistency with the centered layout - visually identical to 'left'.
-    textAlign: 'center',
-  },
-  titleSuccess: {
-    fontFamily: 'PlusJakartaSans-Regular',  // bodyLg per Figma - weight 400
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
     lineHeight: 32,
-    color: FIGMA_COLORS.titleSuccess,
-    // Same as titleWhite - parent centering makes textAlign cosmetic for single-line text
-    textAlign: 'center',
+    color: FIGMA_COLORS.titleWhite,
+    textAlign: 'left',
+  },
+  titleAccent: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 20,
+    lineHeight: 32,
+    color: FIGMA_COLORS.titleAccent,
+    textAlign: 'left',
   },
   receiptDetails: {
-    gap: 16,                       // Figma: Frame 2095586361 itemSpacing: 16
-    alignItems: 'center',          // Figma: Frame 2095586369 counterAxisAlignItems: CENTER
+    gap: 16,                           // Figma: Frame 2095586361 itemSpacing: 16
+    alignItems: 'center',
   },
   receiptRow: {
-    width: FIGMA_CARD_INNER_WIDTH, // Figma: Frame 1686557329 width: 222
-    height: 20,                    // Figma: Frame 1686557329 height: 20
+    width: FIGMA_CARD_INNER_WIDTH,     // Figma: Frame 1686557329 width: 222
+    height: 20,                        // Figma: Frame 1686557329 height: 20
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 4,                        // Figma: itemSpacing: 4
+    gap: 4,                            // Figma: itemSpacing: 4
   },
   labelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,                        // Figma: Frame 1686557121 itemSpacing: 4
+    gap: 4,                            // Figma: Frame 1686557121 itemSpacing: 4
   },
   hashIcon: {
-    width: 16,                     // Figma: Frame width: 16
-    height: 16,                    // Figma: Frame height: 16
+    width: 16,                         // Figma: Frame width: 16
+    height: 16,                        // Figma: Frame height: 16
     justifyContent: 'center',
     alignItems: 'center',
   },
   labelText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,     // bodyXs per Figma analysis
+    fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.labelText,  // neutral.600 #878787
-    textAlign: 'left',              // Left-aligned label in receipt row
+    color: FIGMA_COLORS.labelText,     // neutral.600 #878787
+    textAlign: 'left',
   },
   valueText: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400 for amount values
-    fontSize: 12,                  // Figma: fontSize: 12
-    lineHeight: 20,                // Figma: lineHeightPx: 20
-    color: FIGMA_COLORS.valueText, // neutral.300 #CBCBCB
-    textAlign: 'right',            // Right-aligned value in receipt row
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.valueText,     // neutral.300 #CBCBCB
+    textAlign: 'right',
   },
   divider: {
-    width: FIGMA_CARD_INNER_WIDTH, // Figma: Vector 49 width: 222
-    marginVertical: 0,             // Parent gap handles spacing
+    width: FIGMA_CARD_INNER_WIDTH,     // Figma: Vector 49 width: 222
+    marginVertical: 0,
   },
   payableRentValueText: {
-    fontFamily: 'PlusJakartaSans-SemiBold', // Figma 41:9435: fontWeight 600
-    fontSize: 14,                  // Figma 41:9435: fontSize: 14
-    lineHeight: 20,                // Figma 41:9435: lineHeightPx: 20
-    color: FIGMA_COLORS.payableRentValue, // neutral.200 #DDDDDD
-    textAlign: 'right',            // Right-aligned value in receipt row
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
+    fontSize: 14,                      // Figma: fontSize: 14
+    lineHeight: 20,                    // Figma: lineHeightPx: 20
+    color: FIGMA_COLORS.payableRentValue,   // neutral.200 #DDDDDD
+    textAlign: 'right',
   },
   cashbackPill: {
-    width: FIGMA_CARD_INNER_WIDTH, // Figma: Frame 1686557297 width: 222
+    width: FIGMA_CARD_INNER_WIDTH,     // Figma: Frame 1686557297 width: 222
     alignSelf: 'center',
-    paddingHorizontal: 12,         // per Figma: paddingLeft/Right: 12
-    paddingVertical: 4,            // per Figma: paddingTop/Bottom: 4
-    borderRadius: 40,              // per Figma: cornerRadius: 40
+    paddingHorizontal: 12,             // Figma: paddingLeft/Right: 12
+    paddingVertical: 4,                // Figma: paddingTop/Bottom: 4
+    borderRadius: 40,                  // Figma: cornerRadius: 40
     marginVertical: 12,
-    backgroundColor: FIGMA_COLORS.cashbackBg,  // #1A1A1A (black.600)
-    justifyContent: 'center',      // Figma: primaryAxisAlignItems: CENTER
-    alignItems: 'center',          // Figma: counterAxisAlignItems: CENTER
+    backgroundColor: FIGMA_COLORS.cashbackBg, // #1A1A1A
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cashbackText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,                  // per Figma: fontSize: 12
-    lineHeight: 20,                // per Figma: lineHeightPx: 20
-    color: FIGMA_COLORS.cashbackText,  // #DDDDDD (neutral.200)
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.cashbackText,  // #DDDDDD
     textAlign: 'center',
   },
   spacer: {
     flex: 1,
   },
+  // Button container - Figma Frame 2095586363: x:40, y:704, width:313, gap:16
   buttonContainer: {
-    gap: 16,                       // Figma: Frame 2095586363 itemSpacing: 16
-    alignItems: 'center',          // Figma: counterAxisAlignItems: CENTER
+    width: 313,                        // Figma: fixed 313px
+    alignSelf: 'center',
+    gap: 16,                           // Figma: itemSpacing: 16
+    alignItems: 'center',
+    paddingBottom: 24,
   },
   linkButton: {
     alignItems: 'center',
@@ -580,9 +521,9 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,                  // per Figma 41:9455: fontSize: 12
-    lineHeight: 20,                // per Figma: lineHeightPx: 20
-    color: FIGMA_COLORS.contactSupportText,  // #A9A9A9 (neutral.500)
-    textAlign: 'center',           // Figma: textAlignHorizontal: CENTER
+    fontSize: 12,                      // Figma 41:9455: fontSize: 12
+    lineHeight: 20,                    // Figma: lineHeightPx: 20
+    color: FIGMA_COLORS.contactSupportText, // #A9A9A9
+    textAlign: 'center',
   },
 });

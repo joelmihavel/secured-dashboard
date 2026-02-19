@@ -74,7 +74,8 @@ describe('CarouselScreen', () => {
 
   it('renders first slide heading', () => {
     const { getByText } = render(<CarouselScreen />);
-    expect(getByText('Earn 1% back ')).toBeTruthy();
+    // Heading is now a single text node with colored spans; check for segment text
+    expect(getByText(/Earn 1% back/)).toBeTruthy();
   });
 
   it('renders first slide body text', () => {

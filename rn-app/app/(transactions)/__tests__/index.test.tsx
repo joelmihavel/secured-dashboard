@@ -23,11 +23,6 @@ jest.mock('@/src/components/patterns', () => ({
   DottedPattern: () => null,
 }));
 
-jest.mock('@expo/vector-icons', () => {
-  const { View } = require('react-native');
-  return { Ionicons: (props: any) => <View {...props} /> };
-});
-
 jest.mock('react-native-svg', () => {
   const { View, Text: RNText } = require('react-native');
   return {
@@ -42,20 +37,16 @@ jest.mock('react-native-svg', () => {
   };
 });
 
-jest.mock('@/src/components/payment', () => {
-  const { View } = require('react-native');
-  return {
-    CreditCardSelect: (props: any) => <View testID={props.testID} />,
-    UPICardSelect: (props: any) => <View testID={props.testID} />,
-    NetbankingCardSelect: (props: any) => <View testID={props.testID} />,
-    AddMoreCard: (props: any) => <View testID={props.testID} />,
-  };
-});
-
 jest.mock('@/src/hooks', () => ({
   useDashboard: () => ({
-    tenancy: { id: 'ten-1', monthly_rent: 40000 },
-    upcomingPayment: { amount: 40000, days_until_due: 5 },
+    tenancy: { id: 'ten-1', monthly_rent: 30000 },
+    upcomingPayment: {
+      amount: 32500,
+      days_until_due: 10,
+      is_overdue: false,
+      cashback_eligible: true,
+      due_date: '2026-03-07',
+    },
     cashback: { available_balance: 325, pending_balance: 0, total_earned: 3256, total_used: 0 },
     isLoading: false,
   }),
@@ -67,38 +58,37 @@ describe('PayRentTransactionScreen', () => {
     expect(getByTestId('pay-now-button')).toBeTruthy();
   });
 
-  it('renders rent due text', () => {
+  it('renders rent due label', () => {
     const { getByText } = render(<PayRentTransactionScreen />);
-    expect(getByText(/rent is due/i)).toBeTruthy();
+    expect(getByText(/Rent due in 10 days/)).toBeTruthy();
   });
 
-  it('renders cashback section', () => {
+  it('renders setup label', () => {
     const { getByText } = render(<PayRentTransactionScreen />);
-    expect(getByText(/Apply Cashback/i)).toBeTruthy();
+    expect(getByText(/Complete setup to unlock 1% cashback/)).toBeTruthy();
   });
 
-  it('renders notifications and help buttons', () => {
+  it('renders cashback pill for with_cashback state', () => {
+    const { getByText } = render(<PayRentTransactionScreen />);
+    expect(getByText(/325 cashback applied/)).toBeTruthy();
+  });
+
+  it('renders rent breakdown rows', () => {
+    const { getByText } = render(<PayRentTransactionScreen />);
+    expect(getByText('Base rent')).toBeTruthy();
+    expect(getByText('Maintenance')).toBeTruthy();
+    expect(getByText('Total Rent')).toBeTruthy();
+    expect(getByText('Payable Rent')).toBeTruthy();
+  });
+
+  it('renders back button', () => {
     const { getByTestId } = render(<PayRentTransactionScreen />);
-    expect(getByTestId('notifications-button')).toBeTruthy();
-    expect(getByTestId('help-button')).toBeTruthy();
+    expect(getByTestId('back-button')).toBeTruthy();
   });
 
-  it('renders payment card carousel with mock cards', () => {
-    const { getByTestId } = render(<PayRentTransactionScreen />);
-    expect(getByTestId('payment-card-card-1')).toBeTruthy();
-    expect(getByTestId('payment-card-upi-1')).toBeTruthy();
-    expect(getByTestId('payment-card-netbanking-1')).toBeTruthy();
-    expect(getByTestId('payment-card-add-new')).toBeTruthy();
-  });
-
-  it('renders "Paying with:" label', () => {
+  it('renders footer message', () => {
     const { getByText } = render(<PayRentTransactionScreen />);
-    expect(getByText('Paying with:')).toBeTruthy();
-  });
-
-  it('renders "Pay Now" button label', () => {
-    const { getByText } = render(<PayRentTransactionScreen />);
-    expect(getByText('Pay Now')).toBeTruthy();
+    expect(getByText(/Pay by 7 Dec/)).toBeTruthy();
   });
 
   it('matches snapshot', () => {

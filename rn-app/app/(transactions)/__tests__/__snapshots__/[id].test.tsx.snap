@@ -31,9 +31,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
           {
             "flex": 1,
           },
-          {
-            "paddingHorizontal": 40,
-          },
+          false,
           undefined,
         ]
       }
@@ -43,11 +41,9 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
           [
             {
               "flexGrow": 1,
-              "paddingHorizontal": 32,
             },
             {
               "paddingBottom": 66,
-              "paddingTop": 47,
             },
           ]
         }
@@ -63,7 +59,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
           <View
             style={
               {
-                "paddingVertical": 16,
+                "paddingHorizontal": 40,
               }
             }
           >
@@ -99,67 +95,93 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
               onStartShouldSetResponder={[Function]}
               style={
                 {
-                  "height": 40,
+                  "alignItems": "center",
+                  "height": 32,
                   "justifyContent": "center",
                   "opacity": 1,
-                  "width": 40,
+                  "width": 32,
                 }
               }
+              testID="back-button"
             >
               <View
-                color="#FFFFFF"
-                name="arrow-back"
-                size={24}
-              />
+                fill="none"
+                height={32}
+                viewBox="0 0 32 32"
+                width={32}
+              >
+                <View
+                  d="M25.3333 16H6.66667"
+                  stroke="#FFFFFF"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.667}
+                />
+                <View
+                  d="M6.66667 16L14.6667 24"
+                  stroke="#FFFFFF"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.667}
+                />
+                <View
+                  d="M6.66667 16L14.6667 8"
+                  stroke="#FFFFFF"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.667}
+                />
+              </View>
             </View>
           </View>
           <View
             style={
               {
+                "alignSelf": "center",
                 "marginTop": 32,
                 "position": "relative",
+                "width": 270,
               }
             }
           >
             <View
               style={
                 {
-                  "left": 24,
+                  "left": 16,
                   "position": "absolute",
-                  "top": -24,
+                  "top": -8,
                   "zIndex": 1,
                 }
               }
             >
               <View
                 fill="none"
-                height={64}
-                viewBox="0 0 32 64"
-                width={32}
+                height={35}
+                viewBox="0 0 21 35"
+                width={21}
               >
                 <View
-                  d="M16 0C9.373 0 4 5.373 4 12V44C4 50.627 9.373 56 16 56C22.627 56 28 50.627 28 44V20"
+                  d="M10.25 0C4.5 0 0 4.5 0 10.25V26.75C0 32.5 4.5 35 10.25 35"
                   fill="none"
                   stroke="#4D4D4D"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                 />
                 <View
-                  d="M16 8C13.791 8 12 9.791 12 12V44C12 46.209 13.791 48 16 48C18.209 48 20 46.209 20 44V16"
+                  d="M10.25 5C7.5 5 5 7.5 5 10.25V26.75C5 29.5 7.5 32 10.25 32"
                   fill="none"
                   stroke="#4D4D4D"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                 />
               </View>
             </View>
             <View
               style={
                 {
-                  "backgroundColor": "#1A1A1A",
+                  "backgroundColor": "#202020",
                   "borderRadius": 12,
-                  "marginTop": 24,
                   "paddingBottom": 24,
-                  "paddingHorizontal": 24,
-                  "paddingTop": 40,
+                  "paddingHorizontal": 16,
+                  "paddingTop": 24,
                 }
               }
             >
@@ -169,7 +191,8 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                     "alignItems": "flex-start",
                     "flexDirection": "row",
                     "justifyContent": "space-between",
-                    "marginBottom": 32,
+                    "marginBottom": 24,
+                    "paddingHorizontal": 8,
                   }
                 }
               >
@@ -187,7 +210,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 16,
-                          "fontWeight": "400",
                           "letterSpacing": 0,
                           "lineHeight": 24,
                           "textAlign": "left",
@@ -211,13 +233,12 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 16,
-                          "fontWeight": "400",
                           "letterSpacing": 0,
                           "lineHeight": 24,
                           "textAlign": "left",
                         },
                         {
-                          "color": "#FFFFFF",
+                          "color": "#FF9A6D",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 20,
                           "letterSpacing": 0,
@@ -232,7 +253,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                 <View
                   style={
                     {
-                      "marginTop": -8,
+                      "marginTop": -4,
                     }
                   }
                 >
@@ -260,31 +281,31 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                       strokeWidth="1"
                     />
                     <View
-                      fill="#70BF73"
+                      fill="#06C270"
                     >
                       <View
                         cx="24"
-                        cy="24"
+                        cy="28"
                         r="2"
                       />
                       <View
                         cx="36"
-                        cy="20"
+                        cy="24"
                         r="2"
                       />
                       <View
                         cx="48"
-                        cy="24"
+                        cy="28"
                         r="2"
                       />
                     </View>
                     <Text
-                      fill="#70BF73"
-                      fontSize="14"
-                      fontWeight="bold"
+                      fill="#06C270"
+                      fontSize="13.5"
+                      fontWeight="800"
                       textAnchor="middle"
                       x="36"
-                      y="42"
+                      y="46"
                     >
                       PAID
                     </Text>
@@ -294,7 +315,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
               <View
                 style={
                   {
-                    "gap": 16,
+                    "gap": 0,
                   }
                 }
               >
@@ -304,6 +325,8 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                       "alignItems": "center",
                       "flexDirection": "row",
                       "justifyContent": "space-between",
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
                     }
                   }
                 >
@@ -312,33 +335,21 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                       {
                         "alignItems": "center",
                         "flexDirection": "row",
-                        "gap": 8,
+                        "gap": 4,
                       }
                     }
                   >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "fontWeight": "400",
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FF9A6D",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
+                    <View
+                      fill="none"
+                      height={16}
+                      viewBox="0 0 16 16"
+                      width={16}
                     >
-                      #
-                    </Text>
+                      <View
+                        d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                        fill="#FF9A6D"
+                      />
+                    </View>
                     <Text
                       style={
                         [
@@ -346,7 +357,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -355,6 +365,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#878787",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
                         ]
@@ -370,7 +381,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 16,
-                          "fontWeight": "400",
                           "letterSpacing": 0,
                           "lineHeight": 24,
                           "textAlign": "left",
@@ -380,25 +390,35 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#CBCBCB",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
+                          undefined,
                           false,
-                          {
-                            "color": "#FFFFFF",
-                          },
                         ],
                       ]
                     }
                   >
-                    ₹ 40,000
+                    ₹  32,500
                   </Text>
                 </View>
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#4D4D4D",
+                      "height": 0.5,
+                      "marginHorizontal": 24,
+                    }
+                  }
+                />
                 <View
                   style={
                     {
                       "alignItems": "center",
                       "flexDirection": "row",
                       "justifyContent": "space-between",
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
                     }
                   }
                 >
@@ -407,33 +427,21 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                       {
                         "alignItems": "center",
                         "flexDirection": "row",
-                        "gap": 8,
+                        "gap": 4,
                       }
                     }
                   >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "fontWeight": "400",
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FF9A6D",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
+                    <View
+                      fill="none"
+                      height={16}
+                      viewBox="0 0 16 16"
+                      width={16}
                     >
-                      #
-                    </Text>
+                      <View
+                        d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                        fill="#FF9A6D"
+                      />
+                    </View>
                     <Text
                       style={
                         [
@@ -441,7 +449,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -450,6 +457,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#878787",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
                         ]
@@ -465,7 +473,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 16,
-                          "fontWeight": "400",
                           "letterSpacing": 0,
                           "lineHeight": 24,
                           "textAlign": "left",
@@ -475,12 +482,11 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#CBCBCB",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
+                          undefined,
                           false,
-                          {
-                            "color": "#FFFFFF",
-                          },
                         ],
                       ]
                     }
@@ -491,9 +497,20 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                 <View
                   style={
                     {
+                      "backgroundColor": "#4D4D4D",
+                      "height": 0.5,
+                      "marginHorizontal": 24,
+                    }
+                  }
+                />
+                <View
+                  style={
+                    {
                       "alignItems": "center",
                       "flexDirection": "row",
                       "justifyContent": "space-between",
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
                     }
                   }
                 >
@@ -502,33 +519,21 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                       {
                         "alignItems": "center",
                         "flexDirection": "row",
-                        "gap": 8,
+                        "gap": 4,
                       }
                     }
                   >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "fontWeight": "400",
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FF9A6D",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
+                    <View
+                      fill="none"
+                      height={16}
+                      viewBox="0 0 16 16"
+                      width={16}
                     >
-                      #
-                    </Text>
+                      <View
+                        d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                        fill="#FF9A6D"
+                      />
+                    </View>
                     <Text
                       style={
                         [
@@ -536,7 +541,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -545,6 +549,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#878787",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
                         ]
@@ -560,7 +565,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 16,
-                          "fontWeight": "400",
                           "letterSpacing": 0,
                           "lineHeight": 24,
                           "textAlign": "left",
@@ -570,12 +574,11 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#CBCBCB",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
+                          undefined,
                           false,
-                          {
-                            "color": "#FFFFFF",
-                          },
                         ],
                       ]
                     }
@@ -586,9 +589,20 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                 <View
                   style={
                     {
+                      "backgroundColor": "#4D4D4D",
+                      "height": 0.5,
+                      "marginHorizontal": 24,
+                    }
+                  }
+                />
+                <View
+                  style={
+                    {
                       "alignItems": "center",
                       "flexDirection": "row",
                       "justifyContent": "space-between",
+                      "paddingHorizontal": 24,
+                      "paddingVertical": 16,
                     }
                   }
                 >
@@ -597,33 +611,21 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                       {
                         "alignItems": "center",
                         "flexDirection": "row",
-                        "gap": 8,
+                        "gap": 4,
                       }
                     }
                   >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "fontWeight": "400",
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FF9A6D",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
+                    <View
+                      fill="none"
+                      height={16}
+                      viewBox="0 0 16 16"
+                      width={16}
                     >
-                      #
-                    </Text>
+                      <View
+                        d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                        fill="#FF9A6D"
+                      />
+                    </View>
                     <Text
                       style={
                         [
@@ -631,7 +633,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -640,6 +641,7 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#878787",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
                         ]
@@ -655,7 +657,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 16,
-                          "fontWeight": "400",
                           "letterSpacing": 0,
                           "lineHeight": 24,
                           "textAlign": "left",
@@ -665,12 +666,11 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                             "color": "#CBCBCB",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 12,
+                            "letterSpacing": 0,
                             "lineHeight": 20,
                           },
+                          undefined,
                           false,
-                          {
-                            "color": "#FFFFFF",
-                          },
                         ],
                       ]
                     }
@@ -683,7 +683,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                 style={
                   {
                     "alignItems": "center",
-                    "marginTop": 24,
                     "paddingVertical": 16,
                   }
                 }
@@ -695,7 +694,6 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                         "color": "#FFFFFF",
                         "fontFamily": "PlusJakartaSans-Regular",
                         "fontSize": 16,
-                        "fontWeight": "400",
                         "letterSpacing": 0,
                         "lineHeight": 24,
                         "textAlign": "left",
@@ -704,7 +702,9 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                         "color": "#DDDDDD",
                         "fontFamily": "PlusJakartaSans-Regular",
                         "fontSize": 12,
+                        "letterSpacing": 0,
                         "lineHeight": 20,
+                        "textAlign": "center",
                       },
                     ]
                   }
@@ -715,287 +715,57 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
               <View
                 style={
                   {
-                    "flexDirection": "row",
-                    "justifyContent": "space-between",
-                    "marginVertical": 16,
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.5,
+                    "marginHorizontal": 24,
                   }
                 }
-              >
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "height": 1,
-                      "width": 8,
-                    }
-                  }
-                />
-              </View>
+              />
+            </View>
+            <View
+              style={
+                {
+                  "backgroundColor": "#131313",
+                  "borderRadius": 7,
+                  "bottom": 68,
+                  "height": 14,
+                  "left": -7,
+                  "position": "absolute",
+                  "width": 14,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "#131313",
+                  "borderRadius": 7,
+                  "bottom": 68,
+                  "height": 14,
+                  "position": "absolute",
+                  "right": -7,
+                  "width": 14,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "#202020",
+                  "borderBottomLeftRadius": 12,
+                  "borderBottomRightRadius": 12,
+                  "paddingBottom": 8,
+                }
+              }
+            >
               <View
                 style={
                   {
-                    "paddingTop": 12,
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "justifyContent": "space-between",
+                    "paddingHorizontal": 24,
+                    "paddingVertical": 16,
                   }
                 }
               >
@@ -1004,65 +774,20 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                     {
                       "alignItems": "center",
                       "flexDirection": "row",
-                      "justifyContent": "space-between",
+                      "gap": 4,
                     }
                   }
                 >
                   <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "gap": 8,
-                      }
-                    }
+                    fill="none"
+                    height={16}
+                    viewBox="0 0 16 16"
+                    width={16}
                   >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "fontWeight": "400",
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FF9A6D",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
-                    >
-                      #
-                    </Text>
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "fontWeight": "400",
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#878787",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 12,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
-                    >
-                      Payable Rent
-                    </Text>
+                    <View
+                      d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                      fill="#FF9A6D"
+                    />
                   </View>
                   <Text
                     style={
@@ -1071,52 +796,297 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
                           "fontSize": 16,
-                          "fontWeight": "400",
                           "letterSpacing": 0,
                           "lineHeight": 24,
                           "textAlign": "left",
                         },
-                        [
-                          {
-                            "color": "#CBCBCB",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 12,
-                            "lineHeight": 20,
-                          },
-                          {
-                            "color": "#DDDDDD",
-                            "fontFamily": "PlusJakartaSans-SemiBold",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                          {
-                            "color": "#FFFFFF",
-                          },
-                        ],
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                        },
                       ]
                     }
                   >
-                    ₹ 40,200
+                    Payable Rent
                   </Text>
                 </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      [
+                        {
+                          "color": "#CBCBCB",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "letterSpacing": 0,
+                          "lineHeight": 20,
+                        },
+                        {
+                          "color": "#DDDDDD",
+                        },
+                        {
+                          "color": "#DDDDDD",
+                          "fontFamily": "PlusJakartaSans-SemiBold",
+                          "fontSize": 14,
+                        },
+                      ],
+                    ]
+                  }
+                >
+                  ₹  32,700
+                </Text>
               </View>
             </View>
           </View>
           <View
             style={
               {
+                "alignItems": "center",
+                "gap": 16,
                 "marginTop": 40,
+                "paddingHorizontal": 40,
               }
             }
           >
             <View
-              accessibilityLabel="Download receipt"
+              accessibilityLabel="Download Receipt"
               accessibilityRole="button"
               accessibilityState={
                 {
                   "busy": undefined,
                   "checked": undefined,
                   "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              onBlur={[Function]}
+              onClick={[Function]}
+              onFocus={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                  },
+                  {
+                    "width": "100%",
+                  },
+                  undefined,
+                ]
+              }
+              testID="download-receipt-button"
+            >
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "gap": 8,
+                    "width": "100%",
+                  }
+                }
+              >
+                <View
+                  style={
+                    [
+                      {
+                        "elevation": 8,
+                        "shadowColor": "#995C41",
+                        "shadowOffset": {
+                          "height": 6,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 0.24,
+                        "shadowRadius": 10,
+                        "width": "100%",
+                      },
+                      {
+                        "shadowOffset": {
+                          "height": undefined,
+                          "width": 0,
+                        },
+                        "shadowOpacity": undefined,
+                        "shadowRadius": undefined,
+                        "transform": [
+                          {
+                            "translateY": undefined,
+                          },
+                          {
+                            "scale": undefined,
+                          },
+                        ],
+                      },
+                    ]
+                  }
+                >
+                  <LinearGradient
+                    colors={
+                      [
+                        "#202020",
+                        "#0d0d0d",
+                      ]
+                    }
+                    end={
+                      {
+                        "x": 0,
+                        "y": 1,
+                      }
+                    }
+                    locations={
+                      [
+                        0,
+                        0.9018,
+                      ]
+                    }
+                    start={
+                      {
+                        "x": 0,
+                        "y": 0,
+                      }
+                    }
+                    style={
+                      {
+                        "alignItems": "center",
+                        "borderColor": "rgba(255, 154, 109, 0.25)",
+                        "borderRadius": 8,
+                        "borderWidth": 0.5,
+                        "justifyContent": "center",
+                        "overflow": "hidden",
+                        "padding": 16,
+                        "width": "100%",
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 16,
+                          "lineHeight": 24,
+                          "textAlign": "center",
+                        }
+                      }
+                    >
+                      Download Receipt
+                    </Text>
+                    <View
+                      style={
+                        [
+                          {
+                            "borderBottomLeftRadius": 7,
+                            "borderBottomRightRadius": 7,
+                            "bottom": 0,
+                            "height": 8,
+                            "left": 0,
+                            "position": "absolute",
+                            "right": 0,
+                          },
+                          {
+                            "opacity": undefined,
+                          },
+                        ]
+                      }
+                    >
+                      <LinearGradient
+                        colors={
+                          [
+                            "transparent",
+                            "rgba(255, 255, 255, 0.04)",
+                            "rgba(255, 255, 255, 0.12)",
+                          ]
+                        }
+                        end={
+                          {
+                            "x": 0,
+                            "y": 1,
+                          }
+                        }
+                        locations={
+                          [
+                            0,
+                            0.4,
+                            1,
+                          ]
+                        }
+                        start={
+                          {
+                            "x": 0,
+                            "y": 0,
+                          }
+                        }
+                        style={
+                          {
+                            "borderBottomLeftRadius": 7,
+                            "borderBottomRightRadius": 7,
+                            "flex": 1,
+                          }
+                        }
+                      />
+                    </View>
+                    <View
+                      style={
+                        {
+                          "backgroundColor": "rgba(0, 0, 0, 0.6)",
+                          "bottom": 0,
+                          "height": 1,
+                          "left": 0,
+                          "position": "absolute",
+                          "right": 2,
+                        }
+                      }
+                    />
+                    <View
+                      style={
+                        {
+                          "backgroundColor": "rgba(0, 0, 0, 0.4)",
+                          "bottom": 0,
+                          "position": "absolute",
+                          "right": 0,
+                          "top": 4,
+                          "width": 1,
+                        }
+                      }
+                    />
+                  </LinearGradient>
+                </View>
+              </View>
+            </View>
+            <View
+              accessibilityLabel="Contact support"
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": undefined,
                   "expanded": undefined,
                   "selected": undefined,
                 }
@@ -1141,122 +1111,37 @@ exports[`TransactionDetailScreen matches snapshot 1`] = `
               onStartShouldSetResponder={[Function]}
               style={
                 {
-                  "borderColor": "#FF9A6D",
-                  "borderRadius": 12,
-                  "borderWidth": 1,
                   "opacity": 1,
-                  "overflow": "hidden",
+                  "paddingVertical": 8,
                 }
               }
+              testID="contact-support-button"
             >
-              <LinearGradient
-                colors={
-                  [
-                    "#202020",
-                    "#0d0d0d",
-                  ]
-                }
-                locations={
-                  [
-                    0,
-                    0.9018,
-                  ]
-                }
+              <Text
                 style={
-                  {
-                    "alignItems": "center",
-                    "paddingVertical": 16,
-                  }
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#A9A9A9",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 12,
+                      "letterSpacing": 0,
+                      "lineHeight": 20,
+                      "textAlign": "center",
+                    },
+                  ]
                 }
               >
-                <Text
-                  style={
-                    [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 16,
-                        "fontWeight": "400",
-                        "letterSpacing": 0,
-                        "lineHeight": 24,
-                        "textAlign": "left",
-                      },
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "PlusJakartaSans-Medium",
-                        "fontSize": 14,
-                        "lineHeight": 20,
-                      },
-                    ]
-                  }
-                >
-                  Download Receipt
-                </Text>
-              </LinearGradient>
+                Contact Support
+              </Text>
             </View>
-          </View>
-          <View
-            accessibilityLabel="Contact support"
-            accessibilityRole="button"
-            accessibilityState={
-              {
-                "busy": undefined,
-                "checked": undefined,
-                "disabled": undefined,
-                "expanded": undefined,
-                "selected": undefined,
-              }
-            }
-            accessibilityValue={
-              {
-                "max": undefined,
-                "min": undefined,
-                "now": undefined,
-                "text": undefined,
-              }
-            }
-            accessible={true}
-            collapsable={false}
-            focusable={true}
-            onClick={[Function]}
-            onResponderGrant={[Function]}
-            onResponderMove={[Function]}
-            onResponderRelease={[Function]}
-            onResponderTerminate={[Function]}
-            onResponderTerminationRequest={[Function]}
-            onStartShouldSetResponder={[Function]}
-            style={
-              {
-                "alignItems": "center",
-                "marginTop": 24,
-                "opacity": 1,
-                "paddingVertical": 16,
-              }
-            }
-          >
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "color": "#A9A9A9",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 12,
-                    "lineHeight": 20,
-                  },
-                ]
-              }
-            >
-              Contact Support
-            </Text>
           </View>
         </View>
       </RCTScrollView>

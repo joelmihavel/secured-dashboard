@@ -2,150 +2,185 @@
  * Pending Steps / Personalized Cashback Plan Screen
  * Figma Reference: 1-34236
  *
- * Shows personalized cashback plan after setup:
- * - Welcome message with user name
- * - Cashback rate display
- * - Monthly cashback amount
- * - "Start Earning" CTA
+ * Screen: "onboarding / summary"
+ * Blueprint: /buildbot/data/blueprints/1-34236-blueprint.json
  *
- * Pixel-perfect implementation from Figma analysis:
- * - Title: fontSize 40, lineHeight 56, letterSpacing -1, color #FFFFFF
- * - Card: width 270, height 321, bg #202020, shadow, borderRadius 0
- * - User name: fontSize 14, lineHeight 20, letterSpacing -0.56, color #CBCBCB
- * - Cashback badge: width 58, height 22, bg #FF9A6D, borderRadius 4
- * - Amount: fontSize 16, lineHeight 22.56, letterSpacing -0.64, color #FFFFFF
- * - Button: width 313, height 52, borderColor #FF9A6D, borderRadius 8, shadow
+ * Figma structure:
+ * - Background: #131313 + DottedPattern + Background Shape
+ * - Vector 45 (decorative grid lines at y:462)
+ * - Title (160:3185): "Here is your personalized cashback plan"
+ *   - x:62, y:128, width:269, height:168
+ *   - fontSize 40, lineHeight 56, letterSpacing -1, PlusJakartaSans-Medium
+ *   - Spans: "Here is your " (0-12) = #A9A9A9, newline (12-13) = #FFFFFF,
+ *     "personalized cashback plan" (13-39) = #FF9A6D
+ * - Card (1:34308): x:61, y:371, width:270, height:321
+ *   - Rectangle 136 bg: #202020, shadow rgba(0,0,0) y:9 blur:19
+ *   - Perforations, avatar circle, user name, welcome text
+ *   - Cashback rate section, monthly amount
+ *   - Flent logo vector (32x38.4, #A9A9A9)
+ * - Bottom sheet area (1:34242): white bg, borderRadius 22.79, y:899
+ *   - Handle bar (28x4, #D9D9D9, borderRadius 200)
+ *   - "Pay Rent" heading, landlord info, credit card, payment button
+ * - Start Earning button (I1:34342): 313x52, border #FF9A6D, radius 8
+ *   - Text: "Start Earning" -- 14/20, #FFFFFF, PlusJakartaSans-Medium
+ *
+ * The "Start Earning" button is a floating CTA at bottom.
  */
 
 import React, { useCallback, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Line, G, Rect } from 'react-native-svg';
+import Svg, { Path, Line, G } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text, Logo } from '@/src/components';
+import { DottedPattern } from '@/src/components/patterns/DottedPattern';
 import { useDashboard, useVerificationStatus, deriveSetupProgress } from '@/src/hooks';
-import { colors, spacing, radius } from '@/src/theme';
+import { colors } from '@/src/theme';
 
-// Figma exact values from 1-34236
+// Figma exact values from 1-34236 blueprint
 const FIGMA = {
   // Background
-  backgroundColor: '#131313', // black.700
+  backgroundColor: '#131313',
 
-  // Title
-  titleWidth: 269,
-  titleHeight: 168,
-  titleFontSize: 40,
-  titleLineHeight: 56,
-  titleLetterSpacing: -1,
-  titleColor: '#FFFFFF',
+  // Title (node 160:3185)
+  title: {
+    x: 62,       // Figma absolute minus screen x
+    y: 128,
+    width: 269,
+    fontSize: 40,
+    lineHeight: 56,
+    letterSpacing: -1,
+    fontFamily: 'PlusJakartaSans-Medium' as const,
+    colorWhite: '#FFFFFF',
+    colorGray: '#A9A9A9',
+    colorAccent: '#FF9A6D',
+  },
 
-  // Card
-  cardWidth: 270,
-  cardHeight: 321,
-  cardBackgroundColor: '#202020', // black.500
-  cardShadowColor: '#000000',
-  cardShadowOffsetY: 9,
-  cardShadowRadius: 19,
+  // Card (node 1:34308)
+  card: {
+    width: 270,
+    height: 321,
+    backgroundColor: '#202020',
+    shadowColor: '#000000',
+    shadowOffsetY: 9,
+    shadowRadius: 19,
+  },
 
-  // Card perforations
+  // Perforations
   perforationSize: 14,
 
-  // Progress indicator
-  progressBarWidth: 58,
-  progressBarHeight: 22,
-  progressBarColor: '#FF9A6D', // brand.500
-  progressBarBorderRadius: 4,
+  // Avatar (node 1:34329 Ellipse 8)
+  avatar: {
+    size: 32,
+  },
 
-  // Avatar
-  avatarSize: 32,
+  // User name (1:34331)
+  userName: {
+    fontSize: 14,
+    lineHeight: 19.74,
+    letterSpacing: -0.56,
+    color: '#CBCBCB',
+    fontFamily: 'PlusJakartaSans-Medium' as const,
+  },
 
-  // User name
-  userNameWidth: 145,
-  userNameFontSize: 14,
-  userNameLineHeight: 19.74,
-  userNameLetterSpacing: -0.56,
-  userNameColor: '#CBCBCB', // neutral.300
+  // Welcome subtitle (1:34332)
+  subtitle: {
+    fontSize: 12,
+    lineHeight: 16.92,
+    letterSpacing: -0.24,
+    color: '#878787',
+    fontFamily: 'PlusJakartaSans-Regular' as const,
+  },
 
-  // Subtitle
-  subtitleFontSize: 12,
-  subtitleLineHeight: 16.92,
-  subtitleLetterSpacing: -0.24,
-  subtitleColor: '#878787', // neutral.600
+  // Cashback rate label (1:34337)
+  cashbackLabel: {
+    fontSize: 12,
+    lineHeight: 16.92,
+    letterSpacing: -0.24,
+    color: '#878787',
+    fontFamily: 'PlusJakartaSans-Regular' as const,
+  },
 
-  // Cashback rate
-  cashbackBadgeWidth: 58,
-  cashbackBadgeHeight: 22,
-  cashbackBadgeColor: '#FF9A6D', // brand.500
-  cashbackBadgeBorderRadius: 4,
-  cashbackBadgeTextColor: '#131313', // black.700
+  // Credit card text (1:34338) -- visible:false in Figma
+  creditCard: {
+    fontSize: 14,
+    lineHeight: 19.74,
+    letterSpacing: -0.56,
+    color: '#878787',
+    fontFamily: 'PlusJakartaSans-Regular' as const,
+  },
 
-  cashbackRateFontSize: 14,
-  cashbackRateLineHeight: 19.74,
-  cashbackRateLetterSpacing: -0.56,
-  cashbackRateColor: '#CBCBCB', // neutral.300
+  // Cashback rate text (1:34340)
+  cashbackRate: {
+    fontSize: 14,
+    lineHeight: 19.74,
+    letterSpacing: -0.56,
+    color: '#CBCBCB',
+    fontFamily: 'PlusJakartaSans-Medium' as const,
+    badgeTextColor: '#000000', // "1% back" span color
+  },
 
-  // Monthly amount
-  amountFontSize: 16,
-  amountLineHeight: 22.56,
-  amountLetterSpacing: -0.64,
-  amountColor: '#FFFFFF',
+  // Monthly amount (1:34341)
+  amount: {
+    fontSize: 16,
+    lineHeight: 22.56,
+    letterSpacing: -0.64,
+    color: '#FFFFFF',
+    fontFamily: 'PlusJakartaSans-SemiBold' as const,
+  },
 
-  // Grid
-  gridLineColor: '#4D4D4D', // black.400
+  // Grid lines (Vector 45)
+  gridLineColor: '#4D4D4D',
+  gridStrokeWidth: 0.3,
 
-  // Swipe indicator
-  swipeIndicatorWidth: 24,
-  swipeIndicatorHeight: 2,
-  swipeIndicatorColor: '#4D4D4D', // black.400
-  swipeIndicatorBorderRadius: 200,
+  // Logo vector (1:34334) -- #A9A9A9
+  logoColor: '#A9A9A9',
 
-  // Button
-  buttonWidth: 313,
-  buttonHeight: 52,
-  buttonBorderColor: '#FF9A6D', // brand.500
-  buttonBorderRadius: 8,
-  buttonShadowColor: '#995C41',
-  buttonShadowOffsetY: 6,
-  buttonShadowRadius: 12,
-  buttonTextFontSize: 14,
-  buttonTextLineHeight: 20,
-  buttonTextColor: '#FFFFFF',
+  // Button (I1:34342;100:1564)
+  button: {
+    width: 313,
+    height: 52,
+    borderColor: '#FF9A6D',
+    borderRadius: 8,
+    shadowColor: '#995C41',
+    shadowOffsetY: 6,
+    shadowRadius: 12,
+    textFontSize: 14,
+    textLineHeight: 20,
+    textColor: '#FFFFFF',
+    textFontFamily: 'PlusJakartaSans-Medium' as const,
+  },
 } as const;
 
-// Grid background component matching Figma exactly
+// Decorative grid lines from Figma Vector 45 at y:462
 function GridBackground() {
   return (
-    <View style={styles.gridContainer} pointerEvents="none">
-      <Svg width="100%" height="300" style={StyleSheet.absoluteFill}>
-        <G stroke={FIGMA.gridLineColor} strokeWidth={0.5} opacity={0.3}>
-          {/* Horizontal lines */}
-          {[...Array(15)].map((_, i) => (
-            <Line
-              key={`h-${i}`}
-              x1="0"
-              y1={i * 20}
-              x2="100%"
-              y2={i * 20}
-            />
-          ))}
-          {/* Vertical lines */}
-          {[...Array(20)].map((_, i) => (
-            <Line
-              key={`v-${i}`}
-              x1={i * 20}
-              y1="0"
-              x2={i * 20}
-              y2="300"
-            />
-          ))}
+    <View style={gridStyles.container} pointerEvents="none">
+      <Svg width="100%" height="235" style={StyleSheet.absoluteFill}>
+        <G stroke={FIGMA.gridLineColor} strokeWidth={FIGMA.gridStrokeWidth} opacity={0.5}>
+          {/* Vertical line at x ~37 (from vector path) */}
+          <Line x1="37" y1="0" x2="37" y2="235" />
+          {/* Vertical line at x ~339 */}
+          <Line x1="339" y1="0" x2="339" y2="235" />
+          {/* Horizontal line at y ~198 */}
+          <Line x1="0" y1="198" x2="369" y2="198" />
         </G>
       </Svg>
     </View>
   );
 }
+
+const gridStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 462,
+    left: 12,
+    right: 12,
+    height: 235,
+  },
+});
 
 export default function PendingStepsScreen() {
   const router = useRouter();
@@ -169,17 +204,15 @@ export default function PendingStepsScreen() {
   const userName = user?.first_name
     ? `${user.first_name}${user.last_name ? ` ${user.last_name}` : ''}`
     : 'Rohan Joshi';
-  const cashbackRate = 1; // Default 1% cashback rate
+  const cashbackRate = 1;
   const monthlyRent = tenancy?.monthly_rent ?? 32500;
   const monthlyCashback = Math.floor(monthlyRent * cashbackRate / 100);
 
   const handleStartEarning = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (allVerified) {
-      // All steps complete - go to main dashboard
       router.replace('/(main)');
     } else if (pendingSteps.length > 0) {
-      // Navigate to the first incomplete step
       const nextStep = pendingSteps[0];
       if (nextStep === 'bank') {
         router.push('/(setup)/add-bank');
@@ -197,36 +230,32 @@ export default function PendingStepsScreen() {
 
   return (
     <View style={styles.container} testID="pending-steps-screen">
-      {/* Background with gradient */}
-      <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={['transparent', FIGMA.backgroundColor]}
-          locations={[0.3, 0.6]}
-          style={styles.backgroundGradient}
-        />
-      </View>
+      {/* Background pattern */}
+      <DottedPattern backgroundShape="default" />
+
+      {/* Grid decorative lines */}
+      <GridBackground />
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + spacing.xxl },
+          { paddingTop: insets.top + 48 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title - Figma: fontSize 40, lineHeight 56, letterSpacing -1 */}
+        {/* Title -- Figma 160:3185: x:62, y:128, width:269
+            "Here is your " = #A9A9A9 (chars 0-12)
+            "personalized cashback plan" = #FF9A6D (chars 13-39)
+            fontSize 40, lineHeight 56, letterSpacing -1, PlusJakartaSans-Medium */}
         <View style={styles.titleContainer}>
           <Text style={styles.titleText}>
-            {allVerified
-              ? 'Here is your personalized cashback plan'
-              : `${setupProgress.completedCount} of ${setupProgress.totalCount} steps done`}
+            <Text inherit style={styles.titleGray}>Here is your{'\n'}</Text>
+            <Text inherit style={styles.titleAccent}>personalized cashback plan</Text>
           </Text>
         </View>
 
-        {/* Grid background behind card */}
-        <GridBackground />
-
-        {/* Cashback Card - Figma exact: 270x321, bg #202020, shadow */}
+        {/* Cashback Card -- Figma 1:34308: 270x321, bg #202020, shadow */}
         <View style={styles.cardContainer}>
           <View style={styles.card}>
             {/* Top perforations */}
@@ -236,66 +265,69 @@ export default function PendingStepsScreen() {
               ))}
             </View>
 
-            {/* Card header with progress badge */}
+            {/* Card header with Flent logo */}
             <View style={styles.cardHeader}>
-              <View style={styles.progressBadge}>
-                <Logo size={16} color={colors.white} />
-              </View>
               <Logo size={24} color={colors.white} />
+              {/* Flent logo vector on right -- Figma 1:34334: 32x38.4, #A9A9A9 */}
+              <View style={styles.logoRight}>
+                <Logo size={38} color={FIGMA.logoColor} />
+              </View>
             </View>
 
-            {/* Welcome section - Figma: avatar + name */}
+            {/* Welcome section -- avatar + name + subtitle */}
             <View style={styles.welcomeSection}>
-              {/* Avatar placeholder */}
+              {/* Avatar -- Figma: Ellipse 8, 32x32 circle with image */}
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{userName.charAt(0).toUpperCase()}</Text>
               </View>
 
-              {/* User name - Figma: fontSize 14, lineHeight 19.74, letterSpacing -0.56, color #CBCBCB */}
-              <Text style={styles.welcomeName}>{userName}</Text>
-              {/* Subtitle - Figma: fontSize 12, lineHeight 16.92, color #878787 */}
-              <Text style={styles.welcomeSubtext}>Welcome to Flent Secured</Text>
+              {/* Name and subtitle -- Figma 1:34330: column, gap 8, items center */}
+              <View style={styles.nameContainer}>
+                {/* User name -- Figma 1:34331: 14/19.74, -0.56, #CBCBCB, Medium */}
+                <Text style={styles.welcomeName}>{userName}</Text>
+                {/* Subtitle -- Figma 1:34332: 12/16.92, -0.24, #878787, Regular */}
+                <Text style={styles.welcomeSubtext}>Welcome to Flent Secured</Text>
+              </View>
             </View>
 
-            {/* Cashback section */}
+            {/* Cashback section -- Figma 1:34335: column, gap 4, at y:216 */}
             <View style={styles.cashbackSection}>
-              {/* Label */}
-              <Text style={styles.cashbackLabel}>Your Cashback Rate</Text>
-
-              {/* Credit Card info */}
-              <Text style={styles.creditCardText}>Credit Card XX25</Text>
-
-              {/* Cashback rate row - badge + text */}
-              <View style={styles.cashbackRateRow}>
-                <View style={styles.cashbackBadge}>
-                  <Text style={styles.cashbackBadgeText}>{cashbackRate}% back</Text>
-                </View>
-                <Text style={styles.cashbackRateText}>on every on-time rent</Text>
+              {/* Header row -- Figma 1:34336: row, space-between */}
+              <View style={styles.cashbackHeaderRow}>
+                {/* Label -- Figma 1:34337: 12/16.92, -0.24, #878787 */}
+                <Text style={styles.cashbackLabel}>Your Cashback Rate</Text>
+                {/* Credit card -- Figma 1:34338: INVISIBLE (visible:false) */}
               </View>
 
-              {/* Monthly amount - Figma: fontSize 16, lineHeight 22.56, letterSpacing -0.64, color #FFFFFF */}
-              <Text style={styles.monthlyAmount}>
-                &#x20B9; {monthlyCashback} /month
-              </Text>
+              {/* Rate + amount -- Figma 1:34339: column, gap 12 */}
+              <View style={styles.cashbackRateSection}>
+                {/* "1% back   on every on-time rent" -- mixed colors */}
+                <Text style={styles.cashbackRateText}>
+                  <Text inherit style={styles.cashbackBadgeText}>{cashbackRate}% back</Text>
+                  {'   '}
+                  <Text inherit>on every on-time rent</Text>
+                </Text>
+
+                {/* Monthly amount -- Figma 1:34341: 16/22.56, -0.64, #FFFFFF, SemiBold */}
+                <Text style={styles.monthlyAmount}>
+                  <Text inherit style={styles.amountSymbol}>{'\u20B9'}  </Text>
+                  <Text inherit>{monthlyCashback}</Text>
+                  <Text inherit style={styles.amountSuffix}> /month</Text>
+                </Text>
+              </View>
             </View>
 
-            {/* Side perforations */}
+            {/* Side perforations at bottom */}
             <View style={styles.cardSidePerforations}>
               <View style={[styles.perforationLarge, styles.perforationLeft]} />
-              {[...Array(7)].map((_, i) => (
-                <View key={i} style={styles.perforationLarge} />
-              ))}
               <View style={[styles.perforationLarge, styles.perforationRight]} />
             </View>
           </View>
         </View>
-
-        {/* Swipe indicator - Figma: 24x2, bg #4D4D4D, borderRadius 200 */}
-        <View style={styles.swipeIndicator} />
       </ScrollView>
 
-      {/* Bottom button - Figma: 313x52, borderColor #FF9A6D, shadow */}
-      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + spacing.lg }]}>
+      {/* Bottom button -- Figma I1:34342: 313x52, border #FF9A6D, radius 8, shadow */}
+      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 24 }]}>
         <TouchableOpacity
           style={styles.button}
           onPress={handleStartEarning}
@@ -313,87 +345,189 @@ export default function PendingStepsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: FIGMA.backgroundColor, // #131313
-  },
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  backgroundGradient: {
-    ...StyleSheet.absoluteFillObject,
+    backgroundColor: FIGMA.backgroundColor,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: spacing.xxl, // 40
+    paddingHorizontal: 62, // Figma: title at x:62
   },
-  // Title: Figma exact - fontSize 40, lineHeight 56, letterSpacing -1
+
+  // Title -- Figma 160:3185: width 269, fontSize 40/56, letterSpacing -1
   titleContainer: {
-    width: FIGMA.titleWidth, // 269
-    marginBottom: spacing.xl, // 32
+    width: FIGMA.title.width,
+    marginBottom: 32,
   },
   titleText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: FIGMA.titleFontSize, // 40
-    lineHeight: FIGMA.titleLineHeight, // 56
-    letterSpacing: FIGMA.titleLetterSpacing, // -1
-    color: FIGMA.titleColor, // #FFFFFF
+    fontFamily: FIGMA.title.fontFamily,
+    fontSize: FIGMA.title.fontSize,
+    lineHeight: FIGMA.title.lineHeight,
+    letterSpacing: FIGMA.title.letterSpacing,
+    color: FIGMA.title.colorWhite,
   },
-  // Grid container
-  gridContainer: {
-    position: 'absolute',
-    top: 200,
-    left: 0,
-    right: 0,
-    height: 300,
+  titleGray: {
+    color: FIGMA.title.colorGray,
   },
-  // Card container
+  titleAccent: {
+    color: FIGMA.title.colorAccent,
+  },
+
+  // Card container -- centered, Figma card at x:61 (centered in 393px screen)
   cardContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl, // 32
+    marginBottom: 32,
   },
-  // Card: Figma exact - 270x321, bg #202020, shadow
+  // Card -- Figma 1:34308: 270x321, bg #202020, shadow
   card: {
-    width: FIGMA.cardWidth, // 270
-    height: FIGMA.cardHeight, // 321
-    backgroundColor: FIGMA.cardBackgroundColor, // #202020
-    // No border radius per Figma
+    width: FIGMA.card.width,
+    height: FIGMA.card.height,
+    backgroundColor: FIGMA.card.backgroundColor,
     overflow: 'hidden',
-    // Shadow
-    shadowColor: FIGMA.cardShadowColor,
-    shadowOffset: { width: 0, height: FIGMA.cardShadowOffsetY },
+    shadowColor: FIGMA.card.shadowColor,
+    shadowOffset: { width: 0, height: FIGMA.card.shadowOffsetY },
     shadowOpacity: 1,
-    shadowRadius: FIGMA.cardShadowRadius,
+    shadowRadius: FIGMA.card.shadowRadius,
     elevation: 10,
   },
+
   // Top perforations
   cardPerforations: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    paddingVertical: spacing.xs,
-    marginTop: -FIGMA.perforationSize / 2,
+    paddingVertical: 4,
+    marginTop: -7,
   },
   perforation: {
-    width: FIGMA.perforationSize, // 14
-    height: FIGMA.perforationSize, // 14
+    width: FIGMA.perforationSize,
+    height: FIGMA.perforationSize,
     borderRadius: FIGMA.perforationSize / 2,
-    backgroundColor: colors.black[700], // #131313 - matches background
+    backgroundColor: FIGMA.backgroundColor,
   },
+
+  // Card header
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 26,
+    paddingTop: 16,
+    marginBottom: 0,
+  },
+  logoRight: {
+    // Figma 1:34333: x:218, y:36 relative to card
+  },
+
+  // Welcome section -- Figma: avatar at left, name block beside it
+  welcomeSection: {
+    paddingHorizontal: 26,
+    paddingTop: 12,
+    marginBottom: 24,
+  },
+  avatar: {
+    width: FIGMA.avatar.size,
+    height: FIGMA.avatar.size,
+    borderRadius: FIGMA.avatar.size / 2,
+    backgroundColor: '#E91E63',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatarText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 14,
+    color: colors.white,
+  },
+  nameContainer: {
+    gap: 8,
+    alignItems: 'center',
+  },
+  // User name -- Figma 1:34331: 14/19.74, -0.56, #CBCBCB, Medium
+  welcomeName: {
+    fontFamily: FIGMA.userName.fontFamily,
+    fontSize: FIGMA.userName.fontSize,
+    lineHeight: FIGMA.userName.lineHeight,
+    letterSpacing: FIGMA.userName.letterSpacing,
+    color: FIGMA.userName.color,
+  },
+  // Subtitle -- Figma 1:34332: 12/16.92, -0.24, #878787, Regular
+  welcomeSubtext: {
+    fontFamily: FIGMA.subtitle.fontFamily,
+    fontSize: FIGMA.subtitle.fontSize,
+    lineHeight: FIGMA.subtitle.lineHeight,
+    letterSpacing: FIGMA.subtitle.letterSpacing,
+    color: FIGMA.subtitle.color,
+  },
+
+  // Cashback section -- Figma 1:34335: x:26, y:216, w:233, column, gap 4
+  cashbackSection: {
+    paddingHorizontal: 26,
+    gap: 4,
+  },
+  cashbackHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  // Label -- Figma 1:34337: 12/16.92, -0.24, #878787, Regular
+  cashbackLabel: {
+    fontFamily: FIGMA.cashbackLabel.fontFamily,
+    fontSize: FIGMA.cashbackLabel.fontSize,
+    lineHeight: FIGMA.cashbackLabel.lineHeight,
+    letterSpacing: FIGMA.cashbackLabel.letterSpacing,
+    color: FIGMA.cashbackLabel.color,
+  },
+
+  // Rate section -- Figma 1:34339: column, gap 12
+  cashbackRateSection: {
+    gap: 12,
+  },
+  // Rate text -- Figma 1:34340: 14/19.74, -0.56, #CBCBCB, Medium
+  cashbackRateText: {
+    fontFamily: FIGMA.cashbackRate.fontFamily,
+    fontSize: FIGMA.cashbackRate.fontSize,
+    lineHeight: FIGMA.cashbackRate.lineHeight,
+    letterSpacing: FIGMA.cashbackRate.letterSpacing,
+    color: FIGMA.cashbackRate.color,
+  },
+  // "1% back" span -- Figma: color #000000
+  cashbackBadgeText: {
+    color: FIGMA.cashbackRate.badgeTextColor,
+  },
+
+  // Monthly amount -- Figma 1:34341: 16/22.56, -0.64, #FFFFFF, SemiBold
+  monthlyAmount: {
+    fontFamily: FIGMA.amount.fontFamily,
+    fontSize: FIGMA.amount.fontSize,
+    lineHeight: FIGMA.amount.lineHeight,
+    letterSpacing: FIGMA.amount.letterSpacing,
+    color: FIGMA.amount.color,
+  },
+  // Rupee symbol -- Figma span: fontSize 12
+  amountSymbol: {
+    fontSize: 12,
+  },
+  // "/month" suffix -- Figma span: fontSize 14
+  amountSuffix: {
+    fontSize: 14,
+  },
+
   // Side perforations
   cardSidePerforations: {
     position: 'absolute',
-    bottom: spacing.lg,
+    bottom: 24,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   perforationLarge: {
-    width: FIGMA.perforationSize, // 14
-    height: FIGMA.perforationSize, // 14
+    width: FIGMA.perforationSize,
+    height: FIGMA.perforationSize,
     borderRadius: FIGMA.perforationSize / 2,
-    backgroundColor: colors.black[700], // #131313
+    backgroundColor: FIGMA.backgroundColor,
   },
   perforationLeft: {
     marginLeft: -FIGMA.perforationSize / 2,
@@ -401,153 +535,34 @@ const styles = StyleSheet.create({
   perforationRight: {
     marginRight: -FIGMA.perforationSize / 2,
   },
-  // Card header
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.lg, // 24
-    paddingTop: spacing.md, // 16
-    marginBottom: spacing.lg, // 24
-  },
-  progressBadge: {
-    width: FIGMA.progressBarWidth, // 58
-    height: FIGMA.progressBarHeight, // 22
-    backgroundColor: FIGMA.progressBarColor, // #FF9A6D
-    borderRadius: FIGMA.progressBarBorderRadius, // 4
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Welcome section
-  welcomeSection: {
-    paddingHorizontal: spacing.lg, // 24
-    marginBottom: spacing.lg, // 24
-  },
-  // Avatar: Figma exact - 32x32
-  avatar: {
-    width: FIGMA.avatarSize, // 32
-    height: FIGMA.avatarSize, // 32
-    borderRadius: FIGMA.avatarSize / 2,
-    backgroundColor: '#E91E63', // Pink avatar background from Figma
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.xs, // 8
-  },
-  avatarText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,
-    color: colors.white,
-  },
-  // User name: Figma exact - fontSize 14, lineHeight 19.74, letterSpacing -0.56, color #CBCBCB
-  welcomeName: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: FIGMA.userNameFontSize, // 14
-    lineHeight: FIGMA.userNameLineHeight, // 19.74
-    letterSpacing: FIGMA.userNameLetterSpacing, // -0.56
-    color: FIGMA.userNameColor, // #CBCBCB
-    marginBottom: spacing.xxs, // 4
-  },
-  // Subtitle: Figma exact - fontSize 12, lineHeight 16.92, color #878787
-  welcomeSubtext: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: FIGMA.subtitleFontSize, // 12
-    lineHeight: FIGMA.subtitleLineHeight, // 16.92
-    letterSpacing: FIGMA.subtitleLetterSpacing, // -0.24
-    color: FIGMA.subtitleColor, // #878787
-  },
-  // Cashback section
-  cashbackSection: {
-    paddingHorizontal: spacing.lg, // 24
-  },
-  cashbackLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: FIGMA.subtitleFontSize, // 12
-    lineHeight: FIGMA.subtitleLineHeight, // 16.92
-    letterSpacing: FIGMA.subtitleLetterSpacing, // -0.24
-    color: FIGMA.subtitleColor, // #878787
-    marginBottom: spacing.xxs, // 4
-  },
-  creditCardText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: FIGMA.cashbackRateFontSize, // 14
-    lineHeight: FIGMA.cashbackRateLineHeight, // 19.74
-    letterSpacing: FIGMA.cashbackRateLetterSpacing, // -0.56
-    color: colors.white,
-    marginBottom: spacing.sm, // 12
-  },
-  // Cashback rate row
-  cashbackRateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs, // 8
-    marginBottom: spacing.sm, // 12
-  },
-  // Cashback badge: Figma exact - 58x22, bg #FF9A6D, borderRadius 4
-  cashbackBadge: {
-    width: FIGMA.cashbackBadgeWidth, // 58
-    height: FIGMA.cashbackBadgeHeight, // 22
-    backgroundColor: FIGMA.cashbackBadgeColor, // #FF9A6D
-    borderRadius: FIGMA.cashbackBadgeBorderRadius, // 4
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cashbackBadgeText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 10,
-    color: FIGMA.cashbackBadgeTextColor, // #131313
-  },
-  // Cashback rate text: Figma exact - fontSize 14, color #CBCBCB
-  cashbackRateText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: FIGMA.cashbackRateFontSize, // 14
-    lineHeight: FIGMA.cashbackRateLineHeight, // 19.74
-    letterSpacing: FIGMA.cashbackRateLetterSpacing, // -0.56
-    color: FIGMA.cashbackRateColor, // #CBCBCB
-  },
-  // Monthly amount: Figma exact - fontSize 16, lineHeight 22.56, letterSpacing -0.64, color #FFFFFF
-  monthlyAmount: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: FIGMA.amountFontSize, // 16
-    lineHeight: FIGMA.amountLineHeight, // 22.56
-    letterSpacing: FIGMA.amountLetterSpacing, // -0.64
-    color: FIGMA.amountColor, // #FFFFFF
-  },
-  // Swipe indicator: Figma exact - 24x2, bg #4D4D4D, borderRadius 200
-  swipeIndicator: {
-    width: FIGMA.swipeIndicatorWidth, // 24
-    height: FIGMA.swipeIndicatorHeight, // 2
-    backgroundColor: FIGMA.swipeIndicatorColor, // #4D4D4D
-    borderRadius: FIGMA.swipeIndicatorBorderRadius, // 200
-    alignSelf: 'center',
-    marginBottom: spacing.xl, // 32
-  },
-  // Button container
+
+  // Button container -- fixed at bottom
   buttonContainer: {
-    paddingHorizontal: spacing.xxl, // 40
-    paddingTop: spacing.md, // 16
+    paddingHorizontal: 40,
+    paddingTop: 16,
     alignItems: 'center',
   },
-  // Button: Figma exact - 313x52, borderColor #FF9A6D, borderRadius 8, shadow
+  // Button -- Figma I1:34342: 313x52, border #FF9A6D 0.1px, radius 8, shadow
   button: {
-    width: FIGMA.buttonWidth, // 313
-    height: FIGMA.buttonHeight, // 52
-    borderWidth: 1,
-    borderColor: FIGMA.buttonBorderColor, // #FF9A6D
-    borderRadius: FIGMA.buttonBorderRadius, // 8
+    width: FIGMA.button.width,
+    height: FIGMA.button.height,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: FIGMA.button.borderColor,
+    borderRadius: FIGMA.button.borderRadius,
     justifyContent: 'center',
     alignItems: 'center',
-    // Shadow
-    shadowColor: FIGMA.buttonShadowColor, // #995C41
-    shadowOffset: { width: 0, height: FIGMA.buttonShadowOffsetY },
-    shadowOpacity: 1,
-    shadowRadius: FIGMA.buttonShadowRadius,
+    // Shadow -- Figma: rgba(153,92,65) offset(0,6) blur 12
+    shadowColor: FIGMA.button.shadowColor,
+    shadowOffset: { width: 0, height: FIGMA.button.shadowOffsetY },
+    shadowOpacity: 0.24,
+    shadowRadius: FIGMA.button.shadowRadius,
     elevation: 8,
   },
-  // Button text: Figma exact - fontSize 14, lineHeight 20, color #FFFFFF
+  // Button text -- Figma: 14/20, #FFFFFF, PlusJakartaSans-Medium
   buttonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: FIGMA.buttonTextFontSize, // 14
-    lineHeight: FIGMA.buttonTextLineHeight, // 20
-    color: FIGMA.buttonTextColor, // #FFFFFF
+    fontFamily: FIGMA.button.textFontFamily,
+    fontSize: FIGMA.button.textFontSize,
+    lineHeight: FIGMA.button.textLineHeight,
+    color: FIGMA.button.textColor,
   },
 });

@@ -103,23 +103,20 @@ const styles = StyleSheet.create({
     gap: 8, // Figma: gap 8
   },
   title: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
     color: '#FFFFFF', // Figma: #FFFFFF (white)
   },
   description: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeight 20
     color: '#BABABA', // Figma: #BABABA (neutral[400])
   },
   actionLink: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeight 20
     color: '#FF9A6D', // Figma: #FF9A6D (brand[500])
     marginTop: 4, // Figma: small gap

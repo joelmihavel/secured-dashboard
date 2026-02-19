@@ -107,9 +107,8 @@ const styles = StyleSheet.create({
     gap: 16, // Figma: gap 16
   },
   header: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeight 20
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
@@ -139,16 +138,14 @@ const styles = StyleSheet.create({
     gap: 4, // Figma: gap 4 between title and subtitle
   },
   itemTitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeight 20
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   itemSubtitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 12, // Figma: fontSize 12
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeight 20
     color: '#878787', // Figma: #878787 (neutral[600])
   },

@@ -53,8 +53,7 @@ const FIGMA = {
   inputText: {
     fontSize: 48,
     lineHeight: 60,
-    fontWeight: '500' as const,
-    fontFamily: 'Inter',
+    fontFamily: 'Inter-Medium',
     letterSpacing: -0.96,
   },
 
@@ -238,7 +237,6 @@ const styles = StyleSheet.create({
     fontFamily: FIGMA.inputText.fontFamily,
     fontSize: FIGMA.inputText.fontSize,
     lineHeight: FIGMA.inputText.lineHeight,
-    fontWeight: FIGMA.inputText.fontWeight,
     letterSpacing: FIGMA.inputText.letterSpacing,
     textAlign: 'center',
     width: '100%',

@@ -16,7 +16,7 @@
 import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
 
-import { colors, typography } from '@/src/theme';
+// No theme imports needed - all values use exact Figma hex codes and font families
 
 export type HeadlineVariant = 'due' | 'overdue' | 'missed' | 'multiple_overdue';
 
@@ -84,12 +84,13 @@ function HeadlineSectionComponent({
 
 const styles = StyleSheet.create({
   container: {
-    // Figma 243-3378 node 243:3383 (Frame 2095586453)
-    // Exact values: width 393, height auto, gap 10, padding 64/64
+    // Figma 243-2967 node 243:2969 (Frame 2095586453)
+    // Exact values: width FILL (393), height HUG, gap 10, padding L64 R64
+    // justifyContent CENTER, alignItems CENTER with text STRETCH (FILL width)
     width: '100%',
     flexDirection: 'column',
-    justifyContent: 'flex-start', // Figma: content flows top-down
-    alignItems: 'flex-start', // Figma: LEFT-aligned text content
+    justifyContent: 'center', // Figma: justifyContent CENTER
+    alignItems: 'flex-start', // Text is STRETCH/FILL so left-aligned within full width
     gap: 10, // Figma: itemSpacing 10 between headline and "Paying with:"
     paddingLeft: 64, // Figma: paddingLeft 64
     paddingRight: 64, // Figma: paddingRight 64
@@ -100,8 +101,7 @@ const styles = StyleSheet.create({
     fontSize: 28, // Figma: fontSize 28
     lineHeight: 40, // Figma: lineHeight 40
     letterSpacing: -1, // Figma: letterSpacing -1
-    fontWeight: '400', // Figma: fontWeight 400
-    fontFamily: typography.h4.fontFamily,
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     textAlign: 'left', // Figma: textAlignHorizontal LEFT
   },
   grayText: {
@@ -116,8 +116,7 @@ const styles = StyleSheet.create({
     height: 20, // Figma: height 20
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
-    fontFamily: typography.bodyMd2.fontFamily,
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     color: '#A6A6A6', // Figma: #A6A6A6 (black[200])
     textAlign: 'left', // Figma: textAlignHorizontal LEFT
   },

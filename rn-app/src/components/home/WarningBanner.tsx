@@ -87,11 +87,10 @@ const styles = StyleSheet.create({
   text: {
     // Figma 243-3378 node 243:3382
     // Exact values: width 227, height 20, fontSize 12, fontWeight 400, lineHeight 20
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 12, // Figma: fontSize 12
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeightPx 20
     textAlign: 'center', // Figma: textAlignHorizontal CENTER
-    fontFamily: 'PlusJakartaSans-Regular',
   },
 });
 

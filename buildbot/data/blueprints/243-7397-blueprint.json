@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "screenId": "243-7397",
+    "screenName": "Screen 243-7397",
+    "route": "/unknown",
+    "stateName": "default",
+    "dimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "generatedAt": "2026-02-19T16:50:52.093Z",
+    "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv"
+  },
+  "background": {
+    "color": "#131313",
+    "hasDottedPattern": false
+  },
+  "nodes": [
+    {
+      "id": "243:7397",
+      "parentId": null,
+      "name": "Vector 63",
+      "type": "VECTOR",
+      "depth": 0,
+      "visible": true,
+      "geometry": {
+        "x": 0,
+        "y": 0,
+        "width": 388.5,
+        "height": 0,
+        "rotation": 0
+      },
+      "opacity": 1,
+      "fills": [],
+      "strokes": [
+        {
+          "color": "#000000",
+          "weight": 2,
+          "visible": true,
+          "align": "CENTER"
+        }
+      ],
+      "effects": [],
+      "borderRadius": 0,
+      "clipsContent": false,
+      "strokePaths": [
+        {
+          "path": "M388.5 0L378.5 -5.7735L378.5 5.7735L388.5 0ZM0 0L0 1L379.5 1L379.5 0L379.5 -1L0 -1L0 0Z",
+          "windingRule": "NONZERO"
+        }
+      ],
+      "constraints": {
+        "horizontal": "LEFT",
+        "vertical": "TOP"
+      },
+      "absoluteRenderBounds": {
+        "x": 437.5,
+        "y": 8077.2265625,
+        "width": 388.5,
+        "height": 11.546875
+      },
+      "absoluteBoundingBox": {
+        "x": 437.5,
+        "y": 8083,
+        "width": 388.5,
+        "height": 0
+      },
+      "size": {
+        "x": 388.5,
+        "y": 0
+      },
+      "relativeTransform": [
+        [
+          1,
+          0,
+          437.5
+        ],
+        [
+          0,
+          1,
+          8083
+        ]
+      ],
+      "fillOverrideTable": {
+        "1": null
+      }
+    }
+  ],
+  "assets": [],
+  "tokensUsed": {
+    "colors": {
+      "#000000": "colors.neutral[black]"
+    },
+    "typography": {},
+    "spacing": {},
+    "radius": {}
+  },
+  "prototyping": {
+    "hasInteractions": false,
+    "flowCount": 0,
+    "flows": []
+  }
+}

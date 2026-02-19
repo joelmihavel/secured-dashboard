@@ -1,26 +1,29 @@
 /**
  * TabSwitcher Component
  * "Recent Payments" / "Cashbacks" toggle tabs - Figma pixel-perfect
- * Figma Reference: 243-3378 (Frame 243:3328 "Toggle")
+ * Figma Reference: 243-2967 (node 243:3120 "Toggle")
  *
- * Figma Pixel-Perfect Values (toggle container):
- * - Container (Toggle): width 297, height 44, backgroundColor #131313 (darker)
- *   - borderColor #202020, borderWidth 1, borderRadius 200
- *   - padding 4 all sides
- * - Active tab: width ~145, height 36, backgroundColor #1A1A1A (lighter - visible)
- *   - borderRadius 50, paddingVertical 8, paddingHorizontal 24
- *   - shadow: multiple drop shadows for depth
- * - Inactive tab: height 36, no background (transparent)
- *   - borderRadius 50, paddingVertical 8, paddingHorizontal 24
- * - Active text: fontSize 14, lineHeight 20, fontWeight 600, color #FFFFFF
- * - Inactive text: fontSize 14, lineHeight 20, fontWeight 500, color #878787 (muted)
+ * Figma Pixel-Perfect Values (from 243-2967 blueprint):
+ * - Toggle outer (243:3120): width 264, height 52, borderRadius 4
+ *   - gradient fill: #1A1A1A -> #0D0D0D (top to bottom)
+ *   - stroke: #FFFFFF weight 1, INSIDE
+ *   - inner shadow: #06060699 offset 0/2 blur 6
+ *   - padding: 4 all sides, gap: 0
+ * - Active tab (Component 6 - 243:3121): width 149, height 44, borderRadius 8
+ *   - gradient fill: #202020 -> #1A1A1A
+ *   - inner shadow: #0606068C offset 0/2 blur 6
+ *   - drop shadow: #06060699 offset 0/1 blur 4
+ *   - padding: top 12, right 16, bottom 12, left 16
+ * - Inactive tab: no fill, same padding structure
+ * - Active text: fontSize 14, lineHeight 20, fontWeight 500, PlusJakartaSans-Medium, color #FFFFFF
+ * - Inactive text: fontSize 14, lineHeight 20, fontWeight 500, PlusJakartaSans-Medium, color #656565
  */
 
 import React, { memo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { Text } from '@/src/components/ui';
-import { colors } from '@/src/theme';
 
 export type TabId = 'recent_payments' | 'cashbacks';
 
@@ -31,101 +34,123 @@ export interface TabSwitcherProps {
 
 function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
   return (
-    <View style={styles.container} accessibilityRole="tablist">
+    <LinearGradient
+      colors={['#1A1A1A', '#0D0D0D']}
+      style={styles.container}
+      accessibilityRole="tablist"
+    >
+      {/* Recent Payments tab */}
       <TouchableOpacity
-        style={[
-          styles.tab,
-          activeTab === 'recent_payments' && styles.tabActive,
-        ]}
         onPress={() => onTabChange('recent_payments')}
         activeOpacity={0.8}
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === 'recent_payments' }}
         accessibilityLabel="Recent Payments"
+        style={styles.tabTouchable}
       >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === 'recent_payments' ? styles.tabTextActive : styles.tabTextInactive,
-          ]}
-        >
-          Recent Payments
-        </Text>
+        {activeTab === 'recent_payments' ? (
+          <LinearGradient
+            colors={['#202020', '#1A1A1A']}
+            style={styles.tabActive}
+          >
+            <Text style={styles.tabTextActive}>Recent Payments</Text>
+          </LinearGradient>
+        ) : (
+          <View style={styles.tabInactive}>
+            <Text style={styles.tabTextInactive}>Recent Payments</Text>
+          </View>
+        )}
       </TouchableOpacity>
 
+      {/* Cashbacks tab */}
       <TouchableOpacity
-        style={[
-          styles.tab,
-          activeTab === 'cashbacks' && styles.tabActive,
-        ]}
         onPress={() => onTabChange('cashbacks')}
         activeOpacity={0.8}
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === 'cashbacks' }}
         accessibilityLabel="Cashbacks"
+        style={styles.tabTouchable}
       >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === 'cashbacks' ? styles.tabTextActive : styles.tabTextInactive,
-          ]}
-        >
-          Cashbacks
-        </Text>
+        {activeTab === 'cashbacks' ? (
+          <LinearGradient
+            colors={['#202020', '#1A1A1A']}
+            style={styles.tabActive}
+          >
+            <Text style={styles.tabTextActive}>Cashbacks</Text>
+          </LinearGradient>
+        ) : (
+          <View style={styles.tabInactive}>
+            <Text style={styles.tabTextInactive}>Cashbacks</Text>
+          </View>
+        )}
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  // Figma 243:3120: Toggle outer container
+  // width 264, height 52, borderRadius 4, gradient #1A1A1A->#0D0D0D
+  // stroke #FFFFFF weight 1 INSIDE, padding 4
   container: {
-    // Figma 243-3378: Toggle container
-    // Figma 243-5870: Toggle container #1A1A1A with active tab shadow for depth
     flexDirection: 'row',
     alignSelf: 'center',
     alignItems: 'center',
-    width: 297, // Figma: width 297
-    height: 44, // Figma: height 44
-    backgroundColor: '#1A1A1A', // Figma 243-5870: Toggle bg #1A1A1A
-    borderRadius: 200, // Figma: borderRadius 200 (pill shape)
-    borderWidth: 1, // Figma: borderWidth 1
-    borderColor: '#202020', // Figma: borderColor #202020
+    width: 264, // Figma: width 264
+    height: 52, // Figma: height 52
+    borderRadius: 4, // Figma: borderRadius 4
+    borderWidth: 1, // Figma: stroke weight 1 INSIDE
+    borderColor: '#FFFFFF', // Figma: stroke #FFFFFF
     padding: 4, // Figma: padding 4 all sides
+    gap: 0, // Figma: gap 0
   },
-  tab: {
+  tabTouchable: {
     flex: 1,
-    height: 36, // Figma: height 36
-    borderRadius: 50, // Figma: borderRadius 50 (fully rounded)
+  },
+  // Figma 243:3121 (Component 6 active): borderRadius 8, gradient #202020->#1A1A1A
+  // padding: top 12, right 16, bottom 12, left 16
+  // drop shadow + inner shadow for depth
+  tabActive: {
+    flex: 1,
+    height: 44, // Figma: height 44
+    borderRadius: 8, // Figma: borderRadius 8
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8, // Figma: paddingVertical 8
-    paddingHorizontal: 12, // Reduced from Figma 24 to prevent text truncation on device
-  },
-  tabActive: {
-    // Active tab uses shadow for visual distinction from same-bg container
-    backgroundColor: '#1A1A1A', // Figma 243-5870: #1A1A1A active tab
-    // Multiple drop shadows from Figma for depth
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    paddingVertical: 12, // Figma: paddingTop/Bottom 12
+    paddingHorizontal: 16, // Figma: paddingLeft/Right 16
+    // Drop shadow from Figma
+    shadowColor: '#060606',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
     elevation: 4,
+    overflow: 'hidden',
   },
-  tabText: {
-    fontFamily: 'PlusJakartaSans-Medium',
+  // Figma: inactive tab - no fill, same dimensions
+  tabInactive: {
+    flex: 1,
+    height: 44, // Figma: height 44
+    borderRadius: 8, // Figma: match active tab radius
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12, // Figma: paddingTop/Bottom 12
+    paddingHorizontal: 16, // Figma: paddingLeft/Right 16
+  },
+  // Figma: Active text - fontSize 14, lineHeight 20, fontWeight 500, color #FFFFFF
+  tabTextActive: {
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    // Figma nodes: tab labels use textAlignHorizontal CENTER across all variants
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
+    color: '#FFFFFF', // Figma: #FFFFFF
+    textAlign: 'center',
   },
-  tabTextActive: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontWeight: '600', // Figma: fontWeight 600 for active
-    color: colors.white, // Figma: #FFFFFF for active
-  },
+  // Figma: Inactive text - fontSize 14, lineHeight 20, fontWeight 500, color #656565
   tabTextInactive: {
-    fontWeight: '500', // Figma: fontWeight 500 for inactive
-    color: '#A9A9A9', // Figma 243-5870: #A9A9A9 for inactive tab label
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
+    fontSize: 14, // Figma: fontSize 14
+    lineHeight: 20, // Figma: lineHeight 20
+    color: '#656565', // Figma: #656565 (NOT #A9A9A9)
+    textAlign: 'center',
   },
 });
 

@@ -62,31 +62,34 @@ const F = {
 
   // Title (size=48, w=400, lineH=64, ls=-2)
   // Character style overrides from Figma REST API (charStyleOverrides):
-  //   "Confirm" (chars 0-6) → override 37 → #A9A9A9 (grey)
-  //   "your details" (chars 8-19) → override 36 → #FF9A6D (brand orange)
+  //   "Confirm" (chars 0-6) -> override 37 -> #A9A9A9 (grey)
+  //   "your details" (chars 8-19) -> override 36 -> #FF9A6D (brand orange)
   title: {
     size: 48,
-    weight: '400' as const,
     lineH: 64,
     ls: -2,
-    greyColor: '#a9a9a9',   // "Confirm" — override 37 fill r=0.6627
-    orangeColor: '#ff9a6d',  // "your details" — override 36 fill r=1.0,g=0.6039,b=0.4274
+    greyColor: '#a9a9a9',   // "Confirm" -- override 37 fill r=0.6627
+    orangeColor: '#ff9a6d',  // "your details" -- override 36 fill r=1.0,g=0.6039,b=0.4274
   },
 
   // Detail rows (verify mode -- 1:30448)
+  // Frame 2095586321: column, gap=16
+  // Horizontal row (Frame 1686557333): row, space-between, center, gap=4
+  // Vertical row (Frame 1686557036): column, center, gap=4
+  // Label group (Frame 1686557121/1686557120): row, flex-start, center, gap=4
+  // Divider (Vector 50): stroke #4D4D4D, weight 0.25
   detail: {
     gap: 16,          // Frame 2095586321 itemSpacing
     rowGap: 4,        // within row frame gap
     labelSize: 12,    // TEXT size=12
-    labelWeight: '400' as const,
     labelLineH: 20,
     labelColor: '#878787',
     labelIconGap: 4,  // Frame gap between icon and label text
     valueSize: 14,    // TEXT size=14
-    valueWeight: '400' as const,
     valueLineH: 20,
     valueColor: '#cbcbcb',
     dividerColor: '#4d4d4d', // Vector stroke
+    dividerWeight: 0.25,     // Figma stroke weight
   },
 
   // Input fields (edit mode -- 1:30820)
@@ -99,18 +102,14 @@ const F = {
     padV: 16,
     padH: 16,
     labelSize: 12,
-    labelWeight: '500' as const,
     labelColor: '#a9a9a9',
     editSize: 14,
-    editWeight: '400' as const,
     editColor: '#878787',
     valueSize: 20,
-    valueWeight: '400' as const,
     valueLineH: 32,
     filledColor: '#dddddd',
     placeholderColor: '#222222',
     hintSize: 14,
-    hintWeight: '400' as const,
     hintColor: '#878787',
     labelGap: 6,
   },
@@ -118,7 +117,6 @@ const F = {
   // "Enter Manually" link (verify mode only)
   manual: {
     size: 14,
-    weight: '400' as const,
     lineH: 20,
     color: '#a9a9a9',
   },
@@ -231,7 +229,17 @@ const FIELDS: FieldDef[] = [
 // SUB-COMPONENTS
 // ============================================
 
-/** Detail row for verify mode -- matches Figma 1:30448 detail frames */
+/**
+ * Detail row for verify mode -- matches Figma 1:30448 detail frames.
+ *
+ * Horizontal row (Frame 1686557333): row, space-between, center, gap=4
+ *   - Label group (Frame 1686557121): row, flex-start, center, gap=4
+ *   - Value (TEXT): HUG, textAlign=left
+ *
+ * Vertical row (Frame 1686557036): column, center, gap=4
+ *   - Label group (Frame 1686557120): row, flex-start, center, gap=4, FILL width
+ *   - Value (TEXT): FILL width
+ */
 const DetailRow = ({
   field,
   value,
@@ -244,7 +252,7 @@ const DetailRow = ({
 
   return (
     <View style={isVertical ? styles.detailRowVertical : styles.detailRowHorizontal}>
-      {/* Label group: icon + label text */}
+      {/* Label group: icon (16x16) + label text, gap=4 */}
       <View style={styles.detailLabelGroup}>
         <IconComponent />
         <Text style={styles.detailLabel}>{field.label}</Text>
@@ -256,7 +264,7 @@ const DetailRow = ({
   );
 };
 
-/** Divider between detail rows -- Vector stroke=#4d4d4d */
+/** Divider between detail rows -- Vector stroke=#4d4d4d, weight=0.25 */
 const Divider = () => <View style={styles.divider} />;
 
 /**
@@ -303,7 +311,7 @@ const EditField = ({
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [onEdit, isFieldEditable]);
 
-  // "Edit" only on EDITABLE filled fields — not all filled fields
+  // "Edit" only on EDITABLE filled fields -- not all filled fields
   const hintText = hasValue && !isEditing && isFieldEditable
     ? 'Edit'
     : !hasValue && field.hintText
@@ -486,11 +494,12 @@ export default function ReviewScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.mainContent}>
-          {/* Title group (Frame 1686557318) */}
+          {/* Title group (Frame 1686557318: column, gap=48, FILL width) */}
           <View style={styles.titleGroup}>
             {/* Flent logo icon (Frame 1686557264: 32x38, white) -- visible in both modes */}
             <FlentLogoIcon size={F.logo.h} color="#ffffff" />
 
+            {/* Title text (48px, Regular, lineH=64, ls=-2) */}
             <Text style={styles.title}>
               {mode === 'verify' ? (
                 <>
@@ -507,7 +516,7 @@ export default function ReviewScreen() {
               )}
             </Text>
 
-            {/* Verify mode: detail rows */}
+            {/* Verify mode: detail rows (Frame 2095586321: column, gap=16) */}
             {mode === 'verify' ? (
               <View style={styles.detailsContainer}>
                 {FIELDS.map((field, index) => {
@@ -523,7 +532,7 @@ export default function ReviewScreen() {
                 })}
               </View>
             ) : (
-              /* Edit mode: input fields */
+              /* Edit mode: input fields (gap=16) */
               <View style={styles.inputsContainer}>
                 {FIELDS.map((field) => (
                   <EditField
@@ -540,7 +549,7 @@ export default function ReviewScreen() {
             )}
           </View>
 
-          {/* Button section (Frame 2095586322) */}
+          {/* Button section (Frame 2095586322: column, gap=24, FILL width, alignItems=flex-start) */}
           <View style={styles.buttonSection}>
             {mode === 'verify' ? (
               <PrimaryButton
@@ -560,8 +569,12 @@ export default function ReviewScreen() {
               />
             )}
 
+            {/* Enter Manually (TEXT: 14px, Regular, lineH=20, #A9A9A9, textAlign=center, FILL width) */}
             {mode === 'verify' && (
-              <TouchableOpacity onPress={handleEnterManually}>
+              <TouchableOpacity
+                style={styles.enterManuallyTouchable}
+                onPress={handleEnterManually}
+              >
                 <Text style={styles.enterManuallyText}>Enter Manually</Text>
               </TouchableOpacity>
             )}
@@ -592,7 +605,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // Main content area (Frame 1686557268: pad=48h, gap=40)
+  // Main content area (Frame 1686557268: column, gap=40, padH=48, alignItems=center)
   mainContent: {
     flex: 1,
     paddingHorizontal: F.contentPadH,
@@ -600,36 +613,37 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  // Title group (Frame 1686557318: gap=48)
+  // Title group (Frame 1686557318: column, gap=48, FILL width, alignItems=flex-start)
   titleGroup: {
     gap: F.titleGroupGap,
   },
 
-  // Title text base (size=48, w=400, lineH=64, ls=-2)
+  // Title text base (PlusJakartaSans-Regular, 48px, lineH=64, ls=-2)
+  // NEVER use fontWeight -- always fontFamily per builder rules
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.title.size,
-    fontWeight: F.title.weight,
     lineHeight: F.title.lineH,
     letterSpacing: F.title.ls,
   },
-  // "Confirm" — Figma override 37: #A9A9A9
+  // "Confirm" -- Figma span 0-7: #A9A9A9
   titleGrey: {
     color: F.title.greyColor,
   },
-  // "your details" — Figma override 36: #FF9A6D
+  // "your details" -- Figma span 8-20: #FF9A6D
   titleOrange: {
     color: F.title.orangeColor,
   },
 
   // ---- Verify Mode: Detail Rows ----
 
-  // Container (Frame 2095586321: gap=16)
+  // Container (Frame 2095586321: column, gap=16, FILL width)
   detailsContainer: {
     gap: F.detail.gap,
   },
 
-  // Horizontal row (Agreement ID, Monthly Rent, One-Time Deposit, Rent Duration, Exit Date)
+  // Horizontal row (Frame 1686557333: row, space-between, center, gap=4, FILL width)
+  // Used for: Agreement ID, Monthly Rent, One-Time Deposit, Rent Duration, Exit Date
   detailRowHorizontal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -637,50 +651,51 @@ const styles = StyleSheet.create({
     gap: F.detail.rowGap,
   },
 
-  // Vertical row (Property Name, Tenant(s), Landlord(s))
+  // Vertical row (Frame 1686557036: column, justify=center, gap=4, FILL width)
+  // Used for: Property Name, Tenant(s), Landlord(s)
   detailRowVertical: {
+    justifyContent: 'center',
     gap: F.detail.rowGap,
   },
 
-  // Label group: icon (16x16) + label text, gap=4
+  // Label group (Frame 1686557121/1686557120): row, flex-start, center, gap=4
+  // Icon: 16x16, Label: HUG
   detailLabelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: F.detail.labelIconGap,
   },
 
-  // Label (size=12, w=400, lineH=20, #878787)
+  // Label text (PlusJakartaSans-Regular, 12px, lineH=20, #878787)
   detailLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.labelSize,
-    fontWeight: F.detail.labelWeight,
     lineHeight: F.detail.labelLineH,
     color: F.detail.labelColor,
   },
 
   // Value right-aligned (for horizontal layout)
+  // Figma: HUG content, textAlign=left, #CBCBCB
+  // In row with space-between, HUG naturally floats to the right
   detailValueRight: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.valueSize,
-    fontWeight: F.detail.valueWeight,
     lineHeight: F.detail.valueLineH,
     color: F.detail.valueColor,
-    textAlign: 'right',
-    flex: 1,
   },
 
-  // Value below (for vertical layout)
+  // Value below label (for vertical layout)
+  // Figma: FILL width, textAlign=left, #CBCBCB
   detailValueBelow: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.valueSize,
-    fontWeight: F.detail.valueWeight,
     lineHeight: F.detail.valueLineH,
     color: F.detail.valueColor,
   },
 
-  // Divider (Vector stroke=#4d4d4d)
+  // Divider (Vector 50: stroke=#4D4D4D, weight=0.25, FILL width)
   divider: {
-    height: StyleSheet.hairlineWidth,
+    height: F.detail.dividerWeight,
     backgroundColor: F.detail.dividerColor,
   },
 
@@ -693,17 +708,20 @@ const styles = StyleSheet.create({
 
   // ---- Button Section ----
 
-  // Container (Frame 2095586322: gap=24)
+  // Container (Frame 2095586322: column, gap=24, FILL width, alignItems=flex-start)
   buttonSection: {
     gap: F.buttonGroupGap,
-    alignItems: 'center',
   },
 
-  // "Enter Manually" (size=14, w=400, lineH=20, #a9a9a9)
+  // "Enter Manually" touchable -- full width for easy tap target
+  enterManuallyTouchable: {
+    alignSelf: 'stretch',
+  },
+
+  // "Enter Manually" (PlusJakartaSans-Regular, 14px, lineH=20, #A9A9A9, textAlign=center, FILL width)
   enterManuallyText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.manual.size,
-    fontWeight: F.manual.weight,
     lineHeight: F.manual.lineH,
     color: F.manual.color,
     textAlign: 'center',

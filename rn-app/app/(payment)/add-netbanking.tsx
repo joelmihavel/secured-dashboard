@@ -1,148 +1,73 @@
 /**
- * Add Net Banking / Credit Card Payment Screen
- * Figma Reference: 41-8529 (Pay Rent / Add Credit Payment)
+ * Add Net Banking / Bank Account Screen
+ * Figma Reference: 41-9224 (Pay Rent / Add Bank Account)
  *
- * Pixel-perfect implementation:
- * - Dark background (#131313) with white bottom sheet
- * - Payment summary with total rent and cashback
- * - Card details input section with right-aligned hints
- * - Pay Now button (disabled: #202020/#444444, active: #FF9A6D/#131313)
- * - Alternative payment options (Google Pay, PayTM, PhonePe)
+ * PIXEL-PERFECT implementation from Figma blueprint:
+ *
+ * Screen Layout:
+ * - Background: #131313 (black.700)
+ * - Content paddingHorizontal: 48px
+ * - Content y offset: 117px (from top of screen to content frame)
+ * - Content gap: 40px between major sections
+ * - Inner content gap: 48px between title/form/button groups
+ *
+ * Title: "Add your  Bank Account"
+ * - "Add your " (chars 0-9): #A9A9A9 (gray), NOT white
+ * - "Bank Account" (chars 10-22): #FF9A6D (accent)
+ * - Font: PlusJakartaSans-Regular, 48px/64px, letterSpacing -2
+ *
+ * Form Fields:
+ * - "Bank name" label: PlusJakartaSans-Medium, 12px/20px, #A9A9A9
+ *   placeholder: "Select your bank", 20px/32px, #444444
+ * - "Account holder name" label: PlusJakartaSans-Medium, 12px/20px, #A9A9A9
+ *   placeholder: "e.g. John Smith", 20px/32px, #444444
+ * - "Account number" label: PlusJakartaSans-Medium, 12px/20px, #A9A9A9
+ *   placeholder: "e.g. 1234567890", 20px/32px, #444444
+ * - "IFSC code" label: PlusJakartaSans-Medium, 12px/20px, #A9A9A9
+ *   placeholder: "e.g. HDFC0001234", 20px/32px, #444444
+ * - Hint "edit": PlusJakartaSans-Regular, 14px/20px, #878787, textAlign RIGHT
+ *
+ * Button "Save bank account": PlusJakartaSans-Medium, 16px/24px, #444444 (disabled)
+ * Footer: PlusJakartaSans-Regular, 12px/20px, #A9A9A9, textAlign LEFT
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path, Circle, Rect, Line, G, Defs, ClipPath } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text, PrimaryButton, TextInput } from '@/src/components';
-import { useAddPaymentMethod, useDashboard } from '@/src/hooks';
-import { colors, spacing, radius, typography, fontFamily } from '@/src/theme';
+import { Screen, Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
+import { useAddPaymentMethod } from '@/src/hooks';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Figma-exact color constants from blueprint 41-9224
+const FIGMA_COLORS = {
+  background: '#131313',
+  titleGray: '#A9A9A9',
+  titleAccent: '#FF9A6D',
+  labelText: '#A9A9A9',
+  editLinkText: '#878787',
+  inputPlaceholder: '#444444',
+  inputValue: '#DDDDDD',
+  footerText: '#A9A9A9',
+  errorText: '#FF8080',
+  white: '#FFFFFF',
+} as const;
 
-// ==============================================
-// FIGMA EXTRACTED CONSTANTS (41-8529)
-// ==============================================
-const FIGMA = {
-  screen: {
-    width: 393,
-    height: 1008,
-    backgroundColor: colors.black[700], // #131313
-  },
-  bottomSheet: {
-    backgroundColor: colors.white,
-    borderRadius: 22.79,
-    height: 662.73,
-  },
-  colors: {
-    background: colors.black[700], // #131313
-    sheetBg: colors.white, // #FFFFFF
-    textBlack: colors.neutral[800], // #444444 — Figma dark text on light sheet
-    textGray: colors.neutral[500], // #A9A9A9
-    textMuted: colors.neutral[600], // #878787
-    successGreen: colors.success.default, // #70BF73
-    cardSurface: colors.black[500], // #202020
-    handleBar: '#D9D9D9',
-    iconBg: colors.neutral[100], // #EEEEEE
-    divider: colors.black[600], // #1A1A1A
-    inputBg: colors.neutral[100], // #EEEEEE
-    inputBorder: colors.black[400], // #4D4D4D
-    hintText: colors.neutral[600], // #878787
-    buttonDisabledBg: colors.black[500], // #202020
-    buttonDisabledText: colors.neutral[800], // #444444
-    buttonActiveBg: colors.brand[500], // #FF9A6D
-    buttonActiveText: colors.black[700], // #131313
-  },
-  typography: {
-    // "Add your Credit Card" header — 48px per Figma
-    heroTitle: {
-      fontSize: 48,
-      fontWeight: '400' as const,
-      lineHeight: 64,
-      letterSpacing: -2,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '400' as const,
-      lineHeight: 39.48,
-      letterSpacing: -0.56,
-    },
-    labelMd: {
-      fontSize: 12,
-      fontWeight: '500' as const,
-      lineHeight: 21.6,
-    },
-    amountSm: {
-      fontSize: 12,
-      fontWeight: '600' as const,
-      lineHeight: 16.92,
-      letterSpacing: -0.48,
-    },
-    bodyMd: {
-      fontSize: 16,
-      fontWeight: '500' as const,
-      lineHeight: 28.8,
-      letterSpacing: -0.18,
-    },
-    buttonText: {
-      fontSize: 14,
-      fontWeight: '600' as const,
-      lineHeight: 25.2,
-      letterSpacing: -0.15,
-    },
-    appLabel: {
-      fontSize: 12,
-      fontWeight: '400' as const,
-      lineHeight: 20,
-    },
-    sectionLabel: {
-      fontSize: 12,
-      fontWeight: '500' as const,
-      lineHeight: 20,
-      letterSpacing: 0.5,
-    },
-    hintText: {
-      fontSize: 14,
-      fontWeight: '400' as const,
-      lineHeight: 20,
-    },
-    inputText: {
-      fontSize: 20,
-      fontWeight: '400' as const,
-      lineHeight: 28,
-    },
-  },
-  spacing: {
-    sheetPaddingH: 24,
-    sheetPaddingTop: 15.19,
-    sectionGap: 30.38,
-    contentGap: 16,
-    iconGap: 16,
-  },
-};
-
-// ==============================================
-// SVG ICONS
-// ==============================================
-
-// Back Arrow Icon (white on dark header)
+// Back Arrow Icon
 const BackArrow = () => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
     <Path
       d="M15 18L9 12L15 6"
-      stroke={colors.white}
+      stroke={FIGMA_COLORS.white}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -150,800 +75,250 @@ const BackArrow = () => (
   </Svg>
 );
 
-// Close Icon
-const CloseIcon = () => (
-  <Svg width={12.21} height={12.21} viewBox="0 0 12 12" fill="none">
-    <Path
-      d="M1 1L11 11M1 11L11 1"
-      stroke={FIGMA.colors.textBlack}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-    />
-  </Svg>
-);
-
-// Rent/Home Icon
-const RentIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M12 3L3 10V21H9V14H15V21H21V10L12 3Z"
-      stroke={FIGMA.colors.textBlack}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    />
-  </Svg>
-);
-
-// Cashback/Gift Icon
-const CashbackIcon = () => (
-  <Svg width={16.02} height={19.2} viewBox="0 0 16 19" fill="none">
-    <Path
-      d="M8 0L16 6V19H0V6L8 0Z"
-      fill={FIGMA.colors.textBlack}
-    />
-  </Svg>
-);
-
-// Google Pay Icon (simplified)
-const GooglePayIcon = () => (
-  <View style={styles.upiAppIcon}>
-    <Text style={styles.upiIconText}>G</Text>
-  </View>
-);
-
-// PayTM Icon (simplified)
-const PayTMIcon = () => (
-  <View style={styles.upiAppIcon}>
-    <Text style={styles.upiIconText}>P</Text>
-  </View>
-);
-
-// PhonePe Icon (simplified)
-const PhonePeIcon = () => (
-  <View style={[styles.upiAppIcon, { backgroundColor: '#5F259F' }]}>
-    <Text style={[styles.upiIconText, { color: colors.white }]}>Pe</Text>
-  </View>
-);
-
-// UPI Logo
-const UPILogo = () => (
-  <View style={styles.upiLogo}>
-    <Text style={styles.upiLogoText}>UPI</Text>
-  </View>
-);
-
-// ==============================================
-// MOCK DATA
-// ==============================================
-interface PaymentData {
-  totalRent: number;
-  cashbackSaved: number;
-  landlordName: string;
-  bankName: string;
-  cardLast4: string;
-}
-
-const MOCK_PAYMENT: PaymentData = {
-  totalRent: 32175,
-  cashbackSaved: 325,
-  landlordName: '[Landlord Name]',
-  bankName: 'ICICI',
-  cardLast4: '2003',
-};
-
-// ==============================================
-// MAIN COMPONENT
-// ==============================================
 export default function AddNetbankingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const addMethod = useAddPaymentMethod();
-  const { tenancy, cashback } = useDashboard();
-  const params = useLocalSearchParams();
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [cardHolderName, setCardHolderName] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
   const [error, setError] = useState('');
 
-  // Determine if form is filled enough to enable button
-  const isFormValid = useMemo(() => {
-    return cardNumber.length >= 16 && expiryDate.length >= 4 && cvv.length >= 3;
-  }, [cardNumber, expiryDate, cvv]);
-
-  // Payment data from dashboard and params
-  const paymentData = useMemo(() => ({
-    totalRent: params.amount ? Number(params.amount) : (tenancy?.monthly_rent ?? MOCK_PAYMENT.totalRent),
-    cashbackSaved: cashback?.available_balance ?? MOCK_PAYMENT.cashbackSaved,
-    landlordName: tenancy?.landlord_name ?? MOCK_PAYMENT.landlordName,
-    bankName: MOCK_PAYMENT.bankName,
-    cardLast4: cardNumber.replace(/\s/g, '').slice(-4) || MOCK_PAYMENT.cardLast4,
-  }), [params.amount, tenancy, cashback, cardNumber]);
-
-  const handleClose = useCallback(() => {
+  const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   }, [router]);
 
-  const handlePayNow = useCallback(async () => {
-    if (!isFormValid) return;
+  const validateForm = useCallback((): boolean => {
+    if (!bankName.trim()) {
+      setError('Please select your bank');
+      return false;
+    }
+    if (!accountHolderName.trim()) {
+      setError('Please enter account holder name');
+      return false;
+    }
+    if (!accountNumber.trim() || accountNumber.length < 8) {
+      setError('Please enter a valid account number');
+      return false;
+    }
+    if (!ifscCode.trim() || !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(ifscCode)) {
+      setError('Please enter a valid IFSC code');
+      return false;
+    }
+    return true;
+  }, [bankName, accountHolderName, accountNumber, ifscCode]);
+
+  const handleSaveBankAccount = useCallback(() => {
+    setError('');
+    if (!validateForm()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsProcessing(true);
-    setError('');
-
-    const last4 = cardNumber.replace(/\s/g, '').slice(-4);
 
     addMethod.mutate(
       {
         type: 'netbanking',
-        details: last4,
+        details: accountNumber.slice(-4),
         metadata: {
-          cardholderName: cardHolderName.trim(),
-          expiryDate,
+          bankName: bankName.trim(),
+          accountHolderName: accountHolderName.trim(),
+          accountNumber: accountNumber.trim(),
+          ifscCode: ifscCode.trim().toUpperCase(),
         },
         isDefault: false,
       },
       {
         onSuccess: () => {
-          setIsProcessing(false);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.back();
         },
         onError: (err) => {
-          setIsProcessing(false);
-          setError(err instanceof Error ? err.message : 'Failed to add payment method');
+          setError(err instanceof Error ? err.message : 'Failed to add bank account');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
       }
     );
-  }, [isFormValid, addMethod, cardNumber, cardHolderName, expiryDate, router]);
+  }, [validateForm, addMethod, bankName, accountHolderName, accountNumber, ifscCode, router]);
 
-  const handleUPIApp = useCallback((app: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navigate to UPI add screen for the selected app
-    router.push('/(payment)/add-upi' as never);
-  }, [router]);
-
-  const formatCurrency = (amount: number) => {
-    return `\u20B9 ${amount.toLocaleString('en-IN')}`;
-  };
+  const isFormFilled =
+    bankName.trim().length > 0 &&
+    accountHolderName.trim().length > 0 &&
+    accountNumber.trim().length >= 8 &&
+    ifscCode.trim().length > 0;
 
   return (
-    <Screen testID="add-netbanking-screen" style={styles.screen}>
-      <View style={styles.container}>
-        {/* Dark Background Area with title */}
-        <View style={styles.darkHeader}>
-          <View style={[styles.darkHeaderContent, { paddingTop: insets.top + 16 }]}>
-            {/* Back button */}
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleClose}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <BackArrow />
-            </TouchableOpacity>
-            {/* Hero Title — Figma: 48px, white, letterSpacing: -2 */}
-            <Text style={styles.heroTitle}>
-              {'Add your \nCredit Card'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Bottom Sheet */}
-        <View style={[styles.bottomSheet, { paddingBottom: insets.bottom + 24 }]}>
-          {/* Handle Bar */}
-          <View style={styles.handleBarContainer}>
-            <View style={styles.handleBar} />
-          </View>
-
-          {/* Sheet Content */}
-          <ScrollView
-            style={styles.sheetScrollView}
-            contentContainerStyle={styles.sheetContent}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
+    <Screen testID="add-netbanking-screen" padded={false} style={styles.screen}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + 117,
+              paddingBottom: insets.bottom + 24,
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Back Button */}
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backButton}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            {/* Header Row - Payment Method Indicators + Close Button */}
-            <View style={styles.headerRow}>
-              <View style={styles.paymentMethodIndicators}>
-                <View style={styles.cardIndicator} />
-                <View style={styles.cardIndicator} />
-                <View style={styles.cardIndicator} />
-              </View>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleClose}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <CloseIcon />
-              </TouchableOpacity>
-            </View>
+            <BackArrow />
+          </TouchableOpacity>
 
-            {/* Title */}
-            <View style={styles.titleSection}>
-              <Text style={styles.screenTitle}>Pay Rent</Text>
-            </View>
+          {/* Title Section - Figma: "Add your " is #A9A9A9 (gray), NOT white */}
+          <ScreenTitle gray="Add your " accent="Bank Account" />
 
-            {/* Payment Summary Card */}
-            <View style={styles.summarySection}>
-              <View style={styles.summaryRow}>
-                {/* Rent Icon */}
-                <View style={styles.summaryIconContainer}>
-                  <RentIcon />
-                </View>
+          {/* Form Section - Figma: 16px gap between fields */}
+          <View style={styles.formSection}>
+            {/* Bank Name */}
+            <TextInput
+              label="Bank name"
+              value={bankName}
+              onChangeText={(text) => {
+                setBankName(text);
+                setError('');
+              }}
+              placeholder="Select your bank"
+              hintText="edit"
+              autoCapitalize="words"
+              testID="bank-name-input"
+            />
 
-                {/* Total Payable */}
-                <View style={styles.summaryTextContainer}>
-                  <Text style={styles.summaryLabel}>Total payable rent</Text>
-                  <Text style={styles.summaryAmount}>{formatCurrency(paymentData.totalRent)}</Text>
-                </View>
-              </View>
+            {/* Account Holder Name */}
+            <TextInput
+              label="Account holder name"
+              value={accountHolderName}
+              onChangeText={(text) => {
+                setAccountHolderName(text);
+                setError('');
+              }}
+              placeholder="e.g. John Smith"
+              hintText="edit"
+              autoCapitalize="words"
+              testID="account-holder-input"
+            />
 
-              {/* Divider */}
-              <View style={styles.summaryDivider} />
+            {/* Account Number */}
+            <TextInput
+              label="Account number"
+              value={accountNumber}
+              onChangeText={(text) => {
+                setAccountNumber(text.replace(/\D/g, ''));
+                setError('');
+              }}
+              placeholder="e.g. 1234567890"
+              hintText="edit"
+              keyboardType="number-pad"
+              testID="account-number-input"
+            />
 
-              {/* Cashback Row */}
-              <View style={styles.summaryRow}>
-                {/* Cashback Icon */}
-                <View style={styles.summaryIconContainer}>
-                  <View style={styles.cashbackIconBg}>
-                    <CashbackIcon />
-                  </View>
-                </View>
+            {/* IFSC Code */}
+            <TextInput
+              label="IFSC code"
+              value={ifscCode}
+              onChangeText={(text) => {
+                setIfscCode(text.toUpperCase());
+                setError('');
+              }}
+              placeholder="e.g. HDFC0001234"
+              hintText="edit"
+              autoCapitalize="characters"
+              testID="ifsc-code-input"
+            />
 
-                {/* Cashback Info */}
-                <View style={styles.summaryTextContainer}>
-                  <Text style={styles.cashbackAmount}>
-                    saved {formatCurrency(paymentData.cashbackSaved)} {'\u2192'}
-                  </Text>
-                  <Text style={styles.cashbackLabel}>using flent cashback</Text>
-                </View>
-              </View>
-            </View>
+            {/* Error Message */}
+            {error ? (
+              <Text style={styles.errorText}>{error}</Text>
+            ) : null}
+          </View>
 
-            {/* Card Input Fields — using shared TextInput with light variant */}
-            <View style={styles.cardInputSection}>
-              <TextInput
-                label="Card number"
-                value={cardNumber}
-                onChangeText={setCardNumber}
-                placeholder="XXXX XXXX XXXX XXXX"
-                hintText="Hint text"
-                variant="light"
-                keyboardType="number-pad"
-                maxLength={19}
-              />
+          {/* Spacer pushes button to bottom */}
+          <View style={styles.spacer} />
 
-              {/* Expiry + CVV Row */}
-              <View style={styles.inputRow}>
-                <View style={{ flex: 1 }}>
-                  <TextInput
-                    label="Expiry date"
-                    value={expiryDate}
-                    onChangeText={setExpiryDate}
-                    placeholder="MM/YY"
-                    hintText="Hint text"
-                    variant="light"
-                    keyboardType="number-pad"
-                    maxLength={5}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <TextInput
-                    label="CVV"
-                    value={cvv}
-                    onChangeText={setCvv}
-                    placeholder="***"
-                    hintText="Hint text"
-                    variant="light"
-                    keyboardType="number-pad"
-                    maxLength={4}
-                    secureTextEntry
-                  />
-                </View>
-              </View>
+          {/* Save Button - Figma: "Save bank account" 16px/24px, Medium, #444444 disabled */}
+          <PrimaryButton
+            title="Save bank account"
+            onPress={handleSaveBankAccount}
+            disabled={!isFormFilled}
+            loading={addMethod.isPending}
+            testID="save-bank-button"
+          />
 
-              <TextInput
-                label="Card holder name"
-                value={cardHolderName}
-                onChangeText={setCardHolderName}
-                placeholder="Name on card"
-                hintText="Hint text"
-                variant="light"
-                autoCapitalize="words"
-              />
-            </View>
-
-            {/* Payment Details Section */}
-            <View style={styles.paymentDetailsSection}>
-              {/* Paying To Row */}
-              <View style={styles.payingToRow}>
-                <Text style={styles.payingToLabel}>Paying to</Text>
-                <Text style={styles.payingToValue}>{paymentData.landlordName}</Text>
-              </View>
-
-              {/* Card Details Row */}
-              <View style={styles.cardDetailsRow}>
-                <View style={styles.cardThumbnail}>
-                  <View style={styles.cardThumbnailInner} />
-                </View>
-                <View style={styles.cardInfo}>
-                  <Text style={styles.bankName}>{paymentData.bankName}</Text>
-                  <Text style={styles.cardNumber}>
-                    XXXX XXXX XXXX {paymentData.cardLast4}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Pay Now Button — Figma: disabled #202020/#444444, active #FF9A6D/#131313 */}
-            <TouchableOpacity
-              style={[
-                styles.payNowButton,
-                isFormValid && styles.payNowButtonActive,
-                isProcessing && styles.payNowButtonDisabled,
-              ]}
-              onPress={handlePayNow}
-              disabled={isProcessing || !isFormValid}
-              activeOpacity={0.9}
-            >
-              <Text
-                style={[
-                  styles.payNowButtonText,
-                  isFormValid && styles.payNowButtonTextActive,
-                ]}
-              >
-                {isProcessing ? 'Processing...' : 'Pay Now'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Security Note */}
-            <Text style={styles.securityNote}>
-              All payments are 100% secure
-            </Text>
-
-            {/* Divider Line */}
-            <View style={styles.sectionDivider} />
-
-            {/* Alternative Payment Section */}
-            <View style={styles.altPaymentSection}>
-              <View style={styles.altPaymentHeader}>
-                <UPILogo />
-                <Text style={styles.altPaymentLabel}>PAY BY ANY APP INSTEAD</Text>
-              </View>
-
-              {/* UPI Apps Row */}
-              <View style={styles.upiAppsRow}>
-                {/* Google Pay */}
-                <TouchableOpacity
-                  style={styles.upiAppContainer}
-                  onPress={() => handleUPIApp('gpay')}
-                >
-                  <View style={styles.upiAppIconWrapper}>
-                    <GooglePayIcon />
-                  </View>
-                  <Text style={styles.upiAppName}>Google Pay</Text>
-                </TouchableOpacity>
-
-                {/* PayTM */}
-                <TouchableOpacity
-                  style={styles.upiAppContainer}
-                  onPress={() => handleUPIApp('paytm')}
-                >
-                  <View style={styles.upiAppIconWrapper}>
-                    <PayTMIcon />
-                  </View>
-                  <Text style={styles.upiAppName}>PayTM</Text>
-                </TouchableOpacity>
-
-                {/* PhonePe */}
-                <TouchableOpacity
-                  style={styles.upiAppContainer}
-                  onPress={() => handleUPIApp('phonepe')}
-                >
-                  <View style={styles.upiAppIconWrapper}>
-                    <PhonePeIcon />
-                  </View>
-                  <Text style={styles.upiAppName}>PhonePe</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </View>
+          {/* Footer Text - Figma: 12px/20px, Regular, #A9A9A9, textAlign LEFT */}
+          <Text style={styles.footerText}>
+            You may receive a verification message to confirm your bank account and unlock benefits.
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
-// ==============================================
-// STYLES - Exact Figma Values (41-8529)
-// ==============================================
 const styles = StyleSheet.create({
   screen: {
-    flex: 1,
-    backgroundColor: FIGMA.colors.background, // #131313
+    backgroundColor: FIGMA_COLORS.background,
   },
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
+  // Figma: paddingHorizontal 48px, gap 40px between major sections
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 48,
+    gap: 40,
+  },
 
-  // Dark Header Area — Figma: #131313 background with 48px title
-  darkHeader: {
-    backgroundColor: FIGMA.colors.background, // #131313
-    paddingHorizontal: FIGMA.spacing.sheetPaddingH,
-    paddingBottom: spacing.xl,
-  },
-  darkHeaderContent: {
-    gap: spacing.lg,
-  },
+  // Back button
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Figma: 48px, white, PlusJakartaSans, letterSpacing: -2
-  heroTitle: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.heroTitle.fontSize, // 48
-    fontWeight: FIGMA.typography.heroTitle.fontWeight, // 400
-    lineHeight: FIGMA.typography.heroTitle.lineHeight, // 57.6
-    letterSpacing: FIGMA.typography.heroTitle.letterSpacing, // -2
-    color: colors.white,
-    textAlign: 'left',
+    alignItems: 'flex-start',
   },
 
-  // Bottom Sheet
-  bottomSheet: {
-    flex: 1,
-    backgroundColor: FIGMA.colors.sheetBg, // #FFFFFF
-    borderTopLeftRadius: 22.79,
-    borderTopRightRadius: 22.79,
-    maxHeight: SCREEN_HEIGHT * 0.75,
-  },
-  handleBarContainer: {
-    alignItems: 'center',
-    paddingTop: 15.19,
-    paddingBottom: spacing.lg,
-  },
-  handleBar: {
-    width: 28,
-    height: 4,
-    backgroundColor: FIGMA.colors.handleBar, // #D9D9D9
-    borderRadius: 200,
+  // Form section: Figma gap 16px between fields
+  formSection: {
+    gap: 16,
   },
 
-  // Sheet Content
-  sheetScrollView: {
-    flex: 1,
-  },
-  sheetContent: {
-    paddingHorizontal: FIGMA.spacing.sheetPaddingH, // 24
-    paddingBottom: spacing.lg,
-    gap: FIGMA.spacing.sectionGap, // 30.38
-  },
-
-  // Header Row
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  paymentMethodIndicators: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3.8,
-  },
-  cardIndicator: {
-    width: 61.22,
-    height: 38.97,
-    backgroundColor: FIGMA.colors.iconBg, // #EEEEEE
-    borderRadius: radius.sm,
-  },
-  closeButton: {
-    width: 28.48,
-    height: 28.48,
-    backgroundColor: FIGMA.colors.iconBg, // #EEEEEE
-    borderRadius: 101.73,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Title Section
-  titleSection: {
-    paddingVertical: spacing.xs,
-  },
-  screenTitle: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.title.fontSize, // 28
-    fontWeight: FIGMA.typography.title.fontWeight, // 400
-    lineHeight: FIGMA.typography.title.lineHeight, // 39.48
-    letterSpacing: FIGMA.typography.title.letterSpacing, // -0.56
-    color: '#000000', // Figma: #000000 black for "Pay Rent" title on white sheet
-    textAlign: 'left',
-  },
-
-  // Summary Section
-  summarySection: {
-    gap: FIGMA.spacing.contentGap, // 16
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FIGMA.spacing.iconGap, // 16
-  },
-  summaryIconContainer: {
-    width: 40,
-    height: 40,
-    backgroundColor: FIGMA.colors.iconBg, // #EEEEEE
-    borderRadius: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  summaryTextContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  // Figma 41:8557 "Total payable rent" — textTransform UPPERCASE
-  summaryLabel: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.labelMd.fontSize, // 12
-    fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
-    lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
-    color: FIGMA.colors.textGray, // #A9A9A9
-    textAlign: 'left', // Left-aligned label in summary row
-    textTransform: 'uppercase',
-  },
-  summaryAmount: {
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: FIGMA.typography.amountSm.fontSize, // 12
-    fontWeight: FIGMA.typography.amountSm.fontWeight, // 600
-    lineHeight: FIGMA.typography.amountSm.lineHeight, // 16.92
-    letterSpacing: FIGMA.typography.amountSm.letterSpacing, // -0.48
-    color: '#000000', // Figma: #000000 for amounts on white sheet
-    textAlign: 'left',
-  },
-  summaryDivider: {
-    width: 0.5,
-    height: 32.5,
-    backgroundColor: FIGMA.colors.divider, // #1A1A1A
-    borderRadius: radius.sm,
-    marginLeft: 44 + FIGMA.spacing.iconGap / 2, // Centered under icons
-  },
-  cashbackIconBg: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cashbackAmount: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.amountSm.fontSize, // 12
-    fontWeight: FIGMA.typography.amountSm.fontWeight, // 600
-    lineHeight: FIGMA.typography.amountSm.lineHeight, // 16.92
-    letterSpacing: FIGMA.typography.amountSm.letterSpacing, // -0.48
-    color: FIGMA.colors.successGreen, // #70BF73
-    textAlign: 'left',
-  },
-  // Figma 41:8568 "using flent cashback"
-  cashbackLabel: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.labelMd.fontSize, // 12
-    fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
-    lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
-    color: FIGMA.colors.textGray, // #A9A9A9
-    textAlign: 'left', // Left-aligned in cashback text column
-  },
-
-  // Card Input Section — Figma: borders #4D4D4D, borderRadius: 12
-  cardInputSection: {
-    gap: spacing.md, // 16
-  },
-  // Form fields use shared TextInput (light variant) — styles handled internally
-  inputRow: {
-    flexDirection: 'row',
-    gap: spacing.md, // 16
-  },
-
-  // Payment Details Section
-  paymentDetailsSection: {
-    gap: spacing.xs, // 8
-  },
-  payingToRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  payingToLabel: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.labelMd.fontSize, // 12
-    fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
-    lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
-    letterSpacing: -0.13,
-    color: '#000000', // Figma: #000000 for "Paying to" on white sheet
-    textAlign: 'left',
-  },
-  payingToValue: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.labelMd.fontSize, // 12
-    fontWeight: FIGMA.typography.labelMd.fontWeight, // 500
-    lineHeight: FIGMA.typography.labelMd.lineHeight, // 21.6
-    letterSpacing: -0.13,
-    color: '#000000', // Figma: #000000 for landlord name on white sheet
-    textAlign: 'right',
-  },
-  cardDetailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FIGMA.spacing.iconGap, // 16
-  },
-  cardThumbnail: {
-    width: 51,
-    height: 51,
-    backgroundColor: FIGMA.colors.iconBg, // #EEEEEE
-    borderRadius: radius.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardThumbnailInner: {
-    width: 40,
-    height: 30,
-    backgroundColor: '#1A1A1A',
-    borderRadius: radius.xs,
-  },
-  cardInfo: {
-    flex: 1,
-    gap: 0,
-  },
-  bankName: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.bodyMd.fontSize, // 16
-    fontWeight: FIGMA.typography.bodyMd.fontWeight, // 500
-    lineHeight: FIGMA.typography.bodyMd.lineHeight, // 28.8
-    letterSpacing: FIGMA.typography.bodyMd.letterSpacing, // -0.18
-    color: '#000000', // Figma: #000000 for bank name on white sheet
-    textAlign: 'left',
-  },
-  cardNumber: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.labelMd.fontSize, // 12
-    fontWeight: '400',
+  // Error text: 12px/20px, Regular, #FF8080
+  errorText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
     lineHeight: 20,
-    color: FIGMA.colors.textGray, // #A9A9A9
+    color: FIGMA_COLORS.errorText,
     textAlign: 'left',
   },
 
-  // Pay Now Button — Figma: disabled bg #202020 text #444444, active bg #FF9A6D text #131313
-  payNowButton: {
-    width: '100%',
-    height: 52,
-    backgroundColor: FIGMA.colors.buttonDisabledBg, // #202020
-    borderRadius: radius.md, // 12
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Active state when form is valid
-  payNowButtonActive: {
-    backgroundColor: FIGMA.colors.buttonActiveBg, // #FF9A6D
-  },
-  payNowButtonDisabled: {
-    opacity: 0.6,
-  },
-  // Figma 41:8580 "Pay Now" — textAlignHorizontal: CENTER
-  payNowButtonText: {
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: FIGMA.typography.buttonText.fontSize, // 14
-    fontWeight: FIGMA.typography.buttonText.fontWeight, // 600
-    lineHeight: FIGMA.typography.buttonText.lineHeight, // 25.2
-    letterSpacing: FIGMA.typography.buttonText.letterSpacing, // -0.15
-    color: FIGMA.colors.buttonDisabledText, // #444444
-    textAlign: 'center',
-  },
-  // Active text color when form is valid
-  payNowButtonTextActive: {
-    color: FIGMA.colors.buttonActiveText, // #131313
+  // Spacer pushes button to bottom
+  spacer: {
+    flex: 1,
+    minHeight: 40,
   },
 
-  // Figma 41:8581 "All payments are 100% secure" — textAlignHorizontal: CENTER
-  securityNote: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.appLabel.fontSize, // 12
-    fontWeight: FIGMA.typography.appLabel.fontWeight, // 400
-    lineHeight: FIGMA.typography.appLabel.lineHeight, // 20
-    color: FIGMA.colors.textMuted, // #878787
-    textAlign: 'center',
-  },
-
-  // Section Divider
-  sectionDivider: {
-    width: '100%',
-    height: 1,
-    backgroundColor: FIGMA.colors.iconBg, // #EEEEEE
-  },
-
-  // Alternative Payment Section
-  altPaymentSection: {
-    gap: spacing.md, // 16
-  },
-  altPaymentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm, // 12
-  },
-  // Figma: "PAY BY ANY APP INSTEAD" — textAlign left (in row with icon)
-  altPaymentLabel: {
-    fontFamily: fontFamily.primary.medium,
-    fontSize: FIGMA.typography.sectionLabel.fontSize, // 12
-    fontWeight: '500', // Figma: 500 (Medium) - matches fontFamily.primary.medium
-    lineHeight: FIGMA.typography.sectionLabel.lineHeight, // 20
-    letterSpacing: FIGMA.typography.sectionLabel.letterSpacing, // 0.5
-    color: FIGMA.colors.textMuted, // #878787
+  // Footer text: Figma 12px/20px, Regular, #A9A9A9, textAlign LEFT
+  footerText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.footerText,
+    marginTop: 16,
     textAlign: 'left',
-    textTransform: 'uppercase',
-  },
-
-  // UPI Apps
-  upiAppsRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    gap: 72,
-  },
-  upiAppContainer: {
-    alignItems: 'center',
-    gap: spacing.xs, // 8
-  },
-  upiAppIconWrapper: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  upiAppIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: FIGMA.colors.iconBg, // #EEEEEE
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  upiIconText: {
-    fontFamily: fontFamily.primary.semibold,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000000', // Figma: #000000 for UPI icon text on white sheet
-    textAlign: 'center',
-  },
-  // Figma 41:8590 "Google Pay", 41:8593 "PayTM", 41:8596 "PhonePe" — textAlignHorizontal: CENTER
-  upiAppName: {
-    fontFamily: fontFamily.primary.regular,
-    fontSize: FIGMA.typography.appLabel.fontSize, // 12
-    fontWeight: FIGMA.typography.appLabel.fontWeight, // 400
-    lineHeight: FIGMA.typography.appLabel.lineHeight, // 20
-    color: '#000000', // Figma: #000000 for app names on white sheet
-    textAlign: 'center',
-  },
-
-  // UPI Logo
-  upiLogo: {
-    width: 40,
-    height: 24,
-    backgroundColor: '#0D7E2D',
-    borderRadius: radius.xs,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  upiLogoText: {
-    fontFamily: fontFamily.primary.bold,
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: 1,
-    textAlign: 'center',
   },
 });

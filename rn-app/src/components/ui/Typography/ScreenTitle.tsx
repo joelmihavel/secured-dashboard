@@ -5,13 +5,16 @@
  * EXACT Figma Values:
  * - Font: Plus Jakarta Sans Regular (400)
  * - Size: 48px, line-height 64px, letterSpacing -2
- * - Gray variant: #A9A9A9 (neutral/500) — used for "Let's get to", "Verify your", "My"
- * - White variant: #FFFFFF — used for "Add your", "Invite your"
+ * - Gray variant: #A9A9A9 (neutral/500) — used for "Let's get to", "Verify your", "My", "Add your "
+ * - White variant: #FFFFFF — used for "Invite your"
  * - Accent: #FF9A6D (brand/500) — highlighted word/line
+ *
+ * NOTE: Figma blueprint confirms "Add your " uses GRAY (#A9A9A9), NOT white.
+ * Verified from spans data: chars 0-9 "Add your " have color #A9A9A9.
  *
  * Usage:
  * <ScreenTitle gray="Let's get to" accent="know you" />
- * <ScreenTitle white="Add your" accent="UPI Method" />
+ * <ScreenTitle gray="Add your " accent="UPI Method" />
  * <ScreenTitle gray="My " accent="Profile" singleLine />
  */
 

@@ -48,49 +48,58 @@ function RecentPaymentsListComponent({ payments, onPaymentPress }: RecentPayment
     return null;
   }
 
+  // Figma 243-2967 node 243:3123 (Frame 1686557280):
+  // Rows and dividers are DIRECT children with gap=24 between them
+  // This creates 24px above divider + 24px below divider = 48px visual spacing between rows
+  const items: React.ReactNode[] = [];
+  payments.forEach((payment, index) => {
+    items.push(
+      <TouchableOpacity
+        key={payment.id}
+        style={styles.row}
+        onPress={() => onPaymentPress?.(payment)}
+        activeOpacity={0.7}
+      >
+        {/* Avatar placeholder - Figma: ellipse_8 */}
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {payment.title.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+
+        {/* Content */}
+        <View style={styles.content}>
+          <Text style={styles.title}>{payment.title}</Text>
+          <View style={styles.statusRow}>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: statusConfig[payment.status].color },
+              ]}
+            />
+            <Text style={styles.statusText}>
+              {statusConfig[payment.status].label} {'\u00B7'} {payment.date}
+            </Text>
+          </View>
+        </View>
+
+        {/* Amount - Figma format: single Text with nested spans for inline display */}
+        <Text style={styles.amountBase}>
+          <Text inherit style={styles.rupeeSymbol}>{'₹ '}</Text>
+          <Text inherit style={styles.amount}>{payment.amount.toLocaleString('en-IN')}</Text>
+        </Text>
+      </TouchableOpacity>
+    );
+
+    // Divider between rows (not after last)
+    if (index < payments.length - 1) {
+      items.push(<View key={`divider-${index}`} style={styles.divider} />);
+    }
+  });
+
   return (
     <View style={styles.container}>
-      {payments.map((payment, index) => (
-        <View key={payment.id}>
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => onPaymentPress?.(payment)}
-            activeOpacity={0.7}
-          >
-            {/* Avatar placeholder - Figma: ellipse_8 */}
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {payment.title.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-
-            {/* Content */}
-            <View style={styles.content}>
-              <Text style={styles.title}>{payment.title}</Text>
-              <View style={styles.statusRow}>
-                <View
-                  style={[
-                    styles.statusDot,
-                    { backgroundColor: statusConfig[payment.status].color },
-                  ]}
-                />
-                <Text style={styles.statusText}>
-                  {statusConfig[payment.status].label} {'\u00B7'} {payment.date}
-                </Text>
-              </View>
-            </View>
-
-            {/* Amount - Figma format: single Text with nested spans for inline display */}
-            <Text style={styles.amountBase}>
-              <Text inherit style={styles.rupeeSymbol}>{'₹ '}</Text>
-              <Text inherit style={styles.amount}>{payment.amount.toLocaleString('en-IN')}</Text>
-            </Text>
-          </TouchableOpacity>
-
-          {/* Divider line between rows */}
-          {index < payments.length - 1 && <View style={styles.divider} />}
-        </View>
-      ))}
+      {items}
     </View>
   );
 }
@@ -98,19 +107,23 @@ function RecentPaymentsListComponent({ payments, onPaymentPress }: RecentPayment
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 32, // Figma: 32px exact
+    // Figma 243-2967 node 243:3123: gap 24 between items (rows + dividers)
+    gap: 24, // Figma: itemSpacing 24
+    alignSelf: 'stretch', // Figma: layoutAlign STRETCH - fill parent width
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16, // Figma: ~16px padding
+    justifyContent: 'space-between', // Figma 243:3124: SPACE_BETWEEN
+    minHeight: 45, // Figma 243:3124: height 45
   },
   rowLast: {
     // No bottom border on last item
   },
   divider: {
-    height: 0.25, // Figma 243:2931: very thin divider
+    height: StyleSheet.hairlineWidth, // Figma 243:3134: strokeWeight 0.25
     backgroundColor: '#4D4D4D', // Figma: #4D4D4D (black[400])
-    marginLeft: 48, // Offset to align with content (32 avatar + 16 gap)
+    // Figma 243:3134: Vector 21 at x=0, width 329 -- full width, no left offset
   },
   // Avatar - Figma: ellipse_8
   avatar: {
@@ -120,12 +133,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFCC8A', // Figma: #FFCC8A (brand[300])
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16, // Figma 243:2922: gap 16 between avatar and content
+    marginRight: 16, // Figma 243:3125: gap 16 between avatar and content in left group
   },
   avatarText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     fontSize: 14,
-    fontWeight: '600',
     color: '#FFFFFF', // Figma: #FFFFFF
   },
   // Content
@@ -134,9 +146,8 @@ const styles = StyleSheet.create({
     gap: 8, // Figma 243:2924: gap 8 between title and status row
   },
   title: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 19.74, // Figma: lineHeight ~19.74
     letterSpacing: -0.56, // Figma: letterSpacing -0.56
     color: '#FFFFFF', // Figma: #FFFFFF
@@ -170,8 +181,7 @@ const styles = StyleSheet.create({
   },
   // Amount - Figma: single Text with nested spans for mixed font sizes
   amountBase: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontWeight: '600', // Figma: fontWeight 600
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     letterSpacing: -0.64, // Figma 243:2930: letterSpacing -0.64
     color: '#FFFFFF', // Figma 243:2930: white
   },

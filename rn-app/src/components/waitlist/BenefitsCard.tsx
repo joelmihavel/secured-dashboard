@@ -60,7 +60,6 @@ const FIGMA = {
   titleText: {
     fontSize: 28,
     lineHeight: 40,
-    fontWeight: '400' as const,
     fontFamily: 'PlusJakartaSans-Regular',
     letterSpacing: -1,
   },
@@ -105,7 +104,6 @@ const FIGMA = {
   benefitText: {
     fontSize: 12,
     lineHeight: 20,
-    fontWeight: '400' as const,
     fontFamily: 'PlusJakartaSans-Regular',
     letterSpacing: 0,
   },
@@ -300,7 +298,6 @@ const styles = StyleSheet.create({
     fontFamily: FIGMA.titleText.fontFamily,
     fontSize: FIGMA.titleText.fontSize,
     lineHeight: FIGMA.titleText.lineHeight,
-    fontWeight: FIGMA.titleText.fontWeight,
     letterSpacing: FIGMA.titleText.letterSpacing,
     textAlign: 'center',
   },
@@ -364,7 +361,6 @@ const styles = StyleSheet.create({
     fontFamily: FIGMA.benefitText.fontFamily,
     fontSize: FIGMA.benefitText.fontSize,
     lineHeight: FIGMA.benefitText.lineHeight,
-    fontWeight: FIGMA.benefitText.fontWeight,
     letterSpacing: FIGMA.benefitText.letterSpacing,
     color: FIGMA.colors.benefitText,
   },

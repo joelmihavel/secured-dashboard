@@ -22,184 +22,11 @@ exports[`PayRentTransactionScreen matches snapshot 1`] = `
       }
     }
   >
-    <View
-      style={
-        {
-          "alignItems": "center",
-          "flexDirection": "row",
-          "height": 56,
-          "justifyContent": "space-between",
-          "paddingHorizontal": 32,
-        }
-      }
-    >
-      <View
-        accessibilityLabel="Go back"
-        accessibilityRole="button"
-        accessibilityState={
-          {
-            "busy": undefined,
-            "checked": undefined,
-            "disabled": undefined,
-            "expanded": undefined,
-            "selected": undefined,
-          }
-        }
-        accessibilityValue={
-          {
-            "max": undefined,
-            "min": undefined,
-            "now": undefined,
-            "text": undefined,
-          }
-        }
-        accessible={true}
-        collapsable={false}
-        focusable={true}
-        onClick={[Function]}
-        onResponderGrant={[Function]}
-        onResponderMove={[Function]}
-        onResponderRelease={[Function]}
-        onResponderTerminate={[Function]}
-        onResponderTerminationRequest={[Function]}
-        onStartShouldSetResponder={[Function]}
-        style={
-          {
-            "alignItems": "flex-start",
-            "height": 40,
-            "justifyContent": "center",
-            "opacity": 1,
-            "width": 40,
-          }
-        }
-      >
-        <View
-          fill="none"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <View
-            d="M15 18L9 12L15 6"
-            stroke="#FFFFFF"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-          />
-        </View>
-      </View>
-      <View
-        style={
-          {
-            "alignItems": "center",
-            "flexDirection": "row",
-            "gap": 12,
-          }
-        }
-      >
-        <View
-          accessibilityRole="button"
-          accessibilityState={
-            {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
-            }
-          }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={false}
-          onClick={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
-          style={
-            {
-              "alignItems": "center",
-              "backgroundColor": "#4D4D4D",
-              "borderRadius": 16,
-              "height": 32,
-              "justifyContent": "center",
-              "opacity": 1,
-              "width": 32,
-            }
-          }
-          testID="notifications-button"
-        >
-          <View
-            color="#FFFFFF"
-            name="notifications-outline"
-            size={16}
-          />
-        </View>
-        <View
-          accessibilityRole="button"
-          accessibilityState={
-            {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
-            }
-          }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={false}
-          onClick={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
-          style={
-            {
-              "alignItems": "center",
-              "backgroundColor": "#4D4D4D",
-              "borderRadius": 16,
-              "height": 32,
-              "justifyContent": "center",
-              "opacity": 1,
-              "width": 32,
-            }
-          }
-          testID="help-button"
-        >
-          <View
-            color="#FFFFFF"
-            name="help-circle-outline"
-            size={16}
-          />
-        </View>
-      </View>
-    </View>
     <RCTScrollView
       contentContainerStyle={
         {
-          "gap": 24,
-          "paddingBottom": 48,
+          "gap": 40,
+          "paddingBottom": 188,
         }
       }
       showsVerticalScrollIndicator={false}
@@ -213,215 +40,91 @@ exports[`PayRentTransactionScreen matches snapshot 1`] = `
         <View
           style={
             {
-              "gap": 8,
-              "paddingLeft": 64,
-              "paddingRight": 32,
+              "gap": 24,
+              "paddingHorizontal": 40,
             }
           }
         >
-          <Text
-            style={
-              [
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 16,
-                  "fontWeight": "400",
-                  "letterSpacing": 0,
-                  "lineHeight": 24,
-                  "textAlign": "left",
-                },
-                {
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 28,
-                  "letterSpacing": -1,
-                  "lineHeight": 40,
-                  "textAlign": "left",
-                },
-              ]
-            }
-          >
-            <Text
-              style={
-                [
-                  undefined,
-                  {
-                    "color": "#BABABA",
-                  },
-                ]
+          <View
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
               }
-            >
-              Your rent is due in 
-            </Text>
-            <Text
-              style={
-                [
-                  undefined,
-                  {
-                    "color": "#FF9A6D",
-                  },
-                ]
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
               }
-            >
-              10
-               days
-            </Text>
-          </Text>
-          <Text
-            style={
-              [
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 16,
-                  "fontWeight": "400",
-                  "letterSpacing": 0,
-                  "lineHeight": 24,
-                  "textAlign": "left",
-                },
-                {
-                  "color": "#A6A6A6",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 14,
-                  "lineHeight": 20,
-                  "textAlign": "left",
-                },
-              ]
             }
-          >
-            Paying with:
-          </Text>
-        </View>
-        <RCTScrollView
-          contentContainerStyle={
-            {
-              "gap": 16,
-              "paddingLeft": 64,
-              "paddingRight": 32,
-            }
-          }
-          decelerationRate="fast"
-          horizontal={true}
-          onScroll={[Function]}
-          scrollEventThrottle={16}
-          showsHorizontalScrollIndicator={false}
-          snapToAlignment="start"
-          snapToInterval={286}
-        >
-          <View>
-            <View
-              testID="payment-card-card-1"
-            />
-            <View
-              testID="payment-card-upi-1"
-            />
-            <View
-              testID="payment-card-netbanking-1"
-            />
-            <View
-              testID="payment-card-add-new"
-            />
-          </View>
-        </RCTScrollView>
-        <View
-          style={
-            {
-              "alignItems": "center",
-              "flexDirection": "row",
-              "gap": 8,
-              "justifyContent": "center",
-            }
-          }
-        >
-          <View
-            accessibilityLabel="Page 1, current"
-            style={
-              [
-                {
-                  "backgroundColor": "#202020",
-                  "borderRadius": 4,
-                  "height": 8,
-                  "width": 8,
-                },
-                {
-                  "backgroundColor": "#FF9A6D",
-                },
-              ]
-            }
-          />
-          <View
-            accessibilityLabel="Page 2"
-            style={
-              [
-                {
-                  "backgroundColor": "#202020",
-                  "borderRadius": 4,
-                  "height": 8,
-                  "width": 8,
-                },
-                false,
-              ]
-            }
-          />
-          <View
-            accessibilityLabel="Page 3"
-            style={
-              [
-                {
-                  "backgroundColor": "#202020",
-                  "borderRadius": 4,
-                  "height": 8,
-                  "width": 8,
-                },
-                false,
-              ]
-            }
-          />
-          <View
-            accessibilityLabel="Page 4"
-            style={
-              [
-                {
-                  "backgroundColor": "#202020",
-                  "borderRadius": 4,
-                  "height": 8,
-                  "width": 8,
-                },
-                false,
-              ]
-            }
-          />
-        </View>
-        <View
-          style={
-            {
-              "paddingHorizontal": 32,
-            }
-          }
-        >
-          <View
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onClick={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
             style={
               {
-                "backgroundColor": "#4D4D4D",
-                "height": 1,
+                "alignItems": "center",
+                "height": 32,
+                "justifyContent": "center",
+                "opacity": 1,
+                "width": 32,
               }
             }
-          />
-        </View>
-        <View
-          style={
-            {
-              "gap": 16,
-              "marginHorizontal": 64,
-            }
-          }
-        >
+            testID="back-button"
+          >
+            <View
+              fill="none"
+              height={32}
+              viewBox="0 0 32 32"
+              width={32}
+            >
+              <View
+                d="M25.3333 16H6.66667"
+                stroke="#FFFFFF"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.667}
+              />
+              <View
+                d="M6.66667 16L14.6667 24"
+                stroke="#FFFFFF"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.667}
+              />
+              <View
+                d="M6.66667 16L14.6667 8"
+                stroke="#FFFFFF"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.667}
+              />
+            </View>
+          </View>
           <View
             style={
               {
                 "alignItems": "center",
-                "flexDirection": "row",
-                "justifyContent": "space-between",
+                "backgroundColor": "#202020",
+                "borderRadius": 12,
+                "gap": 32,
+                "paddingBottom": 24,
+                "paddingHorizontal": 16,
+                "paddingTop": 24,
               }
             }
           >
@@ -429,7 +132,6 @@ exports[`PayRentTransactionScreen matches snapshot 1`] = `
               style={
                 {
                   "alignItems": "center",
-                  "flexDirection": "row",
                   "gap": 8,
                 }
               }
@@ -441,579 +143,639 @@ exports[`PayRentTransactionScreen matches snapshot 1`] = `
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 16,
-                      "fontWeight": "400",
                       "letterSpacing": 0,
                       "lineHeight": 24,
                       "textAlign": "left",
                     },
                     {
-                      "color": "#A9A9A9",
-                      "fontFamily": "PlusJakartaSans-Medium",
+                      "color": "#878787",
+                      "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 12,
-                      "lineHeight": 20,
-                      "textAlign": "left",
+                      "letterSpacing": -0.24,
+                      "lineHeight": 17,
+                      "textAlign": "center",
                     },
                   ]
                 }
               >
-                Apply Cashback
+                Rent due in 
+                10
+                 days
               </Text>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#CBCBCB",
+                      "fontFamily": "PlusJakartaSans-Medium",
+                      "fontSize": 14,
+                      "letterSpacing": -0.56,
+                      "lineHeight": 20,
+                      "textAlign": "center",
+                    },
+                  ]
+                }
+              >
+                Complete setup to unlock 1% cashback
+              </Text>
+              <View
+                style={
+                  {
+                    "backgroundColor": "#1A1A1A",
+                    "borderRadius": 200,
+                    "marginTop": 8,
+                    "paddingHorizontal": 12,
+                    "paddingVertical": 8,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#FF9A6D",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                        "textAlign": "center",
+                      },
+                    ]
+                  }
+                >
+                  ₹
+                  325
+                   cashback applied
+                </Text>
+              </View>
             </View>
             <View
               style={
                 {
-                  "height": 24,
-                  "justifyContent": "center",
-                  "width": 44,
+                  "alignSelf": "center",
+                  "backgroundColor": "#1A1A1A",
+                  "height": 5,
+                  "width": 268,
                 }
               }
-            >
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#1A1A1A",
-                      "borderColor": "#202020",
-                      "borderRadius": 12,
-                      "borderWidth": 1,
-                      "height": 24,
-                      "justifyContent": "center",
-                      "paddingHorizontal": 2,
-                      "width": 44,
-                    },
-                    {
-                      "backgroundColor": "#FF9A6D40",
-                      "borderColor": "#FF9A6D",
-                    },
-                  ]
-                }
-              >
-                <View
-                  style={
-                    [
-                      {
-                        "backgroundColor": "#4D4D4D",
-                        "borderRadius": 9,
-                        "height": 18,
-                        "width": 18,
-                      },
-                      {
-                        "alignSelf": "flex-end",
-                        "backgroundColor": "#FF9A6D",
-                      },
-                    ]
-                  }
-                />
-              </View>
-              <View
-                accessibilityRole="switch"
-                accessibilityState={
-                  {
-                    "busy": undefined,
-                    "checked": true,
-                    "disabled": undefined,
-                    "expanded": undefined,
-                    "selected": undefined,
-                  }
-                }
-                accessibilityValue={
-                  {
-                    "max": undefined,
-                    "min": undefined,
-                    "now": undefined,
-                    "text": undefined,
-                  }
-                }
-                accessible={true}
-                collapsable={false}
-                focusable={true}
-                onClick={[Function]}
-                onResponderGrant={[Function]}
-                onResponderMove={[Function]}
-                onResponderRelease={[Function]}
-                onResponderTerminate={[Function]}
-                onResponderTerminationRequest={[Function]}
-                onStartShouldSetResponder={[Function]}
-                style={
-                  {
-                    "bottom": 0,
-                    "left": 0,
-                    "opacity": 1,
-                    "position": "absolute",
-                    "right": 0,
-                    "top": 0,
-                  }
-                }
-              />
-            </View>
-          </View>
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "justifyContent": "space-between",
-              }
-            }
-          >
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "color": "#A9A9A9",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 12,
-                    "lineHeight": 20,
-                    "textAlign": "left",
-                  },
-                ]
-              }
-            >
-              All-time Total
-            </Text>
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "textAlign": "right",
-                  },
-                ]
-              }
-            >
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#A9A9A9",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                    },
-                  ]
-                }
-              >
-                Rs  
-              </Text>
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#DDDDDD",
-                      "fontFamily": "PlusJakartaSans-SemiBold",
-                      "fontSize": 16,
-                      "lineHeight": 24,
-                    },
-                  ]
-                }
-              >
-                3,256
-              </Text>
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#A9A9A9",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                    },
-                  ]
-                }
-              >
-                .00
-              </Text>
-            </Text>
-          </View>
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "justifyContent": "space-between",
-              }
-            }
-          >
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "color": "#A9A9A9",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 12,
-                    "lineHeight": 20,
-                    "textAlign": "left",
-                  },
-                ]
-              }
-            >
-              Avg Rate
-            </Text>
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "textAlign": "right",
-                  },
-                ]
-              }
-            >
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#FF9A6D",
-                      "fontFamily": "PlusJakartaSans-SemiBold",
-                      "fontSize": 16,
-                      "lineHeight": 24,
-                    },
-                  ]
-                }
-              >
-                0.8%
-              </Text>
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#A9A9A9",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                    },
-                  ]
-                }
-              >
-                 Avg
-              </Text>
-            </Text>
-          </View>
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "justifyContent": "space-between",
-              }
-            }
-          >
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "color": "#A9A9A9",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 12,
-                    "lineHeight": 20,
-                    "textAlign": "left",
-                  },
-                ]
-              }
-            >
-              Available
-            </Text>
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "textAlign": "right",
-                  },
-                ]
-              }
-            >
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#A9A9A9",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                    },
-                  ]
-                }
-              >
-                Rs  
-              </Text>
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#FF9A6D",
-                      "fontFamily": "PlusJakartaSans-SemiBold",
-                      "fontSize": 16,
-                      "lineHeight": 24,
-                    },
-                  ]
-                }
-              >
-                325
-              </Text>
-              <Text
-                style={
-                  [
-                    undefined,
-                    {
-                      "color": "#A9A9A9",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                    },
-                  ]
-                }
-              >
-                .00
-              </Text>
-            </Text>
+            />
           </View>
         </View>
         <View
           style={
             {
-              "alignItems": "center",
-              "paddingHorizontal": 32,
+              "alignSelf": "center",
+              "position": "relative",
+              "width": 270,
             }
           }
         >
-          <Text
+          <View
             style={
-              [
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 16,
-                  "fontWeight": "400",
-                  "letterSpacing": 0,
-                  "lineHeight": 24,
-                  "textAlign": "left",
-                },
-                {
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 14,
-                  "lineHeight": 20,
-                  "textAlign": "center",
-                },
-              ]
+              {
+                "paddingHorizontal": 24,
+                "paddingVertical": 16,
+              }
             }
           >
-            <Text
+            <View
               style={
-                [
-                  undefined,
-                  {
-                    "color": "#CBCBCB",
-                    "textAlign": "center",
-                  },
-                ]
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                }
               }
             >
-              Complete setup in 
-            </Text>
-            <Text
-              style={
-                [
-                  undefined,
+              <View
+                style={
                   {
-                    "color": "#FF9A6D",
-                    "fontFamily": "PlusJakartaSans-SemiBold",
-                    "textAlign": "center",
-                  },
-                ]
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                  }
+                }
+              >
+                <View
+                  fill="none"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <View
+                    d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                    fill="#FF9A6D"
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Base rent
+                </Text>
+              </View>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                      {
+                        "color": "#CBCBCB",
+                      },
+                      false,
+                    ],
+                  ]
+                }
+              >
+                ₹ 30,000
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#4D4D4D",
+                "height": 0.5,
+                "marginHorizontal": 24,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "paddingHorizontal": 24,
+                "paddingVertical": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                }
               }
             >
-              28:12:12
-            </Text>
-            <Text
-              style={
-                [
-                  undefined,
+              <View
+                style={
                   {
-                    "color": "#CBCBCB",
-                    "textAlign": "center",
-                  },
-                ]
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                  }
+                }
+              >
+                <View
+                  fill="none"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <View
+                    d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                    fill="#FF9A6D"
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Maintenance
+                </Text>
+              </View>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                      {
+                        "color": "#CBCBCB",
+                      },
+                      false,
+                    ],
+                  ]
+                }
+              >
+                ₹2,500
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#4D4D4D",
+                "height": 0.5,
+                "marginHorizontal": 24,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "paddingHorizontal": 24,
+                "paddingVertical": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                }
               }
             >
-               to  unlock 
-            </Text>
-            <Text
-              style={
-                [
-                  undefined,
+              <View
+                style={
                   {
-                    "color": "#FF9A6D",
-                    "fontFamily": "PlusJakartaSans-Medium",
-                    "textAlign": "center",
-                  },
-                ]
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                  }
+                }
+              >
+                <View
+                  fill="none"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <View
+                    d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                    fill="#FF9A6D"
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Total Rent
+                </Text>
+              </View>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                      {
+                        "color": "#CBCBCB",
+                      },
+                      false,
+                    ],
+                  ]
+                }
+              >
+                ₹  32,500
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "paddingHorizontal": 24,
+                "paddingVertical": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                }
               }
             >
-              Cashbacks
-            </Text>
-          </Text>
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                  }
+                }
+              >
+                <View
+                  fill="none"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <View
+                    d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                    fill="#FF9A6D"
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Cashback 
+                </Text>
+              </View>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                      {
+                        "color": "#EF9194",
+                      },
+                      false,
+                    ],
+                  ]
+                }
+              >
+                - ₹  325
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#4D4D4D",
+                "height": 0.5,
+                "marginHorizontal": 24,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "backgroundColor": "#131313",
+                "borderRadius": 7,
+                "height": 14,
+                "left": -7,
+                "position": "absolute",
+                "top": "73%",
+                "width": 14,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "backgroundColor": "#131313",
+                "borderRadius": 7,
+                "height": 14,
+                "position": "absolute",
+                "right": -7,
+                "top": "73%",
+                "width": 14,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "paddingHorizontal": 24,
+                "paddingVertical": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "space-between",
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                  }
+                }
+              >
+                <View
+                  fill="none"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <View
+                    d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+                    fill="#FF9A6D"
+                  />
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#878787",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Payable Rent
+                </Text>
+              </View>
+              <Text
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 16,
+                      "letterSpacing": 0,
+                      "lineHeight": 24,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "letterSpacing": 0,
+                        "lineHeight": 20,
+                      },
+                      {
+                        "color": "#DDDDDD",
+                      },
+                      {
+                        "fontFamily": "PlusJakartaSans-SemiBold",
+                      },
+                    ],
+                  ]
+                }
+              >
+                ₹  32,500
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </RCTScrollView>
     <View
       style={
         {
-          "backgroundColor": "#131313",
-          "borderTopColor": "#1A1A1A",
-          "borderTopWidth": 1,
-          "bottom": 0,
+          "alignItems": "center",
           "gap": 16,
-          "left": 0,
           "paddingBottom": 32,
-          "paddingHorizontal": 32,
-          "paddingTop": 24,
-          "position": "absolute",
-          "right": 0,
+          "paddingHorizontal": 40,
         }
       }
     >
       <View
-        style={
-          {
-            "alignItems": "center",
-            "gap": 4,
-          }
-        }
-      >
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              {
-                "color": "#A9A9A9",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 12,
-                "lineHeight": 20,
-                "textAlign": "center",
-              },
-            ]
-          }
-        >
-          Due in 
-          10
-           Days
-        </Text>
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              {
-                "textAlign": "center",
-              },
-            ]
-          }
-        >
-          <Text
-            style={
-              [
-                undefined,
-                {
-                  "color": "#EEEEEE",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 16,
-                  "textAlign": "center",
-                },
-              ]
-            }
-          >
-            Rs  
-          </Text>
-          <Text
-            style={
-              [
-                undefined,
-                {
-                  "color": "#EEEEEE",
-                  "fontFamily": "PlusJakartaSans-SemiBold",
-                  "fontSize": 24,
-                  "letterSpacing": -0.5,
-                  "lineHeight": 32,
-                  "textAlign": "center",
-                },
-              ]
-            }
-          >
-            39,675
-          </Text>
-        </Text>
-      </View>
-      <View
-        accessibilityLabel="Pay Now"
+        accessibilityLabel="Pay ₹32,175 now"
         accessibilityRole="button"
         accessibilityState={
           {
@@ -1148,7 +910,7 @@ exports[`PayRentTransactionScreen matches snapshot 1`] = `
                   }
                 }
               >
-                Pay Now
+                Pay ₹32,175 now
               </Text>
               <View
                 style={
@@ -1232,6 +994,30 @@ exports[`PayRentTransactionScreen matches snapshot 1`] = `
           </View>
         </View>
       </View>
+      <Text
+        style={
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 16,
+              "letterSpacing": 0,
+              "lineHeight": 24,
+              "textAlign": "left",
+            },
+            {
+              "color": "#A9A9A9",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 12,
+              "letterSpacing": 0,
+              "lineHeight": 20,
+              "textAlign": "center",
+            },
+          ]
+        }
+      >
+        Pay by 7 Dec to earn ₹ 325 cashback on this payment
+      </Text>
     </View>
   </View>
 </View>

@@ -183,9 +183,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: INPUT_SPACING.labelInputGap,
   },
-  // Figma REST API: fontWeight 400 (Regular), 12px, lineHeight:20
+  // Figma REST API: fontWeight 500 (Medium), 12px, lineHeight:20
+  // Verified from blueprint: "Account holder name" label uses PlusJakartaSans-Medium
   label: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 20,
     // Color applied dynamically via dynamicStyles

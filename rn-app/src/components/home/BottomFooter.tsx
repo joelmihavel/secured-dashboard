@@ -47,8 +47,12 @@ function BottomFooterComponent({
     return value.toLocaleString('en-IN');
   };
 
+  // Figma 243-2967 node 243:3155: paddingBottom 40
+  // On devices with home indicator, use max(insets.bottom, 40) to avoid overlap
+  const bottomPadding = Math.max(insets.bottom, s(40));
+
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom - 12, 8) }]}>
+    <View style={[styles.container, { paddingBottom: bottomPadding }]}>
       {/* Left side - Due info */}
       <View style={styles.leftContent}>
         <Text style={styles.dueLabel}>
@@ -88,7 +92,10 @@ function BottomFooterComponent({
 }
 
 const styles = StyleSheet.create({
-  // Figma 243:7382: HORIZONTAL, SPACE_BETWEEN, CENTER
+  // Figma 243-2967 node 243:3155 (Frame 1686557229):
+  // HORIZONTAL, SPACE_BETWEEN, CENTER
+  // padding: top 16, left 32, right 32, bottom 40 (handled dynamically)
+  // fill #202020, top border 1px
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -97,6 +104,8 @@ const styles = StyleSheet.create({
     paddingTop: s(16),
     paddingHorizontal: s(32),
     gap: s(24),
+    borderTopWidth: 1, // Figma: individualStrokeWeights top=1
+    borderTopColor: '#202020', // Figma: subtle top border
   },
   // Figma 243:7383: VERTICAL, gap=4
   leftContent: {
@@ -105,16 +114,14 @@ const styles = StyleSheet.create({
   },
   // Figma 243:7384: Bold 700, fontSize 12, lineHeight 20, color #A9A9A9
   dueLabel: {
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'PlusJakartaSans-Bold', // Figma: fontWeight 700
     fontSize: sf(12),
     lineHeight: sf(20),
-    fontWeight: '700',
     color: '#A9A9A9',
   },
   // Figma 243:7385: base fontSize 12, weight 600, ls -0.48, color #EEEEEE
   amountText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     letterSpacing: -0.48,
     color: '#EEEEEE',
   },
@@ -167,9 +174,8 @@ const styles = StyleSheet.create({
   },
   // Figma I243:7386;100:1565: fontSize 14, weight 500, lineHeight 20, color #FFFFFF
   buttonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: sf(14),
-    fontWeight: '500',
     lineHeight: sf(20),
     color: '#FFFFFF',
     textAlign: 'center',

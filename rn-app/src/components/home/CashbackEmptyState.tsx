@@ -90,11 +90,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32, // Figma: 32px exact
     paddingVertical: 24, // Figma: 24px
     gap: 12, // Figma: 12px gap between sections
+    alignSelf: 'stretch', // Ensure full width in centered parent
   },
   sectionLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 12, // Figma: fontSize 12
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
     color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
     letterSpacing: 0.5, // Figma: letterSpacing 0.5
@@ -111,9 +111,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
   },
   accruedAmount: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 20, // Figma: fontSize 20
-    fontWeight: '500', // Figma: fontWeight 500
   },
   accruedRupee: {
     color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
@@ -131,26 +130,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#BABABA', // Figma: #BABABA (neutral[400])
     textAlign: 'left', // Figma: left-aligned label in space-between row
   },
   statValue: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
     textAlign: 'right', // Figma: right-aligned value
   },
   statValueAccent: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#FF9A6D', // Figma: #FF9A6D (brand[500])
     textAlign: 'right', // Figma: right-aligned value
   },
@@ -174,17 +170,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
   },
   placeholderTitle: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
-    fontWeight: '500', // Figma: fontWeight 500
     lineHeight: 20, // Figma: lineHeight 20
     color: '#FFFFFF', // Figma: #FFFFFF (white)
     textAlign: 'center', // Figma: textAlignHorizontal CENTER
   },
   placeholderText: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 12, // Figma: fontSize 12
-    fontWeight: '400', // Figma: fontWeight 400
     lineHeight: 20, // Figma: lineHeight 20
     color: '#878787', // Figma: #878787 (neutral[600])
     textAlign: 'center', // Figma: textAlignHorizontal CENTER

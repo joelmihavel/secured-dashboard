@@ -1,165 +1,249 @@
 /**
  * Pay Rent / Transaction Screen - Pixel Perfect Figma Parity
- * Figma Reference: 243-5870 (Pay Rent / Transaction Page --without cashback)
+ * Figma Reference:
+ *   41-8695: Transaction page --with cashback
+ *   41-9681: Transaction page --without cashback (locked)
+ *   41-9746: Transaction page --late payment
  *
- * Layout Structure:
- * - Fixed Header at top
- * - ScrollView for body content (with paddingBottom for footer)
- * - Fixed Footer at bottom (absolute positioned)
+ * Layout Structure (from Figma node tree):
+ *   Root Frame (852x393, #131313)
+ *     - Status bar zone (Frame 2095586357, fixed, y:0, h:77, bg:#131313, paddingBottom:24)
+ *     - Body content (Frame 2095586343, y:101, column, gap:40, paddingBottom:48)
+ *       - Top section (Frame 2095586345, column, gap:24, paddingHorizontal:40)
+ *         - Back arrow icon (32x32, rotated arrow-right = arrow-left)
+ *         - Info card (Frame 1686557240, 313xHUG, bg:#202020, radius:12,
+ *                      padding: top:24, h:16, bottom:24, gap:32, items:center)
+ *           - Inner content (gap:16, items:center)
+ *             - "Rent due in X days" (12px Regular #878787, letterSpacing:-0.24)
+ *             - "Complete setup..." (14px Medium #CBCBCB, letterSpacing:-0.56)
+ *             - Cashback pill (bg:#1A1A1A, radius:200, padding:8/12)
+ *           - Divider bar (268x5, bg:#1A1A1A)
+ *           - Paperclip decoration (absolute, Group 58)
+ *           - Arrow icon (absolute, Outline Icon Library)
+ *       - Rent breakdown card (Frame 2095586361, 270xFIXED)
+ *         - Each line item row: hash icon(16x16) + label(12px #878787) | value(14px #CBCBCB)
+ *         - Divider lines between sections (Vector, stroke:#4D4D4D, 0.25 weight)
+ *         - Cashback value: 14px #EF9194
+ *         - Payable Rent value: 14px SemiBold #DDDDDD
+ *         - Circle cutouts (Ellipse, 14x14, bg:#131313) at card edges
+ *     - Footer (Frame 2095586363, x:40, y:688, width:313, column, gap:16)
+ *       - PrimaryButton "Pay RsXX,XXX now" (14px Medium #FFFFFF, gradient bg)
+ *       - Footer message (12px Regular #A9A9A9, center)
  *
  * Key Figma Specifications:
  * - Background: #131313 (black.700)
- * - Header section paddingLeft: 64px
- * - Payment card carousel: paddingLeft 64px, paddingRight 32px
- * - Footer section paddingHorizontal: 32px
- * - 24px gap between major sections
+ * - Top section paddingHorizontal: 40px
+ * - Info card body: bg #202020, radius 12, padding 24/16/24/16
+ * - Hash symbol: #FF9A6D (brand.500)
+ * - Table labels: #878787 (neutral.600)
+ * - Table values: #CBCBCB (neutral.300)
+ * - Cashback deduction: #EF9194
+ * - Payable Rent value: #DDDDDD (neutral.200), SemiBold
+ * - Footer text: #A9A9A9 (neutral.500)
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { Text, PrimaryButton } from '@/src/components';
-import { CreditCardSelect, UPICardSelect, NetbankingCardSelect, AddMoreCard } from '@/src/components/payment';
 import { useDashboard } from '@/src/hooks';
-import { colors, spacing, radius } from '@/src/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ===========================================
-// FIGMA EXTRACTED DESIGN TOKENS (243-5870)
+// FIGMA EXTRACTED DESIGN TOKENS
 // ===========================================
 const FIGMA_COLORS = {
   // Backgrounds
-  background: '#131313',          // black.700 - Root frame
-  cardBody: '#202020',            // black.500 - Frame 2095586440
-  cardFooter: '#1A1A1A',          // black.600 - Frame 2095586454
-  toggleBg: '#1A1A1A',            // black.600 - Toggle
+  background: '#131313',       // black.700 - Root frame
+  cardBody: '#202020',         // black.500 - Info card body
+  pillBg: '#1A1A1A',           // black.600 - Cashback pill
+  dividerBar: '#1A1A1A',       // black.600 - Rectangle 135
 
   // Text colors
-  textPrimary: '#FFFFFF',         // white
-  textSecondary: '#BABABA',       // neutral.400 - "Your rent is due in"
-  textMuted: '#A6A6A6',           // black.200 - "Paying with:"
-  textDisabled: '#4D4D4D',        // black.400 - inactive card text
-  textAccent: '#FF9A6D',          // brand.500 - "10 days", selected states
-  labelText: '#CBCBCB',           // neutral.300 - footer labels
+  textPrimary: '#FFFFFF',      // white
+  dueLabel: '#878787',         // neutral.600 - "Rent due in X days"
+  setupLabel: '#CBCBCB',       // neutral.300 - "Complete setup..."
+  pillText: '#FF9A6D',         // brand.500 - pill text
+  tableLabel: '#878787',       // neutral.600 - row labels
+  tableValue: '#CBCBCB',       // neutral.300 - row values
+  cashbackDeduction: '#EF9194', // cashback value (negative)
+  payableValue: '#DDDDDD',    // neutral.200 - payable rent value
+  hashSymbol: '#FF9A6D',      // brand.500 - # icons
+  footerText: '#A9A9A9',      // neutral.500 - footer message
 
-  // Status colors
-  success: '#70BF73',             // success.default
-  warning: '#FFD580',             // warning.default
+  // Dividers / lines
+  tableDivider: '#4D4D4D',    // black.400 - table separator lines
+  circleCutout: '#131313',     // same as background (creates notch effect)
 
-  // Icons and dividers
-  iconButton: '#4D4D4D',          // black.400 - Rectangle 140
-  divider: '#4D4D4D',             // black.400
-
-  // Cashback section
-  cashbackLabel: '#A9A9A9',       // neutral.500
-  cashbackValue: '#DDDDDD',       // neutral.200
-  cashbackAccent: '#FF9A6D',      // brand.500
-
-  // UPI colors
-  upiGreen: '#27803B',            // success.dark
-  upiOrange: '#E9661C',           // brand.800
+  // Late payment
+  lateLabel: '#878787',        // neutral.600 - "Rent overdue..."
+  noPayoutLabel: '#CBCBCB',   // neutral.300 - "No cashback..."
 } as const;
 
-// Figma spacing values
+// Figma spacing values (extracted from blueprint geometry/layout)
 const FIGMA_SPACING = {
-  headerPaddingLeft: 64,          // Frame 2095586453 paddingLeft
-  carouselPaddingLeft: 64,        // Frame 2095586448 paddingLeft
-  carouselPaddingRight: 32,       // Frame 2095586448 paddingRight
-  carouselGap: 16,                // Frame 2095586449 gap
-  sectionGap: 24,                 // Frame 2095586343 gap
-  footerHeight: 118,              // Approximate footer height
-  footerPaddingHorizontal: 32,    // Footer paddingHorizontal
+  topSectionPaddingH: 40,      // Frame 2095586345 paddingLeft/Right
+  bodyGap: 40,                 // Frame 2095586343 gap
+  bodyPaddingBottom: 48,       // Frame 2095586343 paddingBottom
+  topSectionGap: 24,           // Frame 2095586345 gap
+  cardPaddingV: 24,            // Info card paddingTop/Bottom
+  cardPaddingH: 16,            // Info card paddingLeft/Right
+  cardInnerGap: 32,            // Info card inner gap
+  innerContentGap: 16,         // pill/label gap inside card
+  pillPaddingH: 12,            // pill horizontal padding
+  pillPaddingV: 8,             // pill vertical padding
+  tableRowPaddingH: 24,        // row left/right inset
+  tableGap: 16,                // gap between table rows in a section
+  footerGap: 16,               // footer column gap
+  footerX: 40,                 // footer paddingHorizontal
+  breakdownCardWidth: 270,     // rent breakdown card width
+  breakdownCardX: 61,          // breakdown card offset from left
 } as const;
 
 // ===========================================
-// ICON COMPONENTS
+// TRANSACTION STATE TYPES
+// ===========================================
+type TransactionState = 'with_cashback' | 'without_cashback' | 'late_payment';
+
+// ===========================================
+// SVG ICON COMPONENTS
 // ===========================================
 
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+const BackArrowIcon = () => (
+  <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
     <Path
-      d="M15 18L9 12L15 6"
+      d="M25.3333 16H6.66667"
       stroke={FIGMA_COLORS.textPrimary}
-      strokeWidth={2}
+      strokeWidth={2.667}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M6.66667 16L14.6667 24"
+      stroke={FIGMA_COLORS.textPrimary}
+      strokeWidth={2.667}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M6.66667 16L14.6667 8"
+      stroke={FIGMA_COLORS.textPrimary}
+      strokeWidth={2.667}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
   </Svg>
 );
 
-// Small circular icon button (Rectangle 140 in Figma)
-const IconButton = ({
-  name,
-  onPress,
-  testID,
-}: {
-  name: keyof typeof Ionicons.glyphMap;
-  onPress?: () => void;
-  testID?: string;
-}) => (
-  <TouchableOpacity
-    style={styles.iconButton}
-    onPress={onPress}
-    testID={testID}
-    accessibilityRole="button"
-  >
-    <Ionicons name={name} size={16} color={FIGMA_COLORS.textPrimary} />
-  </TouchableOpacity>
-);
-
-// Toggle component matching Figma design
-const CashbackToggle = ({
-  enabled,
-  onToggle,
-}: {
-  enabled: boolean;
-  onToggle: (value: boolean) => void;
-}) => (
-  <View style={styles.toggleContainer}>
-    <View style={[styles.toggleTrack, enabled && styles.toggleTrackActive]}>
-      <View style={[styles.toggleThumb, enabled && styles.toggleThumbActive]} />
-    </View>
-    <TouchableOpacity
-      onPress={() => onToggle(!enabled)}
-      style={StyleSheet.absoluteFill}
-      accessibilityRole="switch"
-      accessibilityState={{ checked: enabled }}
+/** Hash/Number sign icon matching Figma (16x16, path extracted from blueprint) */
+const HashIcon = () => (
+  <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+    <Path
+      d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+      fill={FIGMA_COLORS.hashSymbol}
     />
-  </View>
-);
-
-// Page indicator dots
-const PageIndicator = ({ active, index }: { active: boolean; index: number }) => (
-  <View
-    style={[styles.pageIndicator, active && styles.pageIndicatorActive]}
-    accessibilityLabel={`Page ${index + 1}${active ? ', current' : ''}`}
-  />
+  </Svg>
 );
 
 // ===========================================
-// PAYMENT METHOD TYPE
+// SUB-COMPONENTS
 // ===========================================
-type PaymentMethod = 'credit_card' | 'upi' | 'netbanking' | 'add_new';
 
-interface PaymentMethodData {
-  id: string;
-  type: PaymentMethod;
-  cardNumber?: string;
-  expiryDate?: string;
-  upiId?: string;
-  bankAccount?: string;
+/** Info card top section - varies by state */
+function InfoCardContent({ state, daysUntilDue, cashbackAmount }: {
+  state: TransactionState;
+  daysUntilDue: number;
+  cashbackAmount: number;
+}) {
+  const formattedCashback = cashbackAmount.toLocaleString('en-IN');
+
+  switch (state) {
+    case 'with_cashback':
+      return (
+        <>
+          <Text style={styles.dueLabel}>
+            Rent due in {daysUntilDue} days
+          </Text>
+          <Text style={styles.setupLabel}>
+            Complete setup to unlock 1% cashback
+          </Text>
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>
+              {'\u20B9'}{formattedCashback} cashback applied
+            </Text>
+          </View>
+        </>
+      );
+    case 'without_cashback':
+      return (
+        <>
+          <Text style={styles.dueLabel}>
+            Rent due in {daysUntilDue} days
+          </Text>
+          <Text style={styles.setupLabel}>
+            Complete setup to unlock 1% cashback
+          </Text>
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>
+              {'\u20B9'}{formattedCashback} available to unlock
+            </Text>
+          </View>
+        </>
+      );
+    case 'late_payment':
+      return (
+        <>
+          <Text style={styles.dueLabel}>
+            Rent overdue by {daysUntilDue} days
+          </Text>
+          <Text style={styles.setupLabel}>
+            No cashback on this payment
+          </Text>
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>
+              Pay on time next month to earn 1% cashback
+            </Text>
+          </View>
+        </>
+      );
+  }
+}
+
+/** Single row in the rent breakdown table */
+function BreakdownRow({ label, value, valueColor = FIGMA_COLORS.tableValue, bold = false }: {
+  label: string;
+  value: string;
+  valueColor?: string;
+  bold?: boolean;
+}) {
+  return (
+    <View style={styles.breakdownRow}>
+      <View style={styles.breakdownLabelContainer}>
+        <HashIcon />
+        <Text style={styles.breakdownLabel}>{label}</Text>
+      </View>
+      <Text style={[
+        styles.breakdownValue,
+        { color: valueColor },
+        bold && styles.breakdownValueBold,
+      ]}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+/** Thin horizontal divider line matching Figma Vector (stroke #4D4D4D, 0.25 weight) */
+function TableDivider() {
+  return <View style={styles.tableDivider} />;
 }
 
 // ===========================================
@@ -169,248 +253,161 @@ export default function PayRentTransactionScreen() {
   const router = useRouter();
   const { tenancy, upcomingPayment, cashback } = useDashboard();
 
-  const [selectedMethod, setSelectedMethod] = useState<string>('card-1');
-  const [useCashback, setUseCashback] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
+  // Derive transaction state
+  const transactionState: TransactionState = useMemo(() => {
+    if (upcomingPayment?.is_overdue) return 'late_payment';
+    const hasActiveCashback = upcomingPayment?.cashback_eligible === true;
+    return hasActiveCashback ? 'with_cashback' : 'without_cashback';
+  }, [upcomingPayment]);
 
-  // Mock payment methods data
-  const paymentMethods: PaymentMethodData[] = useMemo(() => [
-    { id: 'card-1', type: 'credit_card', cardNumber: '2341', expiryDate: '06/26' },
-    { id: 'upi-1', type: 'upi', upiId: 'rishabh@icici', bankAccount: 'ICICI a/c -  xxx23' },
-    { id: 'netbanking-1', type: 'netbanking', bankAccount: 'ICICI a/c -  xxx23', cardNumber: '2341', expiryDate: '06/26' },
-    { id: 'add-new', type: 'add_new' },
-  ], []);
+  // Compute amounts
+  const baseRent = tenancy?.monthly_rent ?? 30000;
+  const maintenance = 2500; // Maintenance amount (not in API yet, hardcoded per Figma)
+  const totalRent = baseRent + maintenance;
+  const cashbackAmount = cashback?.available_balance ?? 325;
+  const cashbackApplied = transactionState === 'with_cashback' ? cashbackAmount : 0;
+  const payableRent = totalRent; // Payable Rent row always shows total
+  const payNowAmount = totalRent - cashbackApplied;
+  const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
 
-  // Calculate amounts
-  const rentAmount = tenancy?.monthly_rent ?? 32500;
-  const cashbackAvailable = cashback?.available_balance ?? 325;
-  const cashbackToApply = useCashback ? Math.min(cashbackAvailable, rentAmount) : 0;
-  const totalAmount = rentAmount - cashbackToApply;
-  const daysUntilDue = 10;
-  const cashbackRate = '0.8%';
-  const allTimeCashback = 3256;
+  // Format helpers
+  const formatINR = (amount: number) => amount.toLocaleString('en-IN');
+
+  // Button text varies by state
+  const buttonText = `Pay \u20B9${formatINR(payNowAmount)} now`;
+
+  // Footer message varies by state
+  const footerMessage = useMemo(() => {
+    switch (transactionState) {
+      case 'with_cashback':
+        return `Pay by 7 Dec to earn \u20B9 ${formatINR(cashbackAmount)} cashback on this payment`;
+      case 'without_cashback':
+        return `Finish setup in 28:12:12 to be eligible for   \u20B9${formatINR(cashbackAmount)} cashback on this payment`;
+      case 'late_payment':
+        return 'Pay before the due date next month to  earn 1% cashback';
+    }
+  }, [transactionState, cashbackAmount]);
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   }, [router]);
 
-  const handleSelectMethod = useCallback((methodId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (methodId === 'add-new') {
-      router.push('/(payment)/select-method' as never);
-    } else {
-      setSelectedMethod(methodId);
-    }
-  }, [router]);
-
   const handlePayNow = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    const method = paymentMethods.find(m => m.id === selectedMethod);
-    if (method) {
-      router.push({
-        pathname: '/(payment)/initiate',
-        params: { method: method.type === 'credit_card' ? 'card' : method.type },
-      } as never);
-    }
-  }, [router, selectedMethod, paymentMethods]);
+    router.push({
+      pathname: '/(payment)/initiate',
+      params: { method: 'card' },
+    } as never);
+  }, [router]);
 
-  const handleScroll = useCallback((event: { nativeEvent: { contentOffset: { x: number } } }) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const cardWidth = 270 + FIGMA_SPACING.carouselGap;
-    const page = Math.round(offsetX / cardWidth);
-    setCurrentPage(Math.max(0, Math.min(page, paymentMethods.length - 1)));
-  }, [paymentMethods.length]);
-
-  const renderPaymentCard = (method: PaymentMethodData) => {
-    const isSelected = method.id === selectedMethod;
-
-    switch (method.type) {
-      case 'credit_card':
-        return (
-          <CreditCardSelect
-            key={method.id}
-            cardNumber={method.cardNumber ?? ''}
-            expiryDate={method.expiryDate}
-            selected={isSelected}
-            onSelect={() => handleSelectMethod(method.id)}
-            testID={`payment-card-${method.id}`}
-          />
-        );
-      case 'upi':
-        return (
-          <UPICardSelect
-            key={method.id}
-            upiId={method.upiId ?? ''}
-            bankAccount={method.bankAccount}
-            selected={isSelected}
-            onSelect={() => handleSelectMethod(method.id)}
-            testID={`payment-card-${method.id}`}
-          />
-        );
-      case 'netbanking':
-        return (
-          <NetbankingCardSelect
-            key={method.id}
-            bankName="ICICI Bank"
-            bankAccount={method.bankAccount}
-            selected={isSelected}
-            onSelect={() => handleSelectMethod(method.id)}
-            testID={`payment-card-${method.id}`}
-          />
-        );
-      case 'add_new':
-        return (
-          <AddMoreCard
-            key={method.id}
-            onPress={() => handleSelectMethod(method.id)}
-            testID="payment-card-add-new"
-          />
-        );
-      default:
-        return null;
-    }
-  };
+  // Whether cashback is locked (show lock icon)
+  const cashbackLocked = transactionState !== 'with_cashback';
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
-        {/* Fixed Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <BackArrow />
-          </TouchableOpacity>
-          <View style={styles.headerRight}>
-            <IconButton name="notifications-outline" testID="notifications-button" />
-            <IconButton name="help-circle-outline" testID="help-button" />
-          </View>
-        </View>
-
-        {/* Scrollable Content */}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Rent Due Section - paddingLeft: 64px */}
-          <View style={styles.rentDueSection}>
-            {/* Multi-styled text: "Your rent is due in 10 days" */}
-            <Text style={styles.rentDueTitle}>
-              <Text inherit style={styles.rentDueTextSecondary}>Your rent is due in </Text>
-              <Text inherit style={styles.rentDueTextAccent}>{daysUntilDue} days</Text>
-            </Text>
-            <Text style={styles.payingWithText}>Paying with:</Text>
-          </View>
+          {/* === TOP SECTION: Back arrow + Info Card === */}
+          <View style={styles.topSection}>
+            {/* Back Arrow - Figma: 32x32 rotated arrow-right icon */}
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              testID="back-button"
+            >
+              <BackArrowIcon />
+            </TouchableOpacity>
 
-          {/* Payment Cards Carousel - Critical Fix: Horizontal ScrollView Padding */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carouselContent}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            decelerationRate="fast"
-            snapToInterval={270 + FIGMA_SPACING.carouselGap}
-            snapToAlignment="start"
-          >
-            {paymentMethods.map(renderPaymentCard)}
-          </ScrollView>
-
-          {/* Page Indicators */}
-          <View style={styles.pageIndicators}>
-            {paymentMethods.map((_, index) => (
-              <PageIndicator
-                key={index}
-                active={index === currentPage}
-                index={index}
-              />
-            ))}
-          </View>
-
-          {/* Divider Line */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-          </View>
-
-          {/* Cashback Section - paddingHorizontal: 32px */}
-          <View style={styles.cashbackSection}>
-            {/* Cashback Toggle Row */}
-            <View style={styles.cashbackToggleRow}>
-              <View style={styles.cashbackLabelContainer}>
-                <Text style={styles.cashbackLabelText}>Apply Cashback</Text>
+            {/* Info Card - Figma: Frame 1686557240, bg:#202020, radius:12 */}
+            <View style={styles.infoCard}>
+              <View style={styles.infoCardInner}>
+                <InfoCardContent
+                  state={transactionState}
+                  daysUntilDue={daysUntilDue}
+                  cashbackAmount={cashbackAmount}
+                />
               </View>
-              <CashbackToggle enabled={useCashback} onToggle={setUseCashback} />
-            </View>
-
-            {/* All-time Total Row */}
-            <View style={styles.cashbackStatRow}>
-              <Text style={styles.cashbackStatLabel}>All-time Total</Text>
-              {/* Multi-styled text: "Rs 3,256.00" */}
-              <Text style={styles.cashbackStatValue}>
-                <Text inherit style={styles.currencySymbol}>Rs  </Text>
-                <Text inherit style={styles.cashbackValueMain}>{allTimeCashback.toLocaleString('en-IN')}</Text>
-                <Text inherit style={styles.currencySymbol}>.00</Text>
-              </Text>
-            </View>
-
-            {/* Cashback Rate Row */}
-            <View style={styles.cashbackStatRow}>
-              <Text style={styles.cashbackStatLabel}>Avg Rate</Text>
-              {/* Multi-styled text: "0.8% Avg" */}
-              <Text style={styles.cashbackStatValue}>
-                <Text inherit style={styles.cashbackRateAccent}>{cashbackRate}</Text>
-                <Text inherit style={styles.cashbackRateSuffix}> Avg</Text>
-              </Text>
-            </View>
-
-            {/* Available Cashback Row */}
-            <View style={styles.cashbackStatRow}>
-              <Text style={styles.cashbackStatLabel}>Available</Text>
-              {/* Multi-styled text: "Rs 325.00" */}
-              <Text style={styles.cashbackStatValue}>
-                <Text inherit style={styles.currencySymbol}>Rs  </Text>
-                <Text inherit style={styles.cashbackAvailableMain}>{cashbackAvailable.toLocaleString('en-IN')}</Text>
-                <Text inherit style={styles.currencySymbol}>.00</Text>
-              </Text>
+              {/* Divider bar at bottom of card - Figma: Rectangle 135, 268x5, bg:#1A1A1A */}
+              <View style={styles.cardDividerBar} />
             </View>
           </View>
 
-          {/* Setup Progress Message */}
-          <View style={styles.setupMessageContainer}>
-            {/* Multi-styled text: "Complete setup in 28:12:12 to unlock Cashbacks" */}
-            <Text style={styles.setupMessageText}>
-              <Text inherit style={styles.setupTextNormal}>Complete setup in </Text>
-              <Text inherit style={styles.setupTextTimer}>28:12:12</Text>
-              <Text inherit style={styles.setupTextNormal}> to  unlock </Text>
-              <Text inherit style={styles.setupTextAccent}>Cashbacks</Text>
-            </Text>
-          </View>
+          {/* === RENT BREAKDOWN TABLE === */}
+          {/* Figma: Frame 2095586361, centered, width:270 */}
+          <View style={styles.breakdownContainer}>
+            {/* Base Rent */}
+            <View style={styles.breakdownSection}>
+              <BreakdownRow
+                label="Base rent"
+                value={`\u20B9 ${formatINR(baseRent)}`}
+              />
+            </View>
 
+            <TableDivider />
+
+            {/* Maintenance */}
+            <View style={styles.breakdownSection}>
+              <BreakdownRow
+                label="Maintenance"
+                value={`\u20B9${formatINR(maintenance)}`}
+              />
+            </View>
+
+            <TableDivider />
+
+            {/* Total Rent */}
+            <View style={styles.breakdownSection}>
+              <BreakdownRow
+                label="Total Rent"
+                value={`\u20B9  ${formatINR(totalRent)}`}
+              />
+            </View>
+
+            {/* Cashback row */}
+            <View style={styles.breakdownSection}>
+              <BreakdownRow
+                label={cashbackLocked ? 'Cashback \uD83D\uDD12 ' : 'Cashback '}
+                value={`- \u20B9  ${formatINR(cashbackAmount)}`}
+                valueColor={FIGMA_COLORS.cashbackDeduction}
+              />
+            </View>
+
+            <TableDivider />
+
+            {/* Circle cutouts at divider level - Figma: Ellipse 21890 & 21891 */}
+            <View style={styles.circleCutoutLeft} />
+            <View style={styles.circleCutoutRight} />
+
+            {/* Payable Rent */}
+            <View style={styles.breakdownSection}>
+              <BreakdownRow
+                label="Payable Rent"
+                value={`\u20B9  ${formatINR(payableRent)}`}
+                valueColor={FIGMA_COLORS.payableValue}
+                bold
+              />
+            </View>
+          </View>
         </ScrollView>
 
-        {/* Fixed Footer - absolutely positioned */}
+        {/* === FIXED FOOTER === */}
+        {/* Figma: Frame 2095586363, x:40, y:688, width:313, column, gap:16 */}
         <View style={styles.footer}>
-          {/* Amount Display */}
-          <View style={styles.amountContainer}>
-            <Text style={styles.amountLabel}>Due in {daysUntilDue} Days</Text>
-            {/* Multi-styled text: "Rs 32,500" */}
-            <Text style={styles.amountValue}>
-              <Text inherit style={styles.amountCurrency}>Rs  </Text>
-              <Text inherit style={styles.amountMain}>{totalAmount.toLocaleString('en-IN')}</Text>
-            </Text>
-          </View>
-
-          {/* Pay Now Button */}
           <PrimaryButton
-            title="Pay Now"
+            title={buttonText}
             onPress={handlePayNow}
             testID="pay-now-button"
           />
+          <Text style={styles.footerMessage}>
+            {footerMessage}
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -430,275 +427,195 @@ const styles = StyleSheet.create({
     backgroundColor: FIGMA_COLORS.background,
   },
 
-  // Header - Fixed
-  header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  // Icon button - Figma: Rectangle 140, fill #4D4D4D (black.400)
-  iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: FIGMA_COLORS.iconButton, // Critical fix: #4D4D4D
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
   // ScrollView
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxxl, // 48px - listContent paddingBottom per Figma spec
-    gap: FIGMA_SPACING.sectionGap, // 24px between sections
+    gap: FIGMA_SPACING.bodyGap,                // 40px between top section & breakdown
+    paddingBottom: FIGMA_SPACING.bodyPaddingBottom + 140, // 48px + footer height clearance
   },
 
-  // Rent Due Section - Figma: paddingLeft 64px
-  rentDueSection: {
-    paddingLeft: FIGMA_SPACING.headerPaddingLeft, // Critical fix: 64px
-    paddingRight: FIGMA_SPACING.footerPaddingHorizontal,
-    gap: spacing.xs,
-  },
-  // Multi-styled text fix: Single Text with nested spans
-  rentDueTitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28,
-    lineHeight: 40,
-    letterSpacing: -1,
-    textAlign: 'left',
-  },
-  rentDueTextSecondary: {
-    color: FIGMA_COLORS.textSecondary, // #BABABA neutral.400
-  },
-  rentDueTextAccent: {
-    color: FIGMA_COLORS.textAccent, // #FF9A6D brand.500
-  },
-  payingWithText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.textMuted, // #A6A6A6 black.200
-    textAlign: 'left',
+  // === TOP SECTION ===
+  // Figma: Frame 2095586345, column, gap:24, paddingHorizontal:40
+  topSection: {
+    paddingHorizontal: FIGMA_SPACING.topSectionPaddingH, // 40px
+    gap: FIGMA_SPACING.topSectionGap,                     // 24px
   },
 
-  // Payment Cards Carousel - Critical fix: Horizontal ScrollView Padding
-  carouselContent: {
-    paddingLeft: FIGMA_SPACING.carouselPaddingLeft, // 64px
-    paddingRight: FIGMA_SPACING.carouselPaddingRight, // 32px
-    gap: FIGMA_SPACING.carouselGap, // 16px
-  },
-
-  // Page Indicators
-  pageIndicators: {
-    flexDirection: 'row',
+  // Back button - Figma: 32x32
+  backButton: {
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.xs,
-  },
-  pageIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.black[500], // #202020
-  },
-  pageIndicatorActive: {
-    backgroundColor: FIGMA_COLORS.textAccent, // #FF9A6D
   },
 
-  // Divider
-  dividerContainer: {
-    paddingHorizontal: FIGMA_SPACING.footerPaddingHorizontal,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: FIGMA_COLORS.divider,
-  },
-
-  // Cashback Section - Figma: marginHorizontal 64px (spacing.huge)
-  cashbackSection: {
-    marginHorizontal: spacing.huge, // 64px per Figma cashbackSummary spec
-    gap: spacing.md,
-  },
-  cashbackToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cashbackLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  cashbackLabelText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA_COLORS.cashbackLabel, // #A9A9A9 neutral.500
-    textAlign: 'left',
-  },
-
-  // Toggle
-  toggleContainer: {
-    width: 44,
-    height: 24,
-    justifyContent: 'center',
-  },
-  toggleTrack: {
-    width: 44,
-    height: 24,
+  // Info Card - Figma: Frame 1686557240
+  // bg: #202020, radius: 12, padding: 24/16, gap: 32, items: center
+  infoCard: {
+    backgroundColor: FIGMA_COLORS.cardBody,
     borderRadius: 12,
-    backgroundColor: FIGMA_COLORS.toggleBg, // #1A1A1A
-    borderWidth: 1,
-    borderColor: colors.black[500], // #202020
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
-  toggleTrackActive: {
-    backgroundColor: FIGMA_COLORS.textAccent + '40',
-    borderColor: FIGMA_COLORS.textAccent,
-  },
-  toggleThumb: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.black[400],
-  },
-  toggleThumbActive: {
-    backgroundColor: FIGMA_COLORS.textAccent,
-    alignSelf: 'flex-end',
+    paddingTop: FIGMA_SPACING.cardPaddingV,     // 24
+    paddingBottom: FIGMA_SPACING.cardPaddingV,   // 24
+    paddingHorizontal: FIGMA_SPACING.cardPaddingH, // 16
+    gap: FIGMA_SPACING.cardInnerGap,              // 32
+    alignItems: 'center',
   },
 
-  // Cashback Stats
-  cashbackStatRow: {
-    flexDirection: 'row',
+  // Inner content column - gap:16, items:center (from Figma tree)
+  // Contains: due label, setup label, pill
+  infoCardInner: {
+    gap: 8,                  // Figma: Frame 2095586359 gap:8 for text lines
     alignItems: 'center',
-    justifyContent: 'space-between',
-    // marginBottom removed - parent cashbackSection already has gap: spacing.md
   },
-  cashbackStatLabel: {
+
+  // "Rent due in X days" - Figma: 12px Regular #878787, letterSpacing:-0.24
+  dueLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 17,
+    letterSpacing: -0.24,
+    color: FIGMA_COLORS.dueLabel,
+    textAlign: 'center',
+  },
+
+  // "Complete setup..." - Figma: 14px Medium #CBCBCB, letterSpacing:-0.56
+  setupLabel: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: -0.56,
+    color: FIGMA_COLORS.setupLabel,
+    textAlign: 'center',
+  },
+
+  // Cashback pill - Figma: Frame 2095586454
+  // bg: #1A1A1A, radius: 200, padding: 8/12, gap: 10
+  pill: {
+    backgroundColor: FIGMA_COLORS.pillBg,
+    borderRadius: 200,
+    paddingVertical: FIGMA_SPACING.pillPaddingV,  // 8
+    paddingHorizontal: FIGMA_SPACING.pillPaddingH, // 12
+    marginTop: 8,  // extra spacing between text and pill (from Figma tree gap adjustment)
+  },
+
+  // Pill text - Figma: 12px Regular #FF9A6D, lineHeight:20, letterSpacing:0
+  pillText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.cashbackLabel, // #A9A9A9
-    textAlign: 'left',
-  },
-  cashbackStatValue: {
-    textAlign: 'right',
-  },
-  // Multi-styled text for currency values
-  currencySymbol: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: FIGMA_COLORS.cashbackLabel, // #A9A9A9
-  },
-  cashbackValueMain: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    lineHeight: 24,
-    color: FIGMA_COLORS.cashbackValue, // #DDDDDD neutral.200
-  },
-  cashbackAvailableMain: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    lineHeight: 24,
-    color: FIGMA_COLORS.cashbackAccent, // #FF9A6D brand.500
-  },
-  cashbackRateAccent: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16,
-    lineHeight: 24,
-    color: FIGMA_COLORS.cashbackAccent, // #FF9A6D
-  },
-  cashbackRateSuffix: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: FIGMA_COLORS.cashbackLabel, // #A9A9A9
+    letterSpacing: 0,
+    color: FIGMA_COLORS.pillText,
+    textAlign: 'center',
   },
 
-  // Setup Message
-  setupMessageContainer: {
-    paddingHorizontal: FIGMA_SPACING.footerPaddingHorizontal,
+  // Divider bar at bottom of info card - Figma: Rectangle 135, 268x5, bg:#1A1A1A
+  cardDividerBar: {
+    width: 268,
+    height: 5,
+    backgroundColor: FIGMA_COLORS.dividerBar,
+    alignSelf: 'center',
+  },
+
+  // === RENT BREAKDOWN TABLE ===
+  // Figma: Frame 2095586361, x:61, width:270
+  // Positioned centrally relative to 393px screen
+  breakdownContainer: {
+    alignSelf: 'center',
+    width: FIGMA_SPACING.breakdownCardWidth, // 270
+    position: 'relative',                     // for circle cutouts
+  },
+
+  // Each section (one row or group of rows)
+  // Figma: each row frame has paddingVertical from the table structure
+  breakdownSection: {
+    paddingVertical: 16,     // vertical spacing around each row
+    paddingHorizontal: FIGMA_SPACING.tableRowPaddingH, // 24
+  },
+
+  // Row layout - Figma: row, justifyContent: space-between, items: center
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  // Multi-styled text: "Complete setup in 28:12:12 to unlock Cashbacks"
-  setupMessageText: {
+
+  // Label side (hash icon + label text)
+  breakdownLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,                  // Figma: gap between hash and label text
+  },
+
+  // Label text - Figma: 12px Regular #878787, lineHeight:20, letterSpacing:0
+  breakdownLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    letterSpacing: 0,
+    color: FIGMA_COLORS.tableLabel,
+  },
+
+  // Value text - Figma: 14px Regular #CBCBCB, lineHeight:20, letterSpacing:0
+  breakdownValue: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
-    textAlign: 'center',
-  },
-  setupTextNormal: {
-    color: FIGMA_COLORS.labelText, // #CBCBCB neutral.300
-    textAlign: 'center',
-  },
-  setupTextTimer: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    color: FIGMA_COLORS.textAccent, // #FF9A6D brand.500
-    textAlign: 'center',
-  },
-  setupTextAccent: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    color: FIGMA_COLORS.textAccent, // #FF9A6D brand.500
-    textAlign: 'center',
+    letterSpacing: 0,
+    color: FIGMA_COLORS.tableValue,
   },
 
-  // Footer - Fixed at bottom
-  footer: {
+  // Bold value (Payable Rent) - Figma: 14px SemiBold #DDDDDD
+  breakdownValueBold: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+  },
+
+  // Table divider line - Figma: Vector, stroke #4D4D4D, weight 0.25
+  tableDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: FIGMA_COLORS.tableDivider,
+    marginHorizontal: FIGMA_SPACING.tableRowPaddingH, // 24 inset
+  },
+
+  // Circle cutouts at the card notch level
+  // Figma: Ellipse 21890 (x:-6, y:256) and Ellipse 21891 (x:263, y:256)
+  // 14x14 circles with bg:#131313 (same as screen bg) creating a notch effect
+  circleCutoutLeft: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: FIGMA_COLORS.background,
-    paddingHorizontal: FIGMA_SPACING.footerPaddingHorizontal, // 32px
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-    // Add subtle top border
-    borderTopWidth: 1,
-    borderTopColor: colors.black[600],
+    left: -7,
+    top: '73%',             // approximate vertical position at the last divider
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: FIGMA_COLORS.circleCutout,
   },
-  amountContainer: {
+  circleCutoutRight: {
+    position: 'absolute',
+    right: -7,
+    top: '73%',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: FIGMA_COLORS.circleCutout,
+  },
+
+  // === FOOTER ===
+  // Figma: Frame 2095586363, x:40, y:688, width:313, column, gap:16
+  footer: {
+    paddingHorizontal: FIGMA_SPACING.footerX,  // 40
+    paddingBottom: 32,
+    gap: FIGMA_SPACING.footerGap,               // 16
     alignItems: 'center',
-    gap: spacing.xxs,
   },
-  amountLabel: {
+
+  // Footer message - Figma: 12px Regular #A9A9A9, lineHeight:20, center
+  footerMessage: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.cashbackLabel, // #A9A9A9 neutral.500
-    textAlign: 'center',
-  },
-  // Multi-styled text: "Rs 32,500"
-  amountValue: {
-    textAlign: 'center',
-  },
-  amountCurrency: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 16,
-    color: colors.neutral[100], // #EEEEEE
-    textAlign: 'center',
-  },
-  amountMain: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 24,
-    lineHeight: 32,
-    letterSpacing: -0.5,
-    color: colors.neutral[100], // #EEEEEE
+    letterSpacing: 0,
+    color: FIGMA_COLORS.footerText,
     textAlign: 'center',
   },
 });

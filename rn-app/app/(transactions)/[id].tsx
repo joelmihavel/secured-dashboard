@@ -1,13 +1,44 @@
 /**
  * Transaction Detail / Receipt Screen - Pixel Perfect Figma Parity
- * Figma Reference: 41-9563 (Payment Successful)
+ * Figma Reference: 41-9563 (Payment Successful --no cashback)
  *
- * Features:
- * - Receipt-style card with paperclip decoration
- * - PAID stamp badge
- * - Payment breakdown with # symbol labels
- * - Download receipt button
- * - Contact support link
+ * Layout Structure (from Figma node tree):
+ *   Root Frame (852x393, #131313)
+ *     - Status bar (Frame 2095586357, fixed, y:0, h:77, bg:#131313)
+ *     - Body (Frame 2095586343, y:111, column, gap:40, paddingBottom:48)
+ *       - Top section (Frame 2095586345, paddingHorizontal:40)
+ *         - Back arrow (32x32)
+ *     - Receipt card (Frame 2095586361, x:61, y:183, width:270, height:481)
+ *       - Receipt body (Frame 1686557240, bg:#202020, radius:12, padding:24/16, gap:32)
+ *         - Header area (Frame 2095586360, gap:16, items:center)
+ *           - Paperclip decoration (Group 58, absolute)
+ *           - "Payment\nSuccesful" (20px Regular, #FFFFFF / #FF9A6D span)
+ *           - PAID stamp (Group 58, absolute)
+ *         - Divider bar (268x5, bg:#1A1A1A)
+ *         - Arrow icon
+ *       - Table rows (each: hash icon 16x16 + label 12px #878787 | value 12px #CBCBCB)
+ *         - Amount paid / Rs 32,500
+ *         - Date / 4 Nov 2026
+ *         - Method / UPI (joel@oksbi)
+ *         - Transaction ID / SEC12345678
+ *       - Cashback note "Pay by the 7th..." (12px #DDDDDD, center)
+ *       - Divider (Vector, stroke #4D4D4D)
+ *       - Circle cutouts (Ellipse, 14x14)
+ *       - Payable Rent row (label 12px #878787 | value 14px SemiBold #DDDDDD)
+ *     - Footer (Frame 2095586363, x:40, y:688, column, gap:16)
+ *       - PrimaryButton "Download Receipt" (14px Medium #FFFFFF)
+ *       - "Contact Support" (12px Regular #A9A9A9, center)
+ *
+ * Key Figma Typography Specs:
+ * - "Payment Succesful": 20px/32 Regular, "Payment"=#FFFFFF, "Succesful"=#FF9A6D
+ * - Receipt labels: 12px/20 Regular #878787
+ * - Receipt values: 12px/20 Regular #CBCBCB
+ * - Hash symbol (#): 12px/20 Regular #FF9A6D (same component as pay rent screen)
+ * - Cashback note: 12px/20 Regular #DDDDDD
+ * - Payable Rent value: 14px/20 SemiBold #DDDDDD
+ * - Download Receipt: 14px/20 Medium #FFFFFF
+ * - Contact Support: 12px/20 Regular #A9A9A9
+ * - PAID stamp text: ~13.5px ExtraBold #06C270, uppercase
  */
 
 import React, { useCallback, useMemo } from 'react';
@@ -18,100 +49,138 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Share,
-  Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Circle, Text as SvgText, G } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 
-import { Screen, Text } from '@/src/components';
-import { usePaymentHistory, useGenerateReceipt } from '@/src/hooks';
-import { colors, spacing, radius, gradients, semanticColors } from '@/src/theme';
-import type { PaymentHistoryItem } from '@/src/services/api/payments';
+import { Screen, Text, PrimaryButton } from '@/src/components';
+import { usePaymentHistory, useGenerateReceipt } from '@/src/hooks/usePayments';
 
-// Design System Colors - from 243-6731 Figma analysis
-const RECEIPT_COLORS = {
-  background: '#131313',                 // black.700
-  cardBackground: '#1A1A1A',             // black.600 - Frame 2095586454
-  headerBg: '#202020',                   // black.500 - Frame 1686557229
-  cardDark: '#202020',                   // black.500
-  accentOrange: '#FF9A6D',               // brand.500 - SELECTED
-  textPrimary: '#FFFFFF',                // white
-  textSecondary: '#CBCBCB',              // neutral.300 - Hi, Rishabh
-  textMuted: '#DDDDDD',                  // neutral.200 - Figma cashback note text
-  labelText: '#878787',                  // neutral.600 - Figma receipt labels (Amount paid, Date, etc.)
-  amountText: '#CBCBCB',                 // neutral.300 - Figma receipt values (₹ 32,500, dates, etc.)
-  hintText: '#BABABA',                   // neutral.400 - due notice
-  payingWith: '#A6A6A6',                 // black.200 - Paying with
-  success: '#70BF73',                    // success.default
-  successDark: '#27803B',                // success.dark - path140
-  divider: '#4D4D4D',                    // black.400
-  paperclip: '#4D4D4D',                  // black.400
-  stampBorder: '#27803B',                // success.dark
-  stampText: '#70BF73',                  // success.default
-  hashTag: '#FF9A6D',                    // brand.500
-  avatarBg: '#FFCC8A',                   // brand.300 - Ellipse 8
-  brandOrange: '#F06321',                // brand.700 - path160
-  brandOrangeDark: '#E9661C',            // brand.800 - path144
-  errorDark: '#AE282E',                  // error.dark - path162
+// ===========================================
+// FIGMA EXTRACTED DESIGN TOKENS (41-9563)
+// ===========================================
+const FIGMA_COLORS = {
+  background: '#131313',          // black.700
+  cardBody: '#202020',            // black.500 - receipt card body
+  dividerBar: '#1A1A1A',          // black.600 - horizontal bar
+  textPrimary: '#FFFFFF',         // white
+  successfulText: '#FF9A6D',      // brand.500 - "Succesful" span
+  hashSymbol: '#FF9A6D',          // brand.500 - # icon
+  labelText: '#878787',           // neutral.600 - receipt row labels
+  valueText: '#CBCBCB',           // neutral.300 - receipt row values
+  cashbackNote: '#DDDDDD',        // neutral.200 - cashback note text
+  payableValue: '#DDDDDD',        // neutral.200 - payable rent value
+  tableDivider: '#4D4D4D',        // black.400 - table line separators
+  circleCutout: '#131313',        // same as background
+  paperclip: '#4D4D4D',           // black.400 - paperclip strokes
+  stampBorder: '#27803B',          // success.dark - PAID stamp circles
+  stampText: '#06C270',            // success.approved - PAID stamp text & stars
+  footerText: '#A9A9A9',          // neutral.500 - "Contact Support"
 } as const;
 
-// Paperclip SVG component
-const PaperclipIcon = () => (
-  <Svg width={32} height={64} viewBox="0 0 32 64" fill="none">
+const FIGMA_SPACING = {
+  topPaddingH: 40,                // top section paddingHorizontal
+  bodyGap: 40,                    // main body column gap
+  cardPaddingV: 24,               // card vertical padding
+  cardPaddingH: 16,               // card horizontal padding
+  cardInnerGap: 32,               // gap between card sections
+  tableRowPaddingH: 24,           // table row horizontal inset
+  footerPaddingH: 40,             // footer paddingHorizontal
+  footerGap: 16,                  // footer column gap
+  breakdownCardWidth: 270,        // receipt card width
+} as const;
+
+// ===========================================
+// SVG ICON COMPONENTS
+// ===========================================
+
+const BackArrowIcon = () => (
+  <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
     <Path
-      d="M16 0C9.373 0 4 5.373 4 12V44C4 50.627 9.373 56 16 56C22.627 56 28 50.627 28 44V20"
-      stroke={RECEIPT_COLORS.paperclip}
-      strokeWidth={2}
+      d="M25.3333 16H6.66667"
+      stroke={FIGMA_COLORS.textPrimary}
+      strokeWidth={2.667}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M6.66667 16L14.6667 24"
+      stroke={FIGMA_COLORS.textPrimary}
+      strokeWidth={2.667}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M6.66667 16L14.6667 8"
+      stroke={FIGMA_COLORS.textPrimary}
+      strokeWidth={2.667}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+/** Hash icon matching Figma (16x16, brand.500 fill) */
+const HashIcon = () => (
+  <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+    <Path
+      d="M5.52285 9.33333L5.80313 6.66667L3 6.66667V5.33333L5.94327 5.33333L6.29362 2H7.63427L7.28393 5.33333L9.94327 5.33333L10.2936 2H11.6343L11.2839 5.33333L13.6667 5.33333V6.66667L11.1438 6.66667L10.8635 9.33333H13.6667V10.6667L10.7234 10.6667L10.3731 14H9.0324L9.38273 10.6667L6.72339 10.6667L6.37305 14H5.03237L5.38271 10.6667H3V9.33333H5.52285ZM6.86353 9.33333L9.52287 9.33333L9.80313 6.66667L7.1438 6.66667L6.86353 9.33333Z"
+      fill={FIGMA_COLORS.hashSymbol}
+    />
+  </Svg>
+);
+
+/** Paperclip SVG matching Figma Group 58 */
+const PaperclipIcon = () => (
+  <Svg width={21} height={35} viewBox="0 0 21 35" fill="none">
+    <Path
+      d="M10.25 0C4.5 0 0 4.5 0 10.25V26.75C0 32.5 4.5 35 10.25 35"
+      stroke={FIGMA_COLORS.paperclip}
+      strokeWidth={1.5}
       fill="none"
     />
     <Path
-      d="M16 8C13.791 8 12 9.791 12 12V44C12 46.209 13.791 48 16 48C18.209 48 20 46.209 20 44V16"
-      stroke={RECEIPT_COLORS.paperclip}
-      strokeWidth={2}
+      d="M10.25 5C7.5 5 5 7.5 5 10.25V26.75C5 29.5 7.5 32 10.25 32"
+      stroke={FIGMA_COLORS.paperclip}
+      strokeWidth={1.5}
       fill="none"
     />
   </Svg>
 );
 
-// PAID Stamp SVG component
+/** PAID stamp matching Figma: dashed outer circle, inner circle, stars, PAID text */
 const PaidStamp = () => (
   <Svg width={72} height={72} viewBox="0 0 72 72" fill="none">
-    {/* Outer circle with dashed border */}
     <Circle
       cx="36"
       cy="36"
       r="34"
-      stroke={RECEIPT_COLORS.stampBorder}
+      stroke={FIGMA_COLORS.stampBorder}
       strokeWidth="2"
       strokeDasharray="4 4"
       fill="none"
     />
-    {/* Inner circle */}
     <Circle
       cx="36"
       cy="36"
       r="28"
-      stroke={RECEIPT_COLORS.stampBorder}
+      stroke={FIGMA_COLORS.stampBorder}
       strokeWidth="1"
       fill="none"
     />
-    {/* Stars */}
-    <G fill={RECEIPT_COLORS.stampText}>
-      <Circle cx="24" cy="24" r="2" />
-      <Circle cx="36" cy="20" r="2" />
-      <Circle cx="48" cy="24" r="2" />
+    <G fill={FIGMA_COLORS.stampText}>
+      <Circle cx="24" cy="28" r="2" />
+      <Circle cx="36" cy="24" r="2" />
+      <Circle cx="48" cy="28" r="2" />
     </G>
-    {/* PAID text */}
     <SvgText
       x="36"
-      y="42"
-      fill={RECEIPT_COLORS.stampText}
-      fontSize="14"
-      fontWeight="bold"
+      y="46"
+      fill={FIGMA_COLORS.stampText}
+      fontSize="13.5"
+      fontWeight="800"
       textAnchor="middle"
     >
       PAID
@@ -119,39 +188,42 @@ const PaidStamp = () => (
   </Svg>
 );
 
-// Receipt row with # label
-interface ReceiptRowProps {
+// ===========================================
+// SUB-COMPONENTS
+// ===========================================
+
+/** Receipt row with hash icon label */
+function ReceiptRow({ label, value, valueColor, bold = false }: {
   label: string;
   value: string;
   valueColor?: string;
-  isBold?: boolean;
-}
-
-function ReceiptRow({ label, value, valueColor = RECEIPT_COLORS.textPrimary, isBold = false }: ReceiptRowProps) {
+  bold?: boolean;
+}) {
   return (
     <View style={styles.receiptRow}>
       <View style={styles.receiptLabelContainer}>
-        <Text style={styles.hashSymbol}>#</Text>
+        <HashIcon />
         <Text style={styles.receiptLabel}>{label}</Text>
       </View>
-      <Text style={[styles.receiptValue, isBold && styles.receiptValueBold, { color: valueColor }]}>
+      <Text style={[
+        styles.receiptValue,
+        valueColor ? { color: valueColor } : undefined,
+        bold && styles.receiptValueBold,
+      ]}>
         {value}
       </Text>
     </View>
   );
 }
 
-// Dashed divider component
-function DashedDivider() {
-  return (
-    <View style={styles.dashedDivider}>
-      {Array.from({ length: 30 }).map((_, i) => (
-        <View key={i} style={styles.dash} />
-      ))}
-    </View>
-  );
+/** Thin horizontal divider line */
+function TableDivider() {
+  return <View style={styles.tableDivider} />;
 }
 
+// ===========================================
+// MAIN COMPONENT
+// ===========================================
 export default function TransactionDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -175,10 +247,8 @@ export default function TransactionDetailScreen() {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Generate receipt via edge function -- returns ReceiptData
     generateReceiptMutation.mutate(transaction.id, {
       onSuccess: (receiptData) => {
-        // Share the receipt details since edge function returns structured data
         const message =
           `Receipt #${receiptData.receiptNumber}\n` +
           `Amount: ${formatRupees(receiptData.payment.amount)}\n` +
@@ -193,28 +263,6 @@ export default function TransactionDetailScreen() {
     });
   }, [transaction, generateReceiptMutation]);
 
-  const handleShareReceipt = useCallback(async () => {
-    if (!transaction) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Use rupee amounts (edge function already converts from paise)
-    const amount = formatRupees(transaction.amount);
-    const date = formatDate(transaction.created_at);
-    const month = formatRentMonth(transaction.rent_month);
-
-    const message = `Payment Receipt\n\n${month}\nAmount: ${amount}\nDate: ${date}\nStatus: ${transaction.status.toUpperCase()}\n\nPaid via Flent Secured`;
-
-    try {
-      await Share.share({
-        message,
-        title: 'Payment Receipt',
-      });
-    } catch {
-      // User cancelled share
-    }
-  }, [transaction]);
-
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push('/(profile)/help' as never);
@@ -224,10 +272,19 @@ export default function TransactionDetailScreen() {
   if (isLoading || !transaction) {
     return (
       <Screen testID="transaction-detail-loading">
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-          <Header onBack={handleBack} />
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={RECEIPT_COLORS.accentOrange} />
+        <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <BackArrowIcon />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.loadingInner}>
+            <ActivityIndicator size="large" color={FIGMA_COLORS.successfulText} />
           </View>
         </View>
       </Screen>
@@ -239,36 +296,48 @@ export default function TransactionDetailScreen() {
   const formattedDate = formatDate(transaction.created_at);
   const paymentMethod = formatPaymentMethod(transaction.payment_method);
   const transactionId = `SEC${transaction.id.slice(0, 8).toUpperCase()}`;
-  // net_amount is already computed by edge function (amount - cashback_applied)
   const totalPayable = formatRupees(transaction.net_amount + transaction.pg_fee);
 
   return (
-    <Screen testID="transaction-detail-screen">
+    <Screen testID="transaction-detail-screen" padded={false}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top, paddingBottom: insets.bottom + spacing.xl },
+          { paddingBottom: insets.bottom + 32 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <Header onBack={handleBack} />
+        {/* === BACK BUTTON === */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            testID="back-button"
+          >
+            <BackArrowIcon />
+          </TouchableOpacity>
+        </View>
 
-        {/* Receipt Card */}
-        <View style={styles.receiptContainer}>
-          {/* Paperclip decoration */}
+        {/* === RECEIPT CARD === */}
+        {/* Figma: Frame 2095586361 + Frame 1686557240 */}
+        <View style={styles.receiptCardOuter}>
+          {/* Paperclip decoration - absolute positioned */}
           <View style={styles.paperclipContainer}>
             <PaperclipIcon />
           </View>
 
-          {/* Receipt card */}
+          {/* Card body - bg:#202020, radius:12 */}
           <View style={styles.receiptCard}>
-            {/* Success header with stamp */}
-            <View style={styles.successHeader}>
-              <View style={styles.successTextContainer}>
-                <Text style={styles.paymentLabel}>Payment</Text>
-                <Text style={styles.successText}>Succesful</Text>
+            {/* Header: Payment + Succesful + PAID stamp */}
+            <View style={styles.receiptHeader}>
+              <View style={styles.headerTextContainer}>
+                {/* "Payment\nSuccesful" - 20px Regular */}
+                {/* "Payment" = #FFFFFF, "Succesful" = #FF9A6D (span start:8 end:17) */}
+                <Text style={styles.paymentText}>Payment</Text>
+                <Text style={styles.successfulText}>Succesful</Text>
               </View>
               {isPaid && (
                 <View style={styles.stampContainer}>
@@ -278,10 +347,13 @@ export default function TransactionDetailScreen() {
             </View>
 
             {/* Receipt rows */}
-            <View style={styles.receiptContent}>
+            <View style={styles.receiptRows}>
               <ReceiptRow label="Amount paid" value={formattedAmount} />
+              <TableDivider />
               <ReceiptRow label="Date" value={formattedDate} />
+              <TableDivider />
               <ReceiptRow label="Method" value={paymentMethod} />
+              <TableDivider />
               <ReceiptRow label="Transaction ID" value={transactionId} />
             </View>
 
@@ -292,79 +364,55 @@ export default function TransactionDetailScreen() {
               </Text>
             </View>
 
-            <DashedDivider />
+            {/* Final divider with circle cutouts */}
+            <TableDivider />
+          </View>
 
-            {/* Total payable */}
-            <View style={styles.totalSection}>
-              <ReceiptRow label="Payable Rent" value={totalPayable} isBold />
-            </View>
+          {/* Circle cutouts at divider level */}
+          <View style={styles.circleCutoutLeft} />
+          <View style={styles.circleCutoutRight} />
+
+          {/* Payable Rent row - below the cutout divider */}
+          <View style={styles.payableSection}>
+            <ReceiptRow
+              label="Payable Rent"
+              value={totalPayable}
+              valueColor={FIGMA_COLORS.payableValue}
+              bold
+            />
           </View>
         </View>
 
-        {/* Download Receipt Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.downloadButton}
+        {/* === FOOTER: Download Receipt + Contact Support === */}
+        <View style={styles.footer}>
+          <PrimaryButton
+            title={generateReceiptMutation.isPending ? 'Generating...' : 'Download Receipt'}
             onPress={handleDownloadReceipt}
             disabled={generateReceiptMutation.isPending}
+            testID="download-receipt-button"
+          />
+          <TouchableOpacity
+            style={styles.supportLink}
+            onPress={handleContactSupport}
             accessibilityRole="button"
-            accessibilityLabel="Download receipt"
+            accessibilityLabel="Contact support"
+            testID="contact-support-button"
           >
-            <LinearGradient
-              colors={gradients.button.colors as unknown as readonly [string, string, ...string[]]}
-              locations={gradients.button.locations as unknown as readonly [number, number, ...number[]]}
-              style={styles.downloadButtonGradient}
-            >
-              <Text style={styles.downloadButtonText}>
-                {generateReceiptMutation.isPending ? 'Generating...' : 'Download Receipt'}
-              </Text>
-            </LinearGradient>
+            <Text style={styles.supportLinkText}>Contact Support</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Contact Support Link */}
-        <TouchableOpacity
-          style={styles.supportLink}
-          onPress={handleContactSupport}
-          accessibilityRole="button"
-          accessibilityLabel="Contact support"
-        >
-          <Text style={styles.supportLinkText}>Contact Support</Text>
-        </TouchableOpacity>
       </ScrollView>
     </Screen>
   );
 }
 
-// Header Component
-interface HeaderProps {
-  onBack: () => void;
-}
+// ===========================================
+// HELPER FUNCTIONS
+// ===========================================
 
-function Header({ onBack }: HeaderProps) {
-  return (
-    <View style={styles.header}>
-      <TouchableOpacity
-        onPress={onBack}
-        style={styles.backButton}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <Ionicons name="arrow-back" size={24} color={RECEIPT_COLORS.textPrimary} />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// Helper functions
-function formatAmount(paise: number): string {
-  const rupees = paise / 100;
-  return `₹ ${rupees.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-/** Format a rupee amount (already in rupees, not paise) with currency symbol */
+/** Format rupee amount with currency symbol */
 function formatRupees(rupees: number): string {
-  return `₹ ${rupees.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return `\u20B9  ${rupees.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function formatDate(dateString: string): string {
@@ -374,13 +422,6 @@ function formatDate(dateString: string): string {
     month: 'short',
     year: 'numeric',
   });
-}
-
-function formatRentMonth(rentMonth: string): string {
-  if (!rentMonth) return 'Rent Payment';
-  const [year, month] = rentMonth.split('-');
-  const date = new Date(parseInt(year), parseInt(month) - 1);
-  return `${date.toLocaleDateString('en-IN', { month: 'long' })} ${year}`;
 }
 
 function formatPaymentMethod(method: string | null): string {
@@ -399,165 +440,208 @@ function formatPaymentMethod(method: string | null): string {
   }
 }
 
+// ===========================================
+// STYLES - Exact Figma Values
+// ===========================================
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: RECEIPT_COLORS.background,
-  },
   scrollView: {
     flex: 1,
-    backgroundColor: RECEIPT_COLORS.background,
+    backgroundColor: FIGMA_COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-  },
-  header: {
-    paddingVertical: spacing.md,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
   },
   loadingContainer: {
+    flex: 1,
+    backgroundColor: FIGMA_COLORS.background,
+  },
+  loadingInner: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  receiptContainer: {
-    position: 'relative',
-    marginTop: spacing.xl,
+
+  // === HEADER ===
+  // Figma: Frame 2095586345, paddingHorizontal:40
+  headerRow: {
+    paddingHorizontal: FIGMA_SPACING.topPaddingH,  // 40
   },
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // === RECEIPT CARD ===
+  // Figma: Frame 2095586361, x:61, width:270
+  receiptCardOuter: {
+    alignSelf: 'center',
+    width: FIGMA_SPACING.breakdownCardWidth, // 270
+    marginTop: 32,
+    position: 'relative',
+  },
+
+  // Paperclip - Figma: Group 58, absolute position
   paperclipContainer: {
     position: 'absolute',
-    top: -24,
-    left: 24,
+    top: -8,
+    left: 16,
     zIndex: 1,
   },
+
+  // Card body - Figma: Frame 1686557240
+  // bg: #202020, radius: 12, padding: 24/16, gap: 32
   receiptCard: {
-    backgroundColor: RECEIPT_COLORS.cardBackground,
+    backgroundColor: FIGMA_COLORS.cardBody,
     borderRadius: 12,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    paddingTop: FIGMA_SPACING.cardPaddingV,        // 24
+    paddingBottom: FIGMA_SPACING.cardPaddingV,      // 24
+    paddingHorizontal: FIGMA_SPACING.cardPaddingH,  // 16
   },
-  successHeader: {
+
+  // Receipt header - "Payment\nSuccesful" + PAID stamp
+  // Figma: row, space-between, align flex-start
+  receiptHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: spacing.xl,
+    marginBottom: 24,
+    paddingHorizontal: 8,
   },
-  successTextContainer: {
+  headerTextContainer: {
     flex: 1,
   },
-  paymentLabel: {
+  // "Payment" - Figma: 20px/32 Regular #FFFFFF, letterSpacing:0
+  paymentText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20,     // Figma: "Payment Succesful" = 20px (was 28)
-    lineHeight: 32,   // Figma: lineHeightPx = 32 (was 40)
-    color: RECEIPT_COLORS.textPrimary,
-    letterSpacing: 0,  // Figma: letterSpacing = 0 (was -1)
+    fontSize: 20,
+    lineHeight: 32,
+    letterSpacing: 0,
+    color: FIGMA_COLORS.textPrimary,
   },
-  successText: {
+  // "Succesful" - Figma: 20px/32 Regular #FF9A6D (span override)
+  successfulText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20,     // Figma: 20px (was 28)
-    lineHeight: 32,   // Figma: 32 (was 40)
-    color: RECEIPT_COLORS.textPrimary,  // Figma: base fill #FFFFFF, no override applied (was green)
-    letterSpacing: 0,  // Figma: 0 (was -1)
+    fontSize: 20,
+    lineHeight: 32,
+    letterSpacing: 0,
+    color: FIGMA_COLORS.successfulText,
   },
+  // PAID stamp
   stampContainer: {
-    marginTop: -8,
+    marginTop: -4,
   },
-  receiptContent: {
-    gap: spacing.md,
+
+  // Receipt rows container
+  receiptRows: {
+    gap: 0,
   },
+
+  // Single receipt row - Figma: row, space-between, align center
   receiptRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: FIGMA_SPACING.tableRowPaddingH, // 24
   },
   receiptLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 4,
   },
-  hashSymbol: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,     // bodySm
-    lineHeight: 20,
-    color: RECEIPT_COLORS.hashTag,  // brand.500 #FF9A6D
-  },
+  // Label - Figma: 12px/20 Regular #878787
   receiptLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,     // bodyXs per Figma
-    lineHeight: 20,
-    color: RECEIPT_COLORS.labelText,  // neutral.500 #A9A9A9
-  },
-  receiptValue: {
-    fontFamily: 'PlusJakartaSans-Regular',  // Figma: fontWeight 400 (Regular)
     fontSize: 12,
     lineHeight: 20,
-    color: RECEIPT_COLORS.amountText,  // neutral.300 #CBCBCB per Figma
+    letterSpacing: 0,
+    color: FIGMA_COLORS.labelText,
   },
+  // Value - Figma: 12px/20 Regular #CBCBCB
+  receiptValue: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    letterSpacing: 0,
+    color: FIGMA_COLORS.valueText,
+  },
+  // Bold value (Payable Rent) - Figma: 14px/20 SemiBold #DDDDDD
   receiptValueBold: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,     // Figma: Payable Rent value = 14px (was 16)
-    lineHeight: 20,   // Figma: lineHeight 20
-    color: '#DDDDDD', // Figma: Payable Rent value = #DDDDDD
+    fontSize: 14,
+    color: FIGMA_COLORS.payableValue,
   },
+
+  // Cashback note - Figma: 12px/20 Regular #DDDDDD, center
   cashbackNote: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   cashbackNoteText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: RECEIPT_COLORS.textMuted,
+    letterSpacing: 0,
+    color: FIGMA_COLORS.cashbackNote,
+    textAlign: 'center',
   },
-  dashedDivider: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: spacing.md,
+
+  // Table divider - Figma: Vector, stroke #4D4D4D, weight 0.25
+  tableDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: FIGMA_COLORS.tableDivider,
+    marginHorizontal: FIGMA_SPACING.tableRowPaddingH, // 24 inset
   },
-  dash: {
-    width: 8,
-    height: 1,
-    backgroundColor: RECEIPT_COLORS.divider,
+
+  // Circle cutouts - Figma: Ellipse 14x14, bg:#131313
+  circleCutoutLeft: {
+    position: 'absolute',
+    left: -7,
+    bottom: 68,     // positioned near the final divider
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: FIGMA_COLORS.circleCutout,
   },
-  totalSection: {
-    paddingTop: spacing.sm,
+  circleCutoutRight: {
+    position: 'absolute',
+    right: -7,
+    bottom: 68,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: FIGMA_COLORS.circleCutout,
   },
-  buttonContainer: {
-    marginTop: spacing.xxl,
+
+  // Payable Rent section - below the circle cutout divider
+  payableSection: {
+    backgroundColor: FIGMA_COLORS.cardBody,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    paddingBottom: 8,
   },
-  downloadButton: {
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: RECEIPT_COLORS.accentOrange,
-  },
-  downloadButtonGradient: {
-    paddingVertical: 16,
+
+  // === FOOTER ===
+  // Figma: Frame 2095586363, paddingHorizontal:40, column, gap:16
+  footer: {
+    paddingHorizontal: FIGMA_SPACING.footerPaddingH,  // 40
+    marginTop: 40,
+    gap: FIGMA_SPACING.footerGap,                       // 16
     alignItems: 'center',
   },
-  downloadButtonText: {
-    fontFamily: 'PlusJakartaSans-Medium',  // Figma: fontWeight 500 (was SemiBold/600)
-    fontSize: 14,     // Figma: 14 (was 16)
-    lineHeight: 20,   // Figma: 20 (was 24)
-    color: RECEIPT_COLORS.textPrimary,
-  },
+
+  // Contact Support link - Figma: 12px/20 Regular #A9A9A9, center
   supportLink: {
-    marginTop: spacing.lg,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: 8,
   },
   supportLinkText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,     // Figma: Contact Support = 12px (was 14)
+    fontSize: 12,
     lineHeight: 20,
-    color: '#A9A9A9',  // Figma: Contact Support = #A9A9A9 (was #CBCBCB)
+    letterSpacing: 0,
+    color: FIGMA_COLORS.footerText,
+    textAlign: 'center',
   },
 });

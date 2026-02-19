@@ -38,87 +38,80 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
     >
       <RCTScrollView
         contentContainerStyle={
-          [
-            {
-              "paddingHorizontal": 48,
-            },
-            {
-              "paddingBottom": 82,
-              "paddingTop": 63,
-            },
-          ]
+          {
+            "paddingBottom": 48,
+          }
         }
         showsVerticalScrollIndicator={false}
         style={
           {
-            "backgroundColor": "#131313",
             "flex": 1,
           }
         }
       >
         <View>
           <View
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
-            accessibilityState={
-              {
-                "busy": undefined,
-                "checked": undefined,
-                "disabled": undefined,
-                "expanded": undefined,
-                "selected": undefined,
-              }
-            }
-            accessibilityValue={
-              {
-                "max": undefined,
-                "min": undefined,
-                "now": undefined,
-                "text": undefined,
-              }
-            }
-            accessible={true}
-            collapsable={false}
-            focusable={true}
-            hitSlop={
-              {
-                "bottom": 12,
-                "left": 12,
-                "right": 12,
-                "top": 12,
-              }
-            }
-            onClick={[Function]}
-            onResponderGrant={[Function]}
-            onResponderMove={[Function]}
-            onResponderRelease={[Function]}
-            onResponderTerminate={[Function]}
-            onResponderTerminationRequest={[Function]}
-            onStartShouldSetResponder={[Function]}
             style={
               {
-                "alignItems": "flex-start",
-                "height": 32,
-                "justifyContent": "center",
-                "opacity": 1,
-                "width": 32,
+                "gap": 48,
+                "paddingHorizontal": 48,
               }
             }
           >
             <View
-              color="#FFFFFF"
-              name="arrow-back"
-              size={24}
-            />
-          </View>
-          <View
-            style={
-              {
-                "marginTop": 48,
-                "width": 297,
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": undefined,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
               }
-            }
-          >
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              hitSlop={
+                {
+                  "bottom": 12,
+                  "left": 12,
+                  "right": 12,
+                  "top": 12,
+                }
+              }
+              onClick={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                {
+                  "alignItems": "flex-start",
+                  "height": 32,
+                  "justifyContent": "center",
+                  "opacity": 1,
+                  "width": 32,
+                }
+              }
+            >
+              <View
+                color="#FFFFFF"
+                name="arrow-back"
+                size={24}
+              />
+            </View>
             <Text
               style={
                 [
@@ -126,7 +119,6 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
                     "color": "#FFFFFF",
                     "fontFamily": "PlusJakartaSans-Regular",
                     "fontSize": 16,
-                    "fontWeight": "400",
                     "letterSpacing": 0,
                     "lineHeight": 24,
                     "textAlign": "left",
@@ -136,6 +128,7 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
                     "fontSize": 48,
                     "letterSpacing": -2,
                     "lineHeight": 64,
+                    "maxWidth": 297,
                   },
                 ]
               }
@@ -143,21 +136,9 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
               <Text
                 style={
                   [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
+                    undefined,
                     {
                       "color": "#A9A9A9",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 48,
-                      "letterSpacing": -2,
-                      "lineHeight": 64,
                     },
                   ]
                 }
@@ -167,21 +148,9 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
               <Text
                 style={
                   [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
+                    undefined,
                     {
                       "color": "#FF9A6D",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 48,
-                      "letterSpacing": -2,
-                      "lineHeight": 64,
                     },
                   ]
                 }
@@ -189,446 +158,711 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
                 agreement
               </Text>
             </Text>
-          </View>
-          <View
-            style={
-              {
-                "gap": 16,
-                "marginTop": 48,
-              }
-            }
-          >
             <View
               style={
                 {
-                  "gap": 4,
+                  "gap": 16,
                 }
               }
             >
-              <Text
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                    "justifyContent": "space-between",
+                  }
                 }
               >
-                Agreement ID
-              </Text>
-              <Text
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="document-text-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    Agreement ID
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  KIA 123456789
+                </Text>
+              </View>
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
+                  {
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.25,
+                  }
+                }
+              />
+              <View
+                style={
+                  {
+                    "flexDirection": "column",
+                    "gap": 4,
+                  }
                 }
               >
-                KIA 123456789
-              </Text>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 4,
-                }
-              }
-            >
-              <Text
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="location-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    Property Name
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Prestige Pinestripe, Bommanahalli, Bengaluru 560036
+                </Text>
+              </View>
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
+                  {
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.25,
+                  }
+                }
+              />
+              <View
+                style={
+                  {
+                    "flexDirection": "column",
+                    "gap": 4,
+                  }
                 }
               >
-                Property Name
-              </Text>
-              <Text
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="people-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    Tenant(s)
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Rahul Joshi, Ashish Shakya
+                </Text>
+              </View>
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
+                  {
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.25,
+                  }
+                }
+              />
+              <View
+                style={
+                  {
+                    "flexDirection": "column",
+                    "gap": 4,
+                  }
                 }
               >
-                Prestige Pinestripe, Bommanahalli, Bengaluru 560036
-              </Text>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 4,
-                }
-              }
-            >
-              <Text
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="person-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    Landlord(s)
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  Tanmay Bhatt
+                </Text>
+              </View>
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
+                  {
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.25,
+                  }
+                }
+              />
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                    "justifyContent": "space-between",
+                  }
                 }
               >
-                Tenant(s)
-              </Text>
-              <Text
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="cash-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    Monthly Rent
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  ₹ 40,000
+                </Text>
+              </View>
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
+                  {
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.25,
+                  }
+                }
+              />
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                    "justifyContent": "space-between",
+                  }
                 }
               >
-                Rahul Joshi, Ashish Shakya
-              </Text>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 4,
-                }
-              }
-            >
-              <Text
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="wallet-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    One-Time Deposit
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  ₹ 1,30,000
+                </Text>
+              </View>
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
+                  {
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.25,
+                  }
+                }
+              />
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                    "justifyContent": "space-between",
+                  }
                 }
               >
-                Landlord(s)
-              </Text>
-              <Text
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="calendar-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    Rent Duration
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  11 Months
+                </Text>
+              </View>
+              <View
                 style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
+                  {
+                    "backgroundColor": "#4D4D4D",
+                    "height": 0.25,
+                  }
+                }
+              />
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "gap": 4,
+                    "justifyContent": "space-between",
+                  }
                 }
               >
-                Tanmay Bhatt
-              </Text>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 4,
-                }
-              }
-            >
-              <Text
-                style={
-                  [
+                <View
+                  style={
                     {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
-                }
-              >
-                Monthly Rent
-              </Text>
-              <Text
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
-                }
-              >
-                ₹ 40,000
-              </Text>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 4,
-                }
-              }
-            >
-              <Text
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
-                }
-              >
-                One-Time Deposit
-              </Text>
-              <Text
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
-                }
-              >
-                ₹ 1,30,000
-              </Text>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 4,
-                }
-              }
-            >
-              <Text
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
-                }
-              >
-                Rent Duration
-              </Text>
-              <Text
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
-                }
-              >
-                11 Months
-              </Text>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 4,
-                }
-              }
-            >
-              <Text
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#878787",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 12,
-                      "lineHeight": 16,
-                    },
-                  ]
-                }
-              >
-                Exit Date
-              </Text>
-              <Text
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "color": "#CBCBCB",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
-                    },
-                  ]
-                }
-              >
-                31 Dec, 2027
-              </Text>
+                      "alignItems": "center",
+                      "flexDirection": "row",
+                      "gap": 4,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "alignItems": "center",
+                        "height": 16,
+                        "justifyContent": "center",
+                        "width": 16,
+                      }
+                    }
+                  >
+                    <View
+                      color="#A6A6A6"
+                      name="time-outline"
+                      size={12}
+                    />
+                  </View>
+                  <Text
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 16,
+                          "letterSpacing": 0,
+                          "lineHeight": 24,
+                          "textAlign": "left",
+                        },
+                        {
+                          "color": "#878787",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 12,
+                          "lineHeight": 20,
+                        },
+                      ]
+                    }
+                  >
+                    Exit Date
+                  </Text>
+                </View>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#CBCBCB",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 14,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  31 Dec, 2027
+                </Text>
+              </View>
             </View>
           </View>
         </View>

@@ -2,71 +2,51 @@
  * Payment Processing Screen
  * Figma Reference: 41-9460 (Processing state)
  *
- * Pixel-perfect implementation:
- * - Receipt-style card with notch cutouts and top perforations (14 holes, 14x14px)
- * - Card width: fixed 270px
- * - PENDING stamp badge (rotated -15deg), color #A9A9A9
- * - Title "Payment" - fontSize 20, lineHeight 32, color #FFFFFF
- * - "Processing" - fontSize 20, lineHeight 32, color #FFFFFF (titleAccent)
- * - Info rows with credit card icons
- * - "Contact Support" button: fixed 313px container, centered
- * - Horizontal padding: 40px
+ * Pixel-perfect implementation per Figma blueprint extraction:
+ * - Screen: 393x852, bg #131313
+ * - Receipt card frame (Frame 2095586361): x:61, y:183, 270x481
+ * - Card bg: #202020 (Rectangle 136)
+ * - Perforated top: 14 ellipses, 14x14px each
+ * - Side notches: 14x14px at vertical center
+ * - PENDING stamp: rotated -15deg, color #C7C9D9, Inter ExtraBold 13.51px
+ * - Title: single text node "Payment\nProcessing" - "Payment" #FFFFFF, "Processing" #FF9A6D (span start:8)
+ *   fontSize 20, lineHeight 32, fontFamily PlusJakartaSans-Regular, textAlign left
+ * - Info rows: container 269px wide, paddingHorizontal 32, gap 24
+ *   Row: direction row, gap 16, alignItems center
+ *   Icon container: 52.5x40 HUG
+ *   Text: fontSize 12, lineHeight 20, color #A9A9A9, FILL width
+ * - Button container (Frame 2095586363): x:40, y:704, width 313, gap 16
+ * - PrimaryButton: "Contact Support" fontSize 14, fontWeight 500
  */
 
 import React, { useEffect, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   Linking,
-  Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Rect } from 'react-native-svg';
 import LottieView from 'lottie-react-native';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { verifyPaymentStatus } from '@/src/services/payment';
-import { colors, spacing } from '@/src/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const FIGMA_SCREEN_WIDTH = 393;
-const FIGMA_CARD_WIDTH = 270;
-const FIGMA_BUTTON_WIDTH = 313;
-const SCALE = SCREEN_WIDTH / FIGMA_SCREEN_WIDTH;
-const CARD_WIDTH = Math.round(FIGMA_CARD_WIDTH * SCALE);
-const BUTTON_WIDTH = Math.round(FIGMA_BUTTON_WIDTH * SCALE);
-
-// Exact Figma colors - from 41-9460 analysis
+// Exact Figma colors - from 41-9460 blueprint extraction
 const FIGMA_COLORS = {
   background: '#131313',           // black.700
   cardBackground: '#202020',       // black.500 - Rectangle 136
-  titleWhite: '#FFFFFF',           // white - Payment Processing
-  titleAccent: '#FF9A6D',           // Figma 41-9460 node 41:9485: #ff9a6d (brand.500 orange)
-  stampColor: '#A9A9A9',           // Figma: pending stamp color (matches PaymentStamp component)
-  infoText: '#A9A9A9',             // neutral.500 - We've received your payment
-  iconColor: '#4D4D4D',            // black.400 - Vector icons
-  paperclipColor: '#4D4D4D',       // black.400 - Vector
-  shimmerColor: '#C7C9D9',         // Shimmer animation color
+  titleWhite: '#FFFFFF',           // white - "Payment"
+  titleAccent: '#FF9A6D',          // brand.500 - "Processing" (span start:8, color #FF9A6D)
+  stampColor: '#C7C9D9',           // Figma: PENDING stamp text color
+  infoText: '#A9A9A9',             // neutral.500 - info row text
+  iconColor: '#4D4D4D',            // black.400 - credit card icon
+  paperclipColor: '#4D4D4D',       // black.400 - paperclip
 };
 
 const MAX_VERIFICATION_ATTEMPTS = 10;
 const VERIFICATION_INTERVAL_MS = 2000;
-
-// Back Arrow Icon
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={FIGMA_COLORS.titleWhite}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 // Paperclip decoration
 const Paperclip = () => (
@@ -90,12 +70,8 @@ const CreditCardIcon = () => (
 );
 
 // Perforation Edge - 14 circular holes at top of receipt card
-const PERFORATION_COUNT = 14;
-const PERFORATION_SIZE = 14; // 14x14px circles
-const PERFORATION_RADIUS = 7; // radius 7
-
 const PerforationEdge = () => {
-  const holes = Array.from({ length: PERFORATION_COUNT }, (_, i) => i);
+  const holes = Array.from({ length: 14 }, (_, i) => i);
   return (
     <View style={styles.perforationContainer}>
       {holes.map((i) => (
@@ -105,7 +81,7 @@ const PerforationEdge = () => {
   );
 };
 
-// PENDING Stamp Component
+// PENDING Stamp Component - Figma: Inter ExtraBold, color #C7C9D9
 const PendingStamp = () => (
   <View style={styles.stampContainer}>
     <View style={styles.stampOuter}>
@@ -130,6 +106,7 @@ interface InfoRowProps {
   text: string;
 }
 
+// Info row - Figma: row direction, gap 16, paddingHorizontal 32
 const InfoRow = ({ text }: InfoRowProps) => (
   <View style={styles.infoRow}>
     <CreditCardIcon />
@@ -139,7 +116,6 @@ const InfoRow = ({ text }: InfoRowProps) => (
 
 export default function ProcessingScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     paymentId?: string;
     amount?: string;
@@ -150,7 +126,6 @@ export default function ProcessingScreen() {
 
   const checkPaymentStatus = useCallback(async () => {
     if (!paymentId) {
-      // Demo mode - simulate processing for 5 seconds then go to success
       const DEMO_DELAY_MS = 5000;
       setTimeout(() => {
         router.replace({
@@ -202,7 +177,6 @@ export default function ProcessingScreen() {
         } else if (status === 'pending' && attempts < MAX_VERIFICATION_ATTEMPTS) {
           setTimeout(pollStatus, VERIFICATION_INTERVAL_MS);
         } else {
-          // Max attempts reached - treat as timeout
           router.replace({
             pathname: '/(payment)/failed',
             params: {
@@ -238,11 +212,6 @@ export default function ProcessingScreen() {
     checkPaymentStatus();
   }, [checkPaymentStatus]);
 
-  const handleBack = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
-
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Linking.openURL('mailto:support@flentsecured.com');
@@ -250,16 +219,7 @@ export default function ProcessingScreen() {
 
   return (
     <Screen testID="processing-screen" padded={false} style={styles.screen}>
-      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <BackArrow />
-        </TouchableOpacity>
-
+      <View style={styles.container}>
         {/* Receipt Card */}
         <View style={styles.receiptContainer}>
           {/* Paperclip decoration */}
@@ -269,7 +229,6 @@ export default function ProcessingScreen() {
 
           {/* Card with notches and perforations */}
           <View style={styles.receiptCard}>
-            {/* Top perforations - 14 circular holes */}
             <PerforationEdge />
 
             {/* Left notch */}
@@ -282,13 +241,13 @@ export default function ProcessingScreen() {
               <PendingStamp />
             </View>
 
-            {/* Title */}
+            {/* Title - Figma 41:9485: "Payment\nProcessing", textAlign left */}
             <View style={styles.titleSection}>
               <Text style={styles.titleWhite}>Payment</Text>
               <Text style={styles.titleAccent}>Processing</Text>
             </View>
 
-            {/* Info Rows */}
+            {/* Info Rows - Figma 41:9486: gap 24, paddingHorizontal 32 */}
             <View style={styles.infoSection}>
               <InfoRow text="We've received your payment request." />
               <InfoRow text="This can take a few minutes depending on your bank." />
@@ -300,15 +259,13 @@ export default function ProcessingScreen() {
         {/* Spacer */}
         <View style={styles.spacer} />
 
-        {/* Contact Support Button - fixed 313px width, centered */}
-        <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 24 }]}>
-          <View style={styles.buttonInner}>
-            <PrimaryButton
-              title="Contact Support"
-              onPress={handleContactSupport}
-              testID="contact-support-button"
-            />
-          </View>
+        {/* Button Container - Figma Frame 2095586363: x:40, y:704, width:313, gap:16 */}
+        <View style={styles.buttonContainer}>
+          <PrimaryButton
+            title="Contact Support"
+            onPress={handleContactSupport}
+            testID="contact-support-button"
+          />
         </View>
       </View>
     </Screen>
@@ -321,27 +278,22 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 40, // Figma 41-9460: 40px horizontal padding
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginBottom: 24,
+    // Figma: button container at x:40, card at x:61
+    paddingHorizontal: 40,
   },
   receiptContainer: {
     position: 'relative',
     alignItems: 'center',
+    marginTop: 12,
   },
   paperclipContainer: {
     position: 'absolute',
     top: -20,
-    left: 24,
+    left: -16,
     zIndex: 10,
   },
   receiptCard: {
-    width: CARD_WIDTH,
+    width: 270,                        // Figma: Frame 2095586361 width: 270
     backgroundColor: FIGMA_COLORS.cardBackground,
     borderRadius: 16,
     padding: 24,
@@ -351,19 +303,18 @@ const styles = StyleSheet.create({
   },
   perforationContainer: {
     position: 'absolute',
-    top: -PERFORATION_RADIUS, // Half above, half below the card edge
-    left: 0,
-    right: 0,
+    top: -7,                           // Half above card edge
+    left: 4,
+    right: 4,
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
+    justifyContent: 'space-between',
     zIndex: 5,
   },
   perforationHole: {
-    width: PERFORATION_SIZE,
-    height: PERFORATION_SIZE,
-    borderRadius: PERFORATION_RADIUS,
-    backgroundColor: FIGMA_COLORS.background, // Punched through to background
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: FIGMA_COLORS.background,
   },
   notch: {
     position: 'absolute',
@@ -412,57 +363,66 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   star: {
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 8,
     color: FIGMA_COLORS.stampColor,
+    textAlign: 'center',
   },
   stampText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 10,
+    fontFamily: 'Inter-ExtraBold',     // Figma: fontPostScriptName Inter-ExtraBold
+    fontSize: 13.51,                   // Figma: fontSize 13.51
+    lineHeight: 16.35,                 // Figma: lineHeightPx 16.35
     color: FIGMA_COLORS.stampColor,
-    letterSpacing: 0.5,
-    marginVertical: 2,
     textAlign: 'center',
     textTransform: 'uppercase',
+    marginVertical: 2,
   },
+  // Title - Figma 41:9485: textAlign left, x:34 inside card
   titleSection: {
     marginBottom: 32,
   },
   titleWhite: {
-    fontFamily: 'PlusJakartaSans-Regular',  // bodyLg per Figma - weight 400
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    lineHeight: 32,    // bodyLg lineHeight
+    lineHeight: 32,
     color: FIGMA_COLORS.titleWhite,
+    textAlign: 'left',
   },
   titleAccent: {
-    fontFamily: 'PlusJakartaSans-Regular',  // bodyLg per Figma - weight 400
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
     lineHeight: 32,
     color: FIGMA_COLORS.titleAccent,
+    textAlign: 'left',
   },
+  // Info section - Figma 41:9486: column, gap 24, width 269
   infoSection: {
     gap: 24,
   },
+  // Info row - Figma 41:9487: row, gap 16, paddingHorizontal 32, alignItems center
   infoRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 16,
+    paddingHorizontal: 8,              // Figma: 32px padding inside 269px, card has 24px padding already
   },
   infoText: {
     flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,     // bodyXs per Figma analysis
+    fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.infoText,  // neutral.500 #A9A9A9
+    color: FIGMA_COLORS.infoText,      // #A9A9A9
+    textAlign: 'left',
   },
   spacer: {
     flex: 1,
   },
+  // Button container - Figma Frame 2095586363: x:40, y:704, width:313, gap:16
   buttonContainer: {
-    paddingTop: 24,
+    width: 313,
+    alignSelf: 'center',
+    gap: 16,
     alignItems: 'center',
-  },
-  buttonInner: {
-    width: BUTTON_WIDTH, // Figma 41-9460: scaled from 313px
+    paddingBottom: 24,
   },
 });

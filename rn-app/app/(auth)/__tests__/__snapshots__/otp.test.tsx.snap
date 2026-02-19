@@ -85,7 +85,10 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
     <View
       style={
         [
-          {},
+          {
+            "alignItems": "center",
+            "gap": 15,
+          },
           {
             "transform": [
               {
@@ -100,8 +103,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
         style={
           {
             "alignItems": "center",
-            "paddingBottom": 15,
-            "paddingTop": 8,
           }
         }
       >
@@ -124,6 +125,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
             "borderTopRightRadius": 22.79,
             "overflow": "hidden",
             "paddingTop": 15.19,
+            "width": "100%",
           }
         }
       >
@@ -132,7 +134,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
             {
               "alignItems": "center",
               "gap": 30.38,
-              "paddingBottom": 24,
+              "paddingTop": 16,
             }
           }
         >
@@ -153,7 +155,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                     "color": "#FFFFFF",
                     "fontFamily": "PlusJakartaSans-Regular",
                     "fontSize": 16,
-                    "fontWeight": "400",
                     "letterSpacing": 0,
                     "lineHeight": 24,
                     "textAlign": "left",
@@ -179,7 +180,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                     "color": "#FFFFFF",
                     "fontFamily": "PlusJakartaSans-Regular",
                     "fontSize": 16,
-                    "fontWeight": "400",
                     "letterSpacing": 0,
                     "lineHeight": 24,
                     "textAlign": "left",
@@ -202,26 +202,11 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
           <View
             style={
               {
-                "gap": 6,
                 "paddingHorizontal": 48,
                 "width": "100%",
               }
             }
           >
-            <Text
-              style={
-                {
-                  "color": "#DDDDDD",
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 14,
-                  "fontWeight": "500",
-                  "lineHeight": 20,
-                  "textAlign": "left",
-                }
-              }
-            >
-              Secure code
-            </Text>
             <View
               style={
                 {
@@ -339,7 +324,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -395,7 +379,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -451,7 +434,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -481,7 +463,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         "color": "#FFFFFF",
                         "fontFamily": "PlusJakartaSans-Regular",
                         "fontSize": 20,
-                        "fontWeight": "400",
                         "letterSpacing": 0,
                         "lineHeight": 32,
                         "textAlign": "left",
@@ -540,7 +521,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -596,7 +576,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",
@@ -652,7 +631,6 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
                             "fontSize": 16,
-                            "fontWeight": "400",
                             "letterSpacing": 0,
                             "lineHeight": 24,
                             "textAlign": "left",

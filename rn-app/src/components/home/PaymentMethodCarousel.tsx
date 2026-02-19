@@ -136,10 +136,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 64, // Figma: paddingHorizontal 64 (aligned with 243:5872)
   },
   label: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 14, // Figma: fontSize 14
     lineHeight: 20, // Figma: lineHeight 20
-    fontWeight: '400', // Figma: fontWeight 400
     color: '#A6A6A6', // Figma: #A6A6A6 (black[200])
   },
   scrollContent: {

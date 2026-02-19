@@ -582,16 +582,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             onAddPayment={onAddPayment}
           />
 
-          {/* Tab Switcher: Recent Payments / Cashbacks
-              Figma 243:3327 (Frame 1686557297): centered tab switcher */}
-          <View style={styles.tabContainer}>
+          {/* Tab Section (Frame 1686557297): wraps Toggle + payment list content
+              Figma 243-2967: gap 48, paddingTop 8, paddingLeft 32, paddingRight 32
+              alignItems CENTER, clipsContent true */}
+          <View style={styles.tabSection}>
             <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
-          </View>
 
-          {/* Tab Content
-              Figma: sub-components (RecentPaymentsList, CashbacksList) handle their own
-              paddingHorizontal: 32 -- DO NOT add parent padding */}
-          <View style={styles.tabContent}>
+            {/* Tab Content - gap 48 separates toggle from content */}
             {activeTab === 'recent_payments' ? (
               recentPayments.length > 0 ? (
                 <RecentPaymentsList
@@ -746,17 +743,15 @@ const styles = StyleSheet.create({
   // NOTE: carouselSection REMOVED - PaymentMethodCarousel (243:5877 Frame 2095586448)
   // handles its own paddingLeft: 64, paddingRight: 32, gap: 16 via scrollContent.
   // Adding parent padding caused double-padding.
-  tabContainer: {
-    // Figma 243:3327 (Frame 1686557297): tab section container
-    paddingHorizontal: 32, // Figma: paddingHorizontal 32 (spacing.xl)
+  // Figma 243-2967 node 243:3119 (Frame 1686557297):
+  // Wraps Toggle + payment/cashback list content together
+  // direction: column, alignItems: center, gap: 48
+  // paddingTop: 8, paddingLeft: 32, paddingRight: 32, clipsContent: true
+  tabSection: {
+    gap: 48, // Figma: itemSpacing 48 between toggle and content
+    paddingTop: 8, // Figma: paddingTop 8
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER
-    paddingTop: 8, // Figma 243:3327: paddingTop 8
-    marginBottom: 24, // Adds to parent gap (24) to match Figma's 48px total gap between sections
-  },
-  tabContent: {
-    flex: 1,
-    // NOTE: paddingHorizontal REMOVED - sub-components (RecentPaymentsList, CashbacksList)
-    // handle their own paddingHorizontal: 32. Adding parent padding caused double-padding.
+    overflow: 'hidden', // Figma: clipsContent true
   },
   emptyStateContainer: {
     flex: 1,

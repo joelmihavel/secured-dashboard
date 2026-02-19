@@ -1,27 +1,27 @@
 /**
  * Onboarding Carousel
- * Figma Nodes: 1-28985, 1-29025, 1-29065
+ * Figma Nodes: 1-28985 (slide 1), 1-29025 (slide 2), 1-29065 (slide 3)
  *
- * PIXEL-PERFECT Figma Values:
+ * PIXEL-PERFECT Figma Values (from blueprint JSONs 2026-02-19):
  * - Background: #131313 (black.700)
- * - Swatch opacity: 16%
- * - Container width: 297px (content width)
- * - Container padding: 48px horizontal
- * - Logo: 26.7px x 32px (Figma: vector_1 scaled)
- * - Progress bar: full width 393px, height 12px
- * - Progress bar background: #4D4D4D (black.400)
- * - Progress bar fill: #CC7B57 (brand.600), width varies per slide
- * - Heading: Plus Jakarta Sans Regular, 48px, line-height 64px, tracking -2px
- * - Slide 1: Gray heading (#A9A9A9), accent "1%" in heading
- * - Slide 2: Gray heading (#A9A9A9), accent line 2
- * - Slide 3: White heading (#FFFFFF), accent line 2
- * - Body: 14px, line-height 20px, color varies (#A6A6A6 or #A9A9A9)
- * - Skip text: 14px, line-height 20px, white, "Skip ->"
- * - Dots: 8x8px each, 4px gap, active #FF9A6D, inactive #202020
+ * - Outer Container (160:2668): column, justifyContent=center, gap=48, paddingTop=80, paddingBottom=64
+ * - Inner Container (160:2669): column, gap=40, paddingHorizontal=48, sizingH=FILL, sizingV=FILL
+ *   Children: Logo Container, Text Container, Login Text (Skip), Dots Frame
+ * - Logo Container: 26.7x32, FIXED sizing
+ * - Text Container: column, gap=16, sizingH=FILL, sizingV=HUG
+ *   - Heading: single text node, 48/64/Regular/-2, with color spans (see per-slide)
+ *   - Body: 14/20/Regular, color varies
+ * - Skip: "Skip →", 14/20/Regular, #FFFFFF, "Skip" underlined (span 0-4)
+ * - Dots: 3x 8x8 ellipses, gap=4, active=#FF9A6D, inactive=#202020
+ *
+ * Heading color spans per slide (from blueprint typography.spans):
+ * - Slide 1: base=#A9A9A9, span[0,13)="Earn 1% back "=#FF9A6D
+ * - Slide 2: base=#A9A9A9, span[11,24)="just cashback"=#FF9A6D (note: double space in content)
+ * - Slide 3: base=#FFFFFF, span[0,4)=#A9A9A9, span[5,13)=#A9A9A9, span[14,26)=#FF9A6D
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, FlatList, ViewToken, TouchableOpacity } from 'react-native';
+import { View, Text as RNText, StyleSheet, Dimensions, FlatList, ViewToken, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
@@ -35,93 +35,88 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
   background: colors.black[700],       // #131313
-  progressBg: colors.black[400],       // #4D4D4D
-  progressFill: colors.brand[600],      // #CC7B57 (Figma fill)
   headingGray: colors.neutral[500],    // #A9A9A9
   headingWhite: colors.white,          // #FFFFFF
-  headingAccent: colors.brand[500],    // #FF9A6D (for "1%" highlight)
+  headingAccent: colors.brand[500],    // #FF9A6D (for accent highlights)
   bodyText: colors.black[200],         // #A6A6A6
   bodyTextAlt: colors.neutral[500],    // #A9A9A9
   skipText: colors.white,              // #FFFFFF
-  dotActive: colors.brand[500],        // #FF9A6D
-  dotInactive: colors.black[500],      // #202020 (Figma: Ellipse 21886/21887 backgroundColor)
 } as const;
 
-// Exact Figma dimensions
-const FIGMA_DIMENSIONS = {
-  contentWidth: 297,                   // Figma: main content width
-  containerPadding: 48,                // (393 - 297) / 2 = 48
-  logoWidth: 26.7,                     // Figma: vector_1 width (scaled)
-  logoHeight: 32,                      // Figma: vector_1 height (scaled)
-  progressBarHeight: 12,               // Figma: rectangle_4/5 height
-  progressBarWidth: 393,               // Figma: full screen width
-  progressFillWidth: 262,              // Figma: rectangle_5 width (progress)
-  headingWidth: 297,                   // Figma: heading width
-  headingHeight: 128,                  // Figma: heading height (2 lines)
-  bodyWidth: 297,                      // Figma: body text width
-  bodyHeight: 40,                      // Figma: body text height
-  skipWidth: 297,                      // Figma: login_Text width
-  dotSize: 8,                          // Figma: ellipse width/height
-  dotGap: 4,                           // Figma: Frame 2095586316 layout.gap = 4
+// Exact Figma layout values from blueprint extraction
+const FIGMA_LAYOUT = {
+  // Outer Container (160:2668): paddingTop=80, paddingBottom=64
+  outerPaddingTop: 80,
+  outerPaddingBottom: 64,
+  // Inner Container (160:2669): gap=40, paddingHorizontal=48
+  innerGap: 40,
+  innerPaddingHorizontal: 48,
+  // Text Container (160:2675): gap=16
+  textContainerGap: 16,
 } as const;
 
-// Exact Figma spacing gaps - CORRECTED from fresh Figma MCP (2026-02-01)
-const FIGMA_GAPS = {
-  progressToLogo: 80,                  // Figma: outer Container (160:2668) paddingTop=80
-  logoToHeading: 40,                   // Logo to heading gap
-  headingToBody: 16,                   // Heading to body gap
-  bodyToSkip: 40,                      // Body to skip gap - Figma: body ends y=739, skip at y=779 (40px gap)
-  skipToDots: 40,                      // Skip to dots gap - Figma: skip ends y=799, dots at y=839 (40px gap)
-  bottomPadding: 64,                   // Bottom padding
-} as const;
+/** A styled segment of heading text with its own color */
+interface HeadingSegment {
+  text: string;
+  color: string;
+}
 
 interface Slide {
   id: string;
-  titleLine1: string;
-  titleLine2: string;
-  titleLine1Color: string;
-  titleLine2Color: string;
+  /** Full heading content as a single string (Figma: single TEXT node) */
+  headingContent: string;
+  /** Colored segments derived from Figma typography.spans */
+  headingSegments: HeadingSegment[];
   description: string;
   descriptionColor: string;
   backgroundShape: BackgroundShapeKey;
 }
 
-// Exact content from Figma screenshots with correct colors
-// Each slide has a unique background shape (silhouette image) from Figma
-// VERIFIED FROM FIGMA MCP SCREENSHOTS + get_design_context (2026-02-08):
-// Slide 1 (1-28985): "Earn 1% back " = #FF9A6D (orange), "on your rent" = #A9A9A9 (gray)
-// Slide 2 (1-29025): "More than " = #A9A9A9 (gray), "just cashback" = #FF9A6D (orange)
-// Slide 3 (1-29065): "Your landlord" = #A9A9A9 (gray), "benefits too" = #FF9A6D (orange)
+// Slide data derived from Figma blueprint typography.spans
+// Each heading is ONE text node in Figma with character-level color spans.
+// Text wraps naturally at 297px width (393 - 2*48 padding).
 const slides: Slide[] = [
   {
+    // Figma 1-28985: "Earn 1% back on your rent"
+    // base color: #A9A9A9, span[0,13) = #FF9A6D
     id: '1',
-    titleLine1: 'Earn 1% back ',   // Note trailing space per Figma
-    titleLine2: 'on your rent',
-    titleLine1Color: FIGMA_COLORS.headingAccent,  // #FF9A6D - orange per Figma MCP screenshot
-    titleLine2Color: FIGMA_COLORS.headingGray,    // #A9A9A9 - gray per Figma MCP screenshot
+    headingContent: 'Earn 1% back on your rent',
+    headingSegments: [
+      { text: 'Earn 1% back ', color: FIGMA_COLORS.headingAccent },  // #FF9A6D (chars 0-12)
+      { text: 'on your rent', color: FIGMA_COLORS.headingGray },     // #A9A9A9 (chars 13-25)
+    ],
     description: 'For every timely payment made via UPI, netbanking or credit cards.',
     descriptionColor: FIGMA_COLORS.bodyText,      // #A6A6A6
-    backgroundShape: 'carousel1',                 // Figma node 1-28985
+    backgroundShape: 'carousel1',
   },
   {
+    // Figma 1-29025: "More than  just cashback" (double space between "than" and "just")
+    // base color: #A9A9A9, span[11,24) = #FF9A6D
     id: '2',
-    titleLine1: 'More than ',      // Note trailing space per Figma
-    titleLine2: 'just cashback',
-    titleLine1Color: FIGMA_COLORS.headingGray,    // #A9A9A9 - gray per Figma MCP screenshot
-    titleLine2Color: FIGMA_COLORS.headingAccent,  // #FF9A6D - orange per Figma MCP screenshot
+    headingContent: 'More than  just cashback',
+    headingSegments: [
+      { text: 'More than ', color: FIGMA_COLORS.headingGray },       // #A9A9A9 (chars 0-10)
+      { text: ' just cashback', color: FIGMA_COLORS.headingAccent }, // #FF9A6D (chars 11-24, includes leading space)
+    ],
     description: 'Keep paying via Secured to unlock exclusive renting benefits over time',
     descriptionColor: FIGMA_COLORS.bodyTextAlt,   // #A9A9A9
-    backgroundShape: 'carousel2',                 // Figma node 1-29025
+    backgroundShape: 'carousel2',
   },
   {
+    // Figma 1-29065: "Your landlord benefits too"
+    // base color: #FFFFFF, span[0,4)=#A9A9A9, span[5,13)=#A9A9A9, span[14,26)=#FF9A6D
     id: '3',
-    titleLine1: 'Your landlord',
-    titleLine2: 'benefits too',
-    titleLine1Color: FIGMA_COLORS.headingGray,    // #A9A9A9 - gray per Figma MCP screenshot
-    titleLine2Color: FIGMA_COLORS.headingAccent,  // #FF9A6D - orange per Figma MCP screenshot
+    headingContent: 'Your landlord benefits too',
+    headingSegments: [
+      { text: 'Your', color: FIGMA_COLORS.headingGray },             // #A9A9A9 (chars 0-3)
+      { text: ' ', color: FIGMA_COLORS.headingGray },                // space between spans
+      { text: 'landlord', color: FIGMA_COLORS.headingGray },         // #A9A9A9 (chars 5-12)
+      { text: ' ', color: FIGMA_COLORS.headingWhite },               // space (char 13, base color)
+      { text: 'benefits too', color: FIGMA_COLORS.headingAccent },   // #FF9A6D (chars 14-25)
+    ],
     description: '3 months of rent payments unlock a free vacancy cover for your landlord',
     descriptionColor: FIGMA_COLORS.bodyTextAlt,   // #A9A9A9
-    backgroundShape: 'carousel3',                 // Figma node 1-29065
+    backgroundShape: 'carousel3',
   },
 ];
 
@@ -163,52 +158,45 @@ export default function CarouselScreen() {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  // Calculate progress bar fill width based on active slide (1/3, 2/3, 3/3)
-  const progressFillWidth = ((activeIndex + 1) / slides.length) * FIGMA_DIMENSIONS.progressBarWidth;
-
   const renderSlide = useCallback(({ item }: { item: Slide }) => (
     <View style={styles.slide}>
-      {/* Content Container - progress bar is rendered OUTSIDE FlatList for fixed positioning */}
-      <View style={styles.contentContainer}>
-        {/* Logo - Figma: 26.7x32 */}
-        <View style={styles.logoContainer}>
+      {/* Outer Container (160:2668): column, justifyContent=center, paddingTop=80, paddingBottom=64 */}
+      <View style={styles.outerContainer}>
+        {/* Inner Container (160:2669): column, gap=40, paddingHorizontal=48, sizingV=FILL */}
+        <View style={styles.innerContainer}>
+          {/* Logo Container (160:2673): 26.7x32, FIXED sizing */}
           <Logo size={32} />
-        </View>
 
-        {/* Text Container */}
-        <View style={styles.textContainer}>
-          {/* Heading - Figma exact layout */}
-          <View style={styles.headingContainer}>
-            <Text style={[styles.heading, { color: item.titleLine1Color }]}>
-              {item.titleLine1}
-            </Text>
-            <Text style={[styles.heading, { color: item.titleLine2Color }]}>
-              {item.titleLine2}
+          {/* Text Container (160:2675): column, gap=16, sizingH=FILL, sizingV=HUG */}
+          <View style={styles.textContainer}>
+            {/* Heading - single text node with colored spans (Figma: natural word wrap at 297px) */}
+            <RNText style={styles.heading}>
+              {item.headingSegments.map((segment, index) => (
+                <RNText key={index} style={{ color: segment.color }}>
+                  {segment.text}
+                </RNText>
+              ))}
+            </RNText>
+
+            {/* Body Text */}
+            <Text style={[styles.bodyText, { color: item.descriptionColor }]}>
+              {item.description}
             </Text>
           </View>
 
-          {/* Body Text */}
-          <Text style={[styles.bodyText, { color: item.descriptionColor }]}>
-            {item.description}
-          </Text>
-        </View>
+          {/* Skip Button (169:3202): "Skip →", "Skip" underlined (span 0-4) */}
+          <TouchableOpacity
+            onPress={handleSkip}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Text style={styles.skipText}>
+              <Text inherit style={styles.skipUnderline}>Skip</Text>
+              {' \u2192'}
+            </Text>
+          </TouchableOpacity>
 
-        {/* Skip Button - Figma: "Skip →" with "Skip" underlined, " →" not */}
-        {/* Fresh from Figma MCP (2026-02-01): decoration-solid underline on "Skip" only */}
-        <TouchableOpacity
-          onPress={handleSkip}
-          style={styles.skipContainer}
-          activeOpacity={0.7}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Text style={styles.skipText}>
-            <Text inherit style={styles.skipUnderline}>Skip</Text>
-            {' →'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Dots - fixed position for all slides */}
-        <View style={styles.dotsContainer}>
+          {/* Dots Frame (160:2678): row, gap=4, 3x 8x8 ellipses */}
           <CarouselDots count={slides.length} activeIndex={activeIndex} />
         </View>
       </View>
@@ -223,15 +211,6 @@ export default function CarouselScreen() {
       {/* Background Pattern - 8% opacity per Figma (opacity-8) */}
       {/* Each carousel slide has a unique Background Shape (silhouette) */}
       <DottedPattern backgroundShape={currentBackgroundShape} />
-
-      {/* Progress Bar - Hidden to match Figma: progress bar frame has visible: false in all 3 slides */}
-      {/* Figma: Rectangle 4 (bg) + Rectangle 5 (fill) exist in design but frame is hidden */}
-      {/* Keeping the code commented out in case product decides to re-enable */}
-      {/* <View style={styles.progressBarContainer}>
-        <View style={styles.progressBarBackground}>
-          <View style={[styles.progressBarFill, { width: progressFillWidth }]} />
-        </View>
-      </View> */}
 
       <FlatList
         ref={flatListRef}
@@ -254,77 +233,54 @@ export default function CarouselScreen() {
 }
 
 const styles = StyleSheet.create({
-  slide: {
-    width: SCREEN_WIDTH,
-    flexGrow: 1,
-  },
-  progressBarContainer: {
-    width: FIGMA_DIMENSIONS.progressBarWidth,
-    zIndex: 10, // Ensure progress bar stays on top
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: FIGMA_DIMENSIONS.progressBarHeight,
-    backgroundColor: FIGMA_COLORS.progressBg, // #4D4D4D
-    // No borderRadius per Figma - Rectangle 4/5 have no cornerRadius
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: FIGMA_COLORS.progressFill, // #CC7B57
-    // No borderRadius per Figma - Rectangle 4/5 have no cornerRadius
-  },
   flatList: {
     flex: 1,
   },
-  contentContainer: {
-    flexGrow: 1,
-    paddingHorizontal: FIGMA_DIMENSIONS.containerPadding, // 48px
-    paddingTop: FIGMA_GAPS.progressToLogo, // 40px gap from progress bar to logo
-    paddingBottom: FIGMA_GAPS.bottomPadding,
-    // Figma Container 160:2669: layout.mode VERTICAL, gap 40
+  slide: {
+    width: SCREEN_WIDTH,
+    flex: 1,
   },
-  logoContainer: {
-    marginBottom: FIGMA_GAPS.logoToHeading,
+  // Outer Container (160:2668): column, justifyContent=center, paddingTop=80, paddingBottom=64, gap=48
+  // width=393 (FIXED), height=765 (FIXED), y=53 from screen top
+  outerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingTop: FIGMA_LAYOUT.outerPaddingTop,      // 80
+    paddingBottom: FIGMA_LAYOUT.outerPaddingBottom,  // 64
   },
+  // Inner Container (160:2669): column, gap=40, paddingHorizontal=48, sizingH=FILL, sizingV=FILL
+  innerContainer: {
+    flex: 1,
+    gap: FIGMA_LAYOUT.innerGap,                      // 40
+    paddingHorizontal: FIGMA_LAYOUT.innerPaddingHorizontal, // 48
+  },
+  // Text Container (160:2675): column, gap=16, sizingH=FILL, sizingV=HUG
   textContainer: {
-    gap: FIGMA_GAPS.headingToBody,
+    gap: FIGMA_LAYOUT.textContainerGap,              // 16
   },
-  headingContainer: {
-    // Lines flow together - no gap (Figma exact)
-  },
+  // Heading: Figma single TEXT node, 48/64/Regular/-2, wraps naturally at container width
+  // Using RNText directly to avoid Text component variant defaults interfering with spans
   heading: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,
     lineHeight: 64,
     letterSpacing: -2,
-    width: FIGMA_DIMENSIONS.headingWidth,
   },
+  // Body: 14/20/Regular
   bodyText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
-    width: FIGMA_DIMENSIONS.bodyWidth,
   },
-  skipContainer: {
-    marginTop: FIGMA_GAPS.bodyToSkip,
-  },
+  // Skip: 14/20/Regular, #FFFFFF
   skipText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
     color: FIGMA_COLORS.skipText,
-    width: FIGMA_DIMENSIONS.skipWidth,
   },
+  // Skip "Skip" underline span (chars 0-4, textDecoration=underline)
   skipUnderline: {
-    // Figma: "Skip" is underlined, " →" is not
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.skipText,
-    textDecorationLine: 'underline',
-  },
-  dotsContainer: {
-    marginTop: FIGMA_GAPS.skipToDots,
+    textDecorationLine: 'underline' as const,
   },
 });
