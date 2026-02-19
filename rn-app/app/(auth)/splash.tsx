@@ -2,20 +2,22 @@
  * Splash Screen (Get Started)
  * Figma Node: 1-28055
  *
- * PIXEL-PERFECT Figma Values:
+ * PIXEL-PERFECT Figma Values (from blueprint 1-28055-blueprint.json):
  * - Background: #131313 (black.700)
- * - Container width: 297px (Figma: main text/button width)
- * - Container padding: 48px horizontal (centered)
- * - Logo: 33.375px x 40px (Figma exact: vector_1)
- * - Heading: Plus Jakarta Sans Regular, 48px, line-height 64px, tracking -2px
- * - Heading gray text: #A9A9A9 (neutral.500) - "Make" and "your rent"
- * - Heading accent text: #FF9A6D (brand.500) - "work for you->"
- * - Body: 14px, line-height 20px, color #A6A6A6 (black.200)
- * - Divider: 24px width, 2px height, #4D4D4D (black.400), radius 200px
- * - Button: 297px width, 56px height, border #FF9A6D, radius 8px
- * - Button shadow: #995C41, offset 0,6, blur 12
- * - Button text: Plus Jakarta Sans Medium, 16px, line-height 24px, white, centered
- * - Login text: 12px, line-height 20px, white, centered (Figma base style)
+ * - Root: 393x852, no layout (children absolutely positioned + Container)
+ * - Container (1:28061): y=205, 393x613, VERTICAL, SPACE_BETWEEN, gap=48, paddingBottom=64
+ *   - Container (1:28062): FILL x HUG, VERTICAL, gap=40, padding L/R=48
+ *     - Logo Container (1:28063): 33.375x40 FIXED
+ *     - Text Container (1:28065): FILL x HUG, VERTICAL, gap=16
+ *       - Main Heading (1:28066): FILL x HUG, 48/64/400/-2, mixed colors
+ *         chars 0-15: #A9A9A9 ("Make  your rent  ")
+ *         chars 17-30: #FF9A6D ("work for you->")
+ *       - Subheading (1:28067): FILL x HUG, 14/20/400/0, #A6A6A6
+ *   - Button Container (1:28068): FILL x HUG, VERTICAL, CENTER, gap=24, padding L/R=48
+ *     - button (1:28069): PrimaryButton with divider
+ *     - Login Text (1:28070): FILL x HUG, base 12/20/#797979 but ALL chars overridden:
+ *       chars 0-16: fontSize=14, color=#FFFFFF
+ *       chars 16-22: fontSize=14, color=#FFFFFF, underline
  */
 
 import React, { useCallback } from 'react';
@@ -25,7 +27,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Screen, Logo, Text, PrimaryButton } from '@/src/components';
 import { DottedPattern } from '@/src/components';
-import { colors, typography, spacing, radius, scaled, scaledSpacing, scaledWidth, sv } from '@/src/theme';
+import { colors, spacing, sv } from '@/src/theme';
 
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
@@ -37,23 +39,7 @@ const FIGMA_COLORS = {
   buttonBorder: colors.brand[500],     // #FF9A6D
   buttonShadow: '#995C41',             // Figma exact
   textWhite: colors.white,             // #FFFFFF
-  loginText: colors.black[300],         // #797979 - Figma node 1:28070 base color
 } as const;
-
-// Figma dimensions that need responsive scaling (not covered by tokens)
-const FIGMA_DIMENSIONS = {
-  contentWidth: 297,                   // Figma: main_Heading width, button width
-  logoHeight: 40,                      // Figma: vector_1 height (width scales from this)
-} as const;
-
-// Token mappings for reference (actual values from extracted-values.json):
-// - containerPadding: 48 → spacing.xxxl
-// - logoToHeading: 40 → spacing.xxl
-// - headingToBody: 16 → spacing.md
-// - buttonToLogin: 24 → spacing.lg
-// - bottomPadding: 64 → spacing.huge
-// - divider: 24x2, radius 200, #4D4D4D → handled by PrimaryButton
-// - button: radius 8, padding 16 → handled by PrimaryButton
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -75,36 +61,34 @@ export default function SplashScreen() {
 
       {/* Outer Container - pushes main content to bottom per Figma */}
       <View style={styles.outerContainer}>
-        {/* Main Container - Figma node 1:28061: height 613, space-between */}
+        {/* Main Container - Figma node 1:28061: 393x613, VERTICAL, SPACE_BETWEEN */}
         <View style={styles.mainContent}>
-          {/* Top Section - Logo and Hero Text */}
+          {/* Top Section (1:28062) - Logo and Hero Text, padding L/R 48, gap 40 */}
           <View style={styles.topSection}>
-            {/* Logo - Figma exact: 33.375x40 */}
+            {/* Logo Container (1:28063) - Figma exact: 33.375x40 */}
             <View style={styles.logoContainer}>
               <Logo size={40} />
             </View>
 
-            {/* Hero Text */}
+            {/* Text Container (1:28065) - FILL x HUG, gap 16 */}
             <View style={styles.textContainer}>
-              {/* Heading - Figma node 1:28066: "Make  your rent  work for you→" */}
-              {/* Figma styleOverrideTable: style 9 = gray (#A9A9A9), style 7 = brand (#FF9A6D) */}
-              {/* "Make" + "your rent" = gray, "work for you→" = brand accent */}
+              {/* Main Heading (1:28066): 48/64/400/-2 mixed colors */}
+              {/* spans: 0-15 = #A9A9A9 ("Make  your rent  "), 17-30 = #FF9A6D ("work for you->") */}
               <Text style={styles.headingGray}>
                 Make{'\n'}your rent{'\n'}
-                <Text style={styles.headingAccent}>work for you→</Text>
+                <Text inherit style={styles.headingAccent}>work for you→</Text>
               </Text>
 
-              {/* Body Text - Figma: Subheading (node 1:28067) */}
-              {/* Uses curly apostrophe (') per Figma exact text */}
+              {/* Subheading (1:28067): 14/20/400/0 #A6A6A6 */}
               <Text style={styles.bodyText}>
                 Secured is India{'\u2019'}s first rent payment app built to reward reliable tenants.
               </Text>
             </View>
           </View>
 
-          {/* Bottom CTA Section */}
+          {/* Button Container (1:28068) - FILL x HUG, CENTER, gap 24, padding L/R 48 */}
           <View style={styles.bottomSection}>
-            {/* Get Started Button with divider above */}
+            {/* Get Started Button (1:28069) with divider above */}
             <PrimaryButton
               title="Get Started"
               onPress={handleGetStarted}
@@ -112,8 +96,8 @@ export default function SplashScreen() {
               testID="get-started-button"
             />
 
-            {/* Login Link - Figma node 1:28070: "Already a user? Log in" */}
-            {/* styleOverrideTable: style 16 = white, style 17 = white + UNDERLINE */}
+            {/* Login Text (1:28070): base 12/20/#797979, ALL chars overridden to 14/#FFFFFF */}
+            {/* chars 16-22 ("Log in") additionally have underline */}
             <Pressable
               onPress={handleLogin}
               style={styles.loginContainer}
@@ -122,7 +106,7 @@ export default function SplashScreen() {
               accessibilityLabel="Already a user? Log in"
             >
               <Text style={styles.loginText}>
-                Already a user? <Text style={styles.loginLink}>Log in</Text>
+                Already a user? <Text inherit style={styles.loginLink}>Log in</Text>
               </Text>
             </Pressable>
           </View>
@@ -134,96 +118,96 @@ export default function SplashScreen() {
 
 const styles = StyleSheet.create({
   // Outer container pushes main content to bottom per Figma
-  // NOTE: Using flexGrow: 1 instead of flex: 1 for layout safety on small screens
+  // Container (1:28061) starts at y=205 (852-613-34=205), so content sits in bottom ~72%
   outerContainer: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: 'flex-end', // Aligns mainContent to bottom
   },
+
   // Main Content - Figma node 1:28061: Container
-  // height: 613, layoutMode: VERTICAL, primaryAxisAlignItems: SPACE_BETWEEN
-  // paddingBottom: 64, itemSpacing: 48
-  // Container starts at y=239 relative to root (852-613=239), so ~28% from top
+  // width: 393 (FIXED = full screen), height: 613 (FIXED)
+  // VERTICAL, SPACE_BETWEEN, gap: 48, paddingBottom: 64
   mainContent: {
-    height: sv(613), // Figma Container height (NOT 852 root screen height)
-    justifyContent: 'space-between', // Figma: primaryAxisAlignItems: SPACE_BETWEEN
-    paddingBottom: spacing.huge, // Figma: paddingBottom = 64 → spacing.huge
-    gap: spacing.xxxl, // Figma: itemSpacing = 48 → minimum gap between sections
+    height: sv(613),
+    justifyContent: 'space-between',    // Figma: primaryAxisAlignItems: SPACE_BETWEEN
+    paddingBottom: spacing.huge,         // Figma: paddingBottom = 64 -> spacing.huge
+    gap: spacing.xxxl,                   // Figma: itemSpacing = 48 -> spacing.xxxl
   },
-  // Top section with horizontal padding - Figma: paddingLeft/Right = 48
-  // Figma node 1:28062 "Container": layoutSizingHorizontal: FILL
+
+  // Top section (1:28062) - Container
+  // FILL x HUG, VERTICAL, gap: 40, padding L/R: 48
   topSection: {
-    width: '100%',
-    paddingHorizontal: spacing.xxxl, // Figma: 48px
+    alignSelf: 'stretch',               // Figma: layoutSizingHorizontal: FILL
+    paddingHorizontal: spacing.xxxl,     // Figma: paddingLeft/Right = 48
+    gap: spacing.xxl,                    // Figma: itemSpacing = 40 -> spacing.xxl
   },
-  logoContainer: {
-    // Figma: Logo to heading gap = 40 → spacing.xxl
-    marginBottom: spacing.xxl,
-  },
+
+  // Logo Container (1:28063) - 33.375x40 FIXED
+  // No extra margin needed; parent gap handles spacing
+  logoContainer: {},
+
+  // Text Container (1:28065) - FILL x HUG, VERTICAL, gap: 16
   textContainer: {
-    // Figma node 1:28065 "Text Container": layoutSizingHorizontal: FILL
-    width: '100%',
-    // Figma: Text Container gap = 16 → spacing.md
-    gap: spacing.md,
+    alignSelf: 'stretch',               // Figma: layoutSizingHorizontal: FILL
+    gap: spacing.md,                     // Figma: itemSpacing = 16 -> spacing.md
   },
+
+  // Main Heading (1:28066): PlusJakartaSans-Regular, 48px, lineHeight 64, letterSpacing -2
+  // Base fill is #FFFFFF but span override 0-15 = #A9A9A9 (gray text)
   headingGray: {
-    // Figma: Main Heading (node 1:28066) - single text with mixed colors
-    // Typography: Plus Jakarta Sans, 48px, 400 weight, lineHeight 64, letterSpacing -2
-    ...typography.h1,
-    // Explicit Figma overrides to guard against token drift (pixel-feedback fix)
-    fontWeight: '400',
-    lineHeight: 64,
-    letterSpacing: -2,
-    color: FIGMA_COLORS.headingGray,
-    // Figma node 1:28066 "Main Heading": layoutSizingHorizontal: FILL
-    width: '100%',
-  },
-  headingAccent: {
-    // Custom Text component applies default bodyMdRegular (16px), breaking RN text inheritance.
-    // Must explicitly set h1 properties so nested text renders at 48px like the parent.
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,
     lineHeight: 64,
     letterSpacing: -2,
-    fontWeight: '400',
-    color: FIGMA_COLORS.headingAccent,
+    color: FIGMA_COLORS.headingGray,     // #A9A9A9 (span override for "Make\nyour rent\n")
+    alignSelf: 'stretch',               // Figma: layoutSizingHorizontal: FILL
   },
+
+  // Accent portion of heading - "work for you->"
+  // Uses `inherit` prop so parent fontSize/lineHeight/letterSpacing are inherited
+  // Only need to override color
+  headingAccent: {
+    color: FIGMA_COLORS.headingAccent,   // #FF9A6D
+  },
+
+  // Subheading (1:28067): PlusJakartaSans-Regular, 14/20/0, #A6A6A6
   bodyText: {
-    // Figma: typography.bodyMd2 (14/20/400)
-    ...typography.bodyMd2,
-    color: FIGMA_COLORS.bodyText,
-    // Figma node 1:28067 "Subheading": layoutSizingHorizontal: FILL
-    width: '100%',
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 0,
+    color: FIGMA_COLORS.bodyText,        // #A6A6A6
+    alignSelf: 'stretch',               // Figma: layoutSizingHorizontal: FILL
   },
-  // Bottom section with horizontal padding - Figma: paddingLeft/Right = 48
+
+  // Button Container (1:28068) - FILL x HUG, VERTICAL, CENTER, gap: 24, padding L/R: 48
   bottomSection: {
-    paddingHorizontal: spacing.xxxl, // Figma: 48px
-    // Figma: Button Container gap = 24 → spacing.lg
-    gap: spacing.lg,
-    alignItems: 'center',
+    alignSelf: 'stretch',               // Figma: layoutSizingHorizontal: FILL
+    paddingHorizontal: spacing.xxxl,     // Figma: paddingLeft/Right = 48
+    gap: spacing.lg,                     // Figma: itemSpacing = 24 -> spacing.lg
+    alignItems: 'center',               // Figma: counterAxisAlignItems: CENTER
   },
+
+  // Login pressable container
   loginContainer: {
+    alignSelf: 'stretch',               // Figma: Login Text layoutSizingHorizontal: FILL
     justifyContent: 'center',
     alignItems: 'center',
-    // Figma: width 297 - removed explicit width, let padding control (Gemini fix)
-    // width: scaledWidth(FIGMA_DIMENSIONS.contentWidth),
   },
+
+  // Login Text (1:28070): base fontSize 12, lineHeight 20, #797979
+  // But ALL characters overridden via spans to fontSize 14, color #FFFFFF
   loginText: {
-    // Figma node 1:28070: base fontSize 12 / #797979, but styleOverrideTable[16] overrides ALL
-    // characters to fontSize 14, color #FFFFFF. Use override values since they apply to full text.
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,                                           // Figma: styleOverrideTable[16] = 14
-    lineHeight: 20,
-    color: FIGMA_COLORS.textWhite,                          // Figma: styleOverrideTable[16] = #FFFFFF
-    textAlign: 'center',             // Figma: textAlignHorizontal: CENTER
-    // Figma node 1:28070 "Login Text": layoutSizingHorizontal: FILL
-    width: '100%',
+    fontSize: 14,                        // Figma: span override (all chars) = 14
+    lineHeight: 20,                      // Figma: 20
+    color: FIGMA_COLORS.textWhite,       // Figma: span override (all chars) = #FFFFFF
+    textAlign: 'center',                 // Figma: textAlignHorizontal: CENTER
   },
+
+  // Login link portion ("Log in") - uses `inherit` to get parent styles
+  // Only adds underline decoration per span override chars 16-22
   loginLink: {
-    // Figma styleOverrideTable[17]: fontSize 14, color #FFFFFF, underline
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,                                           // Figma: 14 (was 12)
-    lineHeight: 20,
-    color: FIGMA_COLORS.textWhite,                          // Figma: #FFFFFF (was #797979)
-    textDecorationLine: 'underline',
+    textDecorationLine: 'underline',     // Figma: textDecoration: underline
   },
 });
