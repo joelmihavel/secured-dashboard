@@ -1,0 +1,297 @@
+[     384ms] [WARNING] "shadow*" style props are deprecated. Use "boxShadow". @ http://localhost:8081/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:40238
+[     453ms] Error: Cannot manually set color scheme, as dark mode is type 'media'. Please use StyleSheet.setFlag('darkMode', 'class')
+    at Object.set (http://localhost:8081/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:60653:15)
+    at MutationObserver.observe.attributes (http://localhost:8081/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:60639:27)
+[     467ms] [WARNING] App Start Span could not be finished. `Sentry.wrap` was called before `Sentry.init`. @ http://localhost:8081/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:185651
+[     485ms] [WARNING] props.pointerEvents is deprecated. Use style.pointerEvents @ http://localhost:8081/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:40238
+[     498ms] [WARNING] Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md @ http://localhost:8081/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:50143
+[     564ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[     564ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[   15521ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[   15521ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[   30523ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[   30523ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[   45522ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[   45522ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[   60524ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[   60524ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[   75529ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[   75530ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[   90523ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[   90523ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  105526ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  105526ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  120524ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  120524ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  135527ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  135527ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  150525ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  150525ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  165527ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  165527ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  180526ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  180526ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  195527ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  195527ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  210523ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  210523ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  225528ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  225528ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  240523ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  240524ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  255529ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  255529ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  270529ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  270529ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  285529ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  285530ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  300526ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  300526ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  315528ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  315529ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  330524ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  330524ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  345535ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  345535ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  360526ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  360526ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  375515ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  375515ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  390501ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  390501ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  405502ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  405503ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  420490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  420491ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  435487ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  435487ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  450488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  450488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  465490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  465490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  480491ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  480491ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  495489ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  495489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  510493ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  510493ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  525487ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  525488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  540490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  540490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  555487ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  555488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  570488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  570489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  585495ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  585496ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  600490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  600490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  615488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  615488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  630492ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  630493ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  645492ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  645492ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  660490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  660491ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  675493ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  675493ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  690488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  690488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  705499ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  705499ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  720487ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  720488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  735490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  735490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  750495ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  750495ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  765489ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  765489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  780488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  780488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  795491ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  795491ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  810493ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  810493ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  825495ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  825495ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  840495ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  840495ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  855490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  855490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  870490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  870490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  885494ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  885494ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  900488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  900488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  915492ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  915492ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  930488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  930489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  945494ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  945494ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  960490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  960490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  975493ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  975494ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[  990488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[  990488ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1005494ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1005494ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1020489ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1020489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1035492ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1035493ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1050492ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1050492ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1065499ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1065499ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1080496ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1080496ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1095498ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1095499ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1110490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1110490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1125501ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1125501ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1140489ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1140489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1155493ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1155493ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1170488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1170489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1185487ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1185487ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1200490ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1200490ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1215493ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1215493ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1230500ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1230500ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1245497ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1245497ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1260497ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1260497ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1275499ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1275499ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1290493ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1290494ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1305497ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1305498ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1320501ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1320501ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1335488ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1335489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1350470ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1350470ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1365467ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1365467ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1380467ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1380468ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1395466ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1395466ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1410464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1410464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1425465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1425466ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1440543ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1440547ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1455606ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1455610ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1470465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1470465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1485467ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1485468ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1500463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1500463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1515465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1515465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1530466ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1530466ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1545464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1545464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1560465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1560465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1575470ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1575470ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1590464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1590464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1605467ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1605467ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1620467ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1620467ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1635465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1635465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1650465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1650465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1665462ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1665462ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1680465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1680465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1695464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1695464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1710463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1710463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1725467ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1725467ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1740470ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1740470ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1755500ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1755500ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1770466ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1770466ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1785463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1785463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1800461ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1800461ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1815464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1815465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1830464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1830464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1845464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1845464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1860462ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1860462ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1875468ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1875468ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1890462ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1890462ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1905463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1905463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1920464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1920464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1935462ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1935463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1950463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1950464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1965464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1965464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1980464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1980464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 1995462ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 1995463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2010464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2010464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2025473ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2025473ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2040464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2040464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2055465ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2055465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2070473ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2070474ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2085464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2085465ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2100463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2100463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2115466ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2115466ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2130464ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2130464ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2145463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2145463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0
+[ 2160463ms] [ERROR] Access to fetch at 'https://clients3.google.com/generate_204' from origin 'http://localhost:8081' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8081/sign-up:0
+[ 2160463ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://clients3.google.com/generate_204:0

@@ -1,0 +1,173 @@
+{
+  "screenId": "1-31175",
+  "screenName": "auth / sign up --enter OTP",
+  "route": "/(auth)/otp",
+  "generatedAt": "2026-02-15T20:40:46.974Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T20:37:48.301Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T20:39:02.295Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-72",
+              "property": "title style",
+              "figmaValue": "28px / 400 weight (typography.h4)",
+              "currentValue": "24px / 600 weight",
+              "severity": "major",
+              "explanation": "The title typography uses hardcoded values that do not match the provided 'h4' design token. Updating this ensures the ErrorBoundary matches the app's typography scale.",
+              "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+              "fixedCode": "  title: {\n    fontSize: 28, // typography.h4.fontSize\n    lineHeight: 40, // typography.h4.lineHeight\n    fontWeight: '400', // typography.h4.fontWeight\n    color: '#FFFFFF',\n    marginBottom: 12,\n    textAlign: 'center',\n  },"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "80-84",
+              "property": "button layout",
+              "figmaValue": "Full width (Block)",
+              "currentValue": "Content width (Pill)",
+              "severity": "minor",
+              "explanation": "The screenshot shows buttons spanning the full available width (minus padding). The current button is only as wide as its text. Updating to full width aligns with the visual pattern.",
+              "currentCode": "  button: {\n    backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,\n  },",
+              "fixedCode": "  button: {\n    backgroundColor: '#FF9A6D',\n    paddingVertical: 12,\n    borderRadius: 8,\n    width: '100%',\n    alignItems: 'center',\n  },"
+            }
+          ],
+          "confidence": 60
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T20:40:27.075Z",
+      "feedback": {
+        "rawText": "Based on the analysis of the Figma screenshot, the provided component tree, and the React Native code, here are the screen-level issues identified.\n\n### **1. Remove Unwanted Divider above Button**\nThe Simulator screenshot shows a horizontal divider line above the \"Proceed\" button, which is not present in the Figma design. The code explicitly enables this divider via a prop on the `PrimaryButton` component.\n\n*   **Issue:** `PrimaryButton` has `showDivider={true}`, creating a visual artifact (horizontal line) that contradicts the clean layout in Figma.\n*   **Fix:** Set `showDivider={false}`.\n\n### **2. Handle Container Spacing**\nIn Figma, the handle element (Node 1:31258) is the topmost element of the sheet assembly with no padding above it. The code adds `paddingTop: spacing.xs` (typically 4-8px) to the `handleContainer`, pushing the handle down unnecessarily.\n\n*   **Issue:** Extra top padding on the handle container.\n*   **Fix:** Remove `paddingTop` from `handleContainer`.\n\n### **3. Background Blur Darkness (Observation)**\nThe simulator background appears pitch black, whereas Figma shows a blurred version of the previous screen. The code uses `BlurView` with `tint=\"dark\"` *plus* an overlay with `opacity: 0.4`. This combination likely results in a near-opaque black on the simulator. While `tint=\"dark\"` is appropriate for the design intent, the stacking might be too aggressive. However, without seeing the underlying screen content in the simulator context, this is noted but the primary fix is the layout structure.\n\n```json\n{\n  \"screenLevelIssues\": [\n    {\n      \"file\": \"app/(waitlist)/index.tsx\",\n      \"lineRange\": \"260-267\",\n      \"property\": \"showDivider\",\n      \"figmaValue\": \"false (No divider line)\",\n      \"currentValue\": \"true\",\n      \"severity\": \"major\",\n      \"explanation\": \"The Figma design does not show a horizontal divider line above the 'Proceed' button. The current code enables this divider, causing a visual mismatch and affecting vertical spacing.\",\n      \"currentCode\": \"              <PrimaryButton\\n                title={cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Proceed'}\\n                onPress={handleProceed}\\n                disabled={!isOtpComplete || !!error || cooldownRemaining > 0}\\n                loading={isVerifyingOtp}\\n                showDivider={true}\\n                testID=\\\"proceed-button\\\"\\n              />\",\n      \"fixedCode\": \"              <PrimaryButton\\n                title={cooldownRemaining > 0 ? `Wait ${cooldownRemaining}s` : 'Proceed'}\\n                onPress={handleProceed}\\n                disabled={!isOtpComplete || !!error || cooldownRemaining > 0}\\n                loading={isVerifyingOtp}\\n                showDivider={false}\\n                testID=\\\"proceed-button\\\"\\n              />\"\n    },\n    {\n      \"file\": \"app/(waitlist)/index.tsx\",\n      \"lineRange\": \"315-319\",\n      \"property\": \"paddingTop\",\n      \"figmaValue\": \"0\",\n      \"currentValue\": \"spacing.xs (8px)\",\n      \"severity\": \"minor\",\n      \"explanation\": \"Figma shows the handle as the topmost element in the sheet group without extra padding above it. The code adds spacing.xs, pushing the handle down unnecessarily.\",\n      \"currentCode\": \"  handleContainer: {\\n    alignItems: 'center',\\n    paddingTop: spacing.xs,                                    // 8px - small top margin for handle\\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,          // Figma: 15px gap between handle and sheet content\\n  },\",\n      \"fixedCode\": \"  handleContainer: {\\n    alignItems: 'center',\\n    paddingTop: 0, // Figma: Handle is at the very top\\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,          // Figma: 15px gap between handle and sheet content\\n  },\"\n    }\n  ],\n  \"layoutIssues\": [],\n  \"scrollIssues\": [],\n  \"confidence\": 95\n}\n```",
+        "parseError": true
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T20:40:46.974Z",
+      "feedback": [
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "260-267",
+          "property": "showDivider",
+          "figmaValue": "false",
+          "currentValue": "true",
+          "severity": "major",
+          "explanation": "The Figma design does not show a horizontal divider line above the 'Proceed' button. The current code enables this divider, creating a visual artifact.",
+          "currentCode": "                loading={isVerifyingOtp}\n                showDivider={true}\n                testID=\"proceed-button\"",
+          "fixedCode": "                loading={isVerifyingOtp}\n                showDivider={false}\n                testID=\"proceed-button\""
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-72",
+          "property": "title style",
+          "figmaValue": "28px / 400 weight (typography.h4)",
+          "currentValue": "24px / 600 weight",
+          "severity": "major",
+          "explanation": "The title typography uses hardcoded values that do not match the provided 'h4' design token. Updating this ensures the ErrorBoundary matches the app's typography scale.",
+          "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+          "fixedCode": "  title: {\n    fontSize: 28, // typography.h4.fontSize\n    lineHeight: 40, // typography.h4.lineHeight\n    fontWeight: '400', // typography.h4.fontWeight\n    color: '#FFFFFF',\n    marginBottom: 12,\n    textAlign: 'center',\n  },"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "80-84",
+          "property": "button layout",
+          "figmaValue": "Full width (Block)",
+          "currentValue": "Content width (Pill)",
+          "severity": "minor",
+          "explanation": "The screenshot shows buttons spanning the full available width. The current button is only as wide as its text.",
+          "currentCode": "  button: {\n    backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,\n  },",
+          "fixedCode": "  button: {\n    backgroundColor: '#FF9A6D',\n    paddingVertical: 12,\n    borderRadius: 8,\n    width: '100%',\n    alignItems: 'center',\n  },"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "315-319",
+          "property": "paddingTop",
+          "figmaValue": "0",
+          "currentValue": "spacing.xs (8px)",
+          "severity": "minor",
+          "explanation": "Figma shows the handle as the topmost element in the sheet group without extra padding above it. The code adds spacing.xs, pushing the handle down unnecessarily.",
+          "currentCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: spacing.xs,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,",
+          "fixedCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: 0,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "260-267",
+      "property": "showDivider",
+      "figmaValue": "false",
+      "currentValue": "true",
+      "severity": "major",
+      "explanation": "The Figma design does not show a horizontal divider line above the 'Proceed' button. The current code enables this divider, creating a visual artifact.",
+      "currentCode": "                loading={isVerifyingOtp}\n                showDivider={true}\n                testID=\"proceed-button\"",
+      "fixedCode": "                loading={isVerifyingOtp}\n                showDivider={false}\n                testID=\"proceed-button\""
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-72",
+      "property": "title style",
+      "figmaValue": "28px / 400 weight (typography.h4)",
+      "currentValue": "24px / 600 weight",
+      "severity": "major",
+      "explanation": "The title typography uses hardcoded values that do not match the provided 'h4' design token. Updating this ensures the ErrorBoundary matches the app's typography scale.",
+      "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+      "fixedCode": "  title: {\n    fontSize: 28, // typography.h4.fontSize\n    lineHeight: 40, // typography.h4.lineHeight\n    fontWeight: '400', // typography.h4.fontWeight\n    color: '#FFFFFF',\n    marginBottom: 12,\n    textAlign: 'center',\n  },"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "80-84",
+      "property": "button layout",
+      "figmaValue": "Full width (Block)",
+      "currentValue": "Content width (Pill)",
+      "severity": "minor",
+      "explanation": "The screenshot shows buttons spanning the full available width. The current button is only as wide as its text.",
+      "currentCode": "  button: {\n    backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,\n  },",
+      "fixedCode": "  button: {\n    backgroundColor: '#FF9A6D',\n    paddingVertical: 12,\n    borderRadius: 8,\n    width: '100%',\n    alignItems: 'center',\n  },"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "315-319",
+      "property": "paddingTop",
+      "figmaValue": "0",
+      "currentValue": "spacing.xs (8px)",
+      "severity": "minor",
+      "explanation": "Figma shows the handle as the topmost element in the sheet group without extra padding above it. The code adds spacing.xs, pushing the handle down unnecessarily.",
+      "currentCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: spacing.xs,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,",
+      "fixedCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: 0,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 4,
+    "critical": 0,
+    "major": 2,
+    "minor": 2,
+    "filesAffected": [
+      "app/(waitlist)/index.tsx",
+      "src/components/ErrorBoundary.tsx"
+    ]
+  }
+}

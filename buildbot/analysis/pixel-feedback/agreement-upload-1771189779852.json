@@ -1,0 +1,77 @@
+{
+  "screenId": "1-29914",
+  "screenName": "Onboarding / Agreement --upload",
+  "route": "/(agreement)/upload",
+  "generatedAt": "2026-02-15T21:09:39.852Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T21:04:44.980Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T21:06:26.326Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "1-90",
+              "property": "Visual Mismatch",
+              "figmaValue": "Confirm Details Screen",
+              "currentValue": "Generic ErrorBoundary",
+              "severity": "critical",
+              "explanation": "The provided Figma screenshot corresponds to a 'Confirm Details' screen (containing specific data fields like Agreement ID), whereas the provided code is a generic 'ErrorBoundary' component. The automated extraction pipeline also confirmed 'No direct Figma match found'. It is not possible to visually align the ErrorBoundary to this unrelated screenshot without completely replacing the component's logic and purpose.",
+              "currentCode": "class ErrorBoundary extends Component...",
+              "fixedCode": "// Please provide the correct Figma screenshot for the ErrorBoundary component."
+            }
+          ],
+          "confidence": 100
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T21:08:39.113Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "UploadScreen.tsx",
+            "lineRange": "75-75",
+            "property": "color",
+            "figmaValue": "#FFFFFF (colors.neutral.white)",
+            "currentValue": "#A9A9A9 (colors.neutral[500])",
+            "severity": "major",
+            "explanation": "The text 'One' in the main title is White in the Figma screenshot and JSON data, but is defined as 'titleGray' (#A9A9A9) in the FIGMA constants object.",
+            "currentCode": "titleGray: colors.neutral[500],",
+            "fixedCode": "titleGray: colors.neutral.white,"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T21:09:39.852Z",
+      "feedback": []
+    }
+  ],
+  "consolidatedFixes": [],
+  "summary": {}
+}

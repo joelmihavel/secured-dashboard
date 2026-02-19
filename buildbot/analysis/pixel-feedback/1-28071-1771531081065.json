@@ -1,0 +1,433 @@
+{
+  "screenId": "1-28071",
+  "screenName": "Splash / get-started --animation 2",
+  "route": "/(auth)/beta-splash",
+  "generatedAt": "2026-02-19T19:58:01.065Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T19:55:33.241Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "233:2671",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": -463,
+              "absoluteY": -747,
+              "relativeLeft": -463,
+              "relativeTop": -747,
+              "parentId": "1:28071"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"Splash / get-started --animation\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:197",
+            "nodeName": "Border",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -333.2,
+              "relativeTop": -22.6,
+              "parentId": "I1:28074;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -333.2, top: -22.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Border\" is positioned at (-333.2, -22.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:198",
+            "nodeName": "Cap",
+            "figmaValue": {
+              "absoluteX": 25.9,
+              "absoluteY": 4.67,
+              "relativeLeft": -307.3,
+              "relativeTop": -17.93,
+              "parentId": "I1:28074;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -307.3, top: -17.9",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cap\" is positioned at (-307.3, -17.9) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:199",
+            "nodeName": "Capacity",
+            "figmaValue": {
+              "absoluteX": 2,
+              "absoluteY": 2,
+              "relativeLeft": -331.2,
+              "relativeTop": -20.6,
+              "parentId": "I1:28074;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -331.2, top: -20.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Capacity\" is positioned at (-331.2, -20.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:201",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -308.7,
+              "relativeTop": -23.2,
+              "parentId": "I1:28074;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -308.7, top: -23.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-308.7, -23.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:202",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 3.03,
+              "absoluteY": 4.03,
+              "relativeLeft": -305.67,
+              "relativeTop": -19.169999999999998,
+              "parentId": "I1:28074;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -305.7, top: -19.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-305.7, -19.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:203",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 6.05,
+              "absoluteY": 8.07,
+              "relativeLeft": -302.65,
+              "relativeTop": -15.129999999999999,
+              "parentId": "I1:28074;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -302.6, top: -15.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-302.6, -15.1) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:205",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 7.4,
+              "relativeLeft": -282,
+              "relativeTop": -15.700000000000001,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -282.0, top: -15.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-282.0, -15.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:206",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 5.3,
+              "absoluteY": 5,
+              "relativeLeft": -276.7,
+              "relativeTop": -18.1,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -276.7, top: -18.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-276.7, -18.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:207",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 10.7,
+              "absoluteY": 2.4,
+              "relativeLeft": -271.3,
+              "relativeTop": -20.700000000000003,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -271.3, top: -20.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-271.3, -20.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:208",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 16,
+              "absoluteY": 0,
+              "relativeLeft": -266,
+              "relativeTop": -23.1,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -266.0, top: -23.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-266.0, -23.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+          }
+        ],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 11
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T19:55:33.243Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T19:57:18.132Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "N/A",
+            "property": "gap",
+            "figmaValue": "12",
+            "currentValue": "~24",
+            "severity": "minor",
+            "explanation": "The vertical spacing between the Logo and the 'BETA LAUNCH' badge is visibly larger in the simulator (approx 20-24px) compared to the Figma design (12px).",
+            "currentCode": "gap: spacing.lg, // estimated as 24",
+            "fixedCode": "gap: 12,"
+          },
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "N/A",
+            "property": "letterSpacing",
+            "figmaValue": "-0.2",
+            "currentValue": "0",
+            "severity": "minor",
+            "explanation": "The 'BETA LAUNCH' text in Figma has a negative letter spacing of -0.2px, whereas the simulator renders it with standard spacing (0), making the text appear wider.",
+            "currentCode": "letterSpacing: 0,",
+            "fixedCode": "letterSpacing: -0.2,"
+          },
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "N/A",
+            "property": "verticalAlignment",
+            "figmaValue": "Y=406 (Offset)",
+            "currentValue": "Centered",
+            "severity": "minor",
+            "explanation": "The content group in Figma is positioned starting at Y=406 (approx 20px below the mathematical vertical center), while the simulator appears to center the content exactly.",
+            "currentCode": "justifyContent: 'center',",
+            "fixedCode": "justifyContent: 'center', // Verify if offset is intentional or responsive"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 85
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T19:58:01.065Z",
+      "feedback": [
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -463, -747",
+          "currentValue": "unknown",
+          "severity": "major",
+          "explanation": "Background element 'image 149' requires specific absolute positioning relative to the container.",
+          "currentCode": "// Check image 149 styles",
+          "fixedCode": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute offsets",
+          "currentValue": "unknown",
+          "severity": "major",
+          "explanation": "Battery icon components (Border, Cap, Capacity) have specific absolute offsets relative to the Battery container.",
+          "currentCode": "// Battery sub-elements",
+          "fixedCode": "// Border\nposition: 'absolute', left: -333.2, top: -22.6,\n\n// Cap\nposition: 'absolute', left: -307.3, top: -17.9,\n\n// Capacity\nposition: 'absolute', left: -331.2, top: -20.6,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute offsets",
+          "currentValue": "unknown",
+          "severity": "major",
+          "explanation": "Wifi icon paths have specific absolute offsets relative to the Wifi container.",
+          "currentCode": "// Wifi sub-elements",
+          "fixedCode": "// Path 1\nposition: 'absolute', left: -308.7, top: -23.2,\n\n// Path 2\nposition: 'absolute', left: -305.7, top: -19.2,\n\n// Path 3\nposition: 'absolute', left: -302.6, top: -15.1,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute offsets",
+          "currentValue": "unknown",
+          "severity": "major",
+          "explanation": "Cellular Connection icon paths have specific absolute offsets relative to the container.",
+          "currentCode": "// Cellular sub-elements",
+          "fixedCode": "// Path 1\nposition: 'absolute', left: -282.0, top: -15.7,\n\n// Path 2\nposition: 'absolute', left: -276.7, top: -18.1,\n\n// Path 3\nposition: 'absolute', left: -271.3, top: -20.7,\n\n// Path 4\nposition: 'absolute', left: -266.0, top: -23.1,"
+        },
+        {
+          "file": "app/auth.tsx",
+          "lineRange": "N/A",
+          "property": "gap",
+          "figmaValue": "12 (spacing.sm)",
+          "currentValue": "~24 (spacing.lg)",
+          "severity": "minor",
+          "explanation": "Vertical spacing between Logo and 'BETA LAUNCH' badge is too large.",
+          "currentCode": "gap: spacing.lg,",
+          "fixedCode": "gap: spacing.sm, // 12px"
+        },
+        {
+          "file": "app/auth.tsx",
+          "lineRange": "N/A",
+          "property": "letterSpacing",
+          "figmaValue": "-0.2",
+          "currentValue": "0",
+          "severity": "minor",
+          "explanation": "'BETA LAUNCH' text requires negative letter spacing.",
+          "currentCode": "letterSpacing: 0,",
+          "fixedCode": "letterSpacing: -0.2,"
+        },
+        {
+          "file": "app/auth.tsx",
+          "lineRange": "N/A",
+          "property": "justifyContent",
+          "figmaValue": "Offset Y=406",
+          "currentValue": "Center",
+          "severity": "minor",
+          "explanation": "Content is mathematically centered in code but visually offset (lower) in Figma. Verify if exact centering is desired or if a top offset is needed.",
+          "currentCode": "justifyContent: 'center',",
+          "fixedCode": "justifyContent: 'center', // Consider adding paddingTop if visual offset is required"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -463, -747",
+      "currentValue": "unknown",
+      "severity": "major",
+      "explanation": "Background element 'image 149' requires specific absolute positioning relative to the container.",
+      "currentCode": "// Check image 149 styles",
+      "fixedCode": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute offsets",
+      "currentValue": "unknown",
+      "severity": "major",
+      "explanation": "Battery icon components (Border, Cap, Capacity) have specific absolute offsets relative to the Battery container.",
+      "currentCode": "// Battery sub-elements",
+      "fixedCode": "// Border\nposition: 'absolute', left: -333.2, top: -22.6,\n\n// Cap\nposition: 'absolute', left: -307.3, top: -17.9,\n\n// Capacity\nposition: 'absolute', left: -331.2, top: -20.6,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute offsets",
+      "currentValue": "unknown",
+      "severity": "major",
+      "explanation": "Wifi icon paths have specific absolute offsets relative to the Wifi container.",
+      "currentCode": "// Wifi sub-elements",
+      "fixedCode": "// Path 1\nposition: 'absolute', left: -308.7, top: -23.2,\n\n// Path 2\nposition: 'absolute', left: -305.7, top: -19.2,\n\n// Path 3\nposition: 'absolute', left: -302.6, top: -15.1,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute offsets",
+      "currentValue": "unknown",
+      "severity": "major",
+      "explanation": "Cellular Connection icon paths have specific absolute offsets relative to the container.",
+      "currentCode": "// Cellular sub-elements",
+      "fixedCode": "// Path 1\nposition: 'absolute', left: -282.0, top: -15.7,\n\n// Path 2\nposition: 'absolute', left: -276.7, top: -18.1,\n\n// Path 3\nposition: 'absolute', left: -271.3, top: -20.7,\n\n// Path 4\nposition: 'absolute', left: -266.0, top: -23.1,"
+    },
+    {
+      "file": "app/auth.tsx",
+      "lineRange": "N/A",
+      "property": "gap",
+      "figmaValue": "12 (spacing.sm)",
+      "currentValue": "~24 (spacing.lg)",
+      "severity": "minor",
+      "explanation": "Vertical spacing between Logo and 'BETA LAUNCH' badge is too large.",
+      "currentCode": "gap: spacing.lg,",
+      "fixedCode": "gap: spacing.sm, // 12px"
+    },
+    {
+      "file": "app/auth.tsx",
+      "lineRange": "N/A",
+      "property": "letterSpacing",
+      "figmaValue": "-0.2",
+      "currentValue": "0",
+      "severity": "minor",
+      "explanation": "'BETA LAUNCH' text requires negative letter spacing.",
+      "currentCode": "letterSpacing: 0,",
+      "fixedCode": "letterSpacing: -0.2,"
+    },
+    {
+      "file": "app/auth.tsx",
+      "lineRange": "N/A",
+      "property": "justifyContent",
+      "figmaValue": "Offset Y=406",
+      "currentValue": "Center",
+      "severity": "minor",
+      "explanation": "Content is mathematically centered in code but visually offset (lower) in Figma. Verify if exact centering is desired or if a top offset is needed.",
+      "currentCode": "justifyContent: 'center',",
+      "fixedCode": "justifyContent: 'center', // Consider adding paddingTop if visual offset is required"
+    }
+  ],
+  "summary": {
+    "totalIssues": 7,
+    "critical": 0,
+    "major": 4,
+    "minor": 3,
+    "filesAffected": [
+      "app/(auth)/index.tsx",
+      "app/auth.tsx"
+    ]
+  }
+}

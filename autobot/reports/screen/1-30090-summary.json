@@ -1,0 +1,29 @@
+{
+  "screenId": "1-30090",
+  "screenName": "Agreement Upload - Idle",
+  "route": "/(agreement)/upload",
+  "flow": "agreement",
+  "status": "EXTRACTED",
+  "timestamp": "2026-02-15T20:28:45.039Z",
+  "visual": {
+    "pixelDiff": null,
+    "pixelDiffPassed": null,
+    "coverage": null,
+    "coveragePassed": null,
+    "inspectorScore": null,
+    "geminiClean": null
+  },
+  "testing": {
+    "unitTestFile": null,
+    "totalTests": 0,
+    "passed": 0,
+    "failed": 0
+  },
+  "certification": {
+    "ready": false,
+    "blockers": [
+      "Status is EXTRACTED, not VERIFIED or CERTIFIED",
+      "No unit tests found"
+    ]
+  }
+}

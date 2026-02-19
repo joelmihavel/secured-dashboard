@@ -1,0 +1,62 @@
+{
+  "screenId": "1-28055",
+  "screenName": "Splash / get-started",
+  "route": "/(auth)/splash",
+  "generatedAt": "2026-02-19T18:44:27.110Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Container",
+      "nodeId": "1:28062",
+      "childCount": 2
+    },
+    {
+      "name": "Button Container",
+      "nodeId": "1:28068",
+      "childCount": 2
+    }
+  ],
+  "states": [
+    {
+      "state": "default",
+      "figmaId": "1-28055",
+      "name": "Splash / get-started"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "1:28069",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "I1:28059;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "1:28066",
+      "name": "Main Heading",
+      "content": "Make  your rent  work for you→"
+    },
+    {
+      "nodeId": "1:28067",
+      "name": "Subheading",
+      "content": "Secured is India's first rent payment app built to reward reliable tenants."
+    },
+    {
+      "nodeId": "I1:28069;100:1565",
+      "name": "Text",
+      "content": "Get Started"
+    },
+    {
+      "nodeId": "1:28070",
+      "name": "Login Text",
+      "content": "Already a user? Log in"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

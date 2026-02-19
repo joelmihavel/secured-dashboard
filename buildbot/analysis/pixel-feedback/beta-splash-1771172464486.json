@@ -1,0 +1,90 @@
+{
+  "screenId": "1-28071",
+  "screenName": "Splash / get-started --animation 2",
+  "route": "/(auth)/beta-splash",
+  "generatedAt": "2026-02-15T16:21:04.485Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T16:19:37.928Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T16:19:40.229Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T16:20:51.291Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/beta-splash.tsx",
+            "lineRange": "N/A",
+            "property": "gap",
+            "figmaValue": "16",
+            "currentValue": "32",
+            "severity": "major",
+            "explanation": "The vertical spacing between the Logo icon and the 'BETA LAUNCH' badge is significantly larger in the simulator than in the Figma design. In Figma, the gap is approximately 16px (roughly half the badge height), whereas in the simulator it appears to be roughly 30px (equal to the badge height).",
+            "currentCode": "// In the container holding the logo and badge\ngap: 32, // or marginBottom on the logo component",
+            "fixedCode": "gap: 16, // Reduce spacing to match Figma"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 90
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T16:21:04.485Z",
+      "feedback": [
+        {
+          "file": "app/beta-splash.tsx",
+          "lineRange": "N/A",
+          "property": "gap",
+          "figmaValue": "16 (spacing.md)",
+          "currentValue": "32",
+          "severity": "major",
+          "explanation": "The vertical spacing between the Logo icon and the 'BETA LAUNCH' badge is significantly larger in the simulator (32px) than in the Figma design (16px).",
+          "currentCode": "gap: 32,",
+          "fixedCode": "gap: 16, // spacing.md"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/beta-splash.tsx",
+      "lineRange": "N/A",
+      "property": "gap",
+      "figmaValue": "16 (spacing.md)",
+      "currentValue": "32",
+      "severity": "major",
+      "explanation": "The vertical spacing between the Logo icon and the 'BETA LAUNCH' badge is significantly larger in the simulator (32px) than in the Figma design (16px).",
+      "currentCode": "gap: 32,",
+      "fixedCode": "gap: 16, // spacing.md"
+    }
+  ],
+  "summary": {
+    "totalIssues": 1,
+    "critical": 0,
+    "major": 1,
+    "minor": 0,
+    "filesAffected": [
+      "app/beta-splash.tsx"
+    ]
+  }
+}

@@ -1,0 +1,268 @@
+{
+  "_description": "Enhanced verification pipeline configuration. Maps screen-routes keys to Maestro MCP assertions, navigation params, and hierarchy analysis thresholds. Used by Claude-orchestrated enhanced-verify flow.",
+  "_usage": [
+    "1. Claude navigates to the screen route using Maestro MCP",
+    "2. Claude runs inspect_view_hierarchy and saves CSV to data/hierarchies/{figmaId}-hierarchy.csv",
+    "3. Claude runs assertNoDefectsWithAI for automatic defect detection",
+    "4. Claude runs each assertWithAI assertion from this config",
+    "5. Claude invokes: npx ts-node scripts/analyze-hierarchy.ts {figmaId} --hierarchy data/hierarchies/{figmaId}-hierarchy.csv",
+    "6. Claude invokes the existing verify-screen.ts pipeline for ODiff + coverage + Gemini + Inspector"
+  ],
+  "defaults": {
+    "viewport": "393x852",
+    "thresholds": {
+      "positionPx": 4,
+      "sizePx": 3,
+      "maxMissingTextNodes": 2
+    },
+    "defectDetection": {
+      "enabled": true,
+      "categories": ["overlapping_text", "truncated_text", "misaligned_elements", "color_contrast"]
+    }
+  },
+  "screens": {
+    "splash": {
+      "navigationSteps": ["launch_app"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "The heading text 'Make your rent work for you' is visible and fully readable" },
+        { "type": "assertWithAI", "prompt": "A 'Get Started' button is visible at the bottom of the screen" },
+        { "type": "assertWithAI", "prompt": "The text 'Already a user? Log in' is visible below the Get Started button" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": ["Make  your rent  work for you", "Get Started", "Already a user? Log in"],
+        "thresholdOverrides": null
+      }
+    },
+    "beta-splash": {
+      "navigationSteps": ["launch_app"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "A 'BETA LAUNCH' label or badge is visible on screen" },
+        { "type": "assertWithAI", "prompt": "A 'Get Started' button is visible and appears tappable" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": ["BETA LAUNCH", "Get Started"],
+        "thresholdOverrides": null
+      }
+    },
+    "sign-up": {
+      "navigationSteps": ["launch_app", "tap_get_started"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "A phone number input field is visible with country code +91" },
+        { "type": "assertWithAI", "prompt": "The heading text contains 'Let's get you started' or similar sign-up prompt" },
+        { "type": "assertWithAI", "prompt": "A 'Continue' or 'Next' button is visible at the bottom" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": ["+91", "Continue"],
+        "thresholdOverrides": null
+      }
+    },
+    "otp": {
+      "navigationSteps": ["launch_app", "tap_get_started", "enter_phone", "tap_continue"],
+      "stateVariants": {
+        "empty": {
+          "setupActions": [],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "OTP input boxes are visible and empty" },
+            { "type": "assertWithAI", "prompt": "A 'Resend OTP' option is visible" },
+            { "type": "assertWithAI", "prompt": "The heading mentions verifying a phone number" }
+          ]
+        },
+        "filled": {
+          "setupActions": ["enter_otp_digits"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "OTP input boxes are filled with digits" },
+            { "type": "assertWithAI", "prompt": "A verify or continue button is enabled" }
+          ]
+        },
+        "error1": {
+          "setupActions": ["enter_wrong_otp"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "An error message about incorrect OTP is visible in red or warning color" }
+          ]
+        },
+        "error2": {
+          "setupActions": ["wait_for_expiry"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "An error message about expired OTP is visible" }
+          ]
+        }
+      },
+      "hierarchyAnalysis": {
+        "expectedTextNodes": ["Resend OTP"],
+        "thresholdOverrides": null
+      }
+    },
+    "waitlist": {
+      "navigationSteps": ["deep_link_waitlist"],
+      "stateVariants": {
+        "default": {
+          "setupActions": [],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "A waitlist status message is visible" },
+            { "type": "assertWithAI", "prompt": "The screen shows the user's position or pending status" }
+          ]
+        },
+        "accepted": {
+          "setupActions": ["set_state_accepted"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "An acceptance or approval message is visible" }
+          ]
+        },
+        "rejected": {
+          "setupActions": ["set_state_rejected"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "A rejection message is visible" }
+          ]
+        }
+      },
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "agreement-upload": {
+      "navigationSteps": ["deep_link_agreement_upload"],
+      "stateVariants": {
+        "initial": {
+          "setupActions": [],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "An upload area or button for the rental agreement is visible" },
+            { "type": "assertWithAI", "prompt": "Instructions about uploading the agreement are displayed" }
+          ]
+        },
+        "uploading": {
+          "setupActions": ["trigger_upload"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "A progress indicator or uploading state is visible" }
+          ]
+        },
+        "expired": {
+          "setupActions": ["set_state_expired"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "An error about expired agreement is visible" }
+          ]
+        },
+        "too-large": {
+          "setupActions": ["set_state_too_large"],
+          "assertions": [
+            { "type": "assertWithAI", "prompt": "An error about file size being too large is visible" }
+          ]
+        }
+      },
+      "hierarchyAnalysis": {
+        "expectedTextNodes": ["Upload"],
+        "thresholdOverrides": null
+      }
+    },
+    "agreement-review": {
+      "navigationSteps": ["deep_link_agreement_review"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "Agreement details are displayed with landlord name, rent amount, and dates" },
+        { "type": "assertWithAI", "prompt": "Action buttons for confirming or modifying the agreement are visible" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "setup": {
+      "navigationSteps": ["deep_link_setup"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "Setup steps or checklist items are visible" },
+        { "type": "assertWithAI", "prompt": "Progress through setup stages is indicated" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "home-empty": {
+      "navigationSteps": ["deep_link_home"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "An empty state message or setup prompt is visible on the home screen" },
+        { "type": "assertWithAI", "prompt": "The user's name or greeting is displayed at the top" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "home-active": {
+      "navigationSteps": ["deep_link_home"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "Rent payment information with amount is visible" },
+        { "type": "assertWithAI", "prompt": "Payment method cards (UPI, bank, credit card) are visible" },
+        { "type": "assertWithAI", "prompt": "A 'Pay Now' or 'Pay Rent' button is visible" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": ["Pay Rent"],
+        "thresholdOverrides": null
+      }
+    },
+    "payment-select": {
+      "navigationSteps": ["deep_link_payment"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "Payment method options are listed (UPI, Credit Card, Net Banking)" },
+        { "type": "assertWithAI", "prompt": "The rent amount to pay is displayed" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "payment-processing": {
+      "navigationSteps": ["deep_link_payment_processing"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "A processing or loading indicator is visible" },
+        { "type": "assertWithAI", "prompt": "Text indicating payment is being processed is displayed" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "payment-success": {
+      "navigationSteps": ["deep_link_payment_success"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "A success message or checkmark icon is visible" },
+        { "type": "assertWithAI", "prompt": "The paid amount is displayed" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "payment-failed": {
+      "navigationSteps": ["deep_link_payment_failed"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "A failure message or error icon is visible" },
+        { "type": "assertWithAI", "prompt": "A retry or go back option is available" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    },
+    "profile": {
+      "navigationSteps": ["deep_link_profile"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "The user's profile information (name, phone) is displayed" },
+        { "type": "assertWithAI", "prompt": "Menu items like Payment Methods, Notifications, Help are visible" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": ["My Profile", "Payment Methods", "Notifications", "Help", "About"],
+        "thresholdOverrides": null
+      }
+    },
+    "transactions": {
+      "navigationSteps": ["deep_link_transactions"],
+      "assertions": [
+        { "type": "assertWithAI", "prompt": "A list of transaction entries is visible with dates and amounts" }
+      ],
+      "hierarchyAnalysis": {
+        "expectedTextNodes": [],
+        "thresholdOverrides": null
+      }
+    }
+  }
+}

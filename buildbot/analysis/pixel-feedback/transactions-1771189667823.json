@@ -1,0 +1,297 @@
+{
+  "screenId": "243-5870",
+  "screenName": "Pay Rent / Transaction Page --without cashback",
+  "route": "/(transactions)/index",
+  "generatedAt": "2026-02-15T21:07:47.823Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T21:04:40.596Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T21:05:49.180Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-72",
+              "property": "typography",
+              "figmaValue": "h4 (28px/40px/400)",
+              "currentValue": "24px/600",
+              "severity": "major",
+              "explanation": "Title typography mismatches the design token 'h4' provided in the extraction data. The font size should be 28, line height 40, and weight 400 (normal).",
+              "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+              "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "73-78",
+              "property": "typography",
+              "figmaValue": "bodyXs (12px/20px)",
+              "currentValue": "14px",
+              "severity": "minor",
+              "explanation": "Message typography mismatches the design token 'bodyXs' provided in the extraction data. The font size should be 12 and line height 20.",
+              "currentCode": "  message: {\n    fontSize: 14,\n    color: '#A9A9A9',\n    textAlign: 'center',\n    marginBottom: 24,\n  },",
+              "fixedCode": "  message: {\n    fontSize: 12,\n    lineHeight: 20,\n    color: '#A9A9A9',\n    textAlign: 'center',\n    marginBottom: 24,\n  },"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T21:07:16.449Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "PayRentTransactionScreen.tsx",
+            "lineRange": "258-272",
+            "property": "header",
+            "figmaValue": "Height: 80, Padding: 24px 32px, Content: Logo/Greeting/Profile",
+            "currentValue": "Height: 56, Padding: spacing.xl, Content: Back/Icons",
+            "severity": "major",
+            "explanation": "Header layout and content mismatch. Figma shows a taller dashboard-style header (80px) with 'Hi, Rishabh' and profile avatar, while code implements a standard navigation header (56px) with back button and icons.",
+            "currentCode": "  header: {\n    height: 56,\n    flexDirection: 'row',\n    alignItems: 'center',\n    justifyContent: 'space-between',\n    paddingHorizontal: spacing.xl,\n  },",
+            "fixedCode": "  header: {\n    height: 80,\n    flexDirection: 'row',\n    alignItems: 'center',\n    justifyContent: 'space-between',\n    paddingTop: 24,\n    paddingBottom: 24,\n    paddingHorizontal: 32,\n  },"
+          },
+          {
+            "file": "PayRentTransactionScreen.tsx",
+            "lineRange": "334-336",
+            "property": "children",
+            "figmaValue": "Segmented Control (Recent Payments | Cashbacks)",
+            "currentValue": "Divider",
+            "severity": "major",
+            "explanation": "Missing the 'Recent Payments / Cashbacks' segmented control between the carousel and cashback section. The design shows a pill-shaped toggle, whereas the code shows a simple divider.",
+            "currentCode": "          {/* Divider Line */}\n          <View style={styles.dividerContainer}>\n            <View style={styles.divider} />\n          </View>",
+            "fixedCode": "          {/* Segmented Control Placeholder */}\n          <View style={{ paddingHorizontal: 32, marginBottom: 24 }}>\n            {/* Implementation of Segmented Control needed here matching node 243:6026 */}\n          </View>"
+          },
+          {
+            "file": "PayRentTransactionScreen.tsx",
+            "lineRange": "340-346",
+            "property": "children",
+            "figmaValue": "Cashback Accrued Header + Value",
+            "currentValue": "Toggle Row",
+            "severity": "major",
+            "explanation": "The Cashback section is missing the main 'CASHBACK ACCRUED' label and large value ('₹ 325.00') at the top. The code starts immediately with a toggle row which is not in the dashboard view of the design.",
+            "currentCode": "            {/* Cashback Toggle Row */}\n            <View style={styles.cashbackToggleRow}>\n              <View style={styles.cashbackLabelContainer}>\n                <Text style={styles.cashbackLabelText}>Apply Cashback</Text>\n              </View>\n              <CashbackToggle enabled={useCashback} onToggle={setUseCashback} />\n            </View>",
+            "fixedCode": "            {/* Cashback Header */}\n            <View style={{ gap: 16 }}>\n              <Text style={{ fontSize: 12, color: '#A9A9A9', fontWeight: '500' }}>CASHBACK ACCRUED</Text>\n              <Text style={{ fontSize: 28, color: '#BABABA' }}>₹ 325.00</Text>\n            </View>"
+          },
+          {
+            "file": "PayRentTransactionScreen.tsx",
+            "lineRange": "384-391",
+            "property": "children",
+            "figmaValue": "Stepper Card (3 steps)",
+            "currentValue": "Text Block",
+            "severity": "major",
+            "explanation": "The Setup Card is implemented as a simple text block, but Figma shows a complex card with a 3-step vertical stepper (Add details, Upload proof, Invite landlord).",
+            "currentCode": "          <View style={styles.setupMessageContainer}>\n            {/* Multi-styled text: \"Complete setup in 28:12:12 to unlock Cashbacks\" */}\n            <Text style={styles.setupMessageText}>\n              <Text inherit style={styles.setupTextNormal}>Complete setup in </Text>\n              <Text inherit style={styles.setupTextTimer}>28:12:12</Text>\n              <Text inherit style={styles.setupTextNormal}> to  unlock </Text>\n              <Text inherit style={styles.setupTextAccent}>Cashbacks</Text>\n            </Text>\n          </View>",
+            "fixedCode": "          <View style={{ marginHorizontal: 32, padding: 24, backgroundColor: '#202020', borderRadius: 12, gap: 24 }}>\n             {/* Needs full Stepper implementation matching node 243:6044 */}\n             <Text style={styles.setupMessageText}>...</Text>\n          </View>"
+          },
+          {
+            "file": "PayRentTransactionScreen.tsx",
+            "lineRange": "283-283",
+            "property": "contentContainerStyle",
+            "figmaValue": "paddingBottom: ~140px",
+            "currentValue": "paddingBottom: spacing.xxxl (48px)",
+            "severity": "moderate",
+            "explanation": "The ScrollView content paddingBottom (48px) is insufficient to clear the absolute positioned footer (118px). Content will be hidden behind the footer.",
+            "currentCode": "          contentContainerStyle={styles.scrollContent}",
+            "fixedCode": "          contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 }]}"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T21:07:47.823Z",
+      "feedback": [
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-72",
+          "property": "typography",
+          "figmaValue": "h4 (28px/40px/400)",
+          "currentValue": "24px/600",
+          "severity": "major",
+          "explanation": "Title typography mismatches the design token 'h4'. Updating to match Figma specs.",
+          "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+          "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "73-78",
+          "property": "typography",
+          "figmaValue": "bodySm (12px/20px)",
+          "currentValue": "14px",
+          "severity": "minor",
+          "explanation": "Message typography mismatches the design token 'bodySm'. Updating to match Figma specs.",
+          "currentCode": "  message: {\n    fontSize: 14,\n    color: '#A9A9A9',\n    textAlign: 'center',\n    marginBottom: 24,\n  },",
+          "fixedCode": "  message: {\n    fontSize: 12,\n    lineHeight: 20,\n    color: '#A9A9A9',\n    textAlign: 'center',\n    marginBottom: 24,\n  },"
+        },
+        {
+          "file": "PayRentTransactionScreen.tsx",
+          "lineRange": "258-272",
+          "property": "header",
+          "figmaValue": "Height: 80, Padding: 24px 32px",
+          "currentValue": "Height: 56, Padding: spacing.xl",
+          "severity": "major",
+          "explanation": "Header layout mismatch. Figma defines a taller dashboard header (80px) with specific padding.",
+          "currentCode": "  header: {\n    height: 56,\n    flexDirection: 'row',\n    alignItems: 'center',\n    justifyContent: 'space-between',\n    paddingHorizontal: spacing.xl,\n  },",
+          "fixedCode": "  header: {\n    height: 80,\n    flexDirection: 'row',\n    alignItems: 'center',\n    justifyContent: 'space-between',\n    paddingVertical: spacing.lg,\n    paddingHorizontal: spacing.xl,\n  },"
+        },
+        {
+          "file": "PayRentTransactionScreen.tsx",
+          "lineRange": "283-283",
+          "property": "contentContainerStyle",
+          "figmaValue": "paddingBottom: 140px",
+          "currentValue": "paddingBottom: spacing.xxxl (48px)",
+          "severity": "major",
+          "explanation": "Insufficient scroll padding causes content to be hidden behind the absolute positioned footer.",
+          "currentCode": "          contentContainerStyle={styles.scrollContent}",
+          "fixedCode": "          contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 }]}"
+        },
+        {
+          "file": "PayRentTransactionScreen.tsx",
+          "lineRange": "334-336",
+          "property": "children",
+          "figmaValue": "Segmented Control",
+          "currentValue": "Divider",
+          "severity": "major",
+          "explanation": "Missing Segmented Control (Recent Payments | Cashbacks). Replacing divider with placeholder structure.",
+          "currentCode": "          {/* Divider Line */}\n          <View style={styles.dividerContainer}>\n            <View style={styles.divider} />\n          </View>",
+          "fixedCode": "          {/* Segmented Control Placeholder */}\n          <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>\n            {/* Implementation of Segmented Control needed here matching node 243:6026 */}\n          </View>"
+        },
+        {
+          "file": "PayRentTransactionScreen.tsx",
+          "lineRange": "340-346",
+          "property": "children",
+          "figmaValue": "Cashback Header + Value",
+          "currentValue": "Toggle Row",
+          "severity": "major",
+          "explanation": "Incorrect Cashback section. Design shows 'CASHBACK ACCRUED' header and value, not a toggle row.",
+          "currentCode": "            {/* Cashback Toggle Row */}\n            <View style={styles.cashbackToggleRow}>\n              <View style={styles.cashbackLabelContainer}>\n                <Text style={styles.cashbackLabelText}>Apply Cashback</Text>\n              </View>\n              <CashbackToggle enabled={useCashback} onToggle={setUseCashback} />\n            </View>",
+          "fixedCode": "            {/* Cashback Header */}\n            <View style={{ gap: spacing.md }}>\n              <Text style={{ fontSize: 12, lineHeight: 20, color: colors.neutral[500], fontWeight: '500' }}>CASHBACK ACCRUED</Text>\n              <Text style={{ fontSize: 28, color: colors.neutral[400] }}>₹ 325.00</Text>\n            </View>"
+        },
+        {
+          "file": "PayRentTransactionScreen.tsx",
+          "lineRange": "384-391",
+          "property": "children",
+          "figmaValue": "Stepper Card",
+          "currentValue": "Text Block",
+          "severity": "major",
+          "explanation": "Setup section is a card with a stepper in Figma, not a simple text block. Updating container styling to match card specs.",
+          "currentCode": "          <View style={styles.setupMessageContainer}>\n            {/* Multi-styled text: \"Complete setup in 28:12:12 to unlock Cashbacks\" */}\n            <Text style={styles.setupMessageText}>\n              <Text inherit style={styles.setupTextNormal}>Complete setup in </Text>\n              <Text inherit style={styles.setupTextTimer}>28:12:12</Text>\n              <Text inherit style={styles.setupTextNormal}> to  unlock </Text>\n              <Text inherit style={styles.setupTextAccent}>Cashbacks</Text>\n            </Text>\n          </View>",
+          "fixedCode": "          <View style={{ marginHorizontal: spacing.xl, padding: spacing.lg, backgroundColor: colors.black[500], borderRadius: radius.md, gap: spacing.lg }}>\n             {/* Needs full Stepper implementation matching node 243:6044 */}\n             <Text style={styles.setupMessageText}>...</Text>\n          </View>"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-72",
+      "property": "typography",
+      "figmaValue": "h4 (28px/40px/400)",
+      "currentValue": "24px/600",
+      "severity": "major",
+      "explanation": "Title typography mismatches the design token 'h4'. Updating to match Figma specs.",
+      "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+      "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "73-78",
+      "property": "typography",
+      "figmaValue": "bodySm (12px/20px)",
+      "currentValue": "14px",
+      "severity": "minor",
+      "explanation": "Message typography mismatches the design token 'bodySm'. Updating to match Figma specs.",
+      "currentCode": "  message: {\n    fontSize: 14,\n    color: '#A9A9A9',\n    textAlign: 'center',\n    marginBottom: 24,\n  },",
+      "fixedCode": "  message: {\n    fontSize: 12,\n    lineHeight: 20,\n    color: '#A9A9A9',\n    textAlign: 'center',\n    marginBottom: 24,\n  },"
+    },
+    {
+      "file": "PayRentTransactionScreen.tsx",
+      "lineRange": "258-272",
+      "property": "header",
+      "figmaValue": "Height: 80, Padding: 24px 32px",
+      "currentValue": "Height: 56, Padding: spacing.xl",
+      "severity": "major",
+      "explanation": "Header layout mismatch. Figma defines a taller dashboard header (80px) with specific padding.",
+      "currentCode": "  header: {\n    height: 56,\n    flexDirection: 'row',\n    alignItems: 'center',\n    justifyContent: 'space-between',\n    paddingHorizontal: spacing.xl,\n  },",
+      "fixedCode": "  header: {\n    height: 80,\n    flexDirection: 'row',\n    alignItems: 'center',\n    justifyContent: 'space-between',\n    paddingVertical: spacing.lg,\n    paddingHorizontal: spacing.xl,\n  },"
+    },
+    {
+      "file": "PayRentTransactionScreen.tsx",
+      "lineRange": "283-283",
+      "property": "contentContainerStyle",
+      "figmaValue": "paddingBottom: 140px",
+      "currentValue": "paddingBottom: spacing.xxxl (48px)",
+      "severity": "major",
+      "explanation": "Insufficient scroll padding causes content to be hidden behind the absolute positioned footer.",
+      "currentCode": "          contentContainerStyle={styles.scrollContent}",
+      "fixedCode": "          contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 }]}"
+    },
+    {
+      "file": "PayRentTransactionScreen.tsx",
+      "lineRange": "334-336",
+      "property": "children",
+      "figmaValue": "Segmented Control",
+      "currentValue": "Divider",
+      "severity": "major",
+      "explanation": "Missing Segmented Control (Recent Payments | Cashbacks). Replacing divider with placeholder structure.",
+      "currentCode": "          {/* Divider Line */}\n          <View style={styles.dividerContainer}>\n            <View style={styles.divider} />\n          </View>",
+      "fixedCode": "          {/* Segmented Control Placeholder */}\n          <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>\n            {/* Implementation of Segmented Control needed here matching node 243:6026 */}\n          </View>"
+    },
+    {
+      "file": "PayRentTransactionScreen.tsx",
+      "lineRange": "340-346",
+      "property": "children",
+      "figmaValue": "Cashback Header + Value",
+      "currentValue": "Toggle Row",
+      "severity": "major",
+      "explanation": "Incorrect Cashback section. Design shows 'CASHBACK ACCRUED' header and value, not a toggle row.",
+      "currentCode": "            {/* Cashback Toggle Row */}\n            <View style={styles.cashbackToggleRow}>\n              <View style={styles.cashbackLabelContainer}>\n                <Text style={styles.cashbackLabelText}>Apply Cashback</Text>\n              </View>\n              <CashbackToggle enabled={useCashback} onToggle={setUseCashback} />\n            </View>",
+      "fixedCode": "            {/* Cashback Header */}\n            <View style={{ gap: spacing.md }}>\n              <Text style={{ fontSize: 12, lineHeight: 20, color: colors.neutral[500], fontWeight: '500' }}>CASHBACK ACCRUED</Text>\n              <Text style={{ fontSize: 28, color: colors.neutral[400] }}>₹ 325.00</Text>\n            </View>"
+    },
+    {
+      "file": "PayRentTransactionScreen.tsx",
+      "lineRange": "384-391",
+      "property": "children",
+      "figmaValue": "Stepper Card",
+      "currentValue": "Text Block",
+      "severity": "major",
+      "explanation": "Setup section is a card with a stepper in Figma, not a simple text block. Updating container styling to match card specs.",
+      "currentCode": "          <View style={styles.setupMessageContainer}>\n            {/* Multi-styled text: \"Complete setup in 28:12:12 to unlock Cashbacks\" */}\n            <Text style={styles.setupMessageText}>\n              <Text inherit style={styles.setupTextNormal}>Complete setup in </Text>\n              <Text inherit style={styles.setupTextTimer}>28:12:12</Text>\n              <Text inherit style={styles.setupTextNormal}> to  unlock </Text>\n              <Text inherit style={styles.setupTextAccent}>Cashbacks</Text>\n            </Text>\n          </View>",
+      "fixedCode": "          <View style={{ marginHorizontal: spacing.xl, padding: spacing.lg, backgroundColor: colors.black[500], borderRadius: radius.md, gap: spacing.lg }}>\n             {/* Needs full Stepper implementation matching node 243:6044 */}\n             <Text style={styles.setupMessageText}>...</Text>\n          </View>"
+    }
+  ],
+  "summary": {
+    "totalIssues": 7,
+    "critical": 0,
+    "major": 6,
+    "minor": 1,
+    "filesAffected": [
+      "src/components/ErrorBoundary.tsx",
+      "PayRentTransactionScreen.tsx"
+    ]
+  }
+}

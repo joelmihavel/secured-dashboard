@@ -1,0 +1,330 @@
+{
+  "screenId": "1-29914",
+  "screenName": "Onboarding / Agreement --upload",
+  "route": "/(agreement)/upload",
+  "generatedAt": "2026-02-15T21:08:15.336Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T21:04:40.275Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T21:06:14.161Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "62",
+              "property": "backgroundColor",
+              "figmaValue": "colors.black[700]",
+              "currentValue": "#131313",
+              "severity": "minor",
+              "explanation": "Replace hardcoded hex value with the defined design token for consistency.",
+              "currentCode": "backgroundColor: '#131313',",
+              "fixedCode": "backgroundColor: colors.black[700],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "68-70",
+              "property": "typography",
+              "figmaValue": "typography.h4 (28px, 400 weight)",
+              "currentValue": "24px, 600 weight",
+              "severity": "major",
+              "explanation": "Title style should use the H4 typography token from the design system.",
+              "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+              "fixedCode": "...typography.h4,"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "74",
+              "property": "color",
+              "figmaValue": "colors.neutral[500]",
+              "currentValue": "#A9A9A9",
+              "severity": "minor",
+              "explanation": "Replace hardcoded hex value with the defined design token.",
+              "currentCode": "color: '#A9A9A9',",
+              "fixedCode": "color: colors.neutral[500],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "80",
+              "property": "backgroundColor",
+              "figmaValue": "colors.brand[500]",
+              "currentValue": "#FF9A6D",
+              "severity": "minor",
+              "explanation": "Replace hardcoded hex value with the defined design token.",
+              "currentCode": "backgroundColor: '#FF9A6D',",
+              "fixedCode": "backgroundColor: colors.brand[500],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "82",
+              "property": "borderRadius",
+              "figmaValue": "radius.sm (8)",
+              "currentValue": "8",
+              "severity": "minor",
+              "explanation": "Use the radius token instead of a hardcoded number.",
+              "currentCode": "borderRadius: 8,",
+              "fixedCode": "borderRadius: radius.sm,"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T21:07:49.739Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "UploadScreen.tsx",
+            "lineRange": "100-105",
+            "property": "color",
+            "figmaValue": "#FFFFFF (colors.neutral[white])",
+            "currentValue": "#A9A9A9 (colors.neutral[500])",
+            "severity": "major",
+            "explanation": "The text 'One' is rendered in gray (#A9A9A9) in the code, but the Figma design and extraction data specify it should be White (#FFFFFF). The extraction explicitly lists `_colorToken: 'colors.neutral[white]'`.",
+            "currentCode": "titleGray: colors.neutral[500],",
+            "fixedCode": "titleGray: colors.neutral[white],"
+          },
+          {
+            "file": "UploadScreen.tsx",
+            "lineRange": "500-510",
+            "property": "navigationOptions",
+            "figmaValue": "No Back Button",
+            "currentValue": "Back Button Visible",
+            "severity": "major",
+            "explanation": "The Simulator screenshot shows a back button in the header, whereas the Figma design (Image 1) does not show any navigation header or back button. The screen should likely hide the header.",
+            "currentCode": "// Implicit navigation header",
+            "fixedCode": "// Add options={{ headerShown: false }} to navigation config or Screen component"
+          },
+          {
+            "file": "UploadScreen.tsx",
+            "lineRange": "520-525",
+            "property": "backgroundPattern",
+            "figmaValue": "Extends behind status bar",
+            "currentValue": "Clipped by Safe Area",
+            "severity": "minor",
+            "explanation": "In the Figma design, the dotted background pattern extends to the very top of the screen, behind the status bar elements (time/battery). In the Simulator, the top area appears solid black, suggesting the pattern is clipped or pushed down by a SafeAreaView.",
+            "currentCode": "<Screen testID=\"upload-screen\" padded={false} style={styles.screen}>\n  <DottedPattern ... />",
+            "fixedCode": "// Ensure DottedPattern is positioned absolutely covering the entire screen including status bar area, potentially outside the primary SafeAreaView context if Screen enforces it."
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T21:08:15.336Z",
+      "feedback": [
+        {
+          "file": "UploadScreen.tsx",
+          "lineRange": "500-510",
+          "property": "navigationOptions",
+          "figmaValue": "No Back Button (Header Hidden)",
+          "currentValue": "Back Button Visible",
+          "severity": "major",
+          "explanation": "The design shows no navigation header, but the simulator shows a back button. Hide the header.",
+          "currentCode": "// Implicit navigation header",
+          "fixedCode": "<Stack.Screen options={{ headerShown: false }} />"
+        },
+        {
+          "file": "UploadScreen.tsx",
+          "lineRange": "100-105",
+          "property": "color",
+          "figmaValue": "colors.neutral[white]",
+          "currentValue": "colors.neutral[500]",
+          "severity": "major",
+          "explanation": "The text 'One' should be White according to Figma, currently rendered as Gray.",
+          "currentCode": "titleGray: colors.neutral[500],",
+          "fixedCode": "titleGray: colors.neutral[white],"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "68-70",
+          "property": "typography",
+          "figmaValue": "typography.h4 (28px, 400)",
+          "currentValue": "24px, 600",
+          "severity": "major",
+          "explanation": "Title typography mismatch. Update to use the correct design token.",
+          "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+          "fixedCode": "...typography.h4,"
+        },
+        {
+          "file": "UploadScreen.tsx",
+          "lineRange": "520-525",
+          "property": "backgroundPattern",
+          "figmaValue": "Extends behind status bar",
+          "currentValue": "Clipped by Safe Area",
+          "severity": "minor",
+          "explanation": "Ensure the background pattern extends to the top of the screen behind the status bar.",
+          "currentCode": "<Screen testID=\"upload-screen\" padded={false} style={styles.screen}>\n  <DottedPattern ... />",
+          "fixedCode": "<Screen testID=\"upload-screen\" padded={false} safeAreaEdges={['bottom']} style={styles.screen}>\n  <DottedPattern style={StyleSheet.absoluteFill} ... />"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "62",
+          "property": "backgroundColor",
+          "figmaValue": "colors.black[700]",
+          "currentValue": "#131313",
+          "severity": "minor",
+          "explanation": "Use design token for background color.",
+          "currentCode": "backgroundColor: '#131313',",
+          "fixedCode": "backgroundColor: colors.black[700],"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "74",
+          "property": "color",
+          "figmaValue": "colors.neutral[500]",
+          "currentValue": "#A9A9A9",
+          "severity": "minor",
+          "explanation": "Use design token for text color.",
+          "currentCode": "color: '#A9A9A9',",
+          "fixedCode": "color: colors.neutral[500],"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "80",
+          "property": "backgroundColor",
+          "figmaValue": "colors.brand[500]",
+          "currentValue": "#FF9A6D",
+          "severity": "minor",
+          "explanation": "Use design token for button background.",
+          "currentCode": "backgroundColor: '#FF9A6D',",
+          "fixedCode": "backgroundColor: colors.brand[500],"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "82",
+          "property": "borderRadius",
+          "figmaValue": "radius.sm (8)",
+          "currentValue": "8",
+          "severity": "minor",
+          "explanation": "Use design token for border radius.",
+          "currentCode": "borderRadius: 8,",
+          "fixedCode": "borderRadius: radius.sm,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "UploadScreen.tsx",
+      "lineRange": "500-510",
+      "property": "navigationOptions",
+      "figmaValue": "No Back Button (Header Hidden)",
+      "currentValue": "Back Button Visible",
+      "severity": "major",
+      "explanation": "The design shows no navigation header, but the simulator shows a back button. Hide the header.",
+      "currentCode": "// Implicit navigation header",
+      "fixedCode": "<Stack.Screen options={{ headerShown: false }} />"
+    },
+    {
+      "file": "UploadScreen.tsx",
+      "lineRange": "100-105",
+      "property": "color",
+      "figmaValue": "colors.neutral[white]",
+      "currentValue": "colors.neutral[500]",
+      "severity": "major",
+      "explanation": "The text 'One' should be White according to Figma, currently rendered as Gray.",
+      "currentCode": "titleGray: colors.neutral[500],",
+      "fixedCode": "titleGray: colors.neutral[white],"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "68-70",
+      "property": "typography",
+      "figmaValue": "typography.h4 (28px, 400)",
+      "currentValue": "24px, 600",
+      "severity": "major",
+      "explanation": "Title typography mismatch. Update to use the correct design token.",
+      "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+      "fixedCode": "...typography.h4,"
+    },
+    {
+      "file": "UploadScreen.tsx",
+      "lineRange": "520-525",
+      "property": "backgroundPattern",
+      "figmaValue": "Extends behind status bar",
+      "currentValue": "Clipped by Safe Area",
+      "severity": "minor",
+      "explanation": "Ensure the background pattern extends to the top of the screen behind the status bar.",
+      "currentCode": "<Screen testID=\"upload-screen\" padded={false} style={styles.screen}>\n  <DottedPattern ... />",
+      "fixedCode": "<Screen testID=\"upload-screen\" padded={false} safeAreaEdges={['bottom']} style={styles.screen}>\n  <DottedPattern style={StyleSheet.absoluteFill} ... />"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "62",
+      "property": "backgroundColor",
+      "figmaValue": "colors.black[700]",
+      "currentValue": "#131313",
+      "severity": "minor",
+      "explanation": "Use design token for background color.",
+      "currentCode": "backgroundColor: '#131313',",
+      "fixedCode": "backgroundColor: colors.black[700],"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "74",
+      "property": "color",
+      "figmaValue": "colors.neutral[500]",
+      "currentValue": "#A9A9A9",
+      "severity": "minor",
+      "explanation": "Use design token for text color.",
+      "currentCode": "color: '#A9A9A9',",
+      "fixedCode": "color: colors.neutral[500],"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "80",
+      "property": "backgroundColor",
+      "figmaValue": "colors.brand[500]",
+      "currentValue": "#FF9A6D",
+      "severity": "minor",
+      "explanation": "Use design token for button background.",
+      "currentCode": "backgroundColor: '#FF9A6D',",
+      "fixedCode": "backgroundColor: colors.brand[500],"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "82",
+      "property": "borderRadius",
+      "figmaValue": "radius.sm (8)",
+      "currentValue": "8",
+      "severity": "minor",
+      "explanation": "Use design token for border radius.",
+      "currentCode": "borderRadius: 8,",
+      "fixedCode": "borderRadius: radius.sm,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 8,
+    "critical": 0,
+    "major": 3,
+    "minor": 5,
+    "filesAffected": [
+      "UploadScreen.tsx",
+      "src/components/ErrorBoundary.tsx"
+    ]
+  }
+}

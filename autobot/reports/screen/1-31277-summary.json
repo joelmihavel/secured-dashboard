@@ -1,0 +1,29 @@
+{
+  "screenId": "1-31277",
+  "screenName": "OTP Error 1",
+  "route": "/(auth)/otp",
+  "flow": "otp",
+  "status": "COVERAGE_PASS",
+  "timestamp": "2026-02-15T20:28:45.038Z",
+  "visual": {
+    "pixelDiff": 2.72762730228,
+    "pixelDiffPassed": true,
+    "coverage": 98.2,
+    "coveragePassed": true,
+    "inspectorScore": 82,
+    "geminiClean": null
+  },
+  "testing": {
+    "unitTestFile": null,
+    "totalTests": 0,
+    "passed": 0,
+    "failed": 0
+  },
+  "certification": {
+    "ready": false,
+    "blockers": [
+      "Status is COVERAGE_PASS, not VERIFIED or CERTIFIED",
+      "No unit tests found"
+    ]
+  }
+}

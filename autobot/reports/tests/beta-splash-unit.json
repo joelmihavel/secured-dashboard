@@ -1,0 +1,37 @@
+{
+  "screenId": "1-28071",
+  "testType": "unit",
+  "timestamp": "2026-02-15T17:00:00Z",
+  "testFile": "src/__tests__/screens/beta-splash.test.tsx",
+  "fixtureFile": "src/__tests__/fixtures/beta-splash.fixtures.ts",
+  "totalTests": 14,
+  "passed": 14,
+  "failed": 0,
+  "skipped": 0,
+  "executionTimeMs": 7364,
+  "failures": [],
+  "testIdsVerified": [
+    "beta-splash-screen",
+    "dotted-pattern"
+  ],
+  "testIdsMissing": [],
+  "statesCovered": [
+    "beta"
+  ],
+  "statesMissing": [],
+  "navigationTargetsVerified": [
+    "/(auth)/splash"
+  ],
+  "categoriesCovered": {
+    "1_renders_without_crash": true,
+    "2_text_content_matches_figma": true,
+    "3_interactive_elements_present": true,
+    "4_navigation_fires_correctly": true,
+    "5_loading_state": true,
+    "6_error_state": true,
+    "7_empty_state": true,
+    "8_props_variations": true,
+    "9_accessibility": true
+  },
+  "notes": "Static animated splash screen with single state. No data fetching, no interactive elements, no error/loading branches. All 9 test categories adapted appropriately for this minimal screen type."
+}

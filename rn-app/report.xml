@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="iPhone 17 Pro - iOS 26.2 - E47EC8CC-0DCF-489E-A880-A853D492C9D5" tests="1" failures="0" time="11.0">
+    <testcase id="waitlist-scroll-capture" name="waitlist-scroll-capture" classname="waitlist-scroll-capture" time="11.0" status="SUCCESS">
+      <properties/>
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,165 @@
+{
+  "screenId": "1-31175",
+  "screenName": "auth / sign up --enter OTP",
+  "route": "/(auth)/otp",
+  "generatedAt": "2026-02-15T17:27:42.313Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T17:24:20.752Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T17:25:40.952Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-72",
+              "property": "typography",
+              "figmaValue": "28px / 400 / 40px (typography.h4)",
+              "currentValue": "24px / 600 / undefined",
+              "severity": "major",
+              "explanation": "The title typography does not match the provided design tokens. The 'typography.h4' token specifies fontSize 28, fontWeight 400, and lineHeight 40, whereas the current implementation uses hardcoded values that differ.",
+              "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+              "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+            }
+          ],
+          "confidence": 75
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T17:27:20.517Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(waitlist)/index.tsx",
+            "lineRange": "250-260",
+            "property": "showDivider",
+            "figmaValue": "false (No divider visible)",
+            "currentValue": "true",
+            "severity": "major",
+            "explanation": "The Figma design (Image 1) shows no horizontal divider line above the 'Proceed' button. The current implementation explicitly enables a divider, creating a visual discrepancy visible in the Simulator screenshot.",
+            "currentCode": "                showDivider={true}",
+            "fixedCode": "                showDivider={false}"
+          },
+          {
+            "file": "app/(waitlist)/index.tsx",
+            "lineRange": "310-315",
+            "property": "paddingTop",
+            "figmaValue": "0",
+            "currentValue": "spacing.xs (8px)",
+            "severity": "minor",
+            "explanation": "The handle container has extra top padding (spacing.xs) that is not present in the Figma design. In Figma, the handle element (Node 1:31258) is at the very top of the wrapper (Node 1:31257) without padding.",
+            "currentCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: spacing.xs,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,",
+            "fixedCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: 0,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T17:27:42.313Z",
+      "feedback": [
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-72",
+          "property": "typography",
+          "figmaValue": "28px / 400 / 40px (typography.h4)",
+          "currentValue": "24px / 600 / undefined",
+          "severity": "major",
+          "explanation": "The title typography does not match the design tokens. Figma uses typography.h4 (28px/400/40px), while code uses 24px/600.",
+          "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+          "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "250-260",
+          "property": "showDivider",
+          "figmaValue": "false",
+          "currentValue": "true",
+          "severity": "major",
+          "explanation": "The divider line above the 'Proceed' button is not present in the Figma design.",
+          "currentCode": "                showDivider={true}",
+          "fixedCode": "                showDivider={false}"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "310-315",
+          "property": "paddingTop",
+          "figmaValue": "0",
+          "currentValue": "spacing.xs (8px)",
+          "severity": "minor",
+          "explanation": "The handle container has extra top padding not present in Figma. The handle should sit flush at the top.",
+          "currentCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: spacing.xs,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,",
+          "fixedCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: 0,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-72",
+      "property": "typography",
+      "figmaValue": "28px / 400 / 40px (typography.h4)",
+      "currentValue": "24px / 600 / undefined",
+      "severity": "major",
+      "explanation": "The title typography does not match the design tokens. Figma uses typography.h4 (28px/400/40px), while code uses 24px/600.",
+      "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+      "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "250-260",
+      "property": "showDivider",
+      "figmaValue": "false",
+      "currentValue": "true",
+      "severity": "major",
+      "explanation": "The divider line above the 'Proceed' button is not present in the Figma design.",
+      "currentCode": "                showDivider={true}",
+      "fixedCode": "                showDivider={false}"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "310-315",
+      "property": "paddingTop",
+      "figmaValue": "0",
+      "currentValue": "spacing.xs (8px)",
+      "severity": "minor",
+      "explanation": "The handle container has extra top padding not present in Figma. The handle should sit flush at the top.",
+      "currentCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: spacing.xs,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,",
+      "fixedCode": "  handleContainer: {\n    alignItems: 'center',\n    paddingTop: 0,\n    paddingBottom: FIGMA_DIMENSIONS.handleToSheetGap,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 3,
+    "critical": 0,
+    "major": 2,
+    "minor": 1,
+    "filesAffected": [
+      "src/components/ErrorBoundary.tsx",
+      "app/(waitlist)/index.tsx"
+    ]
+  }
+}

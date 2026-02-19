@@ -1,0 +1,23 @@
+{
+  "name": "autobot",
+  "version": "1.0.0",
+  "description": "AutoBot - Orchestration, certification, and reporting for Flent Secured",
+  "scripts": {
+    "bridge": "npx ts-node scripts/bridge-reports.ts",
+    "solutions": "npx ts-node scripts/populate-solutions.ts",
+    "maestro-cloud": "bash scripts/maestro-cloud.sh",
+    "regression": "npx ts-node scripts/regression-check.ts",
+    "certify": "npx ts-node scripts/certify-screen.ts",
+    "flow-report": "npx ts-node scripts/flow-report.ts",
+    "status": "bash scripts/status.sh",
+    "resume": "bash scripts/resume.sh"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  }
+}

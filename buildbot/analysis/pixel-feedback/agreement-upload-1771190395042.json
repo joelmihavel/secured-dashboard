@@ -1,0 +1,45 @@
+{
+  "screenId": "1-29914",
+  "screenName": "Onboarding / Agreement --upload",
+  "route": "/(agreement)/upload",
+  "generatedAt": "2026-02-15T21:19:55.041Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T21:16:46.812Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T21:17:50.710Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T21:18:54.234Z",
+      "feedback": {
+        "screenLevelIssues": [],
+        "layoutIssues": [],
+        "animationIssues": []
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T21:19:55.041Z",
+      "feedback": []
+    }
+  ],
+  "consolidatedFixes": [],
+  "summary": {}
+}

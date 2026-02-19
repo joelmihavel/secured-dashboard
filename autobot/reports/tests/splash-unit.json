@@ -1,0 +1,53 @@
+{
+  "screenId": "1-28055",
+  "secondaryScreenId": "1-28053",
+  "testType": "unit",
+  "timestamp": "2026-02-15T14:30:00Z",
+  "testFile": "src/__tests__/screens/splash.test.tsx",
+  "fixtureFile": "src/__tests__/fixtures/splash.fixtures.ts",
+  "totalTests": 28,
+  "passed": 28,
+  "failed": 0,
+  "skipped": 0,
+  "executionTimeMs": 6927,
+  "coverage": {
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100
+  },
+  "failures": [],
+  "testCategories": {
+    "rendersWithoutCrash": { "tests": 2, "passed": 2 },
+    "textContentMatchesFigma": { "tests": 9, "passed": 9 },
+    "interactiveElementsPresent": { "tests": 3, "passed": 3 },
+    "navigationFiresCorrectly": { "tests": 4, "passed": 4 },
+    "loadingState": { "tests": 1, "passed": 1, "note": "N/A - static screen, documented" },
+    "errorState": { "tests": 1, "passed": 1, "note": "N/A - static screen, documented" },
+    "emptyState": { "tests": 1, "passed": 1, "note": "N/A - static screen, documented" },
+    "propsVariations": { "tests": 2, "passed": 2, "note": "Both Figma states map to same component" },
+    "accessibility": { "tests": 4, "passed": 4 },
+    "hapticFeedback": { "tests": 1, "passed": 1 }
+  },
+  "testIdsVerified": [
+    "splash-screen",
+    "get-started-button"
+  ],
+  "testIdsMissing": [],
+  "statesCovered": ["default", "animation"],
+  "statesMissing": [],
+  "navigationTargetsVerified": [
+    "/(auth)/carousel",
+    "/(auth)/sign-up"
+  ],
+  "screenCharacteristics": {
+    "isStaticScreen": true,
+    "hasDataFetching": false,
+    "hasLoadingState": false,
+    "hasErrorState": false,
+    "hasEmptyState": false,
+    "interactiveElements": ["get-started-button", "login-pressable"],
+    "exitPoints": ["/(auth)/carousel", "/(auth)/sign-up"],
+    "mocksRequired": ["expo-router", "react-native-safe-area-context", "react-native-svg", "expo-haptics", "react-native-reanimated", "expo-linear-gradient"]
+  }
+}

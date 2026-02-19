@@ -1,0 +1,308 @@
+{
+  "screenId": "1-29914",
+  "screenName": "Onboarding / Agreement --upload",
+  "route": "/(agreement)/upload",
+  "generatedAt": "2026-02-15T20:40:23.841Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T20:37:01.776Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T20:38:28.438Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "62",
+              "property": "backgroundColor",
+              "figmaValue": "colors.black[700]",
+              "currentValue": "'#131313'",
+              "severity": "major",
+              "explanation": "Hardcoded hex value should be replaced with Design Token for theme consistency.",
+              "currentCode": "backgroundColor: '#131313',",
+              "fixedCode": "backgroundColor: colors.black[700],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "65",
+              "property": "padding",
+              "figmaValue": "spacing.lg (24)",
+              "currentValue": "24",
+              "severity": "major",
+              "explanation": "Use spacing token instead of hardcoded pixel value.",
+              "currentCode": "padding: 24,",
+              "fixedCode": "padding: spacing.lg,"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "74",
+              "property": "color",
+              "figmaValue": "colors.neutral[500]",
+              "currentValue": "'#A9A9A9'",
+              "severity": "major",
+              "explanation": "Hardcoded hex value matches neutral[500] token.",
+              "currentCode": "color: '#A9A9A9',",
+              "fixedCode": "color: colors.neutral[500],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "80",
+              "property": "backgroundColor",
+              "figmaValue": "colors.brand[500]",
+              "currentValue": "'#FF9A6D'",
+              "severity": "major",
+              "explanation": "Hardcoded hex value matches brand[500] token.",
+              "currentCode": "backgroundColor: '#FF9A6D',",
+              "fixedCode": "backgroundColor: colors.brand[500],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "82",
+              "property": "borderRadius",
+              "figmaValue": "radius.sm (8)",
+              "currentValue": "8",
+              "severity": "major",
+              "explanation": "Use radius token instead of hardcoded pixel value.",
+              "currentCode": "borderRadius: 8,",
+              "fixedCode": "borderRadius: radius.sm,"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "81",
+              "property": "paddingHorizontal",
+              "figmaValue": "spacing.lg (24)",
+              "currentValue": "24",
+              "severity": "major",
+              "explanation": "Use spacing token for horizontal padding.",
+              "currentCode": "paddingHorizontal: 24,",
+              "fixedCode": "paddingHorizontal: spacing.lg,"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "82",
+              "property": "paddingVertical",
+              "figmaValue": "spacing.sm (12)",
+              "currentValue": "12",
+              "severity": "major",
+              "explanation": "Use spacing token for vertical padding.",
+              "currentCode": "paddingVertical: 12,",
+              "fixedCode": "paddingVertical: spacing.sm,"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T20:39:57.992Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(agreement)/upload.tsx",
+            "lineRange": "650-651",
+            "property": "layout",
+            "figmaValue": "gap: 40",
+            "currentValue": "Spacer (flex: 1)",
+            "severity": "major",
+            "explanation": "The code uses a Spacer with flex: 1 to push the button to the bottom of the screen. In Figma, the button is part of the main content flow, positioned exactly 40px below the card section (Node 1:29985 has gap: 40). The button should not be stuck to the bottom.",
+            "currentCode": "<View style={styles.spacer} />",
+            "fixedCode": "{/* Spacer removed - gap handled by buttonContainer margin */}"
+          },
+          {
+            "file": "app/(agreement)/upload.tsx",
+            "lineRange": "700-705",
+            "property": "justifyContent",
+            "figmaValue": "center",
+            "currentValue": "flex-start (default)",
+            "severity": "major",
+            "explanation": "The content block (height ~618px) is vertically centered in the screen (height 852px) in the Figma design. The current implementation top-aligns it with padding. Adding justifyContent: 'center' to the scroll content container will achieve the correct visual balance.",
+            "currentCode": "scrollContent: {\n    flexGrow: 1,\n    alignItems: 'center', // counterAxisAlignItems: CENTER (children horizontally centered)\n  },",
+            "fixedCode": "scrollContent: {\n    flexGrow: 1,\n    alignItems: 'center',\n    justifyContent: 'center', // Vertically center the content\n  },"
+          },
+          {
+            "file": "app/(agreement)/upload.tsx",
+            "lineRange": "805-810",
+            "property": "width",
+            "figmaValue": "213",
+            "currentValue": "undefined",
+            "severity": "minor",
+            "explanation": "The hint text 'Upload Rental Agreement...' has a specific width of 213px in Figma (Node 1:29995) which forces specific line wrapping. The code lacks this constraint.",
+            "currentCode": "hintText: {\n    ...FIGMA.typography.hint,\n    color: FIGMA.colors.hintText, // #A9A9A9\n    textAlign: 'left', // Figma 1:29914: textAlign = \"left\"\n  },",
+            "fixedCode": "hintText: {\n    ...FIGMA.typography.hint,\n    color: FIGMA.colors.hintText,\n    textAlign: 'left',\n    width: 213,\n  },"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T20:40:23.841Z",
+      "feedback": [
+        {
+          "file": "app/(agreement)/upload.tsx",
+          "lineRange": "650-651",
+          "property": "layout",
+          "figmaValue": "gap: 40",
+          "currentValue": "Spacer (flex: 1)",
+          "severity": "major",
+          "explanation": "The code uses a Spacer with flex: 1 to push the button to the bottom. In Figma, the button is part of the main content flow, positioned exactly 40px below the card section. Removing the spacer restores the correct flow.",
+          "currentCode": "<View style={styles.spacer} />",
+          "fixedCode": "{/* Spacer removed to match Figma flow */}"
+        },
+        {
+          "file": "app/(agreement)/upload.tsx",
+          "lineRange": "700-705",
+          "property": "justifyContent",
+          "figmaValue": "center",
+          "currentValue": "flex-start",
+          "severity": "major",
+          "explanation": "The content block is vertically centered in the screen in Figma. Adding justifyContent: 'center' achieves this balance.",
+          "currentCode": "scrollContent: {\n    flexGrow: 1,\n    alignItems: 'center', // counterAxisAlignItems: CENTER (children horizontally centered)\n  },",
+          "fixedCode": "scrollContent: {\n    flexGrow: 1,\n    alignItems: 'center',\n    justifyContent: 'center', // Vertically center the content\n  },"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "62-65",
+          "property": "style tokens",
+          "figmaValue": "colors.black[700], spacing.lg",
+          "currentValue": "Hardcoded hex/pixels",
+          "severity": "major",
+          "explanation": "Replace hardcoded values with design tokens for theme consistency.",
+          "currentCode": "backgroundColor: '#131313',\n    flex: 1,\n    justifyContent: 'center',\n    alignItems: 'center',\n    padding: 24,",
+          "fixedCode": "backgroundColor: colors.black[700],\n    flex: 1,\n    justifyContent: 'center',\n    alignItems: 'center',\n    padding: spacing.lg,"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "80-82",
+          "property": "button style tokens",
+          "figmaValue": "colors.brand[500], spacing.lg, spacing.sm, radius.sm",
+          "currentValue": "Hardcoded hex/pixels",
+          "severity": "major",
+          "explanation": "Replace hardcoded button styles with design tokens.",
+          "currentCode": "backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,",
+          "fixedCode": "backgroundColor: colors.brand[500],\n    paddingHorizontal: spacing.lg,\n    paddingVertical: spacing.sm,\n    borderRadius: radius.sm,"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "74",
+          "property": "color",
+          "figmaValue": "colors.neutral[500]",
+          "currentValue": "'#A9A9A9'",
+          "severity": "major",
+          "explanation": "Replace hardcoded text color with token.",
+          "currentCode": "color: '#A9A9A9',",
+          "fixedCode": "color: colors.neutral[500],"
+        },
+        {
+          "file": "app/(agreement)/upload.tsx",
+          "lineRange": "805-810",
+          "property": "width",
+          "figmaValue": "213",
+          "currentValue": "undefined",
+          "severity": "minor",
+          "explanation": "The hint text has a specific width of 213px in Figma which forces specific line wrapping.",
+          "currentCode": "hintText: {\n    ...FIGMA.typography.hint,\n    color: FIGMA.colors.hintText, // #A9A9A9\n    textAlign: 'left', // Figma 1:29914: textAlign = \"left\"\n  },",
+          "fixedCode": "hintText: {\n    ...FIGMA.typography.hint,\n    color: FIGMA.colors.hintText,\n    textAlign: 'left',\n    width: 213,\n  },"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(agreement)/upload.tsx",
+      "lineRange": "650-651",
+      "property": "layout",
+      "figmaValue": "gap: 40",
+      "currentValue": "Spacer (flex: 1)",
+      "severity": "major",
+      "explanation": "The code uses a Spacer with flex: 1 to push the button to the bottom. In Figma, the button is part of the main content flow, positioned exactly 40px below the card section. Removing the spacer restores the correct flow.",
+      "currentCode": "<View style={styles.spacer} />",
+      "fixedCode": "{/* Spacer removed to match Figma flow */}"
+    },
+    {
+      "file": "app/(agreement)/upload.tsx",
+      "lineRange": "700-705",
+      "property": "justifyContent",
+      "figmaValue": "center",
+      "currentValue": "flex-start",
+      "severity": "major",
+      "explanation": "The content block is vertically centered in the screen in Figma. Adding justifyContent: 'center' achieves this balance.",
+      "currentCode": "scrollContent: {\n    flexGrow: 1,\n    alignItems: 'center', // counterAxisAlignItems: CENTER (children horizontally centered)\n  },",
+      "fixedCode": "scrollContent: {\n    flexGrow: 1,\n    alignItems: 'center',\n    justifyContent: 'center', // Vertically center the content\n  },"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "62-65",
+      "property": "style tokens",
+      "figmaValue": "colors.black[700], spacing.lg",
+      "currentValue": "Hardcoded hex/pixels",
+      "severity": "major",
+      "explanation": "Replace hardcoded values with design tokens for theme consistency.",
+      "currentCode": "backgroundColor: '#131313',\n    flex: 1,\n    justifyContent: 'center',\n    alignItems: 'center',\n    padding: 24,",
+      "fixedCode": "backgroundColor: colors.black[700],\n    flex: 1,\n    justifyContent: 'center',\n    alignItems: 'center',\n    padding: spacing.lg,"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "80-82",
+      "property": "button style tokens",
+      "figmaValue": "colors.brand[500], spacing.lg, spacing.sm, radius.sm",
+      "currentValue": "Hardcoded hex/pixels",
+      "severity": "major",
+      "explanation": "Replace hardcoded button styles with design tokens.",
+      "currentCode": "backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,",
+      "fixedCode": "backgroundColor: colors.brand[500],\n    paddingHorizontal: spacing.lg,\n    paddingVertical: spacing.sm,\n    borderRadius: radius.sm,"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "74",
+      "property": "color",
+      "figmaValue": "colors.neutral[500]",
+      "currentValue": "'#A9A9A9'",
+      "severity": "major",
+      "explanation": "Replace hardcoded text color with token.",
+      "currentCode": "color: '#A9A9A9',",
+      "fixedCode": "color: colors.neutral[500],"
+    },
+    {
+      "file": "app/(agreement)/upload.tsx",
+      "lineRange": "805-810",
+      "property": "width",
+      "figmaValue": "213",
+      "currentValue": "undefined",
+      "severity": "minor",
+      "explanation": "The hint text has a specific width of 213px in Figma which forces specific line wrapping.",
+      "currentCode": "hintText: {\n    ...FIGMA.typography.hint,\n    color: FIGMA.colors.hintText, // #A9A9A9\n    textAlign: 'left', // Figma 1:29914: textAlign = \"left\"\n  },",
+      "fixedCode": "hintText: {\n    ...FIGMA.typography.hint,\n    color: FIGMA.colors.hintText,\n    textAlign: 'left',\n    width: 213,\n  },"
+    }
+  ],
+  "summary": {
+    "totalIssues": 6,
+    "critical": 0,
+    "major": 5,
+    "minor": 1,
+    "filesAffected": [
+      "app/(agreement)/upload.tsx",
+      "src/components/ErrorBoundary.tsx"
+    ]
+  }
+}

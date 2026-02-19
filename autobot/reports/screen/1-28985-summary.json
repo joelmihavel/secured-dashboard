@@ -1,0 +1,26 @@
+{
+  "screenId": "1-28985",
+  "screenName": "Carousel Page 4",
+  "route": "/(auth)/carousel",
+  "flow": "auth",
+  "status": "VERIFIED",
+  "timestamp": "2026-02-15T20:28:45.035Z",
+  "visual": {
+    "pixelDiff": 8.22892741062,
+    "pixelDiffPassed": true,
+    "coverage": 98.1,
+    "coveragePassed": true,
+    "inspectorScore": 80,
+    "geminiClean": true
+  },
+  "testing": {
+    "unitTestFile": "src/__tests__/screens/carousel.test.tsx",
+    "totalTests": 36,
+    "passed": 36,
+    "failed": 0
+  },
+  "certification": {
+    "ready": true,
+    "blockers": []
+  }
+}

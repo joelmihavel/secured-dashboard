@@ -1,0 +1,89 @@
+appId: com.flent.secured
+name: "Auth Flow - Onboarding (Beta Splash -> Carousel -> Sign Up)"
+tags:
+  - flow-e2e
+  - auth
+  - onboarding
+---
+# ── Test: Full onboarding flow from beta splash through carousel to sign-up ──
+#
+# Flow: beta-splash (auto 2.5s) -> splash -> tap "Get Started" -> carousel
+#       -> swipe through 3 pages -> tap "Skip" -> sign-up screen
+#
+# Screen testIDs verified from source:
+#   beta-splash: testID="beta-splash-screen"
+#   splash:      testID="splash-screen"
+#   carousel:    testID="carousel-screen"
+#   sign-up:     testID="sign-up-screen"
+#   Get Started: testID="get-started-button"
+#
+# NOTE: Carousel uses "Skip ->" link to navigate to sign-up (no "Continue" button).
+
+# Step 1: Launch app with clean state
+- launchApp:
+    clearState: true
+
+# Step 2: Wait through beta splash auto-navigation
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "splash-screen"
+    timeout: 6000
+- waitForAnimationToEnd
+
+# Step 3: Assert splash screen and tap "Get Started"
+- assertVisible:
+    id: "splash-screen"
+- assertVisible:
+    id: "get-started-button"
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# Step 4: Assert carousel screen loaded (page 1)
+- extendedWaitUntil:
+    visible:
+      id: "carousel-screen"
+    timeout: 5000
+- assertVisible:
+    id: "carousel-screen"
+- assertVisible: "Earn 1% back "
+- assertVisible: "on your rent"
+- takeScreenshot: "auth-onboarding-01-carousel-page1"
+
+# Step 5: Swipe to page 2
+- swipe:
+    direction: LEFT
+    duration: 500
+- waitForAnimationToEnd
+- assertVisible: "More than "
+- assertVisible: "just cashback"
+- takeScreenshot: "auth-onboarding-02-carousel-page2"
+
+# Step 6: Swipe to page 3 (last page)
+- swipe:
+    direction: LEFT
+    duration: 500
+- waitForAnimationToEnd
+- assertVisible: "Your landlord"
+- assertVisible: "benefits too"
+- takeScreenshot: "auth-onboarding-03-carousel-page3"
+
+# Step 7: Tap "Skip" to navigate to sign-up
+# Carousel has "Skip ->" text link (underlined "Skip" + " ->")
+- tapOn: "Skip"
+- waitForAnimationToEnd
+
+# Step 8: Assert sign-up screen loaded
+- extendedWaitUntil:
+    visible:
+      id: "sign-up-screen"
+    timeout: 5000
+- assertVisible:
+    id: "sign-up-screen"
+- assertVisible: "know you"
+- assertVisible:
+    id: "phone-input"
+- assertVisible:
+    id: "name-input"
+- takeScreenshot: "auth-onboarding-04-signup-screen"

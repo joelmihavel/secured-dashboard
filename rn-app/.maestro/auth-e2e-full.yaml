@@ -1,0 +1,168 @@
+appId: com.flent.secured
+name: "Auth Flow E2E - Full Journey (Beta Splash -> Splash -> Carousel -> Sign Up -> OTP)"
+tags:
+  - flow-e2e
+  - auth
+  - critical-path
+  - full-journey
+---
+# ── Full end-to-end auth flow with assertions at every transition ──
+#
+# Complete journey:
+#   beta-splash (auto 2.5s) -> splash -> carousel (3 swipes) -> sign-up -> OTP
+#
+# This test validates every screen transition in the auth funnel with
+# assertions at each step to pinpoint exactly where a failure occurs.
+#
+# Screen testIDs verified from source:
+#   beta-splash:    testID="beta-splash-screen"
+#   splash:         testID="splash-screen"
+#   carousel:       testID="carousel-screen"
+#   sign-up:        testID="sign-up-screen"
+#   OTP input:      testID="otp-input"
+#   Get Started:    testID="get-started-button" (used on splash AND sign-up)
+#   phone input:    testID="phone-input"
+#   name input:     testID="name-input"
+#   consent toggle: testID="consent-toggle"
+#   Proceed button: testID="proceed-button"
+
+# ── Step 1: Beta Splash Screen ──────────────────────────────
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+
+# Assert beta splash is visible with logo and badge
+- extendedWaitUntil:
+    visible:
+      id: "beta-splash-screen"
+    timeout: 5000
+- assertVisible:
+    id: "beta-splash-screen"
+- assertVisible: "BETA LAUNCH"
+- takeScreenshot: "auth-e2e-01-beta-splash"
+
+# ── Step 2: Splash Screen (auto-navigation from beta splash) ──
+# Beta splash auto-navigates after ~2.5s
+- extendedWaitUntil:
+    visible:
+      id: "splash-screen"
+    timeout: 6000
+- waitForAnimationToEnd
+
+# Assert splash screen content
+- assertVisible:
+    id: "splash-screen"
+- assertVisible: "work for you"
+- assertVisible: "Get Started"
+- assertVisible:
+    id: "get-started-button"
+- assertVisible: "Already a user?"
+- takeScreenshot: "auth-e2e-02-splash"
+
+# ── Step 3: Carousel Screen ─────────────────────────────────
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# Assert carousel page 1
+- extendedWaitUntil:
+    visible:
+      id: "carousel-screen"
+    timeout: 5000
+- assertVisible:
+    id: "carousel-screen"
+- assertVisible: "Earn 1% back "
+- assertVisible: "on your rent"
+- takeScreenshot: "auth-e2e-03-carousel-page1"
+
+# Swipe to page 2
+- swipe:
+    direction: LEFT
+    duration: 500
+- waitForAnimationToEnd
+- assertVisible: "More than "
+- assertVisible: "just cashback"
+- takeScreenshot: "auth-e2e-04-carousel-page2"
+
+# Swipe to page 3
+- swipe:
+    direction: LEFT
+    duration: 500
+- waitForAnimationToEnd
+- assertVisible: "Your landlord"
+- assertVisible: "benefits too"
+- takeScreenshot: "auth-e2e-05-carousel-page3"
+
+# ── Step 4: Sign Up Screen ──────────────────────────────────
+# Tap "Skip" on carousel to navigate to sign-up
+- tapOn: "Skip"
+- waitForAnimationToEnd
+
+# Assert sign-up screen loaded in empty state
+- extendedWaitUntil:
+    visible:
+      id: "sign-up-screen"
+    timeout: 5000
+- assertVisible:
+    id: "sign-up-screen"
+- assertVisible: "know you"
+- assertVisible:
+    id: "phone-input"
+- assertVisible:
+    id: "name-input"
+- assertVisible:
+    id: "consent-toggle"
+- assertVisible:
+    id: "get-started-button"
+- takeScreenshot: "auth-e2e-06-signup-empty"
+
+# Fill phone number
+- tapOn:
+    id: "phone-input"
+- inputText: "9876543210"
+- hideKeyboard
+
+# Fill name
+- tapOn:
+    id: "name-input"
+- inputText: "John Appleseed"
+- hideKeyboard
+
+# Consent toggle is enabled by default (no tap needed)
+- takeScreenshot: "auth-e2e-07-signup-filled"
+
+# Submit the form
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# ── Step 5: OTP Bottom Sheet ────────────────────────────────
+# OTP appears as a bottom sheet modal over the sign-up screen
+- extendedWaitUntil:
+    visible: "Let's verify your number"
+    timeout: 8000
+
+# Assert OTP screen content
+- assertVisible: "Let's verify your number"
+- assertVisible:
+    containsText: "6-digit code"
+- assertVisible:
+    id: "otp-input"
+- assertVisible:
+    id: "proceed-button"
+- assertVisible:
+    containsText: "Resend"
+- takeScreenshot: "auth-e2e-08-otp-empty"
+
+# Enter 6-digit OTP
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+- hideKeyboard
+- takeScreenshot: "auth-e2e-09-otp-filled"
+
+# Tap Proceed to verify OTP
+- tapOn:
+    id: "proceed-button"
+- waitForAnimationToEnd
+- takeScreenshot: "auth-e2e-10-post-otp"

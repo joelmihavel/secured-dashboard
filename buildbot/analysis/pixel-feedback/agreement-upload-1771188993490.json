@@ -1,0 +1,198 @@
+{
+  "screenId": "1-29914",
+  "screenName": "Onboarding / Agreement --upload",
+  "route": "/(agreement)/upload",
+  "generatedAt": "2026-02-15T20:56:33.489Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T20:53:45.159Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T20:54:55.353Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/waitlist/ErrorBoundary.tsx",
+              "lineRange": "67-69",
+              "property": "typography",
+              "figmaValue": "fontSize: 28, lineHeight: 40, fontWeight: 400 (typography.h4)",
+              "currentValue": "fontSize: 24, fontWeight: 600",
+              "severity": "major",
+              "explanation": "The provided screenshot appears to be a different screen ('Confirm details'), but the ErrorBoundary title should align with the provided design system tokens. The current title uses arbitrary values instead of the 'h4' token defined in the reference.",
+              "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+              "fixedCode": "    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',"
+            },
+            {
+              "file": "src/components/waitlist/ErrorBoundary.tsx",
+              "lineRange": "86-86",
+              "property": "color",
+              "figmaValue": "#131313 (colors.black[700])",
+              "currentValue": "#000000",
+              "severity": "minor",
+              "explanation": "The button text uses hardcoded pure black (#000000). To maintain consistency with the dark theme background used elsewhere, it should use the theme token 'black[700]' (#131313).",
+              "currentCode": "    color: '#000000',",
+              "fixedCode": "    color: '#131313',"
+            }
+          ],
+          "confidence": 60
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T20:56:12.321Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(agreement)/upload.tsx",
+            "lineRange": "100-105",
+            "property": "color",
+            "figmaValue": "#FFFFFF (colors.neutral[white])",
+            "currentValue": "colors.neutral[500] (#A9A9A9)",
+            "severity": "major",
+            "explanation": "The text 'One' in the title is visually White in the Figma screenshot and defined as #FFFFFF in the extraction data. The code implements it as 'titleGray' using 'colors.neutral[500]' (#A9A9A9), causing a significant visual discrepancy.",
+            "currentCode": "titleGray: colors.neutral[500],",
+            "fixedCode": "titleGray: colors.neutral.white,"
+          },
+          {
+            "file": "app/(agreement)/upload.tsx",
+            "lineRange": "130-135",
+            "property": "buttonStyle",
+            "figmaValue": "bg: #202020, text: #444444",
+            "currentValue": "PrimaryButton default disabled styles",
+            "severity": "minor",
+            "explanation": "The disabled 'Proceed' button in Figma has specific dark theme colors (Background: #202020, Text: #444444). The code uses a generic `PrimaryButton` with `disabled={true}`, which likely defaults to standard disabled colors (often lighter grays) rather than the specific dark-on-dark contrast required by this screen's design.",
+            "currentCode": "<PrimaryButton\n  title={config.buttonTitle}\n  disabled={!isButtonEnabled}\n  ...",
+            "fixedCode": "<PrimaryButton\n  title={config.buttonTitle}\n  disabled={!isButtonEnabled}\n  disabledStyle={{ backgroundColor: '#202020' }}\n  disabledTextStyle={{ color: '#444444' }}\n  ..."
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T20:56:33.489Z",
+      "feedback": [
+        {
+          "file": "src/components/waitlist/ErrorBoundary.tsx",
+          "lineRange": "67-69",
+          "property": "typography",
+          "figmaValue": "fontSize: 28, lineHeight: 40, fontWeight: 400 (typography.h4)",
+          "currentValue": "fontSize: 24, fontWeight: 600",
+          "severity": "major",
+          "explanation": "The ErrorBoundary title typography does not match the design system 'h4' token. It currently uses arbitrary values.",
+          "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+          "fixedCode": "    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',"
+        },
+        {
+          "file": "app/(agreement)/upload.tsx",
+          "lineRange": "100-105",
+          "property": "color",
+          "figmaValue": "#FFFFFF (colors.neutral.white)",
+          "currentValue": "colors.neutral[500] (#A9A9A9)",
+          "severity": "major",
+          "explanation": "The text 'One' in the title is visually White in Figma. The current code uses a gray color (neutral[500]), causing a significant visual discrepancy.",
+          "currentCode": "titleGray: colors.neutral[500],",
+          "fixedCode": "titleGray: colors.neutral.white,"
+        },
+        {
+          "file": "src/components/waitlist/ErrorBoundary.tsx",
+          "lineRange": "86-86",
+          "property": "color",
+          "figmaValue": "#131313 (colors.black[700])",
+          "currentValue": "#000000",
+          "severity": "minor",
+          "explanation": "The button text uses hardcoded pure black. It should use the theme token 'black[700]' (#131313) for consistency with the dark theme.",
+          "currentCode": "    color: '#000000',",
+          "fixedCode": "    color: '#131313', // colors.black[700]"
+        },
+        {
+          "file": "app/(agreement)/upload.tsx",
+          "lineRange": "130-135",
+          "property": "buttonStyle",
+          "figmaValue": "bg: #202020 (black[500]), text: #444444 (neutral[800])",
+          "currentValue": "Default disabled styles",
+          "severity": "minor",
+          "explanation": "The disabled 'Proceed' button requires specific dark theme colors to match the design, rather than the default disabled styles.",
+          "currentCode": "<PrimaryButton\n  title={config.buttonTitle}\n  disabled={!isButtonEnabled}",
+          "fixedCode": "<PrimaryButton\n  title={config.buttonTitle}\n  disabled={!isButtonEnabled}\n  disabledStyle={{ backgroundColor: colors.black[500] }}\n  disabledTextStyle={{ color: colors.neutral[800] }}"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/waitlist/ErrorBoundary.tsx",
+      "lineRange": "67-69",
+      "property": "typography",
+      "figmaValue": "fontSize: 28, lineHeight: 40, fontWeight: 400 (typography.h4)",
+      "currentValue": "fontSize: 24, fontWeight: 600",
+      "severity": "major",
+      "explanation": "The ErrorBoundary title typography does not match the design system 'h4' token. It currently uses arbitrary values.",
+      "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+      "fixedCode": "    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',"
+    },
+    {
+      "file": "app/(agreement)/upload.tsx",
+      "lineRange": "100-105",
+      "property": "color",
+      "figmaValue": "#FFFFFF (colors.neutral.white)",
+      "currentValue": "colors.neutral[500] (#A9A9A9)",
+      "severity": "major",
+      "explanation": "The text 'One' in the title is visually White in Figma. The current code uses a gray color (neutral[500]), causing a significant visual discrepancy.",
+      "currentCode": "titleGray: colors.neutral[500],",
+      "fixedCode": "titleGray: colors.neutral.white,"
+    },
+    {
+      "file": "src/components/waitlist/ErrorBoundary.tsx",
+      "lineRange": "86-86",
+      "property": "color",
+      "figmaValue": "#131313 (colors.black[700])",
+      "currentValue": "#000000",
+      "severity": "minor",
+      "explanation": "The button text uses hardcoded pure black. It should use the theme token 'black[700]' (#131313) for consistency with the dark theme.",
+      "currentCode": "    color: '#000000',",
+      "fixedCode": "    color: '#131313', // colors.black[700]"
+    },
+    {
+      "file": "app/(agreement)/upload.tsx",
+      "lineRange": "130-135",
+      "property": "buttonStyle",
+      "figmaValue": "bg: #202020 (black[500]), text: #444444 (neutral[800])",
+      "currentValue": "Default disabled styles",
+      "severity": "minor",
+      "explanation": "The disabled 'Proceed' button requires specific dark theme colors to match the design, rather than the default disabled styles.",
+      "currentCode": "<PrimaryButton\n  title={config.buttonTitle}\n  disabled={!isButtonEnabled}",
+      "fixedCode": "<PrimaryButton\n  title={config.buttonTitle}\n  disabled={!isButtonEnabled}\n  disabledStyle={{ backgroundColor: colors.black[500] }}\n  disabledTextStyle={{ color: colors.neutral[800] }}"
+    }
+  ],
+  "summary": {
+    "totalIssues": 4,
+    "critical": 0,
+    "major": 2,
+    "minor": 2,
+    "filesAffected": [
+      "src/components/waitlist/ErrorBoundary.tsx",
+      "app/(agreement)/upload.tsx"
+    ]
+  }
+}

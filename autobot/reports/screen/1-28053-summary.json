@@ -1,0 +1,26 @@
+{
+  "screenId": "1-28053",
+  "screenName": "Splash Default",
+  "route": "/(auth)/splash",
+  "flow": "auth",
+  "status": "VERIFIED",
+  "timestamp": "2026-02-15T20:28:45.034Z",
+  "visual": {
+    "pixelDiff": null,
+    "pixelDiffPassed": null,
+    "coverage": null,
+    "coveragePassed": null,
+    "inspectorScore": null,
+    "geminiClean": null
+  },
+  "testing": {
+    "unitTestFile": "src/__tests__/screens/splash.test.tsx",
+    "totalTests": 28,
+    "passed": 28,
+    "failed": 0
+  },
+  "certification": {
+    "ready": true,
+    "blockers": []
+  }
+}

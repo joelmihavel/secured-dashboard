@@ -1,0 +1,165 @@
+{
+  "screenId": "1-31175",
+  "screenName": "auth / sign up --enter OTP",
+  "route": "/(auth)/otp",
+  "generatedAt": "2026-02-15T17:33:27.411Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T17:30:43.511Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T17:32:05.655Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "68-69",
+              "property": "typography",
+              "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+              "currentValue": "fontSize: 24, fontWeight: '600'",
+              "severity": "major",
+              "explanation": "The title styles use hardcoded values that deviate from the design system. The screenshot's header aligns with the 'typography.h4' token (28px, regular weight), whereas the code uses a smaller, bolder font.",
+              "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+              "fixedCode": "    fontSize: 28,\n    fontWeight: '400',\n    lineHeight: 40,"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T17:33:09.550Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(waitlist)/otp.tsx",
+            "lineRange": "239-239",
+            "property": "showDivider",
+            "figmaValue": "false (No divider line)",
+            "currentValue": "true",
+            "severity": "major",
+            "explanation": "The simulator shows a horizontal divider line above the 'Proceed' button which is NOT present in the Figma design. The code explicitly enables this with `showDivider={true}`, creating a visual mismatch.",
+            "currentCode": "                showDivider={true}",
+            "fixedCode": "                showDivider={false}"
+          },
+          {
+            "file": "app/(waitlist)/otp.tsx",
+            "lineRange": "246-246",
+            "property": "text content",
+            "figmaValue": "Didn’t receive the code?",
+            "currentValue": "Didn't receive the code?",
+            "severity": "minor",
+            "explanation": "The Figma design uses a smart apostrophe (’) in 'Didn’t', while the code uses a straight apostrophe (').",
+            "currentCode": "                  Didn't receive the code?{' '}",
+            "fixedCode": "                  Didn’t receive the code?{' '}"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 100
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T17:33:27.411Z",
+      "feedback": [
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "68-69",
+          "property": "typography",
+          "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+          "currentValue": "fontSize: 24, fontWeight: '600'",
+          "severity": "major",
+          "explanation": "The title styles use hardcoded values that deviate from the design system. The design uses the 'typography.h4' token (28px, regular weight), whereas the code uses a smaller, bolder font.",
+          "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+          "fixedCode": "    fontSize: 28,\n    fontWeight: '400',\n    lineHeight: 40,"
+        },
+        {
+          "file": "app/(waitlist)/otp.tsx",
+          "lineRange": "239-239",
+          "property": "showDivider",
+          "figmaValue": "false",
+          "currentValue": "true",
+          "severity": "major",
+          "explanation": "The simulator shows a horizontal divider line above the 'Proceed' button which is NOT present in the Figma design.",
+          "currentCode": "                showDivider={true}",
+          "fixedCode": "                showDivider={false}"
+        },
+        {
+          "file": "app/(waitlist)/otp.tsx",
+          "lineRange": "246-246",
+          "property": "text content",
+          "figmaValue": "Didn’t receive the code?",
+          "currentValue": "Didn't receive the code?",
+          "severity": "minor",
+          "explanation": "The Figma design uses a smart apostrophe (’) in 'Didn’t', while the code uses a straight apostrophe (').",
+          "currentCode": "                  Didn't receive the code?{' '}",
+          "fixedCode": "                  Didn’t receive the code?{' '}"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "68-69",
+      "property": "typography",
+      "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+      "currentValue": "fontSize: 24, fontWeight: '600'",
+      "severity": "major",
+      "explanation": "The title styles use hardcoded values that deviate from the design system. The design uses the 'typography.h4' token (28px, regular weight), whereas the code uses a smaller, bolder font.",
+      "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+      "fixedCode": "    fontSize: 28,\n    fontWeight: '400',\n    lineHeight: 40,"
+    },
+    {
+      "file": "app/(waitlist)/otp.tsx",
+      "lineRange": "239-239",
+      "property": "showDivider",
+      "figmaValue": "false",
+      "currentValue": "true",
+      "severity": "major",
+      "explanation": "The simulator shows a horizontal divider line above the 'Proceed' button which is NOT present in the Figma design.",
+      "currentCode": "                showDivider={true}",
+      "fixedCode": "                showDivider={false}"
+    },
+    {
+      "file": "app/(waitlist)/otp.tsx",
+      "lineRange": "246-246",
+      "property": "text content",
+      "figmaValue": "Didn’t receive the code?",
+      "currentValue": "Didn't receive the code?",
+      "severity": "minor",
+      "explanation": "The Figma design uses a smart apostrophe (’) in 'Didn’t', while the code uses a straight apostrophe (').",
+      "currentCode": "                  Didn't receive the code?{' '}",
+      "fixedCode": "                  Didn’t receive the code?{' '}"
+    }
+  ],
+  "summary": {
+    "totalIssues": 3,
+    "critical": 0,
+    "major": 2,
+    "minor": 1,
+    "filesAffected": [
+      "src/components/ErrorBoundary.tsx",
+      "app/(waitlist)/otp.tsx"
+    ]
+  }
+}

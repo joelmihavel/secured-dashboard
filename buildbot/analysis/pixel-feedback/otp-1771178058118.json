@@ -1,0 +1,139 @@
+{
+  "screenId": "1-31175",
+  "screenName": "auth / sign up --enter OTP",
+  "route": "/(auth)/otp",
+  "generatedAt": "2026-02-15T17:54:18.117Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T17:50:21.472Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T17:51:51.667Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "1-90",
+              "property": "Component Mismatch",
+              "figmaValue": "OTP Verification Screen",
+              "currentValue": "Generic ErrorBoundary",
+              "severity": "critical",
+              "explanation": "The provided Figma screenshot shows an OTP Verification screen (Input fields, 'Let's verify your number'), but the code is a generic ErrorBoundary class. These are fundamentally different components. The fixes below align the ErrorBoundary with the provided Design Tokens (Typography, Colors) to ensure it matches the app's design system, as visual matching to the OTP screen is impossible.",
+              "currentCode": "class ErrorBoundary extends Component...",
+              "fixedCode": "// Please verify the correct Figma file is provided for the ErrorBoundary component."
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-69",
+              "property": "title typography",
+              "figmaValue": "28px / 400 (typography.h4)",
+              "currentValue": "24px / 600",
+              "severity": "major",
+              "explanation": "The title style deviates from the provided `typography.h4` token. The screenshot also indicates titles use a lighter font weight (400) rather than bold (600).",
+              "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+              "fixedCode": "    fontSize: 28, // typography.h4\n    lineHeight: 40, // typography.h4\n    fontWeight: '400', // typography.h4"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "62",
+              "property": "backgroundColor",
+              "figmaValue": "colors.black[700]",
+              "currentValue": "'#131313'",
+              "severity": "minor",
+              "explanation": "Hardcoded hex value should map to the design token for maintainability.",
+              "currentCode": "    backgroundColor: '#131313',",
+              "fixedCode": "    backgroundColor: '#131313', // colors.black[700]"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "80",
+              "property": "button background",
+              "figmaValue": "colors.brand[500]",
+              "currentValue": "'#FF9A6D'",
+              "severity": "minor",
+              "explanation": "Hardcoded hex value should map to the design token.",
+              "currentCode": "    backgroundColor: '#FF9A6D',",
+              "fixedCode": "    backgroundColor: '#FF9A6D', // colors.brand[500]"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "74",
+              "property": "message color",
+              "figmaValue": "colors.neutral[500]",
+              "currentValue": "'#A9A9A9'",
+              "severity": "minor",
+              "explanation": "Hardcoded hex value should map to the design token.",
+              "currentCode": "    color: '#A9A9A9',",
+              "fixedCode": "    color: '#A9A9A9', // colors.neutral[500]"
+            }
+          ],
+          "confidence": 60
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T17:53:31.642Z",
+      "feedback": {
+        "rawText": "Based on the analysis of the Figma screenshot (IMAGE 1) vs the Simulator screenshot (IMAGE 2) and the provided code:\n\n1.  **Unwanted Divider Line**: The Simulator shows a horizontal divider line above the \"Proceed\" button. The Figma screenshot does **not** show this line. The code enables this via `showDivider={true}` on the `PrimaryButton`.\n2.  **Visual State**: The Simulator shows the \"Error\" state (Red borders, \"Wrong Code\" text), while the Figma screenshot shows the \"Default\" state. While the error handling logic is correct to keep, the visual structure should match the Figma design which implies a clean layout without the divider line.\n3.  **Spacing**: The spacing and dimensions (48px padding, 30.38px gaps) appear to match the Figma extraction and visual evidence.\n\nI will fix the `PrimaryButton` to remove the divider.\n\n```json\n{\n  \"screenLevelIssues\": [\n    {\n      \"file\": \"app/(waitlist)/index.tsx\",\n      \"lineRange\": \"258-264\",\n      \"property\": \"showDivider\",\n      \"figmaValue\": \"false (No divider visible)\",\n      \"currentValue\": \"true\",\n      \"severity\": \"major\",\n      \"explanation\": \"The Figma screenshot shows no divider line above the 'Proceed' button. The current implementation explicitly enables a divider, creating a visual discrepancy.\",\n      \"currentCode\": \"                loading={isVerifyingOtp}\\n                showDivider={true}\\n                testID=\\\"proceed-button\\\"\",\n      \"fixedCode\": \"                loading={isVerifyingOtp}\\n                showDivider={false}\\n                testID=\\\"proceed-button\\\"\"\n    }\n  ],\n  \"layoutIssues\": [],\n  \"scrollIssues\": [],\n  \"confidence\": 100\n}\n```",
+        "parseError": true
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T17:54:18.117Z",
+      "feedback": [
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "258-264",
+          "property": "showDivider",
+          "figmaValue": "false",
+          "currentValue": "true",
+          "severity": "major",
+          "explanation": "The Figma screenshot shows no divider line above the 'Proceed' button. The current implementation explicitly enables a divider, creating a visual discrepancy.",
+          "currentCode": "                loading={isVerifyingOtp}\n                showDivider={true}\n                testID=\"proceed-button\"",
+          "fixedCode": "                loading={isVerifyingOtp}\n                showDivider={false}\n                testID=\"proceed-button\""
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "258-264",
+      "property": "showDivider",
+      "figmaValue": "false",
+      "currentValue": "true",
+      "severity": "major",
+      "explanation": "The Figma screenshot shows no divider line above the 'Proceed' button. The current implementation explicitly enables a divider, creating a visual discrepancy.",
+      "currentCode": "                loading={isVerifyingOtp}\n                showDivider={true}\n                testID=\"proceed-button\"",
+      "fixedCode": "                loading={isVerifyingOtp}\n                showDivider={false}\n                testID=\"proceed-button\""
+    }
+  ],
+  "summary": {
+    "totalIssues": 1,
+    "critical": 0,
+    "major": 1,
+    "minor": 0,
+    "filesAffected": [
+      "app/(waitlist)/index.tsx"
+    ]
+  }
+}

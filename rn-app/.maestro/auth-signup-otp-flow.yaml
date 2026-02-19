@@ -1,0 +1,116 @@
+appId: com.flent.secured
+name: "Auth Flow - Sign Up to OTP (Phone Entry -> OTP Verification)"
+tags:
+  - flow-e2e
+  - auth
+  - signup
+  - otp
+---
+# ── Test: Sign-up form submission navigates to OTP bottom sheet ──
+#
+# Flow: Launch -> beta-splash (auto) -> splash -> carousel -> sign-up
+#       -> fill phone + name + consent -> tap "Get Started" -> OTP sheet appears
+#       -> enter 6-digit OTP code
+#
+# Screen testIDs verified from source:
+#   sign-up:        testID="sign-up-screen"
+#   phone input:    testID="phone-input"
+#   name input:     testID="name-input"
+#   consent toggle: testID="consent-toggle"
+#   Get Started:    testID="get-started-button"
+#   OTP input:      testID="otp-input"
+#   Proceed button: testID="proceed-button"
+#
+# IMPORTANT: Sign-up requires BOTH phone AND name AND consent to enable button.
+# OTP screen is a bottom sheet modal (not a full screen replacement).
+
+# Step 1: Launch app with clean state
+- launchApp:
+    clearState: true
+
+# Step 2: Navigate through beta splash -> splash -> carousel -> sign-up
+# Wait for beta splash auto-navigation
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "splash-screen"
+    timeout: 6000
+- waitForAnimationToEnd
+
+# Tap "Get Started" on splash screen
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# Swipe through carousel (3 pages) and tap Skip
+- extendedWaitUntil:
+    visible:
+      id: "carousel-screen"
+    timeout: 5000
+- swipe:
+    direction: LEFT
+    duration: 500
+- swipe:
+    direction: LEFT
+    duration: 500
+- waitForAnimationToEnd
+- tapOn: "Skip"
+- waitForAnimationToEnd
+
+# Step 3: Assert sign-up screen loaded in empty state
+- extendedWaitUntil:
+    visible:
+      id: "sign-up-screen"
+    timeout: 5000
+- assertVisible:
+    id: "sign-up-screen"
+- assertVisible:
+    id: "phone-input"
+- assertVisible:
+    id: "name-input"
+- takeScreenshot: "auth-signup-otp-01-signup-empty"
+
+# Step 4: Fill in phone number
+- tapOn:
+    id: "phone-input"
+- inputText: "9876543210"
+- hideKeyboard
+- takeScreenshot: "auth-signup-otp-02-phone-filled"
+
+# Step 5: Fill in name
+- tapOn:
+    id: "name-input"
+- inputText: "John Appleseed"
+- hideKeyboard
+- takeScreenshot: "auth-signup-otp-03-name-filled"
+
+# Step 6: Consent toggle is enabled by default, verify it is visible
+- assertVisible:
+    id: "consent-toggle"
+
+# Step 7: Tap "Get Started" to submit and send OTP
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# Step 8: Assert OTP bottom sheet appears
+# OTP is a modal bottom sheet with title "Let's verify your number"
+- extendedWaitUntil:
+    visible: "Let's verify your number"
+    timeout: 8000
+- assertVisible: "Let's verify your number"
+- assertVisible:
+    containsText: "6-digit code"
+- assertVisible:
+    id: "otp-input"
+- assertVisible:
+    id: "proceed-button"
+- takeScreenshot: "auth-signup-otp-04-otp-empty"
+
+# Step 9: Enter 6-digit OTP code
+# OTP input auto-advances focus per digit (type all 6 digits into the first field)
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+- hideKeyboard
+- takeScreenshot: "auth-signup-otp-05-otp-filled"

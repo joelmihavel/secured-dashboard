@@ -1,0 +1,375 @@
+{
+  "screenId": "41-10712",
+  "screenName": "Onboarding / Post Approval 1",
+  "route": "/(setup)/index",
+  "generatedAt": "2026-02-15T21:04:56.125Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T21:01:47.988Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T21:03:23.012Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "61-66",
+              "property": "container.backgroundColor",
+              "figmaValue": "#000000",
+              "currentValue": "#131313",
+              "severity": "major",
+              "explanation": "The background color in the screenshot is pure black, whereas the current implementation uses a dark gray (black[700]).",
+              "currentCode": "backgroundColor: '#131313',",
+              "fixedCode": "backgroundColor: '#000000',"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "68-73",
+              "property": "title.style",
+              "figmaValue": "34px Bold",
+              "currentValue": "24px 600",
+              "severity": "major",
+              "explanation": "The title typography in the screenshot is significantly larger (approx 34px) and bolder than the current implementation.",
+              "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+              "fixedCode": "fontSize: 34,\n    fontWeight: 'bold',"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "74-79",
+              "property": "message.style",
+              "figmaValue": "20px #8E8E93",
+              "currentValue": "14px #A9A9A9",
+              "severity": "major",
+              "explanation": "The subtitle/message text in the screenshot is larger (approx 20px) and uses a system gray color.",
+              "currentCode": "fontSize: 14,\n    color: '#A9A9A9',",
+              "fixedCode": "fontSize: 20,\n    color: '#8E8E93',"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "80-85",
+              "property": "button.style",
+              "figmaValue": "Transparent Link",
+              "currentValue": "Solid Orange Button",
+              "severity": "critical",
+              "explanation": "The screenshot shows a text link style (transparent background) instead of a solid orange button.",
+              "currentCode": "backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,",
+              "fixedCode": "backgroundColor: 'transparent',\n    paddingHorizontal: 0,\n    paddingVertical: 12,\n    borderRadius: 0,"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "86-90",
+              "property": "buttonText.style",
+              "figmaValue": "Blue #007AFF",
+              "currentValue": "Black #000000",
+              "severity": "critical",
+              "explanation": "The action text in the screenshot is standard iOS blue, not black.",
+              "currentCode": "color: '#000000',\n    fontSize: 16,\n    fontWeight: '600',",
+              "fixedCode": "color: '#007AFF',\n    fontSize: 18,\n    fontWeight: '400',"
+            }
+          ],
+          "confidence": 95
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T21:04:26.098Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(setup)/index.tsx",
+            "lineRange": "220-225",
+            "property": "background",
+            "figmaValue": "Dotted Pattern + Halftone Building Illustration",
+            "currentValue": "DottedPattern only",
+            "severity": "major",
+            "explanation": "The Figma screenshot shows a prominent warm-toned halftone/pixelated building illustration in the top half of the screen overlaying the dotted pattern. The current implementation only includes the `<DottedPattern />` component, missing the illustration entirely.",
+            "currentCode": "<DottedPattern />\n\n      <View style={[styles.container, { paddingTop: insets.top + 65 }]}>",
+            "fixedCode": "<DottedPattern />\n      <Image source={require('@/assets/images/halftone-building.png')} style={styles.backgroundImage} />\n      <View style={[styles.container, { paddingTop: insets.top + 65 }]}>"
+          },
+          {
+            "file": "app/(setup)/index.tsx",
+            "lineRange": "315-318",
+            "property": "titleTextGray.color",
+            "figmaValue": "#FFFFFF (White) or Light Grey",
+            "currentValue": "#A9A9A9 (neutral[500])",
+            "severity": "minor",
+            "explanation": "The 'Let's get' text in the Figma screenshot appears significantly lighter (white or very light grey) compared to the code's `#A9A9A9` (medium grey). The Figma data for the title node also specifies `#FFFFFF`.",
+            "currentCode": "color: FIGMA.titleColorGray, // Figma style override 44 - colors.neutral[500] (#A9A9A9)",
+            "fixedCode": "color: colors.white, // Matches Figma data and visual lightness"
+          }
+        ],
+        "componentIssues": [
+          {
+            "componentName": "SetupCard",
+            "nodeId": "unknown",
+            "issues": [
+              {
+                "file": "app/(setup)/index.tsx",
+                "lineRange": "130-170",
+                "property": "children",
+                "figmaValue": "Paperclip Icon + Diagonal Lines",
+                "currentValue": "Missing",
+                "severity": "major",
+                "explanation": "The card in the Figma screenshot features a paperclip icon attached to the top-left edge and diagonal scratch lines on the top-right. These decorative elements are completely missing from the `SetupCard` component.",
+                "currentCode": "return (\n    <View style={styles.card}>\n      {/* Top perforations (8 circles) */}",
+                "fixedCode": "return (\n    <View style={styles.card}>\n      <PaperclipIcon style={styles.paperclip} />\n      <DiagonalLines style={styles.diagonalLines} />\n      {/* Top perforations (8 circles) */}"
+              }
+            ]
+          },
+          {
+            "componentName": "SETUP_STEPS",
+            "nodeId": "data",
+            "issues": [
+              {
+                "file": "app/(setup)/index.tsx",
+                "lineRange": "48-50",
+                "property": "description",
+                "figmaValue": "Add your landlord's (Orange) || bank details... (Grey)",
+                "currentValue": "Add your landlord's bank details (Orange) || to enable... (Grey)",
+                "severity": "minor",
+                "explanation": "In the Figma screenshot, the text 'bank details' is grey. The current data string places the split '||' after 'bank details', causing it to be rendered in the accent color (orange).",
+                "currentCode": "description: \"Add your landlord's bank details ||to enable payouts\",",
+                "fixedCode": "description: \"Add your landlord's ||bank details to enable payouts\","
+              }
+            ]
+          }
+        ],
+        "confidence": 90
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T21:04:56.125Z",
+      "feedback": [
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "80-85",
+          "property": "button.style",
+          "figmaValue": "Transparent Link",
+          "currentValue": "Solid Orange Button",
+          "severity": "critical",
+          "explanation": "The screenshot shows a text link style (transparent background) instead of a solid orange button. This is a functional/interaction pattern mismatch.",
+          "currentCode": "backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,",
+          "fixedCode": "backgroundColor: 'transparent',\n    paddingHorizontal: 0,\n    paddingVertical: 12,\n    borderRadius: 0,"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "86-90",
+          "property": "buttonText.style",
+          "figmaValue": "Blue #007AFF",
+          "currentValue": "Black #000000",
+          "severity": "critical",
+          "explanation": "The action text in the screenshot is standard iOS blue, indicating a link, rather than black text.",
+          "currentCode": "color: '#000000',\n    fontSize: 16,\n    fontWeight: '600',",
+          "fixedCode": "color: '#007AFF',\n    fontSize: 18,\n    fontWeight: '400',"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "61-66",
+          "property": "container.backgroundColor",
+          "figmaValue": "#000000",
+          "currentValue": "#131313",
+          "severity": "major",
+          "explanation": "The background color is pure black in Figma, but dark gray in code.",
+          "currentCode": "backgroundColor: '#131313',",
+          "fixedCode": "backgroundColor: colors.neutral.black, // #000000"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "68-73",
+          "property": "title.style",
+          "figmaValue": "34px Bold",
+          "currentValue": "24px 600",
+          "severity": "major",
+          "explanation": "Title typography is significantly larger and bolder in Figma.",
+          "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+          "fixedCode": "fontSize: 34,\n    fontWeight: 'bold',"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "74-79",
+          "property": "message.style",
+          "figmaValue": "20px #8E8E93",
+          "currentValue": "14px #A9A9A9",
+          "severity": "major",
+          "explanation": "Message text is larger (20px) and uses system gray.",
+          "currentCode": "fontSize: 14,\n    color: '#A9A9A9',",
+          "fixedCode": "fontSize: 20,\n    color: '#8E8E93',"
+        },
+        {
+          "file": "app/(setup)/index.tsx",
+          "lineRange": "220-225",
+          "property": "background",
+          "figmaValue": "Dotted Pattern + Halftone Building Illustration",
+          "currentValue": "DottedPattern only",
+          "severity": "major",
+          "explanation": "Missing the prominent halftone building illustration overlaying the dotted pattern.",
+          "currentCode": "<DottedPattern />\n\n      <View style={[styles.container, { paddingTop: insets.top + 65 }]}>",
+          "fixedCode": "<DottedPattern />\n      <Image source={require('@/assets/images/halftone-building.png')} style={styles.backgroundImage} />\n      <View style={[styles.container, { paddingTop: insets.top + 65 }]}>"
+        },
+        {
+          "file": "app/(setup)/index.tsx",
+          "lineRange": "130-170",
+          "property": "SetupCard.children",
+          "figmaValue": "Paperclip Icon + Diagonal Lines",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "The card is missing decorative elements (paperclip and diagonal lines) present in the design.",
+          "currentCode": "return (\n    <View style={styles.card}>\n      {/* Top perforations (8 circles) */}",
+          "fixedCode": "return (\n    <View style={styles.card}>\n      <PaperclipIcon style={styles.paperclip} />\n      <DiagonalLines style={styles.diagonalLines} />\n      {/* Top perforations (8 circles) */}"
+        },
+        {
+          "file": "app/(setup)/index.tsx",
+          "lineRange": "315-318",
+          "property": "titleTextGray.color",
+          "figmaValue": "#FFFFFF",
+          "currentValue": "#A9A9A9",
+          "severity": "minor",
+          "explanation": "Title text should be white to match Figma, not grey.",
+          "currentCode": "color: FIGMA.titleColorGray, // Figma style override 44 - colors.neutral[500] (#A9A9A9)",
+          "fixedCode": "color: colors.neutral.white, // Matches Figma data"
+        },
+        {
+          "file": "app/(setup)/index.tsx",
+          "lineRange": "48-50",
+          "property": "SETUP_STEPS.description",
+          "figmaValue": "Split after 'landlord's'",
+          "currentValue": "Split after 'bank details'",
+          "severity": "minor",
+          "explanation": "Incorrect string split causes 'bank details' to be orange instead of grey.",
+          "currentCode": "description: \"Add your landlord's bank details ||to enable payouts\",",
+          "fixedCode": "description: \"Add your landlord's ||bank details to enable payouts\","
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "80-85",
+      "property": "button.style",
+      "figmaValue": "Transparent Link",
+      "currentValue": "Solid Orange Button",
+      "severity": "critical",
+      "explanation": "The screenshot shows a text link style (transparent background) instead of a solid orange button. This is a functional/interaction pattern mismatch.",
+      "currentCode": "backgroundColor: '#FF9A6D',\n    paddingHorizontal: 24,\n    paddingVertical: 12,\n    borderRadius: 8,",
+      "fixedCode": "backgroundColor: 'transparent',\n    paddingHorizontal: 0,\n    paddingVertical: 12,\n    borderRadius: 0,"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "86-90",
+      "property": "buttonText.style",
+      "figmaValue": "Blue #007AFF",
+      "currentValue": "Black #000000",
+      "severity": "critical",
+      "explanation": "The action text in the screenshot is standard iOS blue, indicating a link, rather than black text.",
+      "currentCode": "color: '#000000',\n    fontSize: 16,\n    fontWeight: '600',",
+      "fixedCode": "color: '#007AFF',\n    fontSize: 18,\n    fontWeight: '400',"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "61-66",
+      "property": "container.backgroundColor",
+      "figmaValue": "#000000",
+      "currentValue": "#131313",
+      "severity": "major",
+      "explanation": "The background color is pure black in Figma, but dark gray in code.",
+      "currentCode": "backgroundColor: '#131313',",
+      "fixedCode": "backgroundColor: colors.neutral.black, // #000000"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "68-73",
+      "property": "title.style",
+      "figmaValue": "34px Bold",
+      "currentValue": "24px 600",
+      "severity": "major",
+      "explanation": "Title typography is significantly larger and bolder in Figma.",
+      "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+      "fixedCode": "fontSize: 34,\n    fontWeight: 'bold',"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "74-79",
+      "property": "message.style",
+      "figmaValue": "20px #8E8E93",
+      "currentValue": "14px #A9A9A9",
+      "severity": "major",
+      "explanation": "Message text is larger (20px) and uses system gray.",
+      "currentCode": "fontSize: 14,\n    color: '#A9A9A9',",
+      "fixedCode": "fontSize: 20,\n    color: '#8E8E93',"
+    },
+    {
+      "file": "app/(setup)/index.tsx",
+      "lineRange": "220-225",
+      "property": "background",
+      "figmaValue": "Dotted Pattern + Halftone Building Illustration",
+      "currentValue": "DottedPattern only",
+      "severity": "major",
+      "explanation": "Missing the prominent halftone building illustration overlaying the dotted pattern.",
+      "currentCode": "<DottedPattern />\n\n      <View style={[styles.container, { paddingTop: insets.top + 65 }]}>",
+      "fixedCode": "<DottedPattern />\n      <Image source={require('@/assets/images/halftone-building.png')} style={styles.backgroundImage} />\n      <View style={[styles.container, { paddingTop: insets.top + 65 }]}>"
+    },
+    {
+      "file": "app/(setup)/index.tsx",
+      "lineRange": "130-170",
+      "property": "SetupCard.children",
+      "figmaValue": "Paperclip Icon + Diagonal Lines",
+      "currentValue": "Missing",
+      "severity": "major",
+      "explanation": "The card is missing decorative elements (paperclip and diagonal lines) present in the design.",
+      "currentCode": "return (\n    <View style={styles.card}>\n      {/* Top perforations (8 circles) */}",
+      "fixedCode": "return (\n    <View style={styles.card}>\n      <PaperclipIcon style={styles.paperclip} />\n      <DiagonalLines style={styles.diagonalLines} />\n      {/* Top perforations (8 circles) */}"
+    },
+    {
+      "file": "app/(setup)/index.tsx",
+      "lineRange": "315-318",
+      "property": "titleTextGray.color",
+      "figmaValue": "#FFFFFF",
+      "currentValue": "#A9A9A9",
+      "severity": "minor",
+      "explanation": "Title text should be white to match Figma, not grey.",
+      "currentCode": "color: FIGMA.titleColorGray, // Figma style override 44 - colors.neutral[500] (#A9A9A9)",
+      "fixedCode": "color: colors.neutral.white, // Matches Figma data"
+    },
+    {
+      "file": "app/(setup)/index.tsx",
+      "lineRange": "48-50",
+      "property": "SETUP_STEPS.description",
+      "figmaValue": "Split after 'landlord's'",
+      "currentValue": "Split after 'bank details'",
+      "severity": "minor",
+      "explanation": "Incorrect string split causes 'bank details' to be orange instead of grey.",
+      "currentCode": "description: \"Add your landlord's bank details ||to enable payouts\",",
+      "fixedCode": "description: \"Add your landlord's ||bank details to enable payouts\","
+    }
+  ],
+  "summary": {
+    "totalIssues": 9,
+    "critical": 2,
+    "major": 5,
+    "minor": 2,
+    "filesAffected": [
+      "src/components/ErrorBoundary.tsx",
+      "app/(setup)/index.tsx"
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+appId: com.flent.secured
+name: "Auth Flow - Splash Navigation (Beta Splash -> Splash)"
+tags:
+  - flow-e2e
+  - auth
+  - splash
+---
+# ── Test: Beta Splash auto-navigates to Splash (Get Started) screen ──
+#
+# Flow: App launches on beta-splash -> shows logo + "BETA LAUNCH" badge
+#       -> auto-navigates to splash screen after ~2.5s
+#
+# Screen testIDs verified from source:
+#   beta-splash: testID="beta-splash-screen"
+#   splash:      testID="splash-screen"
+#   Get Started: testID="get-started-button"
+
+# Step 1: Launch app with clear state (dev build shows launcher)
+- launchApp:
+    clearState: true
+
+# Step 1b: Dev build reconnect — tap metro bundler URL
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "http://localhost:8081"
+    timeout: 5000
+- tapOn: "http://localhost:8081"
+
+# Step 2: Wait for beta splash screen to mount and animate in
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "beta-splash-screen"
+    timeout: 10000
+
+# Step 3: Assert beta splash content is visible
+# Beta splash shows the Flent logo and a "BETA LAUNCH" badge
+- assertVisible: "BETA LAUNCH"
+- takeScreenshot: "auth-splash-01-beta-splash"
+
+# Step 4: Wait for auto-navigation to splash screen (~2.5s timer)
+# Using extendedWaitUntil with generous timeout to handle animation + timer
+- extendedWaitUntil:
+    visible:
+      id: "splash-screen"
+    timeout: 6000
+
+# Step 5: Assert splash (Get Started) screen content is visible
+- waitForAnimationToEnd
+- assertVisible: "Get Started"
+- assertVisible: "work for you"
+- assertVisible:
+    id: "get-started-button"
+- takeScreenshot: "auth-splash-02-splash-screen"

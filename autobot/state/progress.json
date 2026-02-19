@@ -1,0 +1,153 @@
+{
+  "screens": {
+    "1-28053": {
+      "name": "Splash Default",
+      "route": "/(auth)/splash",
+      "flow": "auth",
+      "status": "VERIFIED",
+      "coverage": 100,
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "note": "No separate Maestro screenshot (shares with 1-28055)"
+    },
+    "1-28055": {
+      "name": "Splash Animation",
+      "route": "/(auth)/splash",
+      "flow": "auth",
+      "status": "VERIFIED",
+      "coverage": 100,
+      "pixelDiff": 14.67,
+      "inspectorScore": 88,
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "verifiedAt": "2026-02-15T16:24:50Z"
+    },
+    "1-28071": {
+      "name": "Beta Splash",
+      "route": "/(auth)/beta-splash",
+      "flow": "auth",
+      "status": "VERIFIED",
+      "coverage": 100,
+      "pixelDiff": 11.17,
+      "inspectorScore": 5,
+      "note": "Wrong Maestro screenshot (captured carousel instead of beta-splash)",
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "verifiedAt": "2026-02-15T16:21:59Z"
+    },
+    "1-28985": {
+      "name": "Carousel Page 4",
+      "route": "/(auth)/carousel",
+      "flow": "auth",
+      "status": "VERIFIED",
+      "coverage": 98.1,
+      "pixelDiff": 8.23,
+      "inspectorScore": 80,
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "verifiedAt": "2026-02-15T16:24:26Z"
+    },
+    "1-29025": {
+      "name": "Carousel Page 5",
+      "route": "/(auth)/carousel",
+      "flow": "auth",
+      "status": "VERIFIED",
+      "coverage": 97.5,
+      "pixelDiff": 17.89,
+      "inspectorScore": 88,
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "verifiedAt": "2026-02-15T16:30:31Z"
+    },
+    "1-29065": {
+      "name": "Carousel Page 6",
+      "route": "/(auth)/carousel",
+      "flow": "auth",
+      "status": "VERIFIED",
+      "coverage": 97.5,
+      "pixelDiff": 9.91,
+      "inspectorScore": 75,
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "verifiedAt": "2026-02-15T16:31:01Z"
+    },
+    "1-29108": {
+      "name": "Sign-up Empty",
+      "route": "/(auth)/sign-up",
+      "flow": "auth",
+      "status": "VERIFIED",
+      "coverage": 95.8,
+      "pixelDiff": 8.11,
+      "inspectorScore": 82,
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "verifiedAt": "2026-02-15T16:32:54Z"
+    },
+    "1-29914": {
+      "name": "Agreement Upload Initial",
+      "route": "/(agreement)/upload",
+      "flow": "agreement",
+      "status": "VERIFIED",
+      "coverage": 91.3,
+      "pixelDiff": 9.42,
+      "inspectorScore": 15,
+      "note": "Wrong screenshot in previous run - was mapped as sign-up filled, actually agreement upload",
+      "extractedAt": "2026-02-15T10:00:00Z",
+      "verifiedAt": "2026-02-15T16:39:05Z"
+    },
+    "1-31175": {
+      "name": "OTP Empty",
+      "route": "/(auth)/otp",
+      "flow": "otp",
+      "status": "COVERAGE_PASS",
+      "coverage": 100,
+      "extractedAt": "2026-02-15T10:30:00Z"
+    },
+    "1-31073": {
+      "name": "OTP Filled",
+      "route": "/(auth)/otp",
+      "flow": "otp",
+      "status": "COVERAGE_PASS",
+      "coverage": 100,
+      "extractedAt": "2026-02-15T10:30:00Z"
+    },
+    "1-31277": {
+      "name": "OTP Error 1",
+      "route": "/(auth)/otp",
+      "flow": "otp",
+      "status": "COVERAGE_PASS",
+      "coverage": 98.2,
+      "extractedAt": "2026-02-15T10:30:00Z"
+    },
+    "1-31380": {
+      "name": "OTP Error 2",
+      "route": "/(auth)/otp",
+      "flow": "otp",
+      "status": "COVERAGE_PASS",
+      "coverage": 98.2,
+      "extractedAt": "2026-02-15T10:30:00Z"
+    },
+    "41-8760": {
+      "name": "My Profile / Main Screen",
+      "route": "/(profile)/index",
+      "flow": "profile-transactions",
+      "status": "EXTRACTED",
+      "extractedAt": "2026-02-15T09:28:54.020Z",
+      "blueprintNodes": 162
+    },
+    "1-30090": {
+      "name": "Agreement Upload - Idle",
+      "route": "/(agreement)/upload",
+      "flow": "agreement",
+      "status": "EXTRACTED",
+      "extractedAt": "2026-02-15T09:29:59.787Z",
+      "blueprintNodes": 46
+    }
+  },
+  "compound_metrics": {
+    "total_screens": 65,
+    "certified": 0,
+    "coverage_pass": 12,
+    "extracted": 63,
+    "pending": 2,
+    "avg_time_to_certify_min": null,
+    "first_pass_success_rate": null,
+    "fix_loop_avg": null,
+    "agents_md_entries": 25,
+    "velocity_trend": "accelerating"
+  },
+  "lastUpdated": "2026-02-15T13:00:00Z"
+}

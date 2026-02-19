@@ -1,0 +1,165 @@
+{
+  "screenId": "1-29914",
+  "screenName": "Onboarding / Agreement --upload",
+  "route": "/(agreement)/upload",
+  "generatedAt": "2026-02-15T20:43:50.931Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T20:40:27.661Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T20:41:33.914Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-72",
+              "property": "typography",
+              "figmaValue": "fontSize: 28, lineHeight: 40, fontWeight: 400 (typography.h4)",
+              "currentValue": "fontSize: 24, fontWeight: '600'",
+              "severity": "major",
+              "explanation": "The title uses hardcoded typography values that differ from the provided design tokens. The 'h4' token (28px) should be used instead of 24px to align with the design system.",
+              "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+              "fixedCode": "  title: {\n    fontSize: 28, // typography.h4\n    lineHeight: 40, // typography.h4\n    fontWeight: '400', // typography.h4\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T20:43:33.305Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "UploadScreen.tsx",
+            "lineRange": "670-673",
+            "property": "color",
+            "figmaValue": "#FFFFFF (colors.neutral[white])",
+            "currentValue": "#A9A9A9 (colors.neutral[500])",
+            "severity": "major",
+            "explanation": "The word 'One' is rendered in gray (#A9A9A9) in the code, but it is clearly White in the Figma screenshot. The Figma JSON also indicates the base text color is #FFFFFF.",
+            "currentCode": "  titleGray: {\n    ...FIGMA.typography.title,\n    color: FIGMA.colors.titleGray,\n  },",
+            "fixedCode": "  titleGray: {\n    ...FIGMA.typography.title,\n    color: colors.neutral.white,\n  },"
+          },
+          {
+            "file": "UploadScreen.tsx",
+            "lineRange": "530-530",
+            "property": "opacity",
+            "figmaValue": "0.08",
+            "currentValue": "undefined",
+            "severity": "minor",
+            "explanation": "The extracted constant `FIGMA.colors.backgroundPattern` (0.08) is defined in the constants object but is unused in the `DottedPattern` component, likely resulting in incorrect background pattern opacity.",
+            "currentCode": "<DottedPattern showShape={true} backgroundShape=\"agreement\" />",
+            "fixedCode": "<DottedPattern showShape={true} backgroundShape=\"agreement\" opacity={FIGMA.colors.backgroundPattern} />"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T20:43:50.931Z",
+      "feedback": [
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-72",
+          "property": "typography",
+          "figmaValue": "fontSize: 28, lineHeight: 40, fontWeight: 400 (typography.h4)",
+          "currentValue": "fontSize: 24, fontWeight: '600'",
+          "severity": "major",
+          "explanation": "The title uses hardcoded typography values that differ from the provided design tokens. The 'h4' token (28px) should be used instead of 24px to align with the design system.",
+          "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+          "fixedCode": "  title: {\n    fontSize: 28, // typography.h4\n    lineHeight: 40, // typography.h4\n    fontWeight: '400', // typography.h4\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+        },
+        {
+          "file": "UploadScreen.tsx",
+          "lineRange": "670-673",
+          "property": "color",
+          "figmaValue": "#FFFFFF (colors.neutral.white)",
+          "currentValue": "#A9A9A9",
+          "severity": "major",
+          "explanation": "The text color for the title is rendered as gray (#A9A9A9) but should be White (#FFFFFF) according to Figma.",
+          "currentCode": "  titleGray: {\n    ...FIGMA.typography.title,\n    color: FIGMA.colors.titleGray,\n  },",
+          "fixedCode": "  titleGray: {\n    ...FIGMA.typography.title,\n    color: colors.neutral.white,\n  },"
+        },
+        {
+          "file": "UploadScreen.tsx",
+          "lineRange": "530-530",
+          "property": "opacity",
+          "figmaValue": "0.08",
+          "currentValue": "undefined",
+          "severity": "minor",
+          "explanation": "The background pattern opacity constant is defined but not passed to the component.",
+          "currentCode": "<DottedPattern showShape={true} backgroundShape=\"agreement\" />",
+          "fixedCode": "<DottedPattern showShape={true} backgroundShape=\"agreement\" opacity={FIGMA.colors.backgroundPattern} />"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-72",
+      "property": "typography",
+      "figmaValue": "fontSize: 28, lineHeight: 40, fontWeight: 400 (typography.h4)",
+      "currentValue": "fontSize: 24, fontWeight: '600'",
+      "severity": "major",
+      "explanation": "The title uses hardcoded typography values that differ from the provided design tokens. The 'h4' token (28px) should be used instead of 24px to align with the design system.",
+      "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+      "fixedCode": "  title: {\n    fontSize: 28, // typography.h4\n    lineHeight: 40, // typography.h4\n    fontWeight: '400', // typography.h4\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+    },
+    {
+      "file": "UploadScreen.tsx",
+      "lineRange": "670-673",
+      "property": "color",
+      "figmaValue": "#FFFFFF (colors.neutral.white)",
+      "currentValue": "#A9A9A9",
+      "severity": "major",
+      "explanation": "The text color for the title is rendered as gray (#A9A9A9) but should be White (#FFFFFF) according to Figma.",
+      "currentCode": "  titleGray: {\n    ...FIGMA.typography.title,\n    color: FIGMA.colors.titleGray,\n  },",
+      "fixedCode": "  titleGray: {\n    ...FIGMA.typography.title,\n    color: colors.neutral.white,\n  },"
+    },
+    {
+      "file": "UploadScreen.tsx",
+      "lineRange": "530-530",
+      "property": "opacity",
+      "figmaValue": "0.08",
+      "currentValue": "undefined",
+      "severity": "minor",
+      "explanation": "The background pattern opacity constant is defined but not passed to the component.",
+      "currentCode": "<DottedPattern showShape={true} backgroundShape=\"agreement\" />",
+      "fixedCode": "<DottedPattern showShape={true} backgroundShape=\"agreement\" opacity={FIGMA.colors.backgroundPattern} />"
+    }
+  ],
+  "summary": {
+    "totalIssues": 3,
+    "critical": 0,
+    "major": 2,
+    "minor": 1,
+    "filesAffected": [
+      "src/components/ErrorBoundary.tsx",
+      "UploadScreen.tsx"
+    ]
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "description": "Flow → screen → state → story mapping",
+  "flows": {
+    "auth": {
+      "screens": {
+        "splash": {
+          "route": "/(auth)/splash",
+          "states": {
+            "default": { "figmaId": "1-28053", "stories": ["extract", "build", "verify"] },
+            "animation": { "figmaId": "1-28055", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "beta-splash": {
+          "route": "/(auth)/beta-splash",
+          "states": {
+            "beta": { "figmaId": "1-28071", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "carousel": {
+          "route": "/(auth)/carousel",
+          "states": {
+            "page4": { "figmaId": "1-28985", "stories": ["extract", "build", "verify"] },
+            "page5": { "figmaId": "1-29025", "stories": ["extract", "build", "verify"] },
+            "page6": { "figmaId": "1-29065", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "sign-up": {
+          "route": "/(auth)/sign-up",
+          "states": {
+            "empty": { "figmaId": "1-29108", "stories": ["extract", "build", "verify"] },
+            "filled": { "figmaId": "1-29914", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    },
+    "otp": {
+      "screens": {
+        "otp": {
+          "route": "/(auth)/otp",
+          "states": {
+            "empty": { "figmaId": "1-31175", "stories": ["extract", "build", "verify"] },
+            "filled": { "figmaId": "1-31073", "stories": ["extract", "build", "verify"] },
+            "error1": { "figmaId": "1-31277", "stories": ["extract", "build", "verify"] },
+            "error2": { "figmaId": "1-31380", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    },
+    "waitlist": {
+      "screens": {
+        "waitlist": {
+          "route": "/(waitlist)/index",
+          "states": {
+            "default": { "figmaId": "41-11206", "stories": ["extract", "build", "verify"] },
+            "accepted": { "figmaId": "41-11313", "stories": ["extract", "build", "verify"] },
+            "rejected": { "figmaId": "41-11410", "stories": ["extract", "build", "verify"] },
+            "24hrs": { "figmaId": "41-11506", "stories": ["extract", "build", "verify"] },
+            "referral": { "figmaId": "41-11613", "stories": ["extract", "build", "verify"] },
+            "referral-invalid": { "figmaId": "41-11720", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    },
+    "agreement": {
+      "screens": {
+        "upload": {
+          "route": "/(agreement)/upload",
+          "states": {
+            "default": { "figmaId": "1-30090", "stories": ["extract", "build", "verify"] },
+            "uploading": { "figmaId": "1-30001", "stories": ["extract", "build", "verify"] },
+            "expired": { "figmaId": "1-30178", "stories": ["extract", "build", "verify"] },
+            "too-large": { "figmaId": "1-30268", "stories": ["extract", "build", "verify"] },
+            "manual-review": { "figmaId": "1-30358", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "review": {
+          "route": "/(agreement)/review",
+          "states": {
+            "verify": { "figmaId": "1-30448", "stories": ["extract", "build", "verify"] },
+            "modify": { "figmaId": "1-30820", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    },
+    "setup": {
+      "screens": {
+        "setup": {
+          "route": "/(setup)/index",
+          "states": {
+            "step1": { "figmaId": "41-10712", "stories": ["extract", "build", "verify"] },
+            "step2": { "figmaId": "41-10859", "stories": ["extract", "build", "verify"] },
+            "step3": { "figmaId": "41-11006", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "add-bank": {
+          "route": "/(setup)/add-bank",
+          "states": {
+            "default": { "figmaId": "1-31485", "stories": ["extract", "build", "verify"] },
+            "bescom": { "figmaId": "1-31590", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "invite-landlord": {
+          "route": "/(setup)/invite-landlord",
+          "states": {
+            "default": { "figmaId": "1-31671", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    },
+    "home": {
+      "screens": {
+        "home-empty": {
+          "route": "/(main)/index",
+          "states": {
+            "upi-no-cashbacks": { "figmaId": "243-6296", "stories": ["extract", "build", "verify"] },
+            "setup-payment": { "figmaId": "243-6490", "stories": ["extract", "build", "verify"] },
+            "setup-upi": { "figmaId": "243-6731", "stories": ["extract", "build", "verify"] },
+            "no-cashback": { "figmaId": "243-5689", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "home-active": {
+          "route": "/(main)/index",
+          "states": {
+            "bank-upi": { "figmaId": "243-2762", "stories": ["extract", "build", "verify"] },
+            "all-methods": { "figmaId": "243-2967", "stories": ["extract", "build", "verify"] },
+            "late-payment": { "figmaId": "243-3170", "stories": ["extract", "build", "verify"] },
+            "missed-payment": { "figmaId": "243-3378", "stories": ["extract", "build", "verify"] },
+            "complete": { "figmaId": "243-7185", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    },
+    "payment": {
+      "screens": {
+        "select": {
+          "route": "/(payment)/select-method",
+          "states": {
+            "before-7th": { "figmaId": "41-9004", "stories": ["extract", "build", "verify"] },
+            "after-7th": { "figmaId": "41-9114", "stories": ["extract", "build", "verify"] },
+            "no-setup": { "figmaId": "41-8901", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "add-upi": {
+          "route": "/(payment)/add-upi",
+          "states": { "default": { "figmaId": "41-8369", "stories": ["extract", "build", "verify"] } }
+        },
+        "add-card": {
+          "route": "/(payment)/add-card",
+          "states": { "default": { "figmaId": "41-8450", "stories": ["extract", "build", "verify"] } }
+        },
+        "add-netbanking": {
+          "route": "/(payment)/add-netbanking",
+          "states": { "default": { "figmaId": "41-8529", "stories": ["extract", "build", "verify"] } }
+        },
+        "processing": {
+          "route": "/(payment)/processing",
+          "states": { "default": { "figmaId": "41-9460", "stories": ["extract", "build", "verify"] } }
+        },
+        "success": {
+          "route": "/(payment)/success",
+          "states": {
+            "with-cashback": { "figmaId": "41-9388", "stories": ["extract", "build", "verify"] },
+            "no-cashback": { "figmaId": "41-9511", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "failed": {
+          "route": "/(payment)/failed",
+          "states": {
+            "failed": { "figmaId": "41-9563", "stories": ["extract", "build", "verify"] },
+            "refunded": { "figmaId": "41-9635", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "payment-cards": {
+          "route": "/(payment)/select-method",
+          "states": {
+            "credit-unselected": { "figmaId": "243-3794", "stories": ["extract", "build", "verify"] },
+            "credit-selected": { "figmaId": "243-3816", "stories": ["extract", "build", "verify"] },
+            "upi-unselected": { "figmaId": "243-3838", "stories": ["extract", "build", "verify"] },
+            "upi-selected": { "figmaId": "243-3923", "stories": ["extract", "build", "verify"] },
+            "netbanking-unselected": { "figmaId": "243-4008", "stories": ["extract", "build", "verify"] },
+            "netbanking-selected": { "figmaId": "243-4030", "stories": ["extract", "build", "verify"] },
+            "add-more": { "figmaId": "243-4052", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    },
+    "profile-transactions": {
+      "screens": {
+        "profile": {
+          "route": "/(profile)/index",
+          "states": {
+            "main": { "figmaId": "41-8760", "stories": ["extract", "build", "verify"] },
+            "edit-profile": { "figmaId": "41-8880", "stories": ["extract", "build", "verify"] },
+            "payment-upi": { "figmaId": "41-8450", "stories": ["extract", "build", "verify"] },
+            "payment-credit-card": { "figmaId": "41-8612", "stories": ["extract", "build", "verify"] },
+            "payment-bank": { "figmaId": "41-9307", "stories": ["extract", "build", "verify"] },
+            "agreement": { "figmaId": "41-9811", "stories": ["extract", "build", "verify"] }
+          }
+        },
+        "transactions": {
+          "route": "/(transactions)/index",
+          "states": {
+            "no-cashback": { "figmaId": "243-5870", "stories": ["extract", "build", "verify"] },
+            "with-cashback": { "figmaId": "243-6083", "stories": ["extract", "build", "verify"] }
+          }
+        }
+      }
+    }
+  }
+}

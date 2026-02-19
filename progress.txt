@@ -1,0 +1,8 @@
+# AutoBot Progress Log (Ralph standard — append only)
+# Each Ralph iteration appends learnings here
+
+## Bootstrap — 2026-02-15
+- AutoBot system initialized
+- AGENTS.md seeded with 25+ entries from BuildBot learnings
+- 8 flow PRDs generated with ~195 stories total
+- Ready for first Ralph loop

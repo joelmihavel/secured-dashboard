@@ -1,0 +1,31 @@
+{
+  "screenId": "41-8760",
+  "screenName": "My Profile / Main Screen",
+  "route": "/(profile)/index",
+  "flow": "profile-transactions",
+  "status": "EXTRACTED",
+  "timestamp": "2026-02-15T20:28:45.039Z",
+  "visual": {
+    "pixelDiff": 5.79326375712,
+    "pixelDiffPassed": false,
+    "coverage": 0,
+    "coveragePassed": false,
+    "inspectorScore": null,
+    "geminiClean": null
+  },
+  "testing": {
+    "unitTestFile": null,
+    "totalTests": 0,
+    "passed": 0,
+    "failed": 0
+  },
+  "certification": {
+    "ready": false,
+    "blockers": [
+      "Status is EXTRACTED, not VERIFIED or CERTIFIED",
+      "Pixel diff failed (5.79% exceeds threshold)",
+      "Coverage check failed (0.0%)",
+      "No unit tests found"
+    ]
+  }
+}

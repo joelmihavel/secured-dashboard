@@ -1,0 +1,165 @@
+{
+  "screenId": "1-28053",
+  "screenName": "Splash / get-started",
+  "route": "/(auth)/splash",
+  "generatedAt": "2026-02-15T16:13:28.743Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T16:09:58.091Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T16:11:27.135Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-69",
+              "property": "typography",
+              "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+              "currentValue": "fontSize: 24, fontWeight: 600",
+              "severity": "major",
+              "explanation": "The title typography uses hardcoded values that differ from the design system's H4 token provided in the reference. Updating to H4 ensures consistency with the app's heading styles.",
+              "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+              "fixedCode": "    fontSize: 28, // typography.h4\n    fontWeight: '400', // typography.h4\n    lineHeight: 40, // typography.h4"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "74",
+              "property": "fontSize",
+              "figmaValue": "12 (typography.bodyXs)",
+              "currentValue": "14",
+              "severity": "minor",
+              "explanation": "The message text size should align with the bodyXs token from the design system reference.",
+              "currentCode": "    fontSize: 14,",
+              "fixedCode": "    fontSize: 12, // typography.bodyXs\n    lineHeight: 20, // typography.bodyXs"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T16:12:53.340Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "SplashScreen.tsx",
+            "lineRange": "108-113",
+            "property": "style",
+            "figmaValue": "border: #FF9A6D, shadow: #995C41 (offset 0,6, blur 12)",
+            "currentValue": "default (neutral border, no shadow)",
+            "severity": "major",
+            "explanation": "The 'Get Started' button in the simulator lacks the brand orange border (#FF9A6D) and the specific orange-brown shadow (#995C41) required by the design comments. It currently renders with a default neutral/white border and no visible colored glow/shadow.",
+            "currentCode": "            <PrimaryButton\n              title=\"Get Started\"\n              onPress={handleGetStarted}\n              showDivider={true}\n              testID=\"get-started-button\"\n            />",
+            "fixedCode": "            <PrimaryButton\n              title=\"Get Started\"\n              onPress={handleGetStarted}\n              showDivider={true}\n              testID=\"get-started-button\"\n              style={{\n                borderColor: FIGMA_COLORS.buttonBorder,\n                borderWidth: 1,\n                shadowColor: FIGMA_COLORS.buttonShadow,\n                shadowOffset: { width: 0, height: 6 },\n                shadowOpacity: 0.5,\n                shadowRadius: 12,\n                elevation: 10,\n              }}\n            />"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T16:13:28.743Z",
+      "feedback": [
+        {
+          "file": "SplashScreen.tsx",
+          "lineRange": "108-113",
+          "property": "style",
+          "figmaValue": "border: #FF9A6D, shadow: #995C41 (offset 0,6, blur 12)",
+          "currentValue": "default (neutral border, no shadow)",
+          "severity": "major",
+          "explanation": "The 'Get Started' button requires specific brand styling (orange border and shadow) to match the design. Using hex values directly ensures correct rendering.",
+          "currentCode": "            <PrimaryButton\n              title=\"Get Started\"\n              onPress={handleGetStarted}\n              showDivider={true}\n              testID=\"get-started-button\"\n            />",
+          "fixedCode": "            <PrimaryButton\n              title=\"Get Started\"\n              onPress={handleGetStarted}\n              showDivider={true}\n              testID=\"get-started-button\"\n              style={{\n                borderColor: '#FF9A6D', // colors.brand[500]\n                borderWidth: 1,\n                shadowColor: '#995C41',\n                shadowOffset: { width: 0, height: 6 },\n                shadowOpacity: 0.5,\n                shadowRadius: 12,\n                elevation: 10,\n              }}\n            />"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-69",
+          "property": "typography",
+          "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+          "currentValue": "fontSize: 24, fontWeight: 600",
+          "severity": "major",
+          "explanation": "Title typography does not match the H4 design token. Updating to 28px/400 weight ensures consistency.",
+          "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+          "fixedCode": "    fontSize: 28, // typography.h4\n    fontWeight: '400', // typography.h4\n    lineHeight: 40, // typography.h4"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "74",
+          "property": "fontSize",
+          "figmaValue": "12 (typography.bodySm)",
+          "currentValue": "14",
+          "severity": "minor",
+          "explanation": "Message text size should be 12px (bodySm) instead of 14px.",
+          "currentCode": "    fontSize: 14,",
+          "fixedCode": "    fontSize: 12, // typography.bodySm\n    lineHeight: 20, // typography.bodySm"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "SplashScreen.tsx",
+      "lineRange": "108-113",
+      "property": "style",
+      "figmaValue": "border: #FF9A6D, shadow: #995C41 (offset 0,6, blur 12)",
+      "currentValue": "default (neutral border, no shadow)",
+      "severity": "major",
+      "explanation": "The 'Get Started' button requires specific brand styling (orange border and shadow) to match the design. Using hex values directly ensures correct rendering.",
+      "currentCode": "            <PrimaryButton\n              title=\"Get Started\"\n              onPress={handleGetStarted}\n              showDivider={true}\n              testID=\"get-started-button\"\n            />",
+      "fixedCode": "            <PrimaryButton\n              title=\"Get Started\"\n              onPress={handleGetStarted}\n              showDivider={true}\n              testID=\"get-started-button\"\n              style={{\n                borderColor: '#FF9A6D', // colors.brand[500]\n                borderWidth: 1,\n                shadowColor: '#995C41',\n                shadowOffset: { width: 0, height: 6 },\n                shadowOpacity: 0.5,\n                shadowRadius: 12,\n                elevation: 10,\n              }}\n            />"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-69",
+      "property": "typography",
+      "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+      "currentValue": "fontSize: 24, fontWeight: 600",
+      "severity": "major",
+      "explanation": "Title typography does not match the H4 design token. Updating to 28px/400 weight ensures consistency.",
+      "currentCode": "    fontSize: 24,\n    fontWeight: '600',",
+      "fixedCode": "    fontSize: 28, // typography.h4\n    fontWeight: '400', // typography.h4\n    lineHeight: 40, // typography.h4"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "74",
+      "property": "fontSize",
+      "figmaValue": "12 (typography.bodySm)",
+      "currentValue": "14",
+      "severity": "minor",
+      "explanation": "Message text size should be 12px (bodySm) instead of 14px.",
+      "currentCode": "    fontSize: 14,",
+      "fixedCode": "    fontSize: 12, // typography.bodySm\n    lineHeight: 20, // typography.bodySm"
+    }
+  ],
+  "summary": {
+    "totalIssues": 3,
+    "critical": 0,
+    "major": 2,
+    "minor": 1,
+    "filesAffected": [
+      "SplashScreen.tsx",
+      "src/components/ErrorBoundary.tsx"
+    ]
+  }
+}

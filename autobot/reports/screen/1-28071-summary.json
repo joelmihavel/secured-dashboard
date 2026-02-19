@@ -1,0 +1,26 @@
+{
+  "screenId": "1-28071",
+  "screenName": "Beta Splash",
+  "route": "/(auth)/beta-splash",
+  "flow": "auth",
+  "status": "VERIFIED",
+  "timestamp": "2026-02-15T20:28:45.034Z",
+  "visual": {
+    "pixelDiff": 11.170368364,
+    "pixelDiffPassed": true,
+    "coverage": 100,
+    "coveragePassed": true,
+    "inspectorScore": 5,
+    "geminiClean": true
+  },
+  "testing": {
+    "unitTestFile": "src/__tests__/screens/beta-splash.test.tsx",
+    "totalTests": 14,
+    "passed": 14,
+    "failed": 0
+  },
+  "certification": {
+    "ready": true,
+    "blockers": []
+  }
+}

@@ -1,0 +1,374 @@
+{
+  "screenId": "1-29108",
+  "screenName": "auth / sign up --enter phone number",
+  "route": "/(auth)/sign-up",
+  "generatedAt": "2026-02-15T16:29:51.170Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T16:26:16.031Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T16:27:34.514Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "1-1",
+              "property": "Visual Mismatch",
+              "figmaValue": "Onboarding Screen",
+              "currentValue": "Generic Error UI",
+              "severity": "critical",
+              "explanation": "The provided Figma screenshot is for a 'Let's get to know you' onboarding screen, but the code is for an 'ErrorBoundary'. Visual alignment is impossible without repurposing the component entirely. Proceeding with Design Token refactoring only.",
+              "currentCode": "// Mismatch detected",
+              "fixedCode": "// Please verify input image vs component code"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "62-62",
+              "property": "backgroundColor",
+              "figmaValue": "colors.black[700]",
+              "currentValue": "'#131313'",
+              "severity": "major",
+              "explanation": "Replace hardcoded hex with design token.",
+              "currentCode": "backgroundColor: '#131313',",
+              "fixedCode": "backgroundColor: colors.black[700],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-69",
+              "property": "typography",
+              "figmaValue": "typography.h4",
+              "currentValue": "fontSize: 24, fontWeight: '600'",
+              "severity": "major",
+              "explanation": "Align title typography with design system H4 token (28px).",
+              "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+              "fixedCode": "...typography.h4,"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "74-74",
+              "property": "color",
+              "figmaValue": "colors.neutral[500]",
+              "currentValue": "'#A9A9A9'",
+              "severity": "minor",
+              "explanation": "Replace hardcoded grey with neutral token.",
+              "currentCode": "color: '#A9A9A9',",
+              "fixedCode": "color: colors.neutral[500],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "79-79",
+              "property": "backgroundColor",
+              "figmaValue": "colors.brand[500]",
+              "currentValue": "'#FF9A6D'",
+              "severity": "major",
+              "explanation": "Use brand color token for the primary action button.",
+              "currentCode": "backgroundColor: '#FF9A6D',",
+              "fixedCode": "backgroundColor: colors.brand[500],"
+            },
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "81-81",
+              "property": "borderRadius",
+              "figmaValue": "radius.sm",
+              "currentValue": "8",
+              "severity": "minor",
+              "explanation": "Use shared radius token.",
+              "currentCode": "borderRadius: 8,",
+              "fixedCode": "borderRadius: radius.sm,"
+            }
+          ],
+          "confidence": 60
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T16:29:18.264Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(auth)/sign-up.tsx",
+            "lineRange": "46-46",
+            "property": "contentTopOffset",
+            "figmaValue": "~80",
+            "currentValue": "48",
+            "severity": "major",
+            "explanation": "The content in the Simulator sits significantly higher than in the Figma screenshot. Visually, the gap between the status bar and the Logo in Figma is much larger (approx 80px) than the current 48px offset.",
+            "currentCode": "contentTopOffset: 48,",
+            "fixedCode": "contentTopOffset: 80,"
+          },
+          {
+            "file": "app/(auth)/sign-up.tsx",
+            "lineRange": "64-64",
+            "property": "initialConsent",
+            "figmaValue": "false",
+            "currentValue": "true",
+            "severity": "minor",
+            "explanation": "The Figma screenshot shows the consent toggle in the OFF state (grey/dark), whereas the current implementation defaults it to ON (orange).",
+            "currentCode": "const getInitialConsent = () => true; // Consent enabled by default",
+            "fixedCode": "const getInitialConsent = () => false; // Match Figma screenshot state"
+          },
+          {
+            "file": "app/(auth)/sign-up.tsx",
+            "lineRange": "146-146",
+            "property": "placeholderTextColor",
+            "figmaValue": "#444444",
+            "currentValue": "undefined",
+            "severity": "minor",
+            "explanation": "The placeholder text color should be explicitly set to #444444 to match Figma node I1:29184;48:717, ensuring consistent visibility against the dark background.",
+            "currentCode": "placeholder=\"Enter Number\"",
+            "fixedCode": "placeholder=\"Enter Number\"\n                  placeholderTextColor=\"#444444\""
+          },
+          {
+            "file": "app/(auth)/sign-up.tsx",
+            "lineRange": "156-156",
+            "property": "placeholderTextColor",
+            "figmaValue": "#222222",
+            "currentValue": "undefined",
+            "severity": "minor",
+            "explanation": "The placeholder text color should be explicitly set to #222222 to match Figma node I90:2897;47:5569.",
+            "currentCode": "placeholder=\"e.g. John Appleseed\"",
+            "fixedCode": "placeholder=\"e.g. John Appleseed\"\n                  placeholderTextColor=\"#222222\""
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T16:29:51.170Z",
+      "feedback": [
+        {
+          "file": "app/(auth)/sign-up.tsx",
+          "lineRange": "46-46",
+          "property": "contentTopOffset",
+          "figmaValue": "80",
+          "currentValue": "48",
+          "severity": "major",
+          "explanation": "Increase top offset to 80px to match Figma spacing between status bar and logo.",
+          "currentCode": "contentTopOffset: 48,",
+          "fixedCode": "contentTopOffset: 80,"
+        },
+        {
+          "file": "app/(auth)/sign-up.tsx",
+          "lineRange": "64-64",
+          "property": "initialConsent",
+          "figmaValue": "false",
+          "currentValue": "true",
+          "severity": "minor",
+          "explanation": "Set initial consent toggle to false (OFF) to match Figma default state.",
+          "currentCode": "const getInitialConsent = () => true;",
+          "fixedCode": "const getInitialConsent = () => false;"
+        },
+        {
+          "file": "app/(auth)/sign-up.tsx",
+          "lineRange": "146-146",
+          "property": "placeholderTextColor",
+          "figmaValue": "colors.neutral[800]",
+          "currentValue": "undefined",
+          "severity": "minor",
+          "explanation": "Set explicit placeholder color using design token (matches #444444).",
+          "currentCode": "placeholder=\"Enter Number\"",
+          "fixedCode": "placeholder=\"Enter Number\"\n                  placeholderTextColor={colors.neutral[800]}"
+        },
+        {
+          "file": "app/(auth)/sign-up.tsx",
+          "lineRange": "156-156",
+          "property": "placeholderTextColor",
+          "figmaValue": "#222222",
+          "currentValue": "undefined",
+          "severity": "minor",
+          "explanation": "Set explicit placeholder color to match Figma node.",
+          "currentCode": "placeholder=\"e.g. John Appleseed\"",
+          "fixedCode": "placeholder=\"e.g. John Appleseed\"\n                  placeholderTextColor=\"#222222\""
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "62-62",
+          "property": "backgroundColor",
+          "figmaValue": "colors.black[700]",
+          "currentValue": "'#131313'",
+          "severity": "major",
+          "explanation": "Replace hardcoded hex with design token.",
+          "currentCode": "backgroundColor: '#131313',",
+          "fixedCode": "backgroundColor: colors.black[700],"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-69",
+          "property": "typography",
+          "figmaValue": "typography.h4",
+          "currentValue": "fontSize: 24, fontWeight: '600'",
+          "severity": "major",
+          "explanation": "Align title typography with design system H4 token.",
+          "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+          "fixedCode": "...typography.h4,"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "74-74",
+          "property": "color",
+          "figmaValue": "colors.neutral[500]",
+          "currentValue": "'#A9A9A9'",
+          "severity": "minor",
+          "explanation": "Replace hardcoded grey with neutral token.",
+          "currentCode": "color: '#A9A9A9',",
+          "fixedCode": "color: colors.neutral[500],"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "79-79",
+          "property": "backgroundColor",
+          "figmaValue": "colors.brand[500]",
+          "currentValue": "'#FF9A6D'",
+          "severity": "major",
+          "explanation": "Use brand color token for the primary action button.",
+          "currentCode": "backgroundColor: '#FF9A6D',",
+          "fixedCode": "backgroundColor: colors.brand[500],"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "81-81",
+          "property": "borderRadius",
+          "figmaValue": "radius.sm",
+          "currentValue": "8",
+          "severity": "minor",
+          "explanation": "Use shared radius token.",
+          "currentCode": "borderRadius: 8,",
+          "fixedCode": "borderRadius: radius.sm,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(auth)/sign-up.tsx",
+      "lineRange": "46-46",
+      "property": "contentTopOffset",
+      "figmaValue": "80",
+      "currentValue": "48",
+      "severity": "major",
+      "explanation": "Increase top offset to 80px to match Figma spacing between status bar and logo.",
+      "currentCode": "contentTopOffset: 48,",
+      "fixedCode": "contentTopOffset: 80,"
+    },
+    {
+      "file": "app/(auth)/sign-up.tsx",
+      "lineRange": "64-64",
+      "property": "initialConsent",
+      "figmaValue": "false",
+      "currentValue": "true",
+      "severity": "minor",
+      "explanation": "Set initial consent toggle to false (OFF) to match Figma default state.",
+      "currentCode": "const getInitialConsent = () => true;",
+      "fixedCode": "const getInitialConsent = () => false;"
+    },
+    {
+      "file": "app/(auth)/sign-up.tsx",
+      "lineRange": "146-146",
+      "property": "placeholderTextColor",
+      "figmaValue": "colors.neutral[800]",
+      "currentValue": "undefined",
+      "severity": "minor",
+      "explanation": "Set explicit placeholder color using design token (matches #444444).",
+      "currentCode": "placeholder=\"Enter Number\"",
+      "fixedCode": "placeholder=\"Enter Number\"\n                  placeholderTextColor={colors.neutral[800]}"
+    },
+    {
+      "file": "app/(auth)/sign-up.tsx",
+      "lineRange": "156-156",
+      "property": "placeholderTextColor",
+      "figmaValue": "#222222",
+      "currentValue": "undefined",
+      "severity": "minor",
+      "explanation": "Set explicit placeholder color to match Figma node.",
+      "currentCode": "placeholder=\"e.g. John Appleseed\"",
+      "fixedCode": "placeholder=\"e.g. John Appleseed\"\n                  placeholderTextColor=\"#222222\""
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "62-62",
+      "property": "backgroundColor",
+      "figmaValue": "colors.black[700]",
+      "currentValue": "'#131313'",
+      "severity": "major",
+      "explanation": "Replace hardcoded hex with design token.",
+      "currentCode": "backgroundColor: '#131313',",
+      "fixedCode": "backgroundColor: colors.black[700],"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-69",
+      "property": "typography",
+      "figmaValue": "typography.h4",
+      "currentValue": "fontSize: 24, fontWeight: '600'",
+      "severity": "major",
+      "explanation": "Align title typography with design system H4 token.",
+      "currentCode": "fontSize: 24,\n    fontWeight: '600',",
+      "fixedCode": "...typography.h4,"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "74-74",
+      "property": "color",
+      "figmaValue": "colors.neutral[500]",
+      "currentValue": "'#A9A9A9'",
+      "severity": "minor",
+      "explanation": "Replace hardcoded grey with neutral token.",
+      "currentCode": "color: '#A9A9A9',",
+      "fixedCode": "color: colors.neutral[500],"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "79-79",
+      "property": "backgroundColor",
+      "figmaValue": "colors.brand[500]",
+      "currentValue": "'#FF9A6D'",
+      "severity": "major",
+      "explanation": "Use brand color token for the primary action button.",
+      "currentCode": "backgroundColor: '#FF9A6D',",
+      "fixedCode": "backgroundColor: colors.brand[500],"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "81-81",
+      "property": "borderRadius",
+      "figmaValue": "radius.sm",
+      "currentValue": "8",
+      "severity": "minor",
+      "explanation": "Use shared radius token.",
+      "currentCode": "borderRadius: 8,",
+      "fixedCode": "borderRadius: radius.sm,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 9,
+    "critical": 0,
+    "major": 4,
+    "minor": 5,
+    "filesAffected": [
+      "app/(auth)/sign-up.tsx",
+      "src/components/ErrorBoundary.tsx"
+    ]
+  }
+}

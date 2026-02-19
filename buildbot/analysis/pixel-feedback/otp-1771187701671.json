@@ -1,0 +1,162 @@
+{
+  "screenId": "1-31175",
+  "screenName": "auth / sign up --enter OTP",
+  "route": "/(auth)/otp",
+  "generatedAt": "2026-02-15T20:35:01.671Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T20:31:09.500Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T20:32:48.792Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-72",
+              "property": "typography",
+              "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+              "currentValue": "fontSize: 24, fontWeight: '600'",
+              "severity": "major",
+              "explanation": "The title typography uses hardcoded values that do not match the design system's H4 token (visible in the reference image as the main header). The font size should be 28, weight 400 (Regular), and line height 40.",
+              "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+              "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    textAlign: 'center',\n    marginBottom: 12,\n  },"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T20:34:41.861Z",
+      "feedback": {
+        "rawText": "Based on the visual comparison between the Figma design (IMAGE 1) and the Simulator screenshot (IMAGE 2), along with the code analysis, here are the identified screen-level issues:\n\n1.  **Unwanted Divider Line**: The simulator shows a horizontal grey line separating the OTP input section and the \"Proceed\" button. This line is **not** present in the Figma design. The code enables this via `showDivider={true}` on the `PrimaryButton`.\n2.  **Typography (Smart Quotes)**: The Figma design uses smart quotes (e.g., \"Let’s\", \"We’ve\") which are standard in iOS/Apple design systems, whereas the implementation uses straight typewriter apostrophes (\"Let's\", \"We've\").\n\n```json\n{\n  \"screenLevelIssues\": [\n    {\n      \"file\": \"app/(waitlist)/index.tsx\",\n      \"lineRange\": \"260-268\",\n      \"property\": \"showDivider\",\n      \"figmaValue\": \"false\",\n      \"currentValue\": \"true\",\n      \"severity\": \"major\",\n      \"explanation\": \"The simulator shows a horizontal divider line above the 'Proceed' button which is not present in the Figma design. The 'showDivider' prop should be disabled to match the clean layout.\",\n      \"currentCode\": \"                showDivider={true}\",\n      \"fixedCode\": \"                showDivider={false}\"\n    },\n    {\n      \"file\": \"app/(waitlist)/index.tsx\",\n      \"lineRange\": \"230-240\",\n      \"property\": \"text content\",\n      \"figmaValue\": \"Smart quotes (Let’s, We’ve, It’ll)\",\n      \"currentValue\": \"Straight quotes (Let's, We've, It'll)\",\n      \"severity\": \"minor\",\n      \"explanation\": \"Figma design uses smart quotes for typography. Implementation uses standard apostrophes.\",\n      \"currentCode\": \"              <Text style={styles.title}>\\n                Let's verify your number\\n              </Text>\\n\\n              {/* Subtitle - Figma: exact text */}\\n              <Text style={styles.subtitle}>\\n                We've sent a 6-digit code to your phone. It'll auto-verify once entered\\n              </Text>\",\n      \"fixedCode\": \"              <Text style={styles.title}>\\n                Let’s verify your number\\n              </Text>\\n\\n              {/* Subtitle - Figma: exact text */}\\n              <Text style={styles.subtitle}>\\n                We’ve sent a 6-digit code to your phone. It’ll auto-verify once entered\\n              </Text>\"\n    },\n    {\n      \"file\": \"app/(waitlist)/index.tsx\",\n      \"lineRange\": \"273-275\",\n      \"property\": \"text content\",\n      \"figmaValue\": \"Didn’t receive\",\n      \"currentValue\": \"Didn't receive\",\n      \"severity\": \"minor\",\n      \"explanation\": \"Figma design uses smart quotes for the resend text.\",\n      \"currentCode\": \"                <RNText style={styles.resendText}>\\n                  Didn't receive the code?{' '}\",\n      \"fixedCode\": \"                <RNText style={styles.resendText}>\\n                  Didn’t receive the code?{' '}\"\n    }\n  ],\n  \"layoutIssues\": [],\n  \"scrollIssues\": [],\n  \"confidence\": 100\n}\n```",
+        "parseError": true
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T20:35:01.671Z",
+      "feedback": [
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "260-268",
+          "property": "showDivider",
+          "figmaValue": "false",
+          "currentValue": "true",
+          "severity": "major",
+          "explanation": "The simulator shows a horizontal divider line above the 'Proceed' button which is not present in the Figma design. The 'showDivider' prop should be disabled to match the clean layout.",
+          "currentCode": "                showDivider={true}",
+          "fixedCode": "                showDivider={false}"
+        },
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-72",
+          "property": "typography",
+          "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+          "currentValue": "fontSize: 24, fontWeight: '600'",
+          "severity": "major",
+          "explanation": "The title typography uses hardcoded values that do not match the design system's H4 token. Updated to match Figma H4 style.",
+          "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+          "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    textAlign: 'center',\n    marginBottom: 12,\n  },"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "230-240",
+          "property": "text content",
+          "figmaValue": "Smart quotes (Let’s, We’ve, It’ll)",
+          "currentValue": "Straight quotes (Let's, We've, It'll)",
+          "severity": "minor",
+          "explanation": "Figma design uses smart quotes for typography. Implementation uses standard apostrophes.",
+          "currentCode": "              <Text style={styles.title}>\n                Let's verify your number\n              </Text>\n\n              {/* Subtitle - Figma: exact text */}\n              <Text style={styles.subtitle}>\n                We've sent a 6-digit code to your phone. It'll auto-verify once entered\n              </Text>",
+          "fixedCode": "              <Text style={styles.title}>\n                Let’s verify your number\n              </Text>\n\n              {/* Subtitle - Figma: exact text */}\n              <Text style={styles.subtitle}>\n                We’ve sent a 6-digit code to your phone. It’ll auto-verify once entered\n              </Text>"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "273-275",
+          "property": "text content",
+          "figmaValue": "Didn’t receive",
+          "currentValue": "Didn't receive",
+          "severity": "minor",
+          "explanation": "Figma design uses smart quotes for the resend text.",
+          "currentCode": "                <RNText style={styles.resendText}>\n                  Didn't receive the code?{' '}",
+          "fixedCode": "                <RNText style={styles.resendText}>\n                  Didn’t receive the code?{' '}"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "260-268",
+      "property": "showDivider",
+      "figmaValue": "false",
+      "currentValue": "true",
+      "severity": "major",
+      "explanation": "The simulator shows a horizontal divider line above the 'Proceed' button which is not present in the Figma design. The 'showDivider' prop should be disabled to match the clean layout.",
+      "currentCode": "                showDivider={true}",
+      "fixedCode": "                showDivider={false}"
+    },
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-72",
+      "property": "typography",
+      "figmaValue": "fontSize: 28, fontWeight: 400, lineHeight: 40 (typography.h4)",
+      "currentValue": "fontSize: 24, fontWeight: '600'",
+      "severity": "major",
+      "explanation": "The title typography uses hardcoded values that do not match the design system's H4 token. Updated to match Figma H4 style.",
+      "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+      "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    textAlign: 'center',\n    marginBottom: 12,\n  },"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "230-240",
+      "property": "text content",
+      "figmaValue": "Smart quotes (Let’s, We’ve, It’ll)",
+      "currentValue": "Straight quotes (Let's, We've, It'll)",
+      "severity": "minor",
+      "explanation": "Figma design uses smart quotes for typography. Implementation uses standard apostrophes.",
+      "currentCode": "              <Text style={styles.title}>\n                Let's verify your number\n              </Text>\n\n              {/* Subtitle - Figma: exact text */}\n              <Text style={styles.subtitle}>\n                We've sent a 6-digit code to your phone. It'll auto-verify once entered\n              </Text>",
+      "fixedCode": "              <Text style={styles.title}>\n                Let’s verify your number\n              </Text>\n\n              {/* Subtitle - Figma: exact text */}\n              <Text style={styles.subtitle}>\n                We’ve sent a 6-digit code to your phone. It’ll auto-verify once entered\n              </Text>"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "273-275",
+      "property": "text content",
+      "figmaValue": "Didn’t receive",
+      "currentValue": "Didn't receive",
+      "severity": "minor",
+      "explanation": "Figma design uses smart quotes for the resend text.",
+      "currentCode": "                <RNText style={styles.resendText}>\n                  Didn't receive the code?{' '}",
+      "fixedCode": "                <RNText style={styles.resendText}>\n                  Didn’t receive the code?{' '}"
+    }
+  ],
+  "summary": {
+    "totalIssues": 4,
+    "critical": 0,
+    "major": 2,
+    "minor": 2,
+    "filesAffected": [
+      "app/(waitlist)/index.tsx",
+      "src/components/ErrorBoundary.tsx"
+    ]
+  }
+}

@@ -1,0 +1,568 @@
+{
+  "screenId": "1-28071",
+  "screenName": "Splash / get-started --animation 2",
+  "route": "/(auth)/beta-splash",
+  "generatedAt": "2026-02-19T19:33:02.884Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T19:30:51.516Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "233:2671",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": -463,
+              "absoluteY": -747,
+              "relativeLeft": -463,
+              "relativeTop": -747,
+              "parentId": "1:28071"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"Splash / get-started --animation\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:197",
+            "nodeName": "Border",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -333.2,
+              "relativeTop": -22.6,
+              "parentId": "I1:28074;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -333.2, top: -22.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Border\" is positioned at (-333.2, -22.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:198",
+            "nodeName": "Cap",
+            "figmaValue": {
+              "absoluteX": 25.9,
+              "absoluteY": 4.67,
+              "relativeLeft": -307.3,
+              "relativeTop": -17.93,
+              "parentId": "I1:28074;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -307.3, top: -17.9",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cap\" is positioned at (-307.3, -17.9) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:199",
+            "nodeName": "Capacity",
+            "figmaValue": {
+              "absoluteX": 2,
+              "absoluteY": 2,
+              "relativeLeft": -331.2,
+              "relativeTop": -20.6,
+              "parentId": "I1:28074;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -331.2, top: -20.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Capacity\" is positioned at (-331.2, -20.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:201",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -308.7,
+              "relativeTop": -23.2,
+              "parentId": "I1:28074;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -308.7, top: -23.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-308.7, -23.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:202",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 3.03,
+              "absoluteY": 4.03,
+              "relativeLeft": -305.67,
+              "relativeTop": -19.169999999999998,
+              "parentId": "I1:28074;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -305.7, top: -19.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-305.7, -19.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:203",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 6.05,
+              "absoluteY": 8.07,
+              "relativeLeft": -302.65,
+              "relativeTop": -15.129999999999999,
+              "parentId": "I1:28074;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -302.6, top: -15.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-302.6, -15.1) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:205",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 7.4,
+              "relativeLeft": -282,
+              "relativeTop": -15.700000000000001,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -282.0, top: -15.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-282.0, -15.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:206",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 5.3,
+              "absoluteY": 5,
+              "relativeLeft": -276.7,
+              "relativeTop": -18.1,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -276.7, top: -18.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-276.7, -18.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:207",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 10.7,
+              "absoluteY": 2.4,
+              "relativeLeft": -271.3,
+              "relativeTop": -20.700000000000003,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -271.3, top: -20.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-271.3, -20.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28074;125:208",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 16,
+              "absoluteY": 0,
+              "relativeLeft": -266,
+              "relativeTop": -23.1,
+              "parentId": "I1:28074;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -266.0, top: -23.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-266.0, -23.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+          }
+        ],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 11
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T19:30:51.518Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T19:32:09.648Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "0-0",
+            "property": "Source Code",
+            "figmaValue": "Source Code Provided",
+            "currentValue": "File not found",
+            "severity": "critical",
+            "explanation": "The source code for the screen was not provided in the input (File not found), making line-by-line code analysis impossible.",
+            "currentCode": "N/A",
+            "fixedCode": "N/A"
+          },
+          {
+            "file": "Navigation/Layout",
+            "lineRange": "Screen Level",
+            "property": "Bottom Tab Bar",
+            "figmaValue": "Hidden (Full Screen)",
+            "currentValue": "Visible",
+            "severity": "major",
+            "explanation": "The simulator screenshot shows the main app Bottom Tab Bar (Home, Extensions, Settings) is visible. The Figma design is a full-screen Splash/Get Started screen which should not display navigation tabs.",
+            "currentCode": "Screen rendered within TabNavigator context",
+            "fixedCode": "Move screen to Root StackNavigator or set options={{ tabBarStyle: { display: 'none' } }}"
+          }
+        ],
+        "layoutIssues": [
+          {
+            "component": "Background",
+            "property": "Texture Pattern",
+            "figmaValue": "image 149 (Rotated 90°, Opacity 8%)",
+            "currentValue": "Solid Color (Inferred)",
+            "explanation": "Figma design includes a large background texture ('image 149') that is rotated 90 degrees with 8% opacity on top of the #131313 background. Ensure this asset is exported and positioned absolutely with the correct transform."
+          },
+          {
+            "component": "Logo & Badge",
+            "property": "Vertical Spacing",
+            "figmaValue": "12px Gap",
+            "currentValue": "Unknown",
+            "explanation": "Ensure the vertical gap between the bottom of the Logo Container (40px height) and the top of the 'BETA LAUNCH' badge is exactly 12px (Logo y=406, Badge y=458, Logo Height=40)."
+          }
+        ],
+        "scrollIssues": [],
+        "confidence": 40
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T19:33:02.884Z",
+      "feedback": [
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -463, -747",
+          "currentValue": "Unknown",
+          "severity": "critical",
+          "explanation": "\"image 149\" (Background Texture) requires absolute positioning at specific coordinates, plus visual properties (rotation, opacity) identified in visual feedback.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -463,\ntop: -747,\ntransform: [{ rotate: '90deg' }],\nopacity: 0.08,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -333.2, -22.6",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Border\" (Battery component) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -307.3, -17.9",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Cap\" (Battery component) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -331.2, -20.6",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Capacity\" (Battery component) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -308.7, -23.2",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Wifi-path\" (1) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -305.7, -19.2",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Wifi-path\" (2) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -302.6, -15.1",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Wifi-path\" (3) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -282.0, -15.7",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Cellular-Connection-path\" (1) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -276.7, -18.1",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Cellular-Connection-path\" (2) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -271.3, -20.7",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Cellular-Connection-path\" (3) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -266.0, -23.1",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "\"Cellular-Connection-path\" (4) requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "Screen Level",
+          "property": "navigationOptions",
+          "figmaValue": "Hidden Tab Bar",
+          "currentValue": "Visible Tab Bar",
+          "severity": "major",
+          "explanation": "The Bottom Tab Bar is visible but should be hidden for this Splash/Get Started screen.",
+          "currentCode": "N/A",
+          "fixedCode": "<Stack.Screen options={{ tabBarStyle: { display: 'none' }, headerShown: false }} />"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "gap",
+          "figmaValue": "12px",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Vertical spacing between Logo container and Badge must be 12px.",
+          "currentCode": "N/A",
+          "fixedCode": "gap: 12, // spacing.sm"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -463, -747",
+      "currentValue": "Unknown",
+      "severity": "critical",
+      "explanation": "\"image 149\" (Background Texture) requires absolute positioning at specific coordinates, plus visual properties (rotation, opacity) identified in visual feedback.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -463,\ntop: -747,\ntransform: [{ rotate: '90deg' }],\nopacity: 0.08,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -333.2, -22.6",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Border\" (Battery component) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -307.3, -17.9",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Cap\" (Battery component) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -331.2, -20.6",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Capacity\" (Battery component) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -308.7, -23.2",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Wifi-path\" (1) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -305.7, -19.2",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Wifi-path\" (2) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -302.6, -15.1",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Wifi-path\" (3) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -282.0, -15.7",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Cellular-Connection-path\" (1) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -276.7, -18.1",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Cellular-Connection-path\" (2) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -271.3, -20.7",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Cellular-Connection-path\" (3) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -266.0, -23.1",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "\"Cellular-Connection-path\" (4) requires absolute positioning relative to parent.",
+      "currentCode": "N/A",
+      "fixedCode": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "Screen Level",
+      "property": "navigationOptions",
+      "figmaValue": "Hidden Tab Bar",
+      "currentValue": "Visible Tab Bar",
+      "severity": "major",
+      "explanation": "The Bottom Tab Bar is visible but should be hidden for this Splash/Get Started screen.",
+      "currentCode": "N/A",
+      "fixedCode": "<Stack.Screen options={{ tabBarStyle: { display: 'none' }, headerShown: false }} />"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "gap",
+      "figmaValue": "12px",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Vertical spacing between Logo container and Badge must be 12px.",
+      "currentCode": "N/A",
+      "fixedCode": "gap: 12, // spacing.sm"
+    }
+  ],
+  "summary": {
+    "totalIssues": 13,
+    "critical": 1,
+    "major": 12,
+    "minor": 0,
+    "filesAffected": [
+      "app/(auth)/index.tsx"
+    ]
+  }
+}

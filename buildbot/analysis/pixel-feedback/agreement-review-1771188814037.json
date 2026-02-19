@@ -1,0 +1,232 @@
+{
+  "screenId": "1-30448",
+  "screenName": "Onboarding / Agreement --verify agreement",
+  "route": "/(agreement)/review",
+  "generatedAt": "2026-02-15T20:53:34.037Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-15T20:49:52.699Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 0
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-15T20:51:07.320Z",
+      "feedback": [
+        {
+          "componentName": "ErrorBoundary",
+          "nodeId": "unknown",
+          "issues": [
+            {
+              "file": "src/components/ErrorBoundary.tsx",
+              "lineRange": "67-72",
+              "property": "typography",
+              "figmaValue": "h4 (fontSize: 28, lineHeight: 40, fontWeight: 400)",
+              "currentValue": "fontSize: 24, fontWeight: 600",
+              "severity": "major",
+              "explanation": "The provided visual reference is for a different screen ('Confirm Details'), preventing a direct visual comparison. However, the provided Design Tokens specify `typography.h4` as 28px/40px/400 weight. The current ErrorBoundary title uses arbitrary values (24px/600 weight) that deviate from the design system's heading standards.",
+              "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+              "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+            }
+          ],
+          "confidence": 85
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-15T20:52:39.754Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(agreement)/review.tsx",
+            "lineRange": "440-445",
+            "property": "paddingTop",
+            "figmaValue": "insets.top + 64",
+            "currentValue": "insets.top + 16",
+            "severity": "major",
+            "explanation": "Figma node 1:30517 defines a 64px gap between the status bar area and the main content. The current implementation only adds 16px padding, causing the logo and title to sit too high.",
+            "currentCode": "paddingTop: insets.top + 16,",
+            "fixedCode": "paddingTop: insets.top + 64,"
+          },
+          {
+            "file": "app/(agreement)/review.tsx",
+            "lineRange": "500-515",
+            "property": "structure",
+            "figmaValue": "Container with Handle + Button",
+            "currentValue": "Button only",
+            "severity": "moderate",
+            "explanation": "Figma node 1:30581 shows the 'Proceed' button is grouped with a small top handle (24x2, #4D4D4D) with an 8px gap. This visual element is missing in the code.",
+            "currentCode": "<View style={styles.buttonSection}>\n  {mode === 'verify' ? (\n    <PrimaryButton ... />\n  ) : ...",
+            "fixedCode": "<View style={styles.buttonSection}>\n  <View style={styles.buttonGroup}>\n    <View style={styles.buttonHandle} />\n    {mode === 'verify' ? (\n      <PrimaryButton ... />\n    ) : ...\n  </View>"
+          },
+          {
+            "file": "app/(agreement)/review.tsx",
+            "lineRange": "650-655",
+            "property": "height",
+            "figmaValue": "1",
+            "currentValue": "0.25",
+            "severity": "minor",
+            "explanation": "The divider height of 0.25 is too thin to be clearly visible against the dark background, failing to match the visual separation seen in Figma.",
+            "currentCode": "height: 0.25,",
+            "fixedCode": "height: 1,"
+          },
+          {
+            "file": "app/(agreement)/review.tsx",
+            "lineRange": "675-680",
+            "property": "alignItems",
+            "figmaValue": "center",
+            "currentValue": "flex-start",
+            "severity": "minor",
+            "explanation": "The button section aligns items to start, but the design requires the button handle (and button group) to be centered horizontally.",
+            "currentCode": "alignItems: 'flex-start',",
+            "fixedCode": "alignItems: 'center',"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-15T20:53:34.037Z",
+      "feedback": [
+        {
+          "file": "src/components/ErrorBoundary.tsx",
+          "lineRange": "67-72",
+          "property": "typography",
+          "figmaValue": "h4 (28/40/400)",
+          "currentValue": "24/600",
+          "severity": "major",
+          "explanation": "Update ErrorBoundary title to match design system H4 typography (28px, 400 weight).",
+          "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+          "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+        },
+        {
+          "file": "app/(agreement)/review.tsx",
+          "lineRange": "440-445",
+          "property": "paddingTop",
+          "figmaValue": "insets.top + 64",
+          "currentValue": "insets.top + 16",
+          "severity": "major",
+          "explanation": "Increase top padding to 64px (spacing.huge) to match Figma layout.",
+          "currentCode": "paddingTop: insets.top + 16,",
+          "fixedCode": "paddingTop: insets.top + 64,"
+        },
+        {
+          "file": "app/(agreement)/review.tsx",
+          "lineRange": "500-515",
+          "property": "structure",
+          "figmaValue": "Handle + Button",
+          "currentValue": "Button only",
+          "severity": "moderate",
+          "explanation": "Add the missing drag handle visual element above the primary button.",
+          "currentCode": "<View style={styles.buttonSection}>\n  {mode === 'verify' ? (",
+          "fixedCode": "<View style={styles.buttonSection}>\n  <View style={styles.buttonHandle} />\n  {mode === 'verify' ? ("
+        },
+        {
+          "file": "app/(agreement)/review.tsx",
+          "lineRange": "675-680",
+          "property": "alignItems",
+          "figmaValue": "center",
+          "currentValue": "flex-start",
+          "severity": "minor",
+          "explanation": "Center align the button section and define the missing buttonHandle style.",
+          "currentCode": "alignItems: 'flex-start',",
+          "fixedCode": "alignItems: 'center',\n  },\n  buttonHandle: {\n    width: 24,\n    height: 2,\n    backgroundColor: '#4D4D4D', // colors.black[400]\n    borderRadius: 100,\n    marginBottom: 8, // spacing.xs"
+        },
+        {
+          "file": "app/(agreement)/review.tsx",
+          "lineRange": "650-655",
+          "property": "height",
+          "figmaValue": "1",
+          "currentValue": "0.25",
+          "severity": "minor",
+          "explanation": "Increase divider height to 1px for better visibility.",
+          "currentCode": "height: 0.25,",
+          "fixedCode": "height: 1,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "src/components/ErrorBoundary.tsx",
+      "lineRange": "67-72",
+      "property": "typography",
+      "figmaValue": "h4 (28/40/400)",
+      "currentValue": "24/600",
+      "severity": "major",
+      "explanation": "Update ErrorBoundary title to match design system H4 typography (28px, 400 weight).",
+      "currentCode": "  title: {\n    fontSize: 24,\n    fontWeight: '600',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },",
+      "fixedCode": "  title: {\n    fontSize: 28,\n    lineHeight: 40,\n    fontWeight: '400',\n    color: '#FFFFFF',\n    marginBottom: 12,\n  },"
+    },
+    {
+      "file": "app/(agreement)/review.tsx",
+      "lineRange": "440-445",
+      "property": "paddingTop",
+      "figmaValue": "insets.top + 64",
+      "currentValue": "insets.top + 16",
+      "severity": "major",
+      "explanation": "Increase top padding to 64px (spacing.huge) to match Figma layout.",
+      "currentCode": "paddingTop: insets.top + 16,",
+      "fixedCode": "paddingTop: insets.top + 64,"
+    },
+    {
+      "file": "app/(agreement)/review.tsx",
+      "lineRange": "500-515",
+      "property": "structure",
+      "figmaValue": "Handle + Button",
+      "currentValue": "Button only",
+      "severity": "moderate",
+      "explanation": "Add the missing drag handle visual element above the primary button.",
+      "currentCode": "<View style={styles.buttonSection}>\n  {mode === 'verify' ? (",
+      "fixedCode": "<View style={styles.buttonSection}>\n  <View style={styles.buttonHandle} />\n  {mode === 'verify' ? ("
+    },
+    {
+      "file": "app/(agreement)/review.tsx",
+      "lineRange": "675-680",
+      "property": "alignItems",
+      "figmaValue": "center",
+      "currentValue": "flex-start",
+      "severity": "minor",
+      "explanation": "Center align the button section and define the missing buttonHandle style.",
+      "currentCode": "alignItems: 'flex-start',",
+      "fixedCode": "alignItems: 'center',\n  },\n  buttonHandle: {\n    width: 24,\n    height: 2,\n    backgroundColor: '#4D4D4D', // colors.black[400]\n    borderRadius: 100,\n    marginBottom: 8, // spacing.xs"
+    },
+    {
+      "file": "app/(agreement)/review.tsx",
+      "lineRange": "650-655",
+      "property": "height",
+      "figmaValue": "1",
+      "currentValue": "0.25",
+      "severity": "minor",
+      "explanation": "Increase divider height to 1px for better visibility.",
+      "currentCode": "height: 0.25,",
+      "fixedCode": "height: 1,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 5,
+    "critical": 0,
+    "major": 2,
+    "minor": 2,
+    "moderate": 1,
+    "filesAffected": [
+      "src/components/ErrorBoundary.tsx",
+      "app/(agreement)/review.tsx"
+    ]
+  }
+}

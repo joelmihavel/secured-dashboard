@@ -1,0 +1,86 @@
+{
+  "screenId": "carousel",
+  "figmaIds": ["1-28985", "1-29025", "1-29065"],
+  "testType": "unit",
+  "timestamp": "2026-02-15T16:30:00Z",
+  "testFile": "src/__tests__/screens/carousel.test.tsx",
+  "fixtureFile": "src/__tests__/fixtures/carousel.fixtures.ts",
+  "totalTests": 36,
+  "passed": 36,
+  "failed": 0,
+  "skipped": 0,
+  "executionTime": "7.6s",
+  "coverage": {
+    "statements": 93.1,
+    "branches": 58.33,
+    "functions": 85.71,
+    "lines": 93.1
+  },
+  "uncoveredLines": {
+    "carousel.tsx": [156, 157],
+    "reason": "onViewableItemsChanged callback body - only fires during real FlatList scroll events, not triggerable in JSDOM"
+  },
+  "failures": [],
+  "testCategories": {
+    "1_renders_without_crash": { "count": 2, "passed": 2 },
+    "2_text_content_matches_figma": { "count": 10, "passed": 10 },
+    "3_interactive_elements_present": { "count": 4, "passed": 4 },
+    "4_navigation_fires_correctly": { "count": 3, "passed": 3 },
+    "5_loading_state": { "count": 1, "passed": 1, "note": "N/A - static screen, no backend data" },
+    "6_error_state": { "count": 1, "passed": 1, "note": "N/A - static screen, no error states" },
+    "7_empty_state": { "count": 1, "passed": 1, "note": "N/A - hardcoded slides array" },
+    "8_props_variations": { "count": 10, "passed": 10 },
+    "9_accessibility": { "count": 4, "passed": 4 }
+  },
+  "testIdsVerified": [
+    "carousel-screen"
+  ],
+  "testIdsMissing": [
+    "carousel-skip-btn",
+    "carousel-flatlist",
+    "carousel-dots"
+  ],
+  "testIdsMissingDetails": [
+    {
+      "priority": "P2",
+      "area": "testID",
+      "element": "Skip TouchableOpacity",
+      "expected": "carousel-skip-btn",
+      "found": null,
+      "recommendation": "Add testID='carousel-skip-btn' to the Skip TouchableOpacity in carousel.tsx"
+    },
+    {
+      "priority": "P3",
+      "area": "testID",
+      "element": "FlatList",
+      "expected": "carousel-flatlist",
+      "found": null,
+      "recommendation": "Add testID='carousel-flatlist' to the FlatList in carousel.tsx"
+    },
+    {
+      "priority": "P3",
+      "area": "testID",
+      "element": "CarouselDots container",
+      "expected": "carousel-dots",
+      "found": null,
+      "recommendation": "Add testID='carousel-dots' to the dotsContainer View in carousel.tsx"
+    }
+  ],
+  "statesCovered": ["page4", "page5", "page6"],
+  "statesMissing": [],
+  "navigationTargetsVerified": [
+    "/(auth)/sign-up"
+  ],
+  "mocksUsed": [
+    "expo-router",
+    "react-native-safe-area-context",
+    "react-native-svg",
+    "expo-haptics (from global setup)",
+    "react-native-reanimated (from global setup)"
+  ],
+  "knownLimitations": [
+    "FlatList scroll/swipe behavior cannot be fully tested in JSDOM - onViewableItemsChanged not triggered",
+    "scrollToIndex with page param causes invariant error without getItemLayout - unmount before timer flush",
+    "CarouselDots active dot state cannot be verified via scroll since onViewableItemsChanged does not fire"
+  ]
+}
