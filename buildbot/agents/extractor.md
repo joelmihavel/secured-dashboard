@@ -26,16 +26,39 @@ Always use `depth=999` (unlimited). Shallow extraction misses nested components.
 
 ### Properties Per Node
 Extract ALL of these for every node:
-- Identity: nodeId, name, type, visible
-- Geometry: x, y, width, height, rotation
-- Layout: layoutMode, primaryAxisAlignItems, counterAxisAlignItems, padding*, itemSpacing, layoutSizing*
-- Typography (TEXT only): fontSize, fontFamily, fontWeight, lineHeightPx, letterSpacing, textAlignHorizontal, textDecoration, textCase, characters, characterStyleOverrides, styleOverrideTable
-- Fills: type, color (RGBA→hex), opacity, gradientStops, gradientHandlePositions, imageRef
-- Strokes: color, weight, align, cap, join, dashPattern
-- Effects: type, color, offset, blur, spread
-- Borders: cornerRadius, rectangleCornerRadii, individualStrokeWeights
-- Vectors: fillGeometry path d, strokeGeometry
-- Component: componentId, componentProperties
+- Identity: nodeId, name, type, visible, locked, isFixed
+- Geometry: x, y, width, height, rotation, absoluteBoundingBox, absoluteRenderBounds (actual visible area after clips)
+- Layout (parent): layoutMode, primaryAxisAlignItems, counterAxisAlignItems, padding*, itemSpacing, layoutSizing*, counterAxisAlignContent, counterAxisSpacing, itemReverseZIndex
+- Layout (per-child): layoutPositioning (AUTO|ABSOLUTE), layoutAlign (STRETCH|INHERIT|MIN|CENTER|MAX), layoutGrow
+- Sizing mode (per-node): layoutSizingHorizontal (FIXED|FILL|HUG), layoutSizingVertical (FIXED|FILL|HUG) — how each node sizes itself within parent auto-layout
+- Size constraints: minWidth, maxWidth, minHeight, maxHeight
+- Typography (TEXT only): fontSize, fontFamily, fontWeight, fontStyle (italic), fontPostScriptName, lineHeightPx, lineHeightUnit, lineHeightPercent, letterSpacing, textAlignHorizontal, textAlignVertical, textDecoration, textCase, paragraphSpacing, paragraphIndent, textAutoResize, textTruncation, maxLines, opentypeFlags, hyperlink, characters, characterStyleOverrides, styleOverrideTable
+- Fills: type (SOLID|IMAGE|GRADIENT_*), color, opacity, blendMode, gradientStops, gradientHandlePositions, imageRef, scaleMode, imageTransform, imageFilters, boundVariables
+- Typography (TEXT extra): lineTypes (ORDERED/UNORDERED/NONE), lineIndentations, textRangeFills, inheritTextStyleId
+- Fills: type (SOLID|IMAGE|GRADIENT_*), color, opacity, blendMode, gradientStops, gradientHandlePositions, imageRef, scaleMode, imageTransform, imageFilters, boundVariables
+- Strokes: color, weight, align, cap, join, dashPattern, strokeMiterAngle
+- Stroke geometry: strokeGeometry path d, fillOverrideTable, variableWidthPoints
+- Effects: type (DROP_SHADOW|INNER_SHADOW|LAYER_BLUR|BACKGROUND_BLUR), color, offset, blur, spread, showShadowBehindNode
+- Borders: cornerRadius, rectangleCornerRadii, individualStrokeWeights, cornerSmoothing (iOS superellipse)
+- Vectors: fillGeometry path d, booleanOperation (UNION|INTERSECT|SUBTRACT|EXCLUDE)
+- Ellipse arcs: arcData (startingAngle, endingAngle, innerRadius) — for arcs, donuts, pie charts
+- Prototyping: interactions[] (trigger, actions[] array, transitions, smart animate) — NOTE: API field is `interactions`, NOT `reactions`
+- Legacy prototyping: transitionNodeID, transitionDuration, transitionEasing (node-level)
+- Component: componentId, componentProperties, componentPropertyReferences, componentPropertyDefinitions
+- Instance: overrides, overriddenFields, isExposedInstance, exposedInstances
+- Scroll: scrollBehavior (SCROLLS|FIXED|STICKY|FIXED_WHEN_CHILD_OF_SCROLLING_FRAME)
+- Overflow: overflowDirection (HORIZONTAL_SCROLLING|VERTICAL_SCROLLING|HORIZONTAL_AND_VERTICAL_SCROLLING|NONE)
+- Aspect ratio: preserveRatio, targetAspectRatio
+- Masks: isMask, isMaskOutline, maskType
+- Variables: boundVariables (Figma Variable/token bindings — authoritative source, per-node AND per-fill)
+- Style references: styles (named fill/text/effect/grid style IDs)
+- Dev status: devStatus (READY_FOR_DEV, etc.)
+- Export: exportSettings (format, scale, suffix)
+- Layout grids: layoutGrids (design overlay guides)
+- Layout sizing: strokesIncludedInLayout (box-sizing: border-box)
+- CSS Grid layout: gridRowCount, gridColumnCount, gridRowGap, gridColumnGap, gridColumnsSizing, gridRowsSizing
+- CSS Grid per-child: gridChildHorizontalAlign, gridChildVerticalAlign, gridRowSpan, gridColumnSpan, gridRowAnchorIndex, gridColumnAnchorIndex
+- File-level metadata: components (keys, names, componentSetId, documentationLinks), componentSets, styles (named style definitions)
 
 ### Font Weight Resolution
 ```

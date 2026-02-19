@@ -84,14 +84,29 @@ interface ScreenRoutes {
 // -- Blueprint node types ---------------------------------------------------
 
 interface BlueprintFill {
-  type: string;
+  type: string; // SOLID | IMAGE | GRADIENT_LINEAR | GRADIENT_RADIAL | GRADIENT_ANGULAR | GRADIENT_DIAMOND
   color?: string;
   opacity?: number;
   visible: boolean;
+  blendMode?: string; // Per-fill blend mode (NORMAL, MULTIPLY, SCREEN, OVERLAY, etc.)
+  // IMAGE fills
   imageRef?: string;
-  scaleMode?: string;
-  gradientStops?: Array<{ color: string; position: number; opacity?: number }>;
+  scaleMode?: string; // FILL | FIT | CROP | TILE
+  imageTransform?: number[][]; // 2x3 affine transform matrix [[a,b,c],[d,e,f]]
+  imageFilters?: {
+    exposure?: number;
+    contrast?: number;
+    saturation?: number;
+    temperature?: number;
+    tint?: number;
+    highlights?: number;
+    shadows?: number;
+  };
+  // GRADIENT fills
+  gradientStops?: Array<{ color: string; position: number; opacity?: number; boundVariables?: Record<string, unknown> }>;
   gradientHandlePositions?: Array<{ x: number; y: number }>;
+  // Figma Variable bindings on this fill (authoritative design token reference)
+  boundVariables?: Record<string, unknown>;
 }
 
 interface BlueprintStroke {
@@ -120,9 +135,14 @@ interface BlueprintLayout {
   gap: number;
   padding: { top: number; right: number; bottom: number; left: number };
   wrap: string;
-  grow: number;
   sizingH: string;
   sizingV: string;
+  // Wrapped layout cross-axis alignment (only when wrap !== NO_WRAP)
+  counterAxisAlignContent?: string;
+  // Cross-axis gap for wrapped layouts
+  counterAxisSpacing?: number;
+  // Z-ordering of auto-layout children (true = first child on top)
+  itemReverseZIndex?: boolean;
 }
 
 interface BlueprintTypographySpan {
@@ -131,25 +151,43 @@ interface BlueprintTypographySpan {
   color?: string;
   fontWeight?: number;
   fontFamily?: string;
+  fontStyle?: string; // normal | italic
   fontSize?: number;
   letterSpacing?: number;
+  lineHeight?: number;
   textDecoration?: string;
+  textCase?: string; // uppercase | lowercase | capitalize
+  hyperlink?: { type: string; url?: string; nodeID?: string }; // URL or node link
+  opentypeFlags?: Record<string, number>; // OpenType features (ligatures, stylistic sets)
 }
 
 interface BlueprintTypography {
   content: string;
   fontSize: number;
   lineHeight: number;
+  lineHeightUnit?: string; // PIXELS | FONT_SIZE_% | INTRINSIC (informational)
   fontWeight: number;
   fontFamily: string;
+  fontStyle: string; // normal | italic
   letterSpacing: number;
   textAlign: string;
   textAlignVertical: string;
   textDecoration: string;
   textTransform: string;
   paragraphSpacing: number;
+  paragraphIndent?: number; // First-line indent in px
   textAutoResize: string;
+  textTruncation?: string; // DISABLED | ENDING — maps to RN ellipsizeMode
+  maxLines?: number; // Max lines before truncation — maps to RN numberOfLines
   color: string;
+  fontPostScriptName?: string; // Raw PostScript font name from Figma (e.g., "PlusJakartaSans-SemiBoldItalic")
+  openTypeFlags?: Record<string, number>; // OpenType features (ligatures, etc.)
+  hyperlink?: { type: string; url?: string; nodeID?: string }; // Whole-text hyperlink
+  lineHeightPercent?: number; // Line height as % of font size (informational)
+  inheritTextStyleId?: string; // Inherited text style reference
+  lineIndentations?: number[]; // Per-line indentation values
+  lineTypes?: string[]; // Per-line type: NONE, ORDERED, UNORDERED (list bullets/numbers)
+  textRangeFills?: Array<Record<string, unknown>>; // Per-character-range fills (gradient text, multi-color)
   spans: BlueprintTypographySpan[];
 }
 
@@ -157,6 +195,39 @@ interface BlueprintVectorPath {
   path: string;
   windingRule: string;
 }
+
+interface BlueprintArcData {
+  startingAngle: number;
+  endingAngle: number;
+  innerRadius: number;
+}
+
+interface BlueprintInteractionAction {
+  type: string; // NODE, BACK, CLOSE, URL, SCROLL_TO, SWAP, etc.
+  destinationId?: string;
+  url?: string;
+  navigation?: string; // NAVIGATE, SWAP, OVERLAY, SCROLL_TO, CHANGE_TO
+  transition?: {
+    type: string; // DISSOLVE, SMART_ANIMATE, MOVE_IN, MOVE_OUT, PUSH, SLIDE_IN, SLIDE_OUT
+    duration: number;
+    easing: {
+      type: string; // EASE_IN, EASE_OUT, EASE_IN_AND_OUT, LINEAR, CUSTOM_CUBIC_BEZIER
+      easingFunctionCubicBezier?: { x1: number; y1: number; x2: number; y2: number };
+    };
+  };
+  preserveScrollPosition?: boolean;
+  overlayRelativePosition?: { x: number; y: number };
+}
+
+interface BlueprintInteraction {
+  trigger: {
+    type: string; // ON_CLICK, ON_HOVER, ON_PRESS, ON_DRAG, MOUSE_ENTER, MOUSE_LEAVE, AFTER_TIMEOUT, etc.
+    delay?: number;
+    timeout?: number;
+  };
+  actions: BlueprintInteractionAction[]; // Figma returns actions[] array, not singular action
+}
+
 
 interface BlueprintNode {
   id: string;
@@ -172,26 +243,117 @@ interface BlueprintNode {
     height: number;
     rotation: number;
   };
+  // Absolute render bounds (actual visible area after clips/rotations; null = fully clipped)
+  absoluteRenderBounds?: { x: number; y: number; width: number; height: number } | null;
+  // Absolute bounding box (pre-clip axis-aligned bounding box)
+  absoluteBoundingBox?: { x: number; y: number; width: number; height: number };
   opacity: number;
   fills: BlueprintFill[];
   strokes: BlueprintStroke[];
   effects: BlueprintEffect[];
   borderRadius: number | { tl: number; tr: number; br: number; bl: number };
+  // iOS-style superellipse corner smoothing (0.0 to 1.0; ~0.6 = iOS native)
+  cornerSmoothing?: number;
   individualStrokeWeights?: { top: number; right: number; bottom: number; left: number };
   clipsContent: boolean;
   // FRAME / GROUP / COMPONENT / INSTANCE
   layout?: BlueprintLayout;
+  // Per-child auto-layout properties (set on the child, not the parent)
+  layoutPositioning?: string; // AUTO | ABSOLUTE — absolute-positioned children in auto-layout
+  layoutAlign?: string; // STRETCH | INHERIT | MIN | CENTER | MAX — per-child cross-axis override
+  layoutGrow?: number; // How much this child grows within parent auto-layout (0 = don't grow)
+  // Per-node sizing mode (FIXED | FILL | HUG) — how this node sizes itself within parent auto-layout
+  layoutSizingHorizontal?: string;
+  layoutSizingVertical?: string;
+  // Size constraints (auto-layout children)
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
   // TEXT
   typography?: BlueprintTypography;
   // VECTOR / BOOLEAN_OPERATION
   vectorPaths?: BlueprintVectorPath[];
+  // Stroke geometry paths (complex stroked shapes)
+  strokePaths?: BlueprintVectorPath[];
+  // ELLIPSE-specific arc geometry
+  arcData?: BlueprintArcData;
   // INSTANCE / COMPONENT
   componentId?: string;
   componentProperties?: Record<string, unknown>;
+  // Component property references (links sublayer props to parent component properties)
+  componentPropertyReferences?: Record<string, string>;
   // Constraints (responsive sizing)
   constraints?: { horizontal: string; vertical: string };
   // Blend mode
   blendMode?: string;
+  // Prototyping interactions (from Figma API `interactions` field)
+  interactions?: BlueprintInteraction[];
+  // Legacy prototyping properties (node-level)
+  transitionNodeID?: string;
+  transitionDuration?: number;
+  transitionEasing?: Record<string, unknown>;
+  // Scroll behavior (SCROLLS | FIXED | STICKY | FIXED_WHEN_CHILD_OF_SCROLLING_FRAME)
+  scrollBehavior?: string;
+  // Preserve aspect ratio
+  preserveRatio?: boolean;
+  targetAspectRatio?: number;
+  // Size before rotation/scale (only with geometry=paths)
+  size?: { x: number; y: number };
+  // 2x3 affine transform matrix relative to parent (only with geometry=paths)
+  relativeTransform?: number[][];
+  // Mask properties
+  isMask?: boolean;
+  isMaskOutline?: boolean;
+  maskType?: string;
+  // Lock / fixed state
+  locked?: boolean;
+  isFixed?: boolean;
+  // Export settings configured in Figma
+  exportSettings?: Array<{ suffix: string; format: string; constraint: { type: string; value: number } }>;
+  // Figma Variable bindings (design tokens)
+  boundVariables?: Record<string, unknown>;
+  // Style references (named styles: fill, text, effect, grid)
+  styleReferences?: Record<string, string>;
+  // Dev status (READY_FOR_DEV, etc.)
+  devStatus?: { type: string; description?: string };
+  // Layout grids
+  layoutGrids?: Array<Record<string, unknown>>;
+  // Instance overrides (which fields differ from main component)
+  overriddenFields?: string[];
+  overrides?: Array<Record<string, unknown>>;
+  // Instance exposure
+  isExposedInstance?: boolean;
+  exposedInstances?: string[];
+  // Component property definitions (on COMPONENT / COMPONENT_SET nodes)
+  componentPropertyDefinitions?: Record<string, unknown>;
+  // Boolean operation type (for BOOLEAN_OPERATION nodes)
+  booleanOperation?: string; // UNION | INTERSECT | SUBTRACT | EXCLUDE
+  // Show shadow behind node content
+  showShadowBehindNode?: boolean;
+  // Overflow / scroll direction (HORIZONTAL_SCROLLING | VERTICAL_SCROLLING | HORIZONTAL_AND_VERTICAL_SCROLLING | NONE)
+  overflowDirection?: string;
+  // Whether strokes are included in layout calculations (box-sizing: border-box)
+  strokesIncludedInLayout?: boolean;
+  // Stroke miter angle (corner angle for MITER joins, in degrees)
+  strokeMiterAngle?: number;
+  // CSS Grid layout properties (when layoutMode is GRID)
+  gridLayout?: {
+    rowCount?: number;
+    columnCount?: number;
+    rowGap?: number;
+    columnGap?: number;
+    columnsSizing?: string; // CSS grid-template-columns
+    rowsSizing?: string; // CSS grid-template-rows
+  };
+  // Per-child CSS Grid placement
+  gridChildAlign?: { horizontal?: string; vertical?: string }; // AUTO | MIN | CENTER | MAX
+  gridSpan?: { rows?: number; columns?: number };
+  gridAnchor?: { row?: number; column?: number };
+  // Fill override table (for VECTOR nodes with geometry=paths)
+  fillOverrideTable?: Record<string, unknown>;
+  // Variable width stroke points
+  variableWidthPoints?: Array<{ x: number; y: number }>;
   // Auto-mapping
   rnComponent?: string;
   rnProps?: Record<string, unknown>;
@@ -235,6 +397,40 @@ interface ScreenBlueprint {
     spacing: Record<string, string>;
     radius: Record<string, string>;
   };
+  // Prototyping flow summary (aggregated from node interactions)
+  prototyping?: {
+    hasInteractions: boolean;
+    flowCount: number;
+    flows: Array<{
+      sourceNodeId: string;
+      sourceNodeName: string;
+      trigger: string;
+      destinationNodeId?: string;
+      transitionType?: string;
+      transitionDuration?: number;
+    }>;
+  };
+  // Top-level component metadata (from file-level `components` object)
+  componentMeta?: Record<string, {
+    key: string;
+    name: string;
+    description?: string;
+    componentSetId?: string;
+    documentationLinks?: Array<{ uri: string }>;
+  }>;
+  // Top-level component set metadata
+  componentSetMeta?: Record<string, {
+    key: string;
+    name: string;
+    description?: string;
+  }>;
+  // Top-level style definitions (named styles)
+  styleMeta?: Record<string, {
+    key: string;
+    name: string;
+    styleType: string; // FILL | TEXT | EFFECT | GRID
+    description?: string;
+  }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -257,13 +453,22 @@ function figmaColorToHexAlpha(c: { r: number; g: number; b: number; a?: number }
   return hex;
 }
 
-/** Convert screen ID between hyphen and colon formats. */
+/** Convert screen ID between hyphen and colon formats.
+ * Figma IDs are always `{number}:{number}` (e.g., `1:29108`, `243:2762`).
+ * File-safe format uses hyphen: `1-29108`, `243-2762`.
+ */
 function toApiId(id: string): string {
-  return id.includes('-') ? id.replace(/-/g, ':') : id;
+  // Only convert if it matches the expected pattern: digits-digits
+  const match = id.match(/^(\d+)-(\d+)$/);
+  if (match) return `${match[1]}:${match[2]}`;
+  // Already in colon format or unexpected format — return as-is
+  return id;
 }
 
 function toFileId(id: string): string {
-  return id.includes(':') ? id.replace(/:/g, '-') : id;
+  const match = id.match(/^(\d+):(\d+)$/);
+  if (match) return `${match[1]}-${match[2]}`;
+  return id;
 }
 
 /** Node name patterns to skip. */
@@ -504,12 +709,19 @@ function resolveRoute(screenId: string, routes: ScreenRoutes): ResolvedRoute {
 // Figma API Calls
 // ---------------------------------------------------------------------------
 
+interface FigmaNodeResponse {
+  document: Record<string, unknown>;
+  components?: Record<string, Record<string, unknown>>;
+  componentSets?: Record<string, Record<string, unknown>>;
+  styles?: Record<string, Record<string, unknown>>;
+}
+
 async function fetchNodeTree(
   config: FigmaConfig,
   nodeId: string,
-): Promise<Record<string, unknown>> {
+): Promise<FigmaNodeResponse> {
   const apiId = toApiId(nodeId);
-  const url = `${config.restApiBaseUrl}/files/${config.fileKey}/nodes?ids=${encodeURIComponent(apiId)}&depth=999`;
+  const url = `${config.restApiBaseUrl}/files/${config.fileKey}/nodes?ids=${encodeURIComponent(apiId)}&depth=999&geometry=paths`;
   log('info', `Fetching node tree: ${apiId}`);
 
   const response = await withRetry('fetchNodeTree', async () => {
@@ -524,12 +736,19 @@ async function fetchNodeTree(
   });
 
   const data = JSON.parse(response.body);
-  const doc = data.nodes?.[apiId]?.document;
+  const nodeData = data.nodes?.[apiId];
+  const doc = nodeData?.document;
   if (!doc) {
     throw new Error(`Node ${apiId} not found in Figma response`);
   }
   log('info', `Node tree received: "${doc.name}" (${doc.type})`);
-  return doc;
+
+  return {
+    document: doc,
+    components: nodeData.components as Record<string, Record<string, unknown>> | undefined,
+    componentSets: nodeData.componentSets as Record<string, Record<string, unknown>> | undefined,
+    styles: nodeData.styles as Record<string, Record<string, unknown>> | undefined,
+  };
 }
 
 async function fetchScreenBaselineUrl(
@@ -697,10 +916,10 @@ function shouldSkipNode(
   if (SKIP_NAME_PATTERN.test(name)) return true;
 
   // Skip nodes far below the fold (relative to root node's canvas position)
-  // Use 4x design height to include all scrollable content while filtering
-  // truly off-screen elements (e.g., hidden layers far below the artboard).
+  // Use 8x design height to include all scrollable content (terms, privacy, long forms)
+  // while filtering truly off-screen elements (e.g., hidden layers far below the artboard).
   const bbox = node.absoluteBoundingBox as { x: number; y: number; width: number; height: number } | undefined;
-  if (bbox && (bbox.y - rootBboxY) > config.baseDesignHeight * 4) return true;
+  if (bbox && (bbox.y - rootBboxY) > config.baseDesignHeight * 8) return true;
 
   return false;
 }
@@ -712,6 +931,12 @@ function processFills(rawFills: unknown[]): BlueprintFill[] {
       type: (fill.type as string) || 'SOLID',
       visible: fill.visible !== false,
     };
+
+    // Per-fill blend mode (skip NORMAL — it's the default)
+    const blendMode = fill.blendMode as string | undefined;
+    if (blendMode && blendMode !== 'NORMAL' && blendMode !== 'PASS_THROUGH') {
+      result.blendMode = blendMode;
+    }
 
     // SOLID fill
     if (fill.type === 'SOLID' && fill.color) {
@@ -725,14 +950,37 @@ function processFills(rawFills: unknown[]): BlueprintFill[] {
       result.imageRef = (fill.imageRef as string) || undefined;
       result.scaleMode = (fill.scaleMode as string) || undefined;
       result.opacity = (fill.opacity as number) ?? 1;
+
+      // Image transform matrix (rotation, scale, position within node)
+      const imageTransform = fill.imageTransform as number[][] | undefined;
+      if (imageTransform && Array.isArray(imageTransform)) {
+        result.imageTransform = imageTransform;
+      }
+
+      // Image filters (exposure, contrast, saturation, etc.)
+      const filters = fill.filters as Record<string, number> | undefined;
+      if (filters) {
+        const hasNonDefault = Object.values(filters).some((v) => v !== 0);
+        if (hasNonDefault) {
+          result.imageFilters = {
+            exposure: filters.exposure || undefined,
+            contrast: filters.contrast || undefined,
+            saturation: filters.saturation || undefined,
+            temperature: filters.temperature || undefined,
+            tint: filters.tint || undefined,
+            highlights: filters.highlights || undefined,
+            shadows: filters.shadows || undefined,
+          };
+        }
+      }
     }
 
-    // GRADIENT fills
+    // GRADIENT fills (LINEAR, RADIAL, ANGULAR, DIAMOND)
     if (typeof fill.type === 'string' && fill.type.startsWith('GRADIENT_')) {
       const rawStops = fill.gradientStops as Array<{ position: number; color: { r: number; g: number; b: number; a?: number } }>;
       if (Array.isArray(rawStops)) {
         result.gradientStops = rawStops.map((stop) => ({
-          color: figmaColorToHex(stop.color),
+          color: figmaColorToHexAlpha(stop.color),
           position: stop.position,
           opacity: stop.color.a,
         }));
@@ -744,13 +992,19 @@ function processFills(rawFills: unknown[]): BlueprintFill[] {
       result.opacity = (fill.opacity as number) ?? 1;
     }
 
+    // Figma Variable bindings on this fill (authoritative design token reference)
+    const fillBoundVars = fill.boundVariables as Record<string, unknown> | undefined;
+    if (fillBoundVars && Object.keys(fillBoundVars).length > 0) {
+      result.boundVariables = fillBoundVars;
+    }
+
     return result;
   });
 }
 
 function processStrokes(rawStrokes: unknown[], node: Record<string, unknown>): BlueprintStroke[] {
   if (!Array.isArray(rawStrokes)) return [];
-  const weight = (node.strokeWeight as number) || 0;
+  const weight = (node.strokeWeight as number) ?? 0;
   const align = (node.strokeAlign as string) || 'INSIDE';
   const cap = (node.strokeCap as string) || undefined;
   const join = (node.strokeJoin as string) || undefined;
@@ -806,7 +1060,7 @@ function processBorderRadius(
       bl: individual[3],
     };
   }
-  return (node.cornerRadius as number) || 0;
+  return (node.cornerRadius as number) ?? 0;
 }
 
 function processLayout(node: Record<string, unknown>): BlueprintLayout | undefined {
@@ -836,22 +1090,42 @@ function processLayout(node: Record<string, unknown>): BlueprintLayout | undefin
   const primary = node.primaryAxisAlignItems as string | undefined;
   const counter = node.counterAxisAlignItems as string | undefined;
 
-  return {
+  const layoutObj: BlueprintLayout = {
     direction,
     justifyContent: primary ? (primaryMap[primary] || 'flex-start') : 'flex-start',
     alignItems: counter ? (counterMap[counter] || 'flex-start') : 'flex-start',
-    gap: (node.itemSpacing as number) || 0,
+    gap: (node.itemSpacing as number) ?? 0,
     padding: {
-      top: (node.paddingTop as number) || 0,
-      right: (node.paddingRight as number) || 0,
-      bottom: (node.paddingBottom as number) || 0,
-      left: (node.paddingLeft as number) || 0,
+      top: (node.paddingTop as number) ?? 0,
+      right: (node.paddingRight as number) ?? 0,
+      bottom: (node.paddingBottom as number) ?? 0,
+      left: (node.paddingLeft as number) ?? 0,
     },
     wrap: (node.layoutWrap as string) || 'NO_WRAP',
-    grow: (node.layoutGrow as number) || 0,
     sizingH: (node.layoutSizingHorizontal as string) || 'FIXED',
     sizingV: (node.layoutSizingVertical as string) || 'FIXED',
   };
+
+  // Wrapped layout properties (only relevant when wrap !== NO_WRAP)
+  const wrap = layoutObj.wrap;
+  if (wrap && wrap !== 'NO_WRAP') {
+    const counterContent = node.counterAxisAlignContent as string | undefined;
+    if (counterContent) {
+      layoutObj.counterAxisAlignContent = counterContent;
+    }
+    const counterSpacing = node.counterAxisSpacing as number | undefined;
+    if (counterSpacing !== undefined && counterSpacing !== 0) {
+      layoutObj.counterAxisSpacing = counterSpacing;
+    }
+  }
+
+  // Z-ordering of auto-layout children
+  const reverseZIndex = node.itemReverseZIndex as boolean | undefined;
+  if (reverseZIndex === true) {
+    layoutObj.itemReverseZIndex = true;
+  }
+
+  return layoutObj;
 }
 
 function processTypography(node: Record<string, unknown>): BlueprintTypography | undefined {
@@ -859,7 +1133,12 @@ function processTypography(node: Record<string, unknown>): BlueprintTypography |
 
   const style = (node.style as Record<string, unknown>) || {};
   const content = (node.characters as string) || '';
-  const fontWeight = (style.fontWeight as number) || 400;
+  const fontWeight = (style.fontWeight as number) ?? 400;
+
+  // Resolve font style (italic detection)
+  const isItalic = (style.italic as boolean) === true ||
+    ((style.fontPostScriptName as string) || '').toLowerCase().includes('italic');
+  const fontStyle = isItalic ? 'italic' : 'normal';
 
   // Resolve text alignment
   const hAlignMap: Record<string, string> = {
@@ -941,6 +1220,32 @@ function processTypography(node: Record<string, unknown>): BlueprintTypography |
             if (overrideStyle.textDecoration) {
               span.textDecoration = decorationMap[overrideStyle.textDecoration as string] || undefined;
             }
+            if (overrideStyle.lineHeightPx !== undefined) {
+              span.lineHeight = overrideStyle.lineHeightPx as number;
+            }
+            // Font style (italic) in span overrides
+            const spanItalic = (overrideStyle.italic as boolean) === true ||
+              ((overrideStyle.fontPostScriptName as string) || '').toLowerCase().includes('italic');
+            if (spanItalic) {
+              span.fontStyle = 'italic';
+            }
+            // Text case in span overrides
+            if (overrideStyle.textCase) {
+              const spanCase = caseMap[overrideStyle.textCase as string];
+              if (spanCase) {
+                span.textCase = spanCase;
+              }
+            }
+            // Hyperlink in span overrides
+            const hyperlink = overrideStyle.hyperlink as { type: string; url?: string; nodeID?: string } | undefined;
+            if (hyperlink) {
+              span.hyperlink = hyperlink;
+            }
+            // OpenType flags in span overrides
+            const spanOTFlags = overrideStyle.opentypeFlags as Record<string, number> | undefined;
+            if (spanOTFlags && Object.keys(spanOTFlags).length > 0) {
+              span.opentypeFlags = spanOTFlags;
+            }
 
             spans.push(span);
           }
@@ -951,22 +1256,97 @@ function processTypography(node: Record<string, unknown>): BlueprintTypography |
     }
   }
 
-  return {
+  const result: BlueprintTypography = {
     content,
-    fontSize: (style.fontSize as number) || 16,
-    lineHeight: (style.lineHeightPx as number) || 24,
+    fontSize: (style.fontSize as number) ?? 16,
+    lineHeight: (style.lineHeightPx as number) ?? 24,
     fontWeight,
     fontFamily: resolveFontFamily(fontWeight),
-    letterSpacing: (style.letterSpacing as number) || 0,
+    fontStyle,
+    letterSpacing: (style.letterSpacing as number) ?? 0,
     textAlign: hAlignMap[textAlignH] || 'left',
     textAlignVertical: textAlignV,
     textDecoration: decorationMap[rawDecoration] || 'none',
     textTransform: caseMap[rawCase] || 'none',
-    paragraphSpacing: (style.paragraphSpacing as number) || 0,
+    paragraphSpacing: (style.paragraphSpacing as number) ?? 0,
     textAutoResize: (style.textAutoResize as string) || 'NONE',
     color: textColor,
     spans,
   };
+
+  // Line height unit (informational — helps understand if lineHeight is px or %)
+  const lineHeightUnit = style.lineHeightUnit as string | undefined;
+  if (lineHeightUnit && lineHeightUnit !== 'INTRINSIC') {
+    result.lineHeightUnit = lineHeightUnit;
+  }
+
+  // Paragraph indent (first-line indent)
+  const paragraphIndent = style.paragraphIndent as number | undefined;
+  if (paragraphIndent && paragraphIndent > 0) {
+    result.paragraphIndent = paragraphIndent;
+  }
+
+  // Text truncation (DISABLED | ENDING)
+  const textTruncation = node.textTruncation as string | undefined;
+  if (textTruncation && textTruncation !== 'DISABLED') {
+    result.textTruncation = textTruncation; // ENDING → ellipsizeMode: 'tail'
+  }
+
+  // Max lines (used with truncation for numberOfLines)
+  const maxLines = node.maxLines as number | undefined;
+  if (maxLines !== undefined && maxLines > 0) {
+    result.maxLines = maxLines;
+  }
+
+  // OpenType flags (ligatures, stylistic sets, etc.)
+  const opentypeFlags = style.opentypeFlags as Record<string, number> | undefined;
+  if (opentypeFlags && Object.keys(opentypeFlags).length > 0) {
+    result.openTypeFlags = opentypeFlags;
+  }
+
+  // Raw PostScript font name (for debugging font resolution)
+  const fontPSName = style.fontPostScriptName as string | undefined;
+  if (fontPSName) {
+    result.fontPostScriptName = fontPSName;
+  }
+
+  // Whole-text hyperlink (when entire text node is a link)
+  const hyperlink = style.hyperlink as { type: string; url?: string; nodeID?: string } | undefined;
+  if (hyperlink) {
+    result.hyperlink = hyperlink;
+  }
+
+  // Line height as percentage (informational, alongside resolved px value)
+  const lineHeightPercent = style.lineHeightPercentFontSize as number | undefined;
+  if (lineHeightPercent !== undefined && lineHeightPercent > 0) {
+    result.lineHeightPercent = lineHeightPercent;
+  }
+
+  // Inherited text style reference
+  const inheritTextStyleId = style.inheritTextStyleId as string | undefined;
+  if (inheritTextStyleId) {
+    result.inheritTextStyleId = inheritTextStyleId;
+  }
+
+  // Per-line indentation values (for indented text/lists)
+  const lineIndentations = node.lineIndentations as number[] | undefined;
+  if (Array.isArray(lineIndentations) && lineIndentations.some((v) => v > 0)) {
+    result.lineIndentations = lineIndentations;
+  }
+
+  // Per-line types (NONE, ORDERED, UNORDERED — list bullets/numbers)
+  const lineTypes = node.lineTypes as string[] | undefined;
+  if (Array.isArray(lineTypes) && lineTypes.some((v) => v !== 'NONE')) {
+    result.lineTypes = lineTypes;
+  }
+
+  // Per-character-range fills (gradient text, multi-color text — different from character fills via styleOverrideTable)
+  const textRangeFills = node.textRangeFills as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(textRangeFills) && textRangeFills.length > 0) {
+    result.textRangeFills = textRangeFills;
+  }
+
+  return result;
 }
 
 function processVectorPaths(node: Record<string, unknown>): BlueprintVectorPath[] | undefined {
@@ -980,6 +1360,95 @@ function processVectorPaths(node: Record<string, unknown>): BlueprintVectorPath[
     path: fg.path || '',
     windingRule: fg.windingRule || 'NONZERO',
   }));
+}
+
+function processStrokeGeometry(node: Record<string, unknown>): BlueprintVectorPath[] | undefined {
+  const strokeGeometry = node.strokeGeometry as Array<{ path: string; windingRule: string }> | undefined;
+  if (!Array.isArray(strokeGeometry) || strokeGeometry.length === 0) return undefined;
+
+  return strokeGeometry.map((sg) => ({
+    path: sg.path || '',
+    windingRule: sg.windingRule || 'NONZERO',
+  }));
+}
+
+function processArcData(node: Record<string, unknown>): BlueprintArcData | undefined {
+  if (node.type !== 'ELLIPSE') return undefined;
+
+  const arcData = node.arcData as { startingAngle: number; endingAngle: number; innerRadius: number } | undefined;
+  if (!arcData) return undefined;
+
+  // Skip if it's a full circle with no inner radius (the default — nothing special to capture)
+  const isFullCircle = arcData.startingAngle === 0 && Math.abs(arcData.endingAngle - 2 * Math.PI) < 0.001;
+  const hasInnerRadius = arcData.innerRadius > 0;
+  if (isFullCircle && !hasInnerRadius) return undefined;
+
+  return {
+    startingAngle: arcData.startingAngle,
+    endingAngle: arcData.endingAngle,
+    innerRadius: arcData.innerRadius,
+  };
+}
+
+function processInteractions(node: Record<string, unknown>): BlueprintInteraction[] | undefined {
+  // Figma REST API uses `interactions` (not `reactions`). Fall back to `reactions` for compatibility.
+  const rawInteractions = (node.interactions || node.reactions) as Array<Record<string, unknown>> | undefined;
+  if (!Array.isArray(rawInteractions) || rawInteractions.length === 0) return undefined;
+
+  const processed: BlueprintInteraction[] = [];
+  for (const interaction of rawInteractions) {
+    const trigger = interaction.trigger as Record<string, unknown> | undefined;
+    if (!trigger) continue;
+
+    // Figma REST API uses `actions` (array), not `action` (singular)
+    let rawActions = interaction.actions as Array<Record<string, unknown>> | undefined;
+    if (!Array.isArray(rawActions)) {
+      // Fall back to singular `action` for compatibility
+      const singleAction = interaction.action as Record<string, unknown> | undefined;
+      rawActions = singleAction ? [singleAction] : [];
+    }
+    if (rawActions.length === 0) continue;
+
+    const actions: BlueprintInteractionAction[] = [];
+    for (const action of rawActions) {
+      const transition = action.transition as Record<string, unknown> | undefined;
+      const easing = transition?.easing as Record<string, unknown> | undefined;
+
+      actions.push({
+        type: (action.type as string) || 'NODE',
+        ...(action.destinationId ? { destinationId: action.destinationId as string } : {}),
+        ...(action.url ? { url: action.url as string } : {}),
+        ...(action.navigation ? { navigation: action.navigation as string } : {}),
+        ...(action.preserveScrollPosition === true ? { preserveScrollPosition: true } : {}),
+        ...(action.overlayRelativePosition ? {
+          overlayRelativePosition: action.overlayRelativePosition as { x: number; y: number },
+        } : {}),
+        ...(transition ? {
+          transition: {
+            type: (transition.type as string) || 'DISSOLVE',
+            duration: (transition.duration as number) || 0.3,
+            easing: {
+              type: (easing?.type as string) || 'EASE_IN_AND_OUT',
+              ...(easing?.easingFunctionCubicBezier ? {
+                easingFunctionCubicBezier: easing.easingFunctionCubicBezier as { x1: number; y1: number; x2: number; y2: number },
+              } : {}),
+            },
+          },
+        } : {}),
+      });
+    }
+
+    processed.push({
+      trigger: {
+        type: (trigger.type as string) || 'ON_CLICK',
+        ...(trigger.delay !== undefined ? { delay: trigger.delay as number } : {}),
+        ...(trigger.timeout !== undefined ? { timeout: trigger.timeout as number } : {}),
+      },
+      actions,
+    });
+  }
+
+  return processed.length > 0 ? processed : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -1076,7 +1545,7 @@ function traverseNodeTree(
 
   const nodeId = node.id as string;
   const bbox = node.absoluteBoundingBox as { x: number; y: number; width: number; height: number } | undefined;
-  const rotation = (node.rotation as number) || 0;
+  const rotation = (node.rotation as number) ?? 0;
 
   // Compute geometry relative to parent (or absolute for root)
   let relX = 0;
@@ -1144,10 +1613,52 @@ function traverseNodeTree(
     blueprintNode.individualStrokeWeights = isw;
   }
 
-  // Layout
+  // Layout (parent-level auto-layout properties)
   const layout = processLayout(node);
   if (layout) {
     blueprintNode.layout = layout;
+  }
+
+  // Per-child auto-layout properties
+  const layoutPositioning = node.layoutPositioning as string | undefined;
+  if (layoutPositioning && layoutPositioning !== 'AUTO') {
+    blueprintNode.layoutPositioning = layoutPositioning; // ABSOLUTE
+  }
+  const layoutAlign = node.layoutAlign as string | undefined;
+  if (layoutAlign && layoutAlign !== 'INHERIT') {
+    blueprintNode.layoutAlign = layoutAlign; // STRETCH, MIN, CENTER, MAX
+  }
+  const layoutGrow = node.layoutGrow as number | undefined;
+  if (layoutGrow !== undefined && layoutGrow !== 0) {
+    blueprintNode.layoutGrow = layoutGrow;
+  }
+
+  // Per-node sizing mode (how this node sizes itself within parent auto-layout)
+  const sizingH = node.layoutSizingHorizontal as string | undefined;
+  if (sizingH && sizingH !== 'FIXED') {
+    blueprintNode.layoutSizingHorizontal = sizingH; // FILL | HUG
+  }
+  const sizingV = node.layoutSizingVertical as string | undefined;
+  if (sizingV && sizingV !== 'FIXED') {
+    blueprintNode.layoutSizingVertical = sizingV; // FILL | HUG
+  }
+
+  // Size constraints
+  const minWidth = node.minWidth as number | undefined;
+  if (minWidth !== undefined && minWidth > 0) {
+    blueprintNode.minWidth = minWidth;
+  }
+  const maxWidth = node.maxWidth as number | undefined;
+  if (maxWidth !== undefined && maxWidth < Infinity && maxWidth > 0) {
+    blueprintNode.maxWidth = maxWidth;
+  }
+  const minHeight = node.minHeight as number | undefined;
+  if (minHeight !== undefined && minHeight > 0) {
+    blueprintNode.minHeight = minHeight;
+  }
+  const maxHeight = node.maxHeight as number | undefined;
+  if (maxHeight !== undefined && maxHeight < Infinity && maxHeight > 0) {
+    blueprintNode.maxHeight = maxHeight;
   }
 
   // Typography
@@ -1156,10 +1667,22 @@ function traverseNodeTree(
     blueprintNode.typography = typography;
   }
 
-  // Vector paths
+  // Vector paths (fill geometry)
   const vectorPaths = processVectorPaths(node);
   if (vectorPaths) {
     blueprintNode.vectorPaths = vectorPaths;
+  }
+
+  // Stroke geometry paths (complex stroked shapes)
+  const strokePaths = processStrokeGeometry(node);
+  if (strokePaths) {
+    blueprintNode.strokePaths = strokePaths;
+  }
+
+  // Ellipse-specific arc data
+  const arcData = processArcData(node);
+  if (arcData) {
+    blueprintNode.arcData = arcData;
   }
 
   // Component / Instance
@@ -1168,6 +1691,32 @@ function traverseNodeTree(
   }
   if (node.componentProperties) {
     blueprintNode.componentProperties = node.componentProperties as Record<string, unknown>;
+  }
+
+  // Prototyping interactions (Figma REST API field: `interactions`, not `reactions`)
+  const interactions = processInteractions(node);
+  if (interactions) {
+    blueprintNode.interactions = interactions;
+  }
+
+  // Legacy prototyping properties (node-level)
+  const transitionNodeID = node.transitionNodeID as string | undefined;
+  if (transitionNodeID) {
+    blueprintNode.transitionNodeID = transitionNodeID;
+  }
+  const transitionDuration = node.transitionDuration as number | undefined;
+  if (transitionDuration !== undefined && transitionDuration > 0) {
+    blueprintNode.transitionDuration = transitionDuration;
+  }
+  const transitionEasing = node.transitionEasing as Record<string, unknown> | undefined;
+  if (transitionEasing) {
+    blueprintNode.transitionEasing = transitionEasing;
+  }
+
+  // Component property references (wiring sublayer props to parent component properties)
+  const compPropRefs = node.componentPropertyReferences as Record<string, string> | undefined;
+  if (compPropRefs && Object.keys(compPropRefs).length > 0) {
+    blueprintNode.componentPropertyReferences = compPropRefs;
   }
 
   // Constraints (responsive sizing)
@@ -1183,6 +1732,225 @@ function traverseNodeTree(
   const blendMode = node.blendMode as string | undefined;
   if (blendMode && blendMode !== 'NORMAL' && blendMode !== 'PASS_THROUGH') {
     blueprintNode.blendMode = blendMode;
+  }
+
+  // Corner smoothing (iOS superellipse, 0.0–1.0, ~0.6 = iOS native)
+  const cornerSmoothing = node.cornerSmoothing as number | undefined;
+  if (cornerSmoothing !== undefined && cornerSmoothing > 0) {
+    blueprintNode.cornerSmoothing = cornerSmoothing;
+  }
+
+  // Absolute render bounds (actual visible area after clips/rotations; null = fully clipped)
+  const absoluteRenderBounds = node.absoluteRenderBounds as { x: number; y: number; width: number; height: number } | null | undefined;
+  if (absoluteRenderBounds !== undefined) {
+    blueprintNode.absoluteRenderBounds = absoluteRenderBounds;
+  }
+
+  // Absolute bounding box
+  const absoluteBoundingBox = node.absoluteBoundingBox as { x: number; y: number; width: number; height: number } | undefined;
+  if (absoluteBoundingBox) {
+    blueprintNode.absoluteBoundingBox = absoluteBoundingBox;
+  }
+
+  // Scroll behavior (SCROLLS | FIXED | STICKY | FIXED_WHEN_CHILD_OF_SCROLLING_FRAME)
+  const scrollBehavior = node.scrollBehavior as string | undefined;
+  if (scrollBehavior && scrollBehavior !== 'SCROLLS') {
+    blueprintNode.scrollBehavior = scrollBehavior; // Only store non-default values
+  }
+
+  // Preserve aspect ratio
+  const preserveRatio = node.preserveRatio as boolean | undefined;
+  if (preserveRatio === true) {
+    blueprintNode.preserveRatio = true;
+  }
+  const targetAspectRatio = node.targetAspectRatio as number | undefined;
+  if (targetAspectRatio !== undefined && targetAspectRatio > 0) {
+    blueprintNode.targetAspectRatio = targetAspectRatio;
+  }
+
+  // Size before rotation/scale (only available with geometry=paths parameter)
+  const sizeVec = node.size as { x: number; y: number } | undefined;
+  if (sizeVec && (sizeVec.x > 0 || sizeVec.y > 0)) {
+    blueprintNode.size = sizeVec;
+  }
+
+  // Relative transform matrix (only available with geometry=paths parameter)
+  const relTransform = node.relativeTransform as number[][] | undefined;
+  if (relTransform && Array.isArray(relTransform) && relTransform.length === 2) {
+    blueprintNode.relativeTransform = relTransform;
+  }
+
+  // Mask properties
+  const isMask = node.isMask as boolean | undefined;
+  if (isMask === true) {
+    blueprintNode.isMask = true;
+  }
+  const isMaskOutline = node.isMaskOutline as boolean | undefined;
+  if (isMaskOutline === true) {
+    blueprintNode.isMaskOutline = true;
+  }
+  const maskType = node.maskType as string | undefined;
+  if (maskType) {
+    blueprintNode.maskType = maskType;
+  }
+
+  // Lock / fixed state
+  const locked = node.locked as boolean | undefined;
+  if (locked === true) {
+    blueprintNode.locked = true;
+  }
+  const isFixed = node.isFixed as boolean | undefined;
+  if (isFixed === true) {
+    blueprintNode.isFixed = true;
+  }
+
+  // Export settings
+  const exportSettings = node.exportSettings as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(exportSettings) && exportSettings.length > 0) {
+    blueprintNode.exportSettings = exportSettings.map((s) => ({
+      suffix: (s.suffix as string) || '',
+      format: (s.format as string) || 'PNG',
+      constraint: (s.constraint as { type: string; value: number }) || { type: 'SCALE', value: 1 },
+    }));
+  }
+
+  // Figma Variable bindings (design tokens — authoritative source)
+  const boundVariables = node.boundVariables as Record<string, unknown> | undefined;
+  if (boundVariables && Object.keys(boundVariables).length > 0) {
+    blueprintNode.boundVariables = boundVariables;
+  }
+
+  // Style references (named Figma styles: fill, text, effect, grid)
+  const styles = node.styles as Record<string, string> | undefined;
+  if (styles && Object.keys(styles).length > 0) {
+    blueprintNode.styleReferences = styles;
+  }
+
+  // Dev status
+  const devStatus = node.devStatus as { type: string; description?: string } | undefined;
+  if (devStatus) {
+    blueprintNode.devStatus = devStatus;
+  }
+
+  // Layout grids (design overlay guides)
+  const layoutGrids = node.layoutGrids as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(layoutGrids) && layoutGrids.length > 0) {
+    blueprintNode.layoutGrids = layoutGrids;
+  }
+
+  // Instance overrides (which fields differ from main component)
+  const overriddenFields = node.overriddenFields as string[] | undefined;
+  if (Array.isArray(overriddenFields) && overriddenFields.length > 0) {
+    blueprintNode.overriddenFields = overriddenFields;
+  }
+  const overridesArr = node.overrides as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(overridesArr) && overridesArr.length > 0) {
+    blueprintNode.overrides = overridesArr;
+  }
+
+  // Boolean operation type (UNION, INTERSECT, SUBTRACT, EXCLUDE)
+  const booleanOp = node.booleanOperation as string | undefined;
+  if (booleanOp) {
+    blueprintNode.booleanOperation = booleanOp;
+  }
+
+  // Show shadow behind node content
+  const showShadowBehindNode = node.showShadowBehindNode as boolean | undefined;
+  if (showShadowBehindNode === true) {
+    blueprintNode.showShadowBehindNode = true;
+  }
+
+  // Instance exposure (INSTANCE nodes)
+  const isExposedInstance = node.isExposedInstance as boolean | undefined;
+  if (isExposedInstance === true) {
+    blueprintNode.isExposedInstance = true;
+  }
+  const exposedInstances = node.exposedInstances as string[] | undefined;
+  if (Array.isArray(exposedInstances) && exposedInstances.length > 0) {
+    blueprintNode.exposedInstances = exposedInstances;
+  }
+
+  // Component property definitions (COMPONENT / COMPONENT_SET nodes)
+  const compPropDefs = node.componentPropertyDefinitions as Record<string, unknown> | undefined;
+  if (compPropDefs && Object.keys(compPropDefs).length > 0) {
+    blueprintNode.componentPropertyDefinitions = compPropDefs;
+  }
+
+  // Overflow / scroll direction
+  const overflowDirection = node.overflowDirection as string | undefined;
+  if (overflowDirection && overflowDirection !== 'NONE') {
+    blueprintNode.overflowDirection = overflowDirection;
+  }
+
+  // Strokes included in layout (box-sizing: border-box)
+  const strokesIncludedInLayout = node.strokesIncludedInLayout as boolean | undefined;
+  if (strokesIncludedInLayout === true) {
+    blueprintNode.strokesIncludedInLayout = true;
+  }
+
+  // Stroke miter angle
+  const strokeMiterAngle = node.strokeMiterAngle as number | undefined;
+  if (strokeMiterAngle !== undefined && strokeMiterAngle !== 28.96) { // 28.96 is default
+    blueprintNode.strokeMiterAngle = strokeMiterAngle;
+  }
+
+  // CSS Grid layout properties (layoutMode: GRID)
+  const layoutMode = node.layoutMode as string | undefined;
+  if (layoutMode === 'GRID') {
+    const gridLayout: Record<string, unknown> = {};
+    const gridRowCount = node.gridRowCount as number | undefined;
+    if (gridRowCount) gridLayout.rowCount = gridRowCount;
+    const gridColumnCount = node.gridColumnCount as number | undefined;
+    if (gridColumnCount) gridLayout.columnCount = gridColumnCount;
+    const gridRowGap = node.gridRowGap as number | undefined;
+    if (gridRowGap) gridLayout.rowGap = gridRowGap;
+    const gridColumnGap = node.gridColumnGap as number | undefined;
+    if (gridColumnGap) gridLayout.columnGap = gridColumnGap;
+    const gridColumnsSizing = node.gridColumnsSizing as string | undefined;
+    if (gridColumnsSizing) gridLayout.columnsSizing = gridColumnsSizing;
+    const gridRowsSizing = node.gridRowsSizing as string | undefined;
+    if (gridRowsSizing) gridLayout.rowsSizing = gridRowsSizing;
+    if (Object.keys(gridLayout).length > 0) {
+      blueprintNode.gridLayout = gridLayout as BlueprintNode['gridLayout'];
+    }
+  }
+
+  // Per-child CSS Grid placement
+  const gridChildHAlign = node.gridChildHorizontalAlign as string | undefined;
+  const gridChildVAlign = node.gridChildVerticalAlign as string | undefined;
+  if ((gridChildHAlign && gridChildHAlign !== 'AUTO') || (gridChildVAlign && gridChildVAlign !== 'AUTO')) {
+    blueprintNode.gridChildAlign = {
+      ...(gridChildHAlign && gridChildHAlign !== 'AUTO' ? { horizontal: gridChildHAlign } : {}),
+      ...(gridChildVAlign && gridChildVAlign !== 'AUTO' ? { vertical: gridChildVAlign } : {}),
+    };
+  }
+  const gridRowSpan = node.gridRowSpan as number | undefined;
+  const gridColumnSpan = node.gridColumnSpan as number | undefined;
+  if ((gridRowSpan && gridRowSpan > 1) || (gridColumnSpan && gridColumnSpan > 1)) {
+    blueprintNode.gridSpan = {
+      ...(gridRowSpan && gridRowSpan > 1 ? { rows: gridRowSpan } : {}),
+      ...(gridColumnSpan && gridColumnSpan > 1 ? { columns: gridColumnSpan } : {}),
+    };
+  }
+  const gridRowAnchor = node.gridRowAnchorIndex as number | undefined;
+  const gridColAnchor = node.gridColumnAnchorIndex as number | undefined;
+  if ((gridRowAnchor && gridRowAnchor > 0) || (gridColAnchor && gridColAnchor > 0)) {
+    blueprintNode.gridAnchor = {
+      ...(gridRowAnchor && gridRowAnchor > 0 ? { row: gridRowAnchor } : {}),
+      ...(gridColAnchor && gridColAnchor > 0 ? { column: gridColAnchor } : {}),
+    };
+  }
+
+  // Fill override table (VECTOR nodes, only with geometry=paths)
+  const fillOverrideTable = node.fillOverrideTable as Record<string, unknown> | undefined;
+  if (fillOverrideTable && Object.keys(fillOverrideTable).length > 0) {
+    blueprintNode.fillOverrideTable = fillOverrideTable;
+  }
+
+  // Variable width stroke points
+  const variableWidthPoints = node.variableWidthPoints as Array<{ x: number; y: number }> | undefined;
+  if (Array.isArray(variableWidthPoints) && variableWidthPoints.length > 0) {
+    blueprintNode.variableWidthPoints = variableWidthPoints;
   }
 
   // Auto-mapping
@@ -1529,7 +2297,13 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
   // -----------------------------------------------------------------------
   log('info', '');
   log('info', 'STEP 1/3: Fetching full node tree from Figma...');
-  const nodeTree = await fetchNodeTree(config, apiId) as Record<string, unknown>;
+  const figmaResponse = await fetchNodeTree(config, apiId);
+  const nodeTree = figmaResponse.document;
+  const figmaComponents = figmaResponse.components;
+  const figmaComponentSets = figmaResponse.componentSets;
+  const figmaStyles = figmaResponse.styles;
+  if (figmaComponents) log('info', `  Component metadata: ${Object.keys(figmaComponents).length} entries`);
+  if (figmaStyles) log('info', `  Style metadata: ${Object.keys(figmaStyles).length} entries`);
 
   // -----------------------------------------------------------------------
   // Step 2: Fetch baseline image
@@ -1604,6 +2378,50 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
   }
 
   // -----------------------------------------------------------------------
+  // Step 4: Build prototyping flow summary from node interactions
+  // -----------------------------------------------------------------------
+  log('info', '');
+  log('info', 'STEP 4: Aggregating prototyping flows...');
+  const flows: Array<{
+    sourceNodeId: string;
+    sourceNodeName: string;
+    trigger: string;
+    destinationNodeId?: string;
+    transitionType?: string;
+    transitionDuration?: number;
+  }> = [];
+  for (const bpNode of allNodes) {
+    if (bpNode.interactions && bpNode.interactions.length > 0) {
+      for (const interaction of bpNode.interactions) {
+        for (const action of interaction.actions) {
+          flows.push({
+            sourceNodeId: bpNode.id,
+            sourceNodeName: bpNode.name,
+            trigger: interaction.trigger.type,
+            ...(action.destinationId ? { destinationNodeId: action.destinationId } : {}),
+            ...(action.transition ? {
+              transitionType: action.transition.type,
+              transitionDuration: action.transition.duration,
+            } : {}),
+          });
+        }
+      }
+    }
+    // Also capture legacy prototyping properties
+    if (bpNode.transitionNodeID) {
+      flows.push({
+        sourceNodeId: bpNode.id,
+        sourceNodeName: bpNode.name,
+        trigger: 'ON_CLICK',
+        destinationNodeId: bpNode.transitionNodeID,
+        ...(bpNode.transitionDuration ? { transitionDuration: bpNode.transitionDuration } : {}),
+      });
+    }
+  }
+  const hasInteractions = flows.length > 0;
+  log('info', `  Found ${flows.length} prototyping flow(s)`);
+
+  // -----------------------------------------------------------------------
   // Assemble the blueprint
   // -----------------------------------------------------------------------
   const blueprint: ScreenBlueprint = {
@@ -1623,6 +2441,42 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
     nodes: allNodes,
     assets,
     tokensUsed,
+    prototyping: {
+      hasInteractions,
+      flowCount: flows.length,
+      flows,
+    },
+    // Top-level metadata from Figma file response
+    ...(figmaComponents && Object.keys(figmaComponents).length > 0 ? {
+      componentMeta: Object.fromEntries(
+        Object.entries(figmaComponents).map(([id, comp]) => [id, {
+          key: (comp.key as string) || '',
+          name: (comp.name as string) || '',
+          ...(comp.description ? { description: comp.description as string } : {}),
+          ...(comp.componentSetId ? { componentSetId: comp.componentSetId as string } : {}),
+          ...(comp.documentationLinks ? { documentationLinks: comp.documentationLinks as Array<{ uri: string }> } : {}),
+        }])
+      ),
+    } : {}),
+    ...(figmaComponentSets && Object.keys(figmaComponentSets).length > 0 ? {
+      componentSetMeta: Object.fromEntries(
+        Object.entries(figmaComponentSets).map(([id, cs]) => [id, {
+          key: (cs.key as string) || '',
+          name: (cs.name as string) || '',
+          ...(cs.description ? { description: cs.description as string } : {}),
+        }])
+      ),
+    } : {}),
+    ...(figmaStyles && Object.keys(figmaStyles).length > 0 ? {
+      styleMeta: Object.fromEntries(
+        Object.entries(figmaStyles).map(([id, s]) => [id, {
+          key: (s.key as string) || '',
+          name: (s.name as string) || '',
+          styleType: (s.styleType as string) || 'FILL',
+          ...(s.description ? { description: s.description as string } : {}),
+        }])
+      ),
+    } : {}),
   };
 
   // Write blueprint JSON
@@ -1637,6 +2491,7 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
   log('info', `Baseline:  ${baselinePath}`);
   log('info', `Nodes:     ${allNodes.length}`);
   log('info', `Assets:    ${assets.length}`);
+  log('info', `Flows:     ${flows.length}`);
   log('info', `Time:      ${elapsed}s`);
 }
 

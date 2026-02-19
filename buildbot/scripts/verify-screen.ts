@@ -117,8 +117,23 @@ interface CoverageResult {
 }
 
 interface GeminiAuditResult {
-  componentIssues: unknown[];
-  pixelIssues: unknown[];
+  consolidatedFixes: Array<{
+    file?: string;
+    property?: string;
+    figmaValue?: string;
+    currentValue?: string;
+    severity?: string;
+    explanation?: string;
+    fixedCode?: string;
+  }>;
+  summary: {
+    totalIssues: number;
+    critical: number;
+    major: number;
+    minor: number;
+    filesAffected: string[];
+  };
+  batches?: unknown[];
 }
 
 interface InspectionResult {
@@ -139,6 +154,16 @@ interface AuditReport {
   pixelDiff: PixelDiffResult;
 
   coverage?: CoverageResult;
+
+  maestroStructural?: {
+    score: number;
+    totalChecks: number;
+    passed: number;
+    failed: number;
+    codeFixes: number;
+    testIdGaps: number;
+    reportPath: string;
+  };
 
   geminiAudit?: GeminiAuditResult;
 
@@ -189,6 +214,9 @@ interface CLIArgs {
   skipPM: boolean;
   skipBackend: boolean;
   recapture: boolean;
+  autoHeal: boolean;
+  healMaxIterations: number;
+  healTargetScore: number;
   // Batch-state mode
   batchScreen: string | null;
 }
@@ -369,6 +397,9 @@ function parseArgs(): CLIArgs {
   let skipPM = false;
   let skipBackend = false;
   let recapture = false;
+  let autoHeal = false;
+  let healMaxIterations = 3;
+  let healTargetScore = 85;
   let batchScreen: string | null = null;
 
   // Check if first arg is a flag or a screenId
@@ -401,6 +432,15 @@ function parseArgs(): CLIArgs {
       case "--recapture":
         recapture = true;
         break;
+      case "--auto-heal":
+        autoHeal = true;
+        break;
+      case "--heal-max-iterations":
+        healMaxIterations = parseInt(args[++i] ?? "3", 10);
+        break;
+      case "--heal-target-score":
+        healTargetScore = parseInt(args[++i] ?? "85", 10);
+        break;
       default:
         logWarn("args", `Unknown argument: ${args[i]}`);
     }
@@ -418,7 +458,7 @@ function parseArgs(): CLIArgs {
     process.exit(1);
   }
 
-  return { screenId, route, skipInspector, skipMaestro, skipPM, skipBackend, recapture, batchScreen };
+  return { screenId, route, skipInspector, skipMaestro, skipPM, skipBackend, recapture, autoHeal, healMaxIterations, healTargetScore, batchScreen };
 }
 
 function loadScreenRoutes(): ScreenRoutesConfig {
@@ -1490,29 +1530,49 @@ function runCoverageCheck(screenId: string): CoverageResult | null {
 // Step 5: Gemini Visual Feedback
 // ---------------------------------------------------------------------------
 
+/** Extract GeminiAuditResult from raw JSON (handles both old and new Gemini output formats) */
+function extractGeminiResult(raw: Record<string, unknown>): GeminiAuditResult {
+  // New format: consolidatedFixes + summary + batches
+  const consolidatedFixes = Array.isArray(raw.consolidatedFixes) ? raw.consolidatedFixes as GeminiAuditResult['consolidatedFixes'] : [];
+  const rawSummary = raw.summary as Record<string, unknown> | undefined;
+  const summary: GeminiAuditResult['summary'] = {
+    totalIssues: typeof rawSummary?.totalIssues === 'number' ? rawSummary.totalIssues : consolidatedFixes.length,
+    critical: typeof rawSummary?.critical === 'number' ? rawSummary.critical : consolidatedFixes.filter(f => f.severity === 'critical').length,
+    major: typeof rawSummary?.major === 'number' ? rawSummary.major : consolidatedFixes.filter(f => f.severity === 'major').length,
+    minor: typeof rawSummary?.minor === 'number' ? rawSummary.minor : consolidatedFixes.filter(f => f.severity === 'minor').length,
+    filesAffected: Array.isArray(rawSummary?.filesAffected) ? rawSummary.filesAffected as string[] : [...new Set(consolidatedFixes.map(f => f.file).filter(Boolean) as string[])],
+  };
+
+  return { consolidatedFixes, summary, batches: Array.isArray(raw.batches) ? raw.batches : undefined };
+}
+
 function runGeminiAudit(screenId: string, routeKey?: string): GeminiAuditResult | null {
   log("gemini", "Running Gemini visual feedback...");
 
-  // Check for a recent cached Gemini report (skip API if report exists from last 24h)
+  // Check for a recent cached Gemini report — but only if source files haven't changed since
   const cachedReportPath = path.join(PATHS.audits, `${screenId}-gemini.json`);
   if (fileExists(cachedReportPath)) {
     try {
       const stat = fs.statSync(cachedReportPath);
-      const ageMs = Date.now() - stat.mtimeMs;
-      const ageHours = ageMs / (1000 * 60 * 60);
-      if (ageHours < 24) {
+      const reportMtime = stat.mtimeMs;
+      const ageHours = (Date.now() - reportMtime) / (1000 * 60 * 60);
+
+      // Check if blueprint or screen code is newer than cached report
+      const blueprintPath = path.join(PATHS.blueprints, `${screenId}-blueprint.json`);
+      const blueprintMtime = fileExists(blueprintPath) ? fs.statSync(blueprintPath).mtimeMs : 0;
+      const screenshotPath = path.join(PATHS.screenshots, `${screenId}.png`);
+      const screenshotMtime = fileExists(screenshotPath) ? fs.statSync(screenshotPath).mtimeMs : 0;
+
+      const sourceIsNewer = blueprintMtime > reportMtime || screenshotMtime > reportMtime;
+
+      if (ageHours < 24 && !sourceIsNewer) {
         const cached = readJsonSafe<Record<string, unknown>>(cachedReportPath);
         if (cached) {
           log("gemini", `Using cached Gemini report (${ageHours.toFixed(1)}h old): ${cachedReportPath}`);
-          return {
-            componentIssues: Array.isArray(cached.componentIssues) ? cached.componentIssues : [],
-            pixelIssues: Array.isArray(cached.pixelIssues)
-              ? cached.pixelIssues
-              : Array.isArray(cached.issues)
-                ? cached.issues
-                : [],
-          };
+          return extractGeminiResult(cached);
         }
+      } else if (sourceIsNewer) {
+        log("gemini", `Cached report is stale (source files modified after report). Re-running.`);
       }
     } catch { /* ignore stat errors */ }
   }
@@ -1527,7 +1587,7 @@ function runGeminiAudit(screenId: string, routeKey?: string): GeminiAuditResult 
   // Falls back to routeKey for backward compatibility
   const geminiArg = screenId || routeKey;
   const cmd = `npx tsx "${geminiScript}" ${geminiArg}`;
-  const { success } = runCommand(cmd, "gemini", { timeout: 120_000 });
+  const { success } = runCommand(cmd, "gemini", { timeout: 300_000 }); // 5min — Gemini runs 3+ API calls with rate limit retries
 
   if (!success) {
     logWarn("gemini", "Gemini feedback script failed. Continuing with remaining steps.");
@@ -1546,14 +1606,7 @@ function runGeminiAudit(screenId: string, routeKey?: string): GeminiAuditResult 
       const result = readJsonSafe<Record<string, unknown>>(p);
       if (result) {
         log("gemini", `Gemini audit report loaded from ${p}`);
-        return {
-          componentIssues: Array.isArray(result.componentIssues) ? result.componentIssues : [],
-          pixelIssues: Array.isArray(result.pixelIssues)
-            ? result.pixelIssues
-            : Array.isArray(result.issues)
-              ? result.issues
-              : [],
-        };
+        return extractGeminiResult(result);
       }
     }
   }
@@ -1582,12 +1635,19 @@ function runInspector(
 
   const outputPath = path.join(PATHS.audits, `${screenId}-inspection.json`);
 
-  // Cache: skip API call if inspection report exists from last 24h
+  // Cache: skip API call if inspection report exists from last 24h AND source files haven't changed
   if (fileExists(outputPath)) {
     try {
       const stat = fs.statSync(outputPath);
-      const ageHours = (Date.now() - stat.mtimeMs) / (1000 * 60 * 60);
-      if (ageHours < 24) {
+      const reportMtime = stat.mtimeMs;
+      const ageHours = (Date.now() - reportMtime) / (1000 * 60 * 60);
+
+      // Check if source files are newer than cached report
+      const screenshotMtime = fileExists(screenshotPath) ? fs.statSync(screenshotPath).mtimeMs : 0;
+      const baselineMtime = fileExists(baselinePath) ? fs.statSync(baselinePath).mtimeMs : 0;
+      const sourceIsNewer = screenshotMtime > reportMtime || baselineMtime > reportMtime;
+
+      if (ageHours < 24 && !sourceIsNewer) {
         const cached = readJsonSafe<Record<string, unknown>>(outputPath);
         if (cached) {
           const overallScore = typeof cached.overallScore === "number" ? cached.overallScore : 0;
@@ -1596,6 +1656,8 @@ function runInspector(
           log("inspector", `Using cached inspection report (${ageHours.toFixed(1)}h old) — Score: ${overallScore}/100`);
           return { overallScore, criticalIssues, suggestions };
         }
+      } else if (sourceIsNewer) {
+        log("inspector", `Cached report is stale (source files modified). Re-running.`);
       }
     } catch { /* ignore */ }
   }
@@ -1764,7 +1826,8 @@ function produceAuditReport(
   coverage: CoverageResult | null,
   geminiAudit: GeminiAuditResult | null,
   inspection: InspectionResult | null,
-  hasDottedPattern: boolean = false
+  hasDottedPattern: boolean = false,
+  maestroStructuralResult?: { score: number; totalChecks: number; passed: number; failed: number; codeFixes: number; testIdGaps: number; reportPath: string }
 ): AuditReport {
   log("report", "Producing combined audit report...");
 
@@ -1805,6 +1868,20 @@ function produceAuditReport(
   // Coverage assessment
   if (coverage && !coverage.passed) {
     failureReasons.push(`Coverage overall ${coverage.overall}% is below 80% threshold.`);
+  }
+
+  // Maestro structural assessment
+  if (maestroStructuralResult && maestroStructuralResult.score < 60) {
+    failureReasons.push(
+      `Maestro structural score ${maestroStructuralResult.score}/100 is below 60% threshold (${maestroStructuralResult.failed} failed checks, ${maestroStructuralResult.codeFixes} code fixes needed).`
+    );
+  }
+
+  // Gemini audit assessment
+  if (geminiAudit && geminiAudit.summary.critical > 0) {
+    failureReasons.push(
+      `Gemini audit found ${geminiAudit.summary.critical} critical issue(s) and ${geminiAudit.summary.totalIssues} total across ${geminiAudit.summary.filesAffected.length} file(s).`
+    );
   }
 
   // Inspection assessment — filter out elements the app doesn't control or Figma-internal names
@@ -1872,6 +1949,7 @@ function produceAuditReport(
     ...(coverage ? { coverage } : {}),
     ...(geminiAudit ? { geminiAudit } : {}),
     ...(inspection ? { inspection } : {}),
+    ...(maestroStructuralResult ? { maestroStructural: maestroStructuralResult } : {}),
     overallPassed,
     failureReasons,
   };
@@ -1946,11 +2024,14 @@ function runSingleScreen(
     skipPM: boolean;
     skipBackend: boolean;
     recapture?: boolean;
+    autoHeal?: boolean;
+    healMaxIterations?: number;
+    healTargetScore?: number;
     stateName?: string;
     routeKey?: string;
   }
 ): AuditReport {
-  const { skipInspector, skipMaestro, skipPM, skipBackend, recapture = false, stateName, routeKey } = options;
+  const { skipInspector, skipMaestro, skipPM, skipBackend, recapture = false, autoHeal = false, healMaxIterations = 3, healTargetScore = 85, stateName, routeKey } = options;
   const stateLabel = stateName ? ` [state: ${stateName}]` : "";
 
   console.log("");
@@ -2020,6 +2101,66 @@ function runSingleScreen(
   // Step 7: Coverage check
   const coverageResult = runCoverageCheck(screenId);
 
+  // Step 7.5: Maestro Structural Verification (deterministic, no AI)
+  let maestroStructuralResult: AuditReport["maestroStructural"] | undefined;
+  const hierarchyCsvPath = path.join(BUILDBOT_ROOT, "data", "hierarchies", `${screenId}-hierarchy.csv`);
+  if (!skipMaestro && fileExists(hierarchyCsvPath)) {
+    log("structural", "Running Maestro structural verification...");
+    const structuralScript = path.join(PATHS.scripts, "maestro-structural-verify.ts");
+    if (fileExists(structuralScript)) {
+      const structuralReportPath = path.join(BUILDBOT_ROOT, "reports", "maestro-structural", `${screenId}-structural.json`);
+      const cmd = `npx tsx "${structuralScript}" ${screenId} --hierarchy "${hierarchyCsvPath}"`;
+      const { success } = runCommand(cmd, "structural", { timeout: 60_000 });
+      if (success && fileExists(structuralReportPath)) {
+        const structReport = readJsonSafe<Record<string, unknown>>(structuralReportPath);
+        if (structReport) {
+          const summary = structReport.summary as Record<string, number>;
+          maestroStructuralResult = {
+            score: summary.score || 0,
+            totalChecks: summary.totalChecks || 0,
+            passed: summary.passed || 0,
+            failed: summary.failed || 0,
+            codeFixes: Array.isArray(structReport.codeFixes) ? structReport.codeFixes.length : 0,
+            testIdGaps: Array.isArray(structReport.testIdGaps) ? structReport.testIdGaps.length : 0,
+            reportPath: structuralReportPath,
+          };
+          log("structural", `Score: ${maestroStructuralResult.score}/100 | ${maestroStructuralResult.failed} issues | ${maestroStructuralResult.codeFixes} code fixes | ${maestroStructuralResult.testIdGaps} testID gaps`);
+        }
+      }
+    } else {
+      logWarn("structural", "maestro-structural-verify.ts not found. Skipping.");
+    }
+  } else if (skipMaestro) {
+    log("structural", "Skipped (--skip-maestro flag set).");
+  } else {
+    log("structural", `No hierarchy CSV at ${hierarchyCsvPath}. Skipping structural verification.`);
+  }
+
+  // Step 7.7: Auto-heal (optional — patch code from structural report)
+  if (autoHeal && maestroStructuralResult && maestroStructuralResult.score < healTargetScore) {
+    log("auto-heal", `Score ${maestroStructuralResult.score} < target ${healTargetScore}. Running auto-heal...`);
+    const healScript = path.join(PATHS.scripts, "maestro-auto-heal.ts");
+    if (fileExists(healScript)) {
+      const healArgs = [
+        `npx tsx "${healScript}" ${screenId}`,
+        `--hierarchy "${hierarchyCsvPath}"`,
+        `--max-iterations ${healMaxIterations}`,
+        `--target-score ${healTargetScore}`,
+      ].join(" ");
+      runCommand(healArgs, "auto-heal", { timeout: 180_000 });
+
+      const healReportPath = path.join(BUILDBOT_ROOT, "reports", "auto-heal", `${screenId}-auto-heal.json`);
+      if (fileExists(healReportPath)) {
+        const healReport = readJsonSafe<Record<string, unknown>>(healReportPath);
+        if (healReport) {
+          log("auto-heal", `Status: ${healReport.status} | Final score: ${healReport.finalScore}`);
+        }
+      }
+    }
+  } else if (autoHeal && maestroStructuralResult) {
+    log("auto-heal", `Score ${maestroStructuralResult.score} >= target ${healTargetScore}. No healing needed.`);
+  }
+
   // Step 8: Gemini visual feedback
   const geminiResult = runGeminiAudit(screenId, routeKey);
 
@@ -2049,7 +2190,8 @@ function runSingleScreen(
     coverageResult,
     geminiResult,
     inspectionResult,
-    screenHasDottedPattern
+    screenHasDottedPattern,
+    maestroStructuralResult
   );
 
   // Step 12: Print summary
@@ -2213,6 +2355,9 @@ function main(): void {
       skipPM: args.skipPM,
       skipBackend: args.skipBackend,
       recapture: args.recapture,
+      autoHeal: args.autoHeal,
+      healMaxIterations: args.healMaxIterations,
+      healTargetScore: args.healTargetScore,
     });
     process.exit(report.overallPassed ? 0 : 1);
   }

@@ -148,32 +148,45 @@ const BATCH_PROMPTS = {
    * Batch 1: Component-level analysis
    * Uses Figma screenshots as visual truth + extracted data for precise measurements
    */
-  component: (componentName: string, extractionData: any, rnCode: string) => `
+  component: (componentName: string, extractionData: any, rnCode: string, designTokensSummary?: string) => `
 You are a pixel-perfect React Native implementation expert. Analyze the Figma screenshot and extracted data to provide DETERMINISTIC code fixes.
 
 ## YOUR INPUTS
 1. **IMAGE 1: Figma Screenshot** - The VISUAL SOURCE OF TRUTH. This is what the component MUST look like.
 2. **IMAGE 2: Simulator Screenshot** (if provided) - Current app rendering from iOS simulator. Compare with IMAGE 1 to spot visual differences.
-3. **Extracted Data** - Structured measurements from our extract-figma-ai-enhanced pipeline (geometry, fills, typography, computed styles with design token mappings)
+3. **Blueprint Data** - Deterministic measurements extracted from Figma REST API (geometry, fills, typography, layout, boundVariables)
 4. **React Native Code** - The current implementation to fix
 
 If IMAGE 2 (Simulator) is provided, compare it side-by-side with IMAGE 1 (Figma) to identify visual differences before diving into code.
 
 ## CRITICAL CONSTRAINTS
 - DO NOT imagine new UI. Only fix code to match the Figma screenshot EXACTLY.
-- The \`_designTokens\` in extraction data shows which theme tokens to use (e.g., "colors.black[700]", "typography.h4")
-- Every fix must be a specific code change with exact values
+- Use design token references from the DESIGN TOKEN REFERENCE section below
+- Every fix must be a specific code change with exact values from the blueprint
 - If the current code already matches Figma, report no issues
 
 ## COMPONENT: ${componentName}
 
 ## FIGMA EXTRACTED DATA (from extract-figma-ai-enhanced pipeline)
 Key fields:
-- \`computedStyles\`: width, height, backgroundColor, padding, gap, borderRadius
+- \`figmaData.geometry\`: x, y, width, height (relative to parent)
+- \`figmaData.absoluteRenderBounds\`: actual visible bounds after clips (null = invisible)
+- \`figmaData.fills\`: colors with hex values, blendMode, boundVariables (design token references)
+- \`figmaData.strokes\`: border colors, weights, alignment
+- \`figmaData.effects\`: shadows (DROP_SHADOW, INNER_SHADOW), blurs
+- \`figmaData.borderRadius\`: corner radius (number or per-corner object)
+- \`figmaData.cornerSmoothing\`: iOS superellipse (0.6 = iOS native) → borderCurve: 'continuous'
+- \`figmaData.typography\`: font properties, textTruncation, maxLines, lineTypes (lists)
+- \`figmaData.layout\`: auto-layout direction, justify, align, gap, padding, sizing
+- \`figmaData.layoutSizingHorizontal/Vertical\`: FILL (flex:1) / HUG (auto) / FIXED
+- \`figmaData.scrollBehavior\`: SCROLLS / FIXED / STICKY
+- \`figmaData.overflowDirection\`: scroll direction (HORIZONTAL_SCROLLING, etc.)
+- \`figmaData.boundVariables\`: Figma Variable bindings (authoritative design tokens)
+- \`figmaData.styleReferences\`: named Figma styles (text, fill, effect)
+- \`figmaData.interactions\`: prototyping triggers and transitions
+- \`figmaData.componentPropertyReferences\`: sublayer → component property wiring
+- \`computedStyles\`: RN-mapped values (if available)
 - \`_designTokens\`: mapped theme tokens (colors.X, spacing.X, typography.X)
-- \`figmaData.fills\`: colors with hex values and variable bindings
-- \`figmaData.geometry\`: x, y, width, height
-- \`aiAnalysis\`: type, position, notes about implementation
 
 \`\`\`json
 ${JSON.stringify(extractionData, null, 2)}
@@ -185,20 +198,13 @@ ${rnCode}
 \`\`\`
 
 ## DESIGN TOKEN REFERENCE
-From @/src/theme:
-- colors.black[700]=#131313, black[600]=#1A1A1A, black[500]=#202020
-- colors.brand[500]=#FF9A6D, brand[400]=#FFAE8A
-- colors.neutral[500]=#A9A9A9, neutral[800]=#444444
-- typography.h4={fontSize:28, lineHeight:40, fontWeight:400}
-- typography.bodyXs={fontSize:12, lineHeight:20}
-- spacing: xs=8, sm=12, md=16, lg=24, xl=32
-- radius: sm=8, md=12, lg=16
+${designTokensSummary || 'Design tokens not available — use raw Figma values from extraction data.'}
 
 ## ANALYSIS PROCESS
 1. Look at the Figma screenshot - this is your visual reference
-2. Cross-reference with extracted \`computedStyles\` and \`_designTokens\`
+2. Cross-reference with blueprint data (geometry, fills, typography, layout properties)
 3. Compare against React Native code
-4. For each mismatch, provide the EXACT code fix using design tokens
+4. For each mismatch, provide the EXACT code fix using design tokens from the reference above
 
 ## CRITICAL STRUCTURAL CHECKS (often missed by visual comparison)
 1. **Text alignment**: Check \`textAlignHorizontal\` in extraction vs \`textAlign\` in RN code
@@ -206,6 +212,11 @@ From @/src/theme:
    - Should be rendered as nested Text spans, not separate lines
 3. **Button fills**: Check if Figma button has solid orange fill (#FF9A6D) - verify RN uses matching background
 4. **Positions**: Use \`geometry.x, geometry.y\` to calculate exact offsets for absolute positioning
+5. **Corner smoothing**: If \`cornerSmoothing\` > 0, verify \`borderCurve: 'continuous'\` is set in RN (iOS only)
+6. **Sizing mode**: If \`layoutSizingHorizontal: FILL\`, ensure \`flex: 1\` or \`alignSelf: 'stretch'\` (NOT width: '100%')
+7. **Inner shadows**: \`INNER_SHADOW\` effects must use \`boxShadow\` with \`inset\` keyword (RN 0.76+)
+8. **Text truncation**: If \`textTruncation: ENDING\` + \`maxLines\`, verify \`numberOfLines\` and \`ellipsizeMode\` in RN
+9. **Scroll behavior**: If \`scrollBehavior: FIXED\` or \`STICKY\`, verify fixed/sticky positioning in RN
 
 ## OUTPUT (JSON only)
 {
@@ -256,12 +267,15 @@ If IMAGE 2 (Simulator) is provided, compare it side-by-side with IMAGE 1 (Figma)
 
 ## SCREEN: ${screenName}
 
-## FIGMA COMPONENT TREE (from extract-figma-ai-enhanced)
+## FIGMA COMPONENT TREE (from Blueprint extraction)
 Contains:
 - Root screen: geometry, backgroundColor, baseDesign dimensions
-- All children with nodeId, nodeName, geometry, computedStyles
-- \`_designTokens\` mapping for each element
-- aiAnalysis notes for implementation hints
+- All children with nodeId, nodeName, geometry, fills, strokes, effects, typography
+- Layout properties: auto-layout direction, gap, padding, sizing modes (FILL/HUG/FIXED)
+- cornerSmoothing (iOS superellipse), absoluteRenderBounds (actual visible area)
+- boundVariables (Figma Variable/token bindings), styleReferences (named styles)
+- interactions (prototyping triggers/transitions), scrollBehavior, overflowDirection
+- \`_designTokens\` mapping for each element (if available)
 
 \`\`\`json
 ${JSON.stringify(extractionData, null, 2)}
@@ -290,6 +304,11 @@ Looking at the Figma screenshot (IMAGE 1):
    - Should be nested Text components, not separate lines or components
 8. **Button backgrounds**: Compare Figma button fill colors with RN component backgroundColor
 9. **Element positions**: Compare absolute Figma coordinates with RN positioning styles
+10. **Corner smoothing**: \`cornerSmoothing > 0\` → \`borderCurve: 'continuous'\` must be set
+11. **Sizing modes**: \`layoutSizingHorizontal: FILL\` → flex:1, NOT width: '100%'
+12. **Inner shadows**: \`INNER_SHADOW\` must use \`boxShadow\` with \`inset\` keyword
+13. **Fixed/sticky elements**: \`scrollBehavior: FIXED\` or \`STICKY\` → proper fixed positioning
+14. **Overflow scrolling**: \`overflowDirection\` → correct ScrollView horizontal/vertical setup
 
 ## OUTPUT (JSON only)
 {
@@ -520,6 +539,7 @@ async function callGemini(
             temperature: 0.1, // Low for deterministic output
             maxOutputTokens: 16384,
             topP: 0.8,
+            responseMimeType: "application/json", // Force JSON output — no markdown wrapping
             mediaResolution: "MEDIA_RESOLUTION_HIGH",
           },
         }),
@@ -531,14 +551,14 @@ async function callGemini(
 
         if (response.status === 429) {
           // Rate limited — exponential backoff: 30s, 60s, 120s
-          const waitTime = Math.pow(2, attempt) * 15_000;
+          const waitTime = Math.pow(2, attempt) * 30_000;
           console.log(`  Rate limited (429). Waiting ${waitTime / 1000}s before retry...`);
           await sleep(waitTime);
           continue;
         }
 
         if (attempt < maxRetries - 1) {
-          await sleep((attempt + 1) * 3000);
+          await sleep((attempt + 1) * 5000); // 5s, 10s, 15s between retries
           continue;
         }
         throw new Error(`Gemini API failed: ${response.status}`);
@@ -562,13 +582,46 @@ function parseGeminiResponse(response: any): any {
   try {
     const textContent = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Extract JSON from response
+    // Strategy: Try multiple JSON extraction approaches in order of reliability
+    // 1. Try parsing the entire text as JSON (cleanest case)
+    try {
+      return JSON.parse(textContent.trim());
+    } catch { /* not pure JSON, try extraction */ }
+
+    // 2. Look for JSON code block (```json ... ```)
+    const codeBlockMatch = textContent.match(/```json\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      try {
+        return JSON.parse(codeBlockMatch[1].trim());
+      } catch { /* malformed code block JSON */ }
+    }
+
+    // 3. Find the first complete JSON object by matching balanced braces
+    const firstBrace = textContent.indexOf('{');
+    if (firstBrace !== -1) {
+      let depth = 0;
+      let endIdx = -1;
+      for (let i = firstBrace; i < textContent.length; i++) {
+        if (textContent[i] === '{') depth++;
+        else if (textContent[i] === '}') {
+          depth--;
+          if (depth === 0) { endIdx = i; break; }
+        }
+      }
+      if (endIdx !== -1) {
+        const jsonStr = textContent.slice(firstBrace, endIdx + 1);
+        try {
+          return JSON.parse(jsonStr);
+        } catch { /* malformed JSON object */ }
+      }
+    }
+
+    // 4. Last resort: greedy regex (may capture too much but better than nothing)
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }
 
-    // Try to parse the entire response as JSON
     return JSON.parse(textContent);
   } catch (error) {
     console.error('Failed to parse JSON response, returning raw text');
@@ -1141,6 +1194,7 @@ function convertNodesToTree(nodes: any[]): any {
   }
 
   // Map nodes to the expected tree format (handles both blueprint and extraction node formats)
+  // Pass through all blueprint properties for deterministic analysis
   const treeNodes = nodes.map(node => ({
     nodeId: node.nodeId || node.id || '',
     nodeName: node.nodeName || node.name || '',
@@ -1150,25 +1204,73 @@ function convertNodesToTree(nodes: any[]): any {
       characters: node.text || node.characters || node.typography?.content || '',
       geometry: node.geometry,
       fills: node.fills || [],
+      strokes: node.strokes || [],
+      effects: node.effects || [],
       style: node.typography || node.style || {},
+      typography: node.typography,
       children: [],
       characterStyleOverrides: node.characterStyleOverrides || [],
       styleOverrideTable: node.styleOverrideTable || {},
+      // New properties from extraction audit
+      borderRadius: node.borderRadius,
+      cornerSmoothing: node.cornerSmoothing,
+      layout: node.layout,
+      layoutSizingHorizontal: node.layoutSizingHorizontal,
+      layoutSizingVertical: node.layoutSizingVertical,
+      scrollBehavior: node.scrollBehavior,
+      overflowDirection: node.overflowDirection,
+      boundVariables: node.boundVariables,
+      styleReferences: node.styleReferences,
+      componentId: node.componentId,
+      componentProperties: node.componentProperties,
+      componentPropertyReferences: node.componentPropertyReferences,
+      interactions: node.interactions,
+      absoluteRenderBounds: node.absoluteRenderBounds,
+      clipsContent: node.clipsContent,
+      opacity: node.opacity,
+      blendMode: node.blendMode,
     },
     computedStyles: node.rnStyles || node.computedStyles || {},
     geometry: node.geometry,
+    fills: node.fills || [],
     children: [],
   }));
 
-  // Return root node with all children (flat structure for analysis)
-  return {
-    nodeId: treeNodes[0]?.nodeId || 'root',
-    nodeName: treeNodes[0]?.nodeName || 'Root',
-    nodeType: 'ROOT',
-    children: treeNodes,
-    figmaData: treeNodes[0]?.figmaData || {},
-    computedStyles: treeNodes[0]?.computedStyles || {},
-  };
+  // Build actual tree using parentId references (preserves hierarchy for Gemini analysis)
+  const nodeMap = new Map<string, any>();
+  for (const tn of treeNodes) {
+    nodeMap.set(tn.nodeId, tn);
+  }
+
+  let root: any = null;
+  for (let ni = 0; ni < nodes.length; ni++) {
+    const origNode = nodes[ni];
+    const treeNode = treeNodes[ni];
+    const parentId = origNode.parentId;
+
+    if (!parentId) {
+      root = treeNode;
+    } else {
+      const parent = nodeMap.get(parentId);
+      if (parent) {
+        parent.children.push(treeNode);
+      }
+    }
+  }
+
+  // Fallback: if no root found via parentId, use flat structure
+  if (!root) {
+    return {
+      nodeId: treeNodes[0]?.nodeId || 'root',
+      nodeName: treeNodes[0]?.nodeName || 'Root',
+      nodeType: 'ROOT',
+      children: treeNodes,
+      figmaData: treeNodes[0]?.figmaData || {},
+      computedStyles: treeNodes[0]?.computedStyles || {},
+    };
+  }
+
+  return root;
 }
 
 // Load Figma extraction data from multiple possible locations
@@ -1258,6 +1360,48 @@ function loadExtractionData(figmaId: string): any {
 function loadDesignTokens(): any {
   const tokensPath = path.join(CONFIG_DIR, 'design-tokens.json');
   return JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+}
+
+/** Generate a compact design token summary for Gemini prompts (avoids hardcoded values) */
+function generateTokenSummary(tokens: any): string {
+  const lines: string[] = ['From @/src/theme:'];
+
+  // Colors — show hex→token mappings
+  const colorByHex = tokens._colorByHex || {};
+  const colorEntries = Object.entries(colorByHex).slice(0, 15);
+  if (colorEntries.length > 0) {
+    lines.push('Colors:');
+    for (const [hex, token] of colorEntries) {
+      lines.push(`  ${token}=${hex}`);
+    }
+  }
+
+  // Typography — show style keys
+  const typByStyle = tokens._typographyByStyle || {};
+  const typEntries = Object.entries(typByStyle).slice(0, 10);
+  if (typEntries.length > 0) {
+    lines.push('Typography:');
+    for (const [key, token] of typEntries) {
+      const [fs, lh, fw] = (key as string).split(':');
+      lines.push(`  ${token}: fontSize=${fs}, lineHeight=${lh}, fontWeight=${fw}`);
+    }
+  }
+
+  // Spacing
+  const spacingByVal = tokens._spacingByValue || {};
+  const spacingEntries = Object.entries(spacingByVal);
+  if (spacingEntries.length > 0) {
+    lines.push(`Spacing: ${spacingEntries.map(([v, t]) => `${t}=${v}`).join(', ')}`);
+  }
+
+  // Radius
+  const radiusByVal = tokens._radiusByValue || {};
+  const radiusEntries = Object.entries(radiusByVal);
+  if (radiusEntries.length > 0) {
+    lines.push(`Radius: ${radiusEntries.map(([v, t]) => `${t}=${v}`).join(', ')}`);
+  }
+
+  return lines.join('\n');
 }
 
 // Find React Native code for a screen
@@ -1464,6 +1608,7 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
   // Load design tokens
   console.log('\nStep 3: Loading design tokens...');
   const designTokens = loadDesignTokens();
+  const tokenSummary = generateTokenSummary(designTokens);
   console.log('  Design tokens loaded');
 
   // Load React Native code — derive route key from resolved config
@@ -1555,7 +1700,7 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
       : null;
 
     try {
-      const prompt = BATCH_PROMPTS.component(componentName, componentExtraction, componentCode);
+      const prompt = BATCH_PROMPTS.component(componentName, componentExtraction, componentCode, tokenSummary);
 
       // Include Figma screenshot + simulator screenshot if available
       const images: string[] = [];
@@ -1577,7 +1722,7 @@ async function runPixelFeedbackPipeline(screenRoute: string): Promise<FinalRepor
       }
 
       // Rate limiting
-      await sleep(2000);
+      await sleep(5000); // 5s between API calls to avoid rate limits
     } catch (error) {
       console.error(`  Error analyzing ${componentName}:`, error);
     }

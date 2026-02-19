@@ -277,6 +277,7 @@ interface GeminiRequestBody {
   generationConfig: {
     temperature: number;
     maxOutputTokens: number;
+    responseMimeType?: string;
     mediaResolution: string;
   };
 }
@@ -310,7 +311,8 @@ async function callGemini(
     contents: [{ parts }],
     generationConfig: {
       temperature: 0.1,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 16384, // Increased from 8192 — Pass 2 with 3+ components can exceed 8K
+      responseMimeType: 'application/json', // Force JSON output — no markdown wrapping
       mediaResolution: 'MEDIA_RESOLUTION_HIGH',
     },
   };
@@ -482,8 +484,15 @@ function flattenNodes(root: BlueprintNode | Blueprint): BlueprintNode[] {
       traverse(child, 0);
     }
   } else if ('nodes' in root && Array.isArray(root.nodes)) {
+    // Blueprint format: flat nodes array with `depth` field and `id`/`name`/`type` keys
     for (const n of root.nodes) {
-      (n as BlueprintNode & { _depth: number })._depth = 0;
+      // Use the node's own depth field from the blueprint (set by extractor)
+      const nodeDepth = (n as any).depth ?? 0;
+      (n as BlueprintNode & { _depth: number })._depth = nodeDepth;
+      // Normalize field names for inspector compatibility
+      if ((n as any).id && !n.nodeId) n.nodeId = (n as any).id;
+      if ((n as any).name && !n.nodeName) n.nodeName = (n as any).name;
+      if ((n as any).type && !n.nodeType) n.nodeType = (n as any).type;
       result.push(n);
     }
   } else {
@@ -738,27 +747,34 @@ async function pass1FullScreen(
 ): Promise<{ score: number; differences: Difference[] }> {
   log('Pass 1/5: Full Screen Overview...');
 
-  const prompt = `You are a pixel-perfect UI inspector. Compare these two mobile app screenshots.
+  const prompt = `You are a pixel-perfect UI inspector comparing a Figma design against its React Native implementation.
 Image 1 is the Figma design (ground truth). Image 2 is the app implementation.
 
-List EVERY visible difference, no matter how small. Focus on:
-1. Text sizes (estimate px)
-2. Text alignment (left/center/right)
-3. Text colors
-4. Spacing between elements (estimate px)
-5. Background colors
-6. Border visibility and color
-7. Icon sizes and colors
-8. Button shapes and styling
-9. Overall layout and positioning
+List EVERY visible difference, no matter how small. For each difference, be specific about:
+- Which element is affected (use descriptive name like "title text", "submit button", "header section")
+- What the difference is (use exact values where possible: "fontSize appears 24px instead of 28px")
+- Whether it's critical (breaks UX), major (noticeable), or minor (subtle)
 
-Rate overall visual similarity from 0-100.
+Focus on these areas in order of priority:
+1. Text content — any missing, wrong, or truncated text
+2. Text styling — font size, weight, color, alignment differences
+3. Spacing — gaps between elements, padding, margins
+4. Colors — background, text, border, icon colors
+5. Layout — element positioning, sizing, alignment
+6. Borders — radius, width, color, visibility
+7. Icons/assets — size, color, presence
+8. Shadows — drop shadows, inner shadows
+9. Corner smoothing — iOS-style rounded corners vs angular
 
-Respond in JSON format:
+IMPORTANT: Only flag differences you can actually SEE in the screenshots. Do not guess or infer issues that aren't visually apparent.
+
+Rate overall visual similarity from 0-100 (100 = pixel-perfect match).
+
+Respond in JSON:
 {
-  "overallScore": number,
+  "overallScore": 85,
   "differences": [
-    { "element": "string", "issue": "string", "severity": "critical|major|minor" }
+    { "element": "title text", "issue": "Font appears to be Regular weight in app but SemiBold in Figma", "severity": "major" }
   ]
 }`;
 
@@ -1335,6 +1351,7 @@ async function main(): Promise<void> {
   // -----------------------------------------------------------------------
   // Pass 2: Component Crop Inspection
   // -----------------------------------------------------------------------
+  await sleep(3000); // Rate limit buffer between passes
   let componentsResult: ComponentInspection[] = [];
   try {
     componentsResult = await pass2Components(
@@ -1349,6 +1366,7 @@ async function main(): Promise<void> {
   // -----------------------------------------------------------------------
   // Pass 3: Spacing Ruler Check
   // -----------------------------------------------------------------------
+  await sleep(3000); // Rate limit buffer between passes
   let spacingResult: PassResults['spacing'] = { mismatches: [] };
   try {
     spacingResult = await pass3Spacing(screenshotB64, screenshotMime, blueprint);
@@ -1359,6 +1377,7 @@ async function main(): Promise<void> {
   // -----------------------------------------------------------------------
   // Pass 4: Icon & Asset Verification
   // -----------------------------------------------------------------------
+  await sleep(3000); // Rate limit buffer between passes
   let iconsResult: IconResult[] = [];
   try {
     iconsResult = await pass4Icons(args.screenshot, args.baseline, blueprint);
