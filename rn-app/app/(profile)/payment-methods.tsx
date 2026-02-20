@@ -352,11 +352,11 @@ const styles = StyleSheet.create({
   },
   // "Edit your " in #A9A9A9
   titleGray: {
-    color: '#A9A9A9',
+    color: colors.neutral[500],
   },
   // Type name in #FF9A6D
   titleAccent: {
-    color: '#FF9A6D',
+    color: colors.brand[500],
   },
   // Form container (41:8525): 297px wide, gap=16
   formContainer: {
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   indicatorPill: {
     width: 24,
     height: 2,
-    backgroundColor: '#4D4D4D',
+    backgroundColor: colors.black[400],
     borderRadius: 200,
     marginBottom: 8,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 8,
     borderWidth: 0.1,
-    borderColor: '#FF9A6D',
+    borderColor: colors.brand[500],
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -396,6 +396,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 16,
     lineHeight: 24,
-    color: '#FFFFFF',
+    color: colors.white,
   },
 });

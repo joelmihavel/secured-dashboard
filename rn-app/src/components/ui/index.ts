@@ -15,3 +15,4 @@ export * from './FileUpload';
 
 // Error Handling
 export * from './ErrorBoundary';
+export * from './AlertBanner';

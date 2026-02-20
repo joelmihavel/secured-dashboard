@@ -17,6 +17,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { supabase } from '@/src/services/supabase/client';
 import { getWaitlistStatus } from '@/src/services/api/waitlist';
 import { DISABLE_SCREEN_PICKER, DEV_DIRECT_SCREEN } from './(dev)/screen-picker';
+import { colors } from '@/src/theme';
 
 // Global screenshot params for buildbot pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
@@ -24,6 +25,7 @@ export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
 
 type JourneyTarget =
   | '/(auth)/beta-splash'
+  | '/(agreement)/upload'
   | '/(waitlist)'
   | '/(main)';
 
@@ -43,6 +45,9 @@ export default function Index() {
 
       if (data.state === 'approved') {
         setTarget('/(main)');
+      } else if (data.position === null && data.submissionDate === null) {
+        // No waitlist position/submission → user hasn't uploaded agreement yet
+        setTarget('/(agreement)/upload');
       } else {
         // pending, pending_long, rejected → waitlist screen
         setTarget('/(waitlist)');
@@ -116,7 +121,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#131313',
+    backgroundColor: colors.black[700],
     justifyContent: 'center',
     alignItems: 'center',
   },

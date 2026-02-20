@@ -44,13 +44,13 @@ import { colors } from '@/src/theme';
 
 // Figma blueprint colors (41-8880)
 const FIGMA_COLORS = {
-  background: '#131313',         // colors.black[700]
-  editButtonBg: '#CC7B57',       // colors.brand[600] - outer button bg
-  editButtonText: '#FFFFFF',     // button text
-  titleGray: '#A9A9A9',          // colors.neutral[500]
-  accentOrange: '#FF9A6D',       // colors.brand[500]
-  saveButtonBg: '#FF9A6D',       // Save button fill (solid, not gradient)
-  saveButtonText: '#FFFFFF',     // Save button text
+  background: colors.black[700],         // colors.black[700]
+  editButtonBg: colors.brand[600],       // colors.brand[600] - outer button bg
+  editButtonText: colors.white,     // button text
+  titleGray: colors.neutral[500],          // colors.neutral[500]
+  accentOrange: colors.brand[500],       // colors.brand[500]
+  saveButtonBg: colors.brand[500],       // Save button fill (solid, not gradient)
+  saveButtonText: colors.white,     // Save button text
 } as const;
 
 export default function EditProfileScreen() {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   // "My " span: #A9A9A9
   titleGray: {
-    color: '#A9A9A9',
+    color: colors.neutral[500],
   },
   // " " span: inherits default #FFFFFF
   titleSpace: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   // "Profile" span: #FF9A6D
   titleAccent: {
-    color: '#FF9A6D',
+    color: colors.brand[500],
   },
   // Avatar section (41:8885): row, gap=10, paddingH=40, alignItems=center
   avatarSection: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   avatarPlaceholder: {
     width: 80,
     height: 80,
-    backgroundColor: '#FFCC8A',  // colors.brand[300]
+    backgroundColor: colors.brand[300],  // colors.brand[300]
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
@@ -340,14 +340,14 @@ const styles = StyleSheet.create({
     top: 0,
     width: 50,
     height: 35,
-    backgroundColor: '#444444',  // colors.neutral[800]
+    backgroundColor: colors.neutral[800],  // colors.neutral[800]
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
   },
   avatarHead: {
     width: 40,
     height: 40,
-    backgroundColor: '#FFAE8A',  // colors.brand[400]
+    backgroundColor: colors.brand[400],  // colors.brand[400]
     borderRadius: 20,
     marginTop: 15,
   },

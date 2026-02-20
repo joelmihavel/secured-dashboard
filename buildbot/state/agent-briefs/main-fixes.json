@@ -1,0 +1,787 @@
+{
+  "stream": "main",
+  "files": {
+    "app/(payment)/select-method.tsx": {
+      "totalFixes": 45,
+      "importantFixes": 45,
+      "screens": [
+        "243-3794",
+        "243-3816",
+        "243-4030",
+        "243-4008",
+        "243-4052",
+        "243-3838",
+        "243-3923"
+      ],
+      "fixes": [
+        {
+          "property": "Component Structure",
+          "figmaValue": "Detailed Card (270x400px)",
+          "currentValue": "Simple List Item Row",
+          "severity": "critical",
+          "explanation": "The current implementation is a simple list row. It must be replaced with a detailed Credit Card component (270x400px) containing specific nested elements (Visa logo, Chip, Number, Expiry, CVV) to match Figma Node 243:3794.",
+          "currentCode": "<View style={styles.row}>\n  <Text>Credit Card</Text>\n</View>",
+          "fixedCode": "<View style={styles.cardContainer}>\n  {/* Background Vectors */}\n  <View style={styles.bgPattern1} />\n  <View style={styles.bgPattern2} />\n  \n  {/* Header Section */}\n  <View style={styles.headerConta"
+        },
+        {
+          "property": "StyleSheet (Structural Positioning)",
+          "figmaValue": "Absolute Positions from Batch 0",
+          "currentValue": "Missing/Relative",
+          "severity": "critical",
+          "explanation": "Applies verified absolute positioning coordinates from Figma analysis (Batch 0) for all internal card elements. Includes fixes for 14 specific position-delta issues.",
+          "currentCode": "const styles = StyleSheet.create({})",
+          "fixedCode": "const styles = StyleSheet.create({\n  cardContainer: {\n    width: 270,\n    height: 400,\n    backgroundColor: colors.black[500], // #202020\n    borderRadius: 12,\n    overflow: 'hidden',\n    position: 'r"
+        },
+        {
+          "property": "Visual Styling",
+          "figmaValue": "Brand Orange (#FF9A6D) & Dark Texture",
+          "currentValue": "White & Solid Black",
+          "severity": "major",
+          "explanation": "Updates typography colors and background styles to match design tokens. Card number uses brand.500, background uses black.500.",
+          "currentCode": "color: '#FFFFFF', backgroundColor: '#121212'",
+          "fixedCode": "// Applied in StyleSheet above:\n// color: colors.brand[500] (#FF9A6D)\n// backgroundColor: colors.black[500] (#202020)"
+        },
+        {
+          "property": "Component Structure",
+          "figmaValue": "Rich Card UI (270x400px)",
+          "currentValue": "Simple List Item",
+          "severity": "critical",
+          "explanation": "Re-implement the selected credit card component. The current implementation is a generic list item, but Figma requires a 270x400px rich card with specific dark theme colors and typography.",
+          "currentCode": "// Generic List Item Implementation",
+          "fixedCode": "<View style={{ width: 270, height: 400, borderRadius: 12, backgroundColor: colors.black[500], overflow: 'hidden' }}>\n  {/* Main Body */}\n  <View style={{ padding: 24, flex: 1 }}>\n    {/* Header Placeh"
+        },
+        {
+          "property": "absolutePosition",
+          "figmaValue": "Absolute Offsets",
+          "currentValue": "Relative/Flex",
+          "severity": "major",
+          "explanation": "Apply precise absolute positioning to Card Header elements (Visa logo, Chip frame) to match Figma geometry relative to the card container.",
+          "currentCode": "N/A",
+          "fixedCode": "// Visa Logo\nstyle={{ position: 'absolute', left: -32.0, top: -14.0 }}\n\n// Chip Frame (Frame 2095586454)\nstyle={{ position: 'absolute', left: 105.0, top: -24.0 }}"
+        },
+        {
+          "property": "absolutePosition",
+          "figmaValue": "Absolute Offsets",
+          "currentValue": "Relative/Flex",
+          "severity": "major",
+          "explanation": "Apply precise absolute positioning to Card Details (Number, Expiry, CVV) to ensure exact alignment with background elements.",
+          "currentCode": "N/A",
+          "fixedCode": "// Number (\u2022\u2022\u2022\u2022 2341)\nstyle={{ position: 'absolute', left: -32.0, top: -180.0 }}\n\n// Expiry/CVV Container\nstyle={{ position: 'absolute', left: -32.0, top: -120.0 }}\n\n// EXPIRY Text\nstyle={{ position: "
+        },
+        {
+          "property": "absolutePosition",
+          "figmaValue": "Absolute Offsets",
+          "currentValue": "Relative/Flex",
+          "severity": "major",
+          "explanation": "Apply precise absolute positioning to Background Vectors (Group 58, Group 59) to match the card's texture design.",
+          "currentCode": "N/A",
+          "fixedCode": "// Vector 57 (Group 58)\nstyle={{ position: 'absolute', left: -218.0, top: -125.0 }}\n\n// Vector 58 (Group 58)\nstyle={{ position: 'absolute', left: -218.0, top: -110.5 }}\n\n// Vector 57 (Group 59)\nstyle="
+        },
+        {
+          "property": "absolutePosition",
+          "figmaValue": "Absolute Offsets",
+          "currentValue": "Relative/Flex",
+          "severity": "major",
+          "explanation": "Apply precise absolute positioning to Footer elements (Label, Icon) relative to the footer container.",
+          "currentCode": "N/A",
+          "fixedCode": "// Footer Container (Frame 2095586441)\nstyle={{ position: 'absolute', left: 32.0, top: -318.0 }}\n\n// CREDIT CARD Label\nstyle={{ position: 'absolute', left: -32.0, top: -18.0 }}\n\n// Icon Library\nstyle="
+        },
+        {
+          "property": "renderItem",
+          "figmaValue": "UPICardSelected Component",
+          "currentValue": "Standard List Row",
+          "severity": "critical",
+          "explanation": "The selected UPI payment method renders as a simple row. It must be a distinct Card component (270x400) with dark background (colors.black[500]) and specific internal layout.",
+          "currentCode": "// Renders standard row with RadioButton",
+          "fixedCode": "if (selected) {\n  return (\n    <View style={{ width: 270, height: 400, backgroundColor: colors.black[500], borderRadius: 12, overflow: 'hidden' }}>\n      {/* Implement internal structure using structu"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -14",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'UPI-Logo-vector 1' (Node 243:3841) requires absolute positioning relative to parent Frame.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -14.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 105, -24",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586454' (Node 243:3905) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 105.0,\ntop: -24.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -180",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: '\u2022\u2022\u2022\u2022 2341' (Node 243:3908) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -180.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -120",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586438' (Node 243:3909) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -120.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 0, -60",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'ICICI a/c - xxx23' (Node 243:3910) requires absolute positioning inside its parent frame.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -60.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 0, -28",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'rishabh@\u2022\u2022\u2022' (Node 243:3911) requires absolute positioning inside its parent frame.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -28.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -125",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 57' (Node 243:3913) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -125.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -110.5",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 58' (Node 243:3914) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -110.5,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -286",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 57' (Node 243:3916) in Group 59 requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -286.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -271.5",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 58' (Node 243:3917) in Group 59 requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -271.5,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 32, -318",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586441' (Node 243:3919) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 32.0,\ntop: -318.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 218, -320",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 1' (Node 243:3922) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 218.0,\ntop: -320.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -18",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'UPI' (Node 243:3920) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -5, -16",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Outline Icon Library' (Node 243:3921) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -5.0,\ntop: -16.0,"
+        },
+        {
+          "property": "Component Structure",
+          "figmaValue": "UPI Card (270x400, Split BG)",
+          "currentValue": "Simple List Item",
+          "severity": "critical",
+          "explanation": "The selected payment item must be rendered as a rich 'UPI Card' component matching Figma specs (Node 243:3923). Current implementation is a generic list item. This fix establishes the container dimensions, background colors, and typography.",
+          "currentCode": "// Generic List Item implementation",
+          "fixedCode": "const styles = StyleSheet.create({\n  cardContainer: {\n    width: 270,\n    height: 400,\n    backgroundColor: colors.black[500], // #202020\n    borderRadius: radius.md, // 12\n    overflow: 'hidden',\n  }"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -14",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'UPI-Logo-vector 1' (Node 243:3926).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -14.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 105, -24",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Frame 2095586454' (Node 243:3990).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 105.0,\ntop: -24.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -180",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for '\u2022\u2022\u2022\u2022 2341' (Node 243:3993).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -180.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -120",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Frame 2095586438' (Node 243:3994).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -120.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 0, -60",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'ICICI a/c - xxx23' (Node 243:3995).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -60.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 0, -28",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'rishabh@\u2022\u2022\u2022' (Node 243:3996).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -28.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -125",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Vector 57' (Node 243:3998).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -125.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -110.5",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Vector 58' (Node 243:3999).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -110.5,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -286",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Vector 57' (Node 243:4001).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -286.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -218, -271.5",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Vector 58' (Node 243:4002).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -271.5,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 32, -318",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Frame 2095586441' (Node 243:4004).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 32.0,\ntop: -318.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 218, -320",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Vector 1' (Node 243:4007).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 218.0,\ntop: -320.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -18",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'UPI' (Node 243:4005).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -5, -16",
+          "currentValue": "flow layout",
+          "severity": "major",
+          "explanation": "Fix position for 'Outline Icon Library' (Node 243:4006).",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: -5.0,\ntop: -16.0,"
+        },
+        {
+          "property": "Component Implementation",
+          "figmaValue": "Netbanking Card / selected (270x400)",
+          "currentValue": "Missing / List Item UI",
+          "severity": "critical",
+          "explanation": "Implement the missing 'NetBankingCard' component. This fix consolidates the Screen Feedback (missing card UI) and 14 Structural Feedback issues (specific absolute positions for internal elements). The component requires a 270x400 container with specific dark theme colors and absolute positioning for children (logos, text, vectors) as defined by Figma data.",
+          "currentCode": "// Implementation missing or generic list item",
+          "fixedCode": "const NetBankingCard = () => {\n  return (\n    <View style={styles.cardContainer}>\n      <View style={styles.mainContent}>\n        {/* Structural Fix: Frame 2095586441 & Children */}\n        <View styl"
+        },
+        {
+          "property": "Component Implementation",
+          "figmaValue": "Net Banking Card (270x400px)",
+          "currentValue": "List Item Row",
+          "severity": "critical",
+          "explanation": "The current implementation renders a simple list row, but the design requires a detailed 'Net Banking Card' (270x400px). This consolidated fix implements the full card structure, resolving the missing UI state and the 14 structural position issues (logos, account details, vectors) identified in the analysis.",
+          "currentCode": "<View style={styles.row}>\n  <RadioButton />\n  <Text>Net Banking</Text>\n</View>",
+          "fixedCode": "<View style={{ width: 270, height: 400, borderRadius: 12, backgroundColor: '#202020', overflow: 'hidden' }}>\n  {/* Main Content Area */}\n  <View style={{ flex: 1, padding: 24, position: 'relative' }}>"
+        },
+        {
+          "property": "Component Structure",
+          "figmaValue": "Add More Card (270x408, #202020)",
+          "currentValue": "Missing / Incorrect Screen",
+          "severity": "critical",
+          "explanation": "The current screen implementation is missing or incorrect. It should be the 'Add More Card' component with specific dimensions and background color.",
+          "currentCode": "// Missing or incorrect implementation",
+          "fixedCode": "const AddMoreCard = () => {\n  return (\n    <View style={{ width: 270, height: 408, backgroundColor: colors.black[500], borderRadius: radius.lg, position: 'relative' }}>\n      {/* Content goes here */}"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 32, -326",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural mismatch: 'Frame 2095586441' requires absolute positioning relative to the card container.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: 32,\ntop: -326,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 218, -328",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural mismatch: 'Vector 1' requires absolute positioning relative to the card container.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: 218,\ntop: -328,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: -32, -18",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural mismatch: '+ NEW PAYMENT' text requires absolute positioning relative to its parent frame.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: -32,\ntop: -18,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute: 81, -16",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural mismatch: 'Outline Icon Library' requires absolute positioning relative to its parent frame.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: 81,\ntop: -16,"
+        }
+      ]
+    },
+    "app/(transactions)/index.tsx": {
+      "totalFixes": 32,
+      "importantFixes": 26,
+      "screens": [
+        "243-5870",
+        "243-6083"
+      ],
+      "fixes": [
+        {
+          "property": "Header & Navigation",
+          "figmaValue": "Home Header (Logo + Greeting + Avatar)",
+          "currentValue": "Back Button + Info Card",
+          "severity": "critical",
+          "explanation": "The current implementation renders a sub-screen header. Figma requires a Home Screen header with Logo, Greeting, and Avatar. The 'Your rent is due...' text must be a standalone display title.",
+          "currentCode": "<View style={styles.topSection}>\n  <TouchableOpacity ...><BackArrowIcon /></TouchableOpacity>\n  <View style={styles.infoCard}>...</View>\n</View>",
+          "fixedCode": "<View style={styles.header}>\n  <AppLogo />\n  <Text style={typography.h6}>Hi, Rishabh</Text>\n  <Avatar />\n</View>\n<View style={styles.titleContainer}>\n  <Text style={typography.h4}>Your rent is due\\nin"
+        },
+        {
+          "property": "Main Content Layout",
+          "figmaValue": "Horizontal Card Carousel",
+          "currentValue": "Vertical Breakdown Table",
+          "severity": "critical",
+          "explanation": "Replace vertical breakdown table with a horizontal ScrollView (Carousel) displaying payment method cards (UPI Card, Add More Card) and pagination dots.",
+          "currentCode": "<View style={styles.breakdownContainer}>\n  <BreakdownRow label=\"Base rent\" ... />\n</View>",
+          "fixedCode": "<ScrollView horizontal pagingEnabled style={styles.carousel}>\n  <UPICard />\n  <AddMoreCard />\n</ScrollView>\n<PaginationDots />"
+        },
+        {
+          "property": "Footer Layout",
+          "figmaValue": "Row (Info Left, Button Right)",
+          "currentValue": "Column (Button Top, Info Bottom)",
+          "severity": "critical",
+          "explanation": "Footer must be a row. Left: 'Due in 28 Days' + Amount. Right: Small 'Review' button.",
+          "currentCode": "<View style={styles.footer}>\n  <PrimaryButton title={buttonText} ... />\n  <Text ...>{footerMessage}</Text>\n</View>",
+          "fixedCode": "<View style={styles.footer}>\n  <View>\n    <Text style={styles.footerLabel}>Due in 28 Days</Text>\n    <Text style={styles.footerAmount}>\u20b9 32,500</Text>\n  </View>\n  <Button title=\"Review\" variant=\"small"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "relative/flex",
+          "severity": "major",
+          "explanation": "Multiple elements require absolute positioning to match Figma's coordinate system. Apply these styles to the corresponding container frames.",
+          "currentCode": "N/A",
+          "fixedCode": "const styles = StyleSheet.create({\n  frame2095586453: { position: 'absolute', left: 0, top: -157 },\n  frame2095586452: { position: 'absolute', left: 0, top: -23 },\n  vector45: { position: 'absolute', "
+        },
+        {
+          "property": "backgroundColor",
+          "figmaValue": "#4D4D4D",
+          "currentValue": "unknown",
+          "severity": "major",
+          "explanation": "Button 'Rectangle 140' must use the correct dark grey token.",
+          "currentCode": "backgroundColor: '#4D4D4D'",
+          "fixedCode": "backgroundColor: colors.black[400]"
+        },
+        {
+          "property": "imports",
+          "figmaValue": "Theme Imports",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "Import design tokens.",
+          "currentCode": "import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';",
+          "fixedCode": "import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';\nimport { colors, typography, spacing, radius } from '@/src/theme';"
+        },
+        {
+          "property": "Screen Structure",
+          "figmaValue": "Header Text + Carousel + Stats",
+          "currentValue": "InfoCard + Breakdown Table",
+          "severity": "critical",
+          "explanation": "The current screen structure (Info Card + Rent Breakdown Table) is incorrect. It must be restructured to match Figma: 'You are all paid up' header, a horizontal card carousel, and a cashback stats section.",
+          "currentCode": "<View style={styles.topSection}>...</View>\n<View style={styles.breakdownContainer}>...</View>",
+          "fixedCode": "<View style={styles.container}>\n  <Text style={styles.header}>You are all paid up</Text>\n  <ScrollView horizontal>...</ScrollView>\n  <View style={styles.statsSection}>...</View>\n</View>"
+        },
+        {
+          "property": "Footer Layout",
+          "figmaValue": "Row, Padding: 16px 32px 40px 32px, Bg: #202020",
+          "currentValue": "Column, Padding: 0 40px 32px 40px, Bg: Transparent",
+          "severity": "critical",
+          "explanation": "Footer must be a fixed row with dark background (#202020) containing 'Due in...' text and 'Review' button.",
+          "currentCode": "paddingHorizontal: FIGMA_SPACING.footerX,\n    paddingBottom: 32,\n    gap: FIGMA_SPACING.footerGap,\n    alignItems: 'center',",
+          "fixedCode": "flexDirection: 'row',\n    justifyContent: 'space-between',\n    paddingTop: 16,\n    paddingHorizontal: 32,\n    paddingBottom: 40,\n    gap: 24,\n    backgroundColor: '#202020',"
+        },
+        {
+          "property": "paddingHorizontal",
+          "figmaValue": "0 (variable per child)",
+          "currentValue": "40",
+          "severity": "critical",
+          "explanation": "Top section container should have 0px padding. Inner text has 64px padding, carousel has 0px.",
+          "currentCode": "paddingHorizontal: FIGMA_SPACING.topSectionPaddingH,",
+          "fixedCode": "paddingHorizontal: 0,"
+        },
+        {
+          "property": "gap",
+          "figmaValue": "24",
+          "currentValue": "40",
+          "severity": "major",
+          "explanation": "Vertical gap between main content sections should be 24px.",
+          "currentCode": "gap: FIGMA_SPACING.bodyGap,",
+          "fixedCode": "gap: 24,"
+        },
+        {
+          "property": "Horizontal Scroll",
+          "figmaValue": "Required",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "Payment cards section requires a horizontal ScrollView starting at x=64.",
+          "currentCode": "N/A",
+          "fixedCode": "<ScrollView horizontal contentContainerStyle={{ paddingLeft: 64 }} ... />"
+        },
+        {
+          "property": "backgroundColor",
+          "figmaValue": "#4D4D4D",
+          "currentValue": "unknown",
+          "severity": "major",
+          "explanation": "Button 'Rectangle 140' must have background color #4D4D4D (colors.black[400]).",
+          "currentCode": "backgroundColor: '...'",
+          "fixedCode": "backgroundColor: '#4D4D4D'"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586453' (Background Element) requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -157.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586452' requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -23.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 45' requires absolute positioning relative to parent.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 12.0,\ntop: -121.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'UPI-Logo-vector 1' requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -14.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: Card Number '\u2022\u2022\u2022\u2022 2341' requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -180.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'ICICI a/c - xxx23' requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -60.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'rishabh@\u2022\u2022\u2022' requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -28.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'NEW PAYMENT' label requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Due in 28 Days' text requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -23.5,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'All-time Total' label requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -114.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: '\u20b9 3,256.00' value requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 246.0,\ntop: -116.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Cashback Rate' label requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -170.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: '0.8% Avg' value requires absolute positioning.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute',\nleft: 259.0,\ntop: -172.0,"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute",
+          "currentValue": "flex",
+          "severity": "major",
+          "explanation": "Structural Fix: Status Bar Icons (Battery, Wifi, Cellular) require absolute positioning for their vector paths.",
+          "currentCode": "N/A",
+          "fixedCode": "position: 'absolute' // Apply to all vector paths (Wifi-path, Cellular-Connection-path, Battery Border/Cap/Capacity) as per Batch 0 details"
+        }
+      ]
+    },
+    "app/(main)/index.tsx": {
+      "totalFixes": 15,
+      "importantFixes": 12,
+      "screens": [
+        "243-2967",
+        "243-2762"
+      ],
+      "fixes": [
+        {
+          "property": "children",
+          "figmaValue": "Frame 1686557297 (Recent Payments Section)",
+          "currentValue": "Missing",
+          "severity": "critical",
+          "explanation": "The 'Recent Payments' section (containing Toggle and Transaction List) is missing from the render. Structural analysis confirms the existence of transaction rows (Paid, Pending, Failed) with specific layout data.",
+          "currentCode": "{/* Missing Section */}",
+          "fixedCode": "<View style={styles.recentPaymentsSection}>\n  <ToggleSwitch />\n  <TransactionList />\n</View>"
+        },
+        {
+          "property": "backgroundColor",
+          "figmaValue": "#4D4D4D",
+          "currentValue": "Unknown",
+          "severity": "critical",
+          "explanation": "Button 'Rectangle 140' has a fill mismatch. Structural analysis requires #4D4D4D.",
+          "currentCode": "backgroundColor: '...'",
+          "fixedCode": "backgroundColor: colors.black[400], // #4D4D4D"
+        },
+        {
+          "property": "style",
+          "figmaValue": "Complex Layered Fill",
+          "currentValue": "Solid Color",
+          "severity": "major",
+          "explanation": "Payment Card background is missing texture. Figma uses Solid #202020 + Image (16% opacity).",
+          "currentCode": "backgroundColor: '#202020'",
+          "fixedCode": "<ImageBackground \n  source={require('@/assets/card-texture.png')} \n  style={{ backgroundColor: colors.black[500], opacity: 1 }}\n  imageStyle={{ opacity: 0.16 }}\n>..."
+        },
+        {
+          "property": "layout",
+          "figmaValue": "Absolute Positioning",
+          "currentValue": "Relative/Flex",
+          "severity": "major",
+          "explanation": "Multiple elements in the Card and Transaction list require absolute positioning based on Figma structural data. Grouped by parent container.",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "// Card Elements\nconst cardStyles = {\n  upiLogo: { position: 'absolute', left: -32.0, top: -14.0 },\n  cardNumber: { position: 'absolute', left: -32.0, top: -180.0 },\n  accountInfo: { position: 'absolu"
+        },
+        {
+          "property": "children",
+          "figmaValue": "Visible (3 dots)",
+          "currentValue": "Missing",
+          "severity": "major",
+          "explanation": "Pagination dots (Frame 2095586316) are missing below the card carousel.",
+          "currentCode": "{/* Missing Pagination */}",
+          "fixedCode": "<View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.md }}>\n  {[0,1,2].map(i => <View key={i} style={{ width: 8, height: 8, borderRadius: radius.pill, backgroundColor: i=="
+        },
+        {
+          "property": "paddingHorizontal",
+          "figmaValue": "Mixed (32px/64px)",
+          "currentValue": "Uniform (24px)",
+          "severity": "major",
+          "explanation": "Apply mixed padding zones: 32px (spacing.xl) for Header/Recent/Bottom, and 64px (spacing.huge) for Title/Carousel start.",
+          "currentCode": "paddingHorizontal: 24",
+          "fixedCode": "const styles = StyleSheet.create({\n  header: { paddingHorizontal: spacing.xl },\n  title: { paddingHorizontal: spacing.huge },\n  bottomBar: { paddingHorizontal: spacing.xl }\n});"
+        },
+        {
+          "property": "contentContainerStyle",
+          "figmaValue": "Left: 64px, Right: 32px",
+          "currentValue": "Horizontal: 24px",
+          "severity": "major",
+          "explanation": "Carousel content container needs specific insets to align with title.",
+          "currentCode": "contentContainerStyle={{ paddingHorizontal: 24 }}",
+          "fixedCode": "contentContainerStyle={{ paddingLeft: spacing.huge, paddingRight: spacing.xl, gap: spacing.md }}"
+        },
+        {
+          "property": "children",
+          "figmaValue": "PaginationDots, ToggleSwitch",
+          "currentValue": "Missing",
+          "severity": "critical",
+          "explanation": "Insert missing Pagination Dots below carousel and Toggle Switch above Recent Payments list.",
+          "currentCode": "<Carousel />\n<RecentPayments />",
+          "fixedCode": "<Carousel />\n<PaginationDots style={{ marginTop: spacing.md }} />\n<View style={{ gap: spacing.xxxl, paddingHorizontal: spacing.xl }}>\n  <ToggleSwitch options={['Recent Payments', 'Cashbacks']} />\n  <R"
+        },
+        {
+          "property": "backgroundColor",
+          "figmaValue": "Various (#FFFFFF, #0D0D0D, #4D4D4D)",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Fix button background colors based on component variants.",
+          "currentCode": "// Button styles",
+          "fixedCode": "// Rectangle 141\nbackgroundColor: colors.neutral.white,\n// Cashbacks Button\nbackgroundColor: colors.black[800],\n// Rectangle 140\nbackgroundColor: colors.black[400]"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "flex/relative",
+          "severity": "major",
+          "explanation": "Apply strict absolute positioning to Credit Card internal elements (Visa, Number, Expiry, CVV) to match Figma geometry.",
+          "currentCode": "// Card internals",
+          "fixedCode": "visaLogo: { position: 'absolute', left: -32, top: -14 },\ncardNumber: { position: 'absolute', left: -32, top: -180 },\nexpiryLabel: { position: 'absolute', left: 0, top: -60 },\ncvvLabel: { position: 'ab"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "flex/relative",
+          "severity": "major",
+          "explanation": "Apply strict absolute positioning to UPI & Net Banking Card internals.",
+          "currentCode": "// UPI/NetBanking internals",
+          "fixedCode": "upiLogo: { position: 'absolute', left: -32, top: -14 },\nupiId: { position: 'absolute', left: 0, top: -28 },\nnetBankingLabel: { position: 'absolute', left: -32, top: -18 },\nnewPaymentLabel: { position:"
+        },
+        {
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "flex/relative",
+          "severity": "major",
+          "explanation": "Apply strict absolute positioning to Recent Payment list item internals (Status, Date, Amount).",
+          "currentCode": "// List item internals",
+          "fixedCode": "statusText: { position: 'absolute', left: 16, top: -28 },\namountText: { position: 'absolute', left: 263, top: -93 },\niconContainer: { position: 'absolute', left: 0, top: -25.5 }"
+        }
+      ]
+    }
+  }
+}

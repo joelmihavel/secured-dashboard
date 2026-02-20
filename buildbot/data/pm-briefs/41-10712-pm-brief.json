@@ -1,0 +1,152 @@
+{
+  "screenId": "41-10712",
+  "screenName": "Onboarding / Post Approval 1",
+  "route": "/(setup)/index",
+  "generatedAt": "2026-02-19T23:12:04.325Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 1686557264",
+      "nodeId": "41:10752",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 1686557230",
+      "nodeId": "41:10760",
+      "childCount": 5
+    },
+    {
+      "name": "Frame 1686557264",
+      "nodeId": "41:10825",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 2095586360",
+      "nodeId": "160:3118",
+      "childCount": 2
+    }
+  ],
+  "states": [
+    {
+      "state": "step1",
+      "figmaId": "41-10712",
+      "name": "Onboarding / Post Approval 1"
+    },
+    {
+      "state": "step2",
+      "figmaId": "41-10859",
+      "name": "Onboarding / Post Approval 2"
+    },
+    {
+      "state": "step3",
+      "figmaId": "41-11006",
+      "name": "Onboarding / Post Approval 3"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "41:10823",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "41:10770",
+      "name": "Pay Rent",
+      "content": "Pay Rent"
+    },
+    {
+      "nodeId": "41:10781",
+      "name": "Total payable rent",
+      "content": "Total payable rent"
+    },
+    {
+      "nodeId": "41:10782",
+      "name": "₹ 32,175",
+      "content": "₹  32,175"
+    },
+    {
+      "nodeId": "41:10791",
+      "name": "saved ₹ 325 →",
+      "content": "saved ₹ 325 →"
+    },
+    {
+      "nodeId": "41:10792",
+      "name": "using flent cashback",
+      "content": "using flent cashback"
+    },
+    {
+      "nodeId": "41:10796",
+      "name": "Paying to",
+      "content": "Paying to"
+    },
+    {
+      "nodeId": "41:10797",
+      "name": "[Landlord Name]",
+      "content": "[Landlord Name]"
+    },
+    {
+      "nodeId": "41:10801",
+      "name": "ICICI",
+      "content": "ICICI "
+    },
+    {
+      "nodeId": "41:10802",
+      "name": "XXXX XXXX XXXX 2003",
+      "content": "XXXX XXXX XXXX 2003"
+    },
+    {
+      "nodeId": "41:10804",
+      "name": "Pay Now",
+      "content": "Pay Now"
+    },
+    {
+      "nodeId": "41:10805",
+      "name": "All payments are 100% secure",
+      "content": "All payments are 100% secure"
+    },
+    {
+      "nodeId": "41:10810",
+      "name": "PAY BY ANY APP INSTEAD",
+      "content": "PAY BY ANY APP INSTEAD"
+    },
+    {
+      "nodeId": "41:10814",
+      "name": "Google Pay",
+      "content": "Google Pay"
+    },
+    {
+      "nodeId": "41:10817",
+      "name": "PayTM",
+      "content": "PayTM"
+    },
+    {
+      "nodeId": "41:10820",
+      "name": "PhonePe",
+      "content": "PhonePe"
+    },
+    {
+      "nodeId": "I41:10822;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "I41:10823;100:1575",
+      "name": "Text",
+      "content": "Start Flenting →"
+    },
+    {
+      "nodeId": "160:3095",
+      "name": "Let’s get you set up",
+      "content": "Let’s get you set up"
+    },
+    {
+      "nodeId": "160:3121",
+      "name": "Add your landlord’s bank details to enable payouts",
+      "content": "Add your landlord’s bank details to enable payouts"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

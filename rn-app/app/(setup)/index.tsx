@@ -105,8 +105,8 @@ const FIGMA = {
   titleLineHeight: 48,
   titleLetterSpacing: -1,
   // Span colors from typography.spans
-  titleGrayColor: '#A9A9A9', // neutral.500 - chars 0-9 "Let's get"
-  titleAccentColor: '#FF9A6D', // brand.500 - chars 10-20 "you set up"
+  titleGrayColor: colors.neutral[500], // neutral.500 - chars 0-9 "Let's get"
+  titleAccentColor: colors.brand[500], // brand.500 - chars 10-20 "you set up"
 
   // Card frame (160:3101 / Frame 2095586361)
   // Position: x=61, y=322
@@ -114,7 +114,7 @@ const FIGMA = {
   cardY: 322,
   cardWidth: 270,
   cardHeight: 321,
-  cardBgColor: '#202020', // black.500
+  cardBgColor: colors.black[500], // black.500
 
   // Card top perforations (Ellipse 21892-21905)
   // 14 circles, 14px diameter, at y=-4 (half-clipped by card overflow:hidden)
@@ -142,8 +142,8 @@ const FIGMA = {
   // Position: y=48 within content frame (gap 16 from 32h logo = 48)
   descFontSize: 20,
   descLineHeight: 32,
-  descBaseColor: '#CBCBCB', // neutral.300
-  descAccentColor: '#FF9A6D', // brand.500
+  descBaseColor: colors.neutral[300], // neutral.300
+  descAccentColor: colors.brand[500], // brand.500
 
   // Decorative crosshatch group (Group 59: 160:3122)
   // Position within card: x=218, y=36
@@ -171,8 +171,8 @@ const FIGMA = {
   paginationY: 673,
   dotSize: 8,
   dotGap: 4,
-  dotActiveColor: '#FF9A6D', // brand.500
-  dotInactiveColor: '#202020', // black.500
+  dotActiveColor: colors.brand[500], // brand.500
+  dotInactiveColor: colors.black[500], // black.500
 
   // Button (41:10823 disabled / 41:11076 active)
   // Position: x=40, y=739
@@ -183,9 +183,9 @@ const FIGMA = {
   // Disabled button: 56h, radius 12, bg #202020, border #202020 1px
   buttonDisabledHeight: 56,
   buttonDisabledRadius: 12,
-  buttonDisabledBg: '#202020', // black.500
-  buttonDisabledBorder: '#202020',
-  buttonDisabledTextColor: '#444444', // neutral.800
+  buttonDisabledBg: colors.black[500], // black.500
+  buttonDisabledBorder: colors.black[500],
+  buttonDisabledTextColor: colors.neutral[800], // neutral.800
   buttonDisabledTextSize: 16,
   buttonDisabledLineHeight: 24,
 
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: FIGMA.cardBgColor, // #202020
     // Figma shadow 1: rgba(0,0,0,0.1) offset(0,9) blur 19
-    shadowColor: '#000000',
+    shadowColor: colors.black[900],
     shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.1,
     shadowRadius: 19,

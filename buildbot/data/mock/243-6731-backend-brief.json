@@ -1,0 +1,25 @@
+{
+  "screenId": "243-6731",
+  "screenRoute": "/(main)/index",
+  "screenFile": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/rn-app/app/(main)/index.tsx",
+  "generatedAt": "2026-02-19T23:43:03.314Z",
+  "generatedBy": "buildbot-backend-agent-auto",
+  "requiredHooks": [
+    "useCallback",
+    "useState",
+    "useMemo",
+    "useRouter",
+    "useLocalSearchParams",
+    "useSafeAreaInsets",
+    "useDashboard",
+    "useRefreshDashboard",
+    "useSavedPaymentMethods",
+    "usePayments",
+    "useScreenshotMockData",
+    "useMockData"
+  ],
+  "services": [],
+  "supabaseCalls": [],
+  "mockData": null,
+  "notes": "Auto-generated from source scan. Review for completeness."
+}

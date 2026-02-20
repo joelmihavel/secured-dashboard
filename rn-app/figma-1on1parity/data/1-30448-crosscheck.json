@@ -1,0 +1,355 @@
+{
+  "screenId": "1-30448",
+  "screenName": "Onboarding / Agreement --verify agreement",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-20T15:39:53.335Z",
+  "checks": {
+    "nodeCount": 143,
+    "textNodeCount": 35,
+    "componentInstanceCount": 2,
+    "interactiveNodeCount": 3,
+    "imageAssetCount": 8,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": true,
+    "topLevelChildNames": [
+      "image 149",
+      "Background Shape",
+      "Vector 1",
+      "Rectangle 52",
+      "Frame 1686557300",
+      "Frame 2095586323"
+    ],
+    "textContents": [
+      {
+        "nodeId": "1:30465",
+        "name": "Pay Rent",
+        "content": "Pay Rent",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30476",
+        "name": "Total payable rent",
+        "content": "Total payable rent",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:30477",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30486",
+        "name": "saved ₹ 325 →",
+        "content": "saved ₹ 325 →",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#70BF73"
+      },
+      {
+        "nodeId": "1:30487",
+        "name": "using flent cashback",
+        "content": "using flent cashback",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:30491",
+        "name": "Paying to",
+        "content": "Paying to",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30492",
+        "name": "[Landlord Name]",
+        "content": "[Landlord Name]",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30496",
+        "name": "ICICI",
+        "content": "ICICI ",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30497",
+        "name": "XXXX XXXX XXXX 2003",
+        "content": "XXXX XXXX XXXX 2003",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30499",
+        "name": "Pay Now",
+        "content": "Pay Now",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30500",
+        "name": "All payments are 100% secure",
+        "content": "All payments are 100% secure",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30505",
+        "name": "PAY BY ANY APP INSTEAD",
+        "content": "PAY BY ANY APP INSTEAD",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30509",
+        "name": "Google Pay",
+        "content": "Google Pay",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30512",
+        "name": "PayTM",
+        "content": "PayTM",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30515",
+        "name": "PhonePe",
+        "content": "PhonePe",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "I1:30518;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30523",
+        "name": "Confirm your details",
+        "content": "Confirm your details",
+        "fontSize": 48,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30529",
+        "name": "Agreement ID",
+        "content": "Agreement ID",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30530",
+        "name": "KIA 123456789",
+        "content": "KIA 123456789",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "1:30536",
+        "name": "Property Name",
+        "content": "Property Name",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30537",
+        "name": "Prestige Pinestripe, Bommanahalli, Bengaluru 560037",
+        "content": "Prestige Pinestripe, Bommanahalli, Bengaluru 560037",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "1:30543",
+        "name": "Tenant(s)",
+        "content": "Tenant(s)",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30544",
+        "name": "Rahul Joshi, Ashish Shakya,  Gursimran Khamba",
+        "content": "Rahul Joshi, Ashish Shakya,  Gursimran Khamba",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "1:30550",
+        "name": "Landlord(s)",
+        "content": "Landlord(s)",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30551",
+        "name": "Tanmay Bhatt, Kaneez Surkha",
+        "content": "Tanmay Bhatt, Kaneez Surkha",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "1:30557",
+        "name": "Monthly Rent",
+        "content": "Monthly Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30558",
+        "name": "₹ 40,000",
+        "content": "₹ 40,000",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "1:30564",
+        "name": "One-Time Deposit",
+        "content": "One-Time Deposit",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30565",
+        "name": "₹ 130,000",
+        "content": "₹ 130,000",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "1:30571",
+        "name": "Rent Duration",
+        "content": "Rent Duration",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30572",
+        "name": "11 Months",
+        "content": "11 Months",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "1:30578",
+        "name": "Exit Date",
+        "content": "Exit Date",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30579",
+        "name": "31 Dec, 2027",
+        "content": "31 Dec, 2027",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "I1:30581;100:1565",
+        "name": "Text",
+        "content": "Proceed",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30582",
+        "name": "Enter Manually",
+        "content": "Enter Manually",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#4D4D4D",
+      "#70BF73",
+      "#878787",
+      "#A6A6A6",
+      "#A9A9A9",
+      "#CBCBCB",
+      "#D9D9D9",
+      "#EEEEEE",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      15.19174861907959,
+      16,
+      24,
+      30.38349723815918,
+      32,
+      40,
+      48,
+      64
+    ],
+    "componentIds": [
+      "1:7",
+      "104:3130"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Frame 1686557209",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "104:3131"
+      },
+      {
+        "sourceNode": "Enter Manually",
+        "trigger": "ON_CLICK"
+      }
+    ]
+  }
+}

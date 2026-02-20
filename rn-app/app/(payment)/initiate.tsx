@@ -1,10 +1,11 @@
 /**
  * Initiate Payment Screen
- * Figma Reference: 41-8695 (Payment Breakdown - Cashback Applied)
+ * Figma Reference: 41-8695 (Payment Breakdown - Cashback Applied) & 243-7398 (First Visit)
  *
  * Pixel-perfect implementation:
  * - Background: #131313
- * - Card background: #1A1A1A
+ * - Top card: #202020, 12px border radius
+ * - Bottom card: #202020, 12px border radius, top dropshadow
  * - Status banner with coral accent
  * - Payment breakdown with cashback deduction
  * - Pay button with amount
@@ -23,11 +24,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Line, Circle } from 'react-native-svg';
 import { z } from 'zod';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { SummaryRow, DashedDivider } from '@/src/components/payment';
 import { useDashboard } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import {
@@ -36,7 +36,7 @@ import {
   mockPayUCheckout,
   updatePaymentStatus,
 } from '@/src/services/payment';
-import { colors, spacing, radius } from '@/src/theme';
+import { colors } from '@/src/theme';
 
 // Check if running in Expo Go (no native modules)
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -59,48 +59,92 @@ const PaymentParamsSchema = z.object({
 
 type ValidatedPaymentParams = z.infer<typeof PaymentParamsSchema>;
 
-// Exact Figma colors - from 41-8695 analysis
+// Exact Figma colors
 const FIGMA_COLORS = {
-  background: '#131313',           // black.700
-  cardBackground: '#1A1A1A',       // black.600 - Frame 2095586454
-  headerBg: '#202020',             // black.500 - Frame 1686557240
-  titleWhite: '#FFFFFF',           // white
-  titleAccent: '#FF9A6D',          // brand.500 - cashback applied
-  labelText: '#878787',            // neutral.600 - Rent due text
-  valueText: '#DDDDDD',            // neutral.200 - Amount display
-  successText: '#70BF73',          // success.default
-  mutedText: '#CBCBCB',            // neutral.300 - Complete setup text
-  secondaryText: '#A9A9A9',        // neutral.500 - Pay by 7 Dec text
-  dividerColor: '#4D4D4D',         // black.400 - Rectangle 140
-  borderColor: '#4D4D4D',          // black.400
-  discountText: '#EF9194',         // Figma discount display
-  iconColor: '#A6A6A6',            // black.200 - Vector icons
+  background: colors.black[700],           // black.700
+  cardSurface: colors.black[500],          // black.500
+  cardDivider: colors.black[600],          // black.600
+  titleWhite: colors.white,           // white
+  titleAccent: colors.brand[500],          // brand.500 - cashback applied
+  labelText: colors.neutral[600],            // neutral.600 - Rent due text
+  valueText: colors.neutral[300],            // neutral.300 - Amount display
+  successText: colors.success.default,          // success.default
+  mutedText: colors.neutral[300],            // neutral.300 - Complete setup text
+  secondaryText: colors.neutral[500],        // neutral.500 - Pay by 7 Dec text
+  dividerColor: colors.black[400],         // black.400
+  discountText: '#EF9194',         // Figma error.default-2 for locked cashback
 };
 
 // Back Arrow Icon
 const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+  <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
     <Path
-      d="M15 18L9 12L15 6"
+      d="M20 8L12 16L20 24"
       stroke={FIGMA_COLORS.titleWhite}
-      strokeWidth={2}
+      strokeWidth={2.67}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M8.89 16L25.33 16"
+      stroke={FIGMA_COLORS.titleWhite}
+      strokeWidth={2.67}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+// Frame icon (hash)
+const HashIcon = () => (
+  <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+    <Path d="M6 2L4 14M12 2L10 14M2 6H14M2 10H14" stroke="#878787" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+// Lock Icon
+const LockIcon = () => (
+  <Svg width={12} height={12} viewBox="0 0 16 16" fill="none">
+    <Path
+      d="M4 7V5C4 2.79 5.79 1 8 1C10.21 1 12 2.79 12 5V7M3 7H13C13.55 7 14 7.45 14 8V14C14 14.55 13.55 15 13 15H3C2.45 15 2 14.55 2 14V8C2 7.45 2.45 7 3 7Z"
+      stroke="#878787"
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
   </Svg>
 );
 
-// Lock Icon
-const LockIcon = () => (
-  <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
-    <Path
-      d="M4 7V5C4 2.79 5.79 1 8 1C10.21 1 12 2.79 12 5V7M3 7H13C13.55 7 14 7.45 14 8V14C14 14.55 13.55 15 13 15H3C2.45 15 2 14.55 2 14V8C2 7.45 2.45 7 3 7Z"
-      stroke={FIGMA_COLORS.mutedText}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
+// Crosshatch SVG for top card corners
+const Crosshatch = ({ x, y }: { x: number; y: number }) => (
+  <View style={[styles.crosshatch, { left: x, top: y }]}>
+    <Svg width={20.5} height={35} viewBox="0 0 20.5 35">
+      <Line x1={20.5} y1={0} x2={0} y2={20.5} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+      <Line x1={20.5} y1={14.5} x2={0} y2={35} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+    </Svg>
+  </View>
+);
+
+// Summary Row Component matching the dark receipt design
+const BreakdownRow = ({ label, value, isTotal = false, isCashback = false, isLocked = false }: { label: string, value: string, isTotal?: boolean, isCashback?: boolean, isLocked?: boolean }) => (
+  <View style={styles.breakdownRow}>
+    <View style={styles.breakdownLabelGroup}>
+      <HashIcon />
+      <Text style={styles.breakdownLabel}>
+        {label}
+        {isLocked && (
+          <Text inherit style={styles.breakdownLabel}> <LockIcon /> </Text>
+        )}
+      </Text>
+    </View>
+    <Text style={[
+      styles.breakdownValue,
+      isTotal && styles.breakdownValueTotal,
+      isCashback && isLocked && styles.breakdownValueLocked,
+      isCashback && !isLocked && styles.breakdownValueSuccess,
+    ]}>
+      {value}
+    </Text>
+  </View>
 );
 
 export default function InitiatePaymentScreen() {
@@ -127,10 +171,16 @@ export default function InitiatePaymentScreen() {
 
   const method = validatedParams.method;
 
-  const rentAmount = tenancy?.monthly_rent ?? 32500;
-  const maintenanceAmount = 0;
-  const cashbackAvailable = cashback?.available_balance ?? 325;
-  const cashbackToApply = useCashback ? Math.min(cashbackAvailable, rentAmount) : 0;
+  const rentAmount = tenancy?.monthly_rent ?? 30000;
+  const maintenanceAmount = 2500;
+  const totalRent = rentAmount + maintenanceAmount; // 32500
+
+  const cashbackAvailable = cashback?.available_balance ?? 350;
+  const isSetupComplete = tenancy?.verification_status?.bank_verified && tenancy?.verification_status?.utility_verified && tenancy?.verification_status?.landlord_approved;
+  
+  // If setup isn't complete, cashback is locked. If complete, they can apply it.
+  const isCashbackLocked = !isSetupComplete;
+  const cashbackToApply = (useCashback && !isCashbackLocked) ? Math.min(cashbackAvailable, totalRent) : 0;
 
   // Calculate fees based on method
   const getFee = () => {
@@ -142,18 +192,13 @@ export default function InitiatePaymentScreen() {
       case 'upi':
         return 0;
       default:
-        // Log unexpected method in development
-        if (__DEV__) {
-          console.warn(`Unexpected payment method: ${method}, defaulting to 0 fee`);
-        }
         return 0;
     }
   };
 
   const fee = getFee();
-  const totalRent = rentAmount + maintenanceAmount;
   const totalAmount = totalRent + fee - cashbackToApply;
-  const daysUntilDue = 10; // Demo value
+  const daysUntilDue = upcomingPayment?.days_until_due ?? 28;
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -161,6 +206,13 @@ export default function InitiatePaymentScreen() {
   }, [router]);
 
   const handlePayNow = useCallback(async () => {
+    if (!isSetupComplete) {
+      // First visit flow: they must set up payment method first
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.push('/(setup)/index' as never);
+      return;
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsProcessing(true);
 
@@ -217,10 +269,14 @@ export default function InitiatePaymentScreen() {
       Alert.alert('Payment Error', errorMessage);
       setIsProcessing(false);
     }
-  }, [tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setAmount, setTenancyId, resetPaymentStore]);
+  }, [isSetupComplete, tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setAmount, setTenancyId, resetPaymentStore]);
+
+  const ctaText = isSetupComplete 
+    ? `Pay \u20B9${totalAmount.toLocaleString('en-IN')} now` 
+    : 'Add Payment Method to Pay';
 
   return (
-    <Screen testID="initiate-payment-screen" style={styles.screen}>
+    <Screen testID="initiate-payment-screen" style={styles.screen} padded={false}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -238,96 +294,117 @@ export default function InitiatePaymentScreen() {
           <BackArrow />
         </TouchableOpacity>
 
-        {/* Status Banner */}
-        <View style={styles.statusBanner}>
-          <Text style={styles.statusText}>
-            Rent due in <Text inherit style={styles.statusAccent}>{daysUntilDue} days</Text>
-          </Text>
-        </View>
-
-        {/* Cashback Message */}
-        <Text style={styles.cashbackMessage}>
-          {cashbackAvailable > 0
-            ? `Unlock Rs ${cashbackAvailable} cashback by paying before the 7th`
-            : 'Pay on time to earn cashback on your next payment'}
-        </Text>
-
-        {/* Cashback Badge */}
-        <View style={styles.cashbackBadge}>
-          <Text style={styles.cashbackBadgeText}>
-            {cashbackAvailable > 0 ? 'Cashback applied' : 'Cashback available'}
-          </Text>
-        </View>
-
-        {/* Payment Breakdown Card */}
-        <View style={styles.breakdownCard}>
-          <SummaryRow
-            label="Base rent"
-            value={`Rs ${rentAmount.toLocaleString('en-IN')}`}
-          />
-
-          {maintenanceAmount > 0 && (
-            <SummaryRow
-              label="Maintenance"
-              value={`Rs ${maintenanceAmount.toLocaleString('en-IN')}`}
-            />
-          )}
-
-          <DashedDivider color={FIGMA_COLORS.dividerColor} />
-
-          <SummaryRow
-            label="Total rent"
-            value={`Rs ${totalRent.toLocaleString('en-IN')}`}
-          />
-
-          {cashbackAvailable > 0 && useCashback && (
-            <View style={styles.cashbackRowContainer}>
-              <View style={styles.cashbackRow}>
-                <Text style={styles.cashbackLabel}>Cashback</Text>
-                <Switch
-                  value={useCashback}
-                  onValueChange={setUseCashback}
-                  trackColor={{ false: colors.black[400], true: colors.success.default + '80' }}
-                  thumbColor={useCashback ? colors.success.default : colors.neutral[500]}
-                  style={styles.switch}
-                />
-              </View>
-              <Text style={styles.cashbackValue}>
-                -Rs {cashbackToApply.toLocaleString('en-IN')}
+        {/* Outer container matching Figma 270px card logic */}
+        <View style={styles.cardContainer}>
+          
+          {/* Top Card Section */}
+          <View style={styles.topCard}>
+            <View style={styles.topCardContent}>
+              <Text style={styles.topCardTitle}>Rent due in {daysUntilDue} days</Text>
+              <Text style={styles.topCardSubtitle}>
+                {isSetupComplete ? 'Cashback applied successfully' : 'Complete setup to unlock 1% cashback'}
               </Text>
+              
+              <View style={styles.cashbackPill}>
+                <Text style={styles.cashbackPillText}>
+                  {isSetupComplete 
+                    ? `\u20B9${cashbackToApply} cashback applied` 
+                    : `\u20B9${cashbackAvailable} available to unlock`}
+                </Text>
+              </View>
             </View>
-          )}
+            
+            {/* Dark divider matching card curve */}
+            <View style={styles.topCardDivider} />
+            
+            {/* Decorative crosshatches */}
+            <Crosshatch x={16.25} y={17} />
+            <Crosshatch x={277.25} y={87} />
+          </View>
 
-          <DashedDivider color={FIGMA_COLORS.dividerColor} />
+          {/* Dotted cutting line mimicking receipt */}
+          <View style={styles.cuttingLineWrapper}>
+            <Svg width="100%" height={1} viewBox="0 0 369 1" fill="none">
+              <Path d="M0 0.5H369" stroke="#4D4D4D" strokeDasharray="4 4" />
+            </Svg>
+          </View>
 
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Payable Rent</Text>
-            <Text style={styles.totalValue}>
-              Rs {totalAmount.toLocaleString('en-IN')}
-            </Text>
+          {/* Bottom Card Section (Breakdown) */}
+          <View style={styles.bottomCard}>
+            <View style={styles.breakdownInner}>
+              <BreakdownRow 
+                label="Base rent" 
+                value={`\u20B9 ${rentAmount.toLocaleString('en-IN')}`} 
+              />
+              <View style={styles.divider} />
+              
+              <BreakdownRow 
+                label="Maintenance" 
+                value={`\u20B9 ${maintenanceAmount.toLocaleString('en-IN')}`} 
+              />
+              
+              <View style={styles.gapSpacer} />
+              <View style={styles.divider} />
+              
+              <BreakdownRow 
+                label="Total Rent" 
+                value={`\u20B9  ${totalRent.toLocaleString('en-IN')}`} 
+              />
+              
+              {/* Cashback row */}
+              {(cashbackAvailable > 0) && (
+                <BreakdownRow 
+                  label="Cashback" 
+                  value={`- \u20B9  ${isCashbackLocked ? cashbackAvailable : cashbackToApply}`} 
+                  isCashback
+                  isLocked={isCashbackLocked}
+                />
+              )}
+              
+              {/* Fee row if applicable */}
+              {fee > 0 && (
+                <BreakdownRow 
+                  label="Convenience fee" 
+                  value={`+ \u20B9  ${fee.toLocaleString('en-IN')}`} 
+                />
+              )}
+              
+              <View style={styles.divider} />
+              
+              <BreakdownRow 
+                label="Payable Rent" 
+                value={`\u20B9  ${totalAmount.toLocaleString('en-IN')}`} 
+                isTotal
+              />
+            </View>
+
+            {/* Perforations matching the Figma receipt edges */}
+            <View style={styles.leftPerforation} />
+            <View style={styles.rightPerforation} />
           </View>
         </View>
 
         {/* Spacer */}
         <View style={styles.spacer} />
 
-        {/* Pay Button */}
-        <PrimaryButton
-          title={`Pay Rs.${totalAmount.toLocaleString('en-IN')} now`}
-          onPress={handlePayNow}
-          loading={isProcessing}
-          testID="pay-now-button"
-        />
+        {/* CTA Section */}
+        <View style={styles.ctaWrapper}>
+          <PrimaryButton
+            title={ctaText}
+            onPress={handlePayNow}
+            loading={isProcessing}
+            showDivider
+            testID="pay-now-button"
+          />
 
-        {/* Cashback Incentive */}
-        <Text style={styles.incentiveText}>
-          Pay by the 7th to earn 1% cashback
-        </Text>
-
-        {/* Secure Payment Notice */}
-        <View style={styles.secureRow}>
-          <LockIcon />
-          <Text style={styles.secureText}>Secured by PayU</Text>
+          {/* Subtext below button */}
+          {!isSetupComplete && (
+            <Text style={styles.ctaSubtext}>
+              <Text inherit style={styles.ctaSubtextBase}>Finish setup in </Text>
+              <Text inherit style={styles.ctaSubtextUnderline}>28:12:12</Text>
+              <Text inherit style={styles.ctaSubtextBase}>{` to be eligible for\n\u20B9${cashbackAvailable} cashback on this payment`}</Text>
+            </Text>
+          )}
         </View>
       </ScrollView>
     </Screen>
@@ -343,127 +420,183 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginBottom: 24,
-  },
-  statusBanner: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 24,
+    marginLeft: 40, // Matches Figma 40px padding
   },
-  statusText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,     // bodyXs per Figma analysis
-    lineHeight: 20,
-    color: FIGMA_COLORS.labelText, // neutral.600 #878787
+  cardContainer: {
+    paddingHorizontal: 40,
+    alignItems: 'center',
   },
-  statusAccent: {
-    color: FIGMA_COLORS.titleAccent,
-  },
-  cashbackMessage: {
-    fontFamily: 'PlusJakartaSans-Medium',  // bodySmMedium per Figma
-    fontSize: 14,                          // bodySmMedium
-    lineHeight: 20,
-    color: FIGMA_COLORS.mutedText,         // neutral.300 #CBCBCB
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  cashbackBadge: {
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: FIGMA_COLORS.titleAccent,
-    borderRadius: 100,
+  // Top Card - Figma 243:7402
+  topCard: {
+    backgroundColor: FIGMA_COLORS.cardSurface,
+    borderRadius: 12,
+    width: '100%',
     paddingHorizontal: 16,
-    paddingVertical: 6,
-    marginBottom: 24,
-  },
-  cashbackBadgeText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 16,
-    color: FIGMA_COLORS.titleAccent,
-  },
-  breakdownCard: {
-    backgroundColor: FIGMA_COLORS.cardBackground,
-    borderRadius: 16,
-    padding: 24,
-    gap: 12,
-  },
-  cashbackRowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    paddingTop: 24,
+    paddingBottom: 24,
     alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    zIndex: 2,
   },
-  cashbackRow: {
-    flexDirection: 'row',
+  topCardContent: {
     alignItems: 'center',
     gap: 8,
   },
-  cashbackLabel: {
+  topCardTitle: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.labelText,
-    textAlign: 'left',
+    fontSize: 12,
+    color: colors.neutral[600],
   },
-  switch: {
-    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-  },
-  cashbackValue: {
+  topCardSubtitle: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.successText,
-    textAlign: 'right',
+    color: colors.neutral[300],
   },
-  totalRow: {
+  cashbackPill: {
+    backgroundColor: colors.black[600],
+    borderRadius: 200,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  cashbackPillText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    color: colors.brand[500],
+  },
+  topCardDivider: {
+    position: 'absolute',
+    bottom: 0,
+    height: 5,
+    width: 268,
+    backgroundColor: colors.black[600],
+  },
+  crosshatch: {
+    position: 'absolute',
+  },
+  // Dotted cutting line area
+  cuttingLineWrapper: {
+    width: 369, // Wider than card per Figma
+    height: 1,
+    marginVertical: 10,
+    zIndex: 1,
+  },
+  // Bottom Card - Breakdown
+  bottomCard: {
+    backgroundColor: FIGMA_COLORS.cardSurface,
+    width: 270, // Matches Figma width
+    height: 347,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    // Figma Drop shadow
+    shadowColor: colors.black[900],
+    shadowOffset: { width: 0, height: 35 },
+    shadowOpacity: 0.09,
+    shadowRadius: 35,
+    elevation: 10,
+    position: 'relative',
+    alignItems: 'center',
+  },
+  breakdownInner: {
+    width: '100%',
+    paddingTop: 56,
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 8,
   },
-  totalLabel: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
+  breakdownLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  breakdownLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: colors.neutral[600],
+  },
+  breakdownValue: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: FIGMA_COLORS.titleWhite,
-    textAlign: 'left',
+    color: colors.neutral[300],
   },
-  totalValue: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 20,
-    lineHeight: 28,
-    color: FIGMA_COLORS.titleWhite,
-    textAlign: 'right',
+  breakdownValueTotal: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    color: colors.neutral[200],
+  },
+  breakdownValueLocked: {
+    color: FIGMA_COLORS.discountText, // #EF9194
+  },
+  breakdownValueSuccess: {
+    color: FIGMA_COLORS.successText, // #70BF73
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: FIGMA_COLORS.dividerColor,
+    width: '100%',
+  },
+  gapSpacer: {
+    height: 16, // Extra gap before total
+  },
+  // Perforations on bottom card sides
+  leftPerforation: {
+    position: 'absolute',
+    left: -7,
+    top: 256,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: FIGMA_COLORS.background, // Punches a hole
+  },
+  rightPerforation: {
+    position: 'absolute',
+    right: -7,
+    top: 256,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: FIGMA_COLORS.background,
   },
   spacer: {
     flex: 1,
     minHeight: 40,
   },
-  incentiveText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA_COLORS.secondaryText,  // neutral.500 #A9A9A9 per Figma
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  secureRow: {
-    flexDirection: 'row',
+  // CTA Section
+  ctaWrapper: {
+    paddingHorizontal: 40,
+    gap: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 12,
   },
-  secureText: {
+  ctaSubtext: {
+    textAlign: 'center',
+  },
+  ctaSubtextBase: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.mutedText,
+    color: colors.neutral[500],
+  },
+  ctaSubtextUnderline: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 12,
+    lineHeight: 20,
+    color: colors.neutral[100],
+    textDecorationLine: 'underline',
   },
 });
+

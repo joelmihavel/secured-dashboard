@@ -1,0 +1,18 @@
+{
+  "screenId": "41-8529",
+  "screenRoute": "/(payment)/add-netbanking",
+  "screenFile": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/rn-app/app/(payment)/add-netbanking.tsx",
+  "generatedAt": "2026-02-19T23:30:49.005Z",
+  "generatedBy": "buildbot-backend-agent-auto",
+  "requiredHooks": [
+    "useAddPaymentMethod",
+    "useState",
+    "useCallback",
+    "useRouter",
+    "useSafeAreaInsets"
+  ],
+  "services": [],
+  "supabaseCalls": [],
+  "mockData": null,
+  "notes": "Auto-generated from source scan. Review for completeness."
+}

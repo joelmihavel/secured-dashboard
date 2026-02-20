@@ -1,0 +1,252 @@
+{
+  "screenId": "1-31175",
+  "screenName": "auth / sign up --enter OTP",
+  "route": "/(auth)/otp",
+  "generatedAt": "2026-02-19T21:28:54.994Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 1686557230",
+      "nodeId": "1:31183",
+      "childCount": 5
+    },
+    {
+      "name": "Frame 1686557318",
+      "nodeId": "1:31246",
+      "childCount": 4
+    },
+    {
+      "name": "Frame 1686557301",
+      "nodeId": "1:31259",
+      "childCount": 1
+    }
+  ],
+  "states": [
+    {
+      "state": "empty",
+      "figmaId": "1-31175",
+      "name": "auth / sign up --enter OTP"
+    },
+    {
+      "state": "filled",
+      "figmaId": "1-31073",
+      "name": "auth / sign up --enter OTP --filled"
+    },
+    {
+      "state": "error1",
+      "figmaId": "1-31277",
+      "name": "auth / sign up --enter OTP --error 1"
+    },
+    {
+      "state": "error2",
+      "figmaId": "1-31380",
+      "name": "auth / sign up --enter OTP --error 2"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "1:31251",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "1:31252",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "1:31254",
+      "name": "button",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "I1:31272;50:319",
+      "name": "_Mega input field base",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "1:31274",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "I1:31178;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "1:31193",
+      "name": "Pay Rent",
+      "content": "Pay Rent"
+    },
+    {
+      "nodeId": "1:31204",
+      "name": "Total payable rent",
+      "content": "Total payable rent"
+    },
+    {
+      "nodeId": "1:31205",
+      "name": "₹ 32,175",
+      "content": "₹  32,175"
+    },
+    {
+      "nodeId": "1:31214",
+      "name": "saved ₹ 325 →",
+      "content": "saved ₹ 325 →"
+    },
+    {
+      "nodeId": "1:31215",
+      "name": "using flent cashback",
+      "content": "using flent cashback"
+    },
+    {
+      "nodeId": "1:31219",
+      "name": "Paying to",
+      "content": "Paying to"
+    },
+    {
+      "nodeId": "1:31220",
+      "name": "[Landlord Name]",
+      "content": "[Landlord Name]"
+    },
+    {
+      "nodeId": "1:31224",
+      "name": "ICICI",
+      "content": "ICICI "
+    },
+    {
+      "nodeId": "1:31225",
+      "name": "XXXX XXXX XXXX 2003",
+      "content": "XXXX XXXX XXXX 2003"
+    },
+    {
+      "nodeId": "1:31227",
+      "name": "Pay Now",
+      "content": "Pay Now"
+    },
+    {
+      "nodeId": "1:31228",
+      "name": "All payments are 100% secure",
+      "content": "All payments are 100% secure"
+    },
+    {
+      "nodeId": "1:31233",
+      "name": "PAY BY ANY APP INSTEAD",
+      "content": "PAY BY ANY APP INSTEAD"
+    },
+    {
+      "nodeId": "1:31237",
+      "name": "Google Pay",
+      "content": "Google Pay"
+    },
+    {
+      "nodeId": "1:31240",
+      "name": "PayTM",
+      "content": "PayTM"
+    },
+    {
+      "nodeId": "1:31243",
+      "name": "PhonePe",
+      "content": "PhonePe"
+    },
+    {
+      "nodeId": "1:31249",
+      "name": "Let’s get to  know you",
+      "content": "Let’s get to  know you"
+    },
+    {
+      "nodeId": "I1:31251;47:5581",
+      "name": "Label",
+      "content": "Full name"
+    },
+    {
+      "nodeId": "I1:31251;47:5585",
+      "name": "Text",
+      "content": "Joel Mihavel"
+    },
+    {
+      "nodeId": "I1:31252;48:628",
+      "name": "Label",
+      "content": "Phone"
+    },
+    {
+      "nodeId": "I1:31252;48:725",
+      "name": "Dropdown text",
+      "content": "+91"
+    },
+    {
+      "nodeId": "I1:31252;48:728",
+      "name": "Text",
+      "content": "+91 98765 43210"
+    },
+    {
+      "nodeId": "I1:31254;100:1565",
+      "name": "Text",
+      "content": "Get Started"
+    },
+    {
+      "nodeId": "1:31255",
+      "name": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
+      "content": "You may get a verification message from Cashfree to verify your profile and unlock benefits."
+    },
+    {
+      "nodeId": "1:31270",
+      "name": "Let’s verify your number",
+      "content": "Let’s verify your number"
+    },
+    {
+      "nodeId": "1:31271",
+      "name": "We’ve sent a 6-digit code to your phone. It’ll auto-verify once entered",
+      "content": "We’ve sent a 6-digit code to your phone. It’ll auto-verify once entered"
+    },
+    {
+      "nodeId": "I1:31272;50:319;1106:66617",
+      "name": "Text",
+      "content": "0"
+    },
+    {
+      "nodeId": "I1:31272;130:19570",
+      "name": "Text",
+      "content": "0"
+    },
+    {
+      "nodeId": "I1:31272;130:19572",
+      "name": "Text",
+      "content": "0"
+    },
+    {
+      "nodeId": "I1:31272;50:322",
+      "name": "Text",
+      "content": "-"
+    },
+    {
+      "nodeId": "I1:31272;130:19574",
+      "name": "Text",
+      "content": "0"
+    },
+    {
+      "nodeId": "I1:31272;130:19576",
+      "name": "Text",
+      "content": "0"
+    },
+    {
+      "nodeId": "I1:31272;130:19578",
+      "name": "Text",
+      "content": "0"
+    },
+    {
+      "nodeId": "I1:31274;100:1575",
+      "name": "Text",
+      "content": "Proceed"
+    },
+    {
+      "nodeId": "1:31275",
+      "name": "Didn’t receive the code? Resend",
+      "content": "Didn’t receive the code? Resend"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

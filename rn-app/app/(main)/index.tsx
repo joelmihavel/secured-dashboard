@@ -60,6 +60,7 @@ import {
   CashbackSetupModal,
   EmptyPaymentsState,
   CashbackEmptyState,
+  PaymentMethodSelectionSheet,
   // Import types from home components
   TabId,
   PaymentMethod,
@@ -157,6 +158,7 @@ export default function HomeScreen() {
   // Tab state for Recent Payments / Cashbacks
   const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
   const [showCashbackModal, setShowCashbackModal] = useState(false);
+  const [showPaymentSheet, setShowPaymentSheet] = useState(stateParam === 'setup-payment');
 
   // Get saved payment methods — use mock methods when in mock mode
   const { data: realSavedMethods } = useSavedPaymentMethods();
@@ -203,6 +205,7 @@ export default function HomeScreen() {
           : undefined;
 
       return {
+        id: method.id,
         type: method.type, // Preserve original type: 'upi' | 'card' | 'netbanking'
         bankName,
         accountMasked: method.vpa || `****${method.last_four || ''}`,
@@ -214,6 +217,41 @@ export default function HomeScreen() {
       };
     });
   }, [savedMethods]);
+
+  // Payment methods for the bottom sheet
+  const sheetPaymentMethods = useMemo(() => {
+    const hasCard = paymentMethods.some(m => m.type === 'card');
+    const hasUpi = paymentMethods.some(m => m.type === 'upi');
+    const hasNetbanking = paymentMethods.some(m => m.type === 'netbanking');
+
+    return [
+      {
+        id: 'card-1',
+        type: 'card' as const,
+        label: 'Credit Card',
+        isSetUp: hasCard,
+        cardLastFour: paymentMethods.find(m => m.type === 'card')?.cardLastFour,
+        cardExpiry: paymentMethods.find(m => m.type === 'card')?.cardExpiry,
+      },
+      {
+        id: 'upi-1',
+        type: 'upi' as const,
+        label: 'UPI',
+        isSetUp: hasUpi,
+        bankName: paymentMethods.find(m => m.type === 'upi')?.bankName,
+        accountMasked: paymentMethods.find(m => m.type === 'upi')?.accountMasked,
+        upiId: paymentMethods.find(m => m.type === 'upi')?.upiId,
+      },
+      {
+        id: 'netbanking-1',
+        type: 'netbanking' as const,
+        label: 'Net Banking',
+        isSetUp: hasNetbanking,
+      },
+    ];
+  }, [paymentMethods]);
+
+  const [selectedSheetMethod, setSelectedSheetMethod] = useState<string>('card-1');
 
   // User's first name for greeting
   const userName = user?.first_name ?? 'there';
@@ -252,7 +290,8 @@ export default function HomeScreen() {
       hasUpcomingPayment &&
       (dashboardState === 'all_verified' ||
         dashboardState === 'payment_due' ||
-        dashboardState === 'payment_overdue')
+        dashboardState === 'payment_overdue' ||
+        dashboardState === 'pending_verification')
     );
   }, [dashboardState, upcomingPayment, rentAmount]);
 
@@ -271,12 +310,6 @@ export default function HomeScreen() {
 
     // Payment methods exist but landlord not yet approved
     if (!verificationStatus?.landlord_approved) {
-      // TODO: When API supports invitation_status field, map to:
-      // 'invitation_resent_recent' — invitation was recently resent (< 24h)
-      // 'invitation_resent_old' — invitation was resent long ago (> 7 days)
-      // 'invitation_failed' — invitation delivery failed
-      // 'invitation_declined' — landlord explicitly declined
-      // For now, default to 'invitation_sent' until backend provides granular status
       return 'invitation_sent';
     }
 
@@ -309,12 +342,17 @@ export default function HomeScreen() {
   }, [refresh]);
 
   const handleAddPayment = useCallback(() => {
-    if (!isSetupComplete) {
-      setShowCashbackModal(true);
-    } else {
-      router.push('/(payment)/select-method' as never);
-    }
-  }, [router, isSetupComplete]);
+    setShowPaymentSheet(true);
+  }, []);
+
+  const handleSheetSelectMethod = useCallback((method: any) => {
+    setSelectedSheetMethod(method.id);
+  }, []);
+
+  const handleSheetAddNewMethod = useCallback(() => {
+    setShowPaymentSheet(false);
+    router.push('/(payment)/select-method' as never);
+  }, [router]);
 
   const handleCashbackSetup = useCallback(() => {
     setShowCashbackModal(false);
@@ -343,7 +381,6 @@ export default function HomeScreen() {
 
   const handleSendReminder = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement send reminder to landlord
     console.log('Send reminder to landlord');
   }, []);
 
@@ -354,7 +391,6 @@ export default function HomeScreen() {
 
   const handlePaymentMethodPress = useCallback((method: PaymentMethod) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Select this payment method for the transaction
     router.push({
       pathname: '/(payment)/initiate' as never,
       params: { methodType: method.type, methodAccount: method.accountMasked },
@@ -496,11 +532,22 @@ export default function HomeScreen() {
           <BottomFooter
             dueInDays={daysUntilDue}
             amount={rentAmount}
-            buttonLabel="Review & pay"
+            buttonLabel={dashboardState === 'pending_verification' ? "Review" : "Review & pay"}
+            disabled={dashboardState === 'pending_verification' && !isSetupComplete}
             onPress={handlePayNow}
           />
         </View>
       )}
+
+      {/* Payment Method Selection Sheet Overlay */}
+      <PaymentMethodSelectionSheet
+        visible={showPaymentSheet}
+        methods={sheetPaymentMethods}
+        selectedMethodId={selectedSheetMethod}
+        onClose={() => setShowPaymentSheet(false)}
+        onSelectMethod={handleSheetSelectMethod}
+        onAddNewMethod={handleSheetAddNewMethod}
+      />
 
       {/* Cashback Setup Modal */}
       <CashbackSetupModal
@@ -680,6 +727,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
                   accruedAmount={cashbackBalance}
                   allTimeTotal={allTimeCashback}
                   cashbackRate={cashbackRate}
+                  showPlaceholder={true}
                 />
               )
             )}
@@ -751,7 +799,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-    backgroundColor: '#131313', // Figma: #131313 (colors.black[700])
+    backgroundColor: colors.black[700], // Figma: #131313 (colors.black[700])
   },
   scrollContent: {
     flexGrow: 1,
@@ -777,7 +825,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
-    backgroundColor: '#131313', // Figma: #131313 (colors.black[700])
+    backgroundColor: colors.black[700], // Figma: #131313 (colors.black[700])
   },
   loadingText: {
     marginTop: 12,
@@ -789,7 +837,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 32, // Figma: paddingHorizontal 32 (spacing.xl)
     gap: 16,
-    backgroundColor: '#131313', // Figma: #131313 (colors.black[700])
+    backgroundColor: colors.black[700], // Figma: #131313 (colors.black[700])
   },
   errorTitle: {
     marginTop: 24,
@@ -860,7 +908,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
     marginHorizontal: 32, // Figma: 32px horizontal margins (spacing.xl)
     padding: 24, // Figma: padding 24 (spacing.lg)
-    backgroundColor: '#1A1A1A', // Figma: #1A1A1A (colors.black[600])
+    backgroundColor: colors.black[600], // Figma: #1A1A1A (colors.black[600])
     borderRadius: 12, // Figma: borderRadius 12
     alignItems: 'center',
     gap: 8,

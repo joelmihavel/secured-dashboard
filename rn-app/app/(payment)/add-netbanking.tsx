@@ -47,19 +47,20 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
 import { useAddPaymentMethod } from '@/src/hooks';
+import { colors } from '@/src/theme';
 
 // Figma-exact color constants from blueprint 41-9224
 const FIGMA_COLORS = {
-  background: '#131313',
-  titleGray: '#A9A9A9',
-  titleAccent: '#FF9A6D',
-  labelText: '#A9A9A9',
-  editLinkText: '#878787',
-  inputPlaceholder: '#444444',
-  inputValue: '#DDDDDD',
-  footerText: '#A9A9A9',
-  errorText: '#FF8080',
-  white: '#FFFFFF',
+  background: colors.black[700],
+  titleGray: colors.neutral[500],
+  titleAccent: colors.brand[500],
+  labelText: colors.neutral[500],
+  editLinkText: colors.neutral[600],
+  inputPlaceholder: colors.neutral[800],
+  inputValue: colors.neutral[200],
+  footerText: colors.neutral[500],
+  errorText: colors.error.default,
+  white: colors.white,
 } as const;
 
 // Back Arrow Icon

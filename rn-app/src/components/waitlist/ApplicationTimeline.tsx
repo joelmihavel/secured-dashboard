@@ -16,7 +16,11 @@
 
 import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
+import { Dimensions } from 'react-native';
 import { colors } from '@/src/theme/colors';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ratioX = SCREEN_WIDTH / 393;
+const sv = (val: number) => val * ratioX;
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -29,7 +33,7 @@ const FIGMA = {
     width: 313,
     borderRadius: 12,
     paddingTop: 24,
-    paddingBottom: 24,
+    paddingBottom: sv(24),
     paddingLeft: 16,
     paddingRight: 16,
     gap: 24,
@@ -37,20 +41,20 @@ const FIGMA = {
 
   // Timeline row (node 41:11221)
   row: {
-    width: 281,
-    height: 44,
-    gap: 8,
+    width: sv(281),
+    height: sv(44),
+    gap: sv(8),
   },
 
   // Indicator container (node 41:11222)
   indicatorContainer: {
-    width: 20,
-    height: 20,
+    width: sv(20),
+    height: sv(20),
   },
 
   // Indicator dot (node 41:11223)
   indicator: {
-    size: 12,
+    size: sv(12),
   },
 
   // Connector line (node 41:11224)
@@ -61,8 +65,8 @@ const FIGMA = {
 
   // Text container (node 41:11225)
   textContainer: {
-    width: 253,
-    gap: 4,
+    width: sv(253),
+    gap: sv(4),
   },
 
   colors: {
@@ -82,13 +86,13 @@ const FIGMA = {
 
   typography: {
     label: {
-      fontSize: 12,
-      lineHeight: 20,
+      fontSize: sv(12),
+      lineHeight: sv(20),
       fontFamily: 'PlusJakartaSans-Regular',
     },
     value: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: sv(14),
+      lineHeight: sv(20),
       fontFamily: 'PlusJakartaSans-Regular',
     },
   },

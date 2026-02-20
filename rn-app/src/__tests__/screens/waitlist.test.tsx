@@ -162,7 +162,7 @@ jest.mock('lottie-react-native', () => {
 });
 
 // --- Mock useWaitlist hook ---
-let mockWaitlistReturn = { ...WAITLIST_HOOK_PENDING };
+let mockWaitlistReturn: any = { ...WAITLIST_HOOK_PENDING };
 
 jest.mock('@/src/hooks', () => ({
   useWaitlist: () => mockWaitlistReturn,

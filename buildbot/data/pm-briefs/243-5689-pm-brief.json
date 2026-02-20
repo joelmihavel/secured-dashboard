@@ -1,0 +1,182 @@
+{
+  "screenId": "243-5689",
+  "screenName": "Home --Empty State --Transaction page without cashback",
+  "route": "/(main)/index",
+  "generatedAt": "2026-02-19T23:53:19.850Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 2095586453",
+      "nodeId": "243:5691",
+      "childCount": 2
+    },
+    {
+      "name": "Frame 2095586452",
+      "nodeId": "243:5694",
+      "childCount": 3
+    },
+    {
+      "name": "Frame 1686557297",
+      "nodeId": "243:5844",
+      "childCount": 2
+    },
+    {
+      "name": "Frame 1686557294",
+      "nodeId": "243:5856",
+      "childCount": 2
+    },
+    {
+      "name": "Frame 2095586349",
+      "nodeId": "243:5863",
+      "childCount": 1
+    }
+  ],
+  "states": [
+    {
+      "state": "upi-no-cashbacks",
+      "figmaId": "243-6296",
+      "name": "Home --Empty State --with upi / no cashbacks"
+    },
+    {
+      "state": "setup-payment",
+      "figmaId": "243-6490",
+      "name": "Home --Empty State --setup payment"
+    },
+    {
+      "state": "setup-upi",
+      "figmaId": "243-6731",
+      "name": "Home --Empty State --setup payment / upi"
+    },
+    {
+      "state": "no-cashback",
+      "figmaId": "243-5689",
+      "name": "Home --Empty State --Transaction page without cashback"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "243:5833",
+      "name": "button",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "243:5846",
+      "name": "toggle",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "243:5847",
+      "name": "toggle",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "243:5859",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "243:5692",
+      "name": "Your rent is due in 10 days",
+      "content": "Your rent is due in 10 days"
+    },
+    {
+      "nodeId": "243:5693",
+      "name": "Paying with:",
+      "content": "Paying with:"
+    },
+    {
+      "nodeId": "243:5788",
+      "name": "SELECTED",
+      "content": "SELECTED"
+    },
+    {
+      "nodeId": "243:5790",
+      "name": "•••• 2341",
+      "content": "•••• 2341"
+    },
+    {
+      "nodeId": "243:5792",
+      "name": "ICICI a/c - xxx23",
+      "content": "ICICI a/c -  xxx23"
+    },
+    {
+      "nodeId": "243:5793",
+      "name": "rishabh@•••",
+      "content": "rishabh@•••"
+    },
+    {
+      "nodeId": "243:5802",
+      "name": "UPI",
+      "content": "UPI"
+    },
+    {
+      "nodeId": "243:5831",
+      "name": "Setup your payment method to start",
+      "content": "Setup your payment method to start"
+    },
+    {
+      "nodeId": "243:5832",
+      "name": "Add UPI, card, or bank to start earning rewards",
+      "content": "Add UPI, card, or bank to start earning rewards"
+    },
+    {
+      "nodeId": "I243:5833;100:1565",
+      "name": "Text",
+      "content": "+ Add Payment "
+    },
+    {
+      "nodeId": "243:5836",
+      "name": "NEW PAYMENT",
+      "content": "NEW PAYMENT"
+    },
+    {
+      "nodeId": "I243:5846;85:166",
+      "name": "Home",
+      "content": "Recent Payments"
+    },
+    {
+      "nodeId": "I243:5847;85:168",
+      "name": "Home",
+      "content": "Cashbacks"
+    },
+    {
+      "nodeId": "243:5852",
+      "name": "Lorem Ipsum Dolor Et",
+      "content": "Lorem Ipsum Dolor Et"
+    },
+    {
+      "nodeId": "243:5853",
+      "name": "Lorem Ipsum Dolor Et Lorem Ipsum Dolor Et Lorem Ipsum Dolor Et Lorem Ipsum Dolor Et",
+      "content": "Lorem Ipsum Dolor Et Lorem Ipsum Dolor Et Lorem Ipsum Dolor Et Lorem Ipsum Dolor Et"
+    },
+    {
+      "nodeId": "243:5857",
+      "name": "Due in 28 Days",
+      "content": "Due in 28 Days"
+    },
+    {
+      "nodeId": "243:5858",
+      "name": "₹ 32,500",
+      "content": "₹  32,500"
+    },
+    {
+      "nodeId": "I243:5859;100:1565",
+      "name": "Text",
+      "content": "Review"
+    },
+    {
+      "nodeId": "I243:5862;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "243:5868",
+      "name": "Hi, Rishabh",
+      "content": "Hi, Rishabh"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

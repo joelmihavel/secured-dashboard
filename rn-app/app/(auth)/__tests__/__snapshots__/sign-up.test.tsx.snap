@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
+exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
 <View
   style={
     {
@@ -88,17 +88,17 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                         "justifyContent": "center",
                       },
                       {
-                        "height": 38,
-                        "width": 31.706249999999997,
+                        "height": 38.4,
+                        "width": 32.04,
                       },
                     ]
                   }
                 >
                   <View
                     fill="none"
-                    height={38}
+                    height={38.4}
                     viewBox="0 0 34 40"
-                    width={31.706249999999997}
+                    width={32.04}
                   >
                     <View
                       d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
@@ -113,7 +113,6 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                         "color": "#FFFFFF",
                         "fontFamily": "PlusJakartaSans-Regular",
                         "fontSize": 16,
-                        "fontWeight": "400",
                         "letterSpacing": 0,
                         "lineHeight": 24,
                         "textAlign": "left",
@@ -135,21 +134,9 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                   <Text
                     style={
                       [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
-                          "fontWeight": "400",
-                          "letterSpacing": 0,
-                          "lineHeight": 24,
-                          "textAlign": "left",
-                        },
+                        undefined,
                         {
                           "color": "#FF9A6D",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 48,
-                          "letterSpacing": -2,
-                          "lineHeight": 64,
                         },
                       ]
                     }
@@ -188,7 +175,6 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                               "color": "#FFFFFF",
                               "fontFamily": "PlusJakartaSans-Regular",
                               "fontSize": 16,
-                              "fontWeight": "400",
                               "letterSpacing": 0,
                               "lineHeight": 24,
                               "textAlign": "left",
@@ -204,30 +190,6 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                       >
                         Phone
                       </Text>
-                      <Text
-                        style={
-                          [
-                            {
-                              "color": "#FFFFFF",
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
-                              "fontWeight": "400",
-                              "letterSpacing": 0,
-                              "lineHeight": 24,
-                              "textAlign": "left",
-                            },
-                            {
-                              "color": "#878787",
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 14,
-                              "lineHeight": 20,
-                              "textAlign": "right",
-                            },
-                          ]
-                        }
-                      >
-                        edit
-                      </Text>
                     </View>
                     <View
                       style={
@@ -235,6 +197,7 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                           {
                             "alignItems": "center",
                             "borderColor": "transparent",
+                            "borderCurve": "continuous",
                             "borderRadius": 12,
                             "borderWidth": 1,
                             "flexDirection": "row",
@@ -351,7 +314,6 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                               "color": "#FFFFFF",
                               "fontFamily": "PlusJakartaSans-Regular",
                               "fontSize": 16,
-                              "fontWeight": "400",
                               "letterSpacing": 0,
                               "lineHeight": 24,
                               "textAlign": "left",
@@ -363,7 +325,7 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                                 "lineHeight": 20,
                               },
                               {
-                                "color": "#a9a9a9",
+                                "color": "#A9A9A9",
                               },
                             ],
                           ]
@@ -371,40 +333,13 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                       >
                         Name
                       </Text>
-                      <Text
-                        style={
-                          [
-                            {
-                              "color": "#FFFFFF",
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
-                              "fontWeight": "400",
-                              "letterSpacing": 0,
-                              "lineHeight": 24,
-                              "textAlign": "left",
-                            },
-                            [
-                              {
-                                "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 14,
-                                "lineHeight": 20,
-                                "textAlign": "right",
-                              },
-                              {
-                                "color": "#878787",
-                              },
-                            ],
-                          ]
-                        }
-                      >
-                        edit
-                      </Text>
                     </View>
                     <View
                       style={
                         [
                           {
                             "borderColor": "transparent",
+                            "borderCurve": "continuous",
                             "borderRadius": 12,
                             "borderWidth": 1,
                           },
@@ -428,7 +363,7 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                         onChangeText={[Function]}
                         onFocus={[Function]}
                         placeholder="e.g. John Appleseed"
-                        placeholderTextColor="#222222"
+                        placeholderTextColor="#444444"
                         style={
                           [
                             {
@@ -439,7 +374,7 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                               "paddingVertical": 16,
                             },
                             {
-                              "color": "#222222",
+                              "color": "#444444",
                             },
                             false,
                             false,
@@ -553,12 +488,11 @@ exports[`SignUpScreen renders correctly and matches snapshot 1`] = `
                       onStartShouldSetResponder={[Function]}
                       style={
                         {
-                          "height": 31,
-                          "width": 51,
+                          "alignSelf": "flex-start",
                         }
                       }
                       testID="consent-toggle-switch"
-                      value={true}
+                      value={false}
                     />
                   </View>
                 </View>

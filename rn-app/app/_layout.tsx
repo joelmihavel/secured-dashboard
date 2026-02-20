@@ -15,7 +15,7 @@ import '../global.css';
 import { colors } from '@/src/theme';
 import { QueryProvider } from '@/src/providers';
 import { ErrorBoundary } from '@/src/components/ui';
-import { initSentry, Sentry } from '@/src/config/sentry';
+import { initSentry, wrapWithSentry } from '@/src/config/sentry';
 import { setupNotificationHandlers } from '@/src/services/notifications';
 import { setupAutoUpdateCheck } from '@/src/config/updates';
 import { OfflineBanner } from '@/src/components/ui';
@@ -105,4 +105,5 @@ function RootLayoutInner() {
 }
 
 // Wrap with Sentry for performance monitoring and error tracking
-export default Sentry.wrap(RootLayoutInner);
+// Uses safe wrapper that returns component as-is when Sentry native module is unavailable (Expo Go)
+export default wrapWithSentry(RootLayoutInner);

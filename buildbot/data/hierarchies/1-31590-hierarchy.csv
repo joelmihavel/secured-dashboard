@@ -5,105 +5,113 @@ element_num,depth,bounds,attributes,parent_num
 3,3,"[0,0][402,874]","enabled=true",2
 4,4,"[0,0][402,874]","enabled=true",3
 5,5,"[0,0][402,874]","enabled=true",4
-6,6,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",5
-7,7,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",6
-8,8,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",7
-9,9,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",8
-10,10,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",9
-11,11,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",10
-12,12,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",11
-13,13,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",12
+6,6,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",5
+7,7,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",6
+8,8,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",7
+9,9,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",8
+10,10,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",9
+11,11,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",10
+12,12,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",11
+13,13,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",12
 14,14,"[0,0][402,874]","enabled=true",13
 15,15,"[0,0][402,874]","enabled=true",14
 16,16,"[0,0][402,874]","enabled=true",15
 17,17,"[0,0][402,874]","enabled=true",16
-18,18,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",17
-19,19,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",18
-20,20,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",19
+18,18,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",17
+19,19,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",18
+20,20,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",19
 21,21,"[0,0][402,874]","enabled=true",20
 22,22,"[0,0][402,874]","enabled=true",21
 23,23,"[0,0][402,874]","enabled=true",22
 24,24,"[0,0][402,874]","enabled=true",23
-25,25,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",24
-26,26,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",25
-27,27,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",26
-28,28,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",27
-29,29,"[0,0][402,874]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits. Horizontal scroll bar, 1 page; enabled=true",28
-30,30,"[0,0][402,874]","enabled=true",29
-31,31,"[0,0][402,1054]","accessibilityText= Add your Landlord's 
-Bank Details Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD Proceed You may get a verification message from Cashfree to verify your profile and unlock benefits.; enabled=true",30
-32,32,"[48,78][354,102]","accessibilityText=; enabled=true",31
-33,32,"[48,142][354,334]","accessibilityText=Add your Landlord's 
-Bank Details; enabled=true",31
-34,33,"[48,142][354,334]","accessibilityText=Add your Landlord's 
-Bank Details; enabled=true",33
-35,32,"[48,382][354,394]","enabled=true",31
-36,33,"[48,382][354,394]","enabled=true",35
-37,34,"[48,382][179,394]","enabled=true",36
-38,32,"[48,442][354,858]","accessibilityText=Account Holder Name edit Account Holder Name Account holder number edit Account holder number IFSC Code edit IFSC Code PAN CARD edit PAN CARD; enabled=true",31
-39,33,"[48,442][354,534]","accessibilityText=Account Holder Name edit Account Holder Name; enabled=true",38
-40,34,"[48,442][354,462]","accessibilityText=Account Holder Name edit; enabled=true",39
-41,35,"[48,442][175,462]","accessibilityText=Account Holder Name; enabled=true",40
-42,35,"[327,442][354,462]","accessibilityText=edit; enabled=true",40
-43,34,"[48,468][354,534]","accessibilityText=Account Holder Name; enabled=true",39
-44,35,"[49,469][353,533]","accessibilityText=Account Holder Name; enabled=true",43
-45,36,"[49,469][353,533]","accessibilityText=Account Holder Name; hintText=e.g. John Smith; enabled=true",44
-46,33,"[48,550][354,642]","accessibilityText=Account holder number edit Account holder number; enabled=true",38
-47,34,"[48,550][354,570]","accessibilityText=Account holder number edit; enabled=true",46
-48,35,"[48,550][183,570]","accessibilityText=Account holder number; enabled=true",47
-49,35,"[327,550][354,570]","accessibilityText=edit; enabled=true",47
-50,34,"[48,576][354,642]","accessibilityText=Account holder number; enabled=true",46
-51,35,"[49,577][353,641]","accessibilityText=Account holder number; enabled=true",50
-52,36,"[49,577][353,641]","accessibilityText=Account holder number; hintText=e.g. 1234567890; enabled=true",51
-53,33,"[48,658][354,750]","accessibilityText=IFSC Code edit IFSC Code; enabled=true",38
-54,34,"[48,658][354,678]","accessibilityText=IFSC Code edit; enabled=true",53
-55,35,"[48,658][110,678]","accessibilityText=IFSC Code; enabled=true",54
-56,35,"[327,658][354,678]","accessibilityText=edit; enabled=true",54
-57,34,"[48,684][354,750]","accessibilityText=IFSC Code; enabled=true",53
-58,35,"[49,685][353,749]","accessibilityText=IFSC Code; enabled=true",57
-59,36,"[49,685][353,749]","accessibilityText=IFSC Code; hintText=e.g. SBIN0002125; enabled=true",58
-60,33,"[48,766][354,858]","accessibilityText=PAN CARD edit PAN CARD; enabled=true",38
-61,34,"[48,766][354,786]","accessibilityText=PAN CARD edit; enabled=true",60
-62,35,"[48,766][109,786]","accessibilityText=PAN CARD; enabled=true",61
-63,35,"[327,766][354,786]","accessibilityText=edit; enabled=true",61
-64,34,"[48,792][354,858]","accessibilityText=PAN CARD; enabled=true",60
-65,35,"[49,793][353,857]","accessibilityText=PAN CARD; enabled=true",64
-66,36,"[49,793][353,857]","accessibilityText=PAN CARD; hintText=e.g. CSNPM9874A; enabled=true",65
-67,31,"[62,807][340,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",30
-68,32,"[3,834][396,837]","enabled=true",67
-69,31,"[62,807][340,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",30
-70,32,"[3,834][396,837]","enabled=true",69
-71,23,"[0,0][402,874]","enabled=true",22
-72,24,"[0,0][402,874]","enabled=true",71
-73,16,"[0,0][402,874]","enabled=true",15
-74,17,"[0,0][402,874]","enabled=true",73
-75,8,"[0,0][402,874]","enabled=true",7
-76,9,"[0,0][402,874]","enabled=true",75
-77,2,"[0,0][402,874]","enabled=true",1
-78,3,"[0,0][402,874]","enabled=true",77
-79,4,"[0,0][402,874]","enabled=true",78
-80,1,"[0,0][0,0]","",0
-81,2,"[0,0][402,54]","enabled=true",80
-82,2,"[0,0][402,54]","enabled=true",80
-83,3,"[0,0][402,54]","enabled=true",82
-84,4,"[0,0][402,54]","enabled=true",83
-85,5,"[53,22][95,42]","accessibilityText=1:47 AM; enabled=true",84
-86,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",84
-87,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",84
-88,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",84
+25,25,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",24
+26,26,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",25
+27,27,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; resource-id=home-screen; enabled=true",26
+28,28,"[0,0][402,874]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",27
+29,29,"[0,0][402,840]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page Due in 3 Days ₹ 25,000 Review & pay; enabled=true",28
+30,30,"[0,0][402,840]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000 Horizontal scroll bar, 1 page; enabled=true",29
+31,31,"[0,0][402,840]","enabled=true",30
+32,32,"[0,0][402,1269]","accessibilityText=Flent logo Hi, Rishabh R Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000; enabled=true",31
+33,33,"[0,62][402,142]","accessibilityText=Flent logo Hi, Rishabh R; enabled=true",32
+34,34,"[32,86][143,118]","accessibilityText=Flent logo Hi, Rishabh; enabled=true",33
+35,35,"[32,86][58,118]","accessibilityText=Flent logo; enabled=true",34
+36,36,"[32,86][58,118]","enabled=true",35
+37,37,"[32,84][57,117]","enabled=true",36
+38,38,"[32,84][57,117]","enabled=true",37
+39,35,"[70,91][143,112]","accessibilityText=Hi, Rishabh; enabled=true",34
+40,34,"[338,86][370,118]","accessibilityText=R; resource-id=home-avatar; enabled=true",33
+41,33,"[0,166][402,1103]","accessibilityText=Your rent is due
+in 3 days Paying with: UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000; enabled=true",32
+42,34,"[0,166][402,276]","accessibilityText=Your rent is due
+in 3 days Paying with:; enabled=true",41
+43,35,"[64,166][329,246]","accessibilityText=Your rent is due
+in 3 days; enabled=true",42
+44,35,"[64,256][329,276]","accessibilityText=Paying with:; enabled=true",42
+45,34,"[0,300][402,740]","accessibilityText=UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages; enabled=true",41
+46,35,"[0,300][402,708]","accessibilityText=UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method Vertical scroll bar, 3 pages; enabled=true",45
+47,36,"[0,300][402,708]","enabled=true",46
+48,37,"[0,300][938,708]","accessibilityText=UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo Setup your payment method; enabled=true",47
+49,38,"[64,300][334,708]","accessibilityText=UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo; enabled=true",48
+50,39,"[64,300][334,700]","accessibilityText=UPI P SELECTED ICICI a/c - rishabh@icici rishabh@••• UPI  Flent logo; enabled=true",49
+51,38,"[350,300][620,708]","accessibilityText=visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo; enabled=true",48
+52,39,"[350,300][620,700]","accessibilityText=visa •••• 2341 EXPIRY  CVV ••• CREDIT CARD  Flent logo; enabled=true",51
+53,37,"[369,300][399,708]","accessibilityText=Vertical scroll bar, 3 pages; value=0%; text=0%; enabled=true",47
+54,38,"[396,303][399,705]","enabled=true",53
+55,37,"[369,300][399,708]","accessibilityText=Vertical scroll bar, 3 pages; value=0%; text=0%; enabled=true",47
+56,38,"[396,303][399,705]","enabled=true",55
+57,35,"[0,732][402,740]","enabled=true",45
+58,36,"[181,732][189,740]","enabled=true",57
+59,36,"[197,732][205,740]","enabled=true",57
+60,36,"[213,732][221,740]","enabled=true",57
+61,34,"[0,764][402,1103]","accessibilityText=Recent Payments Cashbacks J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000; enabled=true",41
+62,35,"[69,772][333,824]","accessibilityText=Recent Payments Cashbacks; enabled=true",61
+63,36,"[74,777][201,819]","accessibilityText=Recent Payments; enabled=true; selected=true",62
+64,36,"[201,777][328,819]","accessibilityText=Cashbacks; enabled=true",62
+65,35,"[0,872][402,1103]","accessibilityText=J January rent Paid · 5 Jan, 4:00pm ₹ 25,000 D December rent Paid · 3 Dec, 7:45pm ₹ 25,000 N November rent Paid · 2 Nov, 3:15pm ₹ 25,000; enabled=true",61
+66,36,"[32,941][370,941]","enabled=true",65
+67,36,"[32,1034][370,1034]","enabled=true",65
+68,32,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",31
+69,33,"[65,834][337,837]","enabled=true",68
+70,32,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",31
+71,33,"[65,834][337,837]","enabled=true",70
+72,30,"[0,718][402,840]","accessibilityText=Due in 3 Days ₹ 25,000 Review & pay; enabled=true",29
+73,31,"[0,718][402,840]","accessibilityText=Due in 3 Days ₹ 25,000 Review & pay; enabled=true",72
+74,32,"[32,743][176,791]","accessibilityText=Due in 3 Days ₹ 25,000; enabled=true",73
+75,33,"[32,743][176,763]","accessibilityText=Due in 3 Days; enabled=true",74
+76,33,"[32,767][176,791]","accessibilityText=₹ 25,000; enabled=true",74
+77,32,"[201,735][369,799]","accessibilityText=Review & pay; enabled=true",73
+78,33,"[273,735][297,737]","enabled=true",77
+79,33,"[201,745][369,799]","accessibilityText=Review & pay; enabled=true",77
+80,23,"[0,0][402,874]","enabled=true",22
+81,24,"[0,0][402,874]","enabled=true",80
+82,16,"[0,0][402,874]","enabled=true",15
+83,17,"[0,0][402,874]","enabled=true",82
+84,8,"[0,0][402,874]","enabled=true",7
+85,9,"[0,0][402,874]","enabled=true",84
+86,1,"[0,0][0,0]","",0
+87,2,"[0,0][402,54]","enabled=true",86
+88,2,"[0,0][402,54]","enabled=true",86
+89,3,"[0,0][402,54]","enabled=true",88
+90,4,"[0,0][402,54]","enabled=true",89
+91,5,"[55,22][93,42]","accessibilityText=3:15 AM; enabled=true",90
+92,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",90
+93,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",90
+94,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",90

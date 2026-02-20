@@ -1,0 +1,528 @@
+{
+  "screenId": "1-29025",
+  "screenName": "Splash / get-started --carousel slide 2",
+  "route": "/(auth)/carousel",
+  "generatedAt": "2026-02-19T22:43:38.666Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T22:41:01.930Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "237:2731",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": -463,
+              "absoluteY": -747,
+              "relativeLeft": -463,
+              "relativeTop": -747,
+              "parentId": "1:29025"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"Splash / get-started --carousel 5\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:197",
+            "nodeName": "Border",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -333.2,
+              "relativeTop": -22.6,
+              "parentId": "I1:29029;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -333.2, top: -22.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Border\" is positioned at (-333.2, -22.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:198",
+            "nodeName": "Cap",
+            "figmaValue": {
+              "absoluteX": 25.9,
+              "absoluteY": 4.67,
+              "relativeLeft": -307.3,
+              "relativeTop": -17.93,
+              "parentId": "I1:29029;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -307.3, top: -17.9",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cap\" is positioned at (-307.3, -17.9) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:199",
+            "nodeName": "Capacity",
+            "figmaValue": {
+              "absoluteX": 2,
+              "absoluteY": 2,
+              "relativeLeft": -331.2,
+              "relativeTop": -20.6,
+              "parentId": "I1:29029;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -331.2, top: -20.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Capacity\" is positioned at (-331.2, -20.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:201",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -308.7,
+              "relativeTop": -23.2,
+              "parentId": "I1:29029;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -308.7, top: -23.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-308.7, -23.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:202",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 3.03,
+              "absoluteY": 4.03,
+              "relativeLeft": -305.67,
+              "relativeTop": -19.169999999999998,
+              "parentId": "I1:29029;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -305.7, top: -19.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-305.7, -19.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:203",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 6.05,
+              "absoluteY": 8.07,
+              "relativeLeft": -302.65,
+              "relativeTop": -15.129999999999999,
+              "parentId": "I1:29029;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -302.6, top: -15.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-302.6, -15.1) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:205",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 7.4,
+              "relativeLeft": -282,
+              "relativeTop": -15.700000000000001,
+              "parentId": "I1:29029;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -282.0, top: -15.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-282.0, -15.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:206",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 5.3,
+              "absoluteY": 5,
+              "relativeLeft": -276.7,
+              "relativeTop": -18.1,
+              "parentId": "I1:29029;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -276.7, top: -18.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-276.7, -18.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:207",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 10.7,
+              "absoluteY": 2.4,
+              "relativeLeft": -271.3,
+              "relativeTop": -20.700000000000003,
+              "parentId": "I1:29029;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -271.3, top: -20.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-271.3, -20.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:29029;125:208",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 16,
+              "absoluteY": 0,
+              "relativeLeft": -266,
+              "relativeTop": -23.1,
+              "parentId": "I1:29029;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -266.0, top: -23.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-266.0, -23.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "160:2688",
+            "nodeName": "Logo Container",
+            "figmaValue": {
+              "absoluteX": 48,
+              "absoluteY": 0,
+              "relativeLeft": 48,
+              "relativeTop": -80,
+              "parentId": "160:2684"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -80.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Logo Container\" is positioned at (48.0, -80.0) relative to \"Container\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -80.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "160:2691",
+            "nodeName": "More than  just cashback",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -48,
+              "relativeTop": -72,
+              "parentId": "160:2690"
+            },
+            "expectedRNValue": "position: 'absolute', left: -48.0, top: -72.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"More than  just cashback\" is positioned at (-48.0, -72.0) relative to \"Text Container\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -48.0,\ntop: -72.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "160:2694",
+            "nodeName": "Ellipse 21885",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -48,
+              "relativeTop": -356,
+              "parentId": "160:2693"
+            },
+            "expectedRNValue": "position: 'absolute', left: -48.0, top: -356.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Ellipse 21885\" is positioned at (-48.0, -356.0) relative to \"Frame 2095586316\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -48.0,\ntop: -356.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "160:2695",
+            "nodeName": "Ellipse 21886",
+            "figmaValue": {
+              "absoluteX": 12,
+              "absoluteY": 0,
+              "relativeLeft": -36,
+              "relativeTop": -356,
+              "parentId": "160:2693"
+            },
+            "expectedRNValue": "position: 'absolute', left: -36.0, top: -356.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Ellipse 21886\" is positioned at (-36.0, -356.0) relative to \"Frame 2095586316\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -36.0,\ntop: -356.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "160:2696",
+            "nodeName": "Ellipse 21887",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 0,
+              "relativeLeft": -24,
+              "relativeTop": -356,
+              "parentId": "160:2693"
+            },
+            "expectedRNValue": "position: 'absolute', left: -24.0, top: -356.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Ellipse 21887\" is positioned at (-24.0, -356.0) relative to \"Frame 2095586316\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -24.0,\ntop: -356.0,"
+          }
+        ],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 16
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T22:41:01.937Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T22:42:40.801Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "N/A",
+            "property": "paddingHorizontal",
+            "figmaValue": "48",
+            "currentValue": "~24",
+            "severity": "critical",
+            "explanation": "The horizontal padding in the simulator is significantly smaller than the 48px specified in Figma. This causes the main title 'More than just cashback' to wrap incorrectly ('More than just' on line 1 in Simulator vs 'More than' on line 1 in Figma).",
+            "currentCode": "paddingHorizontal: 24, // Inferred",
+            "fixedCode": "paddingHorizontal: 48,"
+          },
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "N/A",
+            "property": "justifyContent",
+            "figmaValue": "flex-end",
+            "currentValue": "flex-start",
+            "severity": "critical",
+            "explanation": "The content in the simulator is aligned to the top of the screen. In Figma, the content stack (Logo, Text, Skip, Dots) is positioned in the lower half of the screen (starting ~y=483), requiring the main container to be bottom-aligned to reveal the background image.",
+            "currentCode": "justifyContent: 'flex-start', // Inferred",
+            "fixedCode": "justifyContent: 'flex-end',"
+          },
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "N/A",
+            "property": "letterSpacing",
+            "figmaValue": "-2",
+            "currentValue": "0",
+            "severity": "major",
+            "explanation": "The main title 'More than just cashback' lacks the tight letter spacing (-2px) defined in Figma. This makes the text wider and contributes to the incorrect wrapping seen in the simulator.",
+            "currentCode": "letterSpacing: 0, // Inferred",
+            "fixedCode": "letterSpacing: -2,"
+          },
+          {
+            "file": "app/auth.tsx",
+            "lineRange": "N/A",
+            "property": "gap",
+            "figmaValue": "48",
+            "currentValue": "~80+",
+            "severity": "moderate",
+            "explanation": "The vertical gap between the subtitle text and the 'Skip' link appears much larger in the simulator than the 48px specified in Figma, suggesting 'space-between' might be used instead of a fixed gap.",
+            "currentCode": "justifyContent: 'space-between', // Inferred",
+            "fixedCode": "gap: 48, justifyContent: 'flex-end'"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T22:43:38.666Z",
+      "feedback": [
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "layout",
+          "figmaValue": "padding: 48, justify: flex-end",
+          "currentValue": "padding: 24, justify: flex-start",
+          "severity": "critical",
+          "explanation": "Adjust main container layout to match Figma. The content should be bottom-aligned with 48px horizontal padding to prevent text wrapping issues.",
+          "currentCode": "paddingHorizontal: 24,\njustifyContent: 'flex-start',",
+          "fixedCode": "paddingHorizontal: 48, // spacing.xxxl\njustifyContent: 'flex-end',\ngap: 48, // spacing.xxxl"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "letterSpacing",
+          "figmaValue": "-2",
+          "currentValue": "0",
+          "severity": "major",
+          "explanation": "Apply tight letter spacing to the main title 'More than just cashback' to match design and assist with correct line wrapping.",
+          "currentCode": "letterSpacing: 0,",
+          "fixedCode": "letterSpacing: -2,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -463, -747",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Fix position of background element 'image 149'.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: 48, -80",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Fix position of 'Logo Container' relative to its parent.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: 48.0,\ntop: -80.0,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -48, -72",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Fix position of 'More than just cashback' text relative to Text Container.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: -48.0,\ntop: -72.0,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute offsets",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Fix positioning of carousel indicators (Ellipses) to match exact Figma coordinates.",
+          "currentCode": "// Carousel dots container",
+          "fixedCode": "// Ellipse 21885\nposition: 'absolute', left: -48.0, top: -356.0,\n\n// Ellipse 21886\nposition: 'absolute', left: -36.0, top: -356.0,\n\n// Ellipse 21887\nposition: 'absolute', left: -24.0, top: -356.0,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute offsets",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Fix positioning of Status Bar elements (Battery, Wifi, Cellular) if these are custom rendered components.",
+          "currentCode": "// Status bar elements",
+          "fixedCode": "// Battery Border\nposition: 'absolute', left: -333.2, top: -22.6,\n\n// Wifi Path\nposition: 'absolute', left: -308.7, top: -23.2,\n\n// Cellular Path\nposition: 'absolute', left: -282.0, top: -15.7,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "layout",
+      "figmaValue": "padding: 48, justify: flex-end",
+      "currentValue": "padding: 24, justify: flex-start",
+      "severity": "critical",
+      "explanation": "Adjust main container layout to match Figma. The content should be bottom-aligned with 48px horizontal padding to prevent text wrapping issues.",
+      "currentCode": "paddingHorizontal: 24,\njustifyContent: 'flex-start',",
+      "fixedCode": "paddingHorizontal: 48, // spacing.xxxl\njustifyContent: 'flex-end',\ngap: 48, // spacing.xxxl"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "letterSpacing",
+      "figmaValue": "-2",
+      "currentValue": "0",
+      "severity": "major",
+      "explanation": "Apply tight letter spacing to the main title 'More than just cashback' to match design and assist with correct line wrapping.",
+      "currentCode": "letterSpacing: 0,",
+      "fixedCode": "letterSpacing: -2,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -463, -747",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Fix position of background element 'image 149'.",
+      "currentCode": "position: 'relative',",
+      "fixedCode": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: 48, -80",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Fix position of 'Logo Container' relative to its parent.",
+      "currentCode": "position: 'relative',",
+      "fixedCode": "position: 'absolute',\nleft: 48.0,\ntop: -80.0,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -48, -72",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Fix position of 'More than just cashback' text relative to Text Container.",
+      "currentCode": "position: 'relative',",
+      "fixedCode": "position: 'absolute',\nleft: -48.0,\ntop: -72.0,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute offsets",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Fix positioning of carousel indicators (Ellipses) to match exact Figma coordinates.",
+      "currentCode": "// Carousel dots container",
+      "fixedCode": "// Ellipse 21885\nposition: 'absolute', left: -48.0, top: -356.0,\n\n// Ellipse 21886\nposition: 'absolute', left: -36.0, top: -356.0,\n\n// Ellipse 21887\nposition: 'absolute', left: -24.0, top: -356.0,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute offsets",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Fix positioning of Status Bar elements (Battery, Wifi, Cellular) if these are custom rendered components.",
+      "currentCode": "// Status bar elements",
+      "fixedCode": "// Battery Border\nposition: 'absolute', left: -333.2, top: -22.6,\n\n// Wifi Path\nposition: 'absolute', left: -308.7, top: -23.2,\n\n// Cellular Path\nposition: 'absolute', left: -282.0, top: -15.7,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 7,
+    "critical": 1,
+    "major": 6,
+    "minor": 0,
+    "filesAffected": [
+      "app/(auth)/index.tsx"
+    ]
+  }
+}

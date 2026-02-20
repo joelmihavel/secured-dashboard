@@ -1,0 +1,932 @@
+{
+  "screenId": "1-31175",
+  "screenName": "auth / sign up --enter OTP",
+  "route": "/(auth)/otp",
+  "generatedAt": "2026-02-19T21:31:30.901Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T21:29:04.375Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [
+          {
+            "type": "text-alignment",
+            "severity": "major",
+            "nodeId": "I1:31272;50:322",
+            "nodeName": "Text",
+            "figmaValue": "center",
+            "expectedRNValue": "textAlign: 'center'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Text \"-...\" has textAlignHorizontal: center in Figma but may not have corresponding textAlign in RN code",
+            "suggestedFix": "Add textAlign: 'center' to the style"
+          }
+        ],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31181",
+            "nodeName": "Frame 1686557300",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 899,
+              "relativeLeft": 0,
+              "relativeTop": 899,
+              "parentId": "1:31175"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: 899.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557300\" is positioned at (0.0, 899.0) relative to \"auth / sign up --enter OTP\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: 899.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:197",
+            "nodeName": "Border",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -333.2,
+              "relativeTop": -22.6,
+              "parentId": "I1:31178;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -333.2, top: -22.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Border\" is positioned at (-333.2, -22.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:198",
+            "nodeName": "Cap",
+            "figmaValue": {
+              "absoluteX": 25.9,
+              "absoluteY": 4.67,
+              "relativeLeft": -307.3,
+              "relativeTop": -17.93,
+              "parentId": "I1:31178;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -307.3, top: -17.9",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cap\" is positioned at (-307.3, -17.9) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:199",
+            "nodeName": "Capacity",
+            "figmaValue": {
+              "absoluteX": 2,
+              "absoluteY": 2,
+              "relativeLeft": -331.2,
+              "relativeTop": -20.6,
+              "parentId": "I1:31178;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -331.2, top: -20.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Capacity\" is positioned at (-331.2, -20.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:201",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -308.7,
+              "relativeTop": -23.2,
+              "parentId": "I1:31178;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -308.7, top: -23.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-308.7, -23.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:202",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 3.02,
+              "absoluteY": 4.03,
+              "relativeLeft": -305.68,
+              "relativeTop": -19.169999999999998,
+              "parentId": "I1:31178;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -305.7, top: -19.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-305.7, -19.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:203",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 6.05,
+              "absoluteY": 8.07,
+              "relativeLeft": -302.65,
+              "relativeTop": -15.129999999999999,
+              "parentId": "I1:31178;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -302.6, top: -15.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-302.6, -15.1) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:205",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 7.4,
+              "relativeLeft": -282,
+              "relativeTop": -15.700000000000001,
+              "parentId": "I1:31178;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -282.0, top: -15.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-282.0, -15.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:206",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 5.3,
+              "absoluteY": 5,
+              "relativeLeft": -276.7,
+              "relativeTop": -18.1,
+              "parentId": "I1:31178;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -276.7, top: -18.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-276.7, -18.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:207",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 10.7,
+              "absoluteY": 2.4,
+              "relativeLeft": -271.3,
+              "relativeTop": -20.700000000000003,
+              "parentId": "I1:31178;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -271.3, top: -20.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-271.3, -20.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31178;125:208",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 16,
+              "absoluteY": 0,
+              "relativeLeft": -266,
+              "relativeTop": -23.1,
+              "parentId": "I1:31178;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -266.0, top: -23.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-266.0, -23.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31182",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "absoluteX": 182.5,
+              "absoluteY": 15.19,
+              "relativeLeft": 182.5,
+              "relativeTop": -883.81,
+              "parentId": "1:31181"
+            },
+            "expectedRNValue": "position: 'absolute', left: 182.5, top: -883.8",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Rectangle 53\" is positioned at (182.5, -883.8) relative to \"Frame 1686557300\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 182.5,\ntop: -883.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31183",
+            "nodeName": "Frame 1686557230",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 43.19,
+              "relativeLeft": 0,
+              "relativeTop": -855.81,
+              "parentId": "1:31181"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -855.8",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557230\" is positioned at (0.0, -855.8) relative to \"Frame 1686557300\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -855.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31192",
+            "nodeName": "Frame 1686557311",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 16,
+              "relativeLeft": 0,
+              "relativeTop": -27.189999999999998,
+              "parentId": "1:31183"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -27.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557311\" is positioned at (0.0, -27.2) relative to \"Frame 1686557230\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -27.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31209",
+            "nodeName": "Frame 1686557311",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 1.5,
+              "relativeLeft": 0,
+              "relativeTop": -63.5,
+              "parentId": "1:31208"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -63.5",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557311\" is positioned at (0.0, -63.5) relative to \"Frame 1686557312\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -63.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31213",
+            "nodeName": "Frame 1686557310",
+            "figmaValue": {
+              "absoluteX": 56,
+              "absoluteY": 0,
+              "relativeLeft": 56,
+              "relativeTop": -65,
+              "parentId": "1:31208"
+            },
+            "expectedRNValue": "position: 'absolute', left: 56.0, top: -65.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557310\" is positioned at (56.0, -65.0) relative to \"Frame 1686557312\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 56.0,\ntop: -65.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31217",
+            "nodeName": "Frame 1686557074",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 0,
+              "relativeLeft": 24,
+              "relativeTop": -223.77,
+              "parentId": "1:31216"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -223.8",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557074\" is positioned at (24.0, -223.8) relative to \"Frame 1686557310\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -223.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31226",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 91,
+              "relativeLeft": 24,
+              "relativeTop": -132.77,
+              "parentId": "1:31216"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -132.8",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557209\" is positioned at (24.0, -132.8) relative to \"Frame 1686557310\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -132.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31228",
+            "nodeName": "All payments are 100% secure",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 142,
+              "relativeLeft": 24,
+              "relativeTop": -81.77000000000001,
+              "parentId": "1:31216"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -81.8",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"All payments are 100% secure\" is positioned at (24.0, -81.8) relative to \"Frame 1686557310\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -81.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31222",
+            "nodeName": "Rectangle 30",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -30,
+              "parentId": "1:31221"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -30.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Rectangle 30\" is positioned at (0.0, -30.0) relative to \"Frame 1686557065\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -30.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31223",
+            "nodeName": "Frame 1686557064",
+            "figmaValue": {
+              "absoluteX": 67,
+              "absoluteY": 0,
+              "relativeLeft": 67,
+              "relativeTop": -30,
+              "parentId": "1:31221"
+            },
+            "expectedRNValue": "position: 'absolute', left: 67.0, top: -30.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557064\" is positioned at (67.0, -30.0) relative to \"Frame 1686557065\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 67.0,\ntop: -30.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31231",
+            "nodeName": "Frame 1686557302",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 0,
+              "relativeLeft": 24,
+              "relativeTop": -448.53,
+              "parentId": "1:31230"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -448.5",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557302\" is positioned at (24.0, -448.5) relative to \"Frame 1686557276\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -448.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31234",
+            "nodeName": "Frame 1686557307",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 48,
+              "relativeLeft": 24,
+              "relativeTop": -400.53,
+              "parentId": "1:31230"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -400.5",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557307\" is positioned at (24.0, -400.5) relative to \"Frame 1686557276\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -400.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31235",
+            "nodeName": "Frame 1686557303",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -24,
+              "relativeTop": -48,
+              "parentId": "1:31234"
+            },
+            "expectedRNValue": "position: 'absolute', left: -24.0, top: -48.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557303\" is positioned at (-24.0, -48.0) relative to \"Frame 1686557307\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -24.0,\ntop: -48.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31238",
+            "nodeName": "Frame 1686557305",
+            "figmaValue": {
+              "absoluteX": 72,
+              "absoluteY": 0,
+              "relativeLeft": 48,
+              "relativeTop": -48,
+              "parentId": "1:31234"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -48.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557305\" is positioned at (48.0, -48.0) relative to \"Frame 1686557307\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -48.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31241",
+            "nodeName": "Frame 1686557306",
+            "figmaValue": {
+              "absoluteX": 144,
+              "absoluteY": 0,
+              "relativeLeft": 120,
+              "relativeTop": -48,
+              "parentId": "1:31234"
+            },
+            "expectedRNValue": "position: 'absolute', left: 120.0, top: -48.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557306\" is positioned at (120.0, -48.0) relative to \"Frame 1686557307\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 120.0,\ntop: -48.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31251",
+            "nodeName": "input",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -262.4,
+              "parentId": "1:31250"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -262.4",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"input\" is positioned at (0.0, -262.4) relative to \"Frame 2095586311\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -262.4,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31252",
+            "nodeName": "input",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 106,
+              "relativeLeft": 0,
+              "relativeTop": -156.39999999999998,
+              "parentId": "1:31250"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -156.4",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"input\" is positioned at (0.0, -156.4) relative to \"Frame 2095586311\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -156.4,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:31252;48:725",
+            "nodeName": "Dropdown text",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -16,
+              "parentId": "I1:31252;48:724"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -16.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Dropdown text\" is positioned at (0.0, -16.0) relative to \"Dropdown\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -16.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31254",
+            "nodeName": "button",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -506.4,
+              "parentId": "1:31253"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -506.4",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"button\" is positioned at (0.0, -506.4) relative to \"Frame 1686557317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -506.4,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31255",
+            "nodeName": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 82,
+              "relativeLeft": 0,
+              "relativeTop": -424.4,
+              "parentId": "1:31253"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -424.4",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"You may get a verification message from Cashfree to verify your profile and unlock benefits.\" is positioned at (0.0, -424.4) relative to \"Frame 1686557317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -424.4,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31258",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "absoluteX": 172.5,
+              "absoluteY": 0,
+              "relativeLeft": 172.5,
+              "relativeTop": -433,
+              "parentId": "1:31257"
+            },
+            "expectedRNValue": "position: 'absolute', left: 172.5, top: -433.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Rectangle 53\" is positioned at (172.5, -433.0) relative to \"Frame 2095586317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 172.5,\ntop: -433.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31259",
+            "nodeName": "Frame 1686557301",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 19,
+              "relativeLeft": 0,
+              "relativeTop": -414,
+              "parentId": "1:31257"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -414.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Frame 1686557301\" is positioned at (0.0, -414.0) relative to \"Frame 2095586317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -414.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31270",
+            "nodeName": "Let’s verify your number",
+            "figmaValue": {
+              "absoluteX": 48,
+              "absoluteY": 0,
+              "relativeLeft": 48,
+              "relativeTop": -16,
+              "parentId": "1:31269"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -16.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Let’s verify your number\" is positioned at (48.0, -16.0) relative to \"Frame 1686557311\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -16.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31274",
+            "nodeName": "button",
+            "figmaValue": {
+              "absoluteX": 48,
+              "absoluteY": 0,
+              "relativeLeft": 48,
+              "relativeTop": -234.77,
+              "parentId": "1:31273"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -234.8",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"button\" is positioned at (48.0, -234.8) relative to \"Frame 1686557317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -234.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:31275",
+            "nodeName": "Didn’t receive the code? Resend",
+            "figmaValue": {
+              "absoluteX": 48,
+              "absoluteY": 72,
+              "relativeLeft": 48,
+              "relativeTop": -162.77,
+              "parentId": "1:31273"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -162.8",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Didn’t receive the code? Resend\" is positioned at (48.0, -162.8) relative to \"Frame 1686557317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -162.8,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31180",
+            "nodeName": "Rectangle 52",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 52",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Rectangle 52\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31182",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#D9D9D9"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#D9D9D9'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #D9D9D9 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#D9D9D9' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31226",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "type": "button",
+              "text": "Pay Now",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Pay Now\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I1:31254;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31256",
+            "nodeName": "Rectangle 54",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 54",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Rectangle 54\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31258",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "1:31274",
+            "nodeName": "button",
+            "figmaValue": {
+              "type": "button",
+              "text": "Proceed",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Proceed\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [],
+        "totalIssues": 44
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T21:29:04.377Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T21:30:48.185Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/auth/otp.tsx",
+            "lineRange": "N/A",
+            "property": "paddingHorizontal",
+            "figmaValue": "48",
+            "currentValue": "~24",
+            "severity": "major",
+            "explanation": "The modal content (Title, Inputs, Button) has 48px horizontal padding in Figma (Frame 1686557311), but the Simulator shows significantly less padding (approx 24px).",
+            "currentCode": "paddingHorizontal: 24, // Inferred",
+            "fixedCode": "paddingHorizontal: 48,"
+          },
+          {
+            "file": "app/auth/otp.tsx",
+            "lineRange": "N/A",
+            "property": "paddingBottom",
+            "figmaValue": "Safe Area + Spacing",
+            "currentValue": "0",
+            "severity": "major",
+            "explanation": "The footer text 'Didn’t receive the code? Resend' is touching the Home Indicator in the Simulator. The container needs to respect the bottom safe area inset.",
+            "currentCode": "paddingBottom: 0, // Inferred",
+            "fixedCode": "paddingBottom: useSafeAreaInsets().bottom + 10,"
+          },
+          {
+            "file": "components/Button.tsx",
+            "lineRange": "N/A",
+            "property": "children",
+            "figmaValue": "Hidden",
+            "currentValue": "Visible",
+            "severity": "moderate",
+            "explanation": "There is an unwanted horizontal line artifact (likely 'Rectangle 140' from Figma data) visible above the 'Proceed' text in the Simulator. This element is not visible in the Figma screenshot.",
+            "currentCode": "<View style={{ width: 24, height: 2, backgroundColor: '#4D4D4D' }} />",
+            "fixedCode": "{/* Remove Rectangle 140 artifact */}"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T21:31:30.901Z",
+      "feedback": [
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "paddingHorizontal",
+          "figmaValue": "48 (spacing.xxxl)",
+          "currentValue": "24",
+          "severity": "major",
+          "explanation": "The main container requires 48px horizontal padding to match Figma (Frame 1686557311). Structural analysis confirms elements are positioned at x=48.",
+          "currentCode": "paddingHorizontal: 24,",
+          "fixedCode": "paddingHorizontal: spacing.xxxl, // 48"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "paddingBottom",
+          "figmaValue": "Safe Area",
+          "currentValue": "0",
+          "severity": "major",
+          "explanation": "Footer text 'Didn’t receive the code?' is touching the home indicator. Needs safe area handling.",
+          "currentCode": "paddingBottom: 20,",
+          "fixedCode": "paddingBottom: useSafeAreaInsets().bottom + spacing.sm,"
+        },
+        {
+          "file": "components/Button.tsx",
+          "lineRange": "N/A",
+          "property": "children",
+          "figmaValue": "Hidden",
+          "currentValue": "Visible",
+          "severity": "critical",
+          "explanation": "Remove the visual artifact (horizontal line/Rectangle 140) appearing inside the Button component above the text.",
+          "currentCode": "<View style={{ width: 24, height: 2, backgroundColor: '#4D4D4D' }} />",
+          "fixedCode": "{/* Artifact removed */}"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "backgroundColor",
+          "figmaValue": "#202020 (colors.black[500])",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "The 'Proceed' button background color must match the design token for #202020.",
+          "currentCode": "backgroundColor: '#000000',",
+          "fixedCode": "backgroundColor: colors.black[500], // #202020"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "N/A",
+          "property": "textAlign",
+          "figmaValue": "center",
+          "currentValue": "left/auto",
+          "severity": "major",
+          "explanation": "The text element (likely OTP separator or placeholder) is centered in Figma but missing textAlign in code.",
+          "currentCode": "style={{ ... }}",
+          "fixedCode": "textAlign: 'center',"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "paddingHorizontal",
+      "figmaValue": "48 (spacing.xxxl)",
+      "currentValue": "24",
+      "severity": "major",
+      "explanation": "The main container requires 48px horizontal padding to match Figma (Frame 1686557311). Structural analysis confirms elements are positioned at x=48.",
+      "currentCode": "paddingHorizontal: 24,",
+      "fixedCode": "paddingHorizontal: spacing.xxxl, // 48"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "paddingBottom",
+      "figmaValue": "Safe Area",
+      "currentValue": "0",
+      "severity": "major",
+      "explanation": "Footer text 'Didn’t receive the code?' is touching the home indicator. Needs safe area handling.",
+      "currentCode": "paddingBottom: 20,",
+      "fixedCode": "paddingBottom: useSafeAreaInsets().bottom + spacing.sm,"
+    },
+    {
+      "file": "components/Button.tsx",
+      "lineRange": "N/A",
+      "property": "children",
+      "figmaValue": "Hidden",
+      "currentValue": "Visible",
+      "severity": "critical",
+      "explanation": "Remove the visual artifact (horizontal line/Rectangle 140) appearing inside the Button component above the text.",
+      "currentCode": "<View style={{ width: 24, height: 2, backgroundColor: '#4D4D4D' }} />",
+      "fixedCode": "{/* Artifact removed */}"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "backgroundColor",
+      "figmaValue": "#202020 (colors.black[500])",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "The 'Proceed' button background color must match the design token for #202020.",
+      "currentCode": "backgroundColor: '#000000',",
+      "fixedCode": "backgroundColor: colors.black[500], // #202020"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "N/A",
+      "property": "textAlign",
+      "figmaValue": "center",
+      "currentValue": "left/auto",
+      "severity": "major",
+      "explanation": "The text element (likely OTP separator or placeholder) is centered in Figma but missing textAlign in code.",
+      "currentCode": "style={{ ... }}",
+      "fixedCode": "textAlign: 'center',"
+    }
+  ],
+  "summary": {
+    "totalIssues": 5,
+    "critical": 1,
+    "major": 4,
+    "minor": 0,
+    "filesAffected": [
+      "app/(auth)/index.tsx",
+      "components/Button.tsx"
+    ]
+  }
+}

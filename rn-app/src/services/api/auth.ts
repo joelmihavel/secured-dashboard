@@ -30,6 +30,7 @@ export interface VerifyOtpRequest {
 
 export type AuthErrorCode =
   | 'INVALID_PHONE'
+  | 'PHONE_EXISTS'
   | 'RATE_LIMITED'
   | 'INVALID_OTP'
   | 'OTP_EXPIRED'
@@ -183,6 +184,10 @@ function mapAuthError(errorMessage: string): AuthError {
 
   if (lowerMessage.includes('timed out') || lowerMessage.includes('aborted')) {
     return { code: 'TIMEOUT', message: 'Request timed out. Please try again.' };
+  }
+
+  if (lowerMessage.includes('already exists') || lowerMessage.includes('already registered')) {
+    return { code: 'PHONE_EXISTS', message: 'This number already exists' };
   }
 
   if (lowerMessage.includes('invalid phone') || lowerMessage.includes('phone number')) {

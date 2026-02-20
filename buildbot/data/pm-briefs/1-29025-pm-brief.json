@@ -1,0 +1,56 @@
+{
+  "screenId": "1-29025",
+  "screenName": "Splash / get-started --carousel slide 2",
+  "route": "/(auth)/carousel",
+  "generatedAt": "2026-02-19T21:08:16.265Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Container",
+      "nodeId": "160:2684",
+      "childCount": 4
+    }
+  ],
+  "states": [
+    {
+      "state": "page1",
+      "figmaId": "1-28985",
+      "name": "Splash / get-started --carousel slide 1"
+    },
+    {
+      "state": "page2",
+      "figmaId": "1-29025",
+      "name": "Splash / get-started --carousel slide 2"
+    },
+    {
+      "state": "page3",
+      "figmaId": "1-29065",
+      "name": "Splash / get-started --carousel slide 3"
+    }
+  ],
+  "interactiveElements": [],
+  "dataFields": [
+    {
+      "nodeId": "I1:29029;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "160:2691",
+      "name": "More than  just cashback",
+      "content": "More than  just cashback"
+    },
+    {
+      "nodeId": "160:2692",
+      "name": "Keep paying via Secured to unlock exclusive renting benefits over time",
+      "content": "Keep paying via Secured to unlock exclusive renting benefits over time"
+    },
+    {
+      "nodeId": "169:3204",
+      "name": "Login Text",
+      "content": "Skip →"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

@@ -35,6 +35,7 @@ import Animated, {
   withSpring,
   interpolate,
   Extrapolation,
+  interpolateColor,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -81,13 +82,21 @@ function PrimaryButtonComponent({
     // Shadow shrinks when pressed (button closer to surface)
     shadowOffset: {
       width: 0,
-      height: interpolate(pressed.value, [0, 1], [6, 2], Extrapolation.CLAMP),
+      height: interpolate(pressed.value, [0, 1], [4, 1], Extrapolation.CLAMP),
     },
-    shadowRadius: interpolate(pressed.value, [0, 1], [10, 4], Extrapolation.CLAMP),
+    shadowRadius: interpolate(pressed.value, [0, 1], [5, 2], Extrapolation.CLAMP),
     shadowOpacity: interpolate(pressed.value, [0, 1], [0.24, 0.16], Extrapolation.CLAMP),
   }));
 
   // Bottom highlight dims when pressed (light source effect)
+  const dividerAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      pressed.value,
+      [0, 1],
+      [colors.black[400], colors.brand[500]] // #4D4D4D -> #FF9A6D
+    )
+  }));
+
   const highlightAnimatedStyle = useAnimatedStyle(() => ({
     opacity: interpolate(pressed.value, [0, 1], [1, 0.3], Extrapolation.CLAMP),
   }));
@@ -124,7 +133,7 @@ function PrimaryButtonComponent({
       {/* Outer container: Figma VERTICAL, CENTER, gap 8, radius 12 */}
       <View style={styles.container}>
         {/* Divider: Figma Rectangle 140 — 24x2 #4D4D4D radius 200 */}
-        {showDivider && <View style={styles.divider} />}
+        {showDivider && <Animated.View style={[styles.divider, dividerAnimatedStyle]} />}
 
         {isDisabled ? (
           <View style={styles.buttonDisabled}>
@@ -152,6 +161,10 @@ function PrimaryButtonComponent({
                 <RNText style={styles.textActive}>{title}</RNText>
               )}
 
+              {/* Inner shadow simulation: dark edge for recessed 3D depth */}
+              {/* Figma: inset -2px -4px 0px 1px rgba(0,0,0,1) */}
+              <View style={styles.darkEdgeOverlay} />
+
               {/* Inner shadow simulation: bottom white highlight for 3D depth */}
               {/* Figma: inset 0px -3px 4px 1px rgba(255,255,255,0.12) */}
               <Animated.View style={[styles.bottomHighlight, highlightAnimatedStyle]}>
@@ -163,11 +176,6 @@ function PrimaryButtonComponent({
                   style={styles.bottomHighlightGradient}
                 />
               </Animated.View>
-
-              {/* Inner shadow simulation: dark edge for recessed 3D depth */}
-              {/* Figma: inset -2px -4px 0px 1px rgba(0,0,0,1) */}
-              <View style={styles.darkEdgeBottom} />
-              <View style={styles.darkEdgeRight} />
             </LinearGradient>
           </Animated.View>
         )}
@@ -214,9 +222,9 @@ const styles = StyleSheet.create({
   shadowHost: {
     width: '100%',
     shadowColor: '#995C41',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 }, // Reduced offset to account for negative spread
     shadowOpacity: 0.24,
-    shadowRadius: 10, // Figma blur 12, reduced slightly for spread -2 approximation
+    shadowRadius: 5, // Figma blur 12 / 2.5 to simulate spread -2 tightness
     elevation: 8,
   },
 
@@ -224,10 +232,15 @@ const styles = StyleSheet.create({
   // Figma: stroke #FF9A6D 0.1px INSIDE, radius 8, padding 16
   buttonFace: {
     width: '100%',
-    borderWidth: StyleSheet.hairlineWidth, // ~0.33px — closest to Figma 0.1px
-    borderColor: 'rgba(255, 154, 109, 0.25)', // #FF9A6D — Figma 0.1px at hairlineWidth(0.33px): opacity ≈ 0.1/0.33
+    borderWidth: 1,
+    borderColor: 'rgba(255, 154, 109, 0.25)',
     borderRadius: 8,
-    padding: 16,
+    borderCurve: 'continuous',
+    // Compensation for 3D depth: push content up and left to center on the raised face
+    paddingTop: 16,
+    paddingLeft: 16,
+    paddingBottom: 16 + 5, 
+    paddingRight: 16 + 3,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -239,11 +252,11 @@ const styles = StyleSheet.create({
   bottomHighlight: {
     position: 'absolute',
     left: 0,
-    right: 0,
-    bottom: 0,
-    height: 8, // spread(1) + blur(4) + offset(3) = ~8px visible region
-    borderBottomLeftRadius: 7,
-    borderBottomRightRadius: 7,
+    right: 3, // Inset from right dark edge
+    bottom: 5, // Inset from bottom dark edge! This puts the highlight ON the bevel edge, not covering the black vertical drop
+    height: 6,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
   },
   bottomHighlightGradient: {
     flex: 1,
@@ -254,23 +267,13 @@ const styles = StyleSheet.create({
   // Dark edge bottom — simulates Figma inner shadow:
   // inset -2px -4px 0px 1px rgba(0,0,0,1)
   // Hard 1px black line at the very bottom (spread=1, blur=0)
-  darkEdgeBottom: {
-    position: 'absolute',
-    left: 0,
-    right: 2, // offset x: -2 means right edge shifts in by 2
-    bottom: 0,
-    height: 1, // spread: 1px
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Softened from pure black for subtlety
-  },
-
-  // Dark edge right — extends the inset shadow along the right edge
-  darkEdgeRight: {
-    position: 'absolute',
-    right: 0,
-    top: 4, // offset y: -4 means it starts 4px from the bottom edge conceptually
-    bottom: 0,
-    width: 1, // spread: 1px
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  darkEdgeOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderBottomWidth: 5, // Spread 1 + offset 4 = 5px
+    borderRightWidth: 3,  // Spread 1 + offset 2 = 3px
+    borderColor: '#000000',
+    borderRadius: 8,
+    borderCurve: 'continuous',
   },
 
   // Text — Figma: PlusJakartaSans-Medium 16px/24px #444444

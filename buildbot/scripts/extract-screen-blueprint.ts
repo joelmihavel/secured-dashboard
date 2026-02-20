@@ -57,6 +57,25 @@ interface FigmaConfig {
   exportScale: number;
 }
 
+interface ResolvedVariable {
+  id: string;
+  name: string;
+  resolvedType: string; // COLOR | FLOAT | STRING | BOOLEAN
+  description?: string;
+  collectionId: string;
+  collectionName: string;
+  valuesByMode: Record<string, unknown>;
+}
+
+interface VariablesResponse {
+  variables: Record<string, ResolvedVariable>;
+  collections: Record<string, {
+    id: string;
+    name: string;
+    modes: Array<{ modeId: string; name: string }>;
+  }>;
+}
+
 interface DesignTokens {
   _colorByHex: Record<string, string>;
   _typographyByStyle: Record<string, string>;
@@ -317,6 +336,10 @@ interface BlueprintNode {
   styleReferences?: Record<string, string>;
   // Dev status (READY_FOR_DEV, etc.)
   devStatus?: { type: string; description?: string };
+  // Jan 2026 API additions
+  complexStrokeProperties?: Record<string, unknown>;
+  textPathStartData?: Record<string, unknown>;
+  transformModifiers?: Array<Record<string, unknown>>;
   // Layout grids
   layoutGrids?: Array<Record<string, unknown>>;
   // Instance overrides (which fields differ from main component)
@@ -431,6 +454,19 @@ interface ScreenBlueprint {
     styleType: string; // FILL | TEXT | EFFECT | GRID
     description?: string;
   }>;
+  // Resolved Figma Variables (from /v1/files/{fileKey}/variables/local)
+  variableMeta?: {
+    variables: Record<string, {
+      name: string;
+      resolvedType: string;
+      collectionName: string;
+      valuesByMode: Record<string, unknown>;
+    }>;
+    collections: Record<string, {
+      name: string;
+      modes: Array<{ modeId: string; name: string }>;
+    }>;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -804,6 +840,78 @@ async function fetchAssetImageUrls(
   return data.images || {};
 }
 
+// ---------------------------------------------------------------------------
+// Figma Variables API
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch local variables from the Figma Variables API.
+ * Resolves variable IDs to names, types, and mode values.
+ * Gracefully degrades: returns empty response if endpoint fails (e.g., non-Enterprise plan).
+ */
+async function fetchVariables(config: FigmaConfig): Promise<VariablesResponse> {
+  const emptyResponse: VariablesResponse = { variables: {}, collections: {} };
+  const url = `${config.restApiBaseUrl}/files/${config.fileKey}/variables/local`;
+  log('info', `Fetching variables from: ${url}`);
+
+  try {
+    const response = await withRetry('fetchVariables', async () => {
+      const res = await httpsGet(url, { 'X-Figma-Token': config.figmaToken });
+      if (res.status === 403) {
+        log('warn', 'Variables API returned 403 — likely requires Enterprise plan. Skipping variable resolution.');
+        return null;
+      }
+      if (res.status === 429) {
+        throw new Error('429 Rate Limited');
+      }
+      if (res.status !== 200) {
+        log('warn', `Variables API returned ${res.status}: ${res.body.slice(0, 200)}. Skipping variable resolution.`);
+        return null;
+      }
+      return res;
+    }, 2, 5000); // fewer retries for optional endpoint
+
+    if (!response) return emptyResponse;
+
+    const data = JSON.parse(response.body);
+    const meta = data.meta || data;
+    const rawCollections = meta.variableCollections || {};
+    const rawVariables = meta.variables || {};
+
+    // Build collection lookup: id → { name, modes }
+    const collections: VariablesResponse['collections'] = {};
+    for (const [colId, col] of Object.entries(rawCollections) as Array<[string, Record<string, unknown>]>) {
+      collections[colId] = {
+        id: colId,
+        name: (col.name as string) || '',
+        modes: Array.isArray(col.modes) ? (col.modes as Array<{ modeId: string; name: string }>) : [],
+      };
+    }
+
+    // Build resolved variables: id → { name, resolvedType, collectionName, valuesByMode }
+    const variables: Record<string, ResolvedVariable> = {};
+    for (const [varId, v] of Object.entries(rawVariables) as Array<[string, Record<string, unknown>]>) {
+      const collectionId = (v.variableCollectionId as string) || '';
+      const collectionName = collections[collectionId]?.name || '';
+      variables[varId] = {
+        id: varId,
+        name: (v.name as string) || '',
+        resolvedType: (v.resolvedType as string) || 'UNKNOWN',
+        ...(v.description ? { description: v.description as string } : {}),
+        collectionId,
+        collectionName,
+        valuesByMode: (v.valuesByMode as Record<string, unknown>) || {},
+      };
+    }
+
+    log('info', `  Variables: ${Object.keys(variables).length} across ${Object.keys(collections).length} collections`);
+    return { variables, collections };
+  } catch (err) {
+    log('warn', `Failed to fetch Figma variables: ${err}. Continuing without variable resolution.`);
+    return emptyResponse;
+  }
+}
+
 /** PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A */
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -979,10 +1087,13 @@ function processFills(rawFills: unknown[]): BlueprintFill[] {
     if (typeof fill.type === 'string' && fill.type.startsWith('GRADIENT_')) {
       const rawStops = fill.gradientStops as Array<{ position: number; color: { r: number; g: number; b: number; a?: number } }>;
       if (Array.isArray(rawStops)) {
-        result.gradientStops = rawStops.map((stop) => ({
+        result.gradientStops = rawStops.map((stop: any) => ({
           color: figmaColorToHexAlpha(stop.color),
           position: stop.position,
           opacity: stop.color.a,
+          ...(stop.boundVariables && Object.keys(stop.boundVariables).length > 0
+            ? { boundVariables: stop.boundVariables }
+            : {}),
         }));
       }
       const rawHandles = fill.gradientHandlePositions as Array<{ x: number; y: number }>;
@@ -1014,6 +1125,8 @@ function processStrokes(rawStrokes: unknown[], node: Record<string, unknown>): B
     .filter((s: Record<string, unknown>) => s.visible !== false)
     .map((s: Record<string, unknown>) => {
       const color = s.color as { r: number; g: number; b: number; a?: number };
+      const strokeOpacity = s.opacity as number | undefined;
+      const strokeBlendMode = s.blendMode as string | undefined;
       return {
         color: color ? figmaColorToHex(color) : '#000000',
         weight,
@@ -1022,6 +1135,9 @@ function processStrokes(rawStrokes: unknown[], node: Record<string, unknown>): B
         cap: cap || undefined,
         join: join || undefined,
         dashPattern: dashPattern || undefined,
+        ...(strokeOpacity !== undefined && strokeOpacity !== 1 ? { opacity: strokeOpacity } : {}),
+        ...(strokeBlendMode && strokeBlendMode !== 'NORMAL' && strokeBlendMode !== 'PASS_THROUGH'
+          ? { blendMode: strokeBlendMode } : {}),
       };
     });
 }
@@ -1953,6 +2069,26 @@ function traverseNodeTree(
     blueprintNode.variableWidthPoints = variableWidthPoints;
   }
 
+  // Complex stroke properties (Jan 2026 — brush/dynamic strokes)
+  // Skip default {"strokeType": "BASIC"} — only capture brush/dynamic strokes
+  const complexStrokeProps = node.complexStrokeProperties as Record<string, unknown> | undefined;
+  if (complexStrokeProps && Object.keys(complexStrokeProps).length > 0
+    && !(Object.keys(complexStrokeProps).length === 1 && complexStrokeProps.strokeType === 'BASIC')) {
+    blueprintNode.complexStrokeProperties = complexStrokeProps;
+  }
+
+  // Text path start data (Jan 2026 — TEXT_PATH nodes)
+  const textPathStart = node.textPathStartData as Record<string, unknown> | undefined;
+  if (textPathStart && Object.keys(textPathStart).length > 0) {
+    blueprintNode.textPathStartData = textPathStart;
+  }
+
+  // Transform modifiers (Jan 2026 — TRANSFORM_GROUP nodes)
+  const transformMods = node.transformModifiers as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(transformMods) && transformMods.length > 0) {
+    blueprintNode.transformModifiers = transformMods;
+  }
+
   // Auto-mapping
   if (isScreen) {
     blueprintNode.rnComponent = 'Screen';
@@ -2296,7 +2432,7 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
   // Step 1: Fetch the full node tree
   // -----------------------------------------------------------------------
   log('info', '');
-  log('info', 'STEP 1/3: Fetching full node tree from Figma...');
+  log('info', 'STEP 1/4: Fetching full node tree from Figma...');
   const figmaResponse = await fetchNodeTree(config, apiId);
   const nodeTree = figmaResponse.document;
   const figmaComponents = figmaResponse.components;
@@ -2306,10 +2442,17 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
   if (figmaStyles) log('info', `  Style metadata: ${Object.keys(figmaStyles).length} entries`);
 
   // -----------------------------------------------------------------------
-  // Step 2: Fetch baseline image
+  // Step 2: Fetch Figma Variables (resolve boundVariable IDs to names/values)
   // -----------------------------------------------------------------------
   log('info', '');
-  log('info', 'STEP 2/3: Fetching baseline screenshot...');
+  log('info', 'STEP 2/4: Fetching Figma variables...');
+  const variablesData = await fetchVariables(config);
+
+  // -----------------------------------------------------------------------
+  // Step 3: Fetch baseline image
+  // -----------------------------------------------------------------------
+  log('info', '');
+  log('info', 'STEP 3/4: Fetching baseline screenshot...');
   const baselinePath = path.join(baselinesDir, `${fileId}-baseline.png`);
   try {
     const imageUrl = await fetchScreenBaselineUrl(config, apiId);
@@ -2328,10 +2471,10 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
   }
 
   // -----------------------------------------------------------------------
-  // Step 3: Process the node tree
+  // Step 4: Process the node tree
   // -----------------------------------------------------------------------
   log('info', '');
-  log('info', 'STEP 3/3: Processing node tree...');
+  log('info', 'STEP 4/4: Processing node tree...');
 
   const allNodes: BlueprintNode[] = [];
   const assetNodeIds = new Set<string>();
@@ -2477,6 +2620,19 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
         }])
       ),
     } : {}),
+    ...(variablesData && variablesData.variables && Object.keys(variablesData.variables).length > 0 ? {
+      variableMeta: {
+        variables: Object.fromEntries(
+          Object.entries(variablesData.variables).map(([id, v]) => [id, {
+            name: v.name,
+            resolvedType: v.resolvedType,
+            collectionName: v.collectionName,
+            valuesByMode: v.valuesByMode,
+          }])
+        ),
+        collections: variablesData.collections,
+      },
+    } : {}),
   };
 
   // Write blueprint JSON
@@ -2492,6 +2648,7 @@ async function extractScreenBlueprint(screenIdArg: string): Promise<void> {
   log('info', `Nodes:     ${allNodes.length}`);
   log('info', `Assets:    ${assets.length}`);
   log('info', `Flows:     ${flows.length}`);
+  log('info', `Variables: ${Object.keys(variablesData?.variables || {}).length}`);
   log('info', `Time:      ${elapsed}s`);
 }
 

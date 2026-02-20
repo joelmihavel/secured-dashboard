@@ -56,7 +56,7 @@ const OTP_LENGTH = 6;
 const OTP_COLORS = {
   boxBackground: '#222222',
   boxBorder: '#444444',
-  boxBorderActive: '#444444', // Keep same border in active state per Figma
+  boxBorderActive: '#FFFFFF', // Keep same border in active state per Figma
   boxBackgroundActive: '#222222', // Same background, just show cursor
   textEmpty: '#444444',
   textFilled: '#FFFFFF',          // CRITICAL FIX: Figma node I31:2866;50:319;1106:66617 shows #FFFFFF
@@ -118,7 +118,15 @@ function OTPInputComponent({
   // Focus input on mount
   useEffect(() => {
     if (autoFocus) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      // Multiple attempts to ensure focus succeeds across different transition timings
+      const t1 = setTimeout(() => inputRef.current?.focus(), 100);
+      const t2 = setTimeout(() => inputRef.current?.focus(), 400);
+      const t3 = setTimeout(() => inputRef.current?.focus(), 800);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
     }
   }, [autoFocus]);
 
@@ -134,26 +142,6 @@ function OTPInputComponent({
 
   return (
     <View style={styles.container}>
-      {/* Hidden input with iOS OTP autofill support */}
-      <RNTextInput
-        ref={inputRef}
-        value={value}
-        onChangeText={handleChange}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        keyboardType="number-pad"
-        maxLength={OTP_LENGTH}
-        caretHidden
-        editable={!disabled}
-        accessibilityLabel="OTP verification code"
-        accessibilityState={{ disabled: !!disabled }}
-        style={styles.hiddenInput}
-        testID={testID}
-        // iOS native OTP autofill - automatically fetches SMS OTP codes
-        textContentType="oneTimeCode"
-        autoComplete="one-time-code"
-      />
-
       {/* Visible boxes */}
       <Pressable onPress={handlePress} style={styles.boxesContainer} accessibilityRole="none" accessibilityLabel={`OTP input, ${digits.length} of ${OTP_LENGTH} digits entered`}>
         {/* First group (0-2) */}
@@ -187,6 +175,25 @@ function OTPInputComponent({
           ))}
         </View>
       </Pressable>
+
+      {/* Transparent input overlaid on boxes — taps land directly on TextInput */}
+      <RNTextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        keyboardType="number-pad"
+        maxLength={OTP_LENGTH}
+        caretHidden
+        editable={!disabled}
+        accessibilityLabel="OTP verification code"
+        accessibilityState={{ disabled: !!disabled }}
+        style={styles.hiddenInput}
+        testID={testID}
+        textContentType="oneTimeCode"
+        autoComplete="one-time-code"
+      />
 
       {/* Error message - Figma shows error text centered below OTP boxes */}
       {error && (
@@ -271,10 +278,10 @@ const styles = StyleSheet.create({
     // This allows the container to have no gap when there's no error
   },
   hiddenInput: {
-    position: 'absolute',
-    opacity: 0,
-    width: 1,
-    height: 1,
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.02, // Must be > 0.01 for iOS hit-testing (UIView ignores alpha <= 0.01)
+    color: 'transparent',
+    backgroundColor: 'transparent',
   },
   boxesContainer: {
     flexDirection: 'row',
@@ -293,7 +300,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   box: {
-    width: OTP_DIMENSIONS.boxWidth, // Figma: auto-width based on content
+    width: 39, // Figma: fixed 39px per box
     height: OTP_DIMENSIONS.boxHeight, // 64px
     paddingHorizontal: OTP_DIMENSIONS.boxPaddingH, // 12px per Figma
     paddingVertical: OTP_DIMENSIONS.boxPaddingV, // 8px per Figma
@@ -326,7 +333,7 @@ const styles = StyleSheet.create({
   cursor: {
     width: 2,
     height: 24,
-    backgroundColor: OTP_COLORS.textFilled, // Use filled text color for cursor
+    backgroundColor: '#FF9A6D', // Use filled text color for cursor
     borderRadius: 1,
   },
   errorText: {

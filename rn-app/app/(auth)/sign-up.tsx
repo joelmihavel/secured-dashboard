@@ -23,14 +23,14 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput as RNTextInput } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput as RNTextInput, Keyboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput } from '@/src/components';
 import { DottedPattern, ConsentToggle } from '@/src/components';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors } from '@/src/theme';
+import { colors, typography } from '@/src/theme';
 
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
@@ -83,15 +83,15 @@ const FIGMA_GAPS = {
 // SafeAreaView adds ~53px for status bar (Figma "Status Bar" instance height)
 // Additional paddingTop needed = 101 - 53 = 48px
 const FIGMA_LAYOUT = {
-  // Since SafeAreaView already handles status bar area (~53px),
-  // we add the remaining offset to position content correctly
-  contentTopOffset: 48,                // Figma: 101px total - 53px safe area = 48px
+  // SafeAreaView top is disabled, so we use the full 101px offset
+  contentTopOffset: 101,                // Figma: 101px total from top of screen
 } as const;
 
-export default function SignUpScreen() {
+export default function SignUpScreen({ background }: { background?: boolean } = {}) {
   const router = useRouter();
   const { state } = useLocalSearchParams<{ state?: 'empty' | 'filled' | 'error' }>();
   const nameInputRef = useRef<RNTextInput>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const { sendCode, status, error, isSendingOtp, clearError } = useAuth();
   const setUserName = useAuthStore((s) => s.setUserName);
   const setConsentForMobile360 = useAuthStore((s) => s.setConsentForMobile360);
@@ -99,13 +99,13 @@ export default function SignUpScreen() {
   // Mock data for testing states
   const mockData = {
     phone: '9876543210',
-    name: 'John Appleseed',
+    name: 'Rishabh Agnihotri',
   };
 
   // Initialize state based on query parameter for automated testing
   const getInitialPhone = () => (state === 'filled' ? mockData.phone : '');
   const getInitialName = () => (state === 'filled' ? mockData.name : '');
-  const getInitialConsent = () => state === 'filled'; // Figma 1:29108: toggle "Off State" by default
+  const getInitialConsent = () => true; // Always enabled unless explicitly disabled
 
   const [phone, setPhone] = useState(getInitialPhone);
   const [name, setName] = useState(getInitialName);
@@ -113,23 +113,43 @@ export default function SignUpScreen() {
   const [mockError, setMockError] = useState<string | undefined>(
     state === 'error' ? 'Enter valid number' : undefined
   );
+  const [phoneBlurError, setPhoneBlurError] = useState<string | undefined>();
 
   // Check if form is valid
   const isPhoneValid = phone.replace(/\D/g, '').length === 10;
   const isNameValid = name.trim().length >= 2;
   const isFormValid = isPhoneValid && isNameValid && consent;
 
-  // Navigate to OTP screen when OTP is sent
+  // Navigate to OTP screen when send-OTP mutation completes successfully.
+  // Uses isSendingOtp transition (true→false) instead of status alone, because:
+  // 1. Watching `status` + `router` caused double-push (router ref changes on push)
+  // 2. This approach also handles re-sends (each mutate() cycles isPending)
+  const wasSendingOtpRef = useRef(false);
   useEffect(() => {
-    if (status === 'otp_sent') {
+    if (!background && wasSendingOtpRef.current && !isSendingOtp && status === 'otp_sent') {
       router.push('/(auth)/otp');
     }
-  }, [status, router]);
+    wasSendingOtpRef.current = isSendingOtp;
+  }, [isSendingOtp, status, background]);
+
+  // Auto-scroll to reveal focused input when keyboard appears
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      if (nameInputRef.current?.isFocused()) {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   // Error message mapping - only show phone-related errors, not OTP errors
   const getPhoneErrorMessage = (): string | undefined => {
     // Return mock error for testing if set
     if (mockError) return mockError;
+    // Return blur validation error (local, before any API call)
+    if (phoneBlurError) return phoneBlurError;
     if (!error) return undefined;
 
     // Only display errors relevant to the phone input step.
@@ -144,16 +164,31 @@ export default function SignUpScreen() {
         return 'Check your internet connection';
       case 'TIMEOUT':
         return 'Request timed out. Try again.';
-      default:
+      case 'INVALID_OTP':
+      case 'OTP_EXPIRED':
+      case 'MAX_ATTEMPTS':
+      case 'SESSION_ERROR':
+        // OTP-related errors handled by OTP screen
         return undefined;
+      default:
+        return 'Something went wrong. Try again.';
     }
   };
 
   const handlePhoneChange = useCallback((text: string) => {
     setPhone(text);
+    if (phoneBlurError) setPhoneBlurError(undefined);
     if (mockError) setMockError(undefined);
     if (error) clearError();
-  }, [error, clearError, mockError]);
+  }, [error, clearError, mockError, phoneBlurError]);
+
+  const handlePhoneBlur = useCallback(() => {
+    // Only validate if user has started typing (don't show error on untouched field)
+    const digitCount = phone.replace(/\D/g, '').length;
+    if (digitCount > 0 && digitCount < 10) {
+      setPhoneBlurError('Enter valid number');
+    }
+  }, [phone]);
 
   const handleNameChange = useCallback((text: string) => {
     setName(text);
@@ -189,7 +224,7 @@ export default function SignUpScreen() {
   }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
   return (
-    <Screen padded={false} testID="sign-up-screen">
+    <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
       {/* Background Pattern - uses actual Figma images with correct opacity (8%) */}
       <DottedPattern />
 
@@ -198,6 +233,7 @@ export default function SignUpScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -223,9 +259,9 @@ export default function SignUpScreen() {
                   label="Phone"
                   value={phone}
                   onChangeText={handlePhoneChange}
+                  onBlur={handlePhoneBlur}
                   error={getPhoneErrorMessage()}
                   placeholder="Enter Number"
-                  hintText={phone.length > 0 ? 'edit' : undefined}
                   testID="phone-input"
                 />
 
@@ -239,7 +275,6 @@ export default function SignUpScreen() {
                   placeholder="e.g. John Appleseed"
                   keyboardType="default"
                   autoCapitalize="words"
-                  hintText={name.length > 0 ? 'edit' : undefined}
                   testID="name-input"
                 />
               </View>
@@ -252,7 +287,7 @@ export default function SignUpScreen() {
                   onPress={handleGetStarted}
                   disabled={!isFormValid}
                   loading={isSendingOtp}
-                  showDivider={false}
+                  showDivider={true}
                   testID="get-started-button"
                 />
 
@@ -295,12 +330,9 @@ const styles = StyleSheet.create({
     width: FIGMA_DIMENSIONS.contentWidth, // 297px per Figma
   },
   headingGray: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,
-    lineHeight: 64,
-    letterSpacing: -2,
-    color: FIGMA_COLORS.headingGray,      // #A9A9A9 - "Let's get to" text (Figma 1:29183)
-    width: FIGMA_DIMENSIONS.headingWidth, // 297px per Figma
+    ...typography.h1,
+    color: FIGMA_COLORS.headingGray,
+    width: FIGMA_DIMENSIONS.headingWidth,
   },
   headingAccent: {
     // Only color override needed - fontSize/lineHeight/fontFamily/letterSpacing

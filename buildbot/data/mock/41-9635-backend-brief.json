@@ -1,0 +1,17 @@
+{
+  "screenId": "41-9635",
+  "screenRoute": "/(payment)/failed",
+  "screenFile": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/rn-app/app/(payment)/failed.tsx",
+  "generatedAt": "2026-02-20T00:58:19.354Z",
+  "generatedBy": "buildbot-backend-agent-auto",
+  "requiredHooks": [
+    "useEffect",
+    "useCallback",
+    "useRouter",
+    "useLocalSearchParams"
+  ],
+  "services": [],
+  "supabaseCalls": [],
+  "mockData": null,
+  "notes": "Auto-generated from source scan. Review for completeness."
+}

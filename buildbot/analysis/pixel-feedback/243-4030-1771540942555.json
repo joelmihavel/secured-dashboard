@@ -1,0 +1,329 @@
+{
+  "screenId": "243-4030",
+  "screenName": "Net Banking Card --Selected",
+  "route": "/(payment)/select-method",
+  "generatedAt": "2026-02-19T22:42:22.555Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T22:40:16.198Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4033",
+            "nodeName": "Bank Logos (Small)",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 6,
+              "relativeLeft": -32,
+              "relativeTop": -18,
+              "parentId": "243:4032"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -18.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Bank Logos (Small)\" is positioned at (-32.0, -18.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4034",
+            "nodeName": "Frame 2095586454",
+            "figmaValue": {
+              "absoluteX": 137,
+              "absoluteY": 0,
+              "relativeLeft": 105,
+              "relativeTop": -24,
+              "parentId": "243:4032"
+            },
+            "expectedRNValue": "position: 'absolute', left: 105.0, top: -24.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 2095586454\" is positioned at (105.0, -24.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 105.0,\ntop: -24.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4037",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -32,
+              "relativeTop": -180,
+              "parentId": "243:4036"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -180.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"•••• 2341\" is positioned at (-32.0, -180.0) relative to \"Frame 2095586440\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -180.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4038",
+            "nodeName": "Frame 2095586438",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 60,
+              "relativeLeft": -32,
+              "relativeTop": -120,
+              "parentId": "243:4036"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -120.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 2095586438\" is positioned at (-32.0, -120.0) relative to \"Frame 2095586440\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -120.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4039",
+            "nodeName": "EXPIRY 06/26",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -60,
+              "parentId": "243:4038"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -60.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"EXPIRY 06/26\" is positioned at (0.0, -60.0) relative to \"Frame 2095586438\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -60.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4040",
+            "nodeName": "ICICI a/c - xxx23",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 32,
+              "relativeLeft": 0,
+              "relativeTop": -28,
+              "parentId": "243:4038"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -28.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"ICICI a/c - xxx23\" is positioned at (0.0, -28.0) relative to \"Frame 2095586438\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -28.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4042",
+            "nodeName": "Vector 57",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -218,
+              "relativeTop": -125,
+              "parentId": "243:4041"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -125.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 57\" is positioned at (-218.0, -125.0) relative to \"Group 58\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -125.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4043",
+            "nodeName": "Vector 58",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 14.5,
+              "relativeLeft": -218,
+              "relativeTop": -110.5,
+              "parentId": "243:4041"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -110.5",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 58\" is positioned at (-218.0, -110.5) relative to \"Group 58\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -110.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4045",
+            "nodeName": "Vector 57",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -218,
+              "relativeTop": -286,
+              "parentId": "243:4044"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -286.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 57\" is positioned at (-218.0, -286.0) relative to \"Group 59\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -286.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4046",
+            "nodeName": "Vector 58",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 14.5,
+              "relativeLeft": -218,
+              "relativeTop": -271.5,
+              "parentId": "243:4044"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -271.5",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 58\" is positioned at (-218.0, -271.5) relative to \"Group 59\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -271.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4048",
+            "nodeName": "Frame 2095586441",
+            "figmaValue": {
+              "absoluteX": 32,
+              "absoluteY": 18,
+              "relativeLeft": 32,
+              "relativeTop": -318,
+              "parentId": "243:4047"
+            },
+            "expectedRNValue": "position: 'absolute', left: 32.0, top: -318.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 2095586441\" is positioned at (32.0, -318.0) relative to \"Frame 2095586341\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 32.0,\ntop: -318.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4051",
+            "nodeName": "Vector 1",
+            "figmaValue": {
+              "absoluteX": 217.97,
+              "absoluteY": 16,
+              "relativeLeft": 217.97,
+              "relativeTop": -320,
+              "parentId": "243:4047"
+            },
+            "expectedRNValue": "position: 'absolute', left: 218.0, top: -320.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 1\" is positioned at (218.0, -320.0) relative to \"Frame 2095586341\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 218.0,\ntop: -320.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4049",
+            "nodeName": "NET BANKING",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -32,
+              "relativeTop": -18,
+              "parentId": "243:4048"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -18.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"NET BANKING\" is positioned at (-32.0, -18.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:4050",
+            "nodeName": "Outline Icon Library",
+            "figmaValue": {
+              "absoluteX": 97,
+              "absoluteY": 2,
+              "relativeLeft": 65,
+              "relativeTop": -16,
+              "parentId": "243:4048"
+            },
+            "expectedRNValue": "position: 'absolute', left: 65.0, top: -16.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Outline Icon Library\" is positioned at (65.0, -16.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 65.0,\ntop: -16.0,"
+          }
+        ],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 14
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T22:40:16.201Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T22:41:14.882Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/payment.tsx",
+            "lineRange": "1-100",
+            "property": "Component Implementation",
+            "figmaValue": "Net Banking Card (270x400px)",
+            "currentValue": "List Item Row",
+            "severity": "critical",
+            "explanation": "Major design mismatch: The simulator shows a simple list item for 'Net Banking' (with 'Set it up' text), whereas the Figma design specifies a fully detailed 'Net Banking Card' component (270x400px). The card should feature a dark background (#202020) with pattern overlay, ICICI branding, account details ('ICICI a/c - xxx23'), and a distinct bottom bar for 'NET BANKING'. The current implementation is missing this entire card state.",
+            "currentCode": "// Current implementation renders a list row\n<View style={styles.row}>\n  <RadioButton />\n  <Text>Net Banking</Text>\n</View>",
+            "fixedCode": "// Needs implementation of NetBankingCard matching Figma Node 243:4030\n<View style={{ width: 270, height: 400, borderRadius: 12, overflow: 'hidden' }}>\n  <View style={{ flex: 1, backgroundColor: '#202020', padding: 24 }}>\n    {/* Top Section: Logo & Details */}\n  </View>\n  <View style={{ height: 64, backgroundColor: '#1A1A1A', flexDirection: 'row', alignItems: 'center' }}>\n    {/* Bottom Section: Label & Edit Icon */}\n  </View>\n</View>"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 100
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T22:42:22.555Z",
+      "feedback": [
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "1-100",
+          "property": "Component Implementation",
+          "figmaValue": "Net Banking Card (270x400px)",
+          "currentValue": "List Item Row",
+          "severity": "critical",
+          "explanation": "The current implementation renders a simple list row, but the design requires a detailed 'Net Banking Card' (270x400px). This consolidated fix implements the full card structure, resolving the missing UI state and the 14 structural position issues (logos, account details, vectors) identified in the analysis.",
+          "currentCode": "<View style={styles.row}>\n  <RadioButton />\n  <Text>Net Banking</Text>\n</View>",
+          "fixedCode": "<View style={{ width: 270, height: 400, borderRadius: 12, backgroundColor: '#202020', overflow: 'hidden' }}>\n  {/* Main Content Area */}\n  <View style={{ flex: 1, padding: 24, position: 'relative' }}>\n    {/* Background Pattern Vectors (Absolute) */}\n    <View style={{ position: 'absolute', left: -218, top: -125, opacity: 0.5 }}>\n      {/* Placeholder for Vector 57/58 */}\n      <View style={{ width: 400, height: 400, borderRadius: 200, borderWidth: 1, borderColor: '#333' }} />\n    </View>\n\n    {/* Bank Logos */}\n    <View style={{ position: 'absolute', top: 24, left: 24, flexDirection: 'row' }}>\n      {/* Placeholder for Bank Logos (Small) */}\n      <View style={{ width: 32, height: 32, backgroundColor: '#FFF', borderRadius: 16 }} />\n    </View>\n\n    {/* Account Details */}\n    <View style={{ marginTop: 120 }}>\n      <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Plus Jakarta Sans', letterSpacing: 2 }}>•••• 2341</Text>\n      <View style={{ marginTop: 24 }}>\n        <Text style={{ color: '#878787', fontSize: 12, fontFamily: 'Plus Jakarta Sans', fontWeight: '600' }}>EXPIRY 06/26</Text>\n        <Text style={{ color: '#BABABA', fontSize: 14, fontFamily: 'Plus Jakarta Sans', marginTop: 4 }}>ICICI a/c - xxx23</Text>\n      </View>\n    </View>\n  </View>\n\n  {/* Bottom Bar */}\n  <View style={{ height: 64, backgroundColor: '#1A1A1A', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 }}>\n    <Text style={{ color: '#FFFFFF', fontSize: 14, fontFamily: 'Plus Jakarta Sans', fontWeight: '600', letterSpacing: 0.5 }}>NET BANKING</Text>\n    {/* Edit Icon Placeholder */}\n    <View style={{ width: 20, height: 20, borderColor: '#FFF', borderWidth: 1, borderRadius: 4 }} />\n  </View>\n</View>"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "1-100",
+      "property": "Component Implementation",
+      "figmaValue": "Net Banking Card (270x400px)",
+      "currentValue": "List Item Row",
+      "severity": "critical",
+      "explanation": "The current implementation renders a simple list row, but the design requires a detailed 'Net Banking Card' (270x400px). This consolidated fix implements the full card structure, resolving the missing UI state and the 14 structural position issues (logos, account details, vectors) identified in the analysis.",
+      "currentCode": "<View style={styles.row}>\n  <RadioButton />\n  <Text>Net Banking</Text>\n</View>",
+      "fixedCode": "<View style={{ width: 270, height: 400, borderRadius: 12, backgroundColor: '#202020', overflow: 'hidden' }}>\n  {/* Main Content Area */}\n  <View style={{ flex: 1, padding: 24, position: 'relative' }}>\n    {/* Background Pattern Vectors (Absolute) */}\n    <View style={{ position: 'absolute', left: -218, top: -125, opacity: 0.5 }}>\n      {/* Placeholder for Vector 57/58 */}\n      <View style={{ width: 400, height: 400, borderRadius: 200, borderWidth: 1, borderColor: '#333' }} />\n    </View>\n\n    {/* Bank Logos */}\n    <View style={{ position: 'absolute', top: 24, left: 24, flexDirection: 'row' }}>\n      {/* Placeholder for Bank Logos (Small) */}\n      <View style={{ width: 32, height: 32, backgroundColor: '#FFF', borderRadius: 16 }} />\n    </View>\n\n    {/* Account Details */}\n    <View style={{ marginTop: 120 }}>\n      <Text style={{ color: '#FFFFFF', fontSize: 20, fontFamily: 'Plus Jakarta Sans', letterSpacing: 2 }}>•••• 2341</Text>\n      <View style={{ marginTop: 24 }}>\n        <Text style={{ color: '#878787', fontSize: 12, fontFamily: 'Plus Jakarta Sans', fontWeight: '600' }}>EXPIRY 06/26</Text>\n        <Text style={{ color: '#BABABA', fontSize: 14, fontFamily: 'Plus Jakarta Sans', marginTop: 4 }}>ICICI a/c - xxx23</Text>\n      </View>\n    </View>\n  </View>\n\n  {/* Bottom Bar */}\n  <View style={{ height: 64, backgroundColor: '#1A1A1A', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 }}>\n    <Text style={{ color: '#FFFFFF', fontSize: 14, fontFamily: 'Plus Jakarta Sans', fontWeight: '600', letterSpacing: 0.5 }}>NET BANKING</Text>\n    {/* Edit Icon Placeholder */}\n    <View style={{ width: 20, height: 20, borderColor: '#FFF', borderWidth: 1, borderRadius: 4 }} />\n  </View>\n</View>"
+    }
+  ],
+  "summary": {
+    "totalIssues": 15,
+    "critical": 1,
+    "major": 14,
+    "minor": 0,
+    "filesAffected": [
+      "app/(payment)/index.tsx"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "screenId": "1-31485",
+  "screenRoute": "/(setup)/add-bank",
+  "screenFile": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/rn-app/app/(setup)/add-bank.tsx",
+  "generatedAt": "2026-02-19T22:55:35.781Z",
+  "generatedBy": "buildbot-backend-agent-auto",
+  "requiredHooks": [
+    "useVerifyBank",
+    "useDashboard",
+    "useCallback",
+    "useState",
+    "useRouter",
+    "useSafeAreaInsets"
+  ],
+  "services": [],
+  "supabaseCalls": [],
+  "mockData": null,
+  "notes": "Auto-generated from source scan. Review for completeness."
+}

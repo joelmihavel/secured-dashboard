@@ -46,7 +46,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
-import { useAgreement } from '@/src/hooks';
+import { useAgreement, useNetworkStatus } from '@/src/hooks';
 import {
   getMimeType,
   validateFileSize,
@@ -84,15 +84,15 @@ const FIGMA = {
     paperclip: colors.black[400],         // #4D4D4D - VariableID:d0771a90f71f9f9162cc0656f42874451acc6ae7
 
     // Text colors (from styleOverrideTable)
-    titleGray: colors.neutral[500],       // #A9A9A9 - VariableID:a30255c279da5be0e3281358b6555fa3fed99370
-    titleAccent: colors.brand[500],       // #FF9A6D - VariableID:0fd77850f1e95a3b4b9c0b7b04fa3f11a2f4a424
+    titleGray: colors.neutral[500], // #A9A9A9
+    titleAccent: colors.brand[500], // #FF9A6D - VariableID:0fd77850f1e95a3b4b9c0b7b04fa3f11a2f4a424
     subtitle: colors.black[300],          // #797979
     hintText: colors.neutral[500],        // #A9A9A9
     fileName: '#D2D2D2',                  // Figma exact: neutral file name
     progressText: colors.neutral[800],    // #444444
 
     // Status colors (from Figma variable references)
-    iconError: '#E5484D',                 // var(--colour/icons/error/default)
+    iconError: colors.error.radix,                 // var(--colour/icons/error/default)
     iconSuccess: colors.success.default,  // #70BF73
     iconWarning: '#FFB020',               // var(--colour/icons/warning/default) - NOT brand[500]
     progressBar: colors.brand[500],       // #FF9A6D
@@ -275,12 +275,12 @@ const STATE_CONFIG = {
     buttonEnabled: true,
     errorMessage: null as string | null,
     showDivider: true, // Figma: divider pill above active button
-    fileNameColor: '#4D4D4D', // Figma 1:30090: dimmer filename color
+    fileNameColor: colors.black[400], // Figma 1:30090: dimmer filename color
   },
   error_expired: {
     borderColor: FIGMA.colors.iconError, // #E5484D
     borderWidth: 1, // Figma 1:30178: stroke weight 1, align INSIDE
-    foldCornerFill: FIGMA.colors.cardBackground, // #202020 (Figma 1:30178 Vector 44 fill)
+    foldCornerFill: FIGMA.colors.cardBackground, // #202020
     foldCornerStroke: FIGMA.colors.iconError, // #E5484D - matches card border
 
     buttonTitle: 'Upload Again',
@@ -299,7 +299,7 @@ const STATE_CONFIG = {
     buttonTitle: 'Upload Again',
     buttonEnabled: true,
     // From 1-30268 - message appears OUTSIDE the card
-    errorMessage: 'This file is too large. Please upload a file under 10MB',
+    errorMessage: 'This file is too large. Please upload a file under 50MB.',
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: '#D2D2D2', // Figma 1:30268: lighter filename
   },
@@ -437,11 +437,14 @@ function PaperclipIcon() {
 // - error (1-30178/30268): fill #202020, stroke #E5484D, simple triangle path
 // - warning (1-30358): fill #202020, stroke #FFB020, simple triangle path
 function FoldCorner({ fill, stroke }: { fill: string; stroke: string }) {
-  // Use curved path when fill is default (#1A1A1A), simple triangle for error/warning
+  // Idle state: Vector 44 is curved. Path: M67 60L0 0L0 48C0 54.6274 5.37258 60 12 60L67 60Z
+  // Error state: Vector 44 is straight triangle. Path: M67 60L0 0L0 60L67 60Z
   const isDefault = fill === FIGMA.colors.foldCornerFill;
+  
+  // Notice the exact paths from Figma data
   const svgPath = isDefault
-    ? 'M65.6924 59.5H12C5.64873 59.5 0.5 54.3513 0.5 48V1.11816L65.6924 59.5Z'
-    : 'M66.5 59.5H0.5V0.705078L66.5 59.5Z'; // Simple triangle for error/warning states
+    ? 'M67 60L0 0L0 48C0 54.6274 5.37258 60 12 60L67 60Z'
+    : 'M67 60L0 0L0 60L67 60Z';
 
   return (
     <View style={styles.foldCornerContainer}>
@@ -505,6 +508,7 @@ export default function UploadScreen() {
   // Set useMock to true for visual testing / development only
   const useMock = stateParam != null && stateParam !== 'idle';
   const agreement = useAgreement({ useMock });
+  const { isConnected } = useNetworkStatus();
 
   // Map URL state parameter to internal upload state
   const getInitialUploadState = (): UploadState => {
@@ -553,10 +557,14 @@ export default function UploadScreen() {
     }
   }, [stateParam]);
 
-  // Sync real upload progress from hook
+  // Sync real upload progress from hook — update whenever progress changes,
+  // including reset to 0 on error (not just when isUploading)
   useEffect(() => {
-    if (agreement.isUploading && agreement.uploadProgress > 0) {
+    if (agreement.uploadProgress > 0) {
       setUploadProgress(agreement.uploadProgress);
+    } else if (!agreement.isUploading && agreement.uploadProgress === 0) {
+      // Reset local progress when hook resets (error or explicit reset)
+      setUploadProgress(0);
     }
   }, [agreement.isUploading, agreement.uploadProgress]);
 
@@ -635,7 +643,7 @@ export default function UploadScreen() {
           if (data.is_city_supported === false) {
             setUploadState('manual_review');
             setErrorOverrideMessage(
-              "We're not in your city yet. Our team will review your document manually."
+              "Our team will review it manually and get back to you within 24 hours."
             );
           } else {
             setUploadState('success');
@@ -766,7 +774,7 @@ export default function UploadScreen() {
   const handlePickDocument = useCallback(async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
+        type: ['application/pdf'],
         copyToCacheDirectory: true,
       });
 
@@ -799,13 +807,25 @@ export default function UploadScreen() {
   const handleUpload = useCallback(async () => {
     if (!document) return;
 
-    const mimeType = getMimeType(document.name);
-    if (!validateAgreementType(mimeType)) {
-      Alert.alert('Invalid File', 'Please upload a PDF or image file (JPG, PNG)');
+    // Check network connectivity before starting upload
+    if (!isConnected) {
+      Alert.alert('No Internet', 'Please check your network connection and try again.');
       return;
     }
 
-    if (document.size && !validateFileSize(document.size)) {
+    // Guard against unreadable files (size=0 or undefined from DocumentPicker)
+    if (!document.size || document.size <= 0) {
+      Alert.alert('Cannot Read File', 'Could not read the file. Please try selecting it again.');
+      return;
+    }
+
+    const mimeType = getMimeType(document.name);
+    if (!validateAgreementType(mimeType)) {
+      Alert.alert('Invalid File', 'Please upload a PDF file.');
+      return;
+    }
+
+    if (!validateFileSize(document.size, 50)) {
       setUploadState('error_size');
       return;
     }
@@ -836,7 +856,7 @@ export default function UploadScreen() {
 
       if (!result.processResult.isCitySupported) {
         setUploadState('manual_review');
-        setErrorOverrideMessage("We're not in your city yet. Our team will review your document manually.");
+        setErrorOverrideMessage("Our team will review it manually and get back to you within 24 hours.");
         return;
       }
 
@@ -858,14 +878,26 @@ export default function UploadScreen() {
       const agreementError = error as { code?: string; message?: string };
       const code = agreementError.code ?? '';
 
+      const errorMsg = agreementError.message ?? '';
+
       switch (code) {
         case 'FILE_TOO_LARGE':
           setUploadState('error_size');
+          // Show actual file size vs limit if available
+          if (document.size) {
+            const fileMB = (document.size / (1024 * 1024)).toFixed(1);
+            setErrorOverrideMessage(`Your file is ${fileMB}MB. Maximum allowed is 50MB.`);
+          }
           break;
 
         case 'INVALID_FILE_TYPE':
           setUploadState('error_expired');
-          setErrorOverrideMessage('This file type is not supported. Please upload a PDF.');
+          // Distinguish between unreadable file and wrong type
+          if (errorMsg.includes('Could not read')) {
+            setErrorOverrideMessage('Could not read the file. Please try selecting it again.');
+          } else {
+            setErrorOverrideMessage('This file type is not supported. Please upload a PDF.');
+          }
           break;
 
         case 'OCR_FAILED':
@@ -880,7 +912,14 @@ export default function UploadScreen() {
 
         case 'UPLOAD_FAILED':
           setUploadState('error_expired');
-          setErrorOverrideMessage('Upload failed. Please check your connection and try again.');
+          // Show timeout-specific message if applicable
+          if (errorMsg.includes('timed out')) {
+            setErrorOverrideMessage('Upload timed out. Please try with a smaller file or better connection.');
+          } else if (errorMsg.includes('expired')) {
+            setErrorOverrideMessage('Upload session expired. Please try again.');
+          } else {
+            setErrorOverrideMessage('Upload failed. Please check your connection and try again.');
+          }
           break;
 
         case 'PROCESSING_IN_PROGRESS':
@@ -900,7 +939,7 @@ export default function UploadScreen() {
           break;
       }
     }
-  }, [document, agreement, router]);
+  }, [document, agreement, router, isConnected]);
 
   const handleRetry = useCallback(() => {
     clearPollTimer();
@@ -992,8 +1031,15 @@ export default function UploadScreen() {
           </View>
 
           {/* Upload Card - Frame 1686557325 (node 1:29992) */}
-          {/* Figma states: idle (upload box), uploading (% + bar), success/error/warning (file + icon) */}
-          {/* Error/warning messages appear OUTSIDE the card per Figma */}
+          <View style={{ position: 'relative' }}>
+            {/* Wireframe Guidelines behind card */}
+            <View style={styles.wireframeGrid}>
+              <View style={styles.wireframeHLineTop} />
+              <View style={styles.wireframeHLineBottom} />
+              <View style={styles.wireframeVLineLeft} />
+              <View style={styles.wireframeVLineRight} />
+            </View>
+
           {document ? (
             <View style={uploadState !== 'uploading' ? styles.cardWithMessageWrapper : undefined}>
               <Animated.View
@@ -1075,12 +1121,12 @@ export default function UploadScreen() {
 
                 {/* Upload hints - exact Figma text from 1:29995 */}
                 <View style={styles.hintContainer}>
-                  <Text style={styles.hintText}>Upload Rental Agreement</Text>
-                  <Text style={styles.hintText}>File types: PDF, DOCX, Max size: 10MB</Text>
+                  <Text style={styles.hintText}>Upload Rental Agreement{'\n'}File types: PDF, Max size: 50MB</Text>
                 </View>
               </View>
             </TouchableOpacity>
           )}
+          </View>
         </View>
 
         {/* Spacer */}
@@ -1159,7 +1205,45 @@ const styles = StyleSheet.create({
   // Figma: 297x160, cornerRadius 12, padding 24/16/24/16
   // Layout: VERTICAL, justifyContent CENTER, alignItems CENTER, gap 16
   // CRITICAL: overflow visible for paperclip and fold corner to extend outside card
+  // Wireframe Background lines
+  wireframeGrid: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1, // Behind the card
+  },
+  wireframeHLineTop: {
+    position: 'absolute',
+    left: -100, right: -100, top: 0,
+    height: 1,
+    borderTopWidth: 1,
+    borderColor: '#1A1A1A',
+    borderStyle: 'dashed',
+  },
+  wireframeHLineBottom: {
+    position: 'absolute',
+    left: -100, right: -100, top: 160,
+    height: 1,
+    borderBottomWidth: 1,
+    borderColor: '#1A1A1A',
+    borderStyle: 'dashed',
+  },
+  wireframeVLineLeft: {
+    position: 'absolute',
+    top: -100, bottom: -100, left: 0,
+    width: 1,
+    borderLeftWidth: 1,
+    borderColor: '#1A1A1A',
+    borderStyle: 'dashed',
+  },
+  wireframeVLineRight: {
+    position: 'absolute',
+    top: -100, bottom: -100, left: 297,
+    width: 1,
+    borderRightWidth: 1,
+    borderColor: '#1A1A1A',
+    borderStyle: 'dashed',
+  },
   uploadCard: {
+    borderCurve: 'continuous',
     backgroundColor: FIGMA.colors.cardBackground, // #202020
     borderRadius: FIGMA.card.borderRadius,        // 12
     width: FIGMA.card.width,                      // 297 (explicit width)
@@ -1208,6 +1292,7 @@ const styles = StyleSheet.create({
   // Rectangle 120 (node 1:29997) - background-colored cutout
   // This "cuts out" the card corner by covering it with background color
   foldCornerCutout: {
+    borderCurve: 'continuous',
     position: 'absolute',
     width: FIGMA.foldCorner.cutout.width,             // 54
     height: FIGMA.foldCorner.cutout.height,           // 54

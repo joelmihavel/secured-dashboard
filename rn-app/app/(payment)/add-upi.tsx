@@ -40,21 +40,22 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
 import { useAddUpiVpa, useVerifyUpi } from '@/src/hooks';
+import { colors } from '@/src/theme';
 
 // Figma-exact color constants from blueprint 41-8369
 const FIGMA_COLORS = {
-  background: '#131313',
-  titleGray: '#A9A9A9',
-  titleAccent: '#FF9A6D',
-  labelText: '#A9A9A9',
-  editLinkText: '#878787',
-  inputPlaceholder: '#444444',
-  inputValue: '#DDDDDD',
-  footerText: '#A9A9A9',
-  errorText: '#FF8080',
-  buttonDisabledBg: '#202020',
-  buttonDisabledText: '#444444',
-  white: '#FFFFFF',
+  background: colors.black[700],
+  titleGray: colors.neutral[500],
+  titleAccent: colors.brand[500],
+  labelText: colors.neutral[500],
+  editLinkText: colors.neutral[600],
+  inputPlaceholder: colors.neutral[800],
+  inputValue: colors.neutral[200],
+  footerText: colors.neutral[500],
+  errorText: colors.error.default,
+  buttonDisabledBg: colors.black[500],
+  buttonDisabledText: colors.neutral[800],
+  white: colors.white,
 } as const;
 
 // Back Arrow Icon
@@ -170,7 +171,7 @@ export default function AddUpiScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             {
-              paddingTop: insets.top + 117,
+              paddingTop: insets.top + 64, // Figma 64px gap below status bar
               paddingBottom: insets.bottom + 24,
             },
           ]}
@@ -222,32 +223,32 @@ export default function AddUpiScreen() {
             ) : null}
           </View>
 
-          {/* Spacer pushes button to bottom */}
-          <View style={styles.spacer} />
+          {/* Button + Footer Section - Figma: Frame 1686557317, gap 16px */}
+          <View style={styles.buttonFooterSection}>
+            {/* Verify + Proceed Buttons */}
+            {!isVerified && isFormValid ? (
+              <PrimaryButton
+                title={verifyUpi.isPending ? 'Verifying...' : 'Verify UPI'}
+                onPress={handleVerify}
+                disabled={!isFormValid || verifyUpi.isPending}
+                loading={verifyUpi.isPending}
+                testID="verify-upi-button"
+              />
+            ) : (
+              <PrimaryButton
+                title="Proceed"
+                onPress={handleProceed}
+                disabled={!isFormValid}
+                loading={addUpi.isPending}
+                testID="proceed-button"
+              />
+            )}
 
-          {/* Verify + Proceed Buttons */}
-          {!isVerified && isFormValid ? (
-            <PrimaryButton
-              title={verifyUpi.isPending ? 'Verifying...' : 'Verify UPI'}
-              onPress={handleVerify}
-              disabled={!isFormValid || verifyUpi.isPending}
-              loading={verifyUpi.isPending}
-              testID="verify-upi-button"
-            />
-          ) : (
-            <PrimaryButton
-              title="Proceed"
-              onPress={handleProceed}
-              disabled={!isFormValid}
-              loading={addUpi.isPending}
-              testID="proceed-button"
-            />
-          )}
-
-          {/* Footer Text - Figma: 12px/20px, Regular, #A9A9A9, textAlign LEFT */}
-          <Text style={styles.footerText}>
-            This will be used to make rent payments and earn cashback.
-          </Text>
+            {/* Footer Text - Figma: 12px/20px, Regular, #A9A9A9, textAlign LEFT */}
+            <Text style={styles.footerText}>
+              This will be used to make rent payments and earn cashback.
+            </Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  // Figma: paddingHorizontal 48px, gap 40px between major sections
+  // Figma: paddingHorizontal 48px, gap 40px between major sections (Frame 1686557268)
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 48,
@@ -284,6 +285,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
+  // Button + Footer wrapper: Figma Frame 1686557317, gap 16px
+  buttonFooterSection: {
+    gap: 16,
+  },
+
   // Error text: 12px/20px, Regular, #FF8080
   errorText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -293,19 +299,12 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 
-  // Spacer pushes button to bottom
-  spacer: {
-    flex: 1,
-    minHeight: 40,
-  },
-
   // Footer text: Figma 12px/20px, Regular, #A9A9A9, textAlign LEFT
   footerText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: FIGMA_COLORS.footerText,
-    marginTop: 16,
     textAlign: 'left',
   },
 });

@@ -1,0 +1,240 @@
+{
+  "screenId": "1-30001",
+  "screenName": "Onboarding / Agreement --uploading",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-20T13:46:58.458Z",
+  "checks": {
+    "nodeCount": 95,
+    "textNodeCount": 20,
+    "componentInstanceCount": 2,
+    "interactiveNodeCount": 3,
+    "imageAssetCount": 7,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": true,
+    "topLevelChildNames": [
+      "image 149",
+      "Background Shape",
+      "Vector 45",
+      "Vector 1",
+      "Status Bar",
+      "Rectangle 52",
+      "Frame 1686557300",
+      "Frame 1686557268"
+    ],
+    "textContents": [
+      {
+        "nodeId": "I1:30005;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30020",
+        "name": "Pay Rent",
+        "content": "Pay Rent",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30031",
+        "name": "Total payable rent",
+        "content": "Total payable rent",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:30032",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30041",
+        "name": "saved ₹ 325 →",
+        "content": "saved ₹ 325 →",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#70BF73"
+      },
+      {
+        "nodeId": "1:30042",
+        "name": "using flent cashback",
+        "content": "using flent cashback",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:30046",
+        "name": "Paying to",
+        "content": "Paying to",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30047",
+        "name": "[Landlord Name]",
+        "content": "[Landlord Name]",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30051",
+        "name": "ICICI",
+        "content": "ICICI ",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30052",
+        "name": "XXXX XXXX XXXX 2003",
+        "content": "XXXX XXXX XXXX 2003",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30054",
+        "name": "Pay Now",
+        "content": "Pay Now",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30055",
+        "name": "All payments are 100% secure",
+        "content": "All payments are 100% secure",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30060",
+        "name": "PAY BY ANY APP INSTEAD",
+        "content": "PAY BY ANY APP INSTEAD",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30064",
+        "name": "Google Pay",
+        "content": "Google Pay",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30067",
+        "name": "PayTM",
+        "content": "PayTM",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30070",
+        "name": "PhonePe",
+        "content": "PhonePe",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30077",
+        "name": "One  More Step",
+        "content": "One  More Step",
+        "fontSize": 48,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30078",
+        "name": "Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.",
+        "content": "Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#797979"
+      },
+      {
+        "nodeId": "1:30086",
+        "name": "30%",
+        "content": "30%",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I1:30089;100:1575",
+        "name": "Text",
+        "content": "Proceed",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#444444"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#444444",
+      "#4D4D4D",
+      "#70BF73",
+      "#797979",
+      "#878787",
+      "#A9A9A9",
+      "#D9D9D9",
+      "#EEEEEE",
+      "#FF9A6D",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      12,
+      15.19174861907959,
+      16,
+      24,
+      30.38349723815918,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:7",
+      "1:81"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Onboarding / Agreement --uploading",
+        "trigger": "AFTER_TIMEOUT"
+      },
+      {
+        "sourceNode": "Frame 1686557209",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_CLICK",
+        "destination": "1:78"
+      }
+    ]
+  }
+}

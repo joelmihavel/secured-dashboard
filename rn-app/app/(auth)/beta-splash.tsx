@@ -86,7 +86,7 @@ export default function BetaSplashScreen() {
 
   return (
     <Screen
-      padded={false}
+      padded={false} safeAreaTop={false} safeAreaBottom={false}
       style={{ backgroundColor: FIGMA_COLORS.background }}
       testID="beta-splash-screen"
     >

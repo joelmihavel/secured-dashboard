@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, VerifyOtpRequest } from '../services/api/auth';
 import { useAuthStore } from '../stores/auth';
-import { useIdentityFetch } from './useIdentityVerification';
+import { useRecordConsent, useIdentityFetch } from './useIdentityVerification';
 import { supabase } from '../services/supabase/client';
 
 // ==============================================
@@ -153,6 +153,7 @@ export function useAuth() {
   const sendOtpMutation = useSendOtp();
   const verifyOtpMutation = useVerifyOtp();
   const resendOtpMutation = useResendOtp();
+  const recordConsentMutation = useRecordConsent();
   const identityFetchMutation = useIdentityFetch();
   const identityFiredRef = useRef(false);
 
@@ -166,7 +167,9 @@ export function useAuth() {
     }
   }, [authStore.status]);
 
-  // Fire non-blocking Mobile 360 identity fetch after successful authentication
+  // Non-blocking Mobile 360 flow after OTP verification:
+  // Step 1: Record consent to backend (persists timestamp, IP, phone)
+  // Step 2: Trigger Cashfree Mobile 360 fetch using persisted consent
   useEffect(() => {
     if (
       authStore.status === 'authenticated' &&
@@ -175,10 +178,29 @@ export function useAuth() {
       !identityFiredRef.current
     ) {
       identityFiredRef.current = true;
-      identityFetchMutation.mutate({
-        consent_timestamp: new Date().toISOString(),
-        name: authStore.userName || undefined,
-      });
+      const consentTimestamp = authStore.consentTimestamp || new Date().toISOString();
+      const userName = authStore.userName || undefined;
+
+      // Step 1: Record consent, then Step 2: trigger Mobile 360
+      recordConsentMutation.mutate(
+        { consent_timestamp: consentTimestamp, name: userName },
+        {
+          onSuccess: () => {
+            // Consent persisted — now trigger Cashfree Mobile 360
+            identityFetchMutation.mutate({
+              consent_timestamp: consentTimestamp,
+              name: userName,
+            });
+          },
+          onError: () => {
+            // Consent recording failed — still try Mobile 360 (it auto-creates consent as fallback)
+            identityFetchMutation.mutate({
+              consent_timestamp: consentTimestamp,
+              name: userName,
+            });
+          },
+        }
+      );
     }
   }, [authStore.status, authStore.isNewUser, authStore.consentForMobile360]);
 

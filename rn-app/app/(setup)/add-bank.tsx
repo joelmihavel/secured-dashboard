@@ -40,17 +40,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useVerifyBank, useDashboard, validateAccountNumber, validateIfscCode } from '@/src/hooks';
 import type { BankVerificationResponse, SetupError } from '@/src/types/setup';
+import { colors } from '@/src/theme';
 
 // Figma exact color values from 1-33737 blueprint
 const FIGMA_COLORS = {
-  background: '#131313',
-  progressTrack: '#4D4D4D',
-  progressFill: '#CC7B57',
-  footer: '#A9A9A9',
-  white: '#FFFFFF',
+  background: colors.black[700],
+  progressTrack: colors.black[400],
+  progressFill: colors.brand[600],
+  footer: colors.neutral[500],
+  white: colors.white,
 } as const;
 
 export default function AddBankScreen() {
@@ -193,20 +194,14 @@ export default function AddBankScreen() {
           </View>
 
           {/* API Error Banner */}
-          {apiError && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{apiError}</Text>
-            </View>
-          )}
+          {apiError && <AlertBanner type="error" message={apiError} />}
 
           {/* Verification Success Banner */}
           {verificationResult?.verified && (
-            <View style={styles.successBanner}>
-              <Text style={styles.successBannerText}>
-                Bank verified{verificationResult.bankName ? ` - ${verificationResult.bankName}` : ''}
-                {verificationResult.branch ? `, ${verificationResult.branch}` : ''}
-              </Text>
-            </View>
+            <AlertBanner 
+              type="success" 
+              message={`Bank verified${verificationResult.bankName ? ` - ${verificationResult.bankName}` : ''}${verificationResult.branch ? `, ${verificationResult.branch}` : ''}`} 
+            />
           )}
 
           {/* Form - Figma: gap 16 between fields */}
@@ -325,37 +320,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: FIGMA_COLORS.footer,
     textAlign: 'left',
-  },
-  // Error banner
-  errorBanner: {
-    backgroundColor: 'rgba(229, 72, 77, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(229, 72, 77, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#E5484D',
-    textAlign: 'left' as const,
-  },
-  // Success banner
-  successBanner: {
-    backgroundColor: 'rgba(70, 167, 88, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(70, 167, 88, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  successBannerText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#46A758',
-    textAlign: 'left' as const,
   },
 });

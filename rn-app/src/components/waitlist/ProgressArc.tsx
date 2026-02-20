@@ -24,6 +24,7 @@
 import React, { memo, useMemo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
 import Svg, { Path, Line, G } from 'react-native-svg';
+import { sv } from '@/src/theme/scale';
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -229,7 +230,7 @@ function ProgressArcComponent({
         height={CONTAINER_H}
       >
         <G transform={`rotate(${rotDelta} ${CX} ${CY})`}>
-          {/* Dashed line — node 41:11547, reference endpoints */}
+          {/* Dashed line — node 41: sv(11547), reference endpoints */}
           <Line
             x1={DASH_REF_X1}
             y1={DASH_REF_Y1}
@@ -240,7 +241,7 @@ function ProgressArcComponent({
             strokeDasharray="3 3"
           />
 
-          {/* Triangle — node 41:11548, using exact Figma relativeTransform matrix */}
+          {/* Triangle — node 41: sv(11548), using exact Figma relativeTransform matrix */}
           <G transform={`matrix(${TRI_MATRIX})`}>
             <Path d={TRIANGLE_PATH} fill={TRIANGLE_FILL} />
           </G>
@@ -275,7 +276,7 @@ function ProgressArcComponent({
           )}
         </Svg>
 
-        {/* Members text — node 41:11546, centered within gauge */}
+        {/* Members text — node 41: sv(11546), centered within gauge */}
         <View
           style={[
             styles.textContainer,
@@ -326,8 +327,8 @@ const styles = StyleSheet.create({
   membersText: {
     textAlign: 'center',
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sv(14),
+    lineHeight: sv(20),
   },
 
   textGray: {
@@ -340,13 +341,13 @@ const styles = StyleSheet.create({
 
   hintContainer: {
     position: 'absolute',
-    zIndex: 10,
+    zIndex: sv(10),
   },
 
   hintText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sv(12),
+    lineHeight: sv(20),
     color: HINT_COLOR,
     textAlign: 'center',
   },
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-    zIndex: 5,
+    zIndex: sv(5),
   },
 });
 

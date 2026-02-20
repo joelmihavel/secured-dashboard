@@ -431,7 +431,7 @@ Follow this sequence for every screen:
 ### PM Agent does NOT:
 - Write or modify application code
 - Take screenshots or run visual comparisons
-- Run coverage checks or pixel diff tools
+- Run coverage checks or visual comparison tools
 - Make API calls to Supabase
 - Modify Figma designs
 
@@ -444,8 +444,8 @@ These patterns repeat across screens. Apply them automatically:
 ### DottedPattern Background Screens
 Screens: splash, carousel, sign-up, otp, waitlist, agreement upload
 - Always have DottedPattern as background with a specific `backgroundShape` key
-- Inherent 8-12% pixel diff due to SVG-vs-bitmap rendering
-- Inspector should use 18% threshold, not 3%
+- Inherent visual differences between Figma static and app dynamic rendering
+- Inspector and Gemini automatically filter DottedPattern background issues
 
 ### Form Screens
 Screens: sign-up, otp, add-bank, add-upi, add-card, add-netbanking, invite-landlord

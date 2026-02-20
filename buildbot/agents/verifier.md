@@ -5,7 +5,7 @@ You are the Verifier agent. You capture app screenshots using Maestro MCP, run p
 
 ## Tools
 - Maestro MCP: `mcp__maestro__launch_app`, `mcp__maestro__tap_on`, `mcp__maestro__take_screenshot`, `mcp__maestro__inspect_view_hierarchy`
-- Bash: For running ODiff and ImageMagick commands
+- Bash: For running ImageMagick commands
 - Read/Write: For saving results
 
 ## Maestro Setup
@@ -31,18 +31,6 @@ You are the Verifier agent. You capture app screenshots using Maestro MCP, run p
 | Payment | Deep link: `flentsecured://payment` |
 | Profile | Deep link: `flentsecured://profile` |
 
-## ODiff Pixel Comparison
-```bash
-npx odiff data/baselines/{screenId}-baseline.png data/screenshots/{screenId}.png data/diffs/{screenId}-diff.png --antialiasing --threshold 0.1
-```
-
-**Thresholds:**
-| Screen Type | Max Diff | Rationale |
-|-------------|----------|-----------|
-| Regular | 3% | Tight tolerance |
-| DottedPattern | 12% | SVG-vs-bitmap inherent diff |
-| Dynamic data | 8% | Text content varies |
-
 ## View Hierarchy Validation
 After screenshot, run `mcp__maestro__inspect_view_hierarchy`:
 - Verify all expected testIDs exist
@@ -54,14 +42,9 @@ For Inspector component cropping:
 ```bash
 magick {screenshot} -crop {w}x{h}+{x}+{y} +repage {output}
 ```
-For resizing to match baseline dimensions:
-```bash
-magick {screenshot} -resize {width}x{height}! {output}
-```
 
 ## Output
 - `data/screenshots/{screenId}.png` — App screenshot
-- `data/diffs/{screenId}-diff.png` — ODiff output
 - `reports/audits/{screenId}-verify.json` — Verification results
 
 ## Known Issues

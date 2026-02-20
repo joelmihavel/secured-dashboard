@@ -1,0 +1,77 @@
+{
+  "screenId": "41-9635",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Refunded",
+  "route": "/(payment)/failed",
+  "generatedAt": "2026-02-20T00:58:19.352Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 2095586345",
+      "nodeId": "41:9637",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 2095586329",
+      "nodeId": "41:9661",
+      "childCount": 2
+    }
+  ],
+  "states": [
+    {
+      "state": "failed",
+      "figmaId": "41-9563",
+      "name": "Pay Rent / Payment Summary Page --Payment Failed"
+    },
+    {
+      "state": "refunded",
+      "figmaId": "41-9635",
+      "name": "Pay Rent / Payment Summary Page --Payment Refunded"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "41:9675",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "I41:9659;11:75",
+      "name": "Text here",
+      "content": "refunded"
+    },
+    {
+      "nodeId": "41:9660",
+      "name": "Payment Refunded",
+      "content": "Payment Refunded"
+    },
+    {
+      "nodeId": "41:9667",
+      "name": "Your payment was not completed and the amount has been returned to your account.",
+      "content": "Your payment was not completed and the amount has been returned to your account."
+    },
+    {
+      "nodeId": "41:9673",
+      "name": "Refunds usually reflect within 3–5 business days.",
+      "content": "Refunds usually reflect within 3–5 business days."
+    },
+    {
+      "nodeId": "I41:9675;100:1565",
+      "name": "Text",
+      "content": "Contact Support"
+    },
+    {
+      "nodeId": "41:9676",
+      "name": "Try Again",
+      "content": "Try Again"
+    },
+    {
+      "nodeId": "I41:9680;125:209",
+      "name": "Time",
+      "content": "13:13"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

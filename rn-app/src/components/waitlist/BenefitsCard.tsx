@@ -17,6 +17,7 @@
 import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { sv } from '@/src/theme/scale';
 
 // Benefit card icon exported from Figma
 const BENEFIT_ICON = require('@/assets/images/icons/benefit_card_icon.png');
@@ -31,79 +32,79 @@ const FIGMA = {
   // computedStyles: width 313, height 342, borderRadius 12
   // padding: 32/24/32/24, gap 24
   card: {
-    width: 313,
-    height: 342,
-    borderRadius: 12, // radius.lg
-    paddingTop: 32, // spacing[8]
-    paddingBottom: 32,
-    paddingHorizontal: 24, // spacing[6]
-    gap: 24, // spacing[6]
+    width: sv(313),
+    height: sv(342),
+    borderRadius: sv(12), // radius.lg
+    paddingTop: sv(32), // spacing[8]
+    paddingBottom: sv(32),
+    paddingHorizontal: sv(24), // spacing[6]
+    gap: sv(24), // spacing[6]
   },
 
   // Inner content frame (node 41:11256)
   // From Figma extraction line 5551: itemSpacing: 30
   content: {
-    width: 265,
-    height: 278,
-    gap: 30, // Gap between title and benefits list - VERIFIED from Figma
+    width: sv(265),
+    height: sv(278),
+    gap: sv(30), // Gap between title and benefits list - VERIFIED from Figma
   },
 
   // Title container (node 41:11257)
   titleContainer: {
-    width: 265,
-    height: 80,
-    gap: 10,
+    width: sv(265),
+    height: sv(80),
+    gap: sv(10),
   },
 
   // Title text (node 41:11258)
   // style: fontSize 28, lineHeight 40, letterSpacing -1
   titleText: {
-    fontSize: 28,
-    lineHeight: 40,
+    fontSize: sv(28),
+    lineHeight: sv(40),
     fontFamily: 'PlusJakartaSans-Regular',
     letterSpacing: -1,
   },
 
   // Benefits list container (node 41:11259)
   benefitsList: {
-    width: 265,
-    height: 168,
-    gap: 24, // spacing[6]
+    width: sv(265),
+    height: sv(168),
+    gap: sv(24), // spacing[6]
   },
 
-  // Benefit row (nodes 41:11260, 41:11266, 41:11272)
+  // Benefit row (nodes 41: sv(11260), 41: sv(11266), 41:11272)
   // computedStyles: width 265, height 40, gap 16
   benefitRow: {
-    width: 265,
-    height: 40,
-    gap: 16, // spacing.lg
+    width: sv(265),
+    height: sv(40),
+    gap: sv(16), // spacing.lg
   },
 
-  // Icon frame (nodes 41:11261, 41:11267, 41:11273)
+  // Icon frame (nodes 41: sv(11261), 41: sv(11267), 41:11273)
   // computedStyles: width 52.52, height 40
   iconFrame: {
-    width: 52.5,
-    height: 40,
+    width: sv(52.5),
+    height: sv(40),
   },
 
-  // Bracket vectors (nodes 41:11262, 41:11264)
+  // Bracket vectors (nodes 41: sv(11262), 41:11264)
   bracket: {
-    width: 6.72,
-    height: 40,
-    strokeWidth: 1,
+    width: sv(6.72),
+    height: sv(40),
+    strokeWidth: sv(1),
   },
 
-  // Inner image (nodes 41:11263, 41:11269, 41:11275)
+  // Inner image (nodes 41: sv(11263), 41: sv(11269), 41:11275)
   iconImage: {
-    width: 39,
-    height: 39,
+    width: sv(39),
+    height: sv(39),
   },
 
-  // Benefit text (nodes 41:11265, 41:11271, 41:11277)
+  // Benefit text (nodes 41: sv(11265), 41: sv(11271), 41:11277)
   // computedStyles: fontSize 12, lineHeight 20, letterSpacing 0
   benefitText: {
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sv(12),
+    lineHeight: sv(20),
     fontFamily: 'PlusJakartaSans-Regular',
     letterSpacing: 0,
   },
@@ -322,7 +323,7 @@ const styles = StyleSheet.create({
   },
 
   // Benefit row - 265x40, gap 16, alignItems center
-  // Nodes 41:11260, 41:11266, 41:11272
+  // Nodes 41: sv(11260), 41: sv(11266), 41:11272
   benefitRow: {
     width: FIGMA.benefitRow.width,
     height: FIGMA.benefitRow.height,
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
   },
 
   // Icon frame - 52.5x40, horizontal layout
-  // Nodes 41:11261, 41:11267, 41:11273
+  // Nodes 41: sv(11261), 41: sv(11267), 41:11273
   iconFrame: {
     width: FIGMA.iconFrame.width,
     height: FIGMA.iconFrame.height,
@@ -342,22 +343,22 @@ const styles = StyleSheet.create({
 
   // Icon image container (between brackets)
   iconImageContainer: {
-    flex: 1,
+    flex: sv(1),
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   // Icon image - 39x39 (Figma asset)
-  // Nodes 41:11263, 41:11269, 41:11275
+  // Nodes 41: sv(11263), 41: sv(11269), 41:11275
   iconImage: {
     width: FIGMA.iconImage.width,
     height: FIGMA.iconImage.height,
   },
 
   // Benefit text - fontSize 12, lineHeight 20, color #A9A9A9
-  // Nodes 41:11265, 41:11271, 41:11277
+  // Nodes 41: sv(11265), 41: sv(11271), 41:11277
   benefitText: {
-    flex: 1,
+    flex: sv(1),
     fontFamily: FIGMA.benefitText.fontFamily,
     fontSize: FIGMA.benefitText.fontSize,
     lineHeight: FIGMA.benefitText.lineHeight,

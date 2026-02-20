@@ -299,6 +299,9 @@ export async function requestUploadUrl(
  * @param mimeType - MIME type of the file
  * @param onProgress - Optional progress callback (0-100)
  */
+/** Upload timeout: 60 seconds for file transfer to signed URL */
+const UPLOAD_TIMEOUT_MS = 60_000;
+
 export async function uploadFileToSignedUrl(
   signedUrl: string,
   fileUri: string,
@@ -306,8 +309,8 @@ export async function uploadFileToSignedUrl(
   onProgress?: (progress: number) => void
 ): Promise<{ success: boolean; error: AgreementError | null }> {
   try {
-    // Use FileSystem.uploadAsync for progress tracking
-    const uploadResult = await FileSystem.uploadAsync(signedUrl, fileUri, {
+    // Race the upload against a timeout — FileSystem.uploadAsync has no built-in timeout
+    const uploadPromise = FileSystem.uploadAsync(signedUrl, fileUri, {
       httpMethod: 'PUT',
       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
       headers: {
@@ -315,12 +318,27 @@ export async function uploadFileToSignedUrl(
       },
     });
 
-    // FileSystem.uploadAsync doesn't support granular progress,
-    // so we signal 100% on completion
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('UPLOAD_TIMEOUT')), UPLOAD_TIMEOUT_MS);
+    });
+
+    const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
+
     onProgress?.(100);
 
     if (uploadResult.status >= 200 && uploadResult.status < 300) {
       return { success: true, error: null };
+    }
+
+    // Signed URL expired — S3/Supabase returns 403
+    if (uploadResult.status === 403) {
+      return {
+        success: false,
+        error: {
+          code: 'UPLOAD_FAILED',
+          message: 'Upload URL expired. Please try again.',
+        },
+      };
     }
 
     return {
@@ -331,11 +349,23 @@ export async function uploadFileToSignedUrl(
       },
     };
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'File upload failed';
+
+    if (message === 'UPLOAD_TIMEOUT') {
+      return {
+        success: false,
+        error: {
+          code: 'UPLOAD_FAILED',
+          message: 'Upload timed out. Please try with a smaller file or better connection.',
+        },
+      };
+    }
+
     return {
       success: false,
       error: {
         code: 'NETWORK_ERROR',
-        message: err instanceof Error ? err.message : 'File upload failed',
+        message,
       },
     };
   }

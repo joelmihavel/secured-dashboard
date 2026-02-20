@@ -97,7 +97,7 @@ element_num,depth,bounds,attributes,parent_num
 95,2,"[0,0][402,54]","enabled=true",93
 96,3,"[0,0][402,54]","enabled=true",95
 97,4,"[0,0][402,54]","enabled=true",96
-98,5,"[53,22][95,42]","accessibilityText=1:51 AM; enabled=true",97
+98,5,"[55,22][93,42]","accessibilityText=4:07 AM; enabled=true",97
 99,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",97
 100,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",97
 101,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",97

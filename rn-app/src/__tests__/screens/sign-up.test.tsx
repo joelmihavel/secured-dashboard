@@ -94,7 +94,7 @@ jest.mock('react-native-svg', () => {
 });
 
 // --- Mock useAuth hook ---
-let mockAuthReturn = { ...AUTH_HOOK_IDLE };
+let mockAuthReturn: any = { ...AUTH_HOOK_IDLE };
 
 jest.mock('@/src/hooks', () => ({
   useAuth: () => mockAuthReturn,

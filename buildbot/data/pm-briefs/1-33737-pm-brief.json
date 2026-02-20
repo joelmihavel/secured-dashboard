@@ -1,0 +1,212 @@
+{
+  "screenId": "1-33737",
+  "screenName": "Screen 1-33737",
+  "route": "/unknown",
+  "generatedAt": "2026-02-19T23:22:58.800Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 1686557230",
+      "nodeId": "1:33745",
+      "childCount": 5
+    },
+    {
+      "name": "Frame 1686557268",
+      "nodeId": "1:33809",
+      "childCount": 1
+    }
+  ],
+  "states": [
+    {
+      "state": "default",
+      "figmaId": "1-33737",
+      "name": "Onboarding / Add Bank Details"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "1:33819",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "1:33820",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "1:33821",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "1:33822",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "1:33824",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "1:33755",
+      "name": "Pay Rent",
+      "content": "Pay Rent"
+    },
+    {
+      "nodeId": "1:33766",
+      "name": "Total payable rent",
+      "content": "Total payable rent"
+    },
+    {
+      "nodeId": "1:33767",
+      "name": "₹ 32,175",
+      "content": "₹  32,175"
+    },
+    {
+      "nodeId": "1:33776",
+      "name": "saved ₹ 325 →",
+      "content": "saved ₹ 325 →"
+    },
+    {
+      "nodeId": "1:33777",
+      "name": "using flent cashback",
+      "content": "using flent cashback"
+    },
+    {
+      "nodeId": "1:33781",
+      "name": "Paying to",
+      "content": "Paying to"
+    },
+    {
+      "nodeId": "1:33782",
+      "name": "[Landlord Name]",
+      "content": "[Landlord Name]"
+    },
+    {
+      "nodeId": "1:33786",
+      "name": "ICICI",
+      "content": "ICICI "
+    },
+    {
+      "nodeId": "1:33787",
+      "name": "XXXX XXXX XXXX 2003",
+      "content": "XXXX XXXX XXXX 2003"
+    },
+    {
+      "nodeId": "1:33789",
+      "name": "Pay Now",
+      "content": "Pay Now"
+    },
+    {
+      "nodeId": "1:33790",
+      "name": "All payments are 100% secure",
+      "content": "All payments are 100% secure"
+    },
+    {
+      "nodeId": "1:33795",
+      "name": "PAY BY ANY APP INSTEAD",
+      "content": "PAY BY ANY APP INSTEAD"
+    },
+    {
+      "nodeId": "1:33799",
+      "name": "Google Pay",
+      "content": "Google Pay"
+    },
+    {
+      "nodeId": "1:33802",
+      "name": "PayTM",
+      "content": "PayTM"
+    },
+    {
+      "nodeId": "1:33805",
+      "name": "PhonePe",
+      "content": "PhonePe"
+    },
+    {
+      "nodeId": "I1:33808;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "1:33817",
+      "name": "Add your Landlord’s  Bank Details",
+      "content": "Add your Landlord’s  Bank Details"
+    },
+    {
+      "nodeId": "I1:33819;47:5565",
+      "name": "Label",
+      "content": "Account Holder Name"
+    },
+    {
+      "nodeId": "I1:33819;99:1459",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I1:33819;47:5569",
+      "name": "Text",
+      "content": "e.g. John Smith"
+    },
+    {
+      "nodeId": "I1:33820;47:5565",
+      "name": "Label",
+      "content": "Account holder number"
+    },
+    {
+      "nodeId": "I1:33820;99:1459",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I1:33820;47:5569",
+      "name": "Text",
+      "content": "e.g. 1234567890"
+    },
+    {
+      "nodeId": "I1:33821;47:5565",
+      "name": "Label",
+      "content": "IFSC Code"
+    },
+    {
+      "nodeId": "I1:33821;99:1459",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I1:33821;47:5569",
+      "name": "Text",
+      "content": "e.g. SBIN0002125"
+    },
+    {
+      "nodeId": "I1:33822;47:5565",
+      "name": "Label",
+      "content": "PAN CARD"
+    },
+    {
+      "nodeId": "I1:33822;99:1459",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I1:33822;47:5569",
+      "name": "Text",
+      "content": "e.g. CSNPM9874A"
+    },
+    {
+      "nodeId": "I1:33824;100:1575",
+      "name": "Text",
+      "content": "Proceed"
+    },
+    {
+      "nodeId": "1:33825",
+      "name": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
+      "content": "You may get a verification message from Cashfree to verify your profile and unlock benefits."
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

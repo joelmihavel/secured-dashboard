@@ -57,27 +57,28 @@ import Svg, { Path, Circle, Text as SvgText, G } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { usePaymentHistory, useGenerateReceipt } from '@/src/hooks/usePayments';
+import { colors } from '@/src/theme';
 
 // ===========================================
 // FIGMA EXTRACTED DESIGN TOKENS (41-9563)
 // ===========================================
 const FIGMA_COLORS = {
-  background: '#131313',          // black.700
-  cardBody: '#202020',            // black.500 - receipt card body
-  dividerBar: '#1A1A1A',          // black.600 - horizontal bar
-  textPrimary: '#FFFFFF',         // white
-  successfulText: '#FF9A6D',      // brand.500 - "Succesful" span
-  hashSymbol: '#FF9A6D',          // brand.500 - # icon
-  labelText: '#878787',           // neutral.600 - receipt row labels
-  valueText: '#CBCBCB',           // neutral.300 - receipt row values
-  cashbackNote: '#DDDDDD',        // neutral.200 - cashback note text
-  payableValue: '#DDDDDD',        // neutral.200 - payable rent value
-  tableDivider: '#4D4D4D',        // black.400 - table line separators
-  circleCutout: '#131313',        // same as background
-  paperclip: '#4D4D4D',           // black.400 - paperclip strokes
-  stampBorder: '#27803B',          // success.dark - PAID stamp circles
-  stampText: '#06C270',            // success.approved - PAID stamp text & stars
-  footerText: '#A9A9A9',          // neutral.500 - "Contact Support"
+  background: colors.black[700],          // black.700
+  cardBody: colors.black[500],            // black.500 - receipt card body
+  dividerBar: colors.black[600],          // black.600 - horizontal bar
+  textPrimary: colors.white,         // white
+  successfulText: colors.brand[500],      // brand.500 - "Succesful" span
+  hashSymbol: colors.brand[500],          // brand.500 - # icon
+  labelText: colors.neutral[600],           // neutral.600 - receipt row labels
+  valueText: colors.neutral[300],           // neutral.300 - receipt row values
+  cashbackNote: colors.neutral[200],        // neutral.200 - cashback note text
+  payableValue: colors.neutral[200],        // neutral.200 - payable rent value
+  tableDivider: colors.black[400],        // black.400 - table line separators
+  circleCutout: colors.black[700],        // same as background
+  paperclip: colors.black[400],           // black.400 - paperclip strokes
+  stampBorder: colors.success.dark,          // success.dark - PAID stamp circles
+  stampText: colors.success.approved,            // success.approved - PAID stamp text & stars
+  footerText: colors.neutral[500],          // neutral.500 - "Contact Support"
 } as const;
 
 const FIGMA_SPACING = {

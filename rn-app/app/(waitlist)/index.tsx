@@ -13,7 +13,7 @@
  *
  * Design Specs:
  * - Screen: 393x852 (iPhone 14/15 base)
- * - Content width: 313px (40px padding each side)
+ * - Content width: sv(313)px (40px padding each side)
  * - All values are exact Figma pixels with design tokens
  */
 
@@ -36,7 +36,11 @@ import {
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
 import { consumeDeepLinkParams, useDevMockState } from '@/src/hooks/useDeepLink';
+import { Dimensions } from 'react-native';
 import { colors } from '@/src/theme/colors';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ratioX = SCREEN_WIDTH / 393;
+const sv = (val: number) => val * ratioX;
 import { typography } from '@/src/theme/typography';
 import { spacing, radius } from '@/src/theme';
 import type { TimelineItemData } from '@/src/components/waitlist/ApplicationTimeline';
@@ -147,42 +151,42 @@ const FIGMA = {
   layout: {
     // Main container padding: paddingLeft/Right 40 → spacing.xxl
     // From node 41:11212
-    containerPadding: spacing.xxl, // 40
+    containerPadding: sv(40), // 40
 
-    // Content wrapper width: 313
+    // Content wrapper width: sv(313)
     // From node 41:11213
-    contentWidth: 313,
+    contentWidth: sv(313),
 
     // Section gap: 48 → spacing.xxxl
     // From node 41:11212 itemSpacing
-    sectionGap: spacing.xxxl, // 48
+    sectionGap: sv(48), // 48
 
     // Content gap: 40 → spacing.xxl
     // From node 41:11213 itemSpacing
-    contentGap: spacing.xxl, // 40
+    contentGap: sv(40), // 40
 
     // Header section gap: 48 → spacing.xxxl
     // From node 41:11214 itemSpacing
-    headerGap: spacing.xxxl, // 48
+    headerGap: sv(48), // 48
 
     // Text block gap: 16 → spacing.md
     // From node 41:11217 itemSpacing
-    textGap: spacing.md, // 16
+    textGap: sv(16), // 16
   },
 
   // Card styles from extraction (node 41:11220)
   card: {
-    // borderRadius: 12 → radius.lg
-    borderRadius: radius.lg, // 12
+    // borderRadius: sv(12) → radius.lg
+    borderRadius: sv(12), // 12
 
     // paddingTop/Bottom: 24 → spacing.lg
-    paddingVertical: spacing.lg, // 24
+    paddingVertical: sv(24), // 24
 
     // paddingLeft/Right: 16 → spacing.md
-    paddingHorizontal: spacing.md, // 16
+    paddingHorizontal: sv(16), // 16
 
     // itemSpacing: 24 → spacing.lg
-    gap: spacing.lg, // 24
+    gap: sv(24), // 24
   },
 
   // Rejection reasons card (node 160:3051)
@@ -459,7 +463,7 @@ export default function WaitlistScreen() {
             styles.scrollContent,
             {
               paddingTop: insets.top + spacing.huge,
-              paddingBottom: insets.bottom + spacing.xl,
+              paddingBottom: insets.bottom + sv(32), // Using 32px to match Figma typical bottom spacing
             },
           ]}
           showsVerticalScrollIndicator={false}
@@ -557,7 +561,7 @@ export default function WaitlistScreen() {
             styles.scrollContent,
             {
               paddingTop: insets.top + spacing.huge,
-              paddingBottom: insets.bottom + spacing.xl,
+              paddingBottom: insets.bottom + sv(32), // Using 32px to match Figma typical bottom spacing
             },
           ]}
           showsVerticalScrollIndicator={false}
@@ -706,8 +710,8 @@ export default function WaitlistScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: insets.top + spacing.huge, // 64px per Figma (node 41:11206)
-            paddingBottom: insets.bottom + spacing.xl,
+            paddingTop: insets.top + sv(64), // 64px gap below status bar per Figma 41:11210
+            paddingBottom: insets.bottom + sv(32), // Using 32px to match Figma typical bottom spacing
           },
         ]}
         showsVerticalScrollIndicator={false}
@@ -854,8 +858,8 @@ const styles = StyleSheet.create({
 
   // Logo container - Frame 1686557264 (node 41:11215)
   logoContainer: {
-    width: 32,
-    height: 38,
+    width: sv(32),
+    height: sv(38),
   },
 
   // Text block - Frame 2095586319 (node 41:11217)

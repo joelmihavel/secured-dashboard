@@ -56,36 +56,37 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Text, PrimaryButton } from '@/src/components';
 import { useDashboard } from '@/src/hooks';
+import { colors } from '@/src/theme';
 
 // ===========================================
 // FIGMA EXTRACTED DESIGN TOKENS
 // ===========================================
 const FIGMA_COLORS = {
   // Backgrounds
-  background: '#131313',       // black.700 - Root frame
-  cardBody: '#202020',         // black.500 - Info card body
-  pillBg: '#1A1A1A',           // black.600 - Cashback pill
-  dividerBar: '#1A1A1A',       // black.600 - Rectangle 135
+  background: colors.black[700],       // black.700 - Root frame
+  cardBody: colors.black[500],         // black.500 - Info card body
+  pillBg: colors.black[600],           // black.600 - Cashback pill
+  dividerBar: colors.black[600],       // black.600 - Rectangle 135
 
   // Text colors
-  textPrimary: '#FFFFFF',      // white
-  dueLabel: '#878787',         // neutral.600 - "Rent due in X days"
-  setupLabel: '#CBCBCB',       // neutral.300 - "Complete setup..."
-  pillText: '#FF9A6D',         // brand.500 - pill text
-  tableLabel: '#878787',       // neutral.600 - row labels
-  tableValue: '#CBCBCB',       // neutral.300 - row values
+  textPrimary: colors.white,      // white
+  dueLabel: colors.neutral[600],         // neutral.600 - "Rent due in X days"
+  setupLabel: colors.neutral[300],       // neutral.300 - "Complete setup..."
+  pillText: colors.brand[500],         // brand.500 - pill text
+  tableLabel: colors.neutral[600],       // neutral.600 - row labels
+  tableValue: colors.neutral[300],       // neutral.300 - row values
   cashbackDeduction: '#EF9194', // cashback value (negative)
-  payableValue: '#DDDDDD',    // neutral.200 - payable rent value
-  hashSymbol: '#FF9A6D',      // brand.500 - # icons
-  footerText: '#A9A9A9',      // neutral.500 - footer message
+  payableValue: colors.neutral[200],    // neutral.200 - payable rent value
+  hashSymbol: colors.brand[500],      // brand.500 - # icons
+  footerText: colors.neutral[500],      // neutral.500 - footer message
 
   // Dividers / lines
-  tableDivider: '#4D4D4D',    // black.400 - table separator lines
-  circleCutout: '#131313',     // same as background (creates notch effect)
+  tableDivider: colors.black[400],    // black.400 - table separator lines
+  circleCutout: colors.black[700],     // same as background (creates notch effect)
 
   // Late payment
-  lateLabel: '#878787',        // neutral.600 - "Rent overdue..."
-  noPayoutLabel: '#CBCBCB',   // neutral.300 - "No cashback..."
+  lateLabel: colors.neutral[600],        // neutral.600 - "Rent overdue..."
+  noPayoutLabel: colors.neutral[300],   // neutral.300 - "No cashback..."
 } as const;
 
 // Figma spacing values (extracted from blueprint geometry/layout)

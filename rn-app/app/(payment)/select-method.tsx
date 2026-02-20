@@ -40,42 +40,44 @@ import {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
+import { BlurView } from 'expo-blur';
 
 import { Screen, PrimaryButton } from '@/src/components';
 import { useDashboard, useSavedPaymentMethods } from '@/src/hooks';
 import { getCurrentRentMonth } from '@/src/services/api/payments';
 import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
+import { colors } from '@/src/theme';
 
 // Exact Figma colors from 41-8901 / 41-9004 analysis
 const FIGMA_COLORS = {
   // Backgrounds
-  background: '#131313',           // black.700
-  bottomSheetPanel: '#1A1A1A',     // black.600
-  cardSurface: '#202020',          // black.500 (rent card, pill bg)
+  background: colors.black[700],           // black.700
+  bottomSheetPanel: colors.black[600],     // black.600
+  cardSurface: colors.black[500],          // black.500 (rent card, pill bg)
 
   // Text colors
-  textPrimary: '#FFFFFF',          // White
-  headingAccent: '#FF9A6D',        // brand.500 - "Payment Method" span
+  textPrimary: colors.white,          // White
+  headingAccent: colors.brand[500],        // brand.500 - "Payment Method" span
   selectedLabel: '#D2D2D2',        // Selected method label
-  unselectedLabel: '#878787',      // neutral.600 - unselected method label
-  feeText: '#CBCBCB',             // neutral.300 - fee text
-  subtitleText: '#CBCBCB',         // neutral.300 - account detail subtitle
-  pillText: '#DDDDDD',            // "Set it up" pill text
-  labelText: '#878787',            // neutral.600 - rent label
-  rentMonth: '#CBCBCB',            // neutral.300 - month text
-  footerText: '#A9A9A9',           // neutral.500
-  cashbackText: '#FF9A6D',         // brand.500
+  unselectedLabel: colors.neutral[600],      // neutral.600 - unselected method label
+  feeText: colors.neutral[300],             // neutral.300 - fee text
+  subtitleText: colors.neutral[300],         // neutral.300 - account detail subtitle
+  pillText: colors.neutral[200],            // "Set it up" pill text
+  labelText: colors.neutral[600],            // neutral.600 - rent label
+  rentMonth: colors.neutral[300],            // neutral.300 - month text
+  footerText: colors.neutral[500],           // neutral.500
+  cashbackText: colors.brand[500],         // brand.500
 
   // Radio
-  radioSelected: '#FF9A6D',        // brand.500
-  radioUnselected: '#A6A6A6',      // black.200
+  radioSelected: colors.brand[500],        // brand.500
+  radioUnselected: colors.black[200],      // black.200
 
   // Borders/Dividers
-  divider: '#4D4D4D',              // black.400
-  dragHandle: '#4D4D4D',           // black.400
+  divider: colors.black[400],              // black.400
+  dragHandle: colors.black[400],           // black.400
 
   // Success
-  successGreen: '#70BF73',         // (not used in Figma for this screen, kept for compat)
+  successGreen: colors.success.default,         // (not used in Figma for this screen, kept for compat)
 };
 
 // Payment method data type
@@ -365,7 +367,7 @@ export default function SelectPaymentMethodScreen() {
             <View style={styles.rentCard}>
               {/* Top row: due label + month */}
               <View style={styles.rentCardTopRow}>
-                <RNText style={[styles.rentDueLabel, isOverdue && { color: '#FF8080' }]}>
+                <RNText style={[styles.rentDueLabel, isOverdue && { color: colors.error.default }]}>
                   {getDueLabel()}
                 </RNText>
                 <RNText style={styles.rentMonthText}>{rentMonth}</RNText>
@@ -409,9 +411,14 @@ export default function SelectPaymentMethodScreen() {
               </RNText>
             </View>
           </View>
+        </ScrollView>
 
-          {/* ===== BOTTOM SHEET SECTION ===== */}
-          {/* Figma: Frame 2095586317, y=403, column, gap 15, BOTTOM anchored */}
+        {/* ===== BOTTOM SHEET OVERLAY SECTION ===== */}
+        {/* Figma 41:8958: absolute backdrop-blur-[4px] bg-[rgba(0,0,0,0.6)] */}
+        <BlurView intensity={8} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={styles.overlayOverlay} />
+
+        <View style={styles.bottomSheetContainer}>
           <View style={styles.bottomSheet}>
             {/* Drag Handle - Figma: Rectangle 53, 48x4, #4D4D4D, radius 200, centered */}
             <View style={styles.dragHandle} />
@@ -483,7 +490,7 @@ export default function SelectPaymentMethodScreen() {
               </View>
             </View>
           </View>
-        </ScrollView>
+        </View>
       </View>
     </Screen>
   );
@@ -499,6 +506,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  overlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)', // 60% black overlay per Figma
   },
 
   // ===== TOP SECTION =====
@@ -593,6 +604,13 @@ const styles = StyleSheet.create({
   },
 
   // ===== BOTTOM SHEET =====
+  bottomSheetContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    justifyContent: 'flex-end',
+  },
   // Figma: Frame 2095586317, column, gap 15, anchored BOTTOM
   bottomSheet: {
     alignItems: 'center',

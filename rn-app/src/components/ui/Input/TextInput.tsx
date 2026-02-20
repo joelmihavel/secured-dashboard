@@ -38,7 +38,7 @@ import { Text } from '../Typography';
 const INPUT_COLORS_DARK = {
   label: '#A9A9A9',                // Figma: neutral/500
   labelError: '#E5484D',
-  placeholder: '#444444',          // Figma blueprint: text fill #444444 (neutral/800)
+  placeholder: '#222222',          // EXACT Figma parity: e.g. John Appleseed is #222222
   hintText: '#878787',             // Figma: hint text color (neutral/600)
   textFilled: '#DDDDDD',           // Figma: neutral/200
   textError: '#E5484D',            // Figma: error text color
@@ -178,15 +178,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   labelRow: {
+    paddingHorizontal: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: INPUT_SPACING.labelInputGap,
   },
-  // Figma REST API: fontWeight 500 (Medium), 12px, lineHeight:20
-  // Verified from blueprint: "Account holder name" label uses PlusJakartaSans-Medium
+  // Figma REST API: fontWeight 400 (Regular), 12px, lineHeight:20
+  // Verified from Figma: sign-up input labels use PlusJakartaSans-Regular
   label: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     // Color applied dynamically via dynamicStyles
@@ -214,13 +215,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
     borderRadius: 12,
+    borderCurve: 'continuous', // iOS corner smoothing (from Figma cornerSmoothing: 0.6)
+    paddingVertical: INPUT_SPACING.inputPaddingVertical, // 16px to match PhoneInput container
+    paddingHorizontal: 12,
   },
   input: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    lineHeight: 32,
-    paddingVertical: INPUT_SPACING.inputPaddingVertical,
-    paddingHorizontal: 0,
+    height: 32, // Match Figma line-height and PhoneInput for exact visual parity
+    padding: 0,
+    margin: 0,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
     // Color applied dynamically via dynamicStyles
   },
   inputDisabled: {

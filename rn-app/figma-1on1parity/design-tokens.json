@@ -1,0 +1,271 @@
+{
+  "_meta": {
+    "generatedAt": "2026-02-02T07:31:09.897Z",
+    "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+    "source": "figma-mcp-variables",
+    "version": "3.0.0"
+  },
+  "colors": {
+    "neutral": {
+      "100": "#EEEEEE",
+      "200": "#DDDDDD",
+      "300": "#CBCBCB",
+      "400": "#BABABA",
+      "500": "#A9A9A9",
+      "600": "#878787",
+      "800": "#444444",
+      "white": "#FFFFFF",
+      "black": "#000000"
+    },
+    "brand": {
+      "300": "#FFCC8A",
+      "400": "#FFAE8A",
+      "500": "#FF9A6D",
+      "600": "#CC7B57",
+      "700": "#F06321",
+      "800": "#E9661C"
+    },
+    "black": {
+      "200": "#A6A6A6",
+      "300": "#797979",
+      "400": "#4D4D4D",
+      "500": "#202020",
+      "600": "#1A1A1A",
+      "700": "#131313",
+      "800": "#0D0D0D"
+    },
+    "icons": {
+      "Default": "#FFFFFF"
+    },
+    "text": {
+      "Body": "#878787"
+    },
+    "success": {
+      "default": "#70BF73",
+      "approved": "#06C270",
+      "dark": "#27803B",
+      "material": "#4CAF50"
+    },
+    "error": {
+      "default": "#FF8080",
+      "radix": "#E5484D",
+      "dark": "#AE282E"
+    },
+    "warning": {
+      "default": "#FFD580",
+      "amber": "#FFB020"
+    }
+  },
+  "typography": {
+    "h4": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 28,
+      "lineHeight": 40,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "bodyMd2": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "lineHeight": 20,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "bodySm": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "lineHeight": 20,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "bodyLg": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "lineHeight": 32,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "bodyMdRegular": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "lineHeight": 24,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "bodyMd2Medium": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "lineHeight": 20,
+      "fontWeight": 500,
+      "letterSpacing": 0
+    },
+    "label": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 14,
+      "lineHeight": 20,
+      "fontWeight": 600,
+      "letterSpacing": 0
+    },
+    "bodySmMedium": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "lineHeight": 20,
+      "fontWeight": 500,
+      "letterSpacing": 0
+    },
+    "h1": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 48,
+      "lineHeight": 64,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "h2": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 40,
+      "lineHeight": 52,
+      "fontWeight": 400,
+      "letterSpacing": 0
+    },
+    "h5": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 24,
+      "lineHeight": 32,
+      "fontWeight": 600,
+      "letterSpacing": 0
+    },
+    "h6": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "lineHeight": 28,
+      "fontWeight": 600,
+      "letterSpacing": 0
+    },
+    "bodyMd": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 16,
+      "lineHeight": 24,
+      "fontWeight": 600,
+      "letterSpacing": 0
+    },
+    "bodyLgMedium": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "lineHeight": 32,
+      "fontWeight": 500,
+      "letterSpacing": 0
+    },
+    "bodyLgSemibold": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 20,
+      "lineHeight": 32,
+      "fontWeight": 600,
+      "letterSpacing": 0
+    },
+    "bodySmSemiBold": {
+      "fontFamily": "Plus Jakarta Sans",
+      "fontSize": 12,
+      "lineHeight": 20,
+      "fontWeight": 600,
+      "letterSpacing": 0
+    }
+  },
+  "spacing": {
+    "xs": 8,
+    "xl": 32,
+    "lg": 24,
+    "md": 16,
+    "xxs": 4,
+    "zero": 0,
+    "xxxl": 48,
+    "xxl": 40,
+    "xxxs": 2,
+    "sm": 12,
+    "huge": 64
+  },
+  "radius": {
+    "pill": 200,
+    "md": 12,
+    "none": 0,
+    "sm": 8,
+    "xs": 4,
+    "lg": 16,
+    "xl": 24,
+    "xxl": 40
+  },
+  "shadows": {},
+  "_colorByHex": {
+    "#BABABA": "colors.neutral[400]",
+    "#FF9A6D": "colors.brand[500]",
+    "#A6A6A6": "colors.black[200]",
+    "#4D4D4D": "colors.black[400]",
+    "#FFFFFF": "colors.neutral[white]",
+    "#1A1A1A": "colors.black[600]",
+    "#202020": "colors.black[500]",
+    "#CBCBCB": "colors.neutral[300]",
+    "#878787": "colors.neutral[600]",
+    "#0D0D0D": "colors.black[800]",
+    "#000000": "colors.neutral[black]",
+    "#444444": "colors.neutral[800]",
+    "#A9A9A9": "colors.neutral[500]",
+    "#DDDDDD": "colors.neutral[200]",
+    "#EEEEEE": "colors.neutral[100]",
+    "#131313": "colors.black[700]",
+    "#797979": "colors.black[300]",
+    "#FFAE8A": "colors.brand[400]",
+    "#CC7B57": "colors.brand[600]",
+    "#FFCC8A": "colors.brand[300]",
+    "#F06321": "colors.brand[700]",
+    "#E9661C": "colors.brand[800]",
+    "#70BF73": "colors.success[default]",
+    "#06C270": "colors.success[approved]",
+    "#27803B": "colors.success[dark]",
+    "#4CAF50": "colors.success[material]",
+    "#FF8080": "colors.error[default]",
+    "#E5484D": "colors.error[radix]",
+    "#AE282E": "colors.error[dark]",
+    "#FFD580": "colors.warning[default]",
+    "#FFB020": "colors.warning[amber]"
+  },
+  "_typographyByStyle": {
+    "28:40:400": "typography.h4",
+    "14:20:400": "typography.bodyMd2",
+    "12:20:400": "typography.bodySm",
+    "20:32:400": "typography.bodyLg",
+    "16:24:400": "typography.bodyMdRegular",
+    "14:20:500": "typography.bodyMd2Medium",
+    "14:20:600": "typography.label",
+    "12:20:500": "typography.bodySmMedium",
+    "48:64:400": "typography.h1",
+    "40:52:400": "typography.h2",
+    "24:32:600": "typography.h5",
+    "20:28:600": "typography.h6",
+    "16:24:600": "typography.bodyMd",
+    "20:32:500": "typography.bodyLgMedium",
+    "20:32:600": "typography.bodyLgSemibold",
+    "12:20:600": "typography.bodySmSemiBold"
+  },
+  "_spacingByValue": {
+    "0": "spacing.zero",
+    "2": "spacing.xxxs",
+    "4": "spacing.xxs",
+    "8": "spacing.xs",
+    "12": "spacing.sm",
+    "16": "spacing.md",
+    "24": "spacing.lg",
+    "32": "spacing.xl",
+    "40": "spacing.xxl",
+    "48": "spacing.xxxl",
+    "64": "spacing.huge"
+  },
+  "_radiusByValue": {
+    "0": "radius.none",
+    "4": "radius.xs",
+    "8": "radius.sm",
+    "12": "radius.md",
+    "16": "radius.lg",
+    "24": "radius.xl",
+    "40": "radius.xxl",
+    "200": "radius.pill"
+  }
+}

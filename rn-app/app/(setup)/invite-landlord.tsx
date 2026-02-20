@@ -41,24 +41,25 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text, PhoneInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns/DottedPattern';
 import { useSendLandlordInvite, useDashboard } from '@/src/hooks';
 import type { SetupError } from '@/src/types/setup';
+import { colors } from '@/src/theme';
 
 // Figma exact values from 1-34150 blueprint
 const FIGMA_COLORS = {
-  background: '#131313',
-  title: '#FFFFFF',
-  titleGray: '#A9A9A9',
-  accent: '#FF9A6D',
-  subtitle: '#A9A9A9',
-  progressTrack: '#4D4D4D',
-  progressFill: '#CC7B57',
-  label: '#A9A9A9',
-  skipText: '#FFFFFF',
-  buttonText: '#444444',
-  buttonBg: '#202020',
+  background: colors.black[700],
+  title: colors.white,
+  titleGray: colors.neutral[500],
+  accent: colors.brand[500],
+  subtitle: colors.neutral[500],
+  progressTrack: colors.black[400],
+  progressFill: colors.brand[600],
+  label: colors.neutral[500],
+  skipText: colors.white,
+  buttonText: colors.neutral[800],
+  buttonBg: colors.black[500],
 } as const;
 
 export default function InviteLandlordScreen() {
@@ -185,20 +186,10 @@ export default function InviteLandlordScreen() {
           </View>
 
           {/* API Error Banner */}
-          {apiError && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{apiError}</Text>
-            </View>
-          )}
+          {apiError && <AlertBanner type="error" message={apiError} />}
 
           {/* Invite Sent Success Banner */}
-          {inviteSent && (
-            <View style={styles.successBanner}>
-              <Text style={styles.successBannerText}>
-                Invite sent successfully
-              </Text>
-            </View>
-          )}
+          {inviteSent && <AlertBanner type="success" message="Invite sent successfully" />}
 
           {/* Phone Input -- Figma: label + phone input with +91 dropdown */}
           <View style={styles.inputSection}>
@@ -263,7 +254,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: '#A9A9A9',
+    color: colors.neutral[500],
   },
   // Progress bar -- Figma: container height 3 (clipped from 12)
   progressContainer: {
@@ -302,33 +293,5 @@ const styles = StyleSheet.create({
     color: FIGMA_COLORS.skipText,
     textDecorationLine: 'underline',
     textAlign: 'center',
-  },
-  // Error banner
-  errorBanner: {
-    backgroundColor: 'rgba(229, 72, 77, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(229, 72, 77, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-  },
-  errorBannerText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#E5484D',
-  },
-  // Success banner
-  successBanner: {
-    backgroundColor: 'rgba(70, 167, 88, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(70, 167, 88, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-  },
-  successBannerText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#46A758',
   },
 });

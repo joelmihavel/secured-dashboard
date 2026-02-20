@@ -50,14 +50,14 @@ import { colors } from '@/src/theme';
 
 // Blueprint colors (verified against 41-8760-blueprint.json)
 const FIGMA_COLORS = {
-  background: '#131313',       // colors.black[700]
-  cardBackground: '#202020',   // colors.black[500]
-  sectionTitle: '#878787',     // colors.neutral[600]
-  accentOrange: '#FF9A6D',     // colors.brand[500]
-  titleGray: '#A9A9A9',        // colors.neutral[500]
-  textPrimary: '#FFFFFF',      // colors.white
-  menuItemText: '#CBCBCB',     // colors.neutral[300]
-  divider: '#4D4D4D',          // colors.black[400]
+  background: colors.black[700],       // colors.black[700]
+  cardBackground: colors.black[500],   // colors.black[500]
+  sectionTitle: colors.neutral[600],     // colors.neutral[600]
+  accentOrange: colors.brand[500],     // colors.brand[500]
+  titleGray: colors.neutral[500],        // colors.neutral[500]
+  textPrimary: colors.white,      // colors.white
+  menuItemText: colors.neutral[300],     // colors.neutral[300]
+  divider: colors.black[400],          // colors.black[400]
 } as const;
 
 // Demo chart data matching Figma design exactly (verified via Figma REST API node 41:8769)
@@ -163,20 +163,6 @@ function PaymentHistoryChart({ data, selectedMonth = 'MAR' }: PaymentHistoryChar
           contentContainerStyle={styles.chartScrollContent}
         >
           <View style={[styles.chartInner, { width: chartContentWidth }]}>
-            {/* Legend pills - positioned at top of chart area */}
-            {/* Blueprint: pills are children of first 3 columns at y=-30 (top of chart) */}
-            <View style={styles.legendContainer}>
-              <View style={styles.legendItem}>
-                <Text style={styles.legendText}>on time</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <Text style={styles.legendText}>Paid late</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <Text style={styles.legendText}>Not Paid</Text>
-              </View>
-            </View>
-
             {/* First vertical divider line (dashed, #4D4D4D, 0.5 weight) */}
             <View style={styles.chartDividerLine} />
 
@@ -189,8 +175,21 @@ function PaymentHistoryChart({ data, selectedMonth = 'MAR' }: PaymentHistoryChar
                 // Unpaid bars use #4D4D4D (41:8784), others use #FFFFFF (41:8772)
                 const barColor = item.status === 'unpaid' ? FIGMA_COLORS.divider : colors.white;
 
+                // Determine legend text if applicable (matching Figma demo state)
+                let legendText = null;
+                if (item.month === 'JAN') legendText = 'on time';
+                else if (item.month === 'FEB') legendText = 'Paid late';
+                else if (item.month === 'MAR') legendText = 'Not Paid';
+
                 return (
                   <View key={item.month} style={styles.chartColumn}>
+                    {/* Legend pill - absolute positioned above the bar */}
+                    {legendText && (
+                      <View style={[styles.legendItem, { position: 'absolute', top: -30 }]}>
+                        <Text style={styles.legendText}>{legendText}</Text>
+                      </View>
+                    )}
+
                     {/* Bar rectangle */}
                     <View
                       style={[
@@ -530,7 +529,7 @@ const styles = StyleSheet.create({
   },
   // "My " span (chars 0-3): #A9A9A9
   titleMy: {
-    color: '#A9A9A9',
+    color: colors.neutral[500],
   },
   // " " span (chars 3-4): inherits default #FFFFFF
   titleSpace: {
@@ -538,7 +537,7 @@ const styles = StyleSheet.create({
   },
   // "Profile" span (chars 4-11): #FF9A6D
   titleProfile: {
-    color: '#FF9A6D',
+    color: colors.brand[500],
   },
   // Section container: column, gap=24, paddingH=40
   section: {
@@ -552,7 +551,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16.92,
     letterSpacing: 0,
-    color: '#878787',
+    color: colors.neutral[600],
     textTransform: 'uppercase',
     textAlign: 'left',
   },
@@ -604,7 +603,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16.92,
     letterSpacing: -0.24,
-    color: '#000000',
+    color: colors.black[900],
     textAlign: 'center',
   },
   // First vertical divider (41:8770): dashed line, stroke #4D4D4D, 0.5 weight
@@ -643,12 +642,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16.92,
     letterSpacing: -0.24,
-    color: '#878787',
+    color: colors.neutral[600],
     textAlign: 'center',
   },
   // Selected month: same font but color #FF9A6D
   chartMonthLabelSelected: {
-    color: '#FF9A6D',
+    color: colors.brand[500],
   },
   // Dashed vertical dividers between columns
   chartColumnDivider: {
@@ -667,7 +666,7 @@ const styles = StyleSheet.create({
   scrollIndicator: {
     width: 24,
     height: 2,
-    backgroundColor: '#4D4D4D',
+    backgroundColor: colors.black[400],
     borderRadius: 100,
     overflow: 'hidden',
   },
@@ -675,16 +674,16 @@ const styles = StyleSheet.create({
   scrollIndicatorProgress: {
     width: 7,
     height: 2,
-    backgroundColor: '#FF9A6D',
+    backgroundColor: colors.brand[500],
   },
   // Card container for Payment Info / Support / App sections
   // Blueprint (41:8844, 41:8858, 41:8868): bg #202020, radius=12, gap=8, drop shadows
   cardContainer: {
-    backgroundColor: '#202020',
+    backgroundColor: colors.black[500],
     borderRadius: 12,
     gap: 8,
     // Blueprint: 3 drop shadows (largest shadow)
-    shadowColor: '#000000',
+    shadowColor: colors.black[900],
     shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.1,
     shadowRadius: 9.5,  // blur 19 / 2
@@ -702,7 +701,7 @@ const styles = StyleSheet.create({
   // Divider inside card: #4D4D4D, 0.25 weight
   cardDivider: {
     height: 0.25,
-    backgroundColor: '#4D4D4D',
+    backgroundColor: colors.black[400],
   },
   // User info row (41:8831): row, gap=16, padding 16/24, bg #202020, radius=12
   userInfoRow: {
@@ -711,7 +710,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    backgroundColor: '#202020',
+    backgroundColor: colors.black[500],
     borderRadius: 12,
   },
   // Avatar (41:8832): 48x48 ellipse with image fill
@@ -731,7 +730,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FF9A6D',
+    backgroundColor: colors.brand[500],
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -739,7 +738,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#131313',
+    color: colors.black[700],
     textAlign: 'center',
   },
   // User details (41:8833): column, gap=4, grow=1 (flex=1)
@@ -761,7 +760,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16.92,
     letterSpacing: -0.24,
-    color: '#878787',
+    color: colors.neutral[600],
   },
   // Menu item row (41:8839 pattern): row, gap=16, padding 16/24, bg #202020, radius=12
   menuItem: {
@@ -771,7 +770,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    backgroundColor: '#202020',
+    backgroundColor: colors.black[500],
     borderRadius: 12,
   },
   // Menu item text (41:8840): 14px/20 Regular #CBCBCB, letterSpacing 0
@@ -781,7 +780,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     letterSpacing: 0,
-    color: '#CBCBCB',
+    color: colors.neutral[300],
     textAlign: 'left',
   },
 });

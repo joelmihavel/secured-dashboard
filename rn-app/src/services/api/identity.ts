@@ -17,6 +17,16 @@ export interface FetchIdentityRequest {
   name?: string;
 }
 
+export interface RecordConsentResult {
+  success: boolean;
+  data: {
+    consent_id: string;
+    status: string;
+    message: string;
+    already_exists: boolean;
+  };
+}
+
 export interface IdentityResult {
   success: boolean;
   data: {
@@ -43,8 +53,34 @@ export interface IdentityError {
 }
 
 // ==============================================
-// API FUNCTION
+// API FUNCTIONS
 // ==============================================
+
+/**
+ * Record user consent to the backend.
+ * Called right after OTP verification when user gave Mobile 360 consent.
+ * Persists consent_timestamp, IP, phone to identity_verifications table.
+ */
+export async function recordConsent(params: {
+  consent_timestamp: string;
+  name?: string;
+}): Promise<{ data: RecordConsentResult | null; error: IdentityError | null }> {
+  const { data, error } = await callEdgeFunction<RecordConsentResult>(
+    'verify-identity',
+    {
+      action: 'record_consent',
+      consent_timestamp: params.consent_timestamp,
+      name: params.name,
+    },
+    true // requireAuth
+  );
+
+  if (error) {
+    return { data: null, error: mapIdentityError(error) };
+  }
+
+  return { data, error: null };
+}
 
 /**
  * Fetch identity data using pre-recorded consent.

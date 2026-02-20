@@ -98,8 +98,8 @@ const FIGMA = {
   },
   // Inner image: w-[2346px] h-[1319px], rotate-90, opacity-8
   image: {
-    width: 2346,
-    height: 1319,
+    width: 1319,
+    height: 2346,
     opacity: 0.08,
   },
   // Background shape: w-[481px] h-[405px], left-1/2 top-0 -translate-x-1/2, opacity-40

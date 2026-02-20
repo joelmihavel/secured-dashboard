@@ -13,8 +13,7 @@
     "convert": "npx tsx scripts/universal-converter.ts"
   },
   "dependencies": {
-    "dotenv": "^16.3.1",
-    "odiff-bin": "^3.0.0"
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

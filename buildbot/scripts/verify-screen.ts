@@ -1,29 +1,26 @@
 /**
  * verify-screen.ts — BuildBot Verification Pipeline Orchestrator
  *
- * Full pipeline (12 steps):
+ * Full pipeline (11 steps):
  *   1. Validate prerequisites (blueprint, baseline)
  *   2. Load learnings (agents/learning-agent reads learnings/buildbot-learnings.md)
  *   3. Run PM Agent brief (product context, states, data requirements)
  *   4. Run Backend Agent brief (API wiring, mock data population)
  *   5. Capture/validate app screenshot (Maestro or existing)
- *   6. Run ODiff pixel comparison
- *   7. Run coverage check (if script exists)
- *   8. Run Gemini visual feedback (if script exists)
- *   9. Run Inspector (if script exists and not skipped)
- *  10. Run Learning Agent (extract learnings from results)
- *  11. Produce combined audit report
- *  12. Print summary to console
+ *   6. Run coverage check (if script exists)
+ *   6.5. Maestro structural verify (if hierarchy CSV exists)
+ *   6.7. Auto-heal (optional)
+ *   7. Run Gemini visual feedback (if script exists)
+ *   8. Run Inspector (if script exists and not skipped)
+ *   9. Run Learning Agent (extract learnings from results)
+ *  10. Produce combined audit report
+ *  11. Print summary to console
  *
  * Single-screen mode:
  *   npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)"
- *   npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)" --skip-inspector
- *   npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)" --skip-maestro
  *
  * Batch-state mode (all states of one screen):
  *   npx tsx scripts/verify-screen.ts --screen otp
- *   npx tsx scripts/verify-screen.ts --screen agreement-upload --skip-inspector
- *   npx tsx scripts/verify-screen.ts --screen splash --skip-maestro
  */
 
 import * as fs from "fs";
@@ -42,7 +39,6 @@ const PATHS = {
   blueprints: path.join(BUILDBOT_ROOT, "data", "blueprints"),
   baselines: path.join(BUILDBOT_ROOT, "data", "baselines"),
   screenshots: path.join(BUILDBOT_ROOT, "data", "screenshots"),
-  diffs: path.join(BUILDBOT_ROOT, "data", "diffs"),
   pmBriefs: path.join(BUILDBOT_ROOT, "data", "pm-briefs"),
   mock: path.join(BUILDBOT_ROOT, "data", "mock"),
   audits: path.join(BUILDBOT_ROOT, "reports", "audits"),
@@ -101,13 +97,6 @@ function runPreflightChecks(): { ok: boolean; errors: string[] } {
 // Types
 // ---------------------------------------------------------------------------
 
-interface PixelDiffResult {
-  percentage: number;
-  threshold: number;
-  passed: boolean;
-  diffImagePath: string;
-}
-
 interface CoverageResult {
   typography: number;
   colors: number;
@@ -150,8 +139,6 @@ interface AuditReport {
   pmBrief?: PMBriefResult;
 
   backendBrief?: BackendBriefResult;
-
-  pixelDiff: PixelDiffResult;
 
   coverage?: CoverageResult;
 
@@ -209,8 +196,6 @@ interface ScreenRoutesConfig {
 interface CLIArgs {
   screenId: string;
   route: string;
-  skipInspector: boolean;
-  skipMaestro: boolean;
   skipPM: boolean;
   skipBackend: boolean;
   recapture: boolean;
@@ -230,7 +215,6 @@ interface BatchStateReport {
     state: string;
     name: string;
     passed: boolean;
-    pixelDiff: number;
     coverage: number;
     inspectorScore: number;
     failureReasons: string[];
@@ -385,15 +369,13 @@ function parseArgs(): CLIArgs {
       "Examples:\n" +
       '  npx tsx scripts/verify-screen.ts 41-8760 --route "/(profile)"\n' +
       "  npx tsx scripts/verify-screen.ts --screen otp\n" +
-      "  npx tsx scripts/verify-screen.ts --screen agreement-upload --skip-inspector"
+      "  npx tsx scripts/verify-screen.ts --screen agreement-upload"
     );
     process.exit(1);
   }
 
   let screenId = "";
   let route = "";
-  let skipInspector = false;
-  let skipMaestro = false;
   let skipPM = false;
   let skipBackend = false;
   let recapture = false;
@@ -416,12 +398,6 @@ function parseArgs(): CLIArgs {
         break;
       case "--screen":
         batchScreen = args[++i] ?? "";
-        break;
-      case "--skip-inspector":
-        skipInspector = true;
-        break;
-      case "--skip-maestro":
-        skipMaestro = true;
         break;
       case "--skip-pm":
         skipPM = true;
@@ -458,7 +434,7 @@ function parseArgs(): CLIArgs {
     process.exit(1);
   }
 
-  return { screenId, route, skipInspector, skipMaestro, skipPM, skipBackend, recapture, autoHeal, healMaxIterations, healTargetScore, batchScreen };
+  return { screenId, route, skipPM, skipBackend, recapture, autoHeal, healMaxIterations, healTargetScore, batchScreen };
 }
 
 function loadScreenRoutes(): ScreenRoutesConfig {
@@ -501,7 +477,7 @@ function validatePrerequisites(screenId: string): {
   if (!hasBaseline) {
     logWarn(
       "prerequisites",
-      `Baseline image not found at ${baselinePath}. Pixel diff will be skipped.`
+      `Baseline image not found at ${baselinePath}. Inspector will be skipped.`
     );
   } else {
     const baselineCheck = validateImageFile(baselinePath, "baseline");
@@ -1107,7 +1083,7 @@ function captureScreenshotViaCLI(
 
           // Crop stitched image to match baseline proportional height.
           // Stitched image is often taller than baseline because we scroll past content end.
-          // Without this crop, ODiff resize distorts aspect ratios causing false diff.
+          // Without this crop, dimension mismatch distorts aspect ratios causing false comparisons.
           if (stitchedDims && stitchedDims.height > baselineDims.height * 1.1) {
             const scaleFactor = stitchedDims.width / baselineDims.width;
             const targetH = Math.round(baselineDims.height * scaleFactor);
@@ -1130,7 +1106,7 @@ function captureScreenshotViaCLI(
         logError(
           "screenshot",
           `Scrollable screen detected (baseline ${baselineDims.height}px) but only captured viewport (${topDims.height}px). ` +
-          `Scroll capture failed — pixel diff will compare viewport vs full-page baseline. ` +
+          `Scroll capture failed — Inspector will compare viewport vs full-page baseline. ` +
           `Check that Maestro is working: maestro test <flow.yaml>`
         );
         try { fs.renameSync(topPath, screenshotPath); } catch { /* ignore */ }
@@ -1156,7 +1132,6 @@ function captureScreenshotViaCLI(
 
 function validateScreenshot(
   screenId: string,
-  skipMaestro: boolean,
   route: string,
   recapture: boolean = false
 ): { screenshotPath: string; hasScreenshot: boolean } {
@@ -1168,24 +1143,6 @@ function validateScreenshot(
   if (recapture && fileExists(screenshotPath)) {
     log("screenshot", "Recapture mode: deleting existing screenshot...");
     try { fs.unlinkSync(screenshotPath); } catch { /* ignore */ }
-  }
-
-  if (skipMaestro) {
-    if (fileExists(screenshotPath)) {
-      const check = validateImageFile(screenshotPath, "screenshot");
-      if (!check.valid) {
-        logError("screenshot", `Screenshot exists but is corrupt: ${check.reason}`);
-        logError("screenshot", "Delete the corrupt file and recapture.");
-        return { screenshotPath, hasScreenshot: false };
-      }
-      log("screenshot", `Existing screenshot found and valid: ${screenshotPath}`);
-      return { screenshotPath, hasScreenshot: true };
-    }
-    logError(
-      "screenshot",
-      `No existing screenshot at ${screenshotPath}. Either capture manually or run without --skip-maestro.`
-    );
-    return { screenshotPath, hasScreenshot: false };
   }
 
   // Check for existing valid screenshot first
@@ -1205,7 +1162,7 @@ function validateScreenshot(
 }
 
 // ---------------------------------------------------------------------------
-// Step 3: ODiff Pixel Comparison
+// Image Utilities (used by screenshot stitching)
 // ---------------------------------------------------------------------------
 
 /**
@@ -1228,235 +1185,8 @@ function getImageDimensions(
   }
 }
 
-/**
- * Resize an image to target dimensions using ImageMagick.
- * Returns the output path on success, null on failure.
- */
-function resizeImage(
-  sourcePath: string,
-  targetWidth: number,
-  targetHeight: number,
-  outputPath: string
-): string | null {
-  try {
-    execSync(
-      `magick "${sourcePath}" -resize ${targetWidth}x${targetHeight}! "${outputPath}"`,
-      { stdio: ["pipe", "pipe", "pipe"], timeout: 30_000 }
-    );
-    // Validate the resized output is a valid PNG
-    const check = validateImageFile(outputPath, "resized-output");
-    if (!check.valid) {
-      logError("odiff", `Resized image is corrupt: ${check.reason}`);
-      return null;
-    }
-    return outputPath;
-  } catch (err) {
-    logError("odiff", `ImageMagick resize failed: ${err}`);
-    return null;
-  }
-}
-
-function runPixelDiff(
-  screenId: string,
-  baselinePath: string,
-  screenshotPath: string,
-  blueprint: BlueprintMeta | null
-): PixelDiffResult | null {
-  log("odiff", "Running pixel comparison...");
-
-  ensureDir(PATHS.diffs);
-
-  const diffOutputPath = path.join(PATHS.diffs, `${screenId}-diff.png`);
-
-  // Determine threshold based on screen type
-  // Check both the explicit flag AND backgroundShapeKey — screens with Background Shape
-  // in Figma all use the DottedPattern overlay, but the extractor misses detection
-  // because Figma names the pattern image generically (e.g. "image 149")
-  const hasDottedPattern =
-    blueprint?.background?.hasDottedPattern === true ||
-    !!blueprint?.background?.backgroundShapeKey;
-  const threshold = hasDottedPattern ? 18 : 3;
-
-  if (hasDottedPattern) {
-    log("odiff", `DottedPattern screen detected — using ${threshold}% threshold`);
-  } else {
-    log("odiff", `Regular screen — using ${threshold}% threshold`);
-  }
-
-  // --- Dimension matching & normalization ---
-  // ODiff requires matching dimensions. For large images (>2000px longest side),
-  // scale both down proportionally to avoid ODiff memory issues that cause corrupt PNGs.
-  const MAX_COMPARISON_DIM = 2000;
-  const baselineDims = getImageDimensions(baselinePath);
-  const screenshotDims = getImageDimensions(screenshotPath);
-
-  let effectiveBaselinePath = baselinePath;
-  let effectiveScreenshotPath = screenshotPath;
-
-  if (baselineDims && screenshotDims) {
-    log(
-      "odiff",
-      `Baseline: ${baselineDims.width}x${baselineDims.height} | Screenshot: ${screenshotDims.width}x${screenshotDims.height}`
-    );
-
-    // Calculate target dimensions: match baseline aspect ratio, cap at MAX_COMPARISON_DIM
-    let targetW = baselineDims.width;
-    let targetH = baselineDims.height;
-    const longestSide = Math.max(targetW, targetH);
-
-    if (longestSide > MAX_COMPARISON_DIM) {
-      const scale = MAX_COMPARISON_DIM / longestSide;
-      targetW = Math.round(targetW * scale);
-      targetH = Math.round(targetH * scale);
-      log(
-        "odiff",
-        `Images too large for ODiff (${longestSide}px) — scaling both to ${targetW}x${targetH}`
-      );
-
-      // Resize baseline
-      const resizedBaselinePath = path.join(
-        PATHS.diffs,
-        `${screenId}-baseline-resized.png`
-      );
-      const baselineResult = resizeImage(
-        baselinePath,
-        targetW,
-        targetH,
-        resizedBaselinePath
-      );
-      if (baselineResult) {
-        effectiveBaselinePath = baselineResult;
-      }
-
-      // Resize screenshot
-      const resizedScreenshotPath = path.join(
-        PATHS.diffs,
-        `${screenId}-screenshot-resized.png`
-      );
-      const screenshotResult = resizeImage(
-        screenshotPath,
-        targetW,
-        targetH,
-        resizedScreenshotPath
-      );
-      if (screenshotResult) {
-        effectiveScreenshotPath = screenshotResult;
-      }
-    } else if (
-      baselineDims.width !== screenshotDims.width ||
-      baselineDims.height !== screenshotDims.height
-    ) {
-      // Images are small enough but dimensions don't match — resize screenshot to baseline
-      log(
-        "odiff",
-        `Dimension mismatch — resizing screenshot to ${targetW}x${targetH}`
-      );
-      const resizedPath = path.join(
-        PATHS.diffs,
-        `${screenId}-screenshot-resized.png`
-      );
-      const result = resizeImage(
-        screenshotPath,
-        targetW,
-        targetH,
-        resizedPath
-      );
-      if (result) {
-        effectiveScreenshotPath = result;
-      } else {
-        logError("odiff", "Failed to resize screenshot — ODiff may fail.");
-      }
-    }
-  } else {
-    logWarn(
-      "odiff",
-      "Could not read image dimensions. Ensure ImageMagick is installed."
-    );
-  }
-
-  // Run ODiff with --reduce-ram-usage and --parsable-stdout for reliable operation
-  const cmd = [
-    "npx",
-    "odiff",
-    `"${effectiveBaselinePath}"`,
-    `"${effectiveScreenshotPath}"`,
-    `"${diffOutputPath}"`,
-    "--antialiasing",
-    "--threshold",
-    "0.1",
-    "--reduce-ram-usage",
-    "--parsable-stdout",
-  ].join(" ");
-
-  const { stdout, success } = runCommand(cmd, "odiff");
-
-  if (!success && !stdout) {
-    // ODiff exits with code 22 when images differ — check if diff file was created
-    if (!fileExists(diffOutputPath)) {
-      logError(
-        "odiff",
-        "ODiff failed to produce diff. Make sure odiff-bin is installed: npm install in buildbot/"
-      );
-      return null;
-    }
-  }
-
-  // Validate the diff output image is not corrupt (ODiff can produce truncated PNGs)
-  if (fileExists(diffOutputPath)) {
-    const diffCheck = validateImageFile(diffOutputPath, "diff-output");
-    if (!diffCheck.valid) {
-      logWarn("odiff", `Diff image is corrupt (${diffCheck.reason}). It will not be viewable but diff % is still usable.`);
-    }
-  }
-
-  // Parse ODiff --parsable-stdout output.
-  // Parsable format: "diffCount;diffPercentage" (e.g., "2378871;45.08")
-  // Exit code 0 = match, 22 = pixel-diff, 21 = layout-diff
-  let diffPercentage = 0;
-  const combinedOutput = stdout.trim();
-
-  if (success) {
-    // Exit code 0 means images match
-    diffPercentage = 0;
-    log("odiff", "Images match perfectly.");
-  } else if (combinedOutput) {
-    // Parsable format: "diffCount;diffPercentage"
-    const parts = combinedOutput.split(";");
-    if (parts.length === 2) {
-      diffPercentage = parseFloat(parts[1]);
-      if (isNaN(diffPercentage)) diffPercentage = -1;
-    } else {
-      // Fallback: try to find a percentage in output
-      const pctMatch = combinedOutput.match(/(\d+\.?\d*)%/) ??
-        combinedOutput.match(/diffPercentage[:\s]+(\d+\.?\d*)/);
-      diffPercentage = pctMatch ? parseFloat(pctMatch[1]) : -1;
-    }
-  } else {
-    diffPercentage = -1;
-  }
-
-  if (diffPercentage < 0) {
-    logWarn("odiff", `Could not parse diff percentage from output: "${combinedOutput}"`);
-  }
-
-  const passed = diffPercentage >= 0 && diffPercentage <= threshold;
-
-  if (diffPercentage >= 0) {
-    log("odiff", `Diff: ${diffPercentage.toFixed(2)}% (threshold: ${threshold}%) => ${passed ? "PASS" : "FAIL"}`);
-  } else {
-    logWarn("odiff", `Diff percentage unknown. Marking as FAIL. Diff image: ${diffOutputPath}`);
-  }
-
-  return {
-    percentage: diffPercentage >= 0 ? diffPercentage : -1,
-    threshold,
-    passed,
-    diffImagePath: diffOutputPath,
-  };
-}
-
 // ---------------------------------------------------------------------------
-// Step 4: Coverage Check
+// Step 6: Coverage Check
 // ---------------------------------------------------------------------------
 
 function runCoverageCheck(screenId: string): CoverageResult | null {
@@ -1533,7 +1263,7 @@ function runCoverageCheck(screenId: string): CoverageResult | null {
 }
 
 // ---------------------------------------------------------------------------
-// Step 5: Gemini Visual Feedback
+// Step 7: Gemini Visual Feedback
 // ---------------------------------------------------------------------------
 
 /** Extract GeminiAuditResult from raw JSON (handles both old and new Gemini output formats) */
@@ -1622,7 +1352,7 @@ function runGeminiAudit(screenId: string, routeKey?: string): GeminiAuditResult 
 }
 
 // ---------------------------------------------------------------------------
-// Step 6: Inspector
+// Step 8: Inspector
 // ---------------------------------------------------------------------------
 
 function runInspector(
@@ -1669,7 +1399,6 @@ function runInspector(
   }
 
   // With scroll-stitch, screenshots are full-page — no viewport cropping needed.
-  // ODiff handles any remaining dimension mismatches via its resize logic.
   let effectiveBaseline = baselinePath;
 
   const cmd = [
@@ -1715,12 +1444,11 @@ function runInspector(
 }
 
 // ---------------------------------------------------------------------------
-// Step 10: Learning Agent — Extract Learnings from Results
+// Step 9: Learning Agent — Extract Learnings from Results
 // ---------------------------------------------------------------------------
 
 function runLearningAgent(
   screenId: string,
-  pixelDiff: PixelDiffResult | null,
   coverage: CoverageResult | null,
   inspection: InspectionResult | null,
   pmBrief: PMBriefResult | null
@@ -1728,25 +1456,6 @@ function runLearningAgent(
   log("learning-agent", "Analyzing results for new learnings...");
 
   const findings: Array<{ what: string; why: string; how: string; category: string }> = [];
-
-  // Analyze pixel diff for learnable patterns
-  if (pixelDiff && !pixelDiff.passed && pixelDiff.percentage > 0) {
-    if (pixelDiff.percentage > 20) {
-      findings.push({
-        what: "High pixel diff indicates structural mismatch",
-        why: `Pixel diff of ${pixelDiff.percentage.toFixed(1)}% suggests layout structure differs significantly from Figma, not just styling issues.`,
-        how: "Compare section-by-section: check if sections are missing, reordered, or have wrong container structure before fixing individual styles.",
-        category: "Pipeline and Process",
-      });
-    } else if (pixelDiff.percentage > 8) {
-      findings.push({
-        what: "Medium pixel diff indicates component-level mismatches",
-        why: `Pixel diff of ${pixelDiff.percentage.toFixed(1)}% suggests several components have wrong sizing, spacing, or colors.`,
-        how: "Focus on the largest visible differences first (usually spacing or font sizes). Use the diff image to identify which components have the most red highlight area.",
-        category: "React Native Patterns",
-      });
-    }
-  }
 
   // Analyze coverage gaps
   if (coverage && !coverage.passed) {
@@ -1820,7 +1529,7 @@ function runLearningAgent(
 }
 
 // ---------------------------------------------------------------------------
-// Step 11: Produce Combined Audit Report
+// Step 10: Produce Combined Audit Report
 // ---------------------------------------------------------------------------
 
 function produceAuditReport(
@@ -1828,7 +1537,6 @@ function produceAuditReport(
   route: string,
   pmBrief: PMBriefResult | null,
   backendBrief: BackendBriefResult | null,
-  pixelDiff: PixelDiffResult | null,
   coverage: CoverageResult | null,
   geminiAudit: GeminiAuditResult | null,
   inspection: InspectionResult | null,
@@ -1849,26 +1557,6 @@ function produceAuditReport(
   // Backend Brief assessment
   if (backendBrief && !backendBrief.mockDataPopulated) {
     failureReasons.push("Backend Agent: mock data not populated for visual testing.");
-  }
-
-  // Pixel diff assessment
-  const pixelDiffResult: PixelDiffResult = pixelDiff ?? {
-    percentage: -1,
-    threshold: 3,
-    passed: false,
-    diffImagePath: "",
-  };
-
-  if (!pixelDiff) {
-    failureReasons.push("Pixel diff could not be performed (missing baseline or screenshot).");
-  } else if (!pixelDiff.passed) {
-    if (pixelDiff.percentage < 0) {
-      failureReasons.push("Pixel diff percentage could not be determined.");
-    } else {
-      failureReasons.push(
-        `Pixel diff ${pixelDiff.percentage.toFixed(2)}% exceeds threshold of ${pixelDiff.threshold}%.`
-      );
-    }
   }
 
   // Coverage assessment
@@ -1941,7 +1629,6 @@ function produceAuditReport(
 
   // Overall pass determination — only app-controlled critical issues block
   const overallPassed =
-    pixelDiffResult.passed &&
     (coverage?.passed !== false) &&
     appCriticalIssues.length === 0;
 
@@ -1951,7 +1638,6 @@ function produceAuditReport(
     route,
     ...(pmBrief ? { pmBrief } : {}),
     ...(backendBrief ? { backendBrief } : {}),
-    pixelDiff: pixelDiffResult,
     ...(coverage ? { coverage } : {}),
     ...(geminiAudit ? { geminiAudit } : {}),
     ...(inspection ? { inspection } : {}),
@@ -1968,7 +1654,7 @@ function produceAuditReport(
 }
 
 // ---------------------------------------------------------------------------
-// Step 8: Print Summary
+// Step 11: Print Summary
 // ---------------------------------------------------------------------------
 
 function printSummary(report: AuditReport): void {
@@ -1985,10 +1671,6 @@ function printSummary(report: AuditReport): void {
   const inspectorText = report.inspection
     ? `${report.inspection.overallScore}/100`
     : "N/A";
-  const pixelText =
-    report.pixelDiff.percentage >= 0
-      ? `${report.pixelDiff.percentage.toFixed(2)}% (${report.pixelDiff.passed ? "PASS" : "FAIL"})`
-      : "Unknown (FAIL)";
   const overallText = report.overallPassed ? "PASSED" : "FAILED";
 
   const failureBlock =
@@ -2005,7 +1687,6 @@ ${bar}
   Route:       ${report.route}
   PM Brief:    ${pmText}
   Backend:     ${backendText}
-  Pixel Diff:  ${pixelText}
   Coverage:    ${coverageText}
   Inspector:   ${inspectorText}
 
@@ -2025,8 +1706,6 @@ function runSingleScreen(
   screenId: string,
   route: string,
   options: {
-    skipInspector: boolean;
-    skipMaestro: boolean;
     skipPM: boolean;
     skipBackend: boolean;
     recapture?: boolean;
@@ -2037,7 +1716,7 @@ function runSingleScreen(
     routeKey?: string;
   }
 ): AuditReport {
-  const { skipInspector, skipMaestro, skipPM, skipBackend, recapture = false, autoHeal = false, healMaxIterations = 3, healTargetScore = 85, stateName, routeKey } = options;
+  const { skipPM, skipBackend, recapture = false, autoHeal = false, healMaxIterations = 3, healTargetScore = 85, stateName, routeKey } = options;
   const stateLabel = stateName ? ` [state: ${stateName}]` : "";
 
   console.log("");
@@ -2062,7 +1741,6 @@ function runSingleScreen(
         screenId,
         timestamp: new Date().toISOString(),
         route,
-        pixelDiff: { percentage: -1, threshold: 3, passed: false, diffImagePath: "" },
         overallPassed: false,
         failureReasons: ["Blueprint not found and extraction failed."],
       };
@@ -2093,22 +1771,12 @@ function runSingleScreen(
   }
 
   // Step 5: Validate / capture screenshot
-  const { screenshotPath, hasScreenshot } = validateScreenshot(screenId, skipMaestro, route, recapture);
+  const { screenshotPath, hasScreenshot } = validateScreenshot(screenId, route, recapture);
 
-  // Step 6: ODiff pixel comparison
-  let pixelDiffResult: PixelDiffResult | null = null;
-  if (hasBaseline && hasScreenshot) {
-    pixelDiffResult = runPixelDiff(screenId, baselinePath, screenshotPath, blueprint);
-  } else {
-    if (!hasBaseline) logWarn("main", "Skipping pixel diff: no baseline image.");
-    if (!hasScreenshot) logWarn("main", "Skipping pixel diff: no app screenshot.");
-  }
-
-  // Step 7: Coverage check
+  // Step 6: Coverage check
   const coverageResult = runCoverageCheck(screenId);
 
-  // Step 7.5: Maestro Structural Verification (deterministic, no AI)
-  // NOTE: Structural verification runs if hierarchy CSV exists, regardless of --skip-maestro.
+  // Step 6.5: Maestro Structural Verification (deterministic, no AI)
   // The hierarchy CSV is captured externally via Maestro MCP's inspect_view_hierarchy tool.
   let maestroStructuralResult: AuditReport["maestroStructural"] | undefined;
   const hierarchyCsvPath = path.join(BUILDBOT_ROOT, "data", "hierarchies", `${screenId}-hierarchy.csv`);
@@ -2142,7 +1810,7 @@ function runSingleScreen(
     log("structural", `No hierarchy CSV at ${hierarchyCsvPath}. Capture via Maestro MCP inspect_view_hierarchy.`);
   }
 
-  // Step 7.7: Auto-heal (optional — patch code from structural report)
+  // Step 6.7: Auto-heal (optional — patch code from structural report)
   if (autoHeal && maestroStructuralResult && maestroStructuralResult.score < healTargetScore) {
     log("auto-heal", `Score ${maestroStructuralResult.score} < target ${healTargetScore}. Running auto-heal...`);
     const healScript = path.join(PATHS.scripts, "maestro-auto-heal.ts");
@@ -2167,23 +1835,21 @@ function runSingleScreen(
     log("auto-heal", `Score ${maestroStructuralResult.score} >= target ${healTargetScore}. No healing needed.`);
   }
 
-  // Step 8: Gemini visual feedback
+  // Step 7: Gemini visual feedback
   const geminiResult = runGeminiAudit(screenId, routeKey);
 
-  // Step 9: Inspector
+  // Step 8: Inspector
   let inspectionResult: InspectionResult | null = null;
-  if (!skipInspector && hasScreenshot && hasBaseline) {
+  if (hasScreenshot && hasBaseline) {
     inspectionResult = runInspector(screenId, screenshotPath, baselinePath, finalBlueprintPath);
-  } else if (skipInspector) {
-    log("inspector", "Skipped (--skip-inspector flag set).");
   } else {
     logWarn("inspector", "Skipped: missing screenshot or baseline for inspection.");
   }
 
-  // Step 10: Learning Agent — analyze results for new learnings
-  runLearningAgent(screenId, pixelDiffResult, coverageResult, inspectionResult, pmBriefResult);
+  // Step 9: Learning Agent — analyze results for new learnings
+  runLearningAgent(screenId, coverageResult, inspectionResult, pmBriefResult);
 
-  // Step 11: Produce combined audit report
+  // Step 10: Produce combined audit report
   const screenHasDottedPattern =
     blueprint?.background?.hasDottedPattern === true ||
     !!blueprint?.background?.backgroundShapeKey;
@@ -2192,7 +1858,6 @@ function runSingleScreen(
     route,
     pmBriefResult,
     backendBriefResult,
-    pixelDiffResult,
     coverageResult,
     geminiResult,
     inspectionResult,
@@ -2200,7 +1865,7 @@ function runSingleScreen(
     maestroStructuralResult
   );
 
-  // Step 12: Print summary
+  // Step 11: Print summary
   printSummary(report);
 
   return report;
@@ -2213,8 +1878,6 @@ function runSingleScreen(
 function runBatchStates(
   screenKey: string,
   options: {
-    skipInspector: boolean;
-    skipMaestro: boolean;
     skipPM: boolean;
     skipBackend: boolean;
     recapture: boolean;
@@ -2275,7 +1938,6 @@ function runBatchStates(
       state: screenState.state,
       name: screenState.name,
       passed: report.overallPassed,
-      pixelDiff: report.pixelDiff?.percentage ?? -1,
       coverage: report.coverage?.overall ?? -1,
       inspectorScore: report.inspection?.overallScore ?? -1,
       failureReasons: report.failureReasons,
@@ -2316,11 +1978,10 @@ ${bar}`);
 
   for (const sr of stateResults) {
     const status = sr.passed ? "PASS" : "FAIL";
-    const pxText = sr.pixelDiff >= 0 ? `${sr.pixelDiff.toFixed(1)}%` : "N/A";
     const covText = sr.coverage >= 0 ? `${sr.coverage}%` : "N/A";
     const insText = sr.inspectorScore >= 0 ? `${sr.inspectorScore}/100` : "N/A";
     console.log(
-      `  [${status}] ${sr.state.padEnd(20)} px:${pxText.padEnd(8)} cov:${covText.padEnd(8)} insp:${insText}`
+      `  [${status}] ${sr.state.padEnd(20)} cov:${covText.padEnd(8)} insp:${insText}`
     );
     if (!sr.passed && sr.failureReasons.length > 0) {
       sr.failureReasons.forEach((r) => console.log(`         └─ ${r}`));
@@ -2347,8 +2008,6 @@ function main(): void {
   if (args.batchScreen) {
     // Batch-state mode: process all states of a screen
     runBatchStates(args.batchScreen, {
-      skipInspector: args.skipInspector,
-      skipMaestro: args.skipMaestro,
       skipPM: args.skipPM,
       skipBackend: args.skipBackend,
       recapture: args.recapture,
@@ -2356,8 +2015,6 @@ function main(): void {
   } else {
     // Single-screen mode
     const report = runSingleScreen(args.screenId, args.route, {
-      skipInspector: args.skipInspector,
-      skipMaestro: args.skipMaestro,
       skipPM: args.skipPM,
       skipBackend: args.skipBackend,
       recapture: args.recapture,

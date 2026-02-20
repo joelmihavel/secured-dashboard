@@ -32,17 +32,18 @@ import LottieView from 'lottie-react-native';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { verifyPaymentStatus } from '@/src/services/payment';
+import { colors } from '@/src/theme';
 
 // Exact Figma colors - from 41-9460 blueprint extraction
 const FIGMA_COLORS = {
-  background: '#131313',           // black.700
-  cardBackground: '#202020',       // black.500 - Rectangle 136
-  titleWhite: '#FFFFFF',           // white - "Payment"
-  titleAccent: '#FF9A6D',          // brand.500 - "Processing" (span start:8, color #FF9A6D)
+  background: colors.black[700],           // black.700
+  cardBackground: colors.black[500],       // black.500 - Rectangle 136
+  titleWhite: colors.white,           // white - "Payment"
+  titleAccent: colors.brand[500],          // brand.500 - "Processing" (span start:8, color #FF9A6D)
   stampColor: '#C7C9D9',           // Figma: PENDING stamp text color
-  infoText: '#A9A9A9',             // neutral.500 - info row text
-  iconColor: '#4D4D4D',            // black.400 - credit card icon
-  paperclipColor: '#4D4D4D',       // black.400 - paperclip
+  infoText: colors.neutral[500],             // neutral.500 - info row text
+  iconColor: colors.black[400],            // black.400 - credit card icon
+  paperclipColor: colors.black[400],       // black.400 - paperclip
 };
 
 const MAX_VERIFICATION_ATTEMPTS = 10;

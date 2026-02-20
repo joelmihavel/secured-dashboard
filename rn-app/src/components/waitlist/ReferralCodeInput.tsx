@@ -18,7 +18,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { Dimensions } from 'react-native';
 import { colors } from '@/src/theme/colors';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ratioX = SCREEN_WIDTH / 393;
+const sv = (val: number) => val * ratioX;
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -28,31 +32,31 @@ import { colors } from '@/src/theme/colors';
 const FIGMA = {
   // OTP container (node 41:11253)
   container: {
-    width: 281,
-    height: 64,
-    gap: 16, // spacing.lg
+    width: sv(281),
+    height: sv(64),
+    gap: sv(16), // spacing.lg
   },
 
   // Input row (node I41:11253;50:330)
   inputRow: {
-    width: 280,
-    height: 64,
-    gap: 8, // spacing.xs
+    width: sv(280),
+    height: sv(64),
+    gap: sv(8), // spacing.xs
   },
 
   // Individual input box (node I41:11253;50:331;1106:66616)
   inputBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 8, // radius.sm
+    width: sv(64),
+    height: sv(64),
+    borderRadius: sv(8), // radius.sm
     padding: 0, // No padding to fit 48px text in 64px box
-    borderWidth: 1,
+    borderWidth: sv(1),
   },
 
   // Input text (node I41:11253;50:331;1106:66617)
   inputText: {
-    fontSize: 48,
-    lineHeight: 60,
+    fontSize: sv(48),
+    lineHeight: sv(60),
     fontFamily: 'Inter-Medium',
     letterSpacing: -0.96,
   },
@@ -82,8 +86,8 @@ const FIGMA = {
   shadow: {
     color: 'rgba(10, 13, 18, 0.05)',
     offsetX: 0,
-    offsetY: 1,
-    blurRadius: 2,
+    offsetY: sv(1),
+    blurRadius: sv(2),
   },
 } as const;
 
@@ -222,9 +226,9 @@ const styles = StyleSheet.create({
       width: FIGMA.shadow.offsetX,
       height: FIGMA.shadow.offsetY,
     },
-    shadowOpacity: 1,
+    shadowOpacity: sv(1),
     shadowRadius: FIGMA.shadow.blurRadius,
-    elevation: 1,
+    elevation: sv(1),
   },
 
   inputBoxDisabled: {

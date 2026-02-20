@@ -4,14 +4,15 @@
  * Verifies user identity using Cashfree Mobile 360 API.
  *
  * Supports multiple flows:
- * 1. action: "send_otp" - Sends OTP via Cashfree (legacy, if Twilio consent not available)
- * 2. action: "verify_otp" - Verifies Cashfree OTP and retrieves identity data (legacy)
- * 3. action: "fetch_with_consent" - Uses pre-recorded consent from Twilio auth (preferred)
+ * 1. action: "record_consent" - Persists consent to DB after OTP verification (preferred first step)
+ * 2. action: "fetch_with_consent" - Uses persisted consent to trigger Cashfree Mobile 360
+ * 3. action: "send_otp" - Sends OTP via Cashfree (legacy)
+ * 4. action: "verify_otp" - Verifies Cashfree OTP and retrieves identity data (legacy)
  *
  * The preferred flow is:
  * - User authenticates via auth-otp (Twilio Verify) with consent_for_mobile360=true
- * - User calls verify-identity with action: "fetch_with_consent"
- * - This function uses the pre-recorded consent to fetch Mobile 360 data
+ * - App calls record_consent to persist consent (timestamp, IP, phone) to identity_verifications
+ * - App calls fetch_with_consent which finds the persisted consent record and triggers Mobile 360
  *
  * Endpoint: POST /functions/v1/verify-identity
  * Auth: Required (JWT)
@@ -70,7 +71,13 @@ interface FetchWithConsentRequest {
   name?: string;
 }
 
-type VerifyIdentityRequest = SendOtpRequest | VerifyOtpRequest | FetchWithConsentRequest;
+interface RecordConsentRequest {
+  action: "record_consent";
+  consent_timestamp: string;
+  name?: string;
+}
+
+type VerifyIdentityRequest = SendOtpRequest | VerifyOtpRequest | FetchWithConsentRequest | RecordConsentRequest;
 
 // Response from Send OTP API
 interface Mobile360SendOtpResponse {
@@ -193,6 +200,12 @@ const fetchWithConsentSchema = {
   name: { required: false, type: "string" as const },
 };
 
+const recordConsentSchema = {
+  action: { required: true, type: "string" as const, enum: ["record_consent"] },
+  consent_timestamp: { required: true, type: "string" as const },
+  name: { required: false, type: "string" as const, maxLength: 100 },
+};
+
 // ==============================================
 // MAIN HANDLER
 // ==============================================
@@ -238,6 +251,19 @@ serve(async (req: Request) => {
       return await handleSendOtp(body, userId, supabase, audit, clientIp);
     } else if (body.action === "verify_otp") {
       return await handleVerifyOtp(body, userId, supabase, audit);
+    } else if (body.action === "record_consent") {
+      // Record consent to DB — called right after OTP verification
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id, phone, email")
+        .eq("id", userId)
+        .single();
+
+      if (userError || !userData) {
+        throw new ValidationError("User not found", { user_id: "Not found" });
+      }
+
+      return await handleRecordConsent(body, userId, supabase, audit, userData, clientIp);
     } else if (body.action === "fetch_with_consent") {
       // Fetch user details for consent-based flow
       const { data: userData, error: userError } = await supabase
@@ -252,8 +278,8 @@ serve(async (req: Request) => {
 
       return await handleFetchWithConsent(body, userId, supabase, audit, userData, clientIp);
     } else {
-      throw new ValidationError("Invalid action. Use 'send_otp', 'verify_otp', or 'fetch_with_consent'", {
-        action: "Must be 'send_otp', 'verify_otp', or 'fetch_with_consent'",
+      throw new ValidationError("Invalid action. Use 'record_consent', 'send_otp', 'verify_otp', or 'fetch_with_consent'", {
+        action: "Must be 'record_consent', 'send_otp', 'verify_otp', or 'fetch_with_consent'",
       });
     }
   } catch (error) {
@@ -767,6 +793,119 @@ async function callCashfreeVerifyOtp(
       error instanceof Error ? error.message : "Unknown error"
     );
   }
+}
+
+// ==============================================
+// RECORD CONSENT HANDLER
+// ==============================================
+
+/**
+ * Records user consent to the identity_verifications table.
+ * Called right after OTP verification when user gave Mobile 360 consent.
+ * Creates a CONSENT_GIVEN record with the actual consent timestamp,
+ * client IP, phone, and name — before Mobile 360 is triggered.
+ *
+ * This ensures consent is persisted with accurate data (timestamp from
+ * when user actually toggled consent, not when Mobile 360 fires).
+ */
+async function handleRecordConsent(
+  body: unknown,
+  userId: string,
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger,
+  user: { id: string; phone?: string; email?: string },
+  clientIp: string
+): Promise<Response> {
+  // Validate request
+  const validatedBody = validateSchema<RecordConsentRequest>(body, recordConsentSchema, true);
+  const { consent_timestamp, name } = validatedBody;
+
+  // Get user's phone number
+  const userPhone = user.phone;
+  if (!userPhone) {
+    throw new ValidationError("User phone number not found. Please authenticate first.");
+  }
+
+  const sanitizedPhone = sanitizePhone(userPhone);
+
+  // Check for existing consent record (idempotent — don't create duplicates)
+  const { data: existingConsent } = await supabase
+    .from("identity_verifications")
+    .select("id, status, consent_timestamp")
+    .eq("user_id", userId)
+    .in("status", ["CONSENT_GIVEN", "OTP_SENT", "SUCCESS"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingConsent) {
+    // Already have a consent/verification record — return it
+    console.log(`[verify-identity] Existing consent record found for user ${userId}, status=${existingConsent.status}`);
+    return jsonResponse({
+      success: true,
+      data: {
+        consent_id: existingConsent.id,
+        status: existingConsent.status,
+        message: "Consent already recorded",
+        already_exists: true,
+      },
+    });
+  }
+
+  // Validate consent_timestamp is a valid ISO date and not in the future
+  const consentDate = new Date(consent_timestamp);
+  if (isNaN(consentDate.getTime())) {
+    throw new ValidationError("Invalid consent_timestamp format. Use ISO 8601.", {
+      consent_timestamp: "Must be valid ISO 8601 date",
+    });
+  }
+
+  // Create consent record
+  const verificationId = `CONSENT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+  const { data: consentRecord, error: insertError } = await supabase
+    .from("identity_verifications")
+    .insert({
+      verification_id: verificationId,
+      user_id: userId,
+      status: "CONSENT_GIVEN",
+      consent_phone: sanitizedPhone,
+      consent_ip: clientIp || null,
+      consent_timestamp: consent_timestamp,
+      m360_full_name: name || null,
+    })
+    .select("id, status, consent_timestamp")
+    .single();
+
+  if (insertError || !consentRecord) {
+    console.error("[verify-identity] Failed to record consent:", insertError);
+    throw new AppError("Failed to record consent", "DB_ERROR", 500);
+  }
+
+  // Audit log
+  await audit.logSuccess(
+    AuditActions.IDENTITY_VERIFICATION_INITIATED,
+    "consent",
+    "identity_verification",
+    consentRecord.id,
+    {
+      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+      action: "record_consent",
+      consent_timestamp,
+    }
+  );
+
+  console.log(`[verify-identity] Consent recorded: ${verificationId} for user ${userId}`);
+
+  return jsonResponse({
+    success: true,
+    data: {
+      consent_id: consentRecord.id,
+      status: "CONSENT_GIVEN",
+      message: "Consent recorded successfully",
+      already_exists: false,
+    },
+  });
 }
 
 // ==============================================

@@ -221,7 +221,7 @@ export function getMimeType(fileName: string): string {
 }
 
 /**
- * Validate file size (max 10MB)
+ * Validate file size (default max 10MB, override with maxMB param)
  */
 export function validateFileSize(sizeInBytes: number, maxMB = 10): boolean {
   const maxBytes = maxMB * 1024 * 1024;
@@ -229,9 +229,8 @@ export function validateFileSize(sizeInBytes: number, maxMB = 10): boolean {
 }
 
 /**
- * Validate file type for agreements
+ * Validate file type for agreements (PDF only — process-document edge function rejects non-PDF)
  */
 export function validateAgreementType(mimeType: string): boolean {
-  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-  return allowedTypes.includes(mimeType);
+  return mimeType === 'application/pdf';
 }

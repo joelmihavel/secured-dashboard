@@ -1,0 +1,252 @@
+{
+  "screenId": "1-30358",
+  "screenName": "Onboarding / Agreement --upload --manual review",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-20T13:47:30.411Z",
+  "checks": {
+    "nodeCount": 103,
+    "textNodeCount": 21,
+    "componentInstanceCount": 3,
+    "interactiveNodeCount": 3,
+    "imageAssetCount": 8,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": true,
+    "topLevelChildNames": [
+      "image 149",
+      "Background Shape",
+      "Vector 45",
+      "Vector 1",
+      "Status Bar",
+      "Rectangle 52",
+      "Frame 1686557300",
+      "Frame 1686557268"
+    ],
+    "textContents": [
+      {
+        "nodeId": "I1:30362;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30377",
+        "name": "Pay Rent",
+        "content": "Pay Rent",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30388",
+        "name": "Total payable rent",
+        "content": "Total payable rent",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:30389",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30398",
+        "name": "saved ₹ 325 →",
+        "content": "saved ₹ 325 →",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#70BF73"
+      },
+      {
+        "nodeId": "1:30399",
+        "name": "using flent cashback",
+        "content": "using flent cashback",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:30403",
+        "name": "Paying to",
+        "content": "Paying to",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30404",
+        "name": "[Landlord Name]",
+        "content": "[Landlord Name]",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30408",
+        "name": "ICICI",
+        "content": "ICICI ",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30409",
+        "name": "XXXX XXXX XXXX 2003",
+        "content": "XXXX XXXX XXXX 2003",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30411",
+        "name": "Pay Now",
+        "content": "Pay Now",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30412",
+        "name": "All payments are 100% secure",
+        "content": "All payments are 100% secure",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30417",
+        "name": "PAY BY ANY APP INSTEAD",
+        "content": "PAY BY ANY APP INSTEAD",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:30421",
+        "name": "Google Pay",
+        "content": "Google Pay",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30424",
+        "name": "PayTM",
+        "content": "PayTM",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30427",
+        "name": "PhonePe",
+        "content": "PhonePe",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:30434",
+        "name": "One  More Step",
+        "content": "One  More Step",
+        "fontSize": 48,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:30435",
+        "name": "Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.",
+        "content": "Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#797979"
+      },
+      {
+        "nodeId": "1:30445",
+        "name": "Joel_Ramesh-Agreement_Dec 2025.pdf",
+        "content": "Joel_Ramesh-Agreement_Dec 2025.pdf",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#D2D2D2"
+      },
+      {
+        "nodeId": "1:30446",
+        "name": "Hint text",
+        "content": "Our team will review it manually and get back to you within 24 hours.",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#FFB020"
+      },
+      {
+        "nodeId": "I1:30447;100:1565",
+        "name": "Text",
+        "content": "Get Notified",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#202020",
+      "#4D4D4D",
+      "#70BF73",
+      "#797979",
+      "#878787",
+      "#A9A9A9",
+      "#D2D2D2",
+      "#D9D9D9",
+      "#EEEEEE",
+      "#FFB020",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      12,
+      15.19174861907959,
+      16,
+      24,
+      30.38349723815918,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:7",
+      "1:1804",
+      "104:3130"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Frame 1686557209",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Frame 130",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "104:3131"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_CLICK"
+      }
+    ]
+  }
+}

@@ -1,0 +1,600 @@
+{
+  "_description": "Maps Figma screen IDs to app routes for automated testing",
+  "routes": {
+    "splash": {
+      "figmaPatterns": [
+        "Splash",
+        "get-started"
+      ],
+      "route": "/(auth)/splash",
+      "screens": [
+        {
+          "figmaId": "1-28055",
+          "name": "Splash / get-started",
+          "state": "default"
+        }
+      ]
+    },
+    "beta-splash": {
+      "figmaPatterns": [
+        "BETA LAUNCH",
+        "animation 2"
+      ],
+      "route": "/(auth)/beta-splash",
+      "screens": [
+        {
+          "figmaId": "1-28071",
+          "name": "Splash / get-started --animation 2",
+          "state": "beta"
+        }
+      ]
+    },
+    "carousel": {
+      "figmaPatterns": [
+        "carousel"
+      ],
+      "route": "/(auth)/carousel",
+      "screens": [
+        {
+          "figmaId": "1-28985",
+          "name": "Splash / get-started --carousel slide 1",
+          "state": "page1",
+          "routeWithState": "/(auth)/carousel?page=1"
+        },
+        {
+          "figmaId": "1-29025",
+          "name": "Splash / get-started --carousel slide 2",
+          "state": "page2",
+          "routeWithState": "/(auth)/carousel?page=2"
+        },
+        {
+          "figmaId": "1-29065",
+          "name": "Splash / get-started --carousel slide 3",
+          "state": "page3",
+          "routeWithState": "/(auth)/carousel?page=3"
+        }
+      ]
+    },
+    "sign-up": {
+      "figmaPatterns": [
+        "sign up",
+        "enter phone"
+      ],
+      "route": "/(auth)/sign-up",
+      "screens": [
+        {
+          "figmaId": "1-29108",
+          "name": "auth / sign up --enter phone number",
+          "state": "empty",
+          "routeWithState": "/(auth)/sign-up?state=empty"
+        },
+        {
+          "figmaId": "1-29914",
+          "name": "auth / sign up --filled",
+          "state": "filled",
+          "routeWithState": "/(auth)/sign-up?state=filled"
+        }
+      ]
+    },
+    "otp": {
+      "figmaPatterns": [
+        "OTP",
+        "enter OTP"
+      ],
+      "route": "/(auth)/otp",
+      "screens": [
+        {
+          "figmaId": "1-31175",
+          "name": "auth / sign up --enter OTP",
+          "state": "empty",
+          "routeWithState": "/(auth)/otp?state=empty"
+        },
+        {
+          "figmaId": "1-31073",
+          "name": "auth / sign up --enter OTP --filled",
+          "state": "filled",
+          "routeWithState": "/(auth)/otp?state=filled"
+        },
+        {
+          "figmaId": "1-31277",
+          "name": "auth / sign up --enter OTP --error 1",
+          "state": "error1",
+          "routeWithState": "/(auth)/otp?state=error1"
+        },
+        {
+          "figmaId": "1-31380",
+          "name": "auth / sign up --enter OTP --error 2",
+          "state": "error2",
+          "routeWithState": "/(auth)/otp?state=error2"
+        }
+      ]
+    },
+    "waitlist": {
+      "figmaPatterns": [
+        "Waitlist"
+      ],
+      "route": "/(waitlist)",
+      "screens": [
+        {
+          "figmaId": "41-11206",
+          "name": "Onboarding / Waitlist Screen",
+          "state": "default",
+          "routeWithState": "/waitlist/state/pending"
+        },
+        {
+          "figmaId": "41-11313",
+          "name": "Onboarding / Waitlist Screen --accepted",
+          "state": "accepted",
+          "routeWithState": "/waitlist/state/accepted"
+        },
+        {
+          "figmaId": "41-11410",
+          "name": "Onboarding / Waitlist Screen --rejected",
+          "state": "rejected",
+          "routeWithState": "/waitlist/state/rejected"
+        },
+        {
+          "figmaId": "41-11506",
+          "name": "Onboarding / Waitlist Screen --more than 24hrs",
+          "state": "24hrs",
+          "routeWithState": "/waitlist/state/pending_long"
+        },
+        {
+          "figmaId": "41-11613",
+          "name": "Onboarding / Waitlist Screen --referral code entry",
+          "state": "referral",
+          "routeWithState": "/waitlist/state/referral"
+        },
+        {
+          "figmaId": "41-11720",
+          "name": "Onboarding / Waitlist Screen --referral code entry --invalid",
+          "state": "referral-invalid",
+          "routeWithState": "/waitlist/state/referral_invalid"
+        }
+      ]
+    },
+    "agreement-upload": {
+      "figmaPatterns": [
+        "Agreement",
+        "upload"
+      ],
+      "route": "/(agreement)/upload",
+      "screens": [
+        {
+          "figmaId": "1-30090",
+          "name": "Onboarding / Agreement --upload",
+          "state": "default",
+          "routeWithState": "/(agreement)/upload?state=idle"
+        },
+        {
+          "figmaId": "1-30001",
+          "name": "Onboarding / Agreement --uploading",
+          "state": "uploading",
+          "routeWithState": "/(agreement)/upload?state=uploading"
+        },
+        {
+          "figmaId": "1-30178",
+          "name": "Onboarding / Agreement --upload --expired agreement",
+          "state": "expired",
+          "routeWithState": "/(agreement)/upload?state=expired"
+        },
+        {
+          "figmaId": "1-30268",
+          "name": "Onboarding / Agreement --upload --file too large",
+          "state": "too-large",
+          "routeWithState": "/(agreement)/upload?state=too-large"
+        },
+        {
+          "figmaId": "1-30358",
+          "name": "Onboarding / Agreement --upload --manual review",
+          "state": "manual-review",
+          "routeWithState": "/(agreement)/upload?state=manual-review"
+        }
+      ]
+    },
+    "agreement-review": {
+      "figmaPatterns": [
+        "Agreement",
+        "verify",
+        "modify"
+      ],
+      "route": "/(agreement)/review",
+      "screens": [
+        {
+          "figmaId": "1-30448",
+          "name": "Onboarding / Agreement --verify agreement",
+          "state": "verify",
+          "routeWithState": "/(agreement)/review?state=verify"
+        },
+        {
+          "figmaId": "1-30820",
+          "name": "Onboarding / Agreement --modify agreement",
+          "state": "modify",
+          "routeWithState": "/(agreement)/review?state=modify"
+        }
+      ]
+    },
+    "setup": {
+      "figmaPatterns": [
+        "Setup",
+        "post-approval"
+      ],
+      "route": "/(setup)",
+      "screens": [
+        {
+          "figmaId": "41-10712",
+          "name": "Onboarding / Post Approval 1",
+          "state": "step1",
+          "routeWithState": "/(setup)?step=1"
+        },
+        {
+          "figmaId": "41-10859",
+          "name": "Onboarding / Post Approval 2",
+          "state": "step2",
+          "routeWithState": "/(setup)?step=2"
+        },
+        {
+          "figmaId": "41-11006",
+          "name": "Onboarding / Post Approval 3",
+          "state": "step3",
+          "routeWithState": "/(setup)?step=3"
+        }
+      ]
+    },
+    "add-bank": {
+      "figmaPatterns": [
+        "add bank"
+      ],
+      "route": "/(setup)/add-bank",
+      "screens": [
+        {
+          "figmaId": "1-31485",
+          "name": "Onboarding / Add bank details",
+          "state": "default"
+        },
+        {
+          "figmaId": "1-31590",
+          "name": "Onboarding / Add BESCOM number",
+          "state": "bescom"
+        }
+      ]
+    },
+    "invite-landlord": {
+      "figmaPatterns": [
+        "invite landlord"
+      ],
+      "route": "/(setup)/invite-landlord",
+      "screens": [
+        {
+          "figmaId": "1-31671",
+          "name": "Onboarding / Invite Landlord",
+          "state": "default"
+        }
+      ]
+    },
+    "home-empty": {
+      "figmaPatterns": [
+        "Home",
+        "Empty State"
+      ],
+      "route": "/(main)",
+      "screens": [
+        {
+          "figmaId": "243-6296",
+          "name": "Home --Empty State --with upi / no cashbacks",
+          "state": "upi-no-cashbacks",
+          "routeWithState": "/(main)?state=upi-no-cashbacks"
+        },
+        {
+          "figmaId": "243-6490",
+          "name": "Home --Empty State --setup payment",
+          "state": "setup-payment",
+          "routeWithState": "/(main)?state=setup-payment"
+        },
+        {
+          "figmaId": "243-6731",
+          "name": "Home --Empty State --setup payment / upi",
+          "state": "setup-upi",
+          "routeWithState": "/(main)?state=setup-upi"
+        },
+        {
+          "figmaId": "243-5689",
+          "name": "Home --Empty State --Transaction page without cashback",
+          "state": "no-cashback",
+          "routeWithState": "/(main)?state=no-cashback"
+        }
+      ]
+    },
+    "home-active": {
+      "figmaPatterns": [
+        "Home",
+        "active"
+      ],
+      "route": "/(main)",
+      "screens": [
+        {
+          "figmaId": "243-2762",
+          "name": "Home --active --Bank / UPI only",
+          "state": "bank-upi",
+          "routeWithState": "/(main)?state=bank-upi"
+        },
+        {
+          "figmaId": "243-2967",
+          "name": "Home --active --complete setup / all methods",
+          "state": "all-methods",
+          "routeWithState": "/(main)?state=all-methods"
+        },
+        {
+          "figmaId": "243-3170",
+          "name": "Home --active --late payment",
+          "state": "late-payment",
+          "routeWithState": "/(main)?state=late-payment"
+        },
+        {
+          "figmaId": "243-3378",
+          "name": "Home --active --missed payment",
+          "state": "missed-payment",
+          "routeWithState": "/(main)?state=missed-payment"
+        },
+        {
+          "figmaId": "243-7185",
+          "name": "Home --active --complete setup / all methods",
+          "state": "complete",
+          "routeWithState": "/(main)?state=complete"
+        }
+      ]
+    },
+    "payment-select": {
+      "figmaPatterns": [
+        "Pay Rent",
+        "Payment Page"
+      ],
+      "route": "/(payment)/select-method",
+      "screens": [
+        {
+          "figmaId": "41-9004",
+          "name": "Pay Rent / Payment Page --all setup --before 7th",
+          "state": "before-7th",
+          "routeWithState": "/(payment)/select-method?state=before-7th"
+        },
+        {
+          "figmaId": "41-9114",
+          "name": "Pay Rent / Payment Page --all setup --after 7th",
+          "state": "after-7th",
+          "routeWithState": "/(payment)/select-method?state=after-7th"
+        },
+        {
+          "figmaId": "41-8901",
+          "name": "Pay Rent / Payment Page --without setup",
+          "state": "no-setup",
+          "routeWithState": "/(payment)/select-method?state=no-setup"
+        }
+      ]
+    },
+    "payment-add-upi": {
+      "figmaPatterns": [
+        "Add UPI"
+      ],
+      "route": "/(payment)/add-upi",
+      "screens": [
+        {
+          "figmaId": "41-8369",
+          "name": "Pay Rent / Add UPI Payment",
+          "state": "default"
+        }
+      ]
+    },
+    "payment-add-card": {
+      "figmaPatterns": [
+        "Add Credit"
+      ],
+      "route": "/(payment)/add-card",
+      "screens": [
+        {
+          "figmaId": "41-8529",
+          "name": "Pay Rent / Add Credit Payment",
+          "state": "default"
+        }
+      ]
+    },
+    "payment-add-netbanking": {
+      "figmaPatterns": [
+        "Add Net Banking"
+      ],
+      "route": "/(payment)/add-netbanking",
+      "screens": [
+        {
+          "figmaId": "41-9224",
+          "name": "Pay Rent / Add Net Banking",
+          "state": "default"
+        }
+      ]
+    },
+    "payment-processing": {
+      "figmaPatterns": [
+        "Payment Processing"
+      ],
+      "route": "/(payment)/processing",
+      "screens": [
+        {
+          "figmaId": "41-9460",
+          "name": "Pay Rent / Payment Summary Page --Payment Processing",
+          "state": "default"
+        }
+      ]
+    },
+    "payment-success": {
+      "figmaPatterns": [
+        "Payment Successful"
+      ],
+      "route": "/(payment)/success",
+      "screens": [
+        {
+          "figmaId": "41-9388",
+          "name": "Pay Rent / Payment Summary Page --Payment Successful",
+          "state": "with-cashback"
+        },
+        {
+          "figmaId": "41-9511",
+          "name": "Pay Rent / Payment Summary Page --Payment Successful --no cashback",
+          "state": "no-cashback"
+        }
+      ]
+    },
+    "payment-failed": {
+      "figmaPatterns": [
+        "Payment Failed",
+        "Payment Refunded"
+      ],
+      "route": "/(payment)/failed",
+      "screens": [
+        {
+          "figmaId": "41-9563",
+          "name": "Pay Rent / Payment Summary Page --Payment Failed",
+          "state": "failed"
+        },
+        {
+          "figmaId": "41-9635",
+          "name": "Pay Rent / Payment Summary Page --Payment Refunded",
+          "state": "refunded"
+        }
+      ]
+    },
+    "transactions": {
+      "figmaPatterns": [
+        "Transaction"
+      ],
+      "route": "/(transactions)",
+      "screens": [
+        {
+          "figmaId": "243-5870",
+          "name": "Pay Rent / Transaction Page --without cashback",
+          "state": "no-cashback"
+        },
+        {
+          "figmaId": "243-6083",
+          "name": "Pay Rent / Transaction Page --with cashback",
+          "state": "with-cashback"
+        }
+      ]
+    },
+    "profile": {
+      "figmaPatterns": [
+        "My Profile"
+      ],
+      "route": "/(profile)",
+      "screens": [
+        {
+          "figmaId": "41-8760",
+          "name": "My Profile / Main Screen",
+          "state": "main",
+          "routeWithState": "/(profile)"
+        },
+        {
+          "figmaId": "41-8880",
+          "name": "My Profile / Secured Account --My Profile",
+          "state": "edit-profile",
+          "routeWithState": "/(profile)/edit"
+        },
+        {
+          "figmaId": "41-8450",
+          "name": "My Profile / Payment --UPI",
+          "state": "payment-upi",
+          "routeWithState": "/(profile)/payment-methods?tab=upi"
+        },
+        {
+          "figmaId": "41-8612",
+          "name": "My Profile / Payment --Credit Card",
+          "state": "payment-credit-card",
+          "routeWithState": "/(profile)/payment-methods?tab=credit"
+        },
+        {
+          "figmaId": "41-9307",
+          "name": "My Profile / Payment --Bank Account",
+          "state": "payment-bank",
+          "routeWithState": "/(profile)/payment-methods?tab=bank"
+        },
+        {
+          "figmaId": "41-9811",
+          "name": "My Profile / Agreement",
+          "state": "agreement",
+          "routeWithState": "/(profile)/agreement"
+        }
+      ]
+    },
+    "payment-cards": {
+      "figmaPatterns": [
+        "Credit Card",
+        "UPI Card",
+        "Net Banking"
+      ],
+      "route": "/(payment)/select-method",
+      "screens": [
+        {
+          "figmaId": "243-3794",
+          "name": "Credit Card",
+          "state": "credit-unselected"
+        },
+        {
+          "figmaId": "243-3816",
+          "name": "Credit Card --Selected",
+          "state": "credit-selected"
+        },
+        {
+          "figmaId": "243-3838",
+          "name": "UPI Card",
+          "state": "upi-unselected"
+        },
+        {
+          "figmaId": "243-3923",
+          "name": "UPI Card --Selected",
+          "state": "upi-selected"
+        },
+        {
+          "figmaId": "243-4008",
+          "name": "Net Banking Card",
+          "state": "netbanking-unselected"
+        },
+        {
+          "figmaId": "243-4030",
+          "name": "Net Banking Card --Selected",
+          "state": "netbanking-selected"
+        },
+        {
+          "figmaId": "243-4052",
+          "name": "Add More Card",
+          "state": "add-more"
+        }
+      ]
+    }
+  },
+  "stateParams": {
+    "empty": {
+      "mockData": false
+    },
+    "filled": {
+      "mockData": true,
+      "prefill": true
+    },
+    "error1": {
+      "mockData": true,
+      "error": "invalid_otp"
+    },
+    "error2": {
+      "mockData": true,
+      "error": "expired_otp"
+    },
+    "uploading": {
+      "mockData": true,
+      "loading": true
+    },
+    "expired": {
+      "mockData": true,
+      "error": "expired_agreement"
+    },
+    "too-large": {
+      "mockData": true,
+      "error": "file_too_large"
+    }
+  }
+}

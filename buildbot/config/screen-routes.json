@@ -69,7 +69,7 @@
           "routeWithState": "/(auth)/sign-up?state=empty"
         },
         {
-          "figmaId": "1-29914",
+          "figmaId": "1-31073",
           "name": "auth / sign up --filled",
           "state": "filled",
           "routeWithState": "/(auth)/sign-up?state=filled"
@@ -90,14 +90,14 @@
           "routeWithState": "/(auth)/otp?state=empty"
         },
         {
-          "figmaId": "1-31073",
-          "name": "auth / sign up --enter OTP --filled",
+          "figmaId": "1-31277",
+          "name": "auth / sign up --OTP Filled",
           "state": "filled",
           "routeWithState": "/(auth)/otp?state=filled"
         },
         {
-          "figmaId": "1-31277",
-          "name": "auth / sign up --enter OTP --error 1",
+          "figmaId": "1-31485",
+          "name": "auth / sign up --OTP Error 1",
           "state": "error1",
           "routeWithState": "/(auth)/otp?state=error1"
         },
@@ -243,19 +243,30 @@
     },
     "add-bank": {
       "figmaPatterns": [
-        "add bank"
+        "add bank",
+        "Bank Details"
       ],
       "route": "/(setup)/add-bank",
       "screens": [
         {
-          "figmaId": "1-31485",
-          "name": "Onboarding / Add bank details",
+          "figmaId": "1-33737",
+          "name": "Onboarding / Add Bank Details",
           "state": "default"
-        },
+        }
+      ]
+    },
+    "add-utility": {
+      "figmaPatterns": [
+        "BESCOM",
+        "address",
+        "utility"
+      ],
+      "route": "/(setup)/add-utility",
+      "screens": [
         {
-          "figmaId": "1-31590",
-          "name": "Onboarding / Add BESCOM number",
-          "state": "bescom"
+          "figmaId": "1-34343",
+          "name": "Onboarding / Add BESCOM Number",
+          "state": "default"
         }
       ]
     },
@@ -266,7 +277,7 @@
       "route": "/(setup)/invite-landlord",
       "screens": [
         {
-          "figmaId": "1-31671",
+          "figmaId": "1-34150",
           "name": "Onboarding / Invite Landlord",
           "state": "default"
         }

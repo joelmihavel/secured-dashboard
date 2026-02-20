@@ -24,8 +24,8 @@ export default function AuthLayout() {
       <Stack.Screen
         name="otp"
         options={{
-          presentation: 'containedTransparentModal',
-          animation: 'slide_from_bottom',
+          presentation: 'transparentModal',
+          animation: 'fade',
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />

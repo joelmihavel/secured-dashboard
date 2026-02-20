@@ -1,8 +1,8 @@
 {
   "screenId": "41-8760",
   "screenName": "My Profile / Main Screen",
-  "route": "/(profile)/index",
-  "generatedAt": "2026-02-19T20:25:45.312Z",
+  "route": "/(profile)",
+  "generatedAt": "2026-02-19T23:23:09.637Z",
   "generatedBy": "buildbot-pm-agent-auto",
   "functionalAreas": [
     {

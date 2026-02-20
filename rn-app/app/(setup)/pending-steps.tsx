@@ -42,7 +42,7 @@ import { colors } from '@/src/theme';
 // Figma exact values from 1-34236 blueprint
 const FIGMA = {
   // Background
-  backgroundColor: '#131313',
+  backgroundColor: colors.black[700],
 
   // Title (node 160:3185)
   title: {
@@ -53,17 +53,17 @@ const FIGMA = {
     lineHeight: 56,
     letterSpacing: -1,
     fontFamily: 'PlusJakartaSans-Medium' as const,
-    colorWhite: '#FFFFFF',
-    colorGray: '#A9A9A9',
-    colorAccent: '#FF9A6D',
+    colorWhite: colors.white,
+    colorGray: colors.neutral[500],
+    colorAccent: colors.brand[500],
   },
 
   // Card (node 1:34308)
   card: {
     width: 270,
     height: 321,
-    backgroundColor: '#202020',
-    shadowColor: '#000000',
+    backgroundColor: colors.black[500],
+    shadowColor: colors.black[900],
     shadowOffsetY: 9,
     shadowRadius: 19,
   },
@@ -81,7 +81,7 @@ const FIGMA = {
     fontSize: 14,
     lineHeight: 19.74,
     letterSpacing: -0.56,
-    color: '#CBCBCB',
+    color: colors.neutral[300],
     fontFamily: 'PlusJakartaSans-Medium' as const,
   },
 
@@ -90,7 +90,7 @@ const FIGMA = {
     fontSize: 12,
     lineHeight: 16.92,
     letterSpacing: -0.24,
-    color: '#878787',
+    color: colors.neutral[600],
     fontFamily: 'PlusJakartaSans-Regular' as const,
   },
 
@@ -99,7 +99,7 @@ const FIGMA = {
     fontSize: 12,
     lineHeight: 16.92,
     letterSpacing: -0.24,
-    color: '#878787',
+    color: colors.neutral[600],
     fontFamily: 'PlusJakartaSans-Regular' as const,
   },
 
@@ -108,7 +108,7 @@ const FIGMA = {
     fontSize: 14,
     lineHeight: 19.74,
     letterSpacing: -0.56,
-    color: '#878787',
+    color: colors.neutral[600],
     fontFamily: 'PlusJakartaSans-Regular' as const,
   },
 
@@ -117,9 +117,9 @@ const FIGMA = {
     fontSize: 14,
     lineHeight: 19.74,
     letterSpacing: -0.56,
-    color: '#CBCBCB',
+    color: colors.neutral[300],
     fontFamily: 'PlusJakartaSans-Medium' as const,
-    badgeTextColor: '#000000', // "1% back" span color
+    badgeTextColor: colors.black[900], // "1% back" span color
   },
 
   // Monthly amount (1:34341)
@@ -127,29 +127,29 @@ const FIGMA = {
     fontSize: 16,
     lineHeight: 22.56,
     letterSpacing: -0.64,
-    color: '#FFFFFF',
+    color: colors.white,
     fontFamily: 'PlusJakartaSans-SemiBold' as const,
   },
 
   // Grid lines (Vector 45)
-  gridLineColor: '#4D4D4D',
+  gridLineColor: colors.black[400],
   gridStrokeWidth: 0.3,
 
   // Logo vector (1:34334) -- #A9A9A9
-  logoColor: '#A9A9A9',
+  logoColor: colors.neutral[500],
 
   // Button (I1:34342;100:1564)
   button: {
     width: 313,
     height: 52,
-    borderColor: '#FF9A6D',
+    borderColor: colors.brand[500],
     borderRadius: 8,
     shadowColor: '#995C41',
     shadowOffsetY: 6,
     shadowRadius: 12,
     textFontSize: 14,
     textLineHeight: 20,
-    textColor: '#FFFFFF',
+    textColor: colors.white,
     textFontFamily: 'PlusJakartaSans-Medium' as const,
   },
 } as const;

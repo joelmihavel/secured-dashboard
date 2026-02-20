@@ -2,13 +2,13 @@
   "meta": {
     "screenId": "41-8760",
     "screenName": "My Profile / Main Screen",
-    "route": "/(profile)/index",
+    "route": "/(profile)",
     "stateName": "main",
     "dimensions": {
       "width": 393,
       "height": 852
     },
-    "generatedAt": "2026-02-19T16:53:06.445Z",
+    "generatedAt": "2026-02-19T21:40:41.084Z",
     "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv"
   },
   "background": {

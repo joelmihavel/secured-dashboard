@@ -57,6 +57,7 @@ MISSING_IMPORT=$(grep -rLn "from '@/src/components" "$SCREEN_DIR" \
   | grep -v "_layout" \
   | grep -v "__tests__" \
   | grep -v "screen-picker" \
+  | grep -v "app/index\.tsx" \
   || true)
 
 if [ -n "$MISSING_IMPORT" ]; then

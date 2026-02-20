@@ -1,0 +1,871 @@
+{
+  "screenId": "41-8369",
+  "screenName": "Pay Rent / Add UPI Payment",
+  "route": "/(payment)/add-upi",
+  "generatedAt": "2026-02-19T23:25:26.615Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T23:23:23.475Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8374",
+            "nodeName": "Frame 1686557300",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 899,
+              "relativeLeft": 0,
+              "relativeTop": 899,
+              "parentId": "41:8369"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: 899.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557300\" is positioned at (0.0, 899.0) relative to \"Pay Rent / Add UPI Payment\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: 899.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8375",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "absoluteX": 182.5,
+              "absoluteY": 15.19,
+              "relativeLeft": 182.5,
+              "relativeTop": -883.81,
+              "parentId": "41:8374"
+            },
+            "expectedRNValue": "position: 'absolute', left: 182.5, top: -883.8",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Rectangle 53\" is positioned at (182.5, -883.8) relative to \"Frame 1686557300\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 182.5,\ntop: -883.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8376",
+            "nodeName": "Frame 1686557230",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 43.19,
+              "relativeLeft": 0,
+              "relativeTop": -855.81,
+              "parentId": "41:8374"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -855.8",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557230\" is positioned at (0.0, -855.8) relative to \"Frame 1686557300\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -855.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8385",
+            "nodeName": "Frame 1686557311",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 16,
+              "relativeLeft": 0,
+              "relativeTop": -27.189999999999998,
+              "parentId": "41:8376"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -27.2",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557311\" is positioned at (0.0, -27.2) relative to \"Frame 1686557230\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -27.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8402",
+            "nodeName": "Frame 1686557311",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 1.5,
+              "relativeLeft": 0,
+              "relativeTop": -63.5,
+              "parentId": "41:8401"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -63.5",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557311\" is positioned at (0.0, -63.5) relative to \"Frame 1686557312\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -63.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8406",
+            "nodeName": "Frame 1686557310",
+            "figmaValue": {
+              "absoluteX": 56,
+              "absoluteY": 0,
+              "relativeLeft": 56,
+              "relativeTop": -65,
+              "parentId": "41:8401"
+            },
+            "expectedRNValue": "position: 'absolute', left: 56.0, top: -65.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557310\" is positioned at (56.0, -65.0) relative to \"Frame 1686557312\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 56.0,\ntop: -65.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8410",
+            "nodeName": "Frame 1686557074",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 0,
+              "relativeLeft": 24,
+              "relativeTop": -223.77,
+              "parentId": "41:8409"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -223.8",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557074\" is positioned at (24.0, -223.8) relative to \"Frame 1686557310\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -223.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8419",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 91,
+              "relativeLeft": 24,
+              "relativeTop": -132.77,
+              "parentId": "41:8409"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -132.8",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557209\" is positioned at (24.0, -132.8) relative to \"Frame 1686557310\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -132.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8421",
+            "nodeName": "All payments are 100% secure",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 142,
+              "relativeLeft": 24,
+              "relativeTop": -81.77000000000001,
+              "parentId": "41:8409"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -81.8",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"All payments are 100% secure\" is positioned at (24.0, -81.8) relative to \"Frame 1686557310\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -81.8,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8415",
+            "nodeName": "Rectangle 30",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -30,
+              "parentId": "41:8414"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -30.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Rectangle 30\" is positioned at (0.0, -30.0) relative to \"Frame 1686557065\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -30.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8416",
+            "nodeName": "Frame 1686557064",
+            "figmaValue": {
+              "absoluteX": 67,
+              "absoluteY": 0,
+              "relativeLeft": 67,
+              "relativeTop": -30,
+              "parentId": "41:8414"
+            },
+            "expectedRNValue": "position: 'absolute', left: 67.0, top: -30.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557064\" is positioned at (67.0, -30.0) relative to \"Frame 1686557065\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 67.0,\ntop: -30.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8424",
+            "nodeName": "Frame 1686557302",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 0,
+              "relativeLeft": 24,
+              "relativeTop": -448.53,
+              "parentId": "41:8423"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -448.5",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557302\" is positioned at (24.0, -448.5) relative to \"Frame 1686557276\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -448.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8427",
+            "nodeName": "Frame 1686557307",
+            "figmaValue": {
+              "absoluteX": 24,
+              "absoluteY": 48,
+              "relativeLeft": 24,
+              "relativeTop": -400.53,
+              "parentId": "41:8423"
+            },
+            "expectedRNValue": "position: 'absolute', left: 24.0, top: -400.5",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557307\" is positioned at (24.0, -400.5) relative to \"Frame 1686557276\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 24.0,\ntop: -400.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8428",
+            "nodeName": "Frame 1686557303",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -24,
+              "relativeTop": -48,
+              "parentId": "41:8427"
+            },
+            "expectedRNValue": "position: 'absolute', left: -24.0, top: -48.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557303\" is positioned at (-24.0, -48.0) relative to \"Frame 1686557307\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -24.0,\ntop: -48.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8431",
+            "nodeName": "Frame 1686557305",
+            "figmaValue": {
+              "absoluteX": 72,
+              "absoluteY": 0,
+              "relativeLeft": 48,
+              "relativeTop": -48,
+              "parentId": "41:8427"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -48.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557305\" is positioned at (48.0, -48.0) relative to \"Frame 1686557307\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -48.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8434",
+            "nodeName": "Frame 1686557306",
+            "figmaValue": {
+              "absoluteX": 144,
+              "absoluteY": 0,
+              "relativeLeft": 120,
+              "relativeTop": -48,
+              "parentId": "41:8427"
+            },
+            "expectedRNValue": "position: 'absolute', left: 120.0, top: -48.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 1686557306\" is positioned at (120.0, -48.0) relative to \"Frame 1686557307\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 120.0,\ntop: -48.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:197",
+            "nodeName": "Border",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -333.2,
+              "relativeTop": -22.6,
+              "parentId": "I41:8439;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -333.2, top: -22.6",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Border\" is positioned at (-333.2, -22.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:198",
+            "nodeName": "Cap",
+            "figmaValue": {
+              "absoluteX": 25.9,
+              "absoluteY": 4.67,
+              "relativeLeft": -307.3,
+              "relativeTop": -17.93,
+              "parentId": "I41:8439;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -307.3, top: -17.9",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Cap\" is positioned at (-307.3, -17.9) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:199",
+            "nodeName": "Capacity",
+            "figmaValue": {
+              "absoluteX": 2,
+              "absoluteY": 2,
+              "relativeLeft": -331.2,
+              "relativeTop": -20.6,
+              "parentId": "I41:8439;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -331.2, top: -20.6",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Capacity\" is positioned at (-331.2, -20.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:201",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -308.7,
+              "relativeTop": -23.2,
+              "parentId": "I41:8439;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -308.7, top: -23.2",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-308.7, -23.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:202",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 3.03,
+              "absoluteY": 4.03,
+              "relativeLeft": -305.67,
+              "relativeTop": -19.169999999999998,
+              "parentId": "I41:8439;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -305.7, top: -19.2",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-305.7, -19.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:203",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 6.05,
+              "absoluteY": 8.07,
+              "relativeLeft": -302.65,
+              "relativeTop": -15.129999999999999,
+              "parentId": "I41:8439;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -302.6, top: -15.1",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-302.6, -15.1) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:205",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 7.4,
+              "relativeLeft": -282,
+              "relativeTop": -15.700000000000001,
+              "parentId": "I41:8439;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -282.0, top: -15.7",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-282.0, -15.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:206",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 5.3,
+              "absoluteY": 5,
+              "relativeLeft": -276.7,
+              "relativeTop": -18.1,
+              "parentId": "I41:8439;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -276.7, top: -18.1",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-276.7, -18.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:207",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 10.7,
+              "absoluteY": 2.4,
+              "relativeLeft": -271.3,
+              "relativeTop": -20.700000000000003,
+              "parentId": "I41:8439;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -271.3, top: -20.7",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-271.3, -20.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I41:8439;125:208",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 16,
+              "absoluteY": 0,
+              "relativeLeft": -266,
+              "relativeTop": -23.1,
+              "parentId": "I41:8439;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -266.0, top: -23.1",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-266.0, -23.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8445",
+            "nodeName": "input",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -256,
+              "parentId": "41:8444"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -256.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"input\" is positioned at (0.0, -256.0) relative to \"Frame 2095586311\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -256.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8446",
+            "nodeName": "input",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 106,
+              "relativeLeft": 0,
+              "relativeTop": -150,
+              "parentId": "41:8444"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -150.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"input\" is positioned at (0.0, -150.0) relative to \"Frame 2095586311\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -150.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8448",
+            "nodeName": "button",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -500,
+              "parentId": "41:8447"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -500.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"button\" is positioned at (0.0, -500.0) relative to \"Frame 1686557317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -500.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "41:8449",
+            "nodeName": "This will be used to make rent payments and earn cashback.",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 72,
+              "relativeLeft": 0,
+              "relativeTop": -428,
+              "parentId": "41:8447"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -428.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"This will be used to make rent payments and earn cashback.\" is positioned at (0.0, -428.0) relative to \"Frame 1686557317\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -428.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:8373",
+            "nodeName": "Rectangle 52",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 52",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "Button \"Rectangle 52\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:8375",
+            "nodeName": "Rectangle 53",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 53",
+              "fill": "#D9D9D9"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#D9D9D9'",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "Button \"Rectangle 53\" has fill #D9D9D9 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#D9D9D9' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:8419",
+            "nodeName": "Frame 1686557209",
+            "figmaValue": {
+              "type": "button",
+              "text": "Pay Now",
+              "fill": "#000000"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#000000'",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "Button \"Pay Now\" has fill #000000 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#000000' or equivalent design token"
+          },
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "41:8448",
+            "nodeName": "button",
+            "figmaValue": {
+              "type": "button",
+              "text": "Proceed",
+              "fill": "#202020"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#202020'",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "Button \"Proceed\" has fill #202020 in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#202020' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [],
+        "totalIssues": 34
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T23:23:23.478Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T23:24:30.333Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/payment.tsx",
+            "lineRange": "N/A",
+            "property": "layout/spacing",
+            "figmaValue": "gap: 48, justifyContent: 'flex-start'",
+            "currentValue": "justifyContent: 'space-between' (inferred)",
+            "severity": "critical",
+            "explanation": "In Figma, the content (Back Arrow, Title, Inputs, Button Group) flows in a single column with a fixed gap of 48px. The 'Proceed' button is NOT pinned to the bottom of the screen. In the simulator, the button is pushed to the bottom, likely due to 'justifyContent: space-between' or a 'flex: 1' spacer, creating a large incorrect gap between the inputs and the button.",
+            "currentCode": "justifyContent: 'space-between', // Inferred from visual",
+            "fixedCode": "justifyContent: 'flex-start', gap: 48, // Use standard flow"
+          },
+          {
+            "file": "app/payment.tsx",
+            "lineRange": "N/A",
+            "property": "paddingHorizontal",
+            "figmaValue": "48",
+            "currentValue": "24 (inferred)",
+            "severity": "major",
+            "explanation": "Figma specifies a horizontal padding of 48px on the main content frame (Frame 1686557268). The simulator implementation appears to use standard padding (likely 24px), making the content wider than designed.",
+            "currentCode": "paddingHorizontal: 24, // Inferred",
+            "fixedCode": "paddingHorizontal: 48,"
+          },
+          {
+            "file": "app/payment.tsx",
+            "lineRange": "N/A",
+            "property": "marginTop",
+            "figmaValue": "64 (from SafeArea)",
+            "currentValue": "Unknown",
+            "severity": "moderate",
+            "explanation": "Figma shows a 64px gap between the Status Bar (53px height) and the content container. Ensure the content starts 64px below the SafeAreaView or has a total top margin of ~117px from the absolute top.",
+            "currentCode": "marginTop: spacing.xl, // Inferred",
+            "fixedCode": "marginTop: 64,"
+          },
+          {
+            "file": "app/payment.tsx",
+            "lineRange": "N/A",
+            "property": "backgroundColor",
+            "figmaValue": "#131313 + Vector Overlay",
+            "currentValue": "Solid Black",
+            "severity": "minor",
+            "explanation": "The Figma design uses a background color of #131313 with a 'Vector 1' overlay (opacity 1%) that may add subtle texture or gradient. The simulator appears to be a flat solid color.",
+            "currentCode": "backgroundColor: '#000000',",
+            "fixedCode": "backgroundColor: '#131313', // Plus add background image/vector if exported"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 90
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T23:25:26.615Z",
+      "feedback": [
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "layout",
+          "figmaValue": "gap: 48, justifyContent: 'flex-start', paddingHorizontal: 48, marginTop: 64",
+          "currentValue": "justifyContent: 'space-between', paddingHorizontal: 24",
+          "severity": "critical",
+          "explanation": "The screen layout is incorrect. Figma specifies a single column flow with 48px gap, 48px horizontal padding, and 64px top margin (below SafeArea). The current implementation pushes content apart and has insufficient padding.",
+          "currentCode": "justifyContent: 'space-between',\npaddingHorizontal: 24,",
+          "fixedCode": "justifyContent: 'flex-start',\ngap: spacing.xxxl, // 48\npaddingHorizontal: spacing.xxxl, // 48\nmarginTop: spacing.huge, // 64\nbackgroundColor: colors.black[700], // #131313"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "backgroundColor",
+          "figmaValue": "#202020",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Button 'Proceed' has incorrect background color. Figma specifies #202020.",
+          "currentCode": "backgroundColor: '...'",
+          "fixedCode": "backgroundColor: colors.black[500], // #202020"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "backgroundColor",
+          "figmaValue": "#000000",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Button 'Pay Now' (and Rectangle 52) has incorrect background color. Figma specifies #000000.",
+          "currentCode": "backgroundColor: '...'",
+          "fixedCode": "backgroundColor: colors.neutral.black, // #000000"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "backgroundColor",
+          "figmaValue": "#D9D9D9",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Button/Element 'Rectangle 53' has incorrect background color. Figma specifies #D9D9D9.",
+          "currentCode": "backgroundColor: '...'",
+          "fixedCode": "backgroundColor: '#D9D9D9', // No exact token match, use hex or colors.neutral[200]"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural analysis indicates 'Frame 1686557300' (likely a footer or overlay container) requires absolute positioning at bottom.",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 0,\ntop: 899,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural analysis indicates 'Frame 1686557310' (Payment Summary Card?) requires absolute positioning relative to its parent.",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 56,\ntop: -65,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural analysis indicates 'Frame 1686557209' (Pay Now Button Wrapper) requires absolute positioning.",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 24,\ntop: -132.8,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural analysis indicates text 'All payments are 100% secure' requires absolute positioning.",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 24,\ntop: -81.8,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute positioning",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural analysis indicates 'Frame 1686557302' requires absolute positioning.",
+          "currentCode": "position: 'relative'",
+          "fixedCode": "position: 'absolute',\nleft: 24,\ntop: -448.5,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "layout",
+      "figmaValue": "gap: 48, justifyContent: 'flex-start', paddingHorizontal: 48, marginTop: 64",
+      "currentValue": "justifyContent: 'space-between', paddingHorizontal: 24",
+      "severity": "critical",
+      "explanation": "The screen layout is incorrect. Figma specifies a single column flow with 48px gap, 48px horizontal padding, and 64px top margin (below SafeArea). The current implementation pushes content apart and has insufficient padding.",
+      "currentCode": "justifyContent: 'space-between',\npaddingHorizontal: 24,",
+      "fixedCode": "justifyContent: 'flex-start',\ngap: spacing.xxxl, // 48\npaddingHorizontal: spacing.xxxl, // 48\nmarginTop: spacing.huge, // 64\nbackgroundColor: colors.black[700], // #131313"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "backgroundColor",
+      "figmaValue": "#202020",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Button 'Proceed' has incorrect background color. Figma specifies #202020.",
+      "currentCode": "backgroundColor: '...'",
+      "fixedCode": "backgroundColor: colors.black[500], // #202020"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "backgroundColor",
+      "figmaValue": "#000000",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Button 'Pay Now' (and Rectangle 52) has incorrect background color. Figma specifies #000000.",
+      "currentCode": "backgroundColor: '...'",
+      "fixedCode": "backgroundColor: colors.neutral.black, // #000000"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "backgroundColor",
+      "figmaValue": "#D9D9D9",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Button/Element 'Rectangle 53' has incorrect background color. Figma specifies #D9D9D9.",
+      "currentCode": "backgroundColor: '...'",
+      "fixedCode": "backgroundColor: '#D9D9D9', // No exact token match, use hex or colors.neutral[200]"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute positioning",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural analysis indicates 'Frame 1686557300' (likely a footer or overlay container) requires absolute positioning at bottom.",
+      "currentCode": "position: 'relative'",
+      "fixedCode": "position: 'absolute',\nleft: 0,\ntop: 899,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute positioning",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural analysis indicates 'Frame 1686557310' (Payment Summary Card?) requires absolute positioning relative to its parent.",
+      "currentCode": "position: 'relative'",
+      "fixedCode": "position: 'absolute',\nleft: 56,\ntop: -65,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute positioning",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural analysis indicates 'Frame 1686557209' (Pay Now Button Wrapper) requires absolute positioning.",
+      "currentCode": "position: 'relative'",
+      "fixedCode": "position: 'absolute',\nleft: 24,\ntop: -132.8,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute positioning",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural analysis indicates text 'All payments are 100% secure' requires absolute positioning.",
+      "currentCode": "position: 'relative'",
+      "fixedCode": "position: 'absolute',\nleft: 24,\ntop: -81.8,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute positioning",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural analysis indicates 'Frame 1686557302' requires absolute positioning.",
+      "currentCode": "position: 'relative'",
+      "fixedCode": "position: 'absolute',\nleft: 24,\ntop: -448.5,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 9,
+    "critical": 1,
+    "major": 8,
+    "minor": 0,
+    "filesAffected": [
+      "app/(payment)/index.tsx"
+    ]
+  }
+}

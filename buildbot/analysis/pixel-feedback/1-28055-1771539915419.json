@@ -1,0 +1,584 @@
+{
+  "screenId": "1-28055",
+  "screenName": "Splash / get-started",
+  "route": "/(auth)/splash",
+  "generatedAt": "2026-02-19T22:25:15.419Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T22:23:35.681Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "237:2727",
+            "nodeName": "image 149",
+            "figmaValue": {
+              "absoluteX": -463,
+              "absoluteY": -747,
+              "relativeLeft": -463,
+              "relativeTop": -747,
+              "parentId": "1:28055"
+            },
+            "expectedRNValue": "position: 'absolute', left: -463.0, top: -747.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"image 149\" is positioned at (-463.0, -747.0) relative to \"Splash / get-started\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:197",
+            "nodeName": "Border",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -333.2,
+              "relativeTop": -22.6,
+              "parentId": "I1:28059;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -333.2, top: -22.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Border\" is positioned at (-333.2, -22.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -333.2,\ntop: -22.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:198",
+            "nodeName": "Cap",
+            "figmaValue": {
+              "absoluteX": 25.9,
+              "absoluteY": 4.67,
+              "relativeLeft": -307.3,
+              "relativeTop": -17.93,
+              "parentId": "I1:28059;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -307.3, top: -17.9",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cap\" is positioned at (-307.3, -17.9) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -307.3,\ntop: -17.9,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:199",
+            "nodeName": "Capacity",
+            "figmaValue": {
+              "absoluteX": 2,
+              "absoluteY": 2,
+              "relativeLeft": -331.2,
+              "relativeTop": -20.6,
+              "parentId": "I1:28059;125:196"
+            },
+            "expectedRNValue": "position: 'absolute', left: -331.2, top: -20.6",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Capacity\" is positioned at (-331.2, -20.6) relative to \"Battery\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -331.2,\ntop: -20.6,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:201",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -308.7,
+              "relativeTop": -23.2,
+              "parentId": "I1:28059;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -308.7, top: -23.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-308.7, -23.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -308.7,\ntop: -23.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:202",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 3.03,
+              "absoluteY": 4.03,
+              "relativeLeft": -305.67,
+              "relativeTop": -19.169999999999998,
+              "parentId": "I1:28059;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -305.7, top: -19.2",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-305.7, -19.2) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -305.7,\ntop: -19.2,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:203",
+            "nodeName": "Wifi-path",
+            "figmaValue": {
+              "absoluteX": 6.05,
+              "absoluteY": 8.07,
+              "relativeLeft": -302.65,
+              "relativeTop": -15.129999999999999,
+              "parentId": "I1:28059;125:200"
+            },
+            "expectedRNValue": "position: 'absolute', left: -302.6, top: -15.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Wifi-path\" is positioned at (-302.6, -15.1) relative to \"Wifi\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -302.6,\ntop: -15.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:205",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 7.4,
+              "relativeLeft": -282,
+              "relativeTop": -15.700000000000001,
+              "parentId": "I1:28059;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -282.0, top: -15.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-282.0, -15.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -282.0,\ntop: -15.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:206",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 5.3,
+              "absoluteY": 5,
+              "relativeLeft": -276.7,
+              "relativeTop": -18.1,
+              "parentId": "I1:28059;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -276.7, top: -18.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-276.7, -18.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -276.7,\ntop: -18.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:207",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 10.7,
+              "absoluteY": 2.4,
+              "relativeLeft": -271.3,
+              "relativeTop": -20.700000000000003,
+              "parentId": "I1:28059;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -271.3, top: -20.7",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-271.3, -20.7) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -271.3,\ntop: -20.7,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "I1:28059;125:208",
+            "nodeName": "Cellular-Connection-path",
+            "figmaValue": {
+              "absoluteX": 16,
+              "absoluteY": 0,
+              "relativeLeft": -266,
+              "relativeTop": -23.1,
+              "parentId": "I1:28059;125:204"
+            },
+            "expectedRNValue": "position: 'absolute', left: -266.0, top: -23.1",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Cellular-Connection-path\" is positioned at (-266.0, -23.1) relative to \"Cellular Connection\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -266.0,\ntop: -23.1,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:28062",
+            "nodeName": "Container",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -205,
+              "parentId": "1:28061"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -205.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Container\" is positioned at (0.0, -205.0) relative to \"Container\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -205.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:28066",
+            "nodeName": "Main Heading",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -48,
+              "relativeTop": -80,
+              "parentId": "1:28065"
+            },
+            "expectedRNValue": "position: 'absolute', left: -48.0, top: -80.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Main Heading\" is positioned at (-48.0, -80.0) relative to \"Text Container\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -48.0,\ntop: -80.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:28069",
+            "nodeName": "button",
+            "figmaValue": {
+              "absoluteX": 48,
+              "absoluteY": 0,
+              "relativeLeft": 48,
+              "relativeTop": -439,
+              "parentId": "1:28068"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -439.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"button\" is positioned at (48.0, -439.0) relative to \"Button Container\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -439.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "1:28070",
+            "nodeName": "Login Text",
+            "figmaValue": {
+              "absoluteX": 48,
+              "absoluteY": 90,
+              "relativeLeft": 48,
+              "relativeTop": -349,
+              "parentId": "1:28068"
+            },
+            "expectedRNValue": "position: 'absolute', left: 48.0, top: -349.0",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "\"Login Text\" is positioned at (48.0, -349.0) relative to \"Button Container\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 48.0,\ntop: -349.0,"
+          }
+        ],
+        "componentVariantIssues": [
+          {
+            "type": "component-variant",
+            "severity": "major",
+            "nodeId": "I1:28069;137:37",
+            "nodeName": "Rectangle 140",
+            "figmaValue": {
+              "type": "button",
+              "text": "Rectangle 140",
+              "fill": "#4D4D4D"
+            },
+            "expectedRNValue": "Button with backgroundColor: '#4D4D4D'",
+            "file": "app/(auth)/index.tsx",
+            "explanation": "Button \"Rectangle 140\" has fill #4D4D4D in Figma. Verify RN backgroundColor matches.",
+            "suggestedFix": "Verify button has backgroundColor: '#4D4D4D' or equivalent design token"
+          }
+        ],
+        "textStructureIssues": [],
+        "totalIssues": 16
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T22:23:35.695Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T22:24:26.630Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/(waitlist)/index.tsx",
+            "lineRange": "Unknown",
+            "property": "opacity",
+            "figmaValue": "0.08 (8%)",
+            "currentValue": "~1.0 (100%)",
+            "severity": "critical",
+            "explanation": "The background dotted pattern ('image 149') is extremely prominent in the simulator, making text unreadable. In Figma, this image has an opacity of 0.08 (8%), making it a subtle texture.",
+            "currentCode": "opacity: 1, // or undefined",
+            "fixedCode": "opacity: 0.08,"
+          },
+          {
+            "file": "app/(waitlist)/index.tsx",
+            "lineRange": "Unknown",
+            "property": "layout/position",
+            "figmaValue": "absolute, top: 0",
+            "currentValue": "SafeAreaView or marginTop",
+            "severity": "major",
+            "explanation": "The background images in the simulator do not extend behind the status bar, leaving a black bar at the top. In Figma, the background layers (image 149, Background Shape) start at y=0 (or negative coordinates) covering the entire screen including the status bar area.",
+            "currentCode": "<SafeAreaView>...</SafeAreaView>",
+            "fixedCode": "Use absolute positioning for background images with top: 0, and apply SafeAreaView only to the content Container."
+          },
+          {
+            "file": "app/(waitlist)/index.tsx",
+            "lineRange": "Unknown",
+            "property": "backgroundColor",
+            "figmaValue": "Linear Gradient (#202020 -> #0D0D0D)",
+            "currentValue": "Solid Color",
+            "severity": "moderate",
+            "explanation": "The 'Get Started' button in the simulator appears to have a solid dark fill. In Figma, it uses a Linear Gradient from #202020 to #0D0D0D.",
+            "currentCode": "backgroundColor: '#131313',",
+            "fixedCode": "<LinearGradient colors={['#202020', '#0D0D0D']} ... />"
+          },
+          {
+            "file": "app/(waitlist)/index.tsx",
+            "lineRange": "Unknown",
+            "property": "borderColor",
+            "figmaValue": "#FF9A6D (opacity implicit in stroke weight/blend)",
+            "currentValue": "None",
+            "severity": "minor",
+            "explanation": "The 'Get Started' button in Figma has a subtle inside stroke: color #FF9A6D, weight 0.1. This gives it a slight orange glow/border which is missing in the simulator.",
+            "currentCode": "borderWidth: 0,",
+            "fixedCode": "borderWidth: 1, borderColor: 'rgba(255, 154, 109, 0.1)', // approximate for 0.1 weight visibility"
+          },
+          {
+            "file": "app/(waitlist)/index.tsx",
+            "lineRange": "Unknown",
+            "property": "color",
+            "figmaValue": "#A9A9A9",
+            "currentValue": "#FFFFFF",
+            "severity": "moderate",
+            "explanation": "The text 'Make your rent' in the main heading should be Light Grey (#A9A9A9) according to Figma spans. In the simulator, it appears white (same as the 'work for you' arrow, though the arrow is orange).",
+            "currentCode": "color: '#FFFFFF'",
+            "fixedCode": "color: '#A9A9A9'"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T22:25:15.419Z",
+      "feedback": [
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "opacity",
+          "figmaValue": "0.08",
+          "currentValue": "1.0",
+          "severity": "critical",
+          "explanation": "The background dotted pattern ('image 149') is too prominent. Figma specifies 8% opacity.",
+          "currentCode": "opacity: 1,",
+          "fixedCode": "opacity: 0.08,"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "backgroundColor",
+          "figmaValue": "Linear Gradient (#202020 -> #0D0D0D)",
+          "currentValue": "Solid #131313",
+          "severity": "critical",
+          "explanation": "The 'Get Started' button requires a linear gradient background instead of a solid color.",
+          "currentCode": "backgroundColor: '#131313',",
+          "fixedCode": "<LinearGradient colors={[colors.black[500], colors.black[800]]} ... />"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "position",
+          "figmaValue": "absolute, left: -463, top: -747",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Structural mismatch: 'image 149' requires specific absolute positioning relative to its parent.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "position",
+          "figmaValue": "absolute offsets",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Structural mismatch: Main layout containers have specific offsets in Figma.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "// Container\nposition: 'absolute', left: 0.0, top: -205.0,\n\n// Main Heading\nposition: 'absolute', left: -48.0, top: -80.0,\n\n// Button Container\nposition: 'absolute', left: 48.0, top: -439.0,\n\n// Login Text\nposition: 'absolute', left: 48.0, top: -349.0,"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "position",
+          "figmaValue": "absolute offsets",
+          "currentValue": "Unknown",
+          "severity": "major",
+          "explanation": "Structural mismatch: Status bar elements (Battery, Wifi, Cellular) are positioned absolutely in Figma.",
+          "currentCode": "position: 'relative',",
+          "fixedCode": "// Border\nleft: -333.2, top: -22.6,\n// Cap\nleft: -307.3, top: -17.9,\n// Capacity\nleft: -331.2, top: -20.6,\n// Wifi\nleft: -308.7, top: -23.2,\n// Cellular\nleft: -282.0, top: -15.7,"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "layout",
+          "figmaValue": "absolute, top: 0",
+          "currentValue": "SafeAreaView",
+          "severity": "major",
+          "explanation": "Background images should extend behind the status bar (top: 0).",
+          "currentCode": "<SafeAreaView>...</SafeAreaView>",
+          "fixedCode": "position: 'absolute', top: 0, left: 0, right: 0, bottom: 0"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "color",
+          "figmaValue": "#A9A9A9",
+          "currentValue": "#FFFFFF",
+          "severity": "moderate",
+          "explanation": "Heading text 'Make your rent' should be Light Grey.",
+          "currentCode": "color: '#FFFFFF'",
+          "fixedCode": "color: colors.neutral[500] // #A9A9A9"
+        },
+        {
+          "file": "app/(waitlist)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "borderColor",
+          "figmaValue": "#FF9A6D (10% opacity)",
+          "currentValue": "None",
+          "severity": "minor",
+          "explanation": "Button requires a subtle orange inner stroke/border.",
+          "currentCode": "borderWidth: 0,",
+          "fixedCode": "borderWidth: 1,\nborderColor: 'rgba(255, 154, 109, 0.1)', // colors.brand[500] with opacity"
+        },
+        {
+          "file": "app/(auth)/index.tsx",
+          "lineRange": "Unknown",
+          "property": "backgroundColor",
+          "figmaValue": "#4D4D4D",
+          "currentValue": "Unknown",
+          "severity": "minor",
+          "explanation": "Structural check: Verify button base fill color matches Figma token if gradient is not applied.",
+          "currentCode": "backgroundColor: '...'",
+          "fixedCode": "backgroundColor: colors.black[400] // #4D4D4D"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "opacity",
+      "figmaValue": "0.08",
+      "currentValue": "1.0",
+      "severity": "critical",
+      "explanation": "The background dotted pattern ('image 149') is too prominent. Figma specifies 8% opacity.",
+      "currentCode": "opacity: 1,",
+      "fixedCode": "opacity: 0.08,"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "backgroundColor",
+      "figmaValue": "Linear Gradient (#202020 -> #0D0D0D)",
+      "currentValue": "Solid #131313",
+      "severity": "critical",
+      "explanation": "The 'Get Started' button requires a linear gradient background instead of a solid color.",
+      "currentCode": "backgroundColor: '#131313',",
+      "fixedCode": "<LinearGradient colors={[colors.black[500], colors.black[800]]} ... />"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "position",
+      "figmaValue": "absolute, left: -463, top: -747",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Structural mismatch: 'image 149' requires specific absolute positioning relative to its parent.",
+      "currentCode": "position: 'relative',",
+      "fixedCode": "position: 'absolute',\nleft: -463.0,\ntop: -747.0,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "position",
+      "figmaValue": "absolute offsets",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Structural mismatch: Main layout containers have specific offsets in Figma.",
+      "currentCode": "position: 'relative',",
+      "fixedCode": "// Container\nposition: 'absolute', left: 0.0, top: -205.0,\n\n// Main Heading\nposition: 'absolute', left: -48.0, top: -80.0,\n\n// Button Container\nposition: 'absolute', left: 48.0, top: -439.0,\n\n// Login Text\nposition: 'absolute', left: 48.0, top: -349.0,"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "position",
+      "figmaValue": "absolute offsets",
+      "currentValue": "Unknown",
+      "severity": "major",
+      "explanation": "Structural mismatch: Status bar elements (Battery, Wifi, Cellular) are positioned absolutely in Figma.",
+      "currentCode": "position: 'relative',",
+      "fixedCode": "// Border\nleft: -333.2, top: -22.6,\n// Cap\nleft: -307.3, top: -17.9,\n// Capacity\nleft: -331.2, top: -20.6,\n// Wifi\nleft: -308.7, top: -23.2,\n// Cellular\nleft: -282.0, top: -15.7,"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "layout",
+      "figmaValue": "absolute, top: 0",
+      "currentValue": "SafeAreaView",
+      "severity": "major",
+      "explanation": "Background images should extend behind the status bar (top: 0).",
+      "currentCode": "<SafeAreaView>...</SafeAreaView>",
+      "fixedCode": "position: 'absolute', top: 0, left: 0, right: 0, bottom: 0"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "color",
+      "figmaValue": "#A9A9A9",
+      "currentValue": "#FFFFFF",
+      "severity": "moderate",
+      "explanation": "Heading text 'Make your rent' should be Light Grey.",
+      "currentCode": "color: '#FFFFFF'",
+      "fixedCode": "color: colors.neutral[500] // #A9A9A9"
+    },
+    {
+      "file": "app/(waitlist)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "borderColor",
+      "figmaValue": "#FF9A6D (10% opacity)",
+      "currentValue": "None",
+      "severity": "minor",
+      "explanation": "Button requires a subtle orange inner stroke/border.",
+      "currentCode": "borderWidth: 0,",
+      "fixedCode": "borderWidth: 1,\nborderColor: 'rgba(255, 154, 109, 0.1)', // colors.brand[500] with opacity"
+    },
+    {
+      "file": "app/(auth)/index.tsx",
+      "lineRange": "Unknown",
+      "property": "backgroundColor",
+      "figmaValue": "#4D4D4D",
+      "currentValue": "Unknown",
+      "severity": "minor",
+      "explanation": "Structural check: Verify button base fill color matches Figma token if gradient is not applied.",
+      "currentCode": "backgroundColor: '...'",
+      "fixedCode": "backgroundColor: colors.black[400] // #4D4D4D"
+    }
+  ],
+  "summary": {
+    "totalIssues": 9,
+    "critical": 2,
+    "major": 4,
+    "moderate": 1,
+    "minor": 2,
+    "filesAffected": [
+      "app/(waitlist)/index.tsx",
+      "app/(auth)/index.tsx"
+    ]
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "screenId": "243-6490",
+  "screenName": "Home --Empty State --setup payment",
+  "route": "/(main)/index",
+  "generatedAt": "2026-02-19T23:31:35.567Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 2095586349",
+      "nodeId": "243:6493",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 1686557294",
+      "nodeId": "243:6504",
+      "childCount": 2
+    },
+    {
+      "name": "Frame 2095586453",
+      "nodeId": "243:6510",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 2095586452",
+      "nodeId": "243:6513",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 2095586465",
+      "nodeId": "243:6662",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 1686557301",
+      "nodeId": "243:6690",
+      "childCount": 1
+    }
+  ],
+  "states": [
+    {
+      "state": "upi-no-cashbacks",
+      "figmaId": "243-6296",
+      "name": "Home --Empty State --with upi / no cashbacks"
+    },
+    {
+      "state": "setup-payment",
+      "figmaId": "243-6490",
+      "name": "Home --Empty State --setup payment"
+    },
+    {
+      "state": "setup-upi",
+      "figmaId": "243-6731",
+      "name": "Home --Empty State --setup payment / upi"
+    },
+    {
+      "state": "no-cashback",
+      "figmaId": "243-5689",
+      "name": "Home --Empty State --Transaction page without cashback"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "243:6507",
+      "name": "button",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "243:6651",
+      "name": "button",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "243:6686",
+      "name": "button",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "243:6727",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "I243:6492;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "243:6498",
+      "name": "Hi, Rishabh",
+      "content": "Hi, Rishabh"
+    },
+    {
+      "nodeId": "243:6505",
+      "name": "Due in 28 Days",
+      "content": "Due in 28 Days"
+    },
+    {
+      "nodeId": "243:6506",
+      "name": "₹ 32,500",
+      "content": "₹  32,500"
+    },
+    {
+      "nodeId": "I243:6507;100:1565",
+      "name": "Text",
+      "content": "Review"
+    },
+    {
+      "nodeId": "243:6511",
+      "name": "Your rent is due in 10 days",
+      "content": "Your rent is due in 10 days"
+    },
+    {
+      "nodeId": "243:6649",
+      "name": "Setup your payment method to start",
+      "content": "Setup your payment method to start"
+    },
+    {
+      "nodeId": "243:6650",
+      "name": "Add UPI, card, or bank to start earning rewards",
+      "content": "Add UPI, card, or bank to start earning rewards"
+    },
+    {
+      "nodeId": "I243:6651;100:1565",
+      "name": "Text",
+      "content": "+ Add Payment "
+    },
+    {
+      "nodeId": "243:6654",
+      "name": "NEW PAYMENT",
+      "content": "NEW PAYMENT"
+    },
+    {
+      "nodeId": "243:6665",
+      "name": "Setup incomplete (1/3)",
+      "content": "Setup incomplete (1/3)"
+    },
+    {
+      "nodeId": "243:6671",
+      "name": "Add landlord’s bank details",
+      "content": "Add landlord’s bank details"
+    },
+    {
+      "nodeId": "243:6672",
+      "name": "enables secure payouts",
+      "content": "enables secure payouts"
+    },
+    {
+      "nodeId": "243:6678",
+      "name": "Upload address proof",
+      "content": "Upload address proof"
+    },
+    {
+      "nodeId": "243:6679",
+      "name": "for verification",
+      "content": "for verification"
+    },
+    {
+      "nodeId": "243:6684",
+      "name": "Invite your landlord",
+      "content": "Invite your landlord"
+    },
+    {
+      "nodeId": "243:6685",
+      "name": "needed for cashback eligibility",
+      "content": "needed for cashback eligibility"
+    },
+    {
+      "nodeId": "I243:6686;100:1565",
+      "name": "Text",
+      "content": "Finish Setup"
+    },
+    {
+      "nodeId": "243:6701",
+      "name": "Choose a  Payment Method",
+      "content": "Choose a   Payment Method"
+    },
+    {
+      "nodeId": "243:6707",
+      "name": "UPI",
+      "content": "UPI"
+    },
+    {
+      "nodeId": "243:6709",
+      "name": "Set it up",
+      "content": "Set it up"
+    },
+    {
+      "nodeId": "243:6715",
+      "name": "Net Banking",
+      "content": "Net Banking"
+    },
+    {
+      "nodeId": "243:6717",
+      "name": "Set it up",
+      "content": "Set it up"
+    },
+    {
+      "nodeId": "243:6723",
+      "name": "Credit Card",
+      "content": "Credit Card"
+    },
+    {
+      "nodeId": "243:6725",
+      "name": "Set it up",
+      "content": "Set it up"
+    },
+    {
+      "nodeId": "I243:6727;100:1565",
+      "name": "Text",
+      "content": "Set up UPI"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

@@ -1,0 +1,637 @@
+{
+  "screenId": "243-3838",
+  "screenName": "UPI Card",
+  "route": "/(payment)/select-method",
+  "generatedAt": "2026-02-19T22:29:02.068Z",
+  "batches": [
+    {
+      "batch": 0,
+      "type": "structural",
+      "timestamp": "2026-02-19T22:27:14.905Z",
+      "feedback": {
+        "textContentIssues": [],
+        "alignmentIssues": [],
+        "positionIssues": [
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3841",
+            "nodeName": "UPI-Logo-vector 1",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 10,
+              "relativeLeft": -32,
+              "relativeTop": -14,
+              "parentId": "243:3840"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -14.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"UPI-Logo-vector 1\" is positioned at (-32.0, -14.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -14.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3905",
+            "nodeName": "Frame 2095586454",
+            "figmaValue": {
+              "absoluteX": 137,
+              "absoluteY": 0,
+              "relativeLeft": 105,
+              "relativeTop": -24,
+              "parentId": "243:3840"
+            },
+            "expectedRNValue": "position: 'absolute', left: 105.0, top: -24.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 2095586454\" is positioned at (105.0, -24.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 105.0,\ntop: -24.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3908",
+            "nodeName": "•••• 2341",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -32,
+              "relativeTop": -180,
+              "parentId": "243:3907"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -180.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"•••• 2341\" is positioned at (-32.0, -180.0) relative to \"Frame 2095586440\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -180.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3909",
+            "nodeName": "Frame 2095586438",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 60,
+              "relativeLeft": -32,
+              "relativeTop": -120,
+              "parentId": "243:3907"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -120.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 2095586438\" is positioned at (-32.0, -120.0) relative to \"Frame 2095586440\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -120.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3910",
+            "nodeName": "ICICI a/c - xxx23",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": 0,
+              "relativeTop": -60,
+              "parentId": "243:3909"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -60.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"ICICI a/c - xxx23\" is positioned at (0.0, -60.0) relative to \"Frame 2095586438\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -60.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3911",
+            "nodeName": "rishabh@•••",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 32,
+              "relativeLeft": 0,
+              "relativeTop": -28,
+              "parentId": "243:3909"
+            },
+            "expectedRNValue": "position: 'absolute', left: 0.0, top: -28.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"rishabh@•••\" is positioned at (0.0, -28.0) relative to \"Frame 2095586438\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 0.0,\ntop: -28.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3913",
+            "nodeName": "Vector 57",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -218,
+              "relativeTop": -125,
+              "parentId": "243:3912"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -125.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 57\" is positioned at (-218.0, -125.0) relative to \"Group 58\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -125.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3914",
+            "nodeName": "Vector 58",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 14.5,
+              "relativeLeft": -218,
+              "relativeTop": -110.5,
+              "parentId": "243:3912"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -110.5",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 58\" is positioned at (-218.0, -110.5) relative to \"Group 58\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -110.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3916",
+            "nodeName": "Vector 57",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -218,
+              "relativeTop": -286,
+              "parentId": "243:3915"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -286.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 57\" is positioned at (-218.0, -286.0) relative to \"Group 59\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -286.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3917",
+            "nodeName": "Vector 58",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 14.5,
+              "relativeLeft": -218,
+              "relativeTop": -271.5,
+              "parentId": "243:3915"
+            },
+            "expectedRNValue": "position: 'absolute', left: -218.0, top: -271.5",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 58\" is positioned at (-218.0, -271.5) relative to \"Group 59\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -218.0,\ntop: -271.5,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3919",
+            "nodeName": "Frame 2095586441",
+            "figmaValue": {
+              "absoluteX": 32,
+              "absoluteY": 18,
+              "relativeLeft": 32,
+              "relativeTop": -318,
+              "parentId": "243:3918"
+            },
+            "expectedRNValue": "position: 'absolute', left: 32.0, top: -318.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Frame 2095586441\" is positioned at (32.0, -318.0) relative to \"Frame 2095586341\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 32.0,\ntop: -318.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3922",
+            "nodeName": "Vector 1",
+            "figmaValue": {
+              "absoluteX": 217.97,
+              "absoluteY": 16,
+              "relativeLeft": 217.97,
+              "relativeTop": -320,
+              "parentId": "243:3918"
+            },
+            "expectedRNValue": "position: 'absolute', left: 218.0, top: -320.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Vector 1\" is positioned at (218.0, -320.0) relative to \"Frame 2095586341\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: 218.0,\ntop: -320.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3920",
+            "nodeName": "UPI",
+            "figmaValue": {
+              "absoluteX": 0,
+              "absoluteY": 0,
+              "relativeLeft": -32,
+              "relativeTop": -18,
+              "parentId": "243:3919"
+            },
+            "expectedRNValue": "position: 'absolute', left: -32.0, top: -18.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"UPI\" is positioned at (-32.0, -18.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+          },
+          {
+            "type": "position-delta",
+            "severity": "major",
+            "nodeId": "243:3921",
+            "nodeName": "Outline Icon Library",
+            "figmaValue": {
+              "absoluteX": 27,
+              "absoluteY": 2,
+              "relativeLeft": -5,
+              "relativeTop": -16,
+              "parentId": "243:3919"
+            },
+            "expectedRNValue": "position: 'absolute', left: -5.0, top: -16.0",
+            "file": "app/(payment)/index.tsx",
+            "explanation": "\"Outline Icon Library\" is positioned at (-5.0, -16.0) relative to \"Frame 2095586441\". This requires absolute positioning.",
+            "suggestedFix": "position: 'absolute',\nleft: -5.0,\ntop: -16.0,"
+          }
+        ],
+        "componentVariantIssues": [],
+        "textStructureIssues": [],
+        "totalIssues": 14
+      }
+    },
+    {
+      "batch": 1,
+      "type": "component",
+      "timestamp": "2026-02-19T22:27:14.913Z",
+      "feedback": []
+    },
+    {
+      "batch": 2,
+      "type": "fullscreen",
+      "timestamp": "2026-02-19T22:28:13.231Z",
+      "feedback": {
+        "screenLevelIssues": [
+          {
+            "file": "app/payment.tsx",
+            "lineRange": "1-1",
+            "property": "renderItem",
+            "figmaValue": "Card Component (270x400)",
+            "currentValue": "List Item (Row)",
+            "severity": "critical",
+            "explanation": "The selected UPI payment method in the simulator renders as a standard list row. The Figma design specifies a distinct 'UPI Card' component for the selected state. This card requires fixed dimensions (270x400), a specific dark background (#202020) with a texture overlay, and a complex internal layout (Header with Logo/Badge, Body with Account Details, Footer with UPI Icon).",
+            "currentCode": "// Code unavailable - inferred from simulator visual: Renders simple Row with RadioButton",
+            "fixedCode": "// Needs implementation of <UPICardSelected /> matching Figma node 243:3838:\n// Container: { width: 270, height: 400, backgroundColor: '#202020', borderRadius: 12 }\n// Background: Image overlay (opacity 0.16)\n// Header: Row with UPI Logo and 'SELECTED' Badge (bg: #1A1A1A, text: #FF9A6D)\n// Body: Account details with #FF9A6D and #4D4D4D text colors"
+          }
+        ],
+        "layoutIssues": [],
+        "scrollIssues": [],
+        "confidence": 95
+      }
+    },
+    {
+      "batch": 3,
+      "type": "synthesis",
+      "timestamp": "2026-02-19T22:29:02.065Z",
+      "feedback": [
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "1-100",
+          "property": "renderItem",
+          "figmaValue": "UPICardSelected Component",
+          "currentValue": "Standard List Row",
+          "severity": "critical",
+          "explanation": "The selected UPI payment method renders as a simple row. It must be a distinct Card component (270x400) with dark background (colors.black[500]) and specific internal layout.",
+          "currentCode": "// Renders standard row with RadioButton",
+          "fixedCode": "if (selected) {\n  return (\n    <View style={{ width: 270, height: 400, backgroundColor: colors.black[500], borderRadius: 12, overflow: 'hidden' }}>\n      {/* Implement internal structure using structural fixes below */}\n    </View>\n  );\n}"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -32, -14",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'UPI-Logo-vector 1' (Node 243:3841) requires absolute positioning relative to parent Frame.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -14.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: 105, -24",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586454' (Node 243:3905) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 105.0,\ntop: -24.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -32, -180",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: '•••• 2341' (Node 243:3908) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -180.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -32, -120",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586438' (Node 243:3909) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -120.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: 0, -60",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'ICICI a/c - xxx23' (Node 243:3910) requires absolute positioning inside its parent frame.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -60.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: 0, -28",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'rishabh@•••' (Node 243:3911) requires absolute positioning inside its parent frame.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -28.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -218, -125",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 57' (Node 243:3913) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -125.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -218, -110.5",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 58' (Node 243:3914) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -110.5,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -218, -286",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 57' (Node 243:3916) in Group 59 requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -286.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -218, -271.5",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 58' (Node 243:3917) in Group 59 requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -271.5,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: 32, -318",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Frame 2095586441' (Node 243:3919) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 32.0,\ntop: -318.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: 218, -320",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Vector 1' (Node 243:3922) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: 218.0,\ntop: -320.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -32, -18",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'UPI' (Node 243:3920) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+        },
+        {
+          "file": "app/(payment)/index.tsx",
+          "lineRange": "N/A",
+          "property": "position",
+          "figmaValue": "absolute: -5, -16",
+          "currentValue": "relative",
+          "severity": "major",
+          "explanation": "Structural Fix: 'Outline Icon Library' (Node 243:3921) requires absolute positioning.",
+          "currentCode": "/* Missing or relative */",
+          "fixedCode": "position: 'absolute',\nleft: -5.0,\ntop: -16.0,"
+        }
+      ]
+    }
+  ],
+  "consolidatedFixes": [
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "1-100",
+      "property": "renderItem",
+      "figmaValue": "UPICardSelected Component",
+      "currentValue": "Standard List Row",
+      "severity": "critical",
+      "explanation": "The selected UPI payment method renders as a simple row. It must be a distinct Card component (270x400) with dark background (colors.black[500]) and specific internal layout.",
+      "currentCode": "// Renders standard row with RadioButton",
+      "fixedCode": "if (selected) {\n  return (\n    <View style={{ width: 270, height: 400, backgroundColor: colors.black[500], borderRadius: 12, overflow: 'hidden' }}>\n      {/* Implement internal structure using structural fixes below */}\n    </View>\n  );\n}"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -32, -14",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'UPI-Logo-vector 1' (Node 243:3841) requires absolute positioning relative to parent Frame.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -14.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: 105, -24",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Frame 2095586454' (Node 243:3905) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: 105.0,\ntop: -24.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -32, -180",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: '•••• 2341' (Node 243:3908) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -180.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -32, -120",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Frame 2095586438' (Node 243:3909) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -120.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: 0, -60",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'ICICI a/c - xxx23' (Node 243:3910) requires absolute positioning inside its parent frame.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -60.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: 0, -28",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'rishabh@•••' (Node 243:3911) requires absolute positioning inside its parent frame.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: 0.0,\ntop: -28.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -218, -125",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Vector 57' (Node 243:3913) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -125.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -218, -110.5",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Vector 58' (Node 243:3914) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -110.5,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -218, -286",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Vector 57' (Node 243:3916) in Group 59 requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -286.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -218, -271.5",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Vector 58' (Node 243:3917) in Group 59 requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -218.0,\ntop: -271.5,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: 32, -318",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Frame 2095586441' (Node 243:3919) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: 32.0,\ntop: -318.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: 218, -320",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Vector 1' (Node 243:3922) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: 218.0,\ntop: -320.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -32, -18",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'UPI' (Node 243:3920) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -32.0,\ntop: -18.0,"
+    },
+    {
+      "file": "app/(payment)/index.tsx",
+      "lineRange": "N/A",
+      "property": "position",
+      "figmaValue": "absolute: -5, -16",
+      "currentValue": "relative",
+      "severity": "major",
+      "explanation": "Structural Fix: 'Outline Icon Library' (Node 243:3921) requires absolute positioning.",
+      "currentCode": "/* Missing or relative */",
+      "fixedCode": "position: 'absolute',\nleft: -5.0,\ntop: -16.0,"
+    }
+  ],
+  "summary": {
+    "totalIssues": 15,
+    "critical": 1,
+    "major": 14,
+    "minor": 0,
+    "filesAffected": [
+      "app/(payment)/index.tsx"
+    ]
+  }
+}

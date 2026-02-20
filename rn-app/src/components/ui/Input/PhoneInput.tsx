@@ -62,6 +62,7 @@ export interface PhoneInputProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
+  onBlur?: () => void;
   countryCode?: string;
   error?: string;
   disabled?: boolean;
@@ -76,6 +77,7 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
       label,
       value,
       onChangeText,
+      onBlur: onBlurProp,
       countryCode = '+91',
       error,
       disabled,
@@ -93,7 +95,8 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
 
     const handleBlur = useCallback(() => {
       setIsFocused(false);
-    }, []);
+      onBlurProp?.();
+    }, [onBlurProp]);
 
     // Format phone number with space (98765 43210)
     const formatPhoneNumber = useCallback((text: string) => {
@@ -189,6 +192,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   labelRow: {
+    paddingHorizontal: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -227,7 +231,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
     borderRadius: SPACING.inputBorderRadius, // Figma: 12px
-    paddingHorizontal: 16,
+    borderCurve: 'continuous', // iOS corner smoothing (from Figma cornerSmoothing: 0.6)
+    paddingHorizontal: 12,
   },
   // Dropdown container - Figma: I1:29184;48:713 - row, center, gap:4
   dropdownContainer: {

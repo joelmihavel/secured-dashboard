@@ -35,24 +35,25 @@ import Svg, { Path } from 'react-native-svg';
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { DashedDivider } from '@/src/components/payment';
 import { useGenerateReceipt } from '@/src/hooks';
+import { colors } from '@/src/theme';
 
 // Exact Figma colors - from 41-9388 / 41-9563 blueprint extraction
 const FIGMA_COLORS = {
-  background: '#131313',           // black.700 - screen bg
-  cardBackground: '#202020',       // black.500 - Rectangle 136
-  frameBackground: '#1A1A1A',      // black.600 - Frame 1686557297
-  titleWhite: '#FFFFFF',           // white - "Payment" text
-  titleAccent: '#FF9A6D',          // brand.500 - "Succesful" text (span start:8)
-  stampColor: '#06C270',           // success.approved - PAID stamp
-  labelText: '#878787',            // neutral.600 - row labels
-  valueText: '#CBCBCB',            // neutral.300 - row values
-  payableRentValue: '#DDDDDD',     // neutral.200 - Payable Rent value
-  iconColor: '#A6A6A6',            // black.200 - hash icon
-  dividerColor: '#4D4D4D',         // black.400 - dashed dividers
-  paperclipColor: '#4D4D4D',       // black.400 - paperclip vector
-  cashbackBg: '#1A1A1A',           // black.600 - cashback pill bg
-  cashbackText: '#DDDDDD',         // neutral.200 - cashback text
-  contactSupportText: '#A9A9A9',   // neutral.500 - Contact Support
+  background: colors.black[700],           // black.700 - screen bg
+  cardBackground: colors.black[500],       // black.500 - Rectangle 136
+  frameBackground: colors.black[600],      // black.600 - Frame 1686557297
+  titleWhite: colors.white,           // white - "Payment" text
+  titleAccent: colors.brand[500],          // brand.500 - "Succesful" text (span start:8)
+  stampColor: colors.success.approved,           // success.approved - PAID stamp
+  labelText: colors.neutral[600],            // neutral.600 - row labels
+  valueText: colors.neutral[300],            // neutral.300 - row values
+  payableRentValue: colors.neutral[200],     // neutral.200 - Payable Rent value
+  iconColor: colors.black[200],            // black.200 - hash icon
+  dividerColor: colors.black[400],         // black.400 - dashed dividers
+  paperclipColor: colors.black[400],       // black.400 - paperclip vector
+  cashbackBg: colors.black[600],           // black.600 - cashback pill bg
+  cashbackText: colors.neutral[200],         // neutral.200 - cashback text
+  contactSupportText: colors.neutral[500],   // neutral.500 - Contact Support
 };
 
 // Figma card inner width for receipt rows and cashback pill

@@ -38,6 +38,7 @@ import {
   formatDateDisplay,
   type ExtractedAgreementData,
 } from '@/src/services/api/agreement';
+import { colors } from '@/src/theme';
 
 // ============================================
 // FIGMA CONSTANTS -- Figma REST API (1:30448, 1:30820)
@@ -45,7 +46,7 @@ import {
 
 const F = {
   // Screen
-  bg: '#131313',
+  bg: colors.black[700],
   contentPadH: 48, // Frame 1686557268 paddingLeft/Right
 
   // Layout gaps (from Figma frame itemSpacing)
@@ -68,8 +69,8 @@ const F = {
     size: 48,
     lineH: 64,
     ls: -2,
-    greyColor: '#a9a9a9',   // "Confirm" -- override 37 fill r=0.6627
-    orangeColor: '#ff9a6d',  // "your details" -- override 36 fill r=1.0,g=0.6039,b=0.4274
+    greyColor: colors.neutral[500],   // "Confirm" -- override 37 fill r=0.6627
+    orangeColor: colors.brand[500],  // "your details" -- override 36 fill r=1.0,g=0.6039,b=0.4274
   },
 
   // Detail rows (verify mode -- 1:30448)
@@ -83,34 +84,34 @@ const F = {
     rowGap: 4,        // within row frame gap
     labelSize: 12,    // TEXT size=12
     labelLineH: 20,
-    labelColor: '#878787',
+    labelColor: colors.neutral[600],
     labelIconGap: 4,  // Frame gap between icon and label text
     valueSize: 14,    // TEXT size=14
     valueLineH: 20,
-    valueColor: '#cbcbcb',
-    dividerColor: '#4d4d4d', // Vector stroke
+    valueColor: colors.neutral[300],
+    dividerColor: colors.black[400], // Vector stroke
     dividerWeight: 0.25,     // Figma stroke weight
   },
 
   // Input fields (edit mode -- 1:30820)
   input: {
     gap: 16,              // Frame itemSpacing
-    bg: '#222222',
-    borderActive: '#4d4d4d',
-    borderFilled: '#0d0d0d',
+    bg: colors.neutral[900],
+    borderActive: colors.black[400],
+    borderFilled: colors.black[800],
     radius: 12,
     padV: 16,
     padH: 16,
     labelSize: 12,
-    labelColor: '#a9a9a9',
+    labelColor: colors.neutral[500],
     editSize: 14,
-    editColor: '#878787',
+    editColor: colors.neutral[600],
     valueSize: 20,
     valueLineH: 32,
-    filledColor: '#dddddd',
-    placeholderColor: '#222222',
+    filledColor: colors.neutral[200],
+    placeholderColor: colors.neutral[900],
     hintSize: 14,
-    hintColor: '#878787',
+    hintColor: colors.neutral[600],
     labelGap: 6,
   },
 
@@ -118,7 +119,7 @@ const F = {
   manual: {
     size: 14,
     lineH: 20,
-    color: '#a9a9a9',
+    color: colors.neutral[500],
   },
 } as const;
 
@@ -745,6 +746,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: '#ffffff',
+    color: colors.white,
   },
 });

@@ -28,6 +28,7 @@ interface AuthState {
   userId: string | null;
   isNewUser: boolean;
   consentForMobile360: boolean;
+  consentTimestamp: string | null;
   error: {
     code: string;
     message: string;
@@ -69,6 +70,7 @@ const initialState: AuthState = {
   userId: null,
   isNewUser: false,
   consentForMobile360: false,
+  consentTimestamp: null,
   error: null,
 };
 
@@ -95,6 +97,7 @@ export const useAuthStore = create<AuthStore>()(
     setConsentForMobile360: (value) =>
       set((state) => {
         state.consentForMobile360 = value;
+        state.consentTimestamp = value ? new Date().toISOString() : null;
       }),
 
     setOtpSent: () =>

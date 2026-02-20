@@ -41,8 +41,8 @@
  * 5. Content layout: paddingTop=16 on content frame, not additional padding
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
-import { View, StyleSheet, Pressable, BackHandler, Text as RNText } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Pressable, BackHandler, Text as RNText, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -50,14 +50,16 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 
-import { Text, PrimaryButton, OTPInput } from '@/src/components';
-import { colors, springConfig, duration, radius, spacing } from '@/src/theme';
+import { Screen, Text, PrimaryButton, OTPInput } from '@/src/components';
+import { colors, springConfig, duration, radius, spacing, typography } from '@/src/theme';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
+import { getWaitlistStatus } from '@/src/services/api/waitlist';
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
@@ -116,6 +118,11 @@ export default function OTPScreen() {
   const failureCountRef = useRef(0);
   const lastFailureTimeRef = useRef(0);
 
+  // Lock all interaction once verification succeeds and navigation begins.
+  // Prevents double-press during the async gap between verifyOtp completing
+  // and router.replace() firing (getWaitlistStatus API call takes 1-2s).
+  const [isNavigating, setIsNavigating] = useState(false);
+
   // Mock OTP for testing states
   const getMockOtp = () => {
     switch (state) {
@@ -151,7 +158,7 @@ export default function OTPScreen() {
   const [isOtpExpired, setIsOtpExpired] = React.useState(false);
 
   // Animation values
-  const translateY = useSharedValue(0);
+  const translateY = useSharedValue(500); // Start offscreen
   const overlayOpacity = useSharedValue(0);
 
   const isOtpComplete = otp.length === 6;
@@ -233,9 +240,11 @@ export default function OTPScreen() {
     if (error) clearError();
   }, [error, clearError, mockError]);
 
+  const figmaTransition = { duration: 300, easing: Easing.out(Easing.quad) };
+
   const handleClose = useCallback(() => {
-    overlayOpacity.value = withTiming(0, { duration: duration.fast });
-    translateY.value = withSpring(500, springConfig.stiff, (finished) => {
+    overlayOpacity.value = withTiming(0, { duration: 300 });
+    translateY.value = withTiming(500, figmaTransition, (finished) => {
       if (finished) {
         runOnJS(router.back)();
       }
@@ -244,8 +253,9 @@ export default function OTPScreen() {
 
   // Animate in on mount
   useEffect(() => {
-    overlayOpacity.value = withTiming(0.4, { duration: duration.normal }); // Figma: 40% opacity overlay
-  }, [overlayOpacity]);
+    overlayOpacity.value = withTiming(0.4, { duration: 300 });
+    translateY.value = withTiming(0, figmaTransition);
+  }, [overlayOpacity, translateY]);
 
   // Handle back button - include handleClose in dependencies to prevent stale closure
   useEffect(() => {
@@ -256,16 +266,54 @@ export default function OTPScreen() {
     return () => backHandler.remove();
   }, [handleClose]);
 
-  // Navigate to main app when authenticated
+  // Navigate based on user journey state after authentication.
+  // Sets isNavigating=true immediately to lock the UI (prevents double-press),
+  // then fades the overlay to fully opaque to hide sign-up underneath during
+  // the cross-group transition from (auth) modal → (agreement) stack.
   useEffect(() => {
-    if (status === 'authenticated') {
-      router.replace('/(waitlist)');
-    }
-  }, [status, router]);
+    if (status !== 'authenticated') return;
+    if (isNavigating) return; // Prevent duplicate runs
+
+    setIsNavigating(true);
+
+    // Fade overlay to fully opaque to mask the sign-up screen underneath
+    // during cross-group navigation (modal dismiss → new stack push).
+    overlayOpacity.value = withTiming(1, { duration: 200 });
+
+    const resolveRoute = async () => {
+      // Brief delay for the opacity animation to complete
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      try {
+        const { data, error } = await getWaitlistStatus();
+
+        if (error || !data) {
+          // No waitlist data → new user, needs agreement upload
+          router.replace('/(agreement)/upload');
+          return;
+        }
+
+        if (data.state === 'approved') {
+          router.replace('/(main)');
+        } else if (data.position === null && data.submissionDate === null) {
+          // Has entry but no position/submission → hasn't uploaded agreement yet
+          router.replace('/(agreement)/upload');
+        } else {
+          router.replace('/(waitlist)');
+        }
+      } catch {
+        // Fail to agreement upload for new users (safe default)
+        router.replace('/(agreement)/upload');
+      }
+    };
+
+    resolveRoute();
+  }, [status, router, isNavigating, overlayOpacity]);
 
   const handleProceed = useCallback((otpValue?: string) => {
-    // Ref-based guard: prevents double-fire even before React Query isPending updates
-    if (isSubmittingRef.current || isVerifyingOtp) return;
+    // Ref-based guard: prevents double-fire even before React Query isPending updates.
+    // isNavigating: prevents re-submission after verification succeeds (during async navigation).
+    if (isSubmittingRef.current || isVerifyingOtp || isNavigating) return;
 
     const code = otpValue ?? otp;
     if (code.length !== 6) return;
@@ -278,7 +326,7 @@ export default function OTPScreen() {
 
     isSubmittingRef.current = true;
     verifyCode(code, userName || undefined);
-  }, [otp, verifyCode, userName, isVerifyingOtp, cooldownRemaining, isOtpExpired]);
+  }, [otp, verifyCode, userName, isVerifyingOtp, cooldownRemaining, isOtpExpired, isNavigating]);
 
   const handleResend = useCallback(() => {
     setOtp('');
@@ -295,6 +343,8 @@ export default function OTPScreen() {
 
   // Pan gesture for dismiss
   const panGesture = Gesture.Pan()
+    .activeOffsetY([-20, 20]) // Increase threshold slightly
+    .failOffsetX([-10, 10])   // Do not activate on horizontal movement
     .onUpdate((event) => {
       if (event.translationY > 0) {
         translateY.value = event.translationY;
@@ -304,7 +354,7 @@ export default function OTPScreen() {
       if (event.translationY > 100) {
         runOnJS(handleClose)();
       } else {
-        translateY.value = withSpring(0, springConfig.snappy);
+        translateY.value = withTiming(0, figmaTransition);
       }
     });
 
@@ -316,111 +366,117 @@ export default function OTPScreen() {
     opacity: overlayOpacity.value, // Figma: 40% opacity (0.4 target)
   }));
 
-  // Figma: Button is ACTIVE (gradient) in error states -- only disabled when OTP incomplete
-  // or during cooldown/expiry. Error presence does NOT disable the button.
-  const isButtonDisabled = !isOtpComplete || cooldownRemaining > 0 || isOtpExpired;
+  // Figma: Button is ACTIVE (gradient) in error states -- only disabled when OTP incomplete,
+  // during cooldown/expiry, or when navigating after successful verification.
+  const isButtonDisabled = !isOtpComplete || cooldownRemaining > 0 || isOtpExpired || isNavigating;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
       {/* Blurred overlay - tap to dismiss */}
       {/* Figma: Rectangle 55 = blur 8px + 60% black, Rectangle 54 = 40% black overlay */}
       <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
-        <BlurView intensity={8} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
         <Animated.View style={[styles.overlay, overlayAnimatedStyle]} />
       </Pressable>
 
       {/* Bottom Sheet - Figma: Frame 2095586317 column, gap=15, alignItems=center */}
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheetWrapper, sheetAnimatedStyle]}>
-          {/* Handle - Figma: Rectangle 53 at y=0 (no top padding) */}
+      {/* GestureDetector moved INSIDE Animated.View to only wrap the handle area.
+          Previously it wrapped the entire sheet, which caused RNGH's native gesture
+          handler to intercept all touches before they could reach the OTP TextInput. */}
+      <Animated.View style={[styles.sheetWrapper, sheetAnimatedStyle]}>
+        {/* Handle - wrapped in GestureDetector for swipe-to-dismiss */}
+        <GestureDetector gesture={panGesture}>
           <View style={styles.handleContainer}>
             <View style={styles.handle} />
           </View>
+        </GestureDetector>
 
-          {/* Sheet Content - Figma: Frame 1686557301 bg=#1A1A1A, radius=22.79 */}
-          <View style={styles.sheetContent}>
-            {/* Content - Figma: Frame 1686557230 paddingTop=16, gap=30.38 */}
-            <View style={styles.contentContainer}>
-              {/* Header - Figma: Frame 1686557311 gap=10, paddingHorizontal=48 */}
-              <View style={styles.headerBlock}>
-                {/* Title - Figma: PlusJakartaSans-Regular 28/40 -1 #FFFFFF */}
-                <Text style={styles.title}>
-                  Let's verify your number
-                </Text>
+        {/* Sheet Content - Figma: Frame 1686557301 bg=#1A1A1A, radius=22.79 */}
+        <View style={styles.sheetContent}>
+          {/* Content - Figma: Frame 1686557230 paddingTop=16, gap=30.38 */}
+          <View style={styles.contentContainer}>
+            {/* Header - Figma: Frame 1686557311 gap=10, paddingHorizontal=48 */}
+            <View style={styles.headerBlock}>
+              {/* Title - Figma: PlusJakartaSans-Regular 28/40 -1 #FFFFFF */}
+              <Text style={styles.title}>
+                Let's verify your number
+              </Text>
 
-                {/* Subtitle - Figma: PlusJakartaSans-Medium 12/21.6 -0.132 #A9A9A9 */}
-                <Text style={styles.subtitle}>
-                  We've sent a 6-digit code to your phone. It'll auto-verify once entered
-                </Text>
-              </View>
-
-              {/* OTP Input - Figma: OTP instance paddingHorizontal=48 */}
-              {/* Label#67:0 = false in all 4 states -- no "Secure code" label */}
-              <View style={styles.otpBlock}>
-                <OTPInput
-                  value={otp}
-                  onChangeText={handleOtpChange}
-                  onComplete={handleProceed}
-                  error={errorMessage}
-                  testID="otp-input"
-                />
-              </View>
-
-              {/* Footer - Figma: Frame 1686557317 gap=16, paddingHorizontal=48 */}
-              <View style={styles.footerBlock}>
-                {/* Proceed Button - Figma: active gradient in error states too */}
-                <PrimaryButton
-                  title={
-                    isOtpExpired
-                      ? 'Code Expired'
-                      : cooldownRemaining > 0
-                        ? `Wait ${cooldownRemaining}s`
-                        : 'Proceed'
-                  }
-                  onPress={handleProceed}
-                  disabled={isButtonDisabled}
-                  loading={isVerifyingOtp}
-                  showDivider={true}
-                  testID="proceed-button"
-                />
-
-                {/* Resend Link - Figma: PlusJakartaSans-Regular 12/20 #A9A9A9 centered */}
-                <View style={styles.resendContainer}>
-                  {isOtpExpired ? (
-                    <RNText style={styles.resendText}>
-                      Code expired.{' '}
-                      <RNText
-                        style={styles.resendLink}
-                        onPress={handleResend}
-                        disabled={isResendingOtp}
-                      >
-                        {isResendingOtp ? 'Sending...' : 'Send a new code'}
-                      </RNText>
-                    </RNText>
-                  ) : (
-                    <RNText style={styles.resendText}>
-                      {!state && otpExpirySeconds > 0 && otpExpirySeconds <= 60
-                        ? `Code expires in ${otpExpirySeconds}s. `
-                        : "Didn't receive the code? "}
-                      <RNText
-                        style={styles.resendLink}
-                        onPress={handleResend}
-                        disabled={isResendingOtp}
-                      >
-                        {isResendingOtp ? 'Sending...' : 'Resend'}
-                      </RNText>
-                    </RNText>
-                  )}
-                </View>
-              </View>
+              {/* Subtitle - Figma: PlusJakartaSans-Medium 12/21.6 -0.132 #A9A9A9 */}
+              <Text style={styles.subtitle}>
+                We've sent a 6-digit code to your phone. It'll auto-verify once entered
+              </Text>
             </View>
 
-            {/* Home Indicator space */}
-            <View style={styles.homeIndicatorSpace} />
+            {/* OTP Input - Figma: OTP instance paddingHorizontal=48 */}
+            {/* Label#67:0 = false in all 4 states -- no "Secure code" label */}
+            <View style={styles.otpBlock}>
+              <OTPInput
+                value={otp}
+                onChangeText={handleOtpChange}
+                onComplete={handleProceed}
+                error={errorMessage}
+                testID="otp-input"
+              />
+            </View>
+
+            {/* Footer - Figma: Frame 1686557317 gap=16, paddingHorizontal=48 */}
+            <View style={styles.footerBlock}>
+              {/* Proceed Button - Figma: active gradient in error states too */}
+              <PrimaryButton
+                title={
+                  isOtpExpired
+                    ? 'Code Expired'
+                    : cooldownRemaining > 0
+                      ? `Wait ${cooldownRemaining}s`
+                      : 'Proceed'
+                }
+                onPress={handleProceed}
+                disabled={isButtonDisabled}
+                loading={isVerifyingOtp || isNavigating}
+                showDivider={true}
+                testID="proceed-button"
+              />
+
+              {/* Resend Link - Figma: PlusJakartaSans-Regular 12/20 #A9A9A9 centered */}
+              <View style={styles.resendContainer}>
+                {isOtpExpired ? (
+                  <RNText style={styles.resendText}>
+                    Code expired.{' '}
+                    <RNText
+                      style={styles.resendLink}
+                      onPress={handleResend}
+                      disabled={isResendingOtp}
+                    >
+                      {isResendingOtp ? 'Sending...' : 'Send a new code'}
+                    </RNText>
+                  </RNText>
+                ) : (
+                  <RNText style={styles.resendText}>
+                    {!state && otpExpirySeconds > 0 && otpExpirySeconds <= 60
+                      ? `Code expires in ${otpExpirySeconds}s. `
+                      : "Didn't receive the code? "}
+                    <RNText
+                      style={styles.resendLink}
+                      onPress={handleResend}
+                      disabled={isResendingOtp}
+                    >
+                      {isResendingOtp ? 'Sending...' : 'Resend'}
+                    </RNText>
+                  </RNText>
+                )}
+              </View>
+            </View>
           </View>
-        </Animated.View>
-      </GestureDetector>
-    </View>
+
+          {/* Home Indicator space */}
+          <View style={styles.homeIndicatorSpace} />
+        </View>
+      </Animated.View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -449,8 +505,11 @@ const styles = StyleSheet.create({
     width: '100%',                                       // Figma: sizingH=FILL
   },
   // Figma: Handle floats above sheet, no top padding (y=0 in Frame 2095586317)
+  // Extra vertical padding provides a larger touch target for the swipe-to-dismiss gesture
   handleContainer: {
     alignItems: 'center',
+    paddingVertical: 8,
+    width: '100%',
   },
   handle: {
     width: FIGMA_DIMENSIONS.handleWidth,     // 48
@@ -473,22 +532,18 @@ const styles = StyleSheet.create({
   },
   // Figma: PlusJakartaSans-Regular 28/40 letterSpacing=-1 #FFFFFF
   title: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28,
-    lineHeight: 40,
-    letterSpacing: -1.0,
+    ...typography.h4,
     color: FIGMA_COLORS.titleText,
-    width: FIGMA_DIMENSIONS.titleWidth,                    // 297
+    width: FIGMA_DIMENSIONS.titleWidth,
     textAlign: 'left',
   },
   // Figma: PlusJakartaSans-Medium 12/21.6 letterSpacing=-0.132 #A9A9A9
   subtitle: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 21.6,
-    letterSpacing: -0.132,
+    ...typography.bodySmMedium,
+    lineHeight: 21.6, // Specific Figma override
+    letterSpacing: -0.132, // Specific Figma override
     color: FIGMA_COLORS.subtitleText,
-    width: FIGMA_DIMENSIONS.subtitleWidth,                 // 297
+    width: FIGMA_DIMENSIONS.subtitleWidth,
     textAlign: 'left',
   },
   // Figma: OTP instance wrapper with paddingHorizontal=48
@@ -509,13 +564,10 @@ const styles = StyleSheet.create({
   },
   // Figma: PlusJakartaSans-Regular 12/20 letterSpacing=0 #A9A9A9 centered
   resendText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    letterSpacing: 0,
+    ...typography.bodySm,
     color: FIGMA_COLORS.resendText,
     textAlign: 'center',
-    width: FIGMA_DIMENSIONS.resendWidth,                   // 297
+    width: FIGMA_DIMENSIONS.resendWidth,
   },
   // Figma: "Resend" span - same color, underlined
   resendLink: {

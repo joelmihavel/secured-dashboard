@@ -1,0 +1,232 @@
+{
+  "screenId": "41-9307",
+  "screenName": "My Profile / Payment --Bank Account",
+  "route": "/(profile)/index",
+  "generatedAt": "2026-02-20T00:02:56.209Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 1686557230",
+      "nodeId": "41:9314",
+      "childCount": 5
+    },
+    {
+      "name": "Frame 1686557268",
+      "nodeId": "41:9378",
+      "childCount": 1
+    }
+  ],
+  "states": [
+    {
+      "state": "main",
+      "figmaId": "41-8760",
+      "name": "My Profile / Main Screen"
+    },
+    {
+      "state": "edit-profile",
+      "figmaId": "41-8880",
+      "name": "My Profile / Secured Account --My Profile"
+    },
+    {
+      "state": "payment-upi",
+      "figmaId": "41-8450",
+      "name": "My Profile / Payment --UPI"
+    },
+    {
+      "state": "payment-credit-card",
+      "figmaId": "41-8612",
+      "name": "My Profile / Payment --Credit Card"
+    },
+    {
+      "state": "payment-bank",
+      "figmaId": "41-9307",
+      "name": "My Profile / Payment --Bank Account"
+    },
+    {
+      "state": "agreement",
+      "figmaId": "41-9811",
+      "name": "My Profile / Agreement"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "41:9383",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:9384",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:9385",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:9386",
+      "name": "input",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:9387",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "41:9324",
+      "name": "Pay Rent",
+      "content": "Pay Rent"
+    },
+    {
+      "nodeId": "41:9335",
+      "name": "Total payable rent",
+      "content": "Total payable rent"
+    },
+    {
+      "nodeId": "41:9336",
+      "name": "₹ 32,175",
+      "content": "₹  32,175"
+    },
+    {
+      "nodeId": "41:9345",
+      "name": "saved ₹ 325 →",
+      "content": "saved ₹ 325 →"
+    },
+    {
+      "nodeId": "41:9346",
+      "name": "using flent cashback",
+      "content": "using flent cashback"
+    },
+    {
+      "nodeId": "41:9350",
+      "name": "Paying to",
+      "content": "Paying to"
+    },
+    {
+      "nodeId": "41:9351",
+      "name": "[Landlord Name]",
+      "content": "[Landlord Name]"
+    },
+    {
+      "nodeId": "41:9355",
+      "name": "ICICI",
+      "content": "ICICI "
+    },
+    {
+      "nodeId": "41:9356",
+      "name": "XXXX XXXX XXXX 2003",
+      "content": "XXXX XXXX XXXX 2003"
+    },
+    {
+      "nodeId": "41:9358",
+      "name": "Pay Now",
+      "content": "Pay Now"
+    },
+    {
+      "nodeId": "41:9359",
+      "name": "All payments are 100% secure",
+      "content": "All payments are 100% secure"
+    },
+    {
+      "nodeId": "41:9364",
+      "name": "PAY BY ANY APP INSTEAD",
+      "content": "PAY BY ANY APP INSTEAD"
+    },
+    {
+      "nodeId": "41:9368",
+      "name": "Google Pay",
+      "content": "Google Pay"
+    },
+    {
+      "nodeId": "41:9371",
+      "name": "PayTM",
+      "content": "PayTM"
+    },
+    {
+      "nodeId": "41:9374",
+      "name": "PhonePe",
+      "content": "PhonePe"
+    },
+    {
+      "nodeId": "I41:9377;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "41:9381",
+      "name": "Edit your  Bank Account",
+      "content": "Edit your  Bank Account"
+    },
+    {
+      "nodeId": "I41:9383;47:5581",
+      "name": "Label",
+      "content": "Bank name"
+    },
+    {
+      "nodeId": "I41:9383;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:9383;47:5585",
+      "name": "Text",
+      "content": "ICICI Bank"
+    },
+    {
+      "nodeId": "I41:9384;47:5581",
+      "name": "Label",
+      "content": "Account holder name"
+    },
+    {
+      "nodeId": "I41:9384;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:9384;47:5585",
+      "name": "Text",
+      "content": "John Smith"
+    },
+    {
+      "nodeId": "I41:9385;47:5581",
+      "name": "Label",
+      "content": "Account number"
+    },
+    {
+      "nodeId": "I41:9385;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:9385;47:5585",
+      "name": "Text",
+      "content": "1234567890"
+    },
+    {
+      "nodeId": "I41:9386;47:5581",
+      "name": "Label",
+      "content": "IFSC code"
+    },
+    {
+      "nodeId": "I41:9386;99:1464",
+      "name": "Hint text",
+      "content": "edit"
+    },
+    {
+      "nodeId": "I41:9386;47:5585",
+      "name": "Text",
+      "content": "HDFC0001234"
+    },
+    {
+      "nodeId": "I41:9387;100:1565",
+      "name": "Text",
+      "content": "Save Changes"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

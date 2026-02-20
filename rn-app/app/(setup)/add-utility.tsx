@@ -45,24 +45,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useVerifyUtility, useUtilityOperators, useDashboard, validateConsumerNumber } from '@/src/hooks';
 import type { UtilityOperator, SetupError } from '@/src/types/setup';
+import { colors } from '@/src/theme';
 
 // Figma exact color values from 1-34343 blueprint
 const FIGMA_COLORS = {
-  background: '#131313',
-  description: '#A9A9A9',
-  progressTrack: '#4D4D4D',
-  progressFill: '#CC7B57',
-  inputBorder: '#4D4D4D',
-  inputBorderError: '#E5484D',
-  inputText: '#DDDDDD',
-  placeholder: '#444444',
-  editLink: '#878787',
-  skipText: '#FFFFFF',
-  accent: '#FF9A6D',
-  white: '#FFFFFF',
+  background: colors.black[700],
+  description: colors.neutral[500],
+  progressTrack: colors.black[400],
+  progressFill: colors.brand[600],
+  inputBorder: colors.black[400],
+  inputBorderError: colors.error.radix,
+  inputText: colors.neutral[200],
+  placeholder: colors.neutral[800],
+  editLink: colors.neutral[600],
+  skipText: colors.white,
+  accent: colors.brand[500],
+  white: colors.white,
 } as const;
 
 export default function AddUtilityScreen() {
@@ -192,11 +193,7 @@ export default function AddUtilityScreen() {
           </View>
 
           {/* API Error Banner */}
-          {apiError && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{apiError}</Text>
-            </View>
-          )}
+          {apiError && <AlertBanner type="error" message={apiError} />}
 
           {/* Form - Figma: gap 16 */}
           <View style={styles.formContainer}>
@@ -366,7 +363,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 20,
-    color: '#A9A9A9',
+    color: colors.neutral[500],
     textAlign: 'left',
   },
   // Input container - Figma: border #4D4D4D, radius 12
@@ -400,7 +397,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: '#E5484D',
+    color: colors.error.radix,
     textAlign: 'right' as const,
   },
   // Button section - Figma: gap 16
@@ -420,22 +417,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: FIGMA_COLORS.skipText,
   },
-  // Error banner
-  errorBanner: {
-    backgroundColor: 'rgba(229, 72, 77, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(229, 72, 77, 0.3)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#E5484D',
-    textAlign: 'left' as const,
-  },
   // Operator picker modal
   modalOverlay: {
     flex: 1,
@@ -443,7 +424,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: colors.black[600],
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '60%',
@@ -462,7 +443,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 18,
     lineHeight: 24,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   modalLoading: {
     paddingVertical: 40,
@@ -481,13 +462,13 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 16,
     lineHeight: 22,
-    color: '#DDDDDD',
+    color: colors.neutral[200],
   },
   operatorState: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 16,
-    color: '#878787',
+    color: colors.neutral[600],
     marginTop: 2,
   },
 });

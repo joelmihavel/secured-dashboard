@@ -1,154 +1,332 @@
 /**
  * Cashback Setup Modal
- * Figma Reference: 243-7185 (Setup to earn cashback)
+ * Figma Reference: 243-6731 (Setup to earn cashback bottom sheet)
  *
  * Modal that appears when user tries to pay without completing setup.
- * - Title: "Set up to earn cashback"
- * - Subtitle: "Complete your account setup..."
- * - Primary Action: "Set up now" -> Go to pending-steps
- * - Secondary Action: "I'll do this later" -> Continue to payment
+ * - Bottom sheet design with blur overlay
+ * - Title: "Set up to earn cashback on this payment."
+ * - Setup Checklist
+ * - Primary Action: "Finish Setup" -> Go to pending-steps
+ * - Secondary Action: "I'll do it later" -> Continue to payment
  */
 
-import React from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  View,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+  BackHandler,
+} from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import Svg, { Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/ui/Typography/Text';
 import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
-import { colors, radius, spacing, typography } from '@/src/theme';
-import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
+import { colors } from '@/src/theme';
+import { scaledSpacing } from '@/src/theme/scale';
 
 interface CashbackSetupModalProps {
   visible: boolean;
   onClose: () => void;
   onSetup: () => void;
   onSkip: () => void;
+  // Optional props to show actual progress
+  bankDetailsComplete?: boolean;
+  addressProofComplete?: boolean;
+  landlordInvited?: boolean;
 }
 
-// Custom Coin Icon from Figma (vector_57 / vector_58 style)
-const CoinIcon = () => (
-  <Svg width={scaled(64)} height={scaled(64)} viewBox="0 0 64 64" fill="none">
-    <Path
-      d="M32 60C47.464 60 60 47.464 60 32C60 16.536 47.464 4 32 4C16.536 4 4 16.536 4 32C4 47.464 16.536 60 32 60Z"
-      fill={colors.black[500]} // Figma: #202020 -> colors.black[500]
-      stroke={colors.brand[500]} // Figma: #FF9A6D -> colors.brand[500]
-      strokeWidth={2}
-    />
-    <Path
-      d="M32 42V22M22 32H42"
-      stroke={colors.brand[500]} // Figma: #FF9A6D -> colors.brand[500]
-      strokeWidth={3}
-      strokeLinecap="round"
-    />
-  </Svg>
-);
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export function CashbackSetupModal({ visible, onClose, onSetup, onSkip }: CashbackSetupModalProps) {
+// Exact Figma colors from 243-6731
+const FIGMA_COLORS = {
+  sheetBg: '#1A1A1A',
+  handle: '#4D4D4D',
+  titleWhite: '#FFFFFF',
+  titleAccent: '#FF9A6D',
+  itemTitle: '#CBCBCB',
+  itemSubtitle: '#878787',
+  indicatorActive: '#FF9A6D',
+  indicatorInactive: '#1A1A1A',
+  lineActive: 'rgba(255, 154, 109, 0.5)',
+  lineInactive: '#A6A6A6',
+};
+
+export function CashbackSetupModal({
+  visible,
+  onClose,
+  onSetup,
+  onSkip,
+  bankDetailsComplete = false,
+  addressProofComplete = false,
+  landlordInvited = false,
+}: CashbackSetupModalProps) {
+  const insets = useSafeAreaInsets();
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Handle back button on Android
+  useEffect(() => {
+    if (!visible) return;
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      onClose();
+      return true;
+    });
+    return () => backHandler.remove();
+  }, [visible, onClose]);
+
+  // Animate sheet in/out
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible, slideAnim, fadeAnim]);
+
+  if (!visible) return null;
+
+  const setupItems = [
+    {
+      title: "Add landlord's bank details",
+      subtitle: 'enables secure payouts',
+      isComplete: bankDetailsComplete,
+    },
+    {
+      title: 'Upload address proof',
+      subtitle: 'for verification',
+      isComplete: addressProofComplete,
+    },
+    {
+      title: 'Invite your landlord',
+      subtitle: 'needed for cashback eligibility',
+      isComplete: landlordInvited,
+    },
+  ];
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
+      statusBarTranslucent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        {/* Figma: Rectangle 54 - BACKGROUND_BLUR radius: 8, opacity: 0.6 */}
-        <BlurView intensity={8} style={StyleSheet.absoluteFill} tint="dark" />
-        
-        <View style={styles.modalContent}>
-          {/* Close Button */}
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color={colors.neutral[500]} />
-          </TouchableOpacity>
+      <View style={styles.container}>
+        {/* Blur Overlay - Figma: radius 8, opacity 0.6 */}
+        <Animated.View style={[styles.overlayContainer, { opacity: fadeAnim }]}>
+          <BlurView style={StyleSheet.absoluteFill} intensity={8} tint="dark" />
+          <TouchableOpacity
+            style={styles.overlayTouchable}
+            onPress={onClose}
+            activeOpacity={1}
+            accessibilityRole="button"
+            accessibilityLabel="Close cashback setup"
+          />
+        </Animated.View>
 
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <CoinIcon />
+        {/* Bottom Sheet */}
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              transform: [{ translateY: slideAnim }],
+              paddingBottom: Math.max(insets.bottom, 24),
+            },
+          ]}
+        >
+          {/* Handle */}
+          <View style={styles.handleContainer}>
+            <View style={styles.handle} />
           </View>
 
-          {/* Text Content */}
-          <Text style={styles.title}>Set up to earn cashback</Text>
-          <Text style={styles.subtitle}>
-            Complete your account setup to unlock cashback on every rent payment.
-          </Text>
+          <View style={styles.content}>
+            {/* Title */}
+            <Text style={styles.title}>
+              Set up to <Text inherit style={styles.titleAccent}>earn cashback{'\n'}</Text>
+              on this payment.
+            </Text>
 
-          {/* Actions */}
-          <View style={styles.actions}>
-            <PrimaryButton
-              title="Set up now"
-              onPress={onSetup}
-              style={styles.primaryButton}
-            />
-            <TouchableOpacity onPress={onSkip} style={styles.skipButton}>
-              <Text style={styles.skipText}>I'll do this later</Text>
-            </TouchableOpacity>
+            {/* Checklist */}
+            <View style={styles.checklist}>
+              {setupItems.map((item, index) => {
+                const isLast = index === setupItems.length - 1;
+                return (
+                  <View key={index} style={styles.itemRow}>
+                    <View style={styles.indicatorColumn}>
+                      <View
+                        style={[
+                          styles.indicator,
+                          {
+                            backgroundColor: item.isComplete
+                              ? FIGMA_COLORS.indicatorActive
+                              : FIGMA_COLORS.indicatorInactive,
+                          },
+                        ]}
+                      />
+                      {!isLast && (
+                        <View
+                          style={[
+                            styles.connectingLine,
+                            {
+                              backgroundColor: item.isComplete
+                                ? FIGMA_COLORS.lineActive
+                                : FIGMA_COLORS.lineInactive,
+                            },
+                          ]}
+                        />
+                      )}
+                    </View>
+
+                    <View style={styles.itemTextContainer}>
+                      <Text style={styles.itemTitle}>{item.title}</Text>
+                      <Text style={styles.itemSubtitle}>{item.subtitle}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* Actions */}
+            <View style={styles.actions}>
+              <PrimaryButton
+                title="Finish Setup"
+                onPress={onSetup}
+                showDivider
+              />
+              <TouchableOpacity onPress={onSkip} style={styles.skipButton}>
+                <Text style={styles.skipText}>I'll do it later</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    // Figma: Rectangle 54 - backgroundColor #000000 opacity 0.6
+    justifyContent: 'flex-end',
+  },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
+    zIndex: 10,
+  },
+  overlayTouchable: {
+    flex: 1,
+  },
+  sheet: {
+    backgroundColor: FIGMA_COLORS.sheetBg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 15,
+    zIndex: 20,
+  },
+  handleContainer: {
     alignItems: 'center',
-    paddingHorizontal: scaledSpacing(24),
+    paddingBottom: 30, // Matches spacing to content
   },
-  modalContent: {
-    width: '100%',
-    backgroundColor: colors.black[500], // Figma: cardBackground -> colors.black[500]
-    borderRadius: scaled(24),
-    padding: scaledSpacing(32),
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.black[400], // Figma: border -> colors.black[400]
+  handle: {
+    width: 48,
+    height: 4,
+    backgroundColor: FIGMA_COLORS.handle,
+    borderRadius: 200,
   },
-  closeButton: {
-    position: 'absolute',
-    top: scaledSpacing(16),
-    right: scaledSpacing(16),
-    padding: 8,
-  },
-  iconContainer: {
-    marginBottom: scaledSpacing(24),
+  content: {
+    paddingHorizontal: 48,
   },
   title: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(24),
-    lineHeight: scaledFont(32),
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: scaledSpacing(12),
-    letterSpacing: -0.5,
-  },
-  subtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: scaledFont(16),
-    lineHeight: scaledFont(24),
-    color: colors.neutral[500], // Figma: #A9A9A9 -> colors.neutral[500]
-    textAlign: 'center',
-    marginBottom: scaledSpacing(32),
+    fontSize: 28,
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: FIGMA_COLORS.titleWhite,
+    marginBottom: 24,
+  },
+  titleAccent: {
+    color: FIGMA_COLORS.titleAccent,
+  },
+  checklist: {
+    gap: 16,
+    marginBottom: 32,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  indicatorColumn: {
+    alignItems: 'center',
+    width: 20,
+  },
+  indicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  connectingLine: {
+    width: 1,
+    height: 35,
+    marginTop: 4,
+  },
+  itemTextContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  itemTitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: FIGMA_COLORS.itemTitle,
+  },
+  itemSubtitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.itemSubtitle,
   },
   actions: {
     width: '100%',
-    gap: scaledSpacing(16),
-  },
-  primaryButton: {
-    width: '100%',
-  },
-  skipButton: {
-    paddingVertical: scaledSpacing(12),
+    gap: 16,
     alignItems: 'center',
   },
+  skipButton: {
+    paddingVertical: 12,
+  },
   skipText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: scaledFont(14),
-    color: colors.neutral[600], // Figma: #878787 -> colors.neutral[600]
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA_COLORS.titleWhite,
+    textDecorationLine: 'underline',
   },
 });
+

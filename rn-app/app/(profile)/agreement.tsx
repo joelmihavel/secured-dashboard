@@ -45,14 +45,14 @@ import { colors } from '@/src/theme';
 
 // Figma blueprint colors (41-9811)
 const FIGMA_COLORS = {
-  background: '#131313',    // colors.black[700]
-  titleGray: '#A9A9A9',     // colors.neutral[500]
-  accent: '#FF9A6D',        // colors.brand[500]
-  label: '#878787',          // colors.neutral[600]
-  value: '#CBCBCB',          // colors.neutral[300]
-  icon: '#A6A6A6',           // Icon fill color from blueprint
-  divider: '#4D4D4D',        // Divider stroke
-  white: '#FFFFFF',          // colors.white
+  background: colors.black[700],    // colors.black[700]
+  titleGray: colors.neutral[500],     // colors.neutral[500]
+  accent: colors.brand[500],        // colors.brand[500]
+  label: colors.neutral[600],          // colors.neutral[600]
+  value: colors.neutral[300],          // colors.neutral[300]
+  icon: colors.black[200],           // Icon fill color from blueprint
+  divider: colors.black[400],        // Divider stroke
+  white: colors.white,          // colors.white
 } as const;
 
 // Icon mapping for agreement detail labels

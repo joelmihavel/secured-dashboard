@@ -30,7 +30,7 @@ export const DISABLE_SCREEN_PICKER = true;
 // Set to a route path to jump directly to that screen on launch (e.g. '/(auth)/splash')
 // The app will boot straight to this screen, bypassing the screen picker.
 // Set to null to use the normal screen picker flow.
-export const DEV_DIRECT_SCREEN: string | null = null;
+export const DEV_DIRECT_SCREEN: string | null = '/(auth)/sign-up';
 
 interface ScreenRoute {
   name: string;
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   badgeText: {
     ...typography.bodySmMedium,
     color: colors.black[700],
-    fontWeight: '700',
+    fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 10,
     letterSpacing: 1,
   },
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     color: colors.black[300],
     fontSize: 14,
     marginRight: 8,
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans-SemiBold',
   },
   searchInput: {
     flex: 1,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   clearText: {
     color: colors.black[300],
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans-SemiBold',
   },
   controlsRow: {
     flexDirection: 'row',
@@ -447,13 +447,13 @@ const styles = StyleSheet.create({
   },
   sectionIconText: {
     color: colors.brand[500],
-    fontWeight: '700',
+    fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 13,
   },
   sectionTitle: {
     ...typography.bodyMdMedium,
     color: colors.white,
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans-SemiBold',
   },
   sectionRight: {
     flexDirection: 'row',
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
   arrow: {
     color: colors.black[300],
     fontSize: 22,
-    fontWeight: '300',
+    fontFamily: 'PlusJakartaSans-Light',
     marginLeft: 8,
   },
   footer: {

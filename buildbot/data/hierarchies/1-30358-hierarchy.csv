@@ -3,82 +3,46 @@ element_num,depth,bounds,attributes,parent_num
 1,1,"[0,0][402,874]","accessibilityText=Flent Secured; enabled=true",0
 2,2,"[0,0][402,874]","enabled=true",1
 3,3,"[0,0][402,874]","enabled=true",2
-4,4,"[0,0][402,874]","enabled=true",3
-5,5,"[0,0][402,874]","enabled=true",4
-6,6,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",5
-7,7,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",6
-8,8,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",7
-9,9,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",8
-10,10,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",9
-11,11,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",10
-12,12,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",11
-13,13,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",12
-14,14,"[0,0][402,874]","enabled=true",13
-15,15,"[0,0][402,874]","enabled=true",14
-16,16,"[0,0][402,874]","enabled=true",15
-17,17,"[0,0][402,874]","enabled=true",16
-18,18,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",17
-19,19,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",18
-20,20,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",19
-21,21,"[0,0][402,874]","enabled=true",20
-22,22,"[0,0][402,874]","enabled=true",21
-23,23,"[0,0][402,874]","enabled=true",22
-24,24,"[0,0][402,874]","enabled=true",23
-25,25,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",24
-26,26,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",25
-27,27,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; resource-id=upload-screen; enabled=true",26
-28,28,"[0,0][402,874]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",27
-29,29,"[0,62][402,840]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",28
-30,30,"[0,62][402,840]","enabled=true",29
-31,31,"[-458,-674][860,1672]","enabled=true",30
-32,32,"[-458,-673][860,1672]","enabled=true",31
-33,33,"[-458,-673][860,1672]","enabled=true",32
-34,31,"[-39,62][441,467]","enabled=true",30
-35,32,"[-76,-40][659,449]","enabled=true",34
-36,33,"[-76,-40][659,449]","enabled=true",35
-37,32,"[-39,62][441,467]","enabled=true",34
-38,33,"[-39,62][441,467]","enabled=true",37
-39,34,"[-39,62][441,467]","enabled=true",38
-40,31,"[188,62][522,462]","enabled=true",30
-41,32,"[189,62][522,462]","enabled=true",40
-42,33,"[189,62][522,493]","enabled=true",41
-43,34,"[189,62][522,493]","enabled=true",42
-44,30,"[0,62][402,840]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed Horizontal scroll bar, 1 page; enabled=true",29
-45,31,"[0,62][402,840]","enabled=true",44
-46,32,"[0,62][402,840]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB Proceed; enabled=true",45
-47,33,"[52,140][349,618]","accessibilityText=Flent logo One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits. Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB; enabled=true",46
-48,34,"[52,140][349,178]","accessibilityText=Flent logo; enabled=true",47
-49,35,"[52,140][84,178]","accessibilityText=Flent logo; enabled=true",48
-50,36,"[53,140][84,178]","enabled=true",49
-51,37,"[53,137][83,177]","enabled=true",50
-52,38,"[53,137][83,177]","enabled=true",51
-53,34,"[52,226][349,410]","accessibilityText=One More Step Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.; enabled=true",47
-54,35,"[52,226][349,354]","accessibilityText=One More Step; enabled=true",53
-55,36,"[52,226][349,290]","accessibilityText=One; enabled=true",54
-56,36,"[52,290][349,354]","accessibilityText=More Step; enabled=true",54
-57,35,"[52,370][349,410]","accessibilityText=Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.; enabled=true",53
-58,34,"[52,458][349,618]","accessibilityText=Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB; enabled=true",47
-59,33,"[52,716][349,774]","accessibilityText=Proceed; enabled=true",46
-60,34,"[52,716][349,774]","accessibilityText=Proceed; resource-id=proceed-button",59
-61,32,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",45
-62,33,"[65,834][337,837]","enabled=true",61
-63,32,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",45
-64,33,"[65,834][337,837]","enabled=true",63
-65,23,"[0,0][402,874]","enabled=true",22
-66,24,"[0,0][402,874]","enabled=true",65
-67,16,"[0,0][402,874]","enabled=true",15
-68,17,"[0,0][402,874]","enabled=true",67
-69,8,"[0,0][402,874]","enabled=true",7
-70,9,"[0,0][402,874]","enabled=true",69
-71,2,"[0,0][402,874]","enabled=true",1
-72,3,"[0,0][402,874]","enabled=true",71
-73,4,"[0,0][402,874]","enabled=true",72
-74,1,"[0,0][0,0]","",0
-75,2,"[0,0][402,54]","enabled=true",74
-76,2,"[0,0][402,54]","enabled=true",74
-77,3,"[0,0][402,54]","enabled=true",76
-78,4,"[0,0][402,54]","enabled=true",77
-79,5,"[53,22][95,42]","accessibilityText=1:46 AM; enabled=true",78
-80,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",78
-81,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",78
-82,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",78
+4,4,"[-402,-874][804,1748]","enabled=true",3
+5,4,"[0,72][402,874]","enabled=true",3
+6,5,"[0,72][402,874]","enabled=true",5
+7,6,"[0,72][402,874]","enabled=true",6
+8,7,"[0,72][402,874]","enabled=true",7
+9,8,"[0,72][402,874]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",8
+10,9,"[0,72][402,874]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",9
+11,10,"[0,72][402,874]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",10
+12,11,"[0,72][402,874]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",11
+13,12,"[0,72][402,874]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",12
+14,13,"[0,72][402,874]","enabled=true",13
+15,13,"[0,467][402,874]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",13
+16,14,"[177,467][225,471]","enabled=true",15
+17,15,"[177,467][225,471]","enabled=true",16
+18,14,"[0,486][402,874]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",15
+19,15,"[0,502][402,840]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered OTP verification code OTP input, 0 of 6 digits entered Proceed Didn't receive the code? Resend; enabled=true",18
+20,16,"[0,518][402,611]","accessibilityText=Let's verify your number We've sent a 6-digit code to your phone. It'll auto-verify once entered; enabled=true",19
+21,17,"[48,518][345,558]","accessibilityText=Let's verify your number; enabled=true",20
+22,17,"[48,568][345,611]","accessibilityText=We've sent a 6-digit code to your phone. It'll auto-verify once entered; enabled=true",20
+23,16,"[0,641][402,705]","accessibilityText=OTP verification code OTP input, 0 of 6 digits entered; enabled=true",19
+24,17,"[48,641][354,705]","accessibilityText=OTP verification code OTP input, 0 of 6 digits entered; enabled=true",23
+25,18,"[45,641][357,705]","accessibilityText=OTP input, 0 of 6 digits entered; enabled=true",24
+26,16,"[0,736][402,840]","accessibilityText=Proceed Didn't receive the code? Resend; enabled=true",19
+27,17,"[48,736][354,804]","accessibilityText=Proceed; resource-id=proceed-button",26
+28,17,"[52,820][349,840]","accessibilityText=Didn't receive the code? Resend; enabled=true",26
+29,18,"[52,820][349,840]","accessibilityText=Didn't receive the code? Resend; enabled=true",28
+30,15,"[0,840][402,874]","enabled=true",18
+31,10,"[0,72][402,874]","enabled=true",10
+32,11,"[0,72][402,874]","enabled=true",31
+33,2,"[0,0][402,874]","enabled=true",1
+34,3,"[0,0][402,874]","enabled=true",33
+35,4,"[0,0][402,874]","enabled=true",34
+36,2,"[0,0][402,874]","enabled=true",1
+37,3,"[0,0][402,874]","enabled=true",36
+38,1,"[0,0][0,0]","",0
+39,2,"[0,0][402,54]","enabled=true",38
+40,2,"[0,0][402,54]","enabled=true",38
+41,3,"[0,0][402,54]","enabled=true",40
+42,4,"[0,0][402,54]","enabled=true",41
+43,5,"[55,22][93,42]","accessibilityText=4:01 AM; enabled=true",42
+44,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",42
+45,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",42
+46,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",42

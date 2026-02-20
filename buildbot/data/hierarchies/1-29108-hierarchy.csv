@@ -3,122 +3,94 @@ element_num,depth,bounds,attributes,parent_num
 1,1,"[0,0][402,874]","accessibilityText=Flent Secured; enabled=true",0
 2,2,"[0,0][402,874]","enabled=true",1
 3,3,"[0,0][402,874]","enabled=true",2
-4,4,"[0,0][402,874]","enabled=true",3
-5,5,"[0,0][402,874]","enabled=true",4
-6,6,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",5
-7,7,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",6
-8,8,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
+4,4,"[-402,-874][804,1748]","enabled=true",3
+5,4,"[0,72][402,874]","enabled=true",3
+6,5,"[0,72][402,874]","enabled=true",5
+7,6,"[0,72][402,874]","enabled=true",6
+8,7,"[0,72][402,874]","accessibilityText=Flent logo Let's get to
 know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",7
-9,9,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
+9,8,"[0,72][402,874]","accessibilityText=Flent logo Let's get to
 know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",8
-10,10,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
+10,9,"[0,72][402,874]","accessibilityText=Flent logo Let's get to
 know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",9
-11,11,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
+11,10,"[0,72][402,874]","accessibilityText=Flent logo Let's get to
 know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",10
-12,12,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",11
-13,13,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
+12,11,"[0,72][402,874]","accessibilityText=Flent logo Let's get to
+know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; resource-id=sign-up-screen; enabled=true",11
+13,12,"[0,72][402,874]","accessibilityText=Flent logo Let's get to
 know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",12
-14,14,"[0,0][402,874]","enabled=true",13
-15,15,"[0,0][402,874]","enabled=true",14
-16,16,"[0,0][402,874]","enabled=true",15
-17,17,"[0,0][402,874]","enabled=true",16
-18,18,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",17
-19,19,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",18
-20,20,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",19
-21,21,"[0,0][402,874]","enabled=true",20
-22,22,"[0,0][402,874]","enabled=true",21
-23,23,"[0,0][402,874]","enabled=true",22
-24,24,"[0,0][402,874]","enabled=true",23
-25,25,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",24
-26,26,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",25
-27,27,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; resource-id=sign-up-screen; enabled=true",26
-28,28,"[0,0][402,874]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",27
-29,29,"[0,62][402,840]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",28
-30,30,"[0,62][402,840]","enabled=true",29
-31,31,"[-458,-674][860,1672]","enabled=true",30
-32,32,"[-458,-673][860,1672]","enabled=true",31
-33,33,"[-458,-673][860,1672]","enabled=true",32
-34,31,"[-39,62][441,467]","enabled=true",30
-35,32,"[-76,-40][659,449]","enabled=true",34
-36,33,"[-76,-40][659,449]","enabled=true",35
-37,32,"[-39,62][441,467]","enabled=true",34
-38,33,"[-39,62][441,467]","enabled=true",37
-39,34,"[-39,62][441,467]","enabled=true",38
-40,31,"[188,62][522,462]","enabled=true",30
-41,32,"[189,62][522,462]","enabled=true",40
-42,33,"[189,62][522,493]","enabled=true",41
-43,34,"[189,62][522,493]","enabled=true",42
-44,30,"[0,62][402,840]","accessibilityText=Flent logo Let's get to
+14,13,"[0,134][402,840]","accessibilityText=Flent logo Let's get to
+know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",13
+15,14,"[0,134][402,840]","enabled=true",14
+16,15,"[-458,-602][860,1744]","enabled=true",15
+17,16,"[-458,-601][860,1744]","enabled=true",16
+18,17,"[-458,-601][860,1744]","enabled=true",17
+19,15,"[-39,134][441,539]","enabled=true",15
+20,16,"[-76,31][659,521]","enabled=true",19
+21,17,"[-76,31][659,521]","enabled=true",20
+22,16,"[-39,134][441,539]","enabled=true",19
+23,17,"[-39,134][441,539]","enabled=true",22
+24,18,"[-39,134][441,539]","enabled=true",23
+25,15,"[188,134][522,534]","enabled=true",15
+26,16,"[189,134][522,534]","enabled=true",25
+27,17,"[189,134][522,565]","enabled=true",26
+28,18,"[189,134][522,565]","enabled=true",27
+29,14,"[0,134][402,840]","accessibilityText=Flent logo Let's get to
+know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",14
+30,15,"[0,134][402,840]","accessibilityText=Flent logo Let's get to
 know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",29
-45,31,"[0,62][402,840]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree Horizontal scroll bar, 1 page; enabled=true",44
-46,32,"[0,62][402,840]","enabled=true",45
-47,33,"[0,62][402,840]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",46
-48,34,"[0,62][402,840]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",47
-49,35,"[52,110][349,754]","accessibilityText=Flent logo Let's get to
-know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",48
-50,36,"[52,110][84,148]","accessibilityText=Flent logo; enabled=true",49
-51,37,"[52,110][84,148]","enabled=true",50
-52,38,"[52,107][84,148]","enabled=true",51
-53,39,"[52,107][84,148]","enabled=true",52
-54,36,"[52,196][349,324]","accessibilityText=Let's get to
-know you; enabled=true",49
-55,36,"[52,372][349,572]","accessibilityText=Phone +91 Phone Name Name; enabled=true",49
-56,37,"[52,372][349,464]","accessibilityText=Phone +91 Phone; enabled=true",55
-57,38,"[52,372][349,392]","accessibilityText=Phone; enabled=true",56
-58,39,"[52,372][90,392]","accessibilityText=Phone; enabled=true",57
-59,38,"[52,398][349,464]","accessibilityText=+91 Phone; enabled=true",56
-60,39,"[69,415][121,447]","accessibilityText=+91; enabled=true",59
-61,40,"[69,415][101,447]","accessibilityText=+91; enabled=true",60
-62,40,"[105,423][121,439]","enabled=true",60
-63,41,"[108,428][118,434]","enabled=true",62
-64,42,"[108,428][118,434]","enabled=true",63
-65,39,"[137,415][333,447]","accessibilityText=Phone; enabled=true",59
-66,40,"[137,415][333,447]","accessibilityText=Phone; hintText=Enter Number; resource-id=phone-input; enabled=true",65
-67,37,"[52,480][349,572]","accessibilityText=Name Name; enabled=true",55
-68,38,"[52,480][349,500]","accessibilityText=Name; enabled=true",67
-69,39,"[52,480][87,500]","accessibilityText=Name; enabled=true",68
-70,38,"[52,506][349,572]","accessibilityText=Name; enabled=true",67
-71,39,"[53,507][348,571]","accessibilityText=Name; enabled=true",70
-72,40,"[53,507][348,571]","accessibilityText=Name; hintText=e.g. John Appleseed; resource-id=name-input; enabled=true",71
-73,36,"[52,620][349,754]","accessibilityText=Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",49
-74,37,"[52,620][349,678]","accessibilityText=Get Started; resource-id=get-started-button",73
-75,37,"[52,694][349,754]","accessibilityText=Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",73
-76,38,"[52,694][99,718]","accessibilityText=Consent to verification; value=0; text=0; resource-id=consent-toggle; enabled=true",75
-77,38,"[115,694][349,754]","accessibilityText=I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",75
-78,39,"[115,694][350,754]","accessibilityText=I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",77
-79,33,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",46
-80,34,"[65,834][337,837]","enabled=true",79
-81,33,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",46
-82,34,"[65,834][337,837]","enabled=true",81
-83,23,"[0,0][402,874]","enabled=true",22
-84,24,"[0,0][402,874]","enabled=true",83
-85,16,"[0,0][402,874]","enabled=true",15
-86,17,"[0,0][402,874]","enabled=true",85
-87,8,"[0,0][402,874]","enabled=true",7
-88,9,"[0,0][402,874]","enabled=true",87
-89,2,"[0,0][402,874]","enabled=true",1
-90,3,"[0,0][402,874]","enabled=true",89
-91,4,"[0,0][402,874]","enabled=true",90
-92,1,"[0,0][0,0]","",0
-93,2,"[0,0][402,54]","enabled=true",92
-94,2,"[0,0][402,54]","enabled=true",92
-95,3,"[0,0][402,54]","enabled=true",94
-96,4,"[0,0][402,54]","enabled=true",95
-97,5,"[53,22][95,42]","accessibilityText=1:44 AM; enabled=true",96
-98,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",96
-99,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",96
-100,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",96
+31,16,"[0,134][402,840]","enabled=true",30
+32,17,"[0,134][402,840]","accessibilityText=Flent logo Let's get to
+know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",31
+33,18,"[0,134][402,840]","accessibilityText=Flent logo Let's get to
+know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",32
+34,19,"[52,182][349,826]","accessibilityText=Flent logo Let's get to
+know you Phone +91 Phone Name Name Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",33
+35,20,"[52,182][84,220]","accessibilityText=Flent logo; enabled=true",34
+36,21,"[52,182][84,220]","enabled=true",35
+37,22,"[52,179][84,220]","enabled=true",36
+38,23,"[52,179][84,220]","enabled=true",37
+39,20,"[52,268][349,396]","accessibilityText=Let's get to
+know you; enabled=true",34
+40,20,"[52,444][349,644]","accessibilityText=Phone +91 Phone Name Name; enabled=true",34
+41,21,"[52,444][349,536]","accessibilityText=Phone +91 Phone; enabled=true",40
+42,22,"[52,444][349,464]","accessibilityText=Phone; enabled=true",41
+43,23,"[52,444][90,464]","accessibilityText=Phone; enabled=true",42
+44,22,"[52,470][349,536]","accessibilityText=+91 Phone; enabled=true",41
+45,23,"[69,487][121,519]","accessibilityText=+91; enabled=true",44
+46,24,"[69,487][101,519]","accessibilityText=+91; enabled=true",45
+47,24,"[105,495][121,511]","enabled=true",45
+48,25,"[108,500][118,506]","enabled=true",47
+49,26,"[108,500][118,506]","enabled=true",48
+50,23,"[137,487][333,519]","accessibilityText=Phone; enabled=true",44
+51,24,"[137,487][333,519]","accessibilityText=Phone; hintText=Enter Number; resource-id=phone-input; enabled=true",50
+52,21,"[52,552][349,644]","accessibilityText=Name Name; enabled=true",40
+53,22,"[52,552][349,572]","accessibilityText=Name; enabled=true",52
+54,23,"[52,552][87,572]","accessibilityText=Name; enabled=true",53
+55,22,"[52,578][349,644]","accessibilityText=Name; enabled=true",52
+56,23,"[53,579][348,643]","accessibilityText=Name; enabled=true",55
+57,24,"[53,579][348,643]","accessibilityText=Name; hintText=e.g. John Appleseed; resource-id=name-input; enabled=true",56
+58,20,"[52,692][349,826]","accessibilityText=Get Started Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",34
+59,21,"[52,692][349,750]","accessibilityText=Get Started; resource-id=get-started-button",58
+60,21,"[52,766][349,826]","accessibilityText=Consent to verification I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",58
+61,22,"[52,766][99,790]","accessibilityText=Consent to verification; value=0; text=0; resource-id=consent-toggle; enabled=true",60
+62,22,"[115,766][349,826]","accessibilityText=I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",60
+63,23,"[115,766][350,826]","accessibilityText=I consent to a one-time verification to confirm my profile details. Verification is securely handled via Cashfree; enabled=true",62
+64,17,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",31
+65,18,"[65,834][337,837]","enabled=true",64
+66,17,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",31
+67,18,"[65,834][337,837]","enabled=true",66
+68,9,"[0,72][402,874]","enabled=true",9
+69,10,"[0,72][402,874]","enabled=true",68
+70,2,"[0,0][402,874]","enabled=true",1
+71,3,"[0,0][402,874]","enabled=true",70
+72,4,"[0,0][402,874]","enabled=true",71
+73,1,"[0,0][0,0]","",0
+74,2,"[0,0][402,54]","enabled=true",73
+75,2,"[0,0][402,54]","enabled=true",73
+76,3,"[0,0][402,54]","enabled=true",75
+77,4,"[0,0][402,54]","enabled=true",76
+78,5,"[55,22][93,42]","accessibilityText=3:44 AM; enabled=true",77
+79,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",77
+80,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",77
+81,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",77

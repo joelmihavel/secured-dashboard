@@ -1,0 +1,142 @@
+{
+  "screenId": "1-29914",
+  "screenName": "auth / sign up --filled",
+  "route": "/(auth)/sign-up",
+  "generatedAt": "2026-02-19T21:21:32.611Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 1686557230",
+      "nodeId": "1:29923",
+      "childCount": 5
+    },
+    {
+      "name": "Frame 1686557318",
+      "nodeId": "1:29986",
+      "childCount": 3
+    }
+  ],
+  "states": [
+    {
+      "state": "empty",
+      "figmaId": "1-29108",
+      "name": "auth / sign up --enter phone number"
+    },
+    {
+      "state": "filled",
+      "figmaId": "1-29914",
+      "name": "auth / sign up --filled"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "1:30000",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "I1:29918;125:209",
+      "name": "Time",
+      "content": "13:13"
+    },
+    {
+      "nodeId": "1:29933",
+      "name": "Pay Rent",
+      "content": "Pay Rent"
+    },
+    {
+      "nodeId": "1:29944",
+      "name": "Total payable rent",
+      "content": "Total payable rent"
+    },
+    {
+      "nodeId": "1:29945",
+      "name": "₹ 32,175",
+      "content": "₹  32,175"
+    },
+    {
+      "nodeId": "1:29954",
+      "name": "saved ₹ 325 →",
+      "content": "saved ₹ 325 →"
+    },
+    {
+      "nodeId": "1:29955",
+      "name": "using flent cashback",
+      "content": "using flent cashback"
+    },
+    {
+      "nodeId": "1:29959",
+      "name": "Paying to",
+      "content": "Paying to"
+    },
+    {
+      "nodeId": "1:29960",
+      "name": "[Landlord Name]",
+      "content": "[Landlord Name]"
+    },
+    {
+      "nodeId": "1:29964",
+      "name": "ICICI",
+      "content": "ICICI "
+    },
+    {
+      "nodeId": "1:29965",
+      "name": "XXXX XXXX XXXX 2003",
+      "content": "XXXX XXXX XXXX 2003"
+    },
+    {
+      "nodeId": "1:29967",
+      "name": "Pay Now",
+      "content": "Pay Now"
+    },
+    {
+      "nodeId": "1:29968",
+      "name": "All payments are 100% secure",
+      "content": "All payments are 100% secure"
+    },
+    {
+      "nodeId": "1:29973",
+      "name": "PAY BY ANY APP INSTEAD",
+      "content": "PAY BY ANY APP INSTEAD"
+    },
+    {
+      "nodeId": "1:29977",
+      "name": "Google Pay",
+      "content": "Google Pay"
+    },
+    {
+      "nodeId": "1:29980",
+      "name": "PayTM",
+      "content": "PayTM"
+    },
+    {
+      "nodeId": "1:29983",
+      "name": "PhonePe",
+      "content": "PhonePe"
+    },
+    {
+      "nodeId": "1:29990",
+      "name": "One  More Step",
+      "content": "One  More Step"
+    },
+    {
+      "nodeId": "1:29991",
+      "name": "Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.",
+      "content": "Your rental agreement helps us confirm your eligibility and unlock your Secured benefits."
+    },
+    {
+      "nodeId": "1:29995",
+      "name": "Upload Rental Agreement File types: PDF, DOCX, Max size: 10MB",
+      "content": "Upload Rental Agreement\nFile types: PDF, DOCX, Max size: 10MB"
+    },
+    {
+      "nodeId": "I1:30000;100:1575",
+      "name": "Text",
+      "content": "Proceed"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

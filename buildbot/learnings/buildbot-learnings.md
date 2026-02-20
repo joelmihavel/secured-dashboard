@@ -95,9 +95,9 @@ Check whether Figma groups items under one parent frame with a background fill (
 **Why**: Scrollable screens in Figma extend well beyond the viewport height (e.g., profile screen is 1492px tall vs 852px viewport). A 1x threshold skips all content below the fold, which for profile-type screens means Payment Information, Support, and App sections are never extracted. The entire lower half of the screen goes missing.
 **How**: Set the shouldSkipNode threshold to `designHeight * 4` (e.g., 3408px for a 852px screen). This captures all content in even the longest scrollable screens while still filtering out off-canvas elements.
 
-### DottedPattern screens have inherent 8-12% pixel diff
-**Why**: DottedPattern backgrounds use SVG rendering in the app but bitmap images in Figma baselines. The SVG-to-bitmap conversion introduces antialiasing differences at dot boundaries that odiff counts as changed pixels. This is not a rendering bug — the visual result is identical to the human eye.
-**How**: Use 18% odiff threshold for any screen with `hasDottedPattern: true` in its blueprint. Never attempt to reduce diff below 8% on these screens — it's structurally impossible without switching to bitmap backgrounds.
+### DottedPattern screens have inherent visual differences
+**Why**: DottedPattern backgrounds use SVG rendering in the app but bitmap images in Figma baselines. The SVG-to-bitmap conversion introduces antialiasing differences at dot boundaries. This is not a rendering bug — the visual result is identical to the human eye.
+**How**: Inspector and Gemini automatically filter DottedPattern background issues for screens with `hasDottedPattern: true` in their blueprint. These differences are expected and should not block certification.
 
 ### Batch agents in groups of 5 max to manage context
 **Why**: Running more than 5 concurrent agents causes context window pressure on the orchestrator. Each agent's output needs to be processed, and the orchestrator must maintain enough context to synthesize results and make decisions. Beyond 5, quality of orchestration degrades.
@@ -107,14 +107,6 @@ Check whether Figma groups items under one parent frame with a background fill (
 **Why**: Large screen builds can consume significant context. If the agent hits context limits before completing, all in-progress work and decisions are lost. Checkpointing at 50% ensures there's always enough remaining context to complete the current task and hand off cleanly.
 **How**: After completing 50% of planned work items, write current status to `state/buildbot-status.json` and update `MEMORY.md`. Include: completed items, remaining items, key decisions made, blockers encountered.
 
-### Always use --reduce-ram-usage with ODiff
-**Why**: Without this flag, `odiff-bin` produces truncated PNG files when comparing large images (e.g., 1179x4476px profile screen). The PNG header is valid but image data is incomplete, causing downstream consumers (Claude API, image viewers) to fail with "Could not process image" errors. The truncation is silent — ODiff reports a valid diff percentage but the output file is corrupt.
-**How**: Always include `--reduce-ram-usage` and `--parsable-stdout` in every ODiff invocation. Additionally, resize both images proportionally so the longest side is ≤2000px before comparison. This prevents memory pressure during the diff computation. Verify diff output with `magick identify` if needed.
-
-### Resize images to matching dimensions before ODiff
-**Why**: ODiff silently accepts mismatched image dimensions but produces meaningless diff percentages (e.g., 45% for images that are visually similar but different sizes). The comparison is pixel-positional, so a 1206x2622 screenshot compared against a 1179x4476 baseline reports massive differences even where content matches.
-**How**: Before calling ODiff, get dimensions of both images with `magick identify -format "%wx%h"`. If they differ, resize the screenshot to match baseline dimensions using `magick {src} -resize {w}x{h}! {dst}`. For images with longest side >2000px, scale both proportionally to cap at 2000px.
-
 ### Validate PNG integrity at every image I/O boundary
-**Why**: Corrupt, empty, or non-PNG files (e.g., Figma API returning JSON error as .png) cause silent cascading failures. ODiff produces truncated output, Claude API enters a "death loop" on corrupt images, and Gemini API returns 400 errors with no useful context. These failures are hard to diagnose because the files pass `fs.existsSync()` checks.
+**Why**: Corrupt, empty, or non-PNG files (e.g., Figma API returning JSON error as .png) cause silent cascading failures. Claude API enters a "death loop" on corrupt images, and Gemini API returns 400 errors with no useful context. These failures are hard to diagnose because the files pass `fs.existsSync()` checks.
 **How**: Use the `validateImageFile()` function at every boundary: (1) after downloading from Figma API — check buffer has PNG magic bytes before writing to disk; (2) before passing to ODiff — reject 0-byte or non-PNG files; (3) after resize/crop — confirm output is valid; (4) before base64-encoding for API calls — block corrupt images from reaching Gemini/Claude. The function checks: file exists, size > 0, size >= 67 bytes (minimum PNG), and first 8 bytes match PNG signature `89 50 4E 47 0D 0A 1A 0A`. Also detects JSON masquerading as PNG (first byte `0x7b`).

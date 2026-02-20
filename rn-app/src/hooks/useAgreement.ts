@@ -12,7 +12,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import {
   requestUploadUrl,
   uploadFileToSignedUrl,
@@ -74,6 +74,17 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
   const { useMock = false, onUploadProgress } = options;
   const queryClient = useQueryClient();
   const [uploadProgress, setUploadProgress] = useState(0);
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearProgressTimer = useCallback(() => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+  }, []);
+
+  // Cleanup simulated progress timer on unmount
+  useEffect(() => clearProgressTimer, [clearProgressTimer]);
 
   const mutation = useMutation({
     mutationFn: async (params: {
@@ -93,12 +104,20 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
         };
       }
 
+      // Guard against unreadable files (size=0 or undefined from DocumentPicker)
+      if (!fileSize || fileSize <= 0) {
+        throw {
+          code: 'INVALID_FILE_TYPE',
+          message: 'Could not read the file. Please try selecting it again.',
+        } as AgreementError;
+      }
+
       // Validate file type
       const mimeType = getMimeType(fileName);
       if (!validateAgreementType(mimeType)) {
         throw {
           code: 'INVALID_FILE_TYPE',
-          message: 'Please upload a PDF or image file',
+          message: 'Please upload a PDF file',
         } as AgreementError;
       }
 
@@ -125,17 +144,35 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
       setUploadProgress(10);
       onUploadProgress?.(10);
 
-      const uploadResult = await uploadFileToSignedUrl(
+      // Start simulated progress — FileSystem.uploadAsync has no progress callbacks,
+      // so we increment by 2% every 500ms, capped at 65% to leave room for the jump to 75%
+      clearProgressTimer();
+      progressTimerRef.current = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 65) return prev;
+          return prev + 2;
+        });
+      }, 500);
+
+      let uploadResult = await uploadFileToSignedUrl(
         uploadUrl,
         fileUri,
         mimeType,
-        (progress) => {
-          // Scale progress from 10-70%
-          const scaled = 10 + Math.round(progress * 0.6);
-          setUploadProgress(scaled);
-          onUploadProgress?.(scaled);
-        }
       );
+
+      // Auto-retry once on network/upload errors (2s delay)
+      if (!uploadResult.success && uploadResult.error) {
+        const retryable =
+          uploadResult.error.code === 'NETWORK_ERROR' ||
+          uploadResult.error.code === 'UPLOAD_FAILED';
+        if (retryable) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          uploadResult = await uploadFileToSignedUrl(uploadUrl, fileUri, mimeType);
+        }
+      }
+
+      // Stop simulated progress
+      clearProgressTimer();
 
       if (!uploadResult.success) {
         throw uploadResult.error;
@@ -162,6 +199,7 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
       };
     },
     onError: () => {
+      clearProgressTimer();
       setUploadProgress(0);
     },
   });
@@ -169,7 +207,10 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
   return {
     ...mutation,
     uploadProgress,
-    resetProgress: () => setUploadProgress(0),
+    resetProgress: () => {
+      clearProgressTimer();
+      setUploadProgress(0);
+    },
   };
 }
 

@@ -158,7 +158,7 @@ function HomeEmptyStateComponent({
 
       {/* Payment Setup Card (for base variants) */}
       {showPaymentSetupCard && !showPaymentCarousel && (
-        <View style={styles.section}>
+        <View style={[styles.section, styles.standalonePaymentCardWrapper]}>
           <PaymentSetupCard variant="standalone" onAddPayment={onAddPayment} />
         </View>
       )}
@@ -172,11 +172,23 @@ function HomeEmptyStateComponent({
           {activeTab === 'recent_payments' ? (
             <EmptyPaymentsState />
           ) : (
-            <CashbackEmptyState
-              accruedAmount={cashbackAccrued}
-              allTimeTotal={cashbackAllTime}
-              cashbackRate={cashbackRate}
-            />
+            <View style={styles.cashbackTabContent}>
+              <CashbackEmptyState
+                accruedAmount={cashbackAccrued}
+                allTimeTotal={cashbackAllTime}
+                cashbackRate={cashbackRate}
+                showPlaceholder={!showSetupProgress}
+              />
+              {/* Setup Progress Card inside Cashbacks tab if setup incomplete */}
+              {showSetupProgress && (
+                <SetupProgressCard
+                  bankDetailsComplete={bankDetailsComplete}
+                  addressProofComplete={addressProofComplete}
+                  landlordInvited={landlordInvited}
+                  onFinishSetup={onFinishSetup}
+                />
+              )}
+            </View>
           )}
         </View>
       )}
@@ -196,7 +208,7 @@ function HomeEmptyStateComponent({
       )}
 
       {/* Setup Progress Card (for base empty state) */}
-      {showSetupProgress && !showFinishSetup && (
+      {showSetupProgress && !showFinishSetup && !showTabSwitcher && (
         <View style={styles.section}>
           <SetupProgressCard
             bankDetailsComplete={bankDetailsComplete}
@@ -220,6 +232,10 @@ const styles = StyleSheet.create({
   section: {
     // Figma 243-5689: sections aligned to container gap
   },
+  standalonePaymentCardWrapper: {
+    paddingLeft: 64, // Figma: paddingLeft 64 matches Headline
+    paddingRight: 32, // Figma: paddingRight 32
+  },
   // Figma: Tab section wraps toggle + content together
   // Same structure as active state Frame 1686557297
   // gap 48, paddingTop 8, alignItems center
@@ -228,6 +244,11 @@ const styles = StyleSheet.create({
     paddingTop: 8, // Figma: paddingTop 8
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER
     overflow: 'hidden', // Figma: clipsContent true
+  },
+  cashbackTabContent: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 48, // Figma 243-5870: space between Accrued state and Progress Card
   },
 });
 

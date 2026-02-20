@@ -2,7 +2,7 @@
   "screenId": "1-28055",
   "screenRoute": "/(auth)/splash",
   "screenFile": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/rn-app/app/(auth)/splash.tsx",
-  "generatedAt": "2026-02-19T18:44:27.111Z",
+  "generatedAt": "2026-02-19T20:56:25.003Z",
   "generatedBy": "buildbot-backend-agent-auto",
   "requiredHooks": [
     "useCallback",

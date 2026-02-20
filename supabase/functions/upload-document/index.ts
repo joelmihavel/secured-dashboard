@@ -135,11 +135,25 @@ serve(async (req) => {
     );
 
     // ==============================================
+    // ENSURE USER EXISTS IN public.users
+    // ==============================================
+    // The auth trigger should create this, but ensure it exists as a safety net.
+    // Without this row, the FK constraint on extracted_rental_info.user_id fails.
+
+    await adminClient.from("users").upsert(
+      {
+        id: user.id,
+        phone: user.phone ?? null,
+      },
+      { onConflict: "id" }
+    );
+
+    // ==============================================
     // CHECK FOR EXISTING PENDING EXTRACTION
     // ==============================================
     // If user already has a pending extraction, return that instead of creating new
 
-    const { data: existingExtraction } = await supabase
+    const { data: existingExtraction, error: existingError } = await supabase
       .from("extracted_rental_info")
       .select("id, document_storage_path, extraction_status, updated_at")
       .eq("user_id", user.id)
@@ -147,6 +161,8 @@ serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    console.log("[upload-document] Existing extraction check:", JSON.stringify({ found: !!existingExtraction, status: existingExtraction?.extraction_status, error: existingError?.message }));
 
     if (existingExtraction && existingExtraction.extraction_status === "processing") {
       // Check if the processing record is stale (older than 5 minutes)
@@ -195,7 +211,7 @@ serve(async (req) => {
         upsert: true,
       });
 
-    console.log("[upload-document] Upload result - data:", !!uploadData, "error:", uploadError);
+    console.log("[upload-document] Signed URL result - data:", !!uploadData, "error:", JSON.stringify(uploadError));
 
     if (uploadError || !uploadData) {
       console.error("[upload-document] Failed to create signed URL:", uploadError);
@@ -244,10 +260,17 @@ serve(async (req) => {
         .single();
 
       if (insertError || !newExtraction) {
-        console.error("Failed to create extraction record:", insertError);
-        throw new ValidationError("Failed to create document record", {
-          database: insertError?.message || "Unknown error",
-        });
+        console.error("[upload-document] DB insert failed:", JSON.stringify(insertError));
+        console.error("[upload-document] Insert payload:", JSON.stringify({
+          user_id: user.id,
+          document_storage_path: storagePath,
+          document_type: "lease_agreement",
+          extraction_status: "pending",
+        }));
+        throw new ValidationError(
+          `Failed to create document record: ${insertError?.message ?? "no data returned"}`,
+          { database: insertError?.message || "Unknown error", code: insertError?.code || "unknown" }
+        );
       }
 
       extractionId = newExtraction.id;

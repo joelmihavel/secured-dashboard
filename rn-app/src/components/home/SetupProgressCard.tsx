@@ -106,9 +106,6 @@ function SetupProgressCardComponent({
           />
         ))}
       </View>
-
-      {/* Finish Setup button */}
-      <GradientButton title="Finish Setup" onPress={onFinishSetup} />
     </View>
   );
 }
@@ -147,27 +144,6 @@ function SetupItemRow({ title, subtitle, isActive, isLast }: SetupItemRowProps) 
         <Text style={styles.itemSubtitle}>{subtitle}</Text>
       </View>
     </View>
-  );
-}
-
-interface GradientButtonProps {
-  title: string;
-  onPress?: () => void;
-}
-
-function GradientButton({ title, onPress }: GradientButtonProps) {
-  return (
-    <TouchableOpacity onPress={onPress} style={styles.buttonWrapper}>
-      {/* Top bar indicator */}
-      <View style={styles.topIndicator} />
-
-      <LinearGradient
-        colors={['#202020', '#0D0D0D']}
-        style={styles.buttonGradient}
-      >
-        <Text style={styles.buttonText}>{title}</Text>
-      </LinearGradient>
-    </TouchableOpacity>
   );
 }
 
@@ -234,41 +210,6 @@ const styles = StyleSheet.create({
     lineHeight: 20, // Figma: lineHeight 20
     color: '#878787', // Figma: #878787 (neutral[600])
     // Note: textAlign LEFT (default) per Figma -- subtitle text is left-aligned within the list item
-  },
-  // Button styles
-  buttonWrapper: {
-    alignItems: 'center',
-    gap: 8, // Figma: gap between indicator and button
-  },
-  topIndicator: {
-    width: 24, // Figma: width 24
-    height: 2, // Figma: height 2
-    backgroundColor: '#4D4D4D', // Figma: #4D4D4D (black[400])
-    borderRadius: 200, // Figma: borderRadius 200
-  },
-  buttonGradient: {
-    width: '100%',
-    height: 52, // Figma: height 52
-    paddingVertical: 16, // Figma: paddingVertical 16
-    paddingHorizontal: 16, // Figma: paddingHorizontal 16
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8, // Figma: borderRadius 8
-    borderWidth: 1, // Figma: borderWidth 1
-    borderColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
-    // Shadow - Figma: #995C41, offset 0/6, blur 12
-    shadowColor: '#995C41',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  buttonText: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
-    color: colors.white, // Figma: #FFFFFF
-    textAlign: 'center',
   },
 });
 

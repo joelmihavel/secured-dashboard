@@ -1,0 +1,207 @@
+{
+  "screenId": "41-9004",
+  "screenName": "Pay Rent / Payment Page --all setup --before 7th",
+  "route": "/(payment)/select-method",
+  "generatedAt": "2026-02-19T23:23:10.734Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 2095586345",
+      "nodeId": "41:9006",
+      "childCount": 2
+    },
+    {
+      "name": "Frame 2095586361",
+      "nodeId": "41:9025",
+      "childCount": 5
+    },
+    {
+      "name": "Frame 2095586362",
+      "nodeId": "41:9046",
+      "childCount": 2
+    },
+    {
+      "name": "Frame 1686557297",
+      "nodeId": "41:9056",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 1686557301",
+      "nodeId": "41:9064",
+      "childCount": 1
+    }
+  ],
+  "states": [
+    {
+      "state": "before-7th",
+      "figmaId": "41-9004",
+      "name": "Pay Rent / Payment Page --all setup --before 7th"
+    },
+    {
+      "state": "after-7th",
+      "figmaId": "41-9114",
+      "name": "Pay Rent / Payment Page --all setup --after 7th"
+    },
+    {
+      "state": "no-setup",
+      "figmaId": "41-8901",
+      "name": "Pay Rent / Payment Page --without setup"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "41:9059",
+      "name": "button",
+      "type": "INSTANCE"
+    },
+    {
+      "nodeId": "41:9107",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "41:9012",
+      "name": "Rent due in 10 days",
+      "content": "Rent due in 10 days"
+    },
+    {
+      "nodeId": "41:9013",
+      "name": "December 2025",
+      "content": "December 2025"
+    },
+    {
+      "nodeId": "41:9014",
+      "name": "₹ 32,500 →",
+      "content": "₹  32,500 →"
+    },
+    {
+      "nodeId": "41:9030",
+      "name": "Base rent",
+      "content": "Base rent"
+    },
+    {
+      "nodeId": "41:9031",
+      "name": "₹ 30,000",
+      "content": "₹ 30,000"
+    },
+    {
+      "nodeId": "41:9037",
+      "name": "Maintenance",
+      "content": "Maintenance"
+    },
+    {
+      "nodeId": "41:9038",
+      "name": "₹2,000",
+      "content": "₹2,000"
+    },
+    {
+      "nodeId": "41:9044",
+      "name": "Other charges",
+      "content": "Other charges"
+    },
+    {
+      "nodeId": "41:9045",
+      "name": "₹500",
+      "content": "₹500"
+    },
+    {
+      "nodeId": "41:9052",
+      "name": "Payable Rent",
+      "content": "Payable Rent"
+    },
+    {
+      "nodeId": "41:9053",
+      "name": "₹ 32,500",
+      "content": "₹  32,500"
+    },
+    {
+      "nodeId": "41:9057",
+      "name": "🔒 ₹350 cashback waiting for you",
+      "content": "🔒 ₹350 cashback waiting for you"
+    },
+    {
+      "nodeId": "I41:9059;100:1565",
+      "name": "Text",
+      "content": "Pay ₹32,500 now"
+    },
+    {
+      "nodeId": "41:9060",
+      "name": "Complete setup to unlock cashback on payments.",
+      "content": "Complete setup to unlock cashback on payments."
+    },
+    {
+      "nodeId": "41:9075",
+      "name": "Choose a  Payment Method",
+      "content": "Choose a   Payment Method"
+    },
+    {
+      "nodeId": "41:9078",
+      "name": "You’ll earn ₹325 cashback on this payment",
+      "content": "You’ll earn ₹325 cashback on this payment"
+    },
+    {
+      "nodeId": "41:9085",
+      "name": "Credit Card",
+      "content": "Credit Card"
+    },
+    {
+      "nodeId": "41:9086",
+      "name": "•••• 2345",
+      "content": "•••• 2345"
+    },
+    {
+      "nodeId": "41:9087",
+      "name": "₹325 fee",
+      "content": "₹325 fee"
+    },
+    {
+      "nodeId": "41:9094",
+      "name": "UPI",
+      "content": "UPI "
+    },
+    {
+      "nodeId": "41:9095",
+      "name": "••••el@oksbi",
+      "content": "••••el@oksbi"
+    },
+    {
+      "nodeId": "41:9096",
+      "name": "Free",
+      "content": "Free"
+    },
+    {
+      "nodeId": "41:9103",
+      "name": "Net Banking",
+      "content": "Net Banking"
+    },
+    {
+      "nodeId": "41:9104",
+      "name": "•••• 2345",
+      "content": "•••• 2345"
+    },
+    {
+      "nodeId": "41:9105",
+      "name": "₹10 fee",
+      "content": "₹10 fee"
+    },
+    {
+      "nodeId": "I41:9107;100:1565",
+      "name": "Text",
+      "content": "Pay ₹32,500"
+    },
+    {
+      "nodeId": "41:9108",
+      "name": "You’ll see the final amount before payment",
+      "content": "You’ll see the final amount before payment"
+    },
+    {
+      "nodeId": "I41:9113;125:209",
+      "name": "Time",
+      "content": "13:13"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

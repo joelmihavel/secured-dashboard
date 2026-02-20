@@ -135,6 +135,28 @@ function jsonToCsv(jsonStr: string): string {
 // Capture functions
 // ──────────────────────────────────────────────────────────────────────
 
+let appWarmedUp = false;
+
+function warmUpApp(): void {
+  if (appWarmedUp) return;
+  log("Warming up app via Maestro openLink (bypasses Expo Dev Client launcher)...");
+  const tmpFlow = `/tmp/buildbot-warmup-${process.pid}.yaml`;
+  fs.writeFileSync(tmpFlow, `appId: com.flent.secured\n---\n- openLink: "flentsecured:///(auth)/splash"\n`);
+  try {
+    execSync(`maestro test "${tmpFlow}"`, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+      timeout: 60_000,
+    });
+    log("App warmed up successfully.");
+    appWarmedUp = true;
+    sleep(3000);
+  } catch (e) {
+    log(`WARN: Warmup failed - ${(e as Error).message}. Will try xcrun simctl openurl directly.`);
+  }
+  try { fs.unlinkSync(tmpFlow); } catch { /* ok */ }
+}
+
 function navigateToScreen(route: string): boolean {
   // Screens with auto-transition need preview=true
   const previewRoutes = ["/(auth)/beta-splash"];
@@ -143,6 +165,7 @@ function navigateToScreen(route: string): boolean {
 
   log(`  Navigating: ${deepLink}`);
   try {
+    // Fast path: xcrun simctl openurl (works after Maestro warmup loads app past Dev Client launcher)
     execSync(`xcrun simctl openurl booted "${deepLink}"`, {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
@@ -255,6 +278,9 @@ function main(): void {
     log("ERROR: Cannot check simulator status");
     process.exit(1);
   }
+
+  // Warm up app via Maestro to bypass Expo Dev Client launcher
+  warmUpApp();
 
   // Process screens
   let totalScreens = 0;

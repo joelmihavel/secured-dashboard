@@ -1,0 +1,127 @@
+{
+  "screenId": "41-9563",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Failed",
+  "route": "/(payment)/failed",
+  "generatedAt": "2026-02-20T00:45:41.026Z",
+  "generatedBy": "buildbot-pm-agent-auto",
+  "functionalAreas": [
+    {
+      "name": "Frame 2095586345",
+      "nodeId": "41:9565",
+      "childCount": 1
+    },
+    {
+      "name": "Frame 2095586369",
+      "nodeId": "41:9572",
+      "childCount": 3
+    }
+  ],
+  "states": [
+    {
+      "state": "failed",
+      "figmaId": "41-9563",
+      "name": "Pay Rent / Payment Summary Page --Payment Failed"
+    },
+    {
+      "state": "refunded",
+      "figmaId": "41-9635",
+      "name": "Pay Rent / Payment Summary Page --Payment Refunded"
+    }
+  ],
+  "interactiveElements": [
+    {
+      "nodeId": "41:9599",
+      "name": "Transaction ID",
+      "type": "TEXT"
+    },
+    {
+      "nodeId": "41:9629",
+      "name": "button",
+      "type": "INSTANCE"
+    }
+  ],
+  "dataFields": [
+    {
+      "nodeId": "41:9578",
+      "name": "Amount paid",
+      "content": "Amount paid"
+    },
+    {
+      "nodeId": "41:9579",
+      "name": "₹ 32,500",
+      "content": "₹  32,500"
+    },
+    {
+      "nodeId": "41:9585",
+      "name": "Date",
+      "content": "Date"
+    },
+    {
+      "nodeId": "41:9586",
+      "name": "4 Nov 2026",
+      "content": "4 Nov 2026"
+    },
+    {
+      "nodeId": "41:9592",
+      "name": "Method",
+      "content": "Method"
+    },
+    {
+      "nodeId": "41:9593",
+      "name": "UPI (joel@oksbi)",
+      "content": "UPI (joel@oksbi)"
+    },
+    {
+      "nodeId": "41:9599",
+      "name": "Transaction ID",
+      "content": "Transaction ID"
+    },
+    {
+      "nodeId": "41:9600",
+      "name": "SEC12345678",
+      "content": "SEC12345678"
+    },
+    {
+      "nodeId": "41:9602",
+      "name": "Pay by the 7th to earn cashback.",
+      "content": "Pay by the 7th to earn cashback."
+    },
+    {
+      "nodeId": "41:9609",
+      "name": "Payable Rent",
+      "content": "Payable Rent"
+    },
+    {
+      "nodeId": "41:9610",
+      "name": "₹ 32,500",
+      "content": "₹  32,500"
+    },
+    {
+      "nodeId": "I41:9626;5:396",
+      "name": "Text here",
+      "content": "paid"
+    },
+    {
+      "nodeId": "41:9627",
+      "name": "Payment Succesful",
+      "content": "Payment Succesful"
+    },
+    {
+      "nodeId": "I41:9629;100:1565",
+      "name": "Text",
+      "content": "Download Receipt"
+    },
+    {
+      "nodeId": "41:9630",
+      "name": "Contact Support",
+      "content": "Contact Support"
+    },
+    {
+      "nodeId": "I41:9634;125:209",
+      "name": "Time",
+      "content": "13:13"
+    }
+  ],
+  "pmIssues": [],
+  "notes": "Auto-generated from blueprint. Review and enrich with product context."
+}

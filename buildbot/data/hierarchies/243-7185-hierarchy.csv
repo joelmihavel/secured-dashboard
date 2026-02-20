@@ -89,9 +89,9 @@ in 3 days; enabled=true",42
 66,36,"[32,941][370,941]","enabled=true",65
 67,36,"[32,1034][370,1034]","enabled=true",65
 68,32,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",31
-69,33,"[65,834][337,837]","enabled=true",68
+69,33,"[31,834][371,837]","enabled=true",68
 70,32,"[28,807][374,837]","accessibilityText=Horizontal scroll bar, 1 page; value=0%; text=0%; enabled=true",31
-71,33,"[65,834][337,837]","enabled=true",70
+71,33,"[31,834][371,837]","enabled=true",70
 72,30,"[0,718][402,840]","accessibilityText=Due in 3 Days ₹ 25,000 Review & pay; enabled=true",29
 73,31,"[0,718][402,840]","accessibilityText=Due in 3 Days ₹ 25,000 Review & pay; enabled=true",72
 74,32,"[32,743][176,791]","accessibilityText=Due in 3 Days ₹ 25,000; enabled=true",73
@@ -114,7 +114,7 @@ in 3 days; enabled=true",42
 91,2,"[0,0][402,54]","enabled=true",89
 92,3,"[0,0][402,54]","enabled=true",91
 93,4,"[0,0][402,54]","enabled=true",92
-94,5,"[53,22][95,42]","accessibilityText=1:49 AM; enabled=true",93
+94,5,"[55,22][93,42]","accessibilityText=4:04 AM; enabled=true",93
 95,5,"[288,26][307,38]","accessibilityText=Mobile Service; value=No signal; text=No signal; enabled=true",93
 96,5,"[315,26][332,38]","value=SSID, 3 of 3 Wi-Fi bars; text=SSID, 3 of 3 Wi-Fi bars; resource-id=3 of 3 Wi-Fi bars; enabled=true",93
 97,5,"[339,26][366,39]","accessibilityText=100% battery power; value=Not charging; text=Not charging; enabled=true",93

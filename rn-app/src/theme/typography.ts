@@ -35,7 +35,7 @@ export const typography: Record<string, TypographyStyle> = {
   h1: {
     fontSize: 48,
     lineHeight: 64,
-    letterSpacing: -2,
+    letterSpacing: -2.0,
     fontFamily: fontFamily.primary.regular,
     fontWeight: '400',
   },
@@ -49,14 +49,14 @@ export const typography: Record<string, TypographyStyle> = {
   h3: {
     fontSize: 32,
     lineHeight: 44,
-    letterSpacing: -1,
+    letterSpacing: -1.0,
     fontFamily: fontFamily.primary.regular,
     fontWeight: '400',
   },
   h4: {
     fontSize: 28,
     lineHeight: 40,
-    letterSpacing: -1,
+    letterSpacing: -1.0,
     fontFamily: fontFamily.primary.regular,
     fontWeight: '400',
   },
@@ -218,7 +218,7 @@ export const typography: Record<string, TypographyStyle> = {
   amountLarge: {
     fontSize: 32,
     lineHeight: 40,
-    letterSpacing: -1,
+    letterSpacing: -1.0,
     fontFamily: fontFamily.primary.bold,
     fontWeight: '700',
   },
