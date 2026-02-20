@@ -32,11 +32,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import * as ImagePicker from 'expo-image-picker';
+// expo-image-picker removed — requires dev build (native module).
+// Avatar editing is a non-critical feature; skip until dev build is available.
 
 import { Screen, Text, TextInput, PhoneInput } from '@/src/components';
 import { useDashboard, useUpdateProfile, useUploadAvatar } from '@/src/hooks';
@@ -77,38 +79,8 @@ export default function EditProfileScreen() {
 
   const handleEditPicture = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setAvatarUri(asset.uri);
-
-      const contentType = asset.mimeType ?? 'image/jpeg';
-      uploadAvatar.mutate(
-        { fileUri: asset.uri, contentType },
-        {
-          onSuccess: () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-          onError: () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setAvatarUri(null);
-          },
-        }
-      );
-    }
-  }, [uploadAvatar]);
+    Alert.alert('Not Available', 'Photo picker requires a development build.');
+  }, []);
 
   const handleSave = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

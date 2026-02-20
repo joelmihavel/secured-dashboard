@@ -289,20 +289,25 @@ export default function OTPScreen() {
 
         if (error || !data) {
           // No waitlist data → new user, needs agreement upload
+          router.dismissAll();
           router.replace('/(agreement)/upload');
           return;
         }
 
         if (data.state === 'approved') {
+          router.dismissAll();
           router.replace('/(main)');
         } else if (data.position === null && data.submissionDate === null) {
           // Has entry but no position/submission → hasn't uploaded agreement yet
+          router.dismissAll();
           router.replace('/(agreement)/upload');
         } else {
+          router.dismissAll();
           router.replace('/(waitlist)');
         }
       } catch {
         // Fail to agreement upload for new users (safe default)
+        router.dismissAll();
         router.replace('/(agreement)/upload');
       }
     };

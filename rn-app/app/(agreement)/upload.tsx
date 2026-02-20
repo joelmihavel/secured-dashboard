@@ -246,7 +246,7 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
-    buttonTitle: 'Proceed',
+    buttonTitle: 'Get Started',
     buttonEnabled: false,
     errorMessage: null as string | null,
     showDivider: false,
@@ -258,7 +258,7 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke,
 
-    buttonTitle: 'Proceed',
+    buttonTitle: 'Get Started',
     buttonEnabled: false,
     errorMessage: null as string | null,
     showDivider: false,
@@ -271,7 +271,7 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A (Figma 1:30090 Vector 44)
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
-    buttonTitle: 'Proceed',
+    buttonTitle: 'Get Started',
     buttonEnabled: true,
     errorMessage: null as string | null,
     showDivider: true, // Figma: divider pill above active button
@@ -1032,14 +1032,6 @@ export default function UploadScreen() {
 
           {/* Upload Card - Frame 1686557325 (node 1:29992) */}
           <View style={{ position: 'relative' }}>
-            {/* Wireframe Guidelines behind card */}
-            <View style={styles.wireframeGrid}>
-              <View style={styles.wireframeHLineTop} />
-              <View style={styles.wireframeHLineBottom} />
-              <View style={styles.wireframeVLineLeft} />
-              <View style={styles.wireframeVLineRight} />
-            </View>
-
           {document ? (
             <View style={uploadState !== 'uploading' ? styles.cardWithMessageWrapper : undefined}>
               <Animated.View
@@ -1121,7 +1113,7 @@ export default function UploadScreen() {
 
                 {/* Upload hints - exact Figma text from 1:29995 */}
                 <View style={styles.hintContainer}>
-                  <Text style={styles.hintText}>Upload Rental Agreement{'\n'}File types: PDF, Max size: 50MB</Text>
+                  <Text style={styles.hintText}>Upload Rental Agreement{'\n'}File type: PDF and Max size: 10MB</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -1205,43 +1197,6 @@ const styles = StyleSheet.create({
   // Figma: 297x160, cornerRadius 12, padding 24/16/24/16
   // Layout: VERTICAL, justifyContent CENTER, alignItems CENTER, gap 16
   // CRITICAL: overflow visible for paperclip and fold corner to extend outside card
-  // Wireframe Background lines
-  wireframeGrid: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: -1, // Behind the card
-  },
-  wireframeHLineTop: {
-    position: 'absolute',
-    left: -100, right: -100, top: 0,
-    height: 1,
-    borderTopWidth: 1,
-    borderColor: '#1A1A1A',
-    borderStyle: 'dashed',
-  },
-  wireframeHLineBottom: {
-    position: 'absolute',
-    left: -100, right: -100, top: 160,
-    height: 1,
-    borderBottomWidth: 1,
-    borderColor: '#1A1A1A',
-    borderStyle: 'dashed',
-  },
-  wireframeVLineLeft: {
-    position: 'absolute',
-    top: -100, bottom: -100, left: 0,
-    width: 1,
-    borderLeftWidth: 1,
-    borderColor: '#1A1A1A',
-    borderStyle: 'dashed',
-  },
-  wireframeVLineRight: {
-    position: 'absolute',
-    top: -100, bottom: -100, left: 297,
-    width: 1,
-    borderRightWidth: 1,
-    borderColor: '#1A1A1A',
-    borderStyle: 'dashed',
-  },
   uploadCard: {
     borderCurve: 'continuous',
     backgroundColor: FIGMA.colors.cardBackground, // #202020
@@ -1252,15 +1207,15 @@ const styles = StyleSheet.create({
     paddingBottom: FIGMA.card.paddingBottom,      // 24
     paddingHorizontal: FIGMA.card.paddingHorizontal, // 16
     justifyContent: 'center',                     // Figma: justifyContent center
-    alignItems: 'center',                         // Figma: alignItems center
+    alignItems: 'flex-start',                     // Figma: alignItems flex-start
     position: 'relative',
     overflow: 'visible', // CRITICAL for paperclip and fold corner
   },
 
   // Card content - idle state: upload icon + hint text
-  // Figma: VERTICAL, CENTER items, gap 16
+  // Figma: VERTICAL, START items, gap 16
   cardContent: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: FIGMA.card.gap, // 16
   },
 
@@ -1268,7 +1223,7 @@ const styles = StyleSheet.create({
   // 167x68, VERTICAL, CENTER items/justify, gap 12
   cardContentFile: {
     width: 167,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     gap: 12, // Figma Frame 130: itemSpacing 12
   },
@@ -1276,7 +1231,7 @@ const styles = StyleSheet.create({
   // Card content - uploading state: centered % + progress bar
   // Figma: card justifyContent CENTER handles vertical centering
   cardContentUploading: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: FIGMA.card.gap, // 16
   },
 
@@ -1330,14 +1285,14 @@ const styles = StyleSheet.create({
 
   // Hint container
   hintContainer: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
 
   // Hint text - node 1:29995, using bodySm design token
   hintText: {
     ...FIGMA.typography.hint,
     color: FIGMA.colors.hintText, // #A9A9A9
-    textAlign: 'center',
+    textAlign: 'left',
   },
 
   // Card + message wrapper - for error/warning states

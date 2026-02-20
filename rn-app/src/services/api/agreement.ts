@@ -17,7 +17,6 @@
  */
 
 import { callEdgeFunction, supabase } from '../supabase';
-import * as FileSystem from 'expo-file-system';
 
 // ==============================================
 // TYPES -- RN App UI Contract (camelCase)
@@ -309,29 +308,51 @@ export async function uploadFileToSignedUrl(
   onProgress?: (progress: number) => void
 ): Promise<{ success: boolean; error: AgreementError | null }> {
   try {
-    // Race the upload against a timeout — FileSystem.uploadAsync has no built-in timeout
-    const uploadPromise = FileSystem.uploadAsync(signedUrl, fileUri, {
-      httpMethod: 'PUT',
-      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-      headers: {
-        'Content-Type': mimeType,
-      },
-    });
+    // Use XMLHttpRequest to upload the file directly from its URI.
+    // RN's XHR natively resolves file:// and content:// URIs via the
+    // blob module — no need to read into memory as base64.
+    const result = await new Promise<{ status: number }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', signedUrl);
+      xhr.setRequestHeader('Content-Type', mimeType);
 
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('UPLOAD_TIMEOUT')), UPLOAD_TIMEOUT_MS);
-    });
+      const timer = setTimeout(() => {
+        xhr.abort();
+        reject(new Error('UPLOAD_TIMEOUT'));
+      }, UPLOAD_TIMEOUT_MS);
 
-    const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
+      xhr.onload = () => {
+        clearTimeout(timer);
+        resolve({ status: xhr.status });
+      };
+
+      xhr.onerror = () => {
+        clearTimeout(timer);
+        reject(new Error('Network request failed'));
+      };
+
+      xhr.onabort = () => {
+        clearTimeout(timer);
+        reject(new Error('UPLOAD_TIMEOUT'));
+      };
+
+      // RN's fetch/XHR can send a Blob created from a file URI.
+      // This streams the file without loading it fully into JS memory.
+      const fileBody = {
+        uri: fileUri,
+        type: mimeType,
+        name: 'upload',
+      };
+      xhr.send(fileBody as unknown as Blob);
+    });
 
     onProgress?.(100);
 
-    if (uploadResult.status >= 200 && uploadResult.status < 300) {
+    if (result.status >= 200 && result.status < 300) {
       return { success: true, error: null };
     }
 
-    // Signed URL expired — S3/Supabase returns 403
-    if (uploadResult.status === 403) {
+    if (result.status === 403) {
       return {
         success: false,
         error: {
@@ -345,7 +366,7 @@ export async function uploadFileToSignedUrl(
       success: false,
       error: {
         code: 'UPLOAD_FAILED',
-        message: `Upload failed with status ${uploadResult.status}`,
+        message: `Upload failed with status ${result.status}`,
       },
     };
   } catch (err) {
