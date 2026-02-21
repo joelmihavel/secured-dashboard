@@ -11,15 +11,26 @@
  * - I41:11253;50:331;1106:66617: Text - fontSize 48, lineHeight 60, color #444444
  */
 
-import React, { memo, useRef, useCallback } from 'react';
+import React, { memo, useRef, useCallback, useState, useEffect } from 'react';
 import {
   View,
   TextInput as RNTextInput,
+  Text as RNText,
   StyleSheet,
+  Pressable,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withRepeat,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Dimensions } from 'react-native';
 import { colors } from '@/src/theme/colors';
+import { duration } from '@/src/theme';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ratioX = SCREEN_WIDTH / 393;
 const sv = (val: number) => val * ratioX;
@@ -106,6 +117,35 @@ export interface ReferralCodeInputProps {
 const CODE_LENGTH = 4;
 
 // ============================================
+// CURSOR COMPONENT
+// ============================================
+
+function BlinkingCursor({ isActive, disabled }: { isActive: boolean; disabled?: boolean }) {
+  const cursorOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (isActive && !disabled) {
+      cursorOpacity.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500 }),
+          withTiming(0, { duration: 500 })
+        ),
+        -1,
+        false
+      );
+    } else {
+      cursorOpacity.value = withTiming(0, { duration: duration.fast });
+    }
+  }, [isActive, disabled, cursorOpacity]);
+
+  const cursorStyle = useAnimatedStyle(() => ({
+    opacity: cursorOpacity.value,
+  }));
+
+  return <Animated.View style={[styles.cursor, cursorStyle]} />;
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -116,80 +156,103 @@ function ReferralCodeInputComponent({
   disabled,
   testID,
 }: ReferralCodeInputProps) {
-  const inputRefs = useRef<(RNTextInput | null)[]>([]);
+  const inputRef = useRef<RNTextInput>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
-  const handleChange = useCallback(
-    (index: number, text: string) => {
-      if (disabled) return;
-      const char = text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 1);
-      onCharacterChange(index, char);
-      if (char && index < CODE_LENGTH - 1) {
-        inputRefs.current[index + 1]?.focus();
-      }
+  // Derived single string value
+  const valueString = code.join('');
+
+  const handleChange = useCallback((text: string) => {
+    if (disabled) return;
+    
+    // Clean to only uppercase alphanumeric
+    const cleaned = text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LENGTH);
+    
+    // Call the parent's setter for each character position
+    for (let i = 0; i < CODE_LENGTH; i++) {
+      onCharacterChange(i, cleaned[i] || '');
+    }
+
+    if (cleaned.length > valueString.length) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    },
-    [disabled, onCharacterChange]
-  );
+    }
+  }, [disabled, onCharacterChange, valueString]);
 
-  const handleKeyPress = useCallback(
-    (index: number, key: string) => {
-      if (disabled) return;
-      if (key === 'Backspace' && !code[index] && index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    },
-    [disabled, code]
-  );
-
-  const handleFocus = useCallback(() => {
-    Haptics.selectionAsync();
+  const handlePress = useCallback(() => {
+    inputRef.current?.focus();
   }, []);
+
+  const handleFocus = useCallback(() => setIsFocused(true), []);
+  const handleBlur = useCallback(() => setIsFocused(false), []);
 
   return (
     <View style={styles.container} testID={testID}>
-      {Array.from({ length: CODE_LENGTH }, (_, index) => {
-        const hasValue = !!code[index];
-        const hasError = !!error;
+      {/* Visible boxes mapped from string */}
+      <Pressable 
+        onPress={handlePress} 
+        style={styles.boxesContainer} 
+        accessibilityRole="none"
+        accessibilityLabel={`Referral code input, ${valueString.length} of ${CODE_LENGTH} digits entered`}
+      >
+        {Array.from({ length: CODE_LENGTH }, (_, index) => {
+          const char = code[index];
+          const hasValue = !!char;
+          const hasError = !!error;
+          
+          // Current active box is the one immediately after the string length, 
+          // or the last box if full
+          const isCurrentBox = isFocused && (
+            (index === valueString.length && index < CODE_LENGTH) || 
+            (index === CODE_LENGTH - 1 && valueString.length === CODE_LENGTH)
+          );
 
-        // Determine border color based on state
-        const borderColor = hasError
-          ? FIGMA.colors.inputBorderError
-          : hasValue
-            ? FIGMA.colors.inputBorderActive
-            : FIGMA.colors.inputBorder;
+          // Determine border color based on state
+          const borderColor = hasError
+            ? FIGMA.colors.inputBorderError
+            : isCurrentBox
+              ? FIGMA.colors.inputBorderActive
+              : hasValue
+                ? FIGMA.colors.inputBorderActive
+                : FIGMA.colors.inputBorder;
 
-        return (
-          <View
-            key={index}
-            style={[
-              styles.inputBox,
-              { borderColor },
-              disabled && styles.inputBoxDisabled,
-            ]}
-          >
-            <RNTextInput
-              ref={(ref) => (inputRefs.current[index] = ref)}
-              value={code[index]}
-              onChangeText={(text) => handleChange(index, text)}
-              onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
-              onFocus={handleFocus}
+          return (
+            <View
+              key={index}
               style={[
-                styles.inputText,
-                hasValue ? styles.inputTextFilled : styles.inputTextEmpty,
+                styles.inputBox,
+                { borderColor },
+                disabled && styles.inputBoxDisabled,
               ]}
-              maxLength={1}
-              autoCapitalize="characters"
-              keyboardType="default"
-              textAlign="center"
-              placeholder="0"
-              placeholderTextColor={FIGMA.colors.textPlaceholder}
-              editable={!disabled}
-              accessibilityLabel={`Referral code digit ${index + 1} of ${CODE_LENGTH}`}
-              testID={`${testID}-box-${index}`}
-            />
-          </View>
-        );
-      })}
+            >
+              {hasValue ? (
+                <RNText style={[styles.inputText, styles.inputTextFilled]}>{char}</RNText>
+              ) : isCurrentBox ? (
+                <BlinkingCursor isActive={true} disabled={disabled} />
+              ) : (
+                <RNText style={[styles.inputText, styles.inputTextEmpty]}>0</RNText>
+              )}
+            </View>
+          );
+        })}
+      </Pressable>
+
+      {/* Transparent input overlaid on boxes — taps land directly on TextInput */}
+      <RNTextInput
+        ref={inputRef}
+        value={valueString}
+        onChangeText={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        maxLength={CODE_LENGTH}
+        autoCapitalize="characters"
+        keyboardType="default"
+        caretHidden
+        editable={!disabled}
+        accessibilityLabel="Referral verification code"
+        accessibilityState={{ disabled: !!disabled }}
+        style={styles.hiddenInput}
+        testID={`${testID}-hidden-input`}
+      />
     </View>
   );
 }
@@ -199,13 +262,25 @@ function ReferralCodeInputComponent({
 // ============================================
 
 const styles = StyleSheet.create({
-  // Container - 280x64, gap 8
-  // Node I41:11253;50:330
   container: {
+    width: '100%',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  
+  boxesContainer: {
     flexDirection: 'row',
     width: FIGMA.inputRow.width,
     height: FIGMA.inputRow.height,
     gap: FIGMA.inputRow.gap,
+    justifyContent: 'center',
+  },
+
+  hiddenInput: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.02, // Must be > 0.01 for iOS hit-testing
+    color: 'transparent',
+    backgroundColor: 'transparent',
   },
 
   // Input box - 64x64, borderRadius 8, #222222 bg, #444444 border
@@ -243,10 +318,6 @@ const styles = StyleSheet.create({
     lineHeight: FIGMA.inputText.lineHeight,
     letterSpacing: FIGMA.inputText.letterSpacing,
     textAlign: 'center',
-    width: '100%',
-    // Removed height: '100%' for better cross-platform text alignment
-    // The inputBox container already has fixed height of 64
-    padding: 0,
   },
 
   // Empty state - placeholder color #444444
@@ -257,6 +328,13 @@ const styles = StyleSheet.create({
   // Filled state - text color #FFFFFF
   inputTextFilled: {
     color: FIGMA.colors.textFilled,
+  },
+  
+  cursor: {
+    width: 2,
+    height: 32,
+    backgroundColor: FIGMA.colors.textFilled,
+    borderRadius: 1,
   },
 });
 
