@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
   // This container just manages internal vertical flow.
   container: {
     width: '100%',
+    gap: 24, // Matches Figma spacing between rows
   },
 
   // Timeline row
@@ -248,12 +249,14 @@ const styles = StyleSheet.create({
   },
 
   // Connector line
+  // Extends from the bottom of the dot (16px from top) to the top of the next dot
+  // (which is 24px gap + 4px to reach the next dot = 28px below the row)
   connectorLine: {
     position: 'absolute',
     left: FIGMA.indicatorContainer.width / 2 - (FIGMA.connector.width / 2),
-    top: FIGMA.indicatorContainer.height,
+    top: 16, // Bottom edge of the 12x12 dot (centered in 20x20 = Y starts at 4, ends at 16)
     width: FIGMA.connector.width,
-    bottom: -FIGMA.card.gap, // Spans down to the next row (gap is 24)
+    bottom: -28, // Spans through the 24px gap + 4px to the top of the next dot
     zIndex: 1,
   },
 
@@ -272,6 +275,7 @@ const styles = StyleSheet.create({
     lineHeight: FIGMA.typography.label.lineHeight,
     color: FIGMA.colors.textLabel,
     textAlign: 'left',
+    includeFontPadding: false,
   },
 
   // Value text
@@ -282,6 +286,7 @@ const styles = StyleSheet.create({
     lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textValue,
     textAlign: 'left',
+    includeFontPadding: false,
   },
 });
 
