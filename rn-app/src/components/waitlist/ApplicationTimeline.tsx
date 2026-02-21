@@ -172,10 +172,18 @@ function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProp
         return (
           <View key={`${item.label}-${index}`}>
             {/* Timeline row: indicator (20x20) + text column (flex) */}
-            {/* Node 41:11221: 281x44, flexDirection row, gap 8 */}
             <View style={styles.timelineRow}>
+              {/* Connector line below this row (except for last item) */}
+              {!isLast && (
+                <View
+                  style={[
+                    styles.connectorLine,
+                    { backgroundColor: connectorColor },
+                  ]}
+                />
+              )}
+
               {/* Indicator container - 20x20 with 12x12 dot centered */}
-              {/* Node 41:11222: 20x20 FIXED */}
               <View style={styles.indicatorContainer}>
                 <View
                   style={[
@@ -186,7 +194,6 @@ function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProp
               </View>
 
               {/* Text column - flex fill, gap 4 */}
-              {/* Node 41:11225: 253x44, VERTICAL, justifyContent center, gap 4 */}
               <View style={styles.textColumn}>
                 <RNText style={styles.labelText}>{item.label}</RNText>
                 <RNText style={[styles.valueText, { color: valueColor }]}>
@@ -194,19 +201,6 @@ function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProp
                 </RNText>
               </View>
             </View>
-
-            {/* Connector line below this row (except for last item) */}
-            {/* Node 41:11224/41:11231: Vector 59, height 47, centered under indicator */}
-            {!isLast && (
-              <View style={styles.connectorWrapper}>
-                <View
-                  style={[
-                    styles.connectorLine,
-                    { backgroundColor: connectorColor },
-                  ]}
-                />
-              </View>
-            )}
           </View>
         );
       })}
@@ -228,56 +222,50 @@ const styles = StyleSheet.create({
   },
 
   // Timeline row
-  // Node 41:11221: 281x44, HORIZONTAL, gap 8, layoutSizingHorizontal FILL
+  // Node 2967:57519: 281x44, HORIZONTAL, gap 8, alignItems: flex-start
   timelineRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: FIGMA.row.gap,
-    minHeight: FIGMA.row.height,
+    position: 'relative',
   },
 
   // Indicator container - exactly 20x20 with centered 12x12 dot
-  // Node 41:11222: 20x20, FIXED sizing both axes
+  // Node 2967:57520: 20x20
   indicatorContainer: {
     width: FIGMA.indicatorContainer.width,
     height: FIGMA.indicatorContainer.height,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center', // Centers the 12x12 dot inside the 20x20 box
+    zIndex: 2,
   },
 
   // Indicator dot - 12x12 circle
-  // Node 41:11223: Ellipse 21906, 12x12, centered in 20x20 container
   indicatorDot: {
     width: FIGMA.indicator.size,
     height: FIGMA.indicator.size,
     borderRadius: FIGMA.indicator.size / 2,
   },
 
-  // Connector wrapper - aligns the 1px line centered under the 20px indicator column
-  connectorWrapper: {
-    width: FIGMA.indicatorContainer.width,
-    alignItems: 'center',
-  },
-
   // Connector line
-  // Node 41:11224: Vector 59, width 0 (stroke-based = 1px), height 47
   connectorLine: {
+    position: 'absolute',
+    left: FIGMA.indicatorContainer.width / 2 - (FIGMA.connector.width / 2),
+    top: FIGMA.indicatorContainer.height,
     width: FIGMA.connector.width,
-    height: FIGMA.connector.height,
+    bottom: -FIGMA.card.gap, // Spans down to the next row (gap is 24)
+    zIndex: 1,
   },
 
   // Text column
-  // Node 41:11225: 253x44, VERTICAL, primaryAxisAlignItems CENTER, gap 4
-  // layoutSizingHorizontal FILL = flex 1 in RN
   textColumn: {
     flex: 1,
     gap: FIGMA.textContainer.gap,
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Align text to the top
   },
 
   // Label text
-  // Node 41:11226: fontSize 12, lineHeight 20, fontWeight 400, color #878787
-  // PlusJakartaSans-Regular, textAlignHorizontal CENTER (but HUG width in FILL parent)
+  // Node 2967:57524: fontSize 12, lineHeight 20, color #878787
   labelText: {
     fontFamily: FIGMA.typography.label.fontFamily,
     fontSize: FIGMA.typography.label.fontSize,
@@ -287,8 +275,7 @@ const styles = StyleSheet.create({
   },
 
   // Value text
-  // Node 41:11227: fontSize 14, lineHeight 20, fontWeight 400, color #CBCBCB
-  // PlusJakartaSans-Regular, textAlignHorizontal LEFT, layoutSizingHorizontal FILL
+  // Node 2967:57525: fontSize 14, lineHeight 20, color #CBCBCB
   valueText: {
     fontFamily: FIGMA.typography.value.fontFamily,
     fontSize: FIGMA.typography.value.fontSize,
