@@ -19,8 +19,6 @@ import {
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
-import { isTestMode, mockData } from "../_shared/test-mode.ts";
-
 // ==============================================
 // TYPES
 // ==============================================
@@ -125,11 +123,6 @@ serve(async (req: Request) => {
 
   if (req.method !== "GET") {
     return errorResponse("Method not allowed", 405);
-  }
-
-  // MD-131: Test mode support
-  if (isTestMode(req)) {
-    return jsonResponse({ success: true, data: mockData.receipt });
   }
 
   const supabase = createServiceClient();

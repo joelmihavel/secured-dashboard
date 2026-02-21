@@ -22,6 +22,7 @@ import { AuditLogger } from "../_shared/audit.ts";
 interface WaitlistStatusResponse {
   success: boolean;
   has_entry: boolean;
+  user_status?: string; // Master journey state from users table
   // Polling fields (used by iOS app)
   contract_status?: string;
   extraction_status?: string;
@@ -46,6 +47,8 @@ interface WaitlistStatusResponse {
     rejection_reasons: string[];
     next_application_at: string | null;
     created_at: string;
+    has_invite_code: boolean;
+    batch_number: number | null;
   };
   extracted_info?: {
     property_name: string;
@@ -64,6 +67,17 @@ interface WaitlistStatusResponse {
   };
   onboarded_count?: number;
   total_member_slots?: number;
+  // Dynamic config from app_config table
+  review_timeline?: {
+    hours: number;
+    display_text: string;
+  };
+  batch_config?: {
+    current_batch: number;
+    batch_size: number;
+    batch_launch_date: string | null;
+    rejection_cooldown_days: number;
+  };
   error?: string;
 }
 
@@ -208,11 +222,21 @@ serve(async (req) => {
       // Don't throw — fall back to no entry
     }
 
+    // Query user_status from users table (master journey state)
+    const { data: userRecord } = await adminClient
+      .from("users")
+      .select("user_status")
+      .eq("id", user.id)
+      .single();
+
+    const userStatus = (userRecord?.user_status as string) ?? "signed_up";
+
     // No waitlist entry — user hasn't been assigned a position yet
     if (!waitlistEntry) {
       const response: WaitlistStatusResponse = {
         success: true,
         has_entry: false,
+        user_status: userStatus,
       };
       return jsonResponse(response, 200, headers);
     }
@@ -252,6 +276,33 @@ serve(async (req) => {
     const onboardedCount = (onboardedResult as number) ?? 0;
 
     // ==============================================
+    // GET DYNAMIC CONFIG (review_timeline + batch_config)
+    // ==============================================
+
+    let reviewTimeline: { hours: number; display_text: string } | undefined;
+    let batchConfig: {
+      current_batch: number;
+      batch_size: number;
+      batch_launch_date: string | null;
+      rejection_cooldown_days: number;
+    } | undefined;
+
+    const { data: configRows } = await adminClient
+      .from("app_config")
+      .select("key, value")
+      .in("key", ["review_timeline", "batch_config"]);
+
+    if (configRows) {
+      for (const row of configRows) {
+        if (row.key === "review_timeline") {
+          reviewTimeline = row.value as typeof reviewTimeline;
+        } else if (row.key === "batch_config") {
+          batchConfig = row.value as typeof batchConfig;
+        }
+      }
+    }
+
+    // ==============================================
     // BUILD RESPONSE
     // ==============================================
 
@@ -279,6 +330,7 @@ serve(async (req) => {
     const response: WaitlistStatusResponse = {
       success: true,
       has_entry: true,
+      user_status: userStatus,
 
       // Polling fields at root level
       contract_status: contractStatus,
@@ -305,11 +357,17 @@ serve(async (req) => {
         rejection_reasons: waitlistEntry.rejection_reasons || [],
         next_application_at: waitlistEntry.next_application_at,
         created_at: waitlistEntry.created_at,
+        has_invite_code: !!waitlistEntry.invite_code_id,
+        batch_number: waitlistEntry.batch_number ?? null,
       },
 
       // Counts
       onboarded_count: onboardedCount,
-      total_member_slots: TOTAL_MEMBER_SLOTS,
+      total_member_slots: batchConfig?.batch_size ?? TOTAL_MEMBER_SLOTS,
+
+      // Dynamic config
+      review_timeline: reviewTimeline,
+      batch_config: batchConfig,
 
       // Rewards placeholder
       rewards: {

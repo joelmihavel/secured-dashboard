@@ -1,5 +1,13 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import {
+  generateErrorId,
+  reportFatalError,
+  buildSupportEmailUri,
+} from '../../services/errorReporting';
+import { Text } from './Typography/Text';
+import { PrimaryButton } from './Button/PrimaryButton';
+import { theme } from '@/src/theme';
 
 interface Props {
   children: ReactNode;
@@ -9,27 +17,45 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorId: string | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorId: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, errorId: generateErrorId() };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    if (!__DEV__) {
-      const { captureError } = require('../../config/sentry');
-      captureError(error, { componentStack: errorInfo.componentStack });
-    }
+    // Route through reportFatalError — single Sentry capture point.
+    // If the router is still alive, useErrorNavigation will navigate to /error.
+    // If the router is broken, this fallback UI stays visible.
+    reportFatalError({
+      source: 'react_render',
+      title: 'Something went wrong',
+      message: 'The app encountered an unexpected error.',
+      technicalMessage: error.message,
+      originalError: error,
+    });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorId: null });
+  };
+
+  handleContactSupport = () => {
+    const uri = buildSupportEmailUri({
+      id: this.state.errorId || undefined,
+      source: 'react_render',
+      title: 'React Render Crash',
+      message: this.state.error?.message,
+      timestamp: Date.now(),
+    });
+    Linking.openURL(uri);
   };
 
   render() {
@@ -40,17 +66,29 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>
+          <Text variant="h4" align="center" style={styles.title}>Something went wrong</Text>
+          <Text variant="bodyMd2" align="center" style={styles.message}>
             {__DEV__ ? this.state.error?.message : 'Please try again'}
           </Text>
-          <TouchableOpacity
-            style={styles.button}
+
+          {this.state.errorId && (
+            <Text variant="caption" style={styles.errorId}>{this.state.errorId}</Text>
+          )}
+
+          <PrimaryButton
+            title="Try Again"
             onPress={this.handleReset}
+            style={styles.button}
+            testID="error-boundary-reset"
+          />
+
+          <TouchableOpacity
+            style={styles.supportButton}
+            onPress={this.handleContactSupport}
             accessibilityRole="button"
-            accessibilityLabel="Try again"
+            accessibilityLabel="Contact support"
           >
-            <Text style={styles.buttonText}>Try Again</Text>
+            <Text variant="bodyMd2" style={styles.supportButtonText}>Contact Support</Text>
           </TouchableOpacity>
         </View>
       );
@@ -63,34 +101,34 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#131313',
+    backgroundColor: theme.colors.black[700],
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: theme.spacing.lg,
   },
   title: {
-    fontSize: 28,
-    lineHeight: 40,
-    fontWeight: '400',
-    fontFamily: 'PlusJakartaSans-Regular',
-    color: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: theme.spacing.sm,
   },
   message: {
-    fontSize: 14,
-    color: '#A9A9A9',
-    textAlign: 'center',
-    marginBottom: 24,
+    color: theme.colors.neutral[500],
+    marginBottom: theme.spacing.md,
+  },
+  errorId: {
+    fontFamily: 'monospace',
+    color: theme.colors.neutral[600],
+    marginBottom: theme.spacing.xl,
   },
   button: {
-    backgroundColor: '#FF9A6D',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    width: 'auto',
+    paddingHorizontal: theme.spacing.xl,
   },
-  buttonText: {
-    color: '#000000',
-    fontSize: 16,
-    fontWeight: '600',
+  supportButton: {
+    marginTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.sm,
+  },
+  supportButtonText: {
+    color: theme.colors.neutral[500],
+    textDecorationLine: 'underline',
   },
 });

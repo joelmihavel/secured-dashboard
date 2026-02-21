@@ -32,6 +32,7 @@ import React, { useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
+  Dimensions,
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -40,7 +41,7 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -68,6 +69,7 @@ const FIGMA_COLORS = {
 
 export default function AddUtilityScreen() {
   const router = useRouter();
+  const { reentry } = useLocalSearchParams<{ reentry?: string }>();
   const insets = useSafeAreaInsets();
   const verifyUtility = useVerifyUtility();
   const { tenancy } = useDashboard();
@@ -80,13 +82,21 @@ export default function AddUtilityScreen() {
   const [showOperatorPicker, setShowOperatorPicker] = useState(false);
 
   const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
+    if (reentry) {
+      router.replace('/(main)' as never);
+    } else {
+      router.back();
+    }
+  }, [router, reentry]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    if (reentry) {
+      router.replace('/(main)' as never);
+    } else {
+      router.push('/(setup)/invite-landlord' as never);
+    }
+  }, [router, reentry]);
 
   const handleConsumerNumberChange = useCallback((text: string) => {
     setConsumerNumber(text.replace(/\D/g, ''));
@@ -135,7 +145,13 @@ export default function AddUtilityScreen() {
         onSuccess: (data) => {
           if (data.verified) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setTimeout(() => router.back(), 1200);
+            setTimeout(() => {
+              if (reentry) {
+                router.replace('/(main)' as never);
+              } else {
+                router.push('/(setup)/invite-landlord' as never);
+              }
+            }, 1200);
           } else {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             setApiError(
@@ -330,10 +346,13 @@ const styles = StyleSheet.create({
     color: FIGMA_COLORS.description,
     marginBottom: 48,
   },
-  // Progress bar - Figma: marginBottom 48
+  // Progress bar - Figma: Full width
   progressContainer: {
     marginBottom: 48,
-    width: '100%',
+    marginHorizontal: -48,
+    width: Dimensions.get('window').width,
+    height: 3,
+    overflow: 'hidden',
   },
   // Figma: height 12, #4D4D4D track
   progressTrack: {

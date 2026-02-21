@@ -32,12 +32,13 @@ import React, { useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
+  Dimensions,
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -64,6 +65,7 @@ const FIGMA_COLORS = {
 
 export default function InviteLandlordScreen() {
   const router = useRouter();
+  const { reentry } = useLocalSearchParams<{ reentry?: string }>();
   const sendLandlordInvite = useSendLandlordInvite();
   const { tenancy } = useDashboard();
 
@@ -117,10 +119,20 @@ export default function InviteLandlordScreen() {
         onSuccess: (data) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           if (data.alreadyApproved) {
-            router.push('/(setup)/add-bank' as never);
+            if (reentry) {
+              router.replace('/(main)' as never);
+            } else {
+              router.push('/(setup)/pending-steps' as never);
+            }
           } else {
             setInviteSent(true);
-            setTimeout(() => router.push('/(setup)/add-bank' as never), 1500);
+            setTimeout(() => {
+              if (reentry) {
+                router.replace('/(main)' as never);
+              } else {
+                router.push('/(setup)/pending-steps' as never);
+              }
+            }, 1500);
           }
         },
         onError: (error: SetupError) => {
@@ -133,8 +145,12 @@ export default function InviteLandlordScreen() {
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(setup)/add-bank' as never);
-  }, [router]);
+    if (reentry) {
+      router.replace('/(main)' as never);
+    } else {
+      router.push('/(setup)/pending-steps' as never);
+    }
+  }, [router, reentry]);
 
   const cleaned = phoneNumber.replace(/\D/g, '');
   const isFormValid = cleaned.length >= 10;
@@ -256,9 +272,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.neutral[500],
   },
-  // Progress bar -- Figma: container height 3 (clipped from 12)
+  // Progress bar -- Figma: Full width
   progressContainer: {
-    width: '100%',
+    marginHorizontal: -48,
+    width: Dimensions.get('window').width,
     height: 3,
     overflow: 'hidden',
   },
@@ -268,7 +285,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   progressFill: {
-    width: '100%', // full width in this clipped view
+    width: '100%',
     height: '100%',
     backgroundColor: FIGMA_COLORS.progressFill,
   },

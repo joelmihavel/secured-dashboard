@@ -44,6 +44,7 @@ import { BlurView } from 'expo-blur';
 
 import { Screen, PrimaryButton } from '@/src/components';
 import { useDashboard, useSavedPaymentMethods } from '@/src/hooks';
+import { usePaymentStore } from '@/src/stores/payment';
 import { getCurrentRentMonth } from '@/src/services/api/payments';
 import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
@@ -89,6 +90,8 @@ interface PaymentMethod {
   fee: string;
   feeAmount?: number;
   isSetUp: boolean;
+  isDisabled?: boolean;
+  disabledReason?: string;
 }
 
 // Back Arrow Icon - Figma: 32x32 arrow-right instance rotated 180deg, stroke #FFFFFF 2.67px
@@ -151,45 +154,55 @@ const PaymentMethodRow = memo(({
   isSelected: boolean;
   onSelect: () => void;
 }) => {
-  const titleColor = isSelected
-    ? FIGMA_COLORS.selectedLabel    // #D2D2D2
-    : FIGMA_COLORS.unselectedLabel; // #878787
+  const isDisabled = method.isDisabled ?? false;
+  const titleColor = isDisabled
+    ? FIGMA_COLORS.unselectedLabel    // #878787 for disabled
+    : isSelected
+      ? FIGMA_COLORS.selectedLabel    // #D2D2D2
+      : FIGMA_COLORS.unselectedLabel; // #878787
 
   return (
     <Pressable
       onPress={() => {
+        if (isDisabled) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onSelect();
       }}
       accessibilityRole="radio"
-      accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`${method.title}, ${method.fee}`}
-      style={styles.methodRow}
+      accessibilityState={{ selected: isSelected, disabled: isDisabled }}
+      accessibilityLabel={`${method.title}, ${isDisabled ? method.disabledReason : method.fee}`}
+      style={[styles.methodRow, isDisabled && { opacity: 0.5 }]}
     >
       {/* Left side: Radio + Text */}
       <View style={styles.methodRowLeft}>
-        <RadioCircle isSelected={isSelected} />
-        <View style={method.subtitle ? styles.methodTextContainerStacked : undefined}>
+        <RadioCircle isSelected={isDisabled ? false : isSelected} />
+        <View style={(method.subtitle || method.disabledReason) ? styles.methodTextContainerStacked : undefined}>
           <RNText style={[styles.methodTitle, { color: titleColor }]}>
             {method.title}
           </RNText>
-          {method.subtitle && (
+          {isDisabled && method.disabledReason ? (
+            <RNText style={styles.methodSubtitle}>
+              {method.disabledReason}
+            </RNText>
+          ) : method.subtitle ? (
             <RNText style={styles.methodSubtitle}>
               {method.subtitle}
             </RNText>
-          )}
+          ) : null}
         </View>
       </View>
 
       {/* Right side: "Set it up" pill or fee text */}
-      {!method.isSetUp ? (
-        <View style={styles.setItUpPill}>
-          <RNText style={styles.setItUpText}>Set it up</RNText>
-        </View>
-      ) : (
-        <RNText style={styles.feeText}>
-          {method.fee}
-        </RNText>
+      {!isDisabled && (
+        !method.isSetUp ? (
+          <View style={styles.setItUpPill}>
+            <RNText style={styles.setItUpText}>Set it up</RNText>
+          </View>
+        ) : (
+          <RNText style={styles.feeText}>
+            {method.fee}
+          </RNText>
+        )
       )}
     </Pressable>
   );
@@ -204,11 +217,16 @@ const ThinDivider = memo(() => (
 export default function SelectPaymentMethodScreen() {
   const router = useRouter();
   const { tenancy, upcomingPayment, cashback } = useDashboard();
+  const storedAmount = usePaymentStore(state => state.amount);
   const { data: savedMethods, isLoading: isLoadingMethods } = useSavedPaymentMethods();
-  const [selectedMethod, setSelectedMethod] = useState<string>('card-1');
+  const landlordApprovedInit = tenancy?.verification_status?.landlord_approved ?? false;
+  const utilityVerifiedInit = tenancy?.verification_status?.utility_verified ?? false;
+  const [selectedMethod, setSelectedMethod] = useState<string>(
+    (!landlordApprovedInit || !utilityVerifiedInit) ? 'upi-1' : 'card-1'
+  );
 
   // Rent data from dashboard
-  const rentAmount = tenancy?.monthly_rent ?? 32500;
+  const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
   const cashbackAvailable = cashback?.available_balance ?? 350;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
   const isOverdue = upcomingPayment?.is_overdue ?? false;
@@ -262,6 +280,16 @@ export default function SelectPaymentMethodScreen() {
     return `Rent due in ${daysUntilDue} days`;
   };
 
+  // Determine if credit card should be disabled based on tenancy status
+  const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
+  const utilityVerified = tenancy?.verification_status?.utility_verified ?? false;
+  const cardDisabled = !landlordApproved || !utilityVerified;
+  const cardDisabledReason = !landlordApproved
+    ? 'Available after landlord accepts tenancy'
+    : !utilityVerified
+      ? 'Available after utility bill verification'
+      : undefined;
+
   // Payment methods with proper data
   const paymentMethods: PaymentMethod[] = useMemo(() => [
     {
@@ -272,6 +300,8 @@ export default function SelectPaymentMethodScreen() {
       fee: `\u20B9325 fee`,
       feeAmount: Math.round(rentAmount * 0.01),
       isSetUp: hasSavedCard,
+      isDisabled: cardDisabled,
+      disabledReason: cardDisabledReason,
     },
     {
       id: 'upi-1',
@@ -293,7 +323,7 @@ export default function SelectPaymentMethodScreen() {
       feeAmount: 10,
       isSetUp: hasSavedNetbanking,
     },
-  ], [rentAmount, savedMethods, hasSavedCard, hasSavedUpi, hasSavedNetbanking]);
+  ], [rentAmount, savedMethods, hasSavedCard, hasSavedUpi, hasSavedNetbanking, cardDisabled, cardDisabledReason]);
 
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethod);
 
@@ -404,10 +434,10 @@ export default function SelectPaymentMethodScreen() {
               </View>
             </View>
 
-            {/* Cashback pill below the card - Figma: emoji lock + text, 12px Regular #FF9A6D */}
+            {/* Cashback pill below the card - 1% of rent, capped at 1% of agreement rent per month */}
             <View style={styles.cashbackRow}>
               <RNText style={styles.cashbackText}>
-                {`\uD83D\uDD12 \u20B9${cashbackAvailable} cashback waiting for you`}
+                {`\uD83D\uDD12 Earn 1% cashback (up to \u20B9${Math.round(rentAmount * 0.01).toLocaleString('en-IN')}/mo)`}
               </RNText>
             </View>
           </View>
@@ -439,11 +469,11 @@ export default function SelectPaymentMethodScreen() {
                 </View>
 
                 {/* Cashback earned text (all-setup variant) */}
-                {/* Figma 41-9004: "You'll earn Rs325 cashback on this payment" - 12px Regular #FF9A6D */}
-                {allSetUp && cashbackAvailable > 0 && (
+                {/* 1% of rent, capped at 1% of agreement rent per month */}
+                {allSetUp && (
                   <View style={styles.cashbackEarnedRow}>
                     <RNText style={styles.cashbackEarnedText}>
-                      {`You'll earn \u20B9${cashbackAvailable} cashback on this payment`}
+                      {`You'll earn up to \u20B9${Math.round(rentAmount * 0.01).toLocaleString('en-IN')} cashback (1% of rent)`}
                     </RNText>
                   </View>
                 )}

@@ -4,10 +4,15 @@
  * Zustand store for payment flow UI state.
  * Manages selected payment method, processing status, and payment amount.
  * Server data (history, saved methods) is handled by React Query hooks.
+ *
+ * Persists lastPaymentId and lastPaymentTimestamp via expo-secure-store
+ * to allow resuming payment polling after app crash/kill.
  */
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import * as SecureStore from 'expo-secure-store';
 
 // ==============================================
 // TYPES
@@ -43,6 +48,9 @@ interface PaymentState {
     code: string;
     message: string;
   } | null;
+  // Persisted recovery fields
+  lastPaymentId: string | null;
+  lastPaymentTimestamp: number | null;
 }
 
 interface PaymentActions {
@@ -59,6 +67,8 @@ interface PaymentActions {
   setError: (code: string, message: string) => void;
   clearError: () => void;
   reset: () => void;
+  setLastPayment: (id: string) => void;
+  clearLastPayment: () => void;
 }
 
 type PaymentStore = PaymentState & PaymentActions;
@@ -75,6 +85,36 @@ const initialState: PaymentState = {
   tenancyId: null,
   transactionId: null,
   error: null,
+  lastPaymentId: null,
+  lastPaymentTimestamp: null,
+};
+
+// ==============================================
+// SECURE STORAGE ADAPTER (for persist middleware)
+// ==============================================
+
+const secureStoreAdapter = {
+  getItem: async (key: string): Promise<string | null> => {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch {
+      // Silently fail — non-critical persistence
+    }
+  },
+  removeItem: async (key: string): Promise<void> => {
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {
+      // Silently fail
+    }
+  },
 };
 
 // ==============================================
@@ -82,79 +122,101 @@ const initialState: PaymentState = {
 // ==============================================
 
 export const usePaymentStore = create<PaymentStore>()(
-  immer((set) => ({
-    ...initialState,
+  persist(
+    immer((set) => ({
+      ...initialState,
 
-    selectMethod: (method) =>
-      set((state) => {
-        state.selectedMethod = method;
-        state.status = 'selecting_method';
-        state.error = null;
+      selectMethod: (method) =>
+        set((state) => {
+          state.selectedMethod = method;
+          state.status = 'selecting_method';
+          state.error = null;
+        }),
+
+      clearMethod: () =>
+        set((state) => {
+          state.selectedMethod = null;
+          state.status = 'idle';
+        }),
+
+      setAmount: (amount) =>
+        set((state) => {
+          state.amount = amount;
+        }),
+
+      setDueDate: (date) =>
+        set((state) => {
+          state.dueDate = date;
+        }),
+
+      setTenancyId: (id) =>
+        set((state) => {
+          state.tenancyId = id;
+        }),
+
+      setConfirming: () =>
+        set((state) => {
+          state.status = 'confirming';
+          state.error = null;
+        }),
+
+      setProcessing: (transactionId) =>
+        set((state) => {
+          state.status = 'processing';
+          state.transactionId = transactionId;
+          state.error = null;
+        }),
+
+      setSuccess: () =>
+        set((state) => {
+          state.status = 'success';
+          state.error = null;
+        }),
+
+      setFailed: (code, message) =>
+        set((state) => {
+          state.status = 'failed';
+          state.error = { code, message };
+        }),
+
+      setRefunded: () =>
+        set((state) => {
+          state.status = 'refunded';
+        }),
+
+      setError: (code, message) =>
+        set((state) => {
+          state.error = { code, message };
+        }),
+
+      clearError: () =>
+        set((state) => {
+          state.error = null;
+        }),
+
+      reset: () => set(initialState),
+
+      setLastPayment: (id) =>
+        set((state) => {
+          state.lastPaymentId = id;
+          state.lastPaymentTimestamp = Date.now();
+        }),
+
+      clearLastPayment: () =>
+        set((state) => {
+          state.lastPaymentId = null;
+          state.lastPaymentTimestamp = null;
+        }),
+    })),
+    {
+      name: 'payment-recovery',
+      storage: createJSONStorage(() => secureStoreAdapter),
+      partialize: (state) => ({
+        lastPaymentId: state.lastPaymentId,
+        lastPaymentTimestamp: state.lastPaymentTimestamp,
       }),
-
-    clearMethod: () =>
-      set((state) => {
-        state.selectedMethod = null;
-        state.status = 'idle';
-      }),
-
-    setAmount: (amount) =>
-      set((state) => {
-        state.amount = amount;
-      }),
-
-    setDueDate: (date) =>
-      set((state) => {
-        state.dueDate = date;
-      }),
-
-    setTenancyId: (id) =>
-      set((state) => {
-        state.tenancyId = id;
-      }),
-
-    setConfirming: () =>
-      set((state) => {
-        state.status = 'confirming';
-        state.error = null;
-      }),
-
-    setProcessing: (transactionId) =>
-      set((state) => {
-        state.status = 'processing';
-        state.transactionId = transactionId;
-        state.error = null;
-      }),
-
-    setSuccess: () =>
-      set((state) => {
-        state.status = 'success';
-        state.error = null;
-      }),
-
-    setFailed: (code, message) =>
-      set((state) => {
-        state.status = 'failed';
-        state.error = { code, message };
-      }),
-
-    setRefunded: () =>
-      set((state) => {
-        state.status = 'refunded';
-      }),
-
-    setError: (code, message) =>
-      set((state) => {
-        state.error = { code, message };
-      }),
-
-    clearError: () =>
-      set((state) => {
-        state.error = null;
-      }),
-
-    reset: () => set(initialState),
-  }))
+    }
+  )
 );
 
 // ==============================================
@@ -168,3 +230,5 @@ export const selectPaymentError = (state: PaymentStore) => state.error;
 export const selectIsProcessing = (state: PaymentStore) =>
   state.status === 'processing' || state.status === 'confirming';
 export const selectTransactionId = (state: PaymentStore) => state.transactionId;
+export const selectLastPaymentId = (state: PaymentStore) => state.lastPaymentId;
+export const selectLastPaymentTimestamp = (state: PaymentStore) => state.lastPaymentTimestamp;

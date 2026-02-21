@@ -57,6 +57,13 @@ export interface PayUParams {
   udf3: string;
 }
 
+export interface CashbackEligibility {
+  eligible: boolean;
+  reason: string | null;
+  max_cashback_paise: number;
+  wallet_balance_paise: number;
+}
+
 export interface InitiatePaymentData {
   payment_id: string;
   txn_id: string;
@@ -67,6 +74,11 @@ export interface InitiatePaymentData {
   payment_method: PaymentMethod;
   payu: PayUParams;
   intent_url?: string;
+  cashback_eligibility: CashbackEligibility;
+  original_rent_paise: number;
+  chargeable_rent_paise: number;
+  landlord_payout_paise: number;
+  convenience_fee_paise: number;
 }
 
 export interface InitiatePaymentResponse {
@@ -97,6 +109,12 @@ export interface PaymentHistoryItem {
   paid_at: string | null;
   /** Whether a receipt can be downloaded for this payment */
   can_download_receipt: boolean;
+  /** PayU settlement status */
+  payu_settlement_status?: 'pending' | 'processing' | 'settled' | 'failed' | null;
+  /** Landlord payout status */
+  landlord_payout_status?: 'pending' | 'ready' | 'processing' | 'settled' | 'failed' | null;
+  /** Date the landlord payout was settled */
+  landlord_payout_date?: string | null;
   /** Tenancy details from the join */
   tenancy: {
     id: string;
@@ -467,39 +485,6 @@ function mapRawReceiptData(raw: RawReceiptData): ReceiptData {
 }
 
 // ==============================================
-// MOCK DATA FOR DEVELOPMENT
-// ==============================================
-
-/**
- * Mock saved payment methods for dev mode (no auth required)
- */
-const MOCK_SAVED_METHODS: SavedPaymentMethod[] = [
-  {
-    id: 'pm_upi_001',
-    type: 'upi',
-    display_name: 'UPI - ICICI',
-    vpa: 'rishabh@icici',
-    upi_provider: 'other',
-    is_default: true,
-    is_verified: true,
-    nickname: 'UPI - ICICI',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'pm_card_001',
-    type: 'card',
-    display_name: 'Visa ****2341',
-    last_four: '2341',
-    card_network: 'visa',
-    card_type: 'credit',
-    is_default: false,
-    is_verified: true,
-    nickname: 'Visa ending in 2341',
-    created_at: new Date().toISOString(),
-  },
-];
-
-// ==============================================
 // API FUNCTIONS
 // ==============================================
 
@@ -646,9 +631,6 @@ export async function getSavedPaymentMethods(): Promise<{
   );
 
   if (error) {
-    if (__DEV__) {
-      return { data: MOCK_SAVED_METHODS, primaryMethodId: 'pm_upi_001', error: null };
-    }
     return { data: null, primaryMethodId: null, error };
   }
 
@@ -809,6 +791,38 @@ export async function deletePaymentMethod(
 }
 
 // ==============================================
+// VERIFY UPI VPA
+// ==============================================
+
+/**
+ * Verify a UPI VPA address.
+ *
+ * Calls POST /functions/v1/add-upi-vpa with verify_only flag.
+ * Returns whether the VPA is valid and the account holder name.
+ */
+export async function verifyUpiVpa(
+  vpa: string
+): Promise<{ valid: boolean; name?: string; vpa: string }> {
+  const { data, error } = await callEdgeFunction<{
+    success: boolean;
+    data: { valid: boolean; account_holder_name?: string; upi_vpa: string };
+  }>(
+    'add-upi-vpa',
+    { upi_vpa: vpa, verify_only: true },
+    true
+  );
+
+  if (error) throw new Error(error);
+  if (!data?.success) throw new Error('VPA verification failed');
+
+  return {
+    valid: data.data.valid,
+    name: data.data.account_holder_name,
+    vpa: data.data.upi_vpa,
+  };
+}
+
+// ==============================================
 // ERROR MAPPING
 // ==============================================
 
@@ -840,6 +854,36 @@ function mapPaymentError(errorMessage: string): PaymentErrorCode {
   }
 
   return { code: 'UNKNOWN_ERROR', message: errorMessage };
+}
+
+// ==============================================
+// SET DEFAULT PAYMENT METHOD
+// ==============================================
+
+/**
+ * Set a payment method as the default.
+ *
+ * Calls POST /functions/v1/set-default-payment-method
+ * Edge function expects: { payment_method_id }
+ */
+export async function setDefaultPaymentMethod(
+  paymentMethodId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{ success: boolean }>(
+    'set-default-payment-method',
+    { payment_method_id: paymentMethodId },
+    true
+  );
+
+  if (error) {
+    return { success: false, error };
+  }
+
+  if (!data?.success) {
+    return { success: false, error: 'Failed to set default payment method' };
+  }
+
+  return { success: true, error: null };
 }
 
 // ==============================================
@@ -1002,4 +1046,70 @@ export async function getCashbackHistory(
   );
   if (error) return { data: null, error };
   return { data: data?.data ?? null, error: null };
+}
+
+// ==============================================
+// CHECK PAYMENT STATUS (with PayU verification)
+// ==============================================
+
+export interface CheckPaymentStatusResponse {
+  payment_id: string;
+  status: 'pending' | 'initiated' | 'processing' | 'success' | 'failed' | 'refunded';
+  payu_verified: boolean;
+  amount_paise: number;
+  cashback_earned_paise: number;
+  paid_at: string | null;
+  error_message: string | null;
+}
+
+/**
+ * Check payment status via the check-payment-status edge function.
+ * Unlike direct DB polling, this also verifies with PayU if the payment is stale.
+ */
+export async function checkPaymentStatus(
+  paymentId: string
+): Promise<{ data: CheckPaymentStatusResponse | null; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{ data: CheckPaymentStatusResponse }>(
+    'check-payment-status',
+    { payment_id: paymentId },
+    true,
+    'POST'
+  );
+
+  if (error) return { data: null, error };
+  return { data: data?.data ?? null, error: null };
+}
+
+// ==============================================
+// ERROR SANITIZATION
+// ==============================================
+
+/** DB-internal keywords that should never leak to the UI */
+const DB_INTERNAL_PATTERNS = [
+  /column\s+"?\w+"?\s+(?:does not exist|of relation)/i,
+  /relation\s+"?\w+"?\s+does not exist/i,
+  /\bSELECT\b.*\bFROM\b/i,
+  /\bINSERT\b.*\bINTO\b/i,
+  /\bUPDATE\b.*\bSET\b/i,
+  /\bDELETE\b.*\bFROM\b/i,
+  /violates\s+(?:unique|check|foreign key)\s+constraint/i,
+  /syntax error at or near/i,
+  /\bpg_\w+\b/i,
+];
+
+/**
+ * Sanitize error messages before showing to users.
+ * Strips database internals (column names, SQL, relation names) and
+ * returns a safe, user-friendly message.
+ */
+export function sanitizeErrorForUI(errorMessage: string): string {
+  if (!errorMessage) return 'Something went wrong. Please try again.';
+
+  for (const pattern of DB_INTERNAL_PATTERNS) {
+    if (pattern.test(errorMessage)) {
+      return 'Something went wrong. Please try again.';
+    }
+  }
+
+  return errorMessage;
 }

@@ -169,8 +169,10 @@ Rules for match_type:
 - "weak": Possibly same person but significant differences
 - "no_match": Clearly different people
 
-For landlord_verification, we want to confirm the electricity bill holder is the landlord.
-Be reasonably lenient as real-world documents have variations.`;
+Context-specific guidance:
+- For landlord_verification: confirm the electricity bill holder is the landlord. Be reasonably lenient as real-world documents have variations.
+- For bank_verification: confirm the electricity bill consumer is the same person as the bank account holder. Bank records often have abbreviated or formally different name formats (e.g. "RAMESH K" in bank vs "RAMESH KUMAR SHARMA" on bill). Be lenient — only reject if the names clearly refer to different people. Partial matches, missing middle names, initials vs full names, and minor spelling differences should all PASS. The goal is to catch fraud (completely different person), NOT penalize formatting differences.
+- For tenant_verification: confirm the tenant identity matches. Apply standard matching rules.`;
 
   try {
     const result = await callGemini(prompt);

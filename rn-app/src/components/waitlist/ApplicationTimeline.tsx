@@ -137,8 +137,9 @@ function getValueColor(status: TimelineStatus): string {
   switch (status) {
     case 'accepted':
       return FIGMA.colors.textSuccess;
+    case 'rejected':
+      return FIGMA.colors.textError;
     default:
-      // Figma: rejected "Rejected" text uses default value color (#CBCBCB), not red
       return FIGMA.colors.textValue;
   }
 }

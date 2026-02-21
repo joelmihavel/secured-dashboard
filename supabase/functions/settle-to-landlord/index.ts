@@ -1,0 +1,258 @@
+/**
+ * Flent Secured v2 - Settle to Landlord Edge Function
+ *
+ * Processes landlord payouts for successfully collected payments.
+ * Flent collects from user via PayU, then separately transfers to landlord.
+ *
+ * MVP: Logs payout details for manual processing.
+ * V2: Integrates with payout API (Cashfree/RazorpayX).
+ *
+ * Endpoint: POST /functions/v1/settle-to-landlord
+ * Auth: Service role only (called by cron or admin)
+ */
+
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { createServiceClient, verifyServiceRole } from "../_shared/supabase.ts";
+import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
+import { AppError, handleError } from "../_shared/errors.ts";
+import { AuditLogger } from "../_shared/audit.ts";
+
+// ==============================================
+// CONFIGURATION
+// ==============================================
+
+const BATCH_SIZE = 50; // Max payments to process per invocation
+
+// ==============================================
+// MAIN HANDLER
+// ==============================================
+
+serve(async (req: Request) => {
+  // Handle CORS preflight
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  if (req.method !== "POST") {
+    return errorResponse("Method not allowed", 405);
+  }
+
+  const supabase = createServiceClient();
+
+  try {
+    // Verify service role authorization
+    const authHeader = req.headers.get("Authorization");
+    verifyServiceRole(authHeader);
+
+    const audit = new AuditLogger(supabase, {
+      actorType: "service",
+      functionName: "settle-to-landlord",
+      requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
+    });
+
+    // Query payments ready for landlord payout:
+    // - Payment successful (user paid via PayU)
+    // - PayU settlement confirmed (money reached Flent's account)
+    // - Landlord payout still pending
+    const { data: payments, error: queryError } = await supabase
+      .from("payments")
+      .select(`
+        id, tenancy_id, user_id, rent_amount_paise, landlord_payout_paise,
+        landlord_payout_status, payu_settlement_status, payu_txn_id,
+        payment_month, paid_at,
+        tenancy:tenancies(
+          id, landlord_name, landlord_phone, property_address,
+          landlord_bank_account_id
+        )
+      `)
+      .eq("status", "success")
+      .in("landlord_payout_status", ["pending", "ready"])
+      .eq("payu_settlement_status", "settled")
+      .order("paid_at", { ascending: true })
+      .limit(BATCH_SIZE);
+
+    if (queryError) {
+      console.error("Failed to query payments for settlement:", queryError);
+      throw new AppError("Failed to query payments", "DB_ERROR", 500);
+    }
+
+    if (!payments || payments.length === 0) {
+      return jsonResponse({
+        success: true,
+        data: {
+          processed: 0,
+          message: "No payments pending landlord payout",
+        },
+      });
+    }
+
+    const results: Array<{
+      payment_id: string;
+      status: "processing" | "failed";
+      amount_paise: number;
+      landlord_name: string;
+      error?: string;
+    }> = [];
+
+    for (const payment of payments) {
+      const tenancy = payment.tenancy as {
+        id: string;
+        landlord_name: string;
+        landlord_phone: string | null;
+        property_address: string;
+        landlord_bank_account_id: string | null;
+      } | null;
+
+      if (!tenancy) {
+        results.push({
+          payment_id: payment.id,
+          status: "failed",
+          amount_paise: payment.landlord_payout_paise ?? payment.rent_amount_paise,
+          landlord_name: "Unknown",
+          error: "Tenancy not found",
+        });
+        continue;
+      }
+
+      // Fetch landlord bank details
+      let bankAccount = null;
+      if (tenancy.landlord_bank_account_id) {
+        const { data: bank } = await supabase
+          .from("bank_accounts")
+          .select("id, account_holder_name, account_number_masked, ifsc_code, verified")
+          .eq("id", tenancy.landlord_bank_account_id)
+          .single();
+        bankAccount = bank;
+      }
+
+      const payoutAmountPaise = payment.landlord_payout_paise ?? payment.rent_amount_paise;
+
+      if (!bankAccount || !bankAccount.verified) {
+        // Cannot process — bank not verified
+        const { error: updateError } = await supabase
+          .from("payments")
+          .update({
+            landlord_payout_status: "failed",
+            landlord_payout_error: "Landlord bank account not verified",
+          })
+          .eq("id", payment.id);
+
+        if (updateError) {
+          console.error(`Failed to update payment ${payment.id}:`, updateError);
+        }
+
+        await audit.logFailure(
+          "LANDLORD_PAYOUT_FAILED",
+          "payment",
+          "BANK_NOT_VERIFIED",
+          "Landlord bank account not verified",
+          "payment",
+          payment.id,
+          { tenancy_id: tenancy.id, amount_paise: payoutAmountPaise },
+        );
+
+        results.push({
+          payment_id: payment.id,
+          status: "failed",
+          amount_paise: payoutAmountPaise,
+          landlord_name: tenancy.landlord_name,
+          error: "Landlord bank account not verified",
+        });
+        continue;
+      }
+
+      // MVP: Log payout details for manual processing
+      // V2: Call payout API here (Cashfree Payouts / RazorpayX)
+      const payoutRef = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
+
+      console.log("[LANDLORD_PAYOUT] Ready for manual processing:", {
+        payout_ref: payoutRef,
+        payment_id: payment.id,
+        payu_txn_id: payment.payu_txn_id,
+        amount_paise: payoutAmountPaise,
+        amount_rupees: (payoutAmountPaise / 100).toFixed(2),
+        landlord_name: tenancy.landlord_name,
+        landlord_phone: tenancy.landlord_phone,
+        bank_holder: bankAccount.account_holder_name,
+        bank_account_masked: bankAccount.account_number_masked,
+        bank_ifsc: bankAccount.ifsc_code,
+        property: tenancy.property_address,
+        payment_month: payment.payment_month,
+      });
+
+      // Update payment status to processing
+      const { error: updateError } = await supabase
+        .from("payments")
+        .update({
+          landlord_payout_status: "processing",
+          landlord_payout_ref: payoutRef,
+          landlord_payout_initiated_at: new Date().toISOString(),
+        })
+        .eq("id", payment.id);
+
+      if (updateError) {
+        console.error(`Failed to update payment ${payment.id} to processing:`, updateError);
+        results.push({
+          payment_id: payment.id,
+          status: "failed",
+          amount_paise: payoutAmountPaise,
+          landlord_name: tenancy.landlord_name,
+          error: "Failed to update status",
+        });
+        continue;
+      }
+
+      await audit.logSuccess(
+        "LANDLORD_PAYOUT_INITIATED",
+        "payment",
+        "payment",
+        payment.id,
+        {
+          payout_ref: payoutRef,
+          amount_paise: payoutAmountPaise,
+          landlord_name: tenancy.landlord_name,
+          bank_ifsc: bankAccount.ifsc_code,
+        },
+      );
+
+      results.push({
+        payment_id: payment.id,
+        status: "processing",
+        amount_paise: payoutAmountPaise,
+        landlord_name: tenancy.landlord_name,
+      });
+    }
+
+    const processed = results.filter((r) => r.status === "processing").length;
+    const failed = results.filter((r) => r.status === "failed").length;
+
+    // Alert ops if there are failures
+    if (failed > 0) {
+      console.error(`[OPS_ALERT] ${failed} landlord payouts failed out of ${results.length} attempted`);
+
+      // Queue notification to ops
+      await supabase.from("notification_queue").insert({
+        notification_type: "internal",
+        payload: {
+          channel: "ops",
+          title: "Landlord Payout Failures",
+          body: `${failed} out of ${results.length} landlord payouts failed. Check settle-to-landlord logs.`,
+          failures: results.filter((r) => r.status === "failed"),
+        },
+        status: "pending",
+      });
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        total: results.length,
+        processed,
+        failed,
+        results,
+      },
+    });
+  } catch (error) {
+    console.error("Settle to landlord error:", error);
+    return handleError(error, req.headers.get("x-request-id") ?? undefined);
+  }
+});

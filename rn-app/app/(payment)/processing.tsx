@@ -17,13 +17,21 @@
  *   Text: fontSize 12, lineHeight 20, color #A9A9A9, FILL width
  * - Button container (Frame 2095586363): x:40, y:704, width 313, gap 16
  * - PrimaryButton: "Contact Support" fontSize 14, fontWeight 500
+ *
+ * Network resilience:
+ * - AppState listener: re-polls on foreground return
+ * - Network awareness: pauses polling when offline, resumes on reconnect
+ * - Verifying state: shows between PayU return and first successful poll
+ * - Calls check-payment-status edge function for PayU verification
  */
 
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
   Linking,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -31,7 +39,10 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import LottieView from 'lottie-react-native';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { verifyPaymentStatus } from '@/src/services/payment';
+import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
+import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
+import { checkPaymentStatus } from '@/src/services/api/payments';
+import { usePaymentStore } from '@/src/stores';
 import { colors } from '@/src/theme';
 
 // Exact Figma colors - from 41-9460 blueprint extraction
@@ -44,10 +55,14 @@ const FIGMA_COLORS = {
   infoText: colors.neutral[500],             // neutral.500 - info row text
   iconColor: colors.black[400],            // black.400 - credit card icon
   paperclipColor: colors.black[400],       // black.400 - paperclip
+  verifyingText: colors.neutral[300],        // neutral.300 - "Verifying Payment..."
 };
 
-const MAX_VERIFICATION_ATTEMPTS = 10;
-const VERIFICATION_INTERVAL_MS = 2000;
+const VERIFICATION_INTERVAL_MS = 3000;
+const VERIFICATION_TIMEOUT_MS = 120000; // 120 seconds
+const MAX_VERIFICATION_ATTEMPTS = Math.ceil(VERIFICATION_TIMEOUT_MS / VERIFICATION_INTERVAL_MS);
+
+type ScreenState = 'verifying' | 'processing' | 'timed_out';
 
 // Paperclip decoration
 const Paperclip = () => (
@@ -124,11 +139,116 @@ export default function ProcessingScreen() {
   }>();
   const { paymentId, amount, method } = params;
   const lottieRef = useRef<LottieView>(null);
+  const [screenState, setScreenState] = useState<ScreenState>('verifying');
+  const attemptsRef = useRef(0);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPollingRef = useRef(false);
+  const { clearLastPayment } = usePaymentStore();
 
-  const checkPaymentStatus = useCallback(async () => {
+  // Network awareness
+  const { isConnected } = useNetworkStatus(5000);
+  const isConnectedRef = useRef(isConnected);
+  isConnectedRef.current = isConnected;
+
+  const navigateToSuccess = useCallback((pid: string) => {
+    clearLastPayment();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.replace({
+      pathname: '/(payment)/success',
+      params: {
+        paymentId: pid,
+        amount: amount ?? '',
+        method: method ?? '',
+        transactionId: pid,
+        cashback: '0',
+      },
+    } as never);
+  }, [amount, method, router, clearLastPayment]);
+
+  const navigateToFailed = useCallback((pid: string, error?: string) => {
+    clearLastPayment();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    router.replace({
+      pathname: '/(payment)/failed',
+      params: {
+        paymentId: pid,
+        amount: amount ?? '',
+        method: method ?? '',
+        error: error ?? 'Payment failed',
+      },
+    } as never);
+  }, [amount, method, router, clearLastPayment]);
+
+  const pollStatus = useCallback(async () => {
+    if (!paymentId || isPollingRef.current) return;
+
+    // Pause polling when offline
+    if (!isConnectedRef.current) {
+      pollTimeoutRef.current = setTimeout(pollStatus, VERIFICATION_INTERVAL_MS);
+      return;
+    }
+
+    isPollingRef.current = true;
+    attemptsRef.current++;
+
+    try {
+      // Use check-payment-status edge function which also verifies with PayU
+      const { data, error } = await checkPaymentStatus(paymentId);
+
+      if (data) {
+        // Transition from verifying to processing after first successful poll
+        if (screenState === 'verifying') {
+          setScreenState('processing');
+        }
+
+        if (data.status === 'success') {
+          navigateToSuccess(paymentId);
+          isPollingRef.current = false;
+          return;
+        } else if (data.status === 'failed' || data.status === 'refunded') {
+          navigateToFailed(paymentId, data.error_message ?? undefined);
+          isPollingRef.current = false;
+          return;
+        }
+      }
+
+      if (error && screenState === 'verifying') {
+        // Even on error, move to processing state so user isn't stuck on "Verifying"
+        setScreenState('processing');
+      }
+
+      if (attemptsRef.current < MAX_VERIFICATION_ATTEMPTS) {
+        pollTimeoutRef.current = setTimeout(() => {
+          isPollingRef.current = false;
+          pollStatus();
+        }, VERIFICATION_INTERVAL_MS);
+      } else {
+        setScreenState('timed_out');
+      }
+    } catch (err) {
+      console.error('Payment verification error:', err);
+      if (screenState === 'verifying') {
+        setScreenState('processing');
+      }
+      if (attemptsRef.current < MAX_VERIFICATION_ATTEMPTS) {
+        pollTimeoutRef.current = setTimeout(() => {
+          isPollingRef.current = false;
+          pollStatus();
+        }, VERIFICATION_INTERVAL_MS);
+      } else {
+        setScreenState('timed_out');
+      }
+    }
+
+    isPollingRef.current = false;
+  }, [paymentId, screenState, navigateToSuccess, navigateToFailed]);
+
+  // Start polling on mount
+  useEffect(() => {
     if (!paymentId) {
+      // Demo mode — auto-navigate after delay
       const DEMO_DELAY_MS = 5000;
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         router.replace({
           pathname: '/(payment)/success',
           params: {
@@ -139,87 +259,96 @@ export default function ProcessingScreen() {
           },
         } as never);
       }, DEMO_DELAY_MS);
-      return;
+      return () => clearTimeout(timer);
     }
 
-    let attempts = 0;
+    pollStatus();
 
-    const pollStatus = async () => {
-      attempts++;
+    return () => {
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+      }
+    };
+  }, [paymentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-      try {
-        const { status, error } = await verifyPaymentStatus(paymentId);
-
-        if (status === 'success') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          router.replace({
-            pathname: '/(payment)/success',
-            params: {
-              paymentId,
-              amount: amount ?? '',
-              method: method ?? '',
-              transactionId: paymentId,
-              cashback: '0',
-            },
-          } as never);
-          return;
-        } else if (status === 'failure') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          router.replace({
-            pathname: '/(payment)/failed',
-            params: {
-              paymentId,
-              amount: amount ?? '',
-              method: method ?? '',
-              error: error ?? 'Payment failed',
-            },
-          } as never);
-          return;
-        } else if (status === 'pending' && attempts < MAX_VERIFICATION_ATTEMPTS) {
-          setTimeout(pollStatus, VERIFICATION_INTERVAL_MS);
-        } else {
-          router.replace({
-            pathname: '/(payment)/failed',
-            params: {
-              paymentId,
-              amount: amount ?? '',
-              method: method ?? '',
-              error: 'Payment verification timed out. Please check your transaction history.',
-            },
-          } as never);
+  // AppState listener: re-poll when app returns to foreground
+  useEffect(() => {
+    const handleAppState = (nextState: AppStateStatus) => {
+      if (nextState === 'active' && paymentId && screenState !== 'timed_out') {
+        // Force an immediate re-poll when coming back to foreground
+        if (pollTimeoutRef.current) {
+          clearTimeout(pollTimeoutRef.current);
         }
-      } catch (err) {
-        console.error('Payment verification error:', err);
-        if (attempts < MAX_VERIFICATION_ATTEMPTS) {
-          setTimeout(pollStatus, VERIFICATION_INTERVAL_MS);
-        } else {
-          router.replace({
-            pathname: '/(payment)/failed',
-            params: {
-              paymentId,
-              amount: amount ?? '',
-              method: method ?? '',
-              error: 'Could not verify payment status. Please check your transaction history.',
-            },
-          } as never);
-        }
+        isPollingRef.current = false;
+        pollStatus();
       }
     };
 
-    pollStatus();
-  }, [paymentId, amount, method, router]);
+    const subscription = AppState.addEventListener('change', handleAppState);
+    return () => subscription.remove();
+  }, [paymentId, screenState, pollStatus]);
 
+  // Resume polling when connectivity is restored
   useEffect(() => {
-    checkPaymentStatus();
-  }, [checkPaymentStatus]);
+    if (isConnected && paymentId && screenState !== 'timed_out' && !isPollingRef.current) {
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+      }
+      pollStatus();
+    }
+  }, [isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Linking.openURL('mailto:support@flentsecured.com');
   }, []);
 
+  const handleGoToTransactions = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.replace('/(main)' as never);
+  }, [router]);
+
+  // Title text based on screen state
+  const getTitleText = () => {
+    switch (screenState) {
+      case 'verifying':
+        return { top: 'Verifying', bottom: 'Payment...' };
+      case 'processing':
+        return { top: 'Payment', bottom: 'Processing' };
+      case 'timed_out':
+        return { top: 'Payment', bottom: 'Processing' };
+    }
+  };
+
+  const titleText = getTitleText();
+
+  // Info rows based on screen state
+  const getInfoRows = () => {
+    switch (screenState) {
+      case 'verifying':
+        return [
+          "Confirming your payment with the bank...",
+          "This usually takes a few seconds.",
+          "Please don't close the app.",
+        ];
+      case 'processing':
+        return [
+          "We've received your payment request.",
+          "This can take a few minutes depending on your bank.",
+          "You'll see confirmation here once it's complete.",
+        ];
+      case 'timed_out':
+        return [
+          "Your payment is still being processed by your bank.",
+          "This is taking longer than expected. Please check back later.",
+          "You'll receive a notification once the payment is confirmed.",
+        ];
+    }
+  };
+
   return (
     <Screen testID="processing-screen" padded={false} style={styles.screen}>
+      <OfflineBanner message="No internet connection. Polling paused." />
       <View style={styles.container}>
         {/* Receipt Card */}
         <View style={styles.receiptContainer}>
@@ -242,17 +371,17 @@ export default function ProcessingScreen() {
               <PendingStamp />
             </View>
 
-            {/* Title - Figma 41:9485: "Payment\nProcessing", textAlign left */}
+            {/* Title */}
             <View style={styles.titleSection}>
-              <Text style={styles.titleWhite}>Payment</Text>
-              <Text style={styles.titleAccent}>Processing</Text>
+              <Text style={styles.titleWhite}>{titleText.top}</Text>
+              <Text style={styles.titleAccent}>{titleText.bottom}</Text>
             </View>
 
-            {/* Info Rows - Figma 41:9486: gap 24, paddingHorizontal 32 */}
+            {/* Info Rows */}
             <View style={styles.infoSection}>
-              <InfoRow text="We've received your payment request." />
-              <InfoRow text="This can take a few minutes depending on your bank." />
-              <InfoRow text="You'll see confirmation here once it's complete." />
+              {getInfoRows().map((text, i) => (
+                <InfoRow key={i} text={text} />
+              ))}
             </View>
           </View>
         </View>
@@ -262,11 +391,26 @@ export default function ProcessingScreen() {
 
         {/* Button Container - Figma Frame 2095586363: x:40, y:704, width:313, gap:16 */}
         <View style={styles.buttonContainer}>
-          <PrimaryButton
-            title="Contact Support"
-            onPress={handleContactSupport}
-            testID="contact-support-button"
-          />
+          {screenState === 'timed_out' ? (
+            <>
+              <PrimaryButton
+                title="Check Back Later"
+                onPress={handleGoToTransactions}
+                testID="check-back-later-button"
+              />
+              <PrimaryButton
+                title="Contact Support"
+                onPress={handleContactSupport}
+                testID="contact-support-button"
+              />
+            </>
+          ) : (
+            <PrimaryButton
+              title="Contact Support"
+              onPress={handleContactSupport}
+              testID="contact-support-button"
+            />
+          )}
         </View>
       </View>
     </Screen>

@@ -375,17 +375,10 @@ export async function getSavedPaymentMethods(): Promise<{
   );
 
   if (error) {
-    // In dev mode, return mock data
-    if (__DEV__) {
-      return { data: MOCK_PAYMENT_METHODS_DATA, error: null };
-    }
     return { data: null, error: mapProfileError(error) };
   }
 
   if (!data?.success) {
-    if (__DEV__) {
-      return { data: MOCK_PAYMENT_METHODS_DATA, error: null };
-    }
     return {
       data: null,
       error: { code: 'UNKNOWN_ERROR', message: 'Failed to fetch payment methods' },
@@ -421,97 +414,3 @@ function mapProfileError(errorMessage: string): ProfileError {
   return { code: 'UNKNOWN_ERROR', message: errorMessage };
 }
 
-// ==============================================
-// MOCK DATA FOR DEVELOPMENT
-// ==============================================
-
-const MOCK_PAYMENT_METHODS_DATA: PaymentMethodsData = {
-  methods: [
-    {
-      id: 'pm_upi_001',
-      type: 'upi',
-      displayName: 'UPI - rishabh@icici',
-      isPrimary: true,
-      isVerified: true,
-      nickname: 'ICICI UPI',
-      createdAt: '2026-01-15T10:00:00Z',
-      upiVpa: 'rishabh@icici',
-      upiProvider: 'ICICI',
-    },
-    {
-      id: 'pm_card_001',
-      type: 'card',
-      displayName: 'Visa ****2341',
-      isPrimary: false,
-      isVerified: true,
-      nickname: null,
-      createdAt: '2026-01-10T10:00:00Z',
-      cardLast4: '2341',
-      cardNetwork: 'visa',
-      cardType: 'credit',
-      cardIssuer: 'HDFC',
-      cardExpiryMonth: 12,
-      cardExpiryYear: 2027,
-      isExpired: false,
-    },
-    {
-      id: 'pm_nb_001',
-      type: 'netbanking',
-      displayName: 'ICICI Bank',
-      isPrimary: false,
-      isVerified: true,
-      nickname: null,
-      createdAt: '2026-01-05T10:00:00Z',
-      bankCode: 'ICIC',
-      bankName: 'ICICI Bank',
-    },
-  ],
-  primaryMethodId: 'pm_upi_001',
-  groupedMethods: {
-    upi: [
-      {
-        id: 'pm_upi_001',
-        type: 'upi',
-        displayName: 'UPI - rishabh@icici',
-        isPrimary: true,
-        isVerified: true,
-        nickname: 'ICICI UPI',
-        createdAt: '2026-01-15T10:00:00Z',
-        upiVpa: 'rishabh@icici',
-        upiProvider: 'ICICI',
-      },
-    ],
-    cards: [
-      {
-        id: 'pm_card_001',
-        type: 'card',
-        displayName: 'Visa ****2341',
-        isPrimary: false,
-        isVerified: true,
-        nickname: null,
-        createdAt: '2026-01-10T10:00:00Z',
-        cardLast4: '2341',
-        cardNetwork: 'visa',
-        cardType: 'credit',
-        cardIssuer: 'HDFC',
-        cardExpiryMonth: 12,
-        cardExpiryYear: 2027,
-        isExpired: false,
-      },
-    ],
-    netbanking: [
-      {
-        id: 'pm_nb_001',
-        type: 'netbanking',
-        displayName: 'ICICI Bank',
-        isPrimary: false,
-        isVerified: true,
-        nickname: null,
-        createdAt: '2026-01-05T10:00:00Z',
-        bankCode: 'ICIC',
-        bankName: 'ICICI Bank',
-      },
-    ],
-  },
-  totalCount: 3,
-};

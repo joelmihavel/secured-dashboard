@@ -1,11 +1,10 @@
 /**
  * Agreement Review Screen
  *
- * Two modes based on Figma designs:
- * - Verify (1:30448): Read-only detail rows with "Proceed" button
- * - Edit (1:30820): Editable input fields with "Save Changes" button
+ * Verify (1:30448): Read-only detail rows with "Proceed" button
  *
- * Flow: verify -> (Enter Manually) -> edit -> (Save Changes) -> verify -> (Proceed) -> success
+ * Flow: upload -> verify -> (Proceed) -> waitlist
+ * Or: verify -> (Re-upload Agreement) -> upload
  *
  * All values sourced from Figma REST API -- no AI guesswork.
  */
@@ -19,12 +18,14 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import type { TextInput as RNTextInputRef } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut, withRepeat, withTiming, useSharedValue, useAnimatedStyle, Easing } from 'react-native-reanimated';
 
-import { Screen, Text, PrimaryButton, TextInput } from '@/src/components';
+import { Screen, Text, PrimaryButton } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
+import { useUploadStore } from '@/src/stores/upload';
 import {
   FlentLogoIcon,
   AgreementIdIcon,
@@ -41,7 +42,7 @@ import {
 import { colors } from '@/src/theme';
 
 // ============================================
-// FIGMA CONSTANTS -- Figma REST API (1:30448, 1:30820)
+// FIGMA CONSTANTS -- Figma REST API (1:30448)
 // ============================================
 
 const F = {
@@ -93,29 +94,7 @@ const F = {
     dividerWeight: 0.25,     // Figma stroke weight
   },
 
-  // Input fields (edit mode -- 1:30820)
-  input: {
-    gap: 16,              // Frame itemSpacing
-    bg: colors.neutral[900],
-    borderActive: colors.black[400],
-    borderFilled: colors.black[800],
-    radius: 12,
-    padV: 16,
-    padH: 16,
-    labelSize: 12,
-    labelColor: colors.neutral[500],
-    editSize: 14,
-    editColor: colors.neutral[600],
-    valueSize: 20,
-    valueLineH: 32,
-    filledColor: colors.neutral[200],
-    placeholderColor: colors.neutral[900],
-    hintSize: 14,
-    hintColor: colors.neutral[600],
-    labelGap: 6,
-  },
-
-  // "Enter Manually" link (verify mode only)
+  // "Re-upload Agreement" link
   manual: {
     size: 14,
     lineH: 20,
@@ -132,12 +111,6 @@ type FieldLayout = 'horizontal' | 'vertical';
 interface FieldDef {
   key: string;
   label: string;
-  placeholder: string;
-  hintText?: string;
-  backendKey?: string;
-  isMonetary?: boolean;
-  /** Whether the field is user-editable in edit mode */
-  editable?: boolean;
   layout: FieldLayout;
   icon: React.FC<{ size?: number; color?: string }>;
   getValue: (data: ExtractedAgreementData) => string;
@@ -147,8 +120,6 @@ const FIELDS: FieldDef[] = [
   {
     key: 'certificateNo',
     label: 'Agreement ID',
-    placeholder: 'e.g. KIA123456789',
-    hintText: 'Certificate number from agreement',
     layout: 'horizontal',
     icon: AgreementIdIcon,
     getValue: (d) => d.certificateNo ?? '',
@@ -156,23 +127,13 @@ const FIELDS: FieldDef[] = [
   {
     key: 'propertyName',
     label: 'Property Name',
-    placeholder: 'e.g. Prestige Pinestripe, Bengaluru',
-    hintText: 'Full property address',
-    backendKey: 'property_address',
-    editable: true,
     layout: 'vertical',
     icon: PropertyIcon,
-    getValue: (d) => {
-      const parts = [d.propertyName, d.propertyAddress, d.propertyCity, d.propertyPincode].filter(Boolean);
-      return parts.join(', ') || '';
-    },
+    getValue: (d) => d.propertyName ?? '',
   },
   {
     key: 'tenants',
     label: 'Tenant(s)',
-    placeholder: 'e.g. John Appleseed',
-    backendKey: 'tenant_name',
-    editable: true,
     layout: 'vertical',
     icon: TenantIcon,
     getValue: (d) => d.tenantNames?.join(', ') ?? '',
@@ -180,9 +141,6 @@ const FIELDS: FieldDef[] = [
   {
     key: 'landlords',
     label: 'Landlord(s)',
-    placeholder: 'e.g. Lisa Appleseed',
-    backendKey: 'landlord_name',
-    editable: true,
     layout: 'vertical',
     icon: LandlordIcon,
     getValue: (d) => d.landlordNames?.join(', ') ?? '',
@@ -190,9 +148,6 @@ const FIELDS: FieldDef[] = [
   {
     key: 'monthlyRent',
     label: 'Monthly Rent',
-    placeholder: 'e.g. 40,000',
-    backendKey: 'monthly_rent',
-    isMonetary: true,
     layout: 'horizontal',
     icon: AgreementIdIcon,
     getValue: (d) => d.monthlyRentPaise ? `\u20B9 ${formatPaiseToRupees(d.monthlyRentPaise)}` : '',
@@ -200,9 +155,6 @@ const FIELDS: FieldDef[] = [
   {
     key: 'deposit',
     label: 'One-Time Deposit',
-    placeholder: 'e.g. 130,000',
-    backendKey: 'security_deposit',
-    isMonetary: true,
     layout: 'horizontal',
     icon: AgreementIdIcon,
     getValue: (d) => d.securityDepositPaise ? `\u20B9 ${formatPaiseToRupees(d.securityDepositPaise)}` : '',
@@ -210,7 +162,6 @@ const FIELDS: FieldDef[] = [
   {
     key: 'duration',
     label: 'Rent Duration',
-    placeholder: 'e.g. 11 Months',
     layout: 'horizontal',
     icon: AgreementIdIcon,
     getValue: (d) => d.rentDurationMonths ? `${d.rentDurationMonths} Months` : '',
@@ -218,8 +169,6 @@ const FIELDS: FieldDef[] = [
   {
     key: 'exitDate',
     label: 'Exit Date',
-    placeholder: 'e.g. 31 Dec 2027',
-    backendKey: 'lease_end_date',
     layout: 'horizontal',
     icon: AgreementIdIcon,
     getValue: (d) => d.leaseEndDate ? formatDateDisplay(d.leaseEndDate) : '',
@@ -232,14 +181,6 @@ const FIELDS: FieldDef[] = [
 
 /**
  * Detail row for verify mode -- matches Figma 1:30448 detail frames.
- *
- * Horizontal row (Frame 1686557333): row, space-between, center, gap=4
- *   - Label group (Frame 1686557121): row, flex-start, center, gap=4
- *   - Value (TEXT): HUG, textAlign=left
- *
- * Vertical row (Frame 1686557036): column, center, gap=4
- *   - Label group (Frame 1686557120): row, flex-start, center, gap=4, FILL width
- *   - Value (TEXT): FILL width
  */
 const DetailRow = ({
   field,
@@ -253,7 +194,6 @@ const DetailRow = ({
 
   return (
     <View style={isVertical ? styles.detailRowVertical : styles.detailRowHorizontal}>
-      {/* Label group: icon (16x16) + label text, gap=4 */}
       <View style={styles.detailLabelGroup}>
         <IconComponent />
         <Text style={styles.detailLabel}>{field.label}</Text>
@@ -265,74 +205,7 @@ const DetailRow = ({
   );
 };
 
-/** Divider between detail rows -- Vector stroke=#4d4d4d, weight=0.25 */
 const Divider = () => <View style={styles.divider} />;
-
-/**
- * Edit mode field -- uses shared TextInput component.
- *
- * Figma component variants (1:30820):
- *   - Disabled (1:25417): empty fields, no bg, no border, placeholder text
- *   - Focus (1:25369): filled fields, "Edit" in hint slot, value displayed
- *
- * Per Figma, "Edit" shows on ALL filled fields. Only editable fields (Property Name,
- * Tenant(s), Landlord(s)) actually respond to the Edit tap.
- */
-const EditField = ({
-  field,
-  value,
-  isEditing,
-  onEdit,
-  onChangeText,
-  editableFields,
-}: {
-  field: FieldDef;
-  value: string;
-  isEditing: boolean;
-  onEdit: () => void;
-  onChangeText: (text: string) => void;
-  /** Backend-driven editable field keys; overrides static field.editable when present */
-  editableFields?: string[];
-}) => {
-  const inputRef = React.useRef<RNTextInputRef>(null);
-  const hasValue = value.length > 0;
-
-  // Backend flag overrides static default: check backendKey OR field key
-  const isFieldEditable = editableFields
-    ? editableFields.includes(field.backendKey ?? field.key)
-    : field.editable === true;
-
-  // Determine input interactivity: only editable fields can type
-  const canType = isFieldEditable && (isEditing || !hasValue);
-
-  // Handle Edit tap: only editable fields respond
-  const handleEdit = useCallback(() => {
-    if (!isFieldEditable) return;
-    onEdit();
-    setTimeout(() => inputRef.current?.focus(), 50);
-  }, [onEdit, isFieldEditable]);
-
-  // "Edit" only on EDITABLE filled fields -- not all filled fields
-  const hintText = hasValue && !isEditing && isFieldEditable
-    ? 'Edit'
-    : !hasValue && field.hintText
-      ? field.hintText
-      : undefined;
-
-  return (
-    <TextInput
-      ref={inputRef}
-      label={field.label}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={field.placeholder}
-      hintText={hintText}
-      onHintPress={hasValue && !isEditing && isFieldEditable ? handleEdit : undefined}
-      editable={canType}
-      keyboardType={field.isMonetary ? 'numeric' : 'default'}
-    />
-  );
-};
 
 // ============================================
 // MAIN COMPONENT
@@ -341,127 +214,52 @@ const EditField = ({
 export default function ReviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { extractionId, state: stateParam } = useLocalSearchParams<{
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const { extractionId: paramExtractionId } = useLocalSearchParams<{
     extractionId?: string;
-    state?: string;
   }>();
 
-  const useMock = !extractionId;
+  // Fallback to persisted store when URL param is missing (e.g. app kill during review)
+  const persistedExtractionId = useUploadStore((s) => s.extractionId);
+  const extractionId = paramExtractionId ?? persistedExtractionId;
+
   const {
     extractedData,
     isLoadingExtraction,
     confirm,
     isConfirming,
-    update,
-    isUpdating,
+    resetUpload,
   } = useAgreement({
-    useMock,
     extractionId: extractionId ?? null,
   });
 
-  // Mode: verify (read-only detail rows) or edit (input fields).
-  // Defaults to 'verify'; can be overridden by:
-  //   ?state=verify  → 'verify' mode (read-only)
-  //   ?state=modify  → 'edit' mode (input fields)
-  const initialMode = stateParam === 'modify' ? 'edit' : 'verify';
-  const [mode, setMode] = useState<'verify' | 'edit'>(initialMode);
-
-  // Per-field editing state (which fields user has tapped "Edit" on)
-  const [editingFields, setEditingFields] = useState<Set<string>>(new Set());
-
-  // Edit values (overrides for extracted data)
-  const [editValues, setEditValues] = useState<Record<string, string>>({});
-
-  // Build display values from extracted data
-  const fieldValues = useMemo(() => {
-    if (!extractedData) return {};
-    const values: Record<string, string> = {};
-    for (const field of FIELDS) {
-      values[field.key] = field.getValue(extractedData);
-    }
-    return values;
-  }, [extractedData]);
-
-  // Get current value: edit override > extracted data
+  // Get current value from extracted data
   const getFieldValue = useCallback(
-    (key: string) => editValues[key] ?? fieldValues[key] ?? '',
-    [editValues, fieldValues]
+    (key: string) => {
+      const field = FIELDS.find(f => f.key === key);
+      return field && extractedData ? field.getValue(extractedData) : '';
+    },
+    [extractedData]
   );
 
-  // Unlock a field for editing
-  const toggleEditing = useCallback((key: string) => {
-    setEditingFields((prev) => {
-      const next = new Set(prev);
-      next.add(key);
-      return next;
+  // Return to upload screen and reset extraction data
+  const handleReupload = useCallback(() => {
+    resetUpload();
+    router.replace({
+      pathname: '/(agreement)/upload',
+      params: { forceNew: 'true' }
     });
-  }, []);
+  }, [resetUpload, router]);
 
-  // Update a field value
-  const updateFieldValue = useCallback((key: string, value: string) => {
-    setEditValues((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  // Switch to edit mode, pre-populate edit values
-  const handleEnterManually = useCallback(() => {
-    const values: Record<string, string> = {};
-    for (const field of FIELDS) {
-      const v = fieldValues[field.key];
-      if (v) values[field.key] = v;
-    }
-    setEditValues(values);
-    setMode('edit');
-  }, [fieldValues]);
-
-  // Save changes via update-extraction endpoint
-  const handleSaveChanges = useCallback(async () => {
-    if (!extractedData) return;
-
-    const modifications: Record<string, string | number> = {};
-
-    for (const field of FIELDS) {
-      if (!field.backendKey) continue;
-      const edited = editValues[field.key];
-      const original = fieldValues[field.key];
-
-      if (edited !== undefined && edited !== original) {
-        if (field.isMonetary) {
-          const numStr = edited.replace(/[\u20B9,\s]/g, '');
-          const num = parseInt(numStr, 10);
-          if (!isNaN(num)) modifications[field.backendKey] = num;
-        } else {
-          modifications[field.backendKey] = edited;
-        }
-      }
-    }
-
-    if (Object.keys(modifications).length === 0) {
-      setMode('verify');
-      return;
-    }
-
-    try {
-      await update(modifications);
-      setMode('verify');
-      setEditingFields(new Set());
-      setEditValues({});
-    } catch (error) {
-      const msg =
-        (error as { message?: string })?.message ?? 'Failed to save changes';
-      Alert.alert('Save Failed', msg);
-    }
-  }, [extractedData, update, editValues, fieldValues]);
-
-  // Confirm extraction and navigate to success
+  // Confirm extraction and navigate to waitlist
   const handleProceed = useCallback(async () => {
     if (!extractedData) return;
 
     try {
       await confirm({ confirmedRole: 'tenant' });
-      router.push({
-        pathname: '/(agreement)/success',
-        params: { extractionId: extractedData.extractionId },
-      } as never);
+      // Upload flow complete — clear persisted upload state
+      useUploadStore.getState().reset();
+      router.replace('/(waitlist)' as never);
     } catch (error) {
       const msg =
         (error as { message?: string })?.message ??
@@ -469,6 +267,34 @@ export default function ReviewScreen() {
       Alert.alert('Confirmation Failed', msg);
     }
   }, [extractedData, confirm, router]);
+
+  // Scroll state to show/hide the "scroll down" indicator
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+    setIsScrolledToBottom(isBottom);
+  };
+
+  const scrollToBottom = () => {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  };
+
+  // Bouncing animation for scroll indicator
+  const translateY = useSharedValue(0);
+
+  React.useEffect(() => {
+    translateY.value = withRepeat(
+      withTiming(10, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, [translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   // Loading state
   if (isLoadingExtraction) {
@@ -482,15 +308,31 @@ export default function ReviewScreen() {
     );
   }
 
+  // Error state if extracted data couldn't be loaded and we aren't loading anymore
+  if (!extractedData) {
+    return (
+      <Screen testID="review-screen">
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Failed to load agreement details.</Text>
+          <PrimaryButton 
+            title="Go Back" 
+            onPress={() => router.back()} 
+            style={{ marginTop: 24 }} 
+          />
+        </View>
+      </Screen>
+    );
+  }
+
   return (
-    <Screen testID="review-screen" padded={false}>
-      {/* Background pattern */}
-      <View style={styles.backgroundPattern}>
-        <DottedPattern backgroundShape="agreement" />
-      </View>
+    <Screen testID="review-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
+      <DottedPattern showShape={true} backgroundShape="agreement" />
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={[
           styles.scrollContent,
           {
@@ -502,231 +344,151 @@ export default function ReviewScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.mainContent}>
-          {/* Title group (Frame 1686557318: column, gap=48, FILL width) */}
           <View style={styles.titleGroup}>
-            {/* Flent logo icon (Frame 1686557264: 32x38, white) -- visible in both modes */}
             <FlentLogoIcon size={F.logo.h} color="#ffffff" />
 
-            {/* Title text (48px, Regular, lineH=64, ls=-2) */}
             <Text style={styles.title}>
-              {mode === 'verify' ? (
-                <>
-                  <Text inherit style={styles.titleGrey}>Confirm</Text>
-                  {'\n'}
-                  <Text inherit style={styles.titleOrange}>your details</Text>
-                </>
-              ) : (
-                <>
-                  <Text inherit style={styles.titleGrey}>{"Let's"}</Text>
-                  {'\n'}
-                  <Text inherit style={styles.titleOrange}>fix the details</Text>
-                </>
-              )}
+              <Text inherit style={styles.titleGrey}>Confirm</Text>
+              {'\n'}
+              <Text inherit style={styles.titleOrange}>your details</Text>
             </Text>
 
-            {/* Verify mode: detail rows (Frame 2095586321: column, gap=16) */}
-            {mode === 'verify' ? (
-              <View style={styles.detailsContainer}>
-                {FIELDS.map((field, index) => {
-                  const value = getFieldValue(field.key);
-                  if (!value) return null;
+            <View style={styles.detailsContainer}>
+              {FIELDS.map((field, index) => {
+                const value = getFieldValue(field.key);
 
-                  return (
-                    <React.Fragment key={field.key}>
-                      <DetailRow field={field} value={value} />
-                      {index < FIELDS.length - 1 && <Divider />}
-                    </React.Fragment>
-                  );
-                })}
-              </View>
-            ) : (
-              /* Edit mode: input fields (gap=16) */
-              <View style={styles.inputsContainer}>
-                {FIELDS.map((field) => (
-                  <EditField
-                    key={field.key}
-                    field={field}
-                    value={getFieldValue(field.key)}
-                    isEditing={editingFields.has(field.key)}
-                    onEdit={() => toggleEditing(field.key)}
-                    onChangeText={(text) => updateFieldValue(field.key, text)}
-                    editableFields={extractedData?.editableFields}
-                  />
-                ))}
-              </View>
-            )}
+                return (
+                  <React.Fragment key={field.key}>
+                    <DetailRow field={field} value={value || 'Not Found'} />
+                    {index < FIELDS.length - 1 && <Divider />}
+                  </React.Fragment>
+                );
+              })}
+            </View>
           </View>
 
-          {/* Button section (Frame 2095586322: column, gap=24, FILL width, alignItems=flex-start) */}
           <View style={styles.buttonSection}>
-            {mode === 'verify' ? (
-              <PrimaryButton
-                title="Proceed"
-                onPress={handleProceed}
-                disabled={isConfirming}
-                loading={isConfirming}
-                showDivider
-              />
-            ) : (
-              <PrimaryButton
-                title="Save Changes"
-                onPress={handleSaveChanges}
-                disabled={isUpdating}
-                loading={isUpdating}
-                showDivider
-              />
-            )}
+            <PrimaryButton
+              title="Proceed"
+              onPress={handleProceed}
+              disabled={isConfirming}
+              loading={isConfirming}
+              showDivider
+            />
 
-            {/* Enter Manually (TEXT: 14px, Regular, lineH=20, #A9A9A9, textAlign=center, FILL width) */}
-            {mode === 'verify' && (
-              <TouchableOpacity
-                style={styles.enterManuallyTouchable}
-                onPress={handleEnterManually}
-              >
-                <Text style={styles.enterManuallyText}>Enter Manually</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.enterManuallyTouchable}
+              onPress={handleReupload}
+            >
+              <Text style={styles.enterManuallyText}>Re-upload Agreement</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      {!isScrolledToBottom && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          activeOpacity={0.7}
+          style={styles.scrollIndicatorContainer}
+        >
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(300)}
+            style={animatedStyle}
+          >
+            <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
+          </Animated.View>
+        </TouchableOpacity>
+      )}
     </Screen>
   );
 }
 
-// ============================================
-// STYLES -- All values from Figma REST API
-// ============================================
-
 const styles = StyleSheet.create({
-  backgroundPattern: {
+  scrollIndicatorContainer: {
     position: 'absolute',
-    top: 0,
+    bottom: 24,
     left: 0,
     right: 0,
-    height: 405,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
-  // Main content area (Frame 1686557268: column, gap=40, padH=48, alignItems=center)
   mainContent: {
-    flex: 1,
+    width: '100%',
     paddingHorizontal: F.contentPadH,
     gap: F.mainGap,
-    justifyContent: 'space-between',
   },
-
-  // Title group (Frame 1686557318: column, gap=48, FILL width, alignItems=flex-start)
   titleGroup: {
     gap: F.titleGroupGap,
   },
-
-  // Title text base (PlusJakartaSans-Regular, 48px, lineH=64, ls=-2)
-  // NEVER use fontWeight -- always fontFamily per builder rules
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.title.size,
     lineHeight: F.title.lineH,
     letterSpacing: F.title.ls,
   },
-  // "Confirm" -- Figma span 0-7: #A9A9A9
   titleGrey: {
     color: F.title.greyColor,
   },
-  // "your details" -- Figma span 8-20: #FF9A6D
   titleOrange: {
     color: F.title.orangeColor,
   },
-
-  // ---- Verify Mode: Detail Rows ----
-
-  // Container (Frame 2095586321: column, gap=16, FILL width)
   detailsContainer: {
     gap: F.detail.gap,
   },
-
-  // Horizontal row (Frame 1686557333: row, space-between, center, gap=4, FILL width)
-  // Used for: Agreement ID, Monthly Rent, One-Time Deposit, Rent Duration, Exit Date
   detailRowHorizontal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: F.detail.rowGap,
   },
-
-  // Vertical row (Frame 1686557036: column, justify=center, gap=4, FILL width)
-  // Used for: Property Name, Tenant(s), Landlord(s)
   detailRowVertical: {
     justifyContent: 'center',
     gap: F.detail.rowGap,
   },
-
-  // Label group (Frame 1686557121/1686557120): row, flex-start, center, gap=4
-  // Icon: 16x16, Label: HUG
   detailLabelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: F.detail.labelIconGap,
   },
-
-  // Label text (PlusJakartaSans-Regular, 12px, lineH=20, #878787)
   detailLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.labelSize,
     lineHeight: F.detail.labelLineH,
     color: F.detail.labelColor,
   },
-
-  // Value right-aligned (for horizontal layout)
-  // Figma: HUG content, textAlign=left, #CBCBCB
-  // In row with space-between, HUG naturally floats to the right
   detailValueRight: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.valueSize,
     lineHeight: F.detail.valueLineH,
     color: F.detail.valueColor,
   },
-
-  // Value below label (for vertical layout)
-  // Figma: FILL width, textAlign=left, #CBCBCB
   detailValueBelow: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.detail.valueSize,
     lineHeight: F.detail.valueLineH,
     color: F.detail.valueColor,
   },
-
-  // Divider (Vector 50: stroke=#4D4D4D, weight=0.25, FILL width)
   divider: {
     height: F.detail.dividerWeight,
     backgroundColor: F.detail.dividerColor,
   },
-
-  // ---- Edit Mode: Input Fields ----
-
-  // Container (gap=16)
-  inputsContainer: {
-    gap: F.input.gap,
-  },
-
-  // ---- Button Section ----
-
-  // Container (Frame 2095586322: column, gap=24, FILL width, alignItems=flex-start)
   buttonSection: {
     gap: F.buttonGroupGap,
   },
-
-  // "Enter Manually" touchable -- full width for easy tap target
   enterManuallyTouchable: {
     alignSelf: 'stretch',
   },
-
-  // "Enter Manually" (PlusJakartaSans-Regular, 14px, lineH=20, #A9A9A9, textAlign=center, FILL width)
   enterManuallyText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: F.manual.size,
@@ -734,8 +496,6 @@ const styles = StyleSheet.create({
     color: F.manual.color,
     textAlign: 'center',
   },
-
-  // Loading
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

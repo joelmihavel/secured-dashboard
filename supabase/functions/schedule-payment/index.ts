@@ -46,8 +46,6 @@ import {
   isValidRentDueDay,
 } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { isTestMode, mockData } from "../_shared/test-mode.ts";
-
 // ==============================================
 // CONFIGURATION
 // ==============================================
@@ -133,24 +131,6 @@ serve(async (req: Request) => {
 
   if (req.method !== "POST") {
     return errorResponse("Method not allowed", 405);
-  }
-
-  // MD-131: Test mode support
-  if (isTestMode(req)) {
-    return jsonResponse({
-      success: true,
-      data: {
-        schedule_id: mockData.paymentSchedule.id,
-        tenancy_id: mockData.paymentSchedule.tenancy_id,
-        payment_method: mockData.paymentSchedule.payment_method,
-        scheduled_day: mockData.paymentSchedule.scheduled_day,
-        auto_apply_cashback: mockData.paymentSchedule.auto_apply_cashback,
-        status: "active",
-        next_execution_date: mockData.paymentSchedule.next_execution_date,
-        monthly_rent_paise: mockData.paymentSchedule.monthly_rent_paise,
-        retry_policy: { max_retries: MAX_RETRY_ATTEMPTS, retry_delays_hours: RETRY_DELAY_HOURS },
-      },
-    });
   }
 
   const supabase = createServiceClient();

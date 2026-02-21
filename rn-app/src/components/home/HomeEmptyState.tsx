@@ -141,7 +141,7 @@ function HomeEmptyStateComponent({
       <HeadlineSection
         variant="due"
         daysUntilDue={daysUntilDue}
-        showPayingWith={showPaymentCarousel}
+        showPayingWith={false}
       />
 
       {/* Payment Method Carousel (for UPI variants) */}

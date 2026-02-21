@@ -1,0 +1,293 @@
+{
+  "screenId": "41-11506",
+  "screenName": "Onboarding / Waitlist Screen --referral code entry",
+  "figmaUrl": "https://www.figma.com/design/HZaVuwWn6B6jOjrmxZ7Kzv/Flent-Secured-v1.2---Dev?node-id=41-11506&m=dev",
+  "generatedAt": "2026-02-21T10:14:53.612Z",
+  "checks": {
+    "nodeCount": 130,
+    "textNodeCount": 27,
+    "componentInstanceCount": 8,
+    "interactiveNodeCount": 2,
+    "imageAssetCount": 10,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": true,
+    "topLevelChildNames": [
+      "image 149",
+      "Background Shape",
+      "Frame 2095586324",
+      "Frame 2095586317"
+    ],
+    "textContents": [
+      {
+        "nodeId": "I41:11511;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "41:11518",
+        "name": "Welcome,  Rishabh Agnihotri",
+        "content": "Welcome,   Rishabh Agnihotri",
+        "fontSize": 48,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "41:11519",
+        "name": "Your application is in review",
+        "content": "Your application is in review",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#A6A6A6"
+      },
+      {
+        "nodeId": "41:11526",
+        "name": "Application Sent",
+        "content": "Application Sent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:11527",
+        "name": "Submitted on 27 Jan 2026",
+        "content": "Submitted on 27 Jan 2026",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "41:11533",
+        "name": "In Review",
+        "content": "In Review",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:11534",
+        "name": "Approximately 24 hrs",
+        "content": "Approximately 24 hrs",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "41:11539",
+        "name": "Account Status",
+        "content": "Account Status",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:11540",
+        "name": "Pending",
+        "content": "Pending",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "41:11546",
+        "name": "18 / 150  members onboarded",
+        "content": "18 / 150  members onboarded",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "41:11549",
+        "name": "Hint text",
+        "content": "This  release",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#797979"
+      },
+      {
+        "nodeId": "41:11551",
+        "name": "Have an Invite Code?",
+        "content": "Have an Invite Code?",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:11552",
+        "name": "Get priority access to the platform if you use a referral code",
+        "content": "Get priority access to the platform if you use a referral code",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "I41:11553;50:331;1106:66617",
+        "name": "Text",
+        "content": "0",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I41:11553;50:332;1106:66617",
+        "name": "Text",
+        "content": "A",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I41:11553;50:333;1106:66617",
+        "name": "Text",
+        "content": "0",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I41:11553;50:334;1106:66617",
+        "name": "Text",
+        "content": "A",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I41:11554;100:1565",
+        "name": "Text",
+        "content": "Enter Invite Code",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "160:2958",
+        "name": "What do you get with Flent Secured?",
+        "content": "What do you get with Flent Secured?",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "160:2965",
+        "name": "Earn 1% back for paying rent on time",
+        "content": "Earn 1% back for paying rent on time",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "160:2971",
+        "name": "Build a stronger rent history",
+        "content": "Build a stronger rent history",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "160:2977",
+        "name": "Unlock exclusive renting benefits over time",
+        "content": "Unlock exclusive renting benefits over time",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "41:11591",
+        "name": "What’s  Coming your way?",
+        "content": "What’s  Coming your way?",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "41:11598",
+        "name": "Earn 1% cashback on on-time rent",
+        "content": "Earn 1% cashback on on-time rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "41:11604",
+        "name": "Build a stronger rent history",
+        "content": "Build a stronger rent history",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "41:11610",
+        "name": "Unlock smarter benefits over time",
+        "content": "Unlock smarter benefits over time",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I41:11611;100:1565",
+        "name": "Text",
+        "content": "Notify me on launch",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#222222",
+      "#4D4D4D",
+      "#797979",
+      "#878787",
+      "#A6A6A6",
+      "#A9A9A9",
+      "#CBCBCB",
+      "#CC7B57",
+      "#FF9A6D",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      15,
+      15.19174861907959,
+      16,
+      24,
+      30,
+      30.38349723815918,
+      32,
+      40,
+      48,
+      64
+    ],
+    "componentIds": [
+      "1:7",
+      "31:2642",
+      "1:131",
+      "104:3130"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "104:3131"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "104:3131"
+      }
+    ]
+  }
+}

@@ -17,8 +17,7 @@ import {
   sendLandlordInvite,
   resendLandlordInvite,
   deriveSetupProgress,
-  mockOperators,
-  mockSetupSteps,
+  buildSetupSteps,
 } from '@/src/services/api/setup';
 import type {
   BankVerificationRequest,
@@ -89,19 +88,11 @@ export function useUtilityOperators() {
     queryFn: async () => {
       const { data, error } = await getUtilityOperators();
       if (error) {
-        // In dev mode, fall back to mock operators
-        if (__DEV__) return mockOperators;
         throw error;
       }
-      if (!data || data.length === 0) {
-        // Return mock operators as fallback if API returns empty
-        if (__DEV__) return mockOperators;
-        return [];
-      }
-      return data;
+      return data ?? [];
     },
     staleTime: 1000 * 60 * 60, // 1 hour - operators rarely change
-    placeholderData: mockOperators,
   });
 }
 
@@ -202,7 +193,7 @@ export function useSetupProgress(_tenancyId: string) {
   const progress: SetupProgress = useMemo(() => {
     if (!tenancy) {
       return {
-        steps: mockSetupSteps,
+        steps: buildSetupSteps(false, false, false),
         currentStepIndex: 0,
         landlordStatus: { type: 'none' as const },
         completedCount: 0,

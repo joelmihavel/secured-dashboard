@@ -31,7 +31,6 @@ export default function AgreementLayout() {
     >
       <Stack.Screen name="upload" />
       <Stack.Screen name="review" />
-      <Stack.Screen name="success" />
     </Stack>
   );
 }

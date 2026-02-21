@@ -116,6 +116,21 @@ serve(async (req: Request) => {
         });
       }
 
+      // Sync user_status → approved for all successfully approved users
+      if (approvedIds.size > 0) {
+        const { error: statusError } = await supabase
+          .from("users")
+          .update({
+            user_status: "approved",
+            status_updated_at: new Date().toISOString(),
+          })
+          .in("id", Array.from(approvedIds));
+
+        if (statusError) {
+          console.error("[admin-waitlist] Failed to sync user_status on approve:", statusError);
+        }
+      }
+
       await audit.logSuccess("WAITLIST_BATCH_APPROVED", "admin", "waitlist_entries", undefined, {
         count: approvedIds.size,
         user_ids: body.user_ids,
@@ -146,6 +161,21 @@ serve(async (req: Request) => {
           success: rejectedIds.has(uid),
           error: rejectedIds.has(uid) ? undefined : "No waitlist entry found",
         });
+      }
+
+      // Sync user_status → not_eligible for all successfully rejected users
+      if (rejectedIds.size > 0) {
+        const { error: statusError } = await supabase
+          .from("users")
+          .update({
+            user_status: "not_eligible",
+            status_updated_at: new Date().toISOString(),
+          })
+          .in("id", Array.from(rejectedIds));
+
+        if (statusError) {
+          console.error("[admin-waitlist] Failed to sync user_status on reject:", statusError);
+        }
       }
 
       await audit.logSuccess("WAITLIST_BATCH_REJECTED", "admin", "waitlist_entries", undefined, {

@@ -384,6 +384,64 @@ export default function TransactionDetailScreen() {
           </View>
         </View>
 
+        {/* === SETTLEMENT STATUS (only for successful payments) === */}
+        {isPaid && transaction.landlord_payout_status && (
+          <View style={styles.settlementCard}>
+            <View style={styles.settlementHeader}>
+              <Text style={styles.settlementTitle}>Landlord Settlement</Text>
+              <View
+                style={[
+                  styles.settlementBadge,
+                  {
+                    backgroundColor:
+                      transaction.landlord_payout_status === 'settled'
+                        ? 'rgba(76, 175, 80, 0.15)'
+                        : transaction.landlord_payout_status === 'processing' || transaction.landlord_payout_status === 'ready'
+                        ? 'rgba(33, 150, 243, 0.15)'
+                        : transaction.landlord_payout_status === 'failed'
+                        ? 'rgba(244, 67, 54, 0.15)'
+                        : 'rgba(255, 193, 7, 0.15)',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.settlementBadgeText,
+                    {
+                      color:
+                        transaction.landlord_payout_status === 'settled'
+                          ? '#4CAF50'
+                          : transaction.landlord_payout_status === 'processing' || transaction.landlord_payout_status === 'ready'
+                          ? '#2196F3'
+                          : transaction.landlord_payout_status === 'failed'
+                          ? '#F44336'
+                          : '#FFC107',
+                    },
+                  ]}
+                >
+                  {transaction.landlord_payout_status.charAt(0).toUpperCase() +
+                    transaction.landlord_payout_status.slice(1)}
+                </Text>
+              </View>
+            </View>
+            {transaction.landlord_payout_status === 'settled' && transaction.landlord_payout_date && (
+              <Text style={styles.settlementInfo}>
+                Settled on {formatDate(transaction.landlord_payout_date)}
+              </Text>
+            )}
+            {(transaction.landlord_payout_status === 'processing' || transaction.landlord_payout_status === 'ready') && (
+              <Text style={styles.settlementInfo}>
+                Expected in 1-2 business days
+              </Text>
+            )}
+            {transaction.landlord_payout_status === 'pending' && (
+              <Text style={styles.settlementInfo}>
+                Settlement will begin shortly
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* === FOOTER: Download Receipt + Contact Support === */}
         <View style={styles.footer}>
           <PrimaryButton
@@ -644,5 +702,42 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     color: FIGMA_COLORS.footerText,
     textAlign: 'center',
+  },
+
+  // === SETTLEMENT STATUS ===
+  settlementCard: {
+    marginHorizontal: FIGMA_SPACING.footerPaddingH,
+    marginTop: 24,
+    backgroundColor: FIGMA_COLORS.cardBody,
+    borderRadius: 12,
+    padding: 16,
+    gap: 8,
+  },
+  settlementHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  settlementTitle: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 13,
+    lineHeight: 20,
+    color: FIGMA_COLORS.labelText,
+  },
+  settlementBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  settlementBadgeText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  settlementInfo: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 18,
+    color: FIGMA_COLORS.valueText,
   },
 });

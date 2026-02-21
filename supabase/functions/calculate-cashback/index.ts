@@ -41,15 +41,12 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
 import { validateSchema, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { isTestMode, mockData } from "../_shared/test-mode.ts";
-
 // ==============================================
 // CONFIGURATION
 // ==============================================
 
 const CASHBACK_RATE = 0.01; // 1%
 const CASHBACK_EXPIRY_DAYS = 90;
-const MAX_CASHBACK_PER_PAYMENT = 10000_00; // Rs 10,000 in paise
 const MIN_REDEEM_PAISE = 100; // Rs 1 minimum redemption
 
 // ==============================================
@@ -104,11 +101,6 @@ serve(async (req: Request) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
-
-  // MD-131: Test mode support
-  if (isTestMode(req)) {
-    return handleTestMode(req);
-  }
 
   const supabase = createServiceClient();
 
@@ -304,9 +296,35 @@ async function handleCreditCashback(
     });
   }
 
-  // Calculate cashback amount
-  let cashbackPaise = Math.floor(amount_paise * CASHBACK_RATE);
-  cashbackPaise = Math.min(cashbackPaise, MAX_CASHBACK_PER_PAYMENT);
+  // Fetch tenancy to get monthly_rent_paise for dynamic cap
+  const { data: tenancy } = await supabase
+    .from("tenancies")
+    .select("monthly_rent_paise")
+    .eq("id", tenancy_id)
+    .single();
+
+  const monthlyRentPaise = tenancy?.monthly_rent_paise ?? 0;
+
+  // Dynamic monthly cap = 1% of agreement rent
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const monthlyCap = Math.floor(monthlyRentPaise * CASHBACK_RATE);
+
+  // How much already earned this month
+  const { data: monthlyEarnings } = await supabase
+    .from('cashback_ledger')
+    .select('amount_paise')
+    .eq('user_id', user_id)
+    .eq('transaction_type', 'earned')
+    .gte('created_at', startOfMonth.toISOString())
+    .lte('created_at', endOfMonth.toISOString());
+
+  const earnedThisMonth = (monthlyEarnings || []).reduce((sum: number, e: { amount_paise: number }) => sum + e.amount_paise, 0);
+  const capRemaining = Math.max(0, monthlyCap - earnedThisMonth);
+
+  // Calculate cashback: 1% of payment amount, capped by remaining monthly allowance
+  let cashbackPaise = Math.min(Math.floor(amount_paise * CASHBACK_RATE), capRemaining);
 
   if (cashbackPaise <= 0) {
     return jsonResponse({
@@ -314,7 +332,7 @@ async function handleCreditCashback(
       data: {
         cashback_amount_paise: 0,
         cashback_amount: 0,
-        message: "No cashback for this payment",
+        message: "No cashback for this payment (monthly cap reached)",
       },
     });
   }
@@ -398,16 +416,27 @@ async function handleRedeemCashback(
   const validated = validateSchema<RedeemCashbackRequest>(body, redeemSchema, true);
   const { amount_paise, tenancy_id, payment_id } = validated;
 
-  // Verify tenancy ownership
+  // Verify tenancy ownership and verification status
   const { data: tenancy, error: tenancyError } = await supabase
     .from("tenancies")
-    .select("id, user_id, status")
+    .select("id, user_id, status, bank_verified, utility_verified, landlord_approved")
     .eq("id", tenancy_id)
     .eq("user_id", userId)
     .single();
 
   if (tenancyError || !tenancy) {
     throw new NotFoundError("Tenancy", tenancy_id);
+  }
+
+  // Verification gate — all verifications must be complete before redeeming
+  if (!tenancy.bank_verified || !tenancy.utility_verified || !tenancy.landlord_approved) {
+    return jsonResponse(
+      {
+        error: "VERIFICATION_INCOMPLETE",
+        message: "Complete all verifications before redeeming cashback",
+      },
+      403
+    );
   }
 
   // Check available balance
@@ -507,41 +536,3 @@ class NotFoundError extends AppError {
   }
 }
 
-// ==============================================
-// TEST MODE HANDLER
-// ==============================================
-
-function handleTestMode(req: Request): Response {
-  if (req.method === "GET") {
-    return jsonResponse({
-      success: true,
-      data: {
-        total_earned_paise: mockData.cashback.total_earned_paise,
-        available_balance_paise: mockData.cashback.available_balance_paise,
-        total_redeemed_paise: mockData.cashback.total_redeemed_paise,
-        total_expired_paise: 0,
-        total_earned: mockData.cashback.total_earned_paise / 100,
-        available_balance: mockData.cashback.available_balance_paise / 100,
-        total_redeemed: mockData.cashback.total_redeemed_paise / 100,
-        total_expired: 0,
-        current_balance: mockData.cashback.available_balance_paise / 100,
-        expiring_soon: { amount_paise: 0, amount: 0, within_days: 30, entries_count: 0 },
-        history: mockData.cashback.entries,
-      },
-    });
-  }
-
-  // POST (credit or redeem)
-  return jsonResponse({
-    success: true,
-    data: {
-      cashback_amount_paise: 25000,
-      cashback_amount: 250,
-      new_balance_paise: 175000,
-      new_balance: 1750,
-      expires_at: "2026-05-18T10:00:00.000Z",
-      ledger_entry_id: "00000000-0000-0000-0000-000000000035",
-      rate: "1%",
-    },
-  });
-}

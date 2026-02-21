@@ -98,7 +98,7 @@ serve(async (req: Request) => {
     const sortOrder = url.searchParams.get("order") ?? "desc";
 
     // Validate sort field
-    const allowedSortFields = ["created_at", "amount_paise", "status", "paid_at", "rent_month"];
+    const allowedSortFields = ["created_at", "rent_amount_paise", "status", "paid_at", "payment_month"];
     const actualSortField = allowedSortFields.includes(sortField) ? sortField : "created_at";
     const ascending = sortOrder.toLowerCase() === "asc";
 
@@ -109,8 +109,8 @@ serve(async (req: Request) => {
     let query = supabase
       .from("payments")
       .select(`
-        id, amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
-        status, payment_method, rent_month, paid_at, created_at,
+        id, rent_amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
+        status, payment_method, payment_month, paid_at, created_at,
         tenancies!inner (
           id, property_address, landlord_name
         )
@@ -150,14 +150,14 @@ serve(async (req: Request) => {
     // Format response
     const formattedPayments: PaymentHistoryItem[] = (payments ?? []).map((p: any) => ({
       id: p.id,
-      amount: p.amount_paise / 100,
+      amount: p.rent_amount_paise / 100,
       pg_fee: p.pg_fee_paise / 100,
       cashback_applied: p.cashback_applied_paise / 100,
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
-      net_amount: (p.amount_paise - p.cashback_applied_paise) / 100,
+      net_amount: (p.rent_amount_paise - p.cashback_applied_paise) / 100,
       status: p.status,
       payment_method: p.payment_method,
-      rent_month: p.rent_month,
+      rent_month: p.payment_month,
       paid_at: p.paid_at,
       created_at: p.created_at,
       tenancy: p.tenancies ? {
@@ -184,7 +184,7 @@ serve(async (req: Request) => {
     // Calculate summary stats for the filtered results
     const summaryQuery = supabase
       .from("payments")
-      .select("amount_paise, cashback_earned_paise, status")
+      .select("rent_amount_paise, cashback_earned_paise, status")
       .eq("user_id", userId);
 
     // Apply same filters for summary
@@ -213,7 +213,7 @@ serve(async (req: Request) => {
 
     for (const payment of summaryData ?? []) {
       if (payment.status === "success") {
-        summary.total_paid += payment.amount_paise;
+        summary.total_paid += payment.rent_amount_paise;
         summary.total_cashback_earned += payment.cashback_earned_paise ?? 0;
         summary.successful_payments++;
       } else if (payment.status === "failed") {

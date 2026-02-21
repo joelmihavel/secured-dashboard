@@ -58,10 +58,13 @@ interface RawVerifyUtilityResponse {
     verified: boolean;
     name_verified: boolean;
     address_verified: boolean;
+    bank_name_verified: boolean;
     consumer_name: string | null;
     landlord_name: string | null;
     name_match_score: number;
     address_match_score: number;
+    bank_name_match_score: number;
+    bank_account_holder_name: string | null;
     match_threshold: number;
     bill_amount: number | null;
     bill_due_date: string | null;
@@ -137,10 +140,13 @@ function mapUtilityResponse(raw: RawVerifyUtilityResponse): UtilityVerificationR
     verified: d.verified,
     nameVerified: d.name_verified,
     addressVerified: d.address_verified,
+    bankNameVerified: d.bank_name_verified,
     consumerName: d.consumer_name,
     landlordName: d.landlord_name,
     nameMatchScore: d.name_match_score,
     addressMatchScore: d.address_match_score,
+    bankNameMatchScore: d.bank_name_match_score,
+    bankAccountHolderName: d.bank_account_holder_name,
     matchThreshold: d.match_threshold,
     billAmount: d.bill_amount,
     billDueDate: d.bill_due_date,
@@ -185,6 +191,9 @@ function mapSetupError(errorMessage: string): SetupError {
   }
   if (lower.includes('validation') || lower.includes('invalid') || lower.includes('required')) {
     return { code: 'VALIDATION_ERROR', message: errorMessage };
+  }
+  if (lower.includes('bank') && (lower.includes('name') || lower.includes('mismatch'))) {
+    return { code: 'BANK_NAME_MISMATCH', message: errorMessage };
   }
   if (lower.includes('name mismatch') || lower.includes('name_mismatch')) {
     return { code: 'NAME_MISMATCH', message: errorMessage };
@@ -405,20 +414,10 @@ export function deriveSetupProgress(verificationStatus: {
 }
 
 // ==============================================
-// MOCK / DEFAULT DATA
+// SETUP STEPS BUILDER
 // ==============================================
 
-/** Default Karnataka electricity operators as fallback */
-export const mockOperators: UtilityOperator[] = [
-  { operatorCode: 'BESCOM', operatorName: 'BESCOM', state: 'Karnataka' },
-  { operatorCode: 'MESCOM', operatorName: 'MESCOM', state: 'Karnataka' },
-  { operatorCode: 'HESCOM', operatorName: 'HESCOM', state: 'Karnataka' },
-  { operatorCode: 'GESCOM', operatorName: 'GESCOM', state: 'Karnataka' },
-  { operatorCode: 'CESCOM', operatorName: 'CESCOM', state: 'Karnataka' },
-  { operatorCode: 'KPTCL', operatorName: 'KPTCL', state: 'Karnataka' },
-];
-
-function buildSetupSteps(
+export function buildSetupSteps(
   bankDone: boolean,
   utilityDone: boolean,
   landlordDone: boolean
@@ -453,5 +452,3 @@ function buildSetupSteps(
     },
   ];
 }
-
-export const mockSetupSteps: SetupStep[] = buildSetupSteps(false, false, false);

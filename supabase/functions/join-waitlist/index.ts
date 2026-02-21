@@ -66,6 +66,33 @@ serve(async (req: Request) => {
     // Initialize audit logger
     audit = AuditLogger.fromRequest(supabase, req, userId, "join-waitlist");
 
+    // Gate check: user must have confirmed their agreement before joining waitlist
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("user_status")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !userData) {
+      console.error("[join-waitlist] Failed to fetch user status:", userError);
+      throw new Error("Failed to verify user status");
+    }
+
+    // Allow if user is already waitlisted or beyond (idempotent)
+    const allowedStatuses = ["agreement_confirmed", "waitlisted", "approved", "active"];
+    if (!allowedStatuses.includes(userData.user_status)) {
+      return jsonResponse(
+        {
+          success: false,
+          error: true,
+          code: "AGREEMENT_NOT_CONFIRMED",
+          message: "You must confirm your agreement details before joining the waitlist",
+        },
+        403,
+        headers
+      );
+    }
+
     // Call the join_waitlist RPC (idempotent)
     const { data: rpcResult, error: rpcError } = await supabase
       .rpc("join_waitlist", { p_user_id: userId })
@@ -77,6 +104,23 @@ serve(async (req: Request) => {
     }
 
     const result = rpcResult as JoinWaitlistResult;
+
+    // Advance user_status from agreement_confirmed → waitlisted
+    if (result.is_new && userData.user_status === "agreement_confirmed") {
+      const { error: statusError } = await supabase
+        .from("users")
+        .update({
+          user_status: "waitlisted",
+          status_updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId)
+        .eq("user_status", "agreement_confirmed"); // Optimistic lock
+
+      if (statusError) {
+        console.error("[join-waitlist] Failed to advance user_status:", statusError);
+        // Non-fatal — waitlist entry was created, status can be corrected
+      }
+    }
 
     // Log audit event
     if (result.is_new) {

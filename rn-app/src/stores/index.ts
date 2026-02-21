@@ -34,6 +34,8 @@ export {
   selectPaymentError,
   selectIsProcessing,
   selectTransactionId,
+  selectLastPaymentId,
+  selectLastPaymentTimestamp,
 } from './payment';
 export type { PaymentMethodType, PaymentStatus, SelectedPaymentMethod } from './payment';
 
@@ -60,3 +62,13 @@ export {
   selectIsFormDirty,
 } from './profile';
 export type { ProfileTab } from './profile';
+
+export {
+  useUploadStore,
+  selectUploadPhase,
+  selectExtractionId,
+  selectUploadFileName,
+  selectHasHydrated,
+  selectIsUploadActive,
+} from './upload';
+export type { UploadPhase } from './upload';

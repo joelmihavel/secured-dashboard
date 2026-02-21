@@ -54,43 +54,6 @@ export function peekDeepLinkParams(): Record<string, string> | null {
 }
 
 // ==============================================
-// DEV MOCK STATE (reactive pub/sub for BuildBot)
-// ==============================================
-
-/**
- * Reactive mock state store for BuildBot state switching.
- * When a deep link like /waitlist/state/accepted arrives while the screen
- * is already mounted, router.navigate is a no-op. This pub/sub system
- * lets the screen react to state changes without needing re-navigation.
- */
-let _devMockState: string | null = null;
-const _devMockStateListeners = new Set<(state: string) => void>();
-
-export function setDevMockState(state: string): void {
-  _devMockState = state;
-  _devMockStateListeners.forEach(fn => fn(state));
-}
-
-export function getDevMockState(): string | null {
-  return _devMockState;
-}
-
-/**
- * Hook that subscribes to dev mock state changes.
- * Returns the current dev mock state and re-renders when it changes.
- */
-export function useDevMockState(): string | null {
-  const [state, setState] = useState<string | null>(_devMockState);
-  useEffect(() => {
-    // Sync with current value on mount (in case it changed before subscription)
-    if (_devMockState !== null) setState(_devMockState);
-    _devMockStateListeners.add(setState);
-    return () => { _devMockStateListeners.delete(setState); };
-  }, []);
-  return state;
-}
-
-// ==============================================
 // ROUTE RESOLUTION
 // ==============================================
 
@@ -117,7 +80,7 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   // Agreement
   '/agreement/upload': '/(agreement)/upload',
   '/agreement/review': '/(agreement)/review',
-  '/agreement/success': '/(agreement)/success',
+  '/agreement/success': '/(waitlist)',
 
   // Setup
   '/setup': '/(setup)/pending-steps',
@@ -226,11 +189,6 @@ export function handleDeepLinkUrl(url: string): boolean {
     if (statePathMatch) {
       const extractedState = statePathMatch[1];
       _pendingDeepLinkParams = { ...(_pendingDeepLinkParams ?? {}), state: extractedState };
-      // Publish to reactive listeners so already-mounted screens can pick up the change
-      // (router.navigate to the same route is a no-op — the component won't re-mount)
-      if (__DEV__) {
-        setDevMockState(extractedState);
-      }
     }
 
     if (__DEV__) {

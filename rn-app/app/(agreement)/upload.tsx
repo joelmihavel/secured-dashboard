@@ -29,6 +29,7 @@ import {
   Alert,
   StyleSheet,
   AppState,
+  Image,
   type AppStateStatus,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -37,8 +38,11 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  interpolateColor,
   FadeIn,
   Easing,
+  type SharedValue,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
@@ -52,7 +56,9 @@ import {
   validateFileSize,
   validateAgreementType,
 } from '@/src/services/payment';
+import { navigateToError } from '@/src/utils';
 import { supabase } from '@/src/services/supabase/client';
+import { useUploadStore } from '@/src/stores/upload';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
 
@@ -246,11 +252,12 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
-    buttonTitle: 'Get Started',
+    buttonTitle: 'Proceed',
     buttonEnabled: false,
     errorMessage: null as string | null,
-    showDivider: false,
+    showDivider: true,
     fileNameColor: FIGMA.colors.fileName, // #D2D2D2
+    showTrashIcon: true,
   },
   uploading: {
     borderColor: FIGMA.colors.cardBorder,
@@ -258,11 +265,12 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke,
 
-    buttonTitle: 'Get Started',
+    buttonTitle: 'Proceed',
     buttonEnabled: false,
     errorMessage: null as string | null,
-    showDivider: false,
+    showDivider: true,
     fileNameColor: FIGMA.colors.fileName,
+    showTrashIcon: false,
   },
   success: {
     // From Figma 1:30090 - no border stroke, card has empty strokes array
@@ -271,50 +279,54 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A (Figma 1:30090 Vector 44)
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
-    buttonTitle: 'Get Started',
+    buttonTitle: 'Proceed',
     buttonEnabled: true,
     errorMessage: null as string | null,
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: colors.black[400], // Figma 1:30090: dimmer filename color
+    showTrashIcon: true,
   },
   error_expired: {
     borderColor: FIGMA.colors.iconError, // #E5484D
     borderWidth: 1, // Figma 1:30178: stroke weight 1, align INSIDE
-    foldCornerFill: FIGMA.colors.cardBackground, // #202020
+    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.iconError, // #E5484D - matches card border
 
-    buttonTitle: 'Upload Again',
+    buttonTitle: 'Upload again',
     buttonEnabled: true,
     // From 1-30178 - message appears OUTSIDE the card
     errorMessage: 'The agreement is invalid or expired. Please upload a valid one.',
     showDivider: true, // Figma: divider pill above active button
-    fileNameColor: '#D2D2D2', // Figma 1:30178: lighter filename
+    fileNameColor: FIGMA.colors.iconError, // Figma 1:30178: red filename
+    showTrashIcon: true,
   },
   error_size: {
     borderColor: FIGMA.colors.iconError,
     borderWidth: 1,
-    foldCornerFill: FIGMA.colors.cardBackground, // #202020
+    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.iconError,
 
-    buttonTitle: 'Upload Again',
+    buttonTitle: 'Upload again',
     buttonEnabled: true,
     // From 1-30268 - message appears OUTSIDE the card
-    errorMessage: 'This file is too large. Please upload a file under 50MB.',
+    errorMessage: 'This file is too large. Maximum size is 10MB.',
     showDivider: true, // Figma: divider pill above active button
-    fileNameColor: '#D2D2D2', // Figma 1:30268: lighter filename
+    fileNameColor: FIGMA.colors.iconError, // red filename
+    showTrashIcon: true,
   },
   manual_review: {
     borderColor: FIGMA.colors.iconWarning, // #FFB020
     borderWidth: 1,
-    foldCornerFill: FIGMA.colors.cardBackground, // #202020
+    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.iconWarning, // #FFB020 - matches card border
 
-    buttonTitle: 'Get Notified',
+    buttonTitle: 'Join Waitlist',
     buttonEnabled: true,
     // From 1-30358 - message appears OUTSIDE the card
     errorMessage: 'Our team will review it manually and get back to you within 24 hours.',
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: '#D2D2D2', // Figma 1:30358: lighter filename
+    showTrashIcon: true,
   },
 } as const;
 
@@ -358,9 +370,9 @@ function UploadIcon({ size = 24 }: { size?: number }) {
 // From Figma Outline Icon Library (component 1:1804, variant "trash")
 // Figma 1-30090/30178/30268/30358: all use #E5484D stroke (icons/error/default variable)
 // 16x16 icon with 1.33px stroke weight at that size
-function TrashIcon({ size = 16, color = FIGMA.colors.iconError }: { size?: number; color?: string }) {
-  // Figma uses 1.33px stroke at 16px size (scales proportionally from 2px at 24px)
-  const strokeW = size === 16 ? 1.333 : 2;
+function TrashIcon({ size = 20, color = FIGMA.colors.iconError }: { size?: number; color?: string }) {
+  // Scales stroke weight proportionally from 2px at 24px size
+  const strokeW = (size / 24) * 2;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* Lid */}
@@ -427,39 +439,55 @@ function PaperclipIcon() {
   );
 }
 
-// Fold Corner Effect - composed of Rectangle 120 + Vector 44
-// The card is a COMPLETE rectangle - fold effect is created by:
-// 1. Rectangle 120 (#131313, same as background) covers the card corner
-// 2. Vector 44 fold shape creates the visual fold
-//
-// Figma state differences:
-// - idle/uploading/success (1-30090): fill #1A1A1A, stroke #202020, curved path
-// - error (1-30178/30268): fill #202020, stroke #E5484D, simple triangle path
-// - warning (1-30358): fill #202020, stroke #FFB020, simple triangle path
-function FoldCorner({ fill, stroke }: { fill: string; stroke: string }) {
-  // Idle state: Vector 44 is curved. Path: M67 60L0 0L0 48C0 54.6274 5.37258 60 12 60L67 60Z
-  // Error state: Vector 44 is straight triangle. Path: M67 60L0 0L0 60L67 60Z
-  const isDefault = fill === FIGMA.colors.foldCornerFill;
+// Card Background with precise diagonal fold cut - replaces hacky Rect 120 cutout
+function CardBackground({ fill, stroke, borderWidth = 0 }: { fill: string; stroke: string; borderWidth?: number }) {
+  const w = FIGMA.card.width;
+  const h = FIGMA.card.height;
+  const r = FIGMA.card.borderRadius;
+  const cutSize = 54;
   
-  // Notice the exact paths from Figma data
-  const svgPath = isDefault
-    ? 'M67 60L0 0L0 48C0 54.6274 5.37258 60 12 60L67 60Z'
-    : 'M67 60L0 0L0 60L67 60Z';
+  // Calculate inset to prevent SVG stroke clipping
+  const inset = borderWidth / 2;
+  const iW = w - inset;
+  const iH = h - inset;
+
+  // Path starts top-left (inset), goes to start of diagonal cut, cuts diagonally, goes down right side, curves bottom-right, goes bottom-left, curves, and closes up left side
+  const d = `
+    M ${inset} ${r + inset}
+    C ${inset} ${5.37258 + inset} ${5.37258 + inset} ${inset} ${r + inset} ${inset}
+    L ${w - cutSize - inset} ${inset}
+    L ${iW} ${cutSize + inset}
+    L ${iW} ${iH - r}
+    C ${iW} ${h - 5.37258 - inset} ${w - 5.37258 - inset} ${iH} ${iW - r} ${iH}
+    L ${r + inset} ${iH}
+    C ${5.37258 + inset} ${iH} ${inset} ${h - 5.37258 - inset} ${inset} ${iH - r}
+    Z
+  `;
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} fill="none">
+        <Path d={d} fill={fill} stroke={borderWidth > 0 ? stroke : 'none'} strokeWidth={borderWidth} />
+      </Svg>
+    </View>
+  );
+}
+
+function FoldCorner({ fill, stroke }: { fill: string; stroke: string }) {
+  // SVG Flap path (Vector 44)
+  const svgPath = 'M67 60L0 0L0 48C0 54.6274 5.37258 60 12 60L67 60Z';
 
   return (
     <View style={styles.foldCornerContainer}>
-      {/* Rectangle 120 (node 1:29997) - background-colored cutout */}
-      {/* Position: right edge of card, at top */}
-      <View style={styles.foldCornerCutout} />
-
-      {/* Vector 44 (node 1:29998) - fold shape */}
-      {/* Position: same x as cutout, but extends 6px above card */}
+      {/* Vector 44 (node 1:29998) - fold shape overlaps the diagonal cut exactly */}
       <View style={styles.foldCornerShape}>
         <Svg width={FIGMA.foldCorner.shape.width} height={FIGMA.foldCorner.shape.height} viewBox="0 0 67 60" fill="none">
           <Path
             d={svgPath}
             fill={fill}
             stroke={stroke}
+            strokeWidth={1}
+            strokeLinejoin="round"
           />
         </Svg>
       </View>
@@ -492,6 +520,74 @@ function ProgressBar({ progress }: { progress: number }) {
   );
 }
 
+// ============================================
+// ANIMATED SWEEPING TEXT COMPONENT
+// ============================================
+
+function SweepingChar({
+  char,
+  index,
+  charPos,
+  sweep,
+  style,
+}: {
+  char: string;
+  index: number;
+  charPos: number;
+  sweep: SharedValue<number>;
+  style: any;
+}) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const dist = Math.abs(sweep.value - charPos);
+    // If the wave is close, color becomes bright orange, else fallback to dark grey
+    return {
+      color: interpolateColor(
+        dist,
+        [0, 0.15, 0.3],
+        ['#FF9A6D', FIGMA.colors.progressText, FIGMA.colors.progressText]
+      ),
+    };
+  });
+
+  return (
+    <Animated.Text style={[style, animatedStyle]}>
+      {char === ' ' ? '\u00A0' : char}
+    </Animated.Text>
+  );
+}
+
+function SweepingText({ text, style }: { text: string; style: any }) {
+  const chars = text.split('');
+  const sweep = useSharedValue(-0.2); // Start wave off-screen left
+
+  useEffect(() => {
+    sweep.value = withRepeat(
+      withTiming(1.2, { duration: 1800, easing: Easing.linear }), // Move to off-screen right
+      -1, // Infinite
+      false // No reverse
+    );
+  }, [sweep]);
+
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+      {chars.map((char, index) => {
+        // Position of character as a percentage from 0 to 1
+        const charPos = chars.length > 1 ? index / (chars.length - 1) : 0;
+        
+        return (
+          <SweepingChar
+            key={index}
+            char={char}
+            index={index}
+            charPos={charPos}
+            sweep={sweep}
+            style={style}
+          />
+        );
+      })}
+    </View>
+  );
+}
 
 // ============================================
 // MAIN COMPONENT
@@ -500,62 +596,99 @@ function ProgressBar({ progress }: { progress: number }) {
 export default function UploadScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { state: stateParam } = useLocalSearchParams<{
-    state?: 'idle' | 'uploading' | 'success' | 'expired' | 'too-large' | 'manual-review';
+  const { forceNew } = useLocalSearchParams<{
+    forceNew?: string;
   }>();
 
+  // Persisted upload store — survives app kills
+  const hasHydrated = useUploadStore((s) => s._hasHydrated);
+  const persistedPhase = useUploadStore((s) => s.uploadPhase);
+  const persistedFileName = useUploadStore((s) => s.fileName);
+  const persistedErrorMessage = useUploadStore((s) => s.errorMessage);
+  const uploadStore = useUploadStore();
+
   // Use real API via useAgreement hook
-  // Set useMock to true for visual testing / development only
-  const useMock = stateParam != null && stateParam !== 'idle';
-  const agreement = useAgreement({ useMock });
+  const agreement = useAgreement();
   const { isConnected } = useNetworkStatus();
 
-  // Map URL state parameter to internal upload state
+  // Derive initial upload state from persisted store or URL params
   const getInitialUploadState = (): UploadState => {
-    switch (stateParam) {
-      case 'uploading': return 'uploading';
-      case 'success': return 'success';
-      case 'expired': return 'error_expired';
-      case 'too-large': return 'error_size';
-      case 'manual-review': return 'manual_review';
-      default: return 'idle';
+    // forceNew = re-upload from review screen, always start fresh
+    if (forceNew === 'true') return 'idle';
+
+    // Derive from persisted store (prevents flash on resume)
+    const store = useUploadStore.getState();
+    if (store.isStale()) { store.reset(); return 'idle'; }
+
+    switch (store.uploadPhase) {
+      case 'requesting_url':
+      case 'uploading_file':
+      case 'processing':
+        return 'uploading';
+      case 'completed':
+        // findResumableExtraction will redirect to review
+        return 'uploading';
+      case 'failed':
+        return 'error_expired';
+      default:
+        return 'idle';
     }
   };
 
-  // Mock document for non-idle states (for visual testing)
+  // Restore document from persisted store on resume
   const getInitialDocument = (): SelectedDocument | null => {
-    if (stateParam && stateParam !== 'idle') {
-      return {
-        uri: 'mock://document.pdf',
-        name: 'Joel_Ramesh-Agreement_Dec 2025.pdf', // Exact Figma text
-        type: 'pdf',
-        size: stateParam === 'too-large' ? 15 * 1024 * 1024 : 2 * 1024 * 1024,
-      };
+    // Restore document placeholder from persisted store
+    if (forceNew !== 'true') {
+      const store = useUploadStore.getState();
+      if (store.fileName && store.uploadPhase !== 'idle') {
+        return {
+          uri: 'resumed://processing',
+          name: store.fileName,
+          type: 'pdf',
+        };
+      }
     }
     return null;
   };
 
   const [document, setDocument] = useState<SelectedDocument | null>(getInitialDocument);
   const [uploadState, setUploadState] = useState<UploadState>(getInitialUploadState);
-  const [uploadProgress, setUploadProgress] = useState(stateParam === 'uploading' ? 30 : 0);
-  // Overrides config.errorMessage for dynamic backend errors (OCR failed, network, etc.)
-  const [errorOverrideMessage, setErrorOverrideMessage] = useState<string | null>(null);
-
-  // Simulate upload progress for visual testing state demo
-  useEffect(() => {
-    if (stateParam === 'uploading') {
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(interval);
-            return 30;
-          }
-          return prev + 5;
-        });
-      }, 500);
-      return () => clearInterval(interval);
+  const [uploadProgress, setUploadProgress] = useState(() => {
+    // Restore progress approximation from persisted phase
+    const store = useUploadStore.getState();
+    if (forceNew !== 'true' && !store.isStale()) {
+      switch (store.uploadPhase) {
+        case 'uploading_file': return 40;
+        case 'processing': return 75;
+        case 'completed': return 100;
+        default: return 0;
+      }
     }
-  }, [stateParam]);
+    return 0;
+  });
+  // Overrides config.errorMessage for dynamic backend errors (OCR failed, network, etc.)
+  const [errorOverrideMessage, setErrorOverrideMessage] = useState<string | null>(() => {
+    // Restore error message from persisted store
+    if (forceNew !== 'true') {
+      const store = useUploadStore.getState();
+      if (store.uploadPhase === 'failed' && store.errorMessage) {
+        return store.errorMessage;
+      }
+    }
+    return null;
+  });
+
+  // Loading gate: wait for persisted store to hydrate before rendering
+  // This prevents the idle → uploading flash on app restart
+  if (!hasHydrated) {
+    return (
+      <Screen testID="upload-screen">
+        <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: 24, height: 24 }} />
+        </View>
+      </Screen>
+    );
+  }
 
   // Sync real upload progress from hook — update whenever progress changes,
   // including reset to 0 on error (not just when isUploading)
@@ -629,6 +762,7 @@ export default function UploadScreen() {
         if (!mountedRef.current || uploadStateRef.current !== 'uploading') return;
 
         if (!data || data.extraction_status === 'failed') {
+          useUploadStore.getState().setError('PROCESSING_FAILED', 'Document processing failed.');
           setUploadState('error_expired');
           setErrorOverrideMessage('Document processing failed. Please try uploading again.');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -682,10 +816,12 @@ export default function UploadScreen() {
     [clearPollTimer, agreement, router]
   );
 
-  // Query the DB for the user's latest processing/completed extraction.
+  // Query the DB for the user's latest in-progress/completed extraction.
   // Used by both the mount check and the foreground handler.
   // Returns the extraction ID if a resumable record was found, or null.
   const findResumableExtraction = useCallback(async (): Promise<string | null> => {
+    if (forceNew === 'true') return null; // Force a fresh upload state
+
     try {
       // Read-only — does not modify auth state or trigger token refresh
       const {
@@ -695,18 +831,32 @@ export default function UploadScreen() {
 
       const { data } = await supabase
         .from('extracted_rental_info')
-        .select('id, extraction_status, is_city_supported, updated_at')
+        .select('id, extraction_status, is_city_supported, updated_at, user_verified')
         .eq('user_id', session.user.id)
-        .in('extraction_status', ['processing', 'completed'])
+        .in('extraction_status', ['pending', 'processing', 'completed'])
+        .eq('user_verified', false)    // Exclude already-confirmed extractions
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (!data || !mountedRef.current) return null;
+      if (!data || !mountedRef.current) {
+        // No server-side record — reset persisted store if it thinks we're uploading
+        const store = useUploadStore.getState();
+        if (store.uploadPhase !== 'idle' && store.uploadPhase !== 'failed') {
+          store.reset();
+          if (mountedRef.current) {
+            setUploadState('idle');
+            setDocument(null);
+            setUploadProgress(0);
+          }
+        }
+        return null;
+      }
 
       if (data.extraction_status === 'completed') {
         // Set extraction ID only now (data is complete → safe for React Query cache)
         agreement.setExtractionId(data.id);
+        useUploadStore.getState().setPhase('completed');
         router.replace({
           pathname: '/(agreement)/review',
           params: { extractionId: data.id },
@@ -717,20 +867,39 @@ export default function UploadScreen() {
       if (data.extraction_status === 'processing') {
         // Skip stale records — backend resets them after 5 min
         const ageMs = Date.now() - new Date(data.updated_at).getTime();
-        if (ageMs > 5 * 60 * 1000) return null;
+        if (ageMs > 5 * 60 * 1000) {
+          useUploadStore.getState().reset();
+          return null;
+        }
 
         // DO NOT call agreement.setExtractionId() here — extraction data is
         // incomplete, and setting it would trigger useExtractedData to cache
         // partial results with a 5-min staleTime.
+        useUploadStore.getState().setPhase('processing');
         setDocument({
           uri: 'resumed://processing',
-          name: 'Processing your document...',
+          name: useUploadStore.getState().fileName ?? 'Processing your document...',
           type: 'pdf',
         });
         setUploadState('uploading');
         setUploadProgress(75);
         checkAndPollStatus(data.id);
         return data.id;
+      }
+
+      if (data.extraction_status === 'pending') {
+        // App was killed between getting signed URL and uploading file
+        const ageMs = Date.now() - new Date(data.updated_at).getTime();
+        if (ageMs > 5 * 60 * 1000) {
+          // Stale pending record — ignore, let user upload fresh
+          useUploadStore.getState().reset();
+          return null;
+        }
+        // Fresh pending record — upload didn't complete
+        useUploadStore.getState().reset();
+        setUploadState('error_expired');
+        setErrorOverrideMessage('Your previous upload didn\'t complete. Please try again.');
+        return null;
       }
 
       return null;
@@ -741,7 +910,6 @@ export default function UploadScreen() {
 
   // On mount: check for existing in-progress extraction (handles app kill + reopen)
   useEffect(() => {
-    if (stateParam) return; // Skip for visual testing states
     findResumableExtraction();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -807,6 +975,20 @@ export default function UploadScreen() {
   const handleUpload = useCallback(async () => {
     if (!document) return;
 
+    // Deduplication: block new upload while one is actively in progress
+    const store = useUploadStore.getState();
+    if (
+      store.uploadPhase !== 'idle' &&
+      store.uploadPhase !== 'failed' &&
+      !store.isStale()
+    ) {
+      Alert.alert(
+        'Upload In Progress',
+        'A document is already being processed. Please wait for it to complete.'
+      );
+      return;
+    }
+
     // Check network connectivity before starting upload
     if (!isConnected) {
       Alert.alert('No Internet', 'Please check your network connection and try again.');
@@ -844,7 +1026,22 @@ export default function UploadScreen() {
 
       setUploadProgress(100);
 
-      // Check processing result for manual review
+      // If the backend specifically flags the document as invalid or expired
+      if (
+        result.processResult.contractStatus === 'invalid_document' ||
+        result.processResult.contractStatus === 'expired'
+      ) {
+        setUploadState('error_expired');
+        if (result.processResult.reviewReason) {
+          setErrorOverrideMessage(result.processResult.reviewReason);
+        } else {
+          setErrorOverrideMessage('The agreement is invalid or expired. Please upload a valid one.');
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+
+      // Check processing result for manual review (for edge cases not explicitly flagged invalid)
       if (result.processResult.needsManualReview) {
         setUploadState('manual_review');
         // Use backend review reason if available
@@ -928,8 +1125,14 @@ export default function UploadScreen() {
           break;
 
         case 'NOT_AUTHENTICATED':
-          // Redirect to sign-in
-          router.replace('/(auth)/sign-up' as never);
+          // Session is genuinely lost (callEdgeFunction already retried refresh).
+          // Navigate to error screen — user needs to re-authenticate.
+          navigateToError(router, {
+            title: 'Session Expired',
+            message: 'Your session has expired. Please sign in again to continue.',
+            actionLabel: 'Sign In',
+            action: '/(auth)/beta-splash',
+          });
           return;
 
         default:
@@ -952,7 +1155,7 @@ export default function UploadScreen() {
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(main)' as never);
+    router.replace('/(waitlist)' as never);
   }, [router]);
 
   // Get current state config
@@ -986,7 +1189,7 @@ export default function UploadScreen() {
   };
 
   return (
-    <Screen testID="upload-screen" padded={false} style={styles.screen}>
+    <Screen testID="upload-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
       {/* Background Pattern - DottedPattern component with agreement-specific shape */}
       <DottedPattern showShape={true} backgroundShape="agreement" />
 
@@ -1031,20 +1234,31 @@ export default function UploadScreen() {
           </View>
 
           {/* Upload Card - Frame 1686557325 (node 1:29992) */}
-          <View style={{ position: 'relative' }}>
+          <View style={{ position: 'relative', zIndex: 0 }}>
+            {/* Wireframe Grid Image (Vector 45) - positioned absolutely behind card/button gap */}
+            {/* Coordinates based strictly on Figma offsets from the card */}
+            <Image
+              source={{ uri: 'https://www.figma.com/api/mcp/asset/32a7fbdf-a485-4e7b-8e3d-5d19744bbb1f' }}
+              style={styles.gridLineImage}
+              resizeMode="contain"
+            />
           {document ? (
             <View style={uploadState !== 'uploading' ? styles.cardWithMessageWrapper : undefined}>
               <Animated.View
                 entering={FadeIn.duration(FIGMA.animation.duration)}
                 style={[
                   styles.uploadCard,
-                  config.borderWidth > 0 && {
-                    borderWidth: config.borderWidth,
-                    borderColor: config.borderColor,
-                  },
+                  { alignItems: 'center' }, // Document selected/uploading: Center aligned
                 ]}
               >
-                {/* Fold Corner - positioned at top-right of card */}
+                {/* SVG Background for the card (handles diagonal cut) */}
+                <CardBackground 
+                  fill={FIGMA.colors.cardBackground} 
+                  stroke={config.borderColor} 
+                  borderWidth={config.borderWidth} 
+                />
+
+                {/* Fold Corner Flap - positions exactly over the diagonal cut */}
                 <FoldCorner fill={config.foldCornerFill} stroke={config.foldCornerStroke} />
 
                 {/* Paperclip - positioned at top-left of card */}
@@ -1054,20 +1268,26 @@ export default function UploadScreen() {
                 {uploadState === 'uploading' ? (
                   /* Uploading: Figma 1:30001 - centered % + progress bar */
                   <View style={styles.cardContentUploading}>
-                    <Text style={styles.progressPercent}>{uploadProgress}%</Text>
+                    {uploadProgress >= 75 ? (
+                      <SweepingText text="scanning your agreement" style={styles.progressPercent} />
+                    ) : (
+                      <Text style={styles.progressPercent}>{uploadProgress}%</Text>
+                    )}
                     <ProgressBar progress={uploadProgress} />
                   </View>
                 ) : (
                   /* File selected: Figma Frame 130 (1:30173) - 167x68, gap 12 */
                   /* Trash icon 16x16 (#E5484D) + filename text 167x40 */
                   <View style={styles.cardContentFile}>
-                    <TouchableOpacity
-                      onPress={handleRemoveDocument}
-                      activeOpacity={0.7}
-                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    >
-                      <TrashIcon size={16} />
-                    </TouchableOpacity>
+                    {config.showTrashIcon && (
+                      <TouchableOpacity
+                        onPress={handleRemoveDocument}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      >
+                        <TrashIcon size={20} />
+                      </TouchableOpacity>
+                    )}
                     <Text
                       style={[styles.fileName, { color: config.fileNameColor }]}
                       numberOfLines={2}
@@ -1096,9 +1316,16 @@ export default function UploadScreen() {
             <TouchableOpacity
               onPress={handlePickDocument}
               activeOpacity={0.7}
-              style={styles.uploadCard}
+              style={[styles.uploadCard, { alignItems: 'flex-start' }]} // Empty state: Left aligned
             >
-              {/* Fold Corner - positioned at top-right of card */}
+              {/* SVG Background for the card */}
+              <CardBackground 
+                fill={FIGMA.colors.cardBackground} 
+                stroke={FIGMA.colors.cardBorder} 
+                borderWidth={0} 
+              />
+
+              {/* Fold Corner Flap - positions exactly over the diagonal cut */}
               <FoldCorner fill={FIGMA.colors.foldCornerFill} stroke={FIGMA.colors.foldCornerStroke} />
 
               {/* Paperclip - positioned at top-left of card */}
@@ -1121,9 +1348,6 @@ export default function UploadScreen() {
           </View>
         </View>
 
-        {/* Spacer */}
-        <View style={styles.spacer} />
-
         {/* Button Section */}
         <View style={styles.buttonContainer}>
           <PrimaryButton
@@ -1131,7 +1355,7 @@ export default function UploadScreen() {
             onPress={handleButtonPress}
             disabled={!isButtonEnabled}
             loading={uploadState === 'uploading'}
-            showDivider={config.showDivider && isButtonEnabled}
+            showDivider={config.showDivider}
             testID="proceed-button"
           />
         </View>
@@ -1158,6 +1382,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     alignItems: 'center', // counterAxisAlignItems: CENTER (children horizontally centered)
+    justifyContent: 'center', // Fix vertical centering of the entire 618px block
   },
 
   // Header section - Frame 1686557318 (node 1:29986)
@@ -1198,16 +1423,12 @@ const styles = StyleSheet.create({
   // Layout: VERTICAL, justifyContent CENTER, alignItems CENTER, gap 16
   // CRITICAL: overflow visible for paperclip and fold corner to extend outside card
   uploadCard: {
-    borderCurve: 'continuous',
-    backgroundColor: FIGMA.colors.cardBackground, // #202020
-    borderRadius: FIGMA.card.borderRadius,        // 12
     width: FIGMA.card.width,                      // 297 (explicit width)
     height: FIGMA.card.height,                    // 160 (FIXED, not min - Figma sizingV: FIXED)
     paddingTop: FIGMA.card.paddingTop,            // 24
     paddingBottom: FIGMA.card.paddingBottom,      // 24
     paddingHorizontal: FIGMA.card.paddingHorizontal, // 16
     justifyContent: 'center',                     // Figma: justifyContent center
-    alignItems: 'flex-start',                     // Figma: alignItems flex-start
     position: 'relative',
     overflow: 'visible', // CRITICAL for paperclip and fold corner
   },
@@ -1222,8 +1443,8 @@ const styles = StyleSheet.create({
   // Card content - file selected state: Figma Frame 130 (node 1:30173)
   // 167x68, VERTICAL, CENTER items/justify, gap 12
   cardContentFile: {
-    width: 167,
-    alignItems: 'flex-start',
+    maxWidth: 167,
+    alignItems: 'center',
     justifyContent: 'center',
     gap: 12, // Figma Frame 130: itemSpacing 12
   },
@@ -1231,8 +1452,8 @@ const styles = StyleSheet.create({
   // Card content - uploading state: centered % + progress bar
   // Figma: card justifyContent CENTER handles vertical centering
   cardContentUploading: {
-    alignItems: 'flex-start',
-    gap: FIGMA.card.gap, // 16
+    alignItems: 'center',
+    gap: 12, // Figma 1:30079: gap 12 between text and bar
   },
 
   // Fold corner container - positioned at top-right of card
@@ -1243,18 +1464,6 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     overflow: 'visible',
-  },
-  // Rectangle 120 (node 1:29997) - background-colored cutout
-  // This "cuts out" the card corner by covering it with background color
-  foldCornerCutout: {
-    borderCurve: 'continuous',
-    position: 'absolute',
-    width: FIGMA.foldCorner.cutout.width,             // 54
-    height: FIGMA.foldCorner.cutout.height,           // 54
-    borderRadius: FIGMA.foldCorner.cutout.borderRadius, // 12
-    backgroundColor: FIGMA.colors.background,         // #131313 (same as screen)
-    top: FIGMA.foldCorner.cutout.topOffset,           // 0
-    right: FIGMA.foldCorner.cutout.rightOffset,       // 0
   },
   // Vector 44 (node 1:29998) - fold shape
   // Extends 13px past card edge, 6.4px above card top
@@ -1309,6 +1518,8 @@ const styles = StyleSheet.create({
     ...FIGMA.typography.fileName, // bodySmMedium design token
     color: FIGMA.colors.fileName,
     textAlign: 'center' as const,
+    alignSelf: 'stretch',
+    flexShrink: 1,
   },
 
   // Progress percent - Figma 1:30001: centered "30%" text
@@ -1347,9 +1558,15 @@ const styles = StyleSheet.create({
     color: FIGMA.colors.iconWarning,
   },
 
-  // Layout
-  spacer: {
-    flex: 1,
+  // Wireframe grid lines positioned absolutely behind the card
+  // Grid x=43.5, y=448. Card x=48, y=452.4. So Grid is offset left -4.5px, top -4.4px
+  gridLineImage: {
+    position: 'absolute',
+    left: -4.5,
+    top: -4.4,
+    width: 306,
+    height: 194.5,
+    zIndex: -1, // Keep it behind the card
   },
 
   // Button container - button (node 1:30000)

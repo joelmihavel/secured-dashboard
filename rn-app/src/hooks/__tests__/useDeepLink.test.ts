@@ -47,7 +47,7 @@ describe('resolveDeepLink', () => {
   it('should resolve agreement routes', () => {
     expect(resolveDeepLink('/agreement/upload')).toBe('/(agreement)/upload-agreement');
     expect(resolveDeepLink('/agreement/review')).toBe('/(agreement)/review-agreement');
-    expect(resolveDeepLink('/agreement/success')).toBe('/(agreement)/success');
+    expect(resolveDeepLink('/agreement/success')).toBe('/(waitlist)');
   });
 
   it('should resolve setup routes', () => {

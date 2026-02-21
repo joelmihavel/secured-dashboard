@@ -101,10 +101,11 @@ function SetupChecklistComponent({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1A1A1A', // Figma: #1A1A1A (black[600])
-    borderRadius: 12, // Figma: borderRadius 12
-    padding: 24, // Figma: padding 24
-    gap: 16, // Figma: gap 16
+    backgroundColor: '#202020',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+    gap: 24,
   },
   header: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
@@ -113,11 +114,11 @@ const styles = StyleSheet.create({
     color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   checklistContainer: {
-    gap: 16, // Figma: gap 16
+    gap: 24,
   },
   itemRow: {
     flexDirection: 'row',
-    gap: 12, // Figma: gap 12 between indicator and text
+    gap: 8,
   },
   indicatorColumn: {
     alignItems: 'center',

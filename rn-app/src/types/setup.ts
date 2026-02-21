@@ -68,10 +68,13 @@ export interface UtilityVerificationResponse {
   verified: boolean;
   nameVerified: boolean;
   addressVerified: boolean;
+  bankNameVerified: boolean;
   consumerName: string | null;
   landlordName: string | null;
   nameMatchScore: number;
   addressMatchScore: number;
+  bankNameMatchScore: number;
+  bankAccountHolderName: string | null;
   matchThreshold: number;
   billAmount: number | null;
   billDueDate: string | null;
@@ -165,6 +168,7 @@ export type SetupErrorCode =
   | 'VERIFICATION_FAILED'
   | 'NAME_MISMATCH'
   | 'ADDRESS_MISMATCH'
+  | 'BANK_NAME_MISMATCH'
   | 'EMAIL_FAILED'
   | 'NOT_FOUND'
   | 'FORBIDDEN'

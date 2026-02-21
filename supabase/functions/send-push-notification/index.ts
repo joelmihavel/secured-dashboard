@@ -31,7 +31,7 @@ const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID");
 const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID");
 const APNS_PRIVATE_KEY = Deno.env.get("APNS_PRIVATE_KEY"); // Base64 encoded
 const APNS_BUNDLE_ID =
-  Deno.env.get("APNS_BUNDLE_ID") ?? "com.flentsecured.app";
+  Deno.env.get("APNS_BUNDLE_ID") ?? "com.flent.secured";
 
 // APNs URLs
 const APNS_PRODUCTION_URL = "https://api.push.apple.com";

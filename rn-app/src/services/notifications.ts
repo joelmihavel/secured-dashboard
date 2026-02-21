@@ -180,7 +180,7 @@ function sleep(ms: number): Promise<void> {
  */
 export const NOTIFICATION_ROUTES: Record<string, string> = {
   waitlist_approved: '/(waitlist)/approved',
-  agreement_reviewed: '/(agreement)/success',
+  agreement_reviewed: '/(waitlist)',
   payment_success: '/(payment)/success',
   payment_failed: '/(payment)/failed',
   landlord_approved: '/(setup)/pending-steps',
@@ -251,6 +251,19 @@ export async function registerForPushNotifications(): Promise<string | null> {
         tokenPrefix: token.slice(0, 20),
       });
 
+      // Save token to backend
+      try {
+        const { callEdgeFunction } = await import('./supabase/client');
+        await callEdgeFunction('register-device-token', {
+          token,
+          platform: Platform.OS,
+          bundle_id: 'com.flent.secured',
+          sandbox: __DEV__,
+        }, true);
+      } catch (err) {
+        console.warn('[Notifications] Failed to save push token:', err);
+      }
+
       return token;
     }, 'Push token registration');
   } catch (error) {
@@ -311,7 +324,7 @@ export function setupNotificationHandlers(): () => void {
           notificationId,
         });
         return {
-          shouldShowAlert: false,
+          shouldShowAlert: false, shouldShowBanner: false, shouldShowList: false,
           shouldPlaySound: false,
           shouldSetBadge: false,
         };
@@ -324,14 +337,14 @@ export function setupNotificationHandlers(): () => void {
           notificationId,
         });
         return {
-          shouldShowAlert: true,   // Still show silently
+          shouldShowAlert: true, shouldShowBanner: true, shouldShowList: true,   // Still show silently
           shouldPlaySound: false,  // No sound during quiet hours
           shouldSetBadge: true,    // Still update badge count
         };
       }
 
       return {
-        shouldShowAlert: true,
+        shouldShowAlert: true, shouldShowBanner: true, shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
       };

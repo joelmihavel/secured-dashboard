@@ -20,8 +20,6 @@ import {
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
-import { isTestMode, mockData } from "../_shared/test-mode.ts";
-
 // ==============================================
 // CONFIGURATION
 // ==============================================
@@ -111,15 +109,6 @@ serve(async (req: Request) => {
     return errorResponse("Method not allowed", 405);
   }
 
-  // MD-131: Test mode support
-  if (isTestMode(req)) {
-    return jsonResponse(
-      { success: true, data: mockData.dashboard },
-      200,
-      { "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}` }
-    );
-  }
-
   const supabase = createServiceClient();
 
   try {
@@ -172,7 +161,7 @@ serve(async (req: Request) => {
       // 5. Recent payments (last 5)
       supabase
         .from("payments")
-        .select("id, amount_paise, status, rent_month, paid_at, cashback_earned_paise")
+        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(5),
@@ -226,7 +215,7 @@ serve(async (req: Request) => {
         .from("payments")
         .select("id, status")
         .eq("tenancy_id", tenancy.id)
-        .eq("rent_month", rentMonthStr)
+        .eq("payment_month", rentMonthStr)
         .in("status", ["success", "processing", "pending"])
         .maybeSingle();
 
@@ -237,7 +226,7 @@ serve(async (req: Request) => {
           amount_paise: tenancy.monthly_rent_paise,
           days_until_due: daysUntilDue,
           is_overdue: daysUntilDue < 0,
-          cashback_eligible: tenancy.landlord_approved === true,
+          cashback_eligible: true,
           rent_month: rentMonthStr,
         };
       }
@@ -256,16 +245,16 @@ serve(async (req: Request) => {
       }
     }
 
-    if (tenancy && !tenancy.landlord_approved) {
+    if (tenancy && (!tenancy.landlord_approved || !tenancy.utility_verified)) {
       pendingBalance = availableBalance;
     }
 
     // Format recent payments
     const recentPayments = payments.map((p: any) => ({
       id: p.id,
-      amount: p.amount_paise / 100,
+      amount: p.rent_amount_paise / 100,
       status: p.status,
-      rent_month: p.rent_month,
+      rent_month: p.payment_month,
       paid_at: p.paid_at,
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
     }));

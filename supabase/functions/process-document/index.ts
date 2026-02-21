@@ -356,10 +356,17 @@ Deno.serve(async (req) => {
         vertexAiProjectId,
         geminiApiKey
       );
+    } else if (!gcpCredentials) {
+      return new Response(
+        JSON.stringify({ error: "Document processing not configured", code: "SERVICE_UNAVAILABLE" }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     } else {
-      // Development: Use mock data
-      console.log("[process-document] No GCP credentials, using mock extraction");
-      extractedData = getMockExtractedData();
+      // Has GCP credentials but no processor ID
+      return new Response(
+        JSON.stringify({ error: "Document processor not configured", code: "SERVICE_UNAVAILABLE" }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Check if city is supported
@@ -664,6 +671,19 @@ async function processWithDocumentAI(
     console.log("[process-document] Gemini debug:", JSON.stringify(geminiDebug));
 
     if (geminiResult && Object.keys(geminiResult).length > 0) {
+      // Check document classification before merging extraction fields
+      if (geminiResult.is_rental_agreement === false) {
+        const detectedType = geminiResult.document_type_detected || 'unknown';
+        const reason = geminiResult.rejection_reason || `This does not appear to be a rental agreement (detected: ${detectedType}).`;
+        console.log(`[process-document] Document rejected: not a rental agreement. Type: ${detectedType}`);
+        // Store classification in extractedData so it's persisted for debugging
+        (extractedData as any).is_rental_agreement = false;
+        (extractedData as any).document_type_detected = detectedType;
+        (extractedData as any).rejection_reason = reason;
+        (extractedData as any).gemini_debug = geminiDebug;
+        return extractedData;
+      }
+
       // Merge Gemini results
       extractedData = mergeGeminiResults(extractedData, geminiResult);
       extractedData.extraction_method = 'combined';
@@ -673,17 +693,6 @@ async function processWithDocumentAI(
 
   // Store gemini debug in extractedData for debugging
   (extractedData as any).gemini_debug = geminiDebug;
-
-  // Fallback: Auto-generate property_name if still missing but we have address and pincode
-  // This handles cases where Gemini failed or wasn't called (short documents)
-  if (!extractedData.property_name && extractedData.property_address && extractedData.property_pincode) {
-    const generatedName = generatePropertyNameFromAddress(extractedData.property_address, extractedData.property_pincode);
-    if (generatedName) {
-      extractedData.property_name = generatedName;
-      extractedData.fields_extracted = countExtractedFields(extractedData);
-      console.log(`[process-document] Fallback: Auto-generated property_name: "${generatedName}"`);
-    }
-  }
 
   return extractedData;
 }
@@ -777,15 +786,18 @@ async function extractWithVertexAIGemini(
   projectId: string,
   location: string
 ): Promise<object> {
-  const prompt = `You are analyzing an Indian rental/lease agreement document. Extract the following information carefully.
+  const prompt = `You are analyzing a document that the user claims is an Indian rental/lease agreement. First determine if it actually IS a rental/lease agreement, then extract information.
 
 DOCUMENT TEXT:
 ${documentText.substring(0, 50000)}
 
 Extract and return a JSON object with these exact fields (use null for fields you cannot find):
 {
-  "property_name": "name of property/apartment complex/society name. IMPORTANT: If no society/complex name exists (independent villa/bungalow/standalone building), generate property_name as 'first line of address, pincode' (e.g., '123 MG Road, 560001')",
-  "property_address": "full address including flat/house number",
+  "is_rental_agreement": true/false,
+  "document_type_detected": "what type of document this actually is (e.g., 'Rental Agreement', 'Leave and License', 'Sale Deed', 'Bank Statement', 'Invoice', 'Resume', 'Unknown')",
+  "rejection_reason": "if is_rental_agreement is false, explain why (e.g., 'This appears to be a bank statement, not a rental agreement'). null if is_rental_agreement is true",
+  "property_name": "SHORT display name: 'Flat/House#, Society/Complex Name, Locality, Pincode, City'. Example: 'Flat 301, Panchavati Apartments, Indiranagar, 560008, Bangalore'. If no society/complex name, use street: '815, 1st Cross Road, Whitefield, 560066, Bangalore'. MUST be concise — no full address here. MUST NOT repeat the same segment twice (e.g. never 'Flat No. 301, Flat No. 301, ...'). Each comma-separated part must be unique.",
+  "property_address": "FULL verbose address as written in the agreement (all lines, landmarks, etc). This is the complete legal address, NOT a display name.",
   "property_city": "city name (e.g., Bangalore, Bengaluru, Mumbai, Delhi)",
   "property_state": "state name (e.g., Karnataka, Maharashtra, Delhi) - infer from city/address if not explicit",
   "property_pincode": "6-digit pincode",
@@ -813,6 +825,7 @@ Extract and return a JSON object with these exact fields (use null for fields yo
 }
 
 IMPORTANT:
+- FIRST: Determine is_rental_agreement. Set to true ONLY if the document is a rental agreement, lease deed, leave and license agreement, or tenancy agreement. Set to false for sale deeds, bank statements, invoices, resumes, or any other non-rental document. If false, set all extraction fields to null.
 - For amounts, extract only the numeric value (60000 not "Rs. 60,000")
 - For dates, convert to YYYY-MM-DD format
 - For names, include all parties mentioned in the agreement
@@ -835,7 +848,7 @@ IMPORTANT:
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.1,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 2048,
         responseMimeType: "application/json",
       },
     }),
@@ -891,18 +904,21 @@ async function verifyWithGemini(
     landlord_names: initialExtraction.landlord_names,
   };
 
-  const prompt = `You are analyzing an Indian rental agreement document. Extract and verify the following information.
+  const prompt = `You are analyzing a document that the user claims is an Indian rental/lease agreement. First determine if it actually IS a rental/lease agreement, then extract and verify information.
 
 DOCUMENT TEXT:
-${documentText.substring(0, 30000)} // Limit to 30k chars for API limits
+${documentText.substring(0, 30000)}
 
 INITIAL EXTRACTION (verify and correct if needed):
 ${JSON.stringify(extractedFields, null, 2)}
 
 Please extract and return a JSON object with these exact fields:
 {
-  "property_name": "name of property/apartment complex. IMPORTANT: If no society/complex name exists (independent villa/bungalow), generate as 'first line of address, pincode' (e.g., '123 MG Road, 560001')",
-  "property_address": "full address",
+  "is_rental_agreement": true/false,
+  "document_type_detected": "what type of document this actually is (e.g., 'Rental Agreement', 'Leave and License', 'Sale Deed', 'Bank Statement', 'Invoice', 'Unknown')",
+  "rejection_reason": "if is_rental_agreement is false, explain why. null if true",
+  "property_name": "SHORT display name: 'Flat/House#, Society/Complex Name, Locality, Pincode, City'. Example: 'Flat 301, Panchavati Apartments, Indiranagar, 560008, Bangalore'. If no society/complex name, use street: '815, 1st Cross Road, Whitefield, 560066, Bangalore'. MUST be concise — no full address here. MUST NOT repeat the same segment twice. Each comma-separated part must be unique.",
+  "property_address": "FULL verbose address as written in the agreement (all lines, landmarks, etc). This is the complete legal address, NOT a display name.",
   "property_city": "city name (e.g., Bangalore, Bengaluru)",
   "property_state": "state name (infer from city if not explicit)",
   "property_pincode": "6-digit pincode",
@@ -928,9 +944,11 @@ Please extract and return a JSON object with these exact fields:
   "confidence": "your confidence 0-100 that extraction is accurate"
 }
 
-Look for e-stamp fields in the stamp/e-stamp section (usually at top or bottom).
-MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID IS the Stamp Certificate ID - use GRN/Transaction ID as certificate_no.
-Return ONLY the JSON object, no other text.`;
+IMPORTANT:
+- FIRST: Determine is_rental_agreement. Set to true ONLY for rental agreements, lease deeds, leave and license agreements, or tenancy agreements. Set to false for anything else. If false, set all extraction fields to null.
+- Look for e-stamp fields in the stamp/e-stamp section (usually at top or bottom).
+- MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN or Transaction ID IS the Stamp Certificate ID.
+- Return ONLY the JSON object, no other text.`;
 
   try {
     console.log("[process-document] Calling Gemini API with key prefix:", apiKey.substring(0, 10) + "...");
@@ -946,6 +964,7 @@ Return ONLY the JSON object, no other text.`;
           generationConfig: {
             temperature: 0.1,
             maxOutputTokens: 2048,
+            responseMimeType: "application/json",
           },
         }),
       }
@@ -984,22 +1003,6 @@ Return ONLY the JSON object, no other text.`;
     console.error("[process-document] Gemini verification error:", error);
     throw error; // Re-throw to trigger proper error handling
   }
-}
-
-/**
- * Generate property name from address and pincode for independent properties
- * (villas, bungalows, standalone buildings without a society/complex name)
- * Format: "First line of address, Pincode"
- */
-function generatePropertyNameFromAddress(address?: string, pincode?: string): string | undefined {
-  if (!address || !pincode) return undefined;
-
-  // Get first line of address (before first comma or newline)
-  const firstLine = address.split(/[,\n]/)[0]?.trim();
-  if (!firstLine) return undefined;
-
-  // Combine with pincode
-  return `${firstLine}, ${pincode}`;
 }
 
 function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
@@ -1063,16 +1066,6 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     raw_gemini_data: gemini,
     fields_extracted: 0, // Will be recalculated below
   };
-
-  // Auto-generate property_name for independent properties (villas, bungalows, standalone buildings)
-  // if property_name is missing but we have address and pincode
-  if (!merged.property_name && merged.property_address && merged.property_pincode) {
-    const generatedName = generatePropertyNameFromAddress(merged.property_address, merged.property_pincode);
-    if (generatedName) {
-      merged.property_name = generatedName;
-      console.log(`[process-document] Auto-generated property_name: "${generatedName}" from address + pincode`);
-    }
-  }
 
   // Recalculate fields extracted
   merged.fields_extracted = countExtractedFields(merged);
@@ -1336,21 +1329,73 @@ function evaluateExtraction(
   isCitySupported: boolean,
   extractedData?: Partial<ExtractedData>
 ): { needs_manual_review: boolean; review_reason?: string; contract_status: string; missing_fields?: string[] } {
-  // First check: City must be supported
-  if (!isCitySupported) {
+  // City support check: Record the flag but do NOT block extraction
+  // Unsupported cities proceed normally — the is_city_supported flag is stored separately
+
+  // First check: Document classification — is this actually a rental agreement?
+  if (extractedData && (extractedData as any).is_rental_agreement === false) {
+    const reason = (extractedData as any).rejection_reason || 'This document does not appear to be a rental agreement.';
+    const detectedType = (extractedData as any).document_type_detected || 'unknown';
+    console.log(`[process-document] Rejected: not a rental agreement (${detectedType})`);
     return {
       needs_manual_review: true,
-      review_reason: "We're not in your city yet. Property location is outside our currently supported areas.",
-      contract_status: 'manual_review',
+      review_reason: reason,
+      contract_status: 'invalid_document',
     };
   }
 
-  // Second check: Validate minimum required fields if data is available
+  // Second check: Agreement expiry validation
+  // If lease_end_date is in the past, the agreement is expired and cannot be used
+  if (extractedData?.lease_end_date) {
+    const endDate = new Date(extractedData.lease_end_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Compare dates only, not time
+
+    if (!isNaN(endDate.getTime()) && endDate < today) {
+      const formattedEnd = extractedData.lease_end_date; // Already YYYY-MM-DD
+      console.log(`[process-document] Agreement expired: lease_end_date=${formattedEnd}`);
+      return {
+        needs_manual_review: true,
+        review_reason: `This agreement expired on ${formattedEnd}. Please upload a current, valid rental agreement.`,
+        contract_status: 'expired',
+      };
+    }
+  }
+
+  // Second check: Critical fields that make the agreement invalid if missing
+  // Without these, the agreement is unusable — no point in manual review
+  if (extractedData) {
+    const criticalMissing: string[] = [];
+    if (!extractedData.monthly_rent_paise || extractedData.monthly_rent_paise <= 0) {
+      criticalMissing.push('Monthly Rent');
+    }
+    if (!extractedData.security_deposit_paise || extractedData.security_deposit_paise <= 0) {
+      criticalMissing.push('Security Deposit');
+    }
+    if (!extractedData.lease_end_date || !extractedData.lease_end_date.trim()) {
+      criticalMissing.push('Lease End Date');
+    }
+    if (!extractedData.landlord_names || extractedData.landlord_names.length === 0 || !extractedData.landlord_names[0]) {
+      criticalMissing.push('Landlord Name');
+    }
+
+    if (criticalMissing.length > 0) {
+      console.log(`[process-document] Agreement invalid — missing critical fields: ${criticalMissing.join(', ')}`);
+      return {
+        needs_manual_review: true,
+        review_reason: `This agreement is missing critical information: ${criticalMissing.join(', ')}. Please upload a complete rental agreement.`,
+        contract_status: 'invalid_document',
+        missing_fields: criticalMissing,
+      };
+    }
+  }
+
+  // Third check: Validate minimum required fields if data is available
   if (extractedData) {
     const validation = validateMinimumRequiredFields(extractedData);
 
     if (!validation.isComplete) {
-      // Missing critical fields - needs manual review
+      // Missing non-critical fields - needs manual review
       return {
         needs_manual_review: true,
         review_reason: `Missing required fields: ${validation.missingFields.join(', ')}. Our team will review your document manually.`,
@@ -1359,8 +1404,7 @@ function evaluateExtraction(
       };
     }
 
-    // All minimum fields present + city supported = user review (success)
-    // Even if confidence is lower, we trust the extraction if all required fields are present
+    // All minimum fields present = user review (success)
     return {
       needs_manual_review: false,
       contract_status: 'user_review',
@@ -1525,41 +1569,3 @@ async function geocodePropertyAddress(
   console.log(`[process-document] Successfully geocoded property for rental info ${extractedRentalInfoId}`);
 }
 
-// ============================================
-// MOCK DATA FOR DEVELOPMENT
-// ============================================
-
-function getMockExtractedData(): ExtractedData {
-  return {
-    property_name: "Prestige Pinstripe",
-    property_address: "Block A, Flat 306, Whitefield Main Road",
-    property_city: "Bangalore",
-    property_pincode: "560066",
-    micromarket: "Whitefield",
-    area_name: "Whitefield",
-    monthly_rent_paise: 4000000, // Rs 40,000
-    security_deposit_paise: 12000000, // Rs 1,20,000
-    maintenance_paise: 500000, // Rs 5,000
-    rent_escalation_percent: 5,
-    lease_start_date: "2025-01-01",
-    lease_end_date: "2025-12-31",
-    contract_length_months: 11,
-    rent_due_day: 5,
-    tenant_names: ["Amit Kumar", "Priya Sharma"],
-    landlord_names: ["Rajesh Gupta"],
-    tenants: [
-      { name: "Amit Kumar", phone: "9876543210" },
-      { name: "Priya Sharma" },
-    ],
-    landlords: [
-      { name: "Rajesh Gupta", phone: "9123456789" },
-    ],
-    confidence_score: 85,
-    gemini_verification_score: 90,
-    fields_extracted: 12,
-    total_fields: TOTAL_EXTRACTION_FIELDS,
-    extraction_method: 'combined',
-    raw_doc_ai_data: { mock: true },
-    raw_gemini_data: { mock: true },
-  };
-}

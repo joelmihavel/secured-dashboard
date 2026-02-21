@@ -7,7 +7,7 @@
       "width": 393,
       "height": 852
     },
-    "generatedAt": "2026-02-20T15:39:53.335Z",
+    "generatedAt": "2026-02-21T05:39:29.752Z",
     "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv"
   },
   "background": {
@@ -12531,7 +12531,7 @@
       "nodeId": "237:2760",
       "nodeName": "image 149",
       "usage": "image",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/4c9f7c72-e7fc-4f17-b148-c9f2ee08f633",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6dd74221-3511-4491-8a1d-cec0fda2bbcc",
       "localPath": "assets/1-30448_image-149.png"
     },
     {
@@ -12539,7 +12539,7 @@
       "nodeId": "174:2686",
       "nodeName": "Background Shape",
       "usage": "background",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/7d395986-1383-4a46-9e00-472f8855ff53",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/b1656564-d9c2-4ba1-b01b-5d89494d937b",
       "localPath": "assets/1-30448_background-shape.png"
     },
     {
@@ -12547,7 +12547,7 @@
       "nodeId": "1:30494",
       "nodeName": "Rectangle 30",
       "usage": "decoration",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/98810475-158d-477e-91c2-71c2c612c538",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/322cf280-dc28-4447-b397-5750d798ea5e",
       "localPath": "assets/1-30448_rectangle-30.png"
     },
     {
@@ -12555,7 +12555,7 @@
       "nodeId": "1:30504",
       "nodeName": "image 148",
       "usage": "image",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/78ed867d-c6fd-4784-b711-cb1dee6834f7",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/8af89192-0222-4855-8b54-b2bf6d91d197",
       "localPath": "assets/1-30448_image-148.png"
     },
     {
@@ -12563,7 +12563,7 @@
       "nodeId": "1:30508",
       "nodeName": "Ellipse 26",
       "usage": "decoration",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/ea49d418-a7f0-4296-90eb-9a797ab21c24",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/7c3151e3-44ae-4c70-8f8e-50fdb0026b00",
       "localPath": "assets/1-30448_ellipse-26.png"
     },
     {
@@ -12571,7 +12571,7 @@
       "nodeId": "1:30511",
       "nodeName": "Ellipse 26",
       "usage": "decoration",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/fd1816a3-2229-47d4-8d04-1ba583be59da",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/4021aafb-7f5b-4f23-8774-d232b2cee3fb",
       "localPath": "assets/1-30448_ellipse-26.png"
     },
     {
@@ -12579,7 +12579,7 @@
       "nodeId": "1:30514",
       "nodeName": "Ellipse 26",
       "usage": "decoration",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/bef5417c-308a-435d-91e1-27068ac6cc18",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/acd2eb67-0455-47ce-ade1-d5048d6dd3db",
       "localPath": "assets/1-30448_ellipse-26.png"
     },
     {
@@ -12587,7 +12587,7 @@
       "nodeId": "I1:30581;100:1564",
       "nodeName": "Frame 2095586312",
       "usage": "decoration",
-      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/14bd7ade-2647-4573-b12b-485b0952d1f4",
+      "downloadUrl": "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/12423145-270b-4705-855f-6d0b715d9fd4",
       "localPath": "assets/1-30448_frame-2095586312.png"
     }
   ],

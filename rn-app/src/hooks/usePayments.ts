@@ -14,11 +14,13 @@ import {
   addUpiVpa,
   addCardToken,
   deletePaymentMethod,
+  setDefaultPaymentMethod,
   generateReceipt,
   createPaymentSchedule,
   managePaymentSchedule,
   getPaymentSchedules,
   getCashbackHistory,
+  verifyUpiVpa,
   InitiatePaymentRequest,
   InitiatePaymentData,
   PaymentHistoryItem,
@@ -119,6 +121,7 @@ export function useInitiatePayment(callbacks: UseInitiatePaymentCallbacks = {}) 
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { suppressGlobalError: true },
     mutationFn: async (request: InitiatePaymentRequest) => {
       const { data, error } = await initiatePayment(request);
       if (error) {
@@ -181,6 +184,7 @@ export function useAddUpiVpa() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { suppressGlobalError: true },
     mutationFn: async ({ vpa, nickname, setPrimary }: AddUpiVpaParams): Promise<AddUpiVpaResult> => {
       const { data, error } = await addUpiVpa(vpa, nickname, setPrimary);
       if (error) {
@@ -221,6 +225,7 @@ export function useAddCardToken() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { suppressGlobalError: true },
     mutationFn: async (request: AddCardTokenRequest): Promise<SavedPaymentMethod> => {
       const { data, error } = await addCardToken(request);
       if (error) {
@@ -422,17 +427,8 @@ export function useAddPaymentMethod() {
         };
       }
 
-      // For card/netbanking without token, simulate success in dev mode
-      // (In production, this would integrate with PayU tokenization)
-      if (__DEV__) {
-        console.warn(`Card/Netbanking tokenization not implemented - using mock for ${request.type}`);
-      }
-      return {
-        id: `${request.type}_${Date.now()}`,
-        type: request.type,
-        details: request.details,
-        is_default: request.isDefault ?? false,
-      };
+      // Card/netbanking without a token cannot be added
+      throw new Error(`Cannot add ${request.type} without a valid token. Please complete the payment gateway flow first.`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
@@ -467,18 +463,13 @@ export interface VerifyUpiResult {
  */
 export function useVerifyUpi() {
   return useMutation({
+    meta: { suppressGlobalError: true },
     mutationFn: async ({ upiId }: { upiId: string }): Promise<VerifyUpiResult> => {
-      // In production, this would call PayU's VPA verification API
-      // For now, simulate verification
-      const MOCK_VERIFICATION_DELAY_MS = 1500;
-      await new Promise((resolve) => setTimeout(resolve, MOCK_VERIFICATION_DELAY_MS));
-
-      // Extract name from UPI ID (simulated)
-      const name = upiId.split('@')[0].replace(/[._]/g, ' ');
+      const result = await verifyUpiVpa(upiId);
       return {
-        verified: true,
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        vpa: upiId,
+        verified: result.valid,
+        name: result.name ?? upiId.split('@')[0],
+        vpa: result.vpa,
       };
     },
   });
@@ -524,6 +515,25 @@ export function useManageSchedule() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.schedules() });
+    },
+  });
+}
+
+// ==============================================
+// SET DEFAULT PAYMENT METHOD MUTATION
+// ==============================================
+
+export function useSetDefaultPaymentMethod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (paymentMethodId: string) => {
+      const { success, error } = await setDefaultPaymentMethod(paymentMethodId);
+      if (!success) {
+        throw new Error(error ?? 'Failed to set default payment method');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
     },
   });
 }

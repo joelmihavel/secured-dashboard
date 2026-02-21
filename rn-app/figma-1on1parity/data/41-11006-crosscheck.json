@@ -1,0 +1,227 @@
+{
+  "screenId": "41-11006",
+  "screenName": "onboarding / post approval 3",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-21T11:56:20.998Z",
+  "checks": {
+    "nodeCount": 153,
+    "textNodeCount": 19,
+    "componentInstanceCount": 2,
+    "interactiveNodeCount": 2,
+    "imageAssetCount": 7,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": true,
+    "topLevelChildNames": [
+      "Background Shape",
+      "Rectangle 52",
+      "Frame 1686557300",
+      "Status Bar",
+      "button",
+      "Frame 2095586400",
+      "Frame 2095586316",
+      "Frame 2095586401",
+      "Frame 2095586402",
+      "Frame 2095586361"
+    ],
+    "textContents": [
+      {
+        "nodeId": "41:11023",
+        "name": "Pay Rent",
+        "content": "Pay Rent",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11034",
+        "name": "Total payable rent",
+        "content": "Total payable rent",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "41:11035",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11044",
+        "name": "saved ₹ 325 →",
+        "content": "saved ₹ 325 →",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#70BF73"
+      },
+      {
+        "nodeId": "41:11045",
+        "name": "using flent cashback",
+        "content": "using flent cashback",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "41:11049",
+        "name": "Paying to",
+        "content": "Paying to",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11050",
+        "name": "[Landlord Name]",
+        "content": "[Landlord Name]",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11054",
+        "name": "ICICI",
+        "content": "ICICI ",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11055",
+        "name": "XXXX XXXX XXXX 2003",
+        "content": "XXXX XXXX XXXX 2003",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11057",
+        "name": "Pay Now",
+        "content": "Pay Now",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "41:11058",
+        "name": "All payments are 100% secure",
+        "content": "All payments are 100% secure",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11063",
+        "name": "PAY BY ANY APP INSTEAD",
+        "content": "PAY BY ANY APP INSTEAD",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:11067",
+        "name": "Google Pay",
+        "content": "Google Pay",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11070",
+        "name": "PayTM",
+        "content": "PayTM",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "41:11073",
+        "name": "PhonePe",
+        "content": "PhonePe",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "I41:11075;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I41:11076;100:1565",
+        "name": "Text",
+        "content": "Start Flenting →",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "160:3099",
+        "name": "Let’s get you set up",
+        "content": "Let’s get you set up",
+        "fontSize": 32,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "160:3177",
+        "name": "Invite your landlord  to finish setup",
+        "content": "Invite your landlord  to finish setup",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#4D4D4D",
+      "#70BF73",
+      "#878787",
+      "#A9A9A9",
+      "#CBCBCB",
+      "#D9D9D9",
+      "#EEEEEE",
+      "#FF9A6D",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      15.19174861907959,
+      16,
+      24,
+      30.38349723815918,
+      32,
+      34
+    ],
+    "componentIds": [
+      "1:7",
+      "104:3130"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Frame 1686557209",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "104:3131"
+      }
+    ]
+  }
+}

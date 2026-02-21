@@ -228,7 +228,7 @@ serve(async (req: Request) => {
         verified_account_holder_name: pennyDropResult.name_at_bank,
         verified_at:
           pennyDropResult.status === "SUCCESS" ? new Date().toISOString() : null,
-        is_primary: true, // First account added is primary
+        is_default: true, // First account added is primary
       })
       .select()
       .single();
@@ -244,6 +244,15 @@ serve(async (req: Request) => {
         .from("tenancies")
         .update({ bank_verified: true })
         .eq("id", tenancy_id);
+
+      // Advance user_status from approved → active (bank is the mandatory gate)
+      const { error: advanceError } = await supabase
+        .rpc("check_and_advance_to_active", { p_user_id: userId });
+
+      if (advanceError) {
+        console.error("[verify-bank] Failed to advance user_status:", advanceError);
+        // Non-fatal — bank is verified, status can be corrected
+      }
     }
 
     // Log result

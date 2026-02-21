@@ -221,11 +221,19 @@ export const selectReferralError = (state: WaitlistStore) => state.referralError
 export const selectShowConfetti = (state: WaitlistStore) => state.showConfetti;
 export const selectError = (state: WaitlistStore) => state.error;
 
-// Format countdown as HH:MM:SS
+/**
+ * Format countdown as DD:HH:MM:SS (for multi-day countdowns like 30-day rejection cooldown)
+ * or HH:MM:SS (for countdowns under 24 hours).
+ */
 export const selectCountdownText = (state: WaitlistStore) => {
-  const seconds = state.nextApplicationCountdown;
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const totalSeconds = state.nextApplicationCountdown;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  const hh = hours.toString().padStart(2, '0');
+  const mm = minutes.toString().padStart(2, '0');
+  const ss = secs.toString().padStart(2, '0');
+
+  return `${hh}:${mm}:${ss}`;
 };

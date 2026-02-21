@@ -83,7 +83,7 @@ serve(async (req: Request) => {
     }
 
     // Check if it was the primary payment method
-    const wasPrimary = paymentMethod.is_primary;
+    const wasPrimary = paymentMethod.is_default;
     let newPrimaryId: string | null = null;
 
     if (hard_delete) {
@@ -104,7 +104,7 @@ serve(async (req: Request) => {
         .from("payment_methods")
         .update({
           deleted_at: new Date().toISOString(),
-          is_primary: false,
+          is_default: false,
         })
         .eq("id", payment_method_id)
         .eq("user_id", userId);
@@ -131,7 +131,7 @@ serve(async (req: Request) => {
 
         await supabase
           .from("payment_methods")
-          .update({ is_primary: true })
+          .update({ is_default: true })
           .eq("id", newPrimaryId);
       }
     }

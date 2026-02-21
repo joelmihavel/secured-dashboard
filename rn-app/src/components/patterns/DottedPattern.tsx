@@ -23,6 +23,7 @@
 
 import React, { memo } from 'react';
 import { View, StyleSheet, Dimensions, Image } from 'react-native';
+import Animated from 'react-native-reanimated';
 import Svg, {
   Defs,
   LinearGradient,
@@ -61,6 +62,21 @@ const backgroundShapeCarousel3 = require('@/src/assets/images/background_shape_c
 // Agreement upload screen (1-29914) - handshake silhouette
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const backgroundShapeAgreement = require('@/src/assets/images/background_shape_agreement.png');
+// Waitlist screen (41-11206) - hand signing document
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const backgroundShapeWaitlist = require('@/src/assets/images/background_shape_waitlist.png');
+// Post Approval Carousel 1
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const backgroundShapePostApproval1 = require('@/src/assets/images/background_shape_postapproval1.png');
+// Post Approval Carousel 2
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const backgroundShapePostApproval2 = require('@/src/assets/images/background_shape_postapproval2.png');
+// Post Approval Carousel 3
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const backgroundShapePostApproval3 = require('@/src/assets/images/background_shape_postapproval3.png');
+// Personalized Cashback Plan Summary
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const backgroundShapeSummary = require('@/src/assets/images/background_shape_summary.png');
 
 // Background shape options for different screens
 export const BACKGROUND_SHAPES = {
@@ -78,6 +94,16 @@ export const BACKGROUND_SHAPES = {
   carousel3: backgroundShapeCarousel3,
   // Agreement upload screen (1-29914) - handshake silhouette
   agreement: backgroundShapeAgreement,
+  // Waitlist screen
+  waitlist: backgroundShapeWaitlist,
+  // Post approval step 1
+  postapproval1: backgroundShapePostApproval1,
+  // Post approval step 2
+  postapproval2: backgroundShapePostApproval2,
+  // Post approval step 3
+  postapproval3: backgroundShapePostApproval3,
+  // Summary (Cashback Plan)
+  summary: backgroundShapeSummary,
   // Default fallback
   default: backgroundShapeDefault,
 } as const;
@@ -131,17 +157,46 @@ export interface DottedPatternProps {
   showShape?: boolean;
   /** Screen-specific background shape key or custom image source */
   backgroundShape?: BackgroundShapeKey | number;
+  /** The previous shape to render beneath for crossfading transitions */
+  previousBackgroundShape?: BackgroundShapeKey | number;
+  /** Optional animated opacity style for the primary shape image (useful for crossfades) */
+  animatedOpacityStyle?: any;
 }
 
 function DottedPatternComponent({
   showShape = true,
   backgroundShape = 'default',
+  previousBackgroundShape,
+  animatedOpacityStyle,
 }: DottedPatternProps) {
   // Resolve background image - either from preset keys or custom source
   const backgroundShapeImage = typeof backgroundShape === 'string'
     ? BACKGROUND_SHAPES[backgroundShape]
     : backgroundShape;
+    
+  const previousShapeImage = typeof previousBackgroundShape === 'string'
+    ? BACKGROUND_SHAPES[previousBackgroundShape]
+    : previousBackgroundShape;
+    
   const gradientId = `shapeGradient-${Math.random().toString(36).slice(2)}`;
+  
+  // Shared styles for shape image
+  const getShapeStyle = (shapeKey: BackgroundShapeKey | number) => {
+    if (shapeKey === 'waitlist') {
+      return {
+        width: FIGMA.shape.width,
+        height: FIGMA.shape.height,
+        left: 0,
+        top: 0,
+      };
+    }
+    return {
+      width: FIGMA.shape.width * FIGMA.shape.imageWidth,
+      height: FIGMA.shape.height * FIGMA.shape.imageHeight,
+      left: FIGMA.shape.width * FIGMA.shape.imageLeft,
+      top: FIGMA.shape.height * FIGMA.shape.imageTop,
+    };
+  };
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -161,19 +216,27 @@ function DottedPatternComponent({
       {/* Image is LARGER than container and offset per Figma: h-121.14% w-152.81% left--7.69% top--25.38% */}
       {showShape && (
         <View style={styles.shapeContainer}>
-          <Image
-            source={backgroundShapeImage}
-            style={[
-              styles.shapeImage,
-              {
-                width: FIGMA.shape.width * FIGMA.shape.imageWidth,
-                height: FIGMA.shape.height * FIGMA.shape.imageHeight,
-                left: FIGMA.shape.width * FIGMA.shape.imageLeft,
-                top: FIGMA.shape.height * FIGMA.shape.imageTop,
-              }
-            ]}
-            resizeMode="cover"
-          />
+          {previousShapeImage && (
+             <Image
+               source={previousShapeImage}
+               style={[styles.shapeImage, getShapeStyle(previousBackgroundShape as any)]}
+               resizeMode="cover"
+             />
+          )}
+          {animatedOpacityStyle ? (
+             // @ts-ignore (Animated.Image supports style array)
+             <Animated.Image
+               source={backgroundShapeImage}
+               style={[styles.shapeImage, getShapeStyle(backgroundShape), animatedOpacityStyle]}
+               resizeMode="cover"
+             />
+          ) : (
+             <Image
+               source={backgroundShapeImage}
+               style={[styles.shapeImage, getShapeStyle(backgroundShape)]}
+               resizeMode="cover"
+             />
+          )}
           {/* Gradient overlay: transparent to #131313 */}
           <Svg
             width={FIGMA.shape.width}

@@ -20,8 +20,6 @@ import {
   getExtractedAgreementData,
   confirmExtraction,
   updateExtraction,
-  getMockExtractedAgreementData,
-  getMockProcessResult,
   ExtractedAgreementData,
   ProcessDocumentResult,
   ConfirmExtractionResult,
@@ -35,6 +33,7 @@ import {
   validateFileSize,
   validateAgreementType,
 } from '../services/payment/storageService';
+import { useUploadStore } from '../stores/upload';
 
 // ==============================================
 // QUERY KEYS
@@ -51,7 +50,6 @@ export const agreementKeys = {
 // ==============================================
 
 export interface UploadAndProcessOptions {
-  useMock?: boolean;
   onUploadProgress?: (progress: number) => void;
 }
 
@@ -71,7 +69,7 @@ export interface UploadAndProcessResult {
  * Returns the extraction ID and processing results.
  */
 export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
-  const { useMock = false, onUploadProgress } = options;
+  const { onUploadProgress } = options;
   const queryClient = useQueryClient();
   const [uploadProgress, setUploadProgress] = useState(0);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -93,16 +91,6 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
       fileSize: number;
     }): Promise<UploadAndProcessResult> => {
       const { fileUri, fileName, fileSize } = params;
-
-      // Mock mode for development
-      if (useMock) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        setUploadProgress(100);
-        return {
-          extractionId: 'mock-extraction-id',
-          processResult: getMockProcessResult(),
-        };
-      }
 
       // Guard against unreadable files (size=0 or undefined from DocumentPicker)
       if (!fileSize || fileSize <= 0) {
@@ -132,6 +120,7 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
       // Step 1: Request signed upload URL
       setUploadProgress(5);
       onUploadProgress?.(5);
+      useUploadStore.getState().startUpload(fileName);
 
       const uploadUrlResult = await requestUploadUrl(fileName, mimeType, fileSize);
       if (uploadUrlResult.error) {
@@ -139,10 +128,14 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
       }
 
       const { uploadUrl, extractionId, documentPath } = uploadUrlResult.data!;
+      const store = useUploadStore.getState();
+      store.setExtractionId(extractionId);
+      store.setPhase('requesting_url');
 
       // Step 2: Upload file to signed URL
       setUploadProgress(10);
       onUploadProgress?.(10);
+      useUploadStore.getState().setPhase('uploading_file');
 
       // Start simulated progress — FileSystem.uploadAsync has no progress callbacks,
       // so we increment by 2% every 500ms, capped at 65% to leave room for the jump to 75%
@@ -181,6 +174,7 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
       // Step 3: Trigger processing
       setUploadProgress(75);
       onUploadProgress?.(75);
+      useUploadStore.getState().setPhase('processing');
 
       const processResult = await processDocument(extractionId, documentPath);
       if (processResult.error) {
@@ -189,6 +183,7 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
 
       setUploadProgress(100);
       onUploadProgress?.(100);
+      useUploadStore.getState().setPhase('completed');
 
       // Invalidate any cached extraction data
       queryClient.invalidateQueries({ queryKey: agreementKeys.extraction(extractionId) });
@@ -198,9 +193,14 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
         processResult: processResult.data!,
       };
     },
-    onError: () => {
+    onError: (error) => {
       clearProgressTimer();
       setUploadProgress(0);
+      const agreementErr = error as unknown as AgreementError;
+      useUploadStore.getState().setError(
+        agreementErr?.code ?? 'UNKNOWN_ERROR',
+        agreementErr?.message ?? 'Upload failed'
+      );
     },
   });
 
@@ -220,7 +220,6 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
 
 interface UseExtractedDataOptions {
   enabled?: boolean;
-  useMock?: boolean;
 }
 
 /**
@@ -233,16 +232,11 @@ export function useExtractedData(
   extractionId: string | null,
   options: UseExtractedDataOptions = {}
 ) {
-  const { enabled = true, useMock = false } = options;
+  const { enabled = true } = options;
 
   return useQuery({
     queryKey: agreementKeys.extraction(extractionId ?? ''),
     queryFn: async (): Promise<ExtractedAgreementData> => {
-      if (useMock) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return getMockExtractedAgreementData();
-      }
-
       if (!extractionId) {
         throw new Error('Missing extraction ID');
       }
@@ -253,7 +247,7 @@ export function useExtractedData(
       }
       return result.data!;
     },
-    enabled: enabled && (useMock || !!extractionId),
+    enabled: enabled && !!extractionId,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: 2,
   });
@@ -324,7 +318,6 @@ export function useUpdateExtraction() {
 // ==============================================
 
 interface UseAgreementOptions {
-  useMock?: boolean;
   extractionId?: string | null;
 }
 
@@ -335,22 +328,18 @@ interface UseAgreementOptions {
  * along with all relevant state.
  */
 export function useAgreement(options: UseAgreementOptions = {}) {
-  const { useMock = false, extractionId = null } = options;
+  const { extractionId = null } = options;
 
-  // Current extraction ID (set after upload or passed in)
-  const [currentExtractionId, setCurrentExtractionId] = useState<string | null>(
-    extractionId
-  );
+  // Current extraction ID — sourced from persisted store, with prop override
+  const uploadStore = useUploadStore();
+  const currentExtractionId = extractionId ?? uploadStore.extractionId;
 
   // Upload + process mutation
-  const uploadMutation = useUploadAgreement({
-    useMock,
-  });
+  const uploadMutation = useUploadAgreement();
 
   // Extracted data query
   const extractedDataQuery = useExtractedData(currentExtractionId, {
-    useMock,
-    enabled: useMock || !!currentExtractionId,
+    enabled: !!currentExtractionId,
   });
 
   // Confirm mutation
@@ -367,7 +356,7 @@ export function useAgreement(options: UseAgreementOptions = {}) {
         fileName,
         fileSize,
       });
-      setCurrentExtractionId(result.extractionId);
+      // extractionId already set in store by mutation phase tracking
       return result;
     },
     [uploadMutation]
@@ -431,11 +420,15 @@ export function useAgreement(options: UseAgreementOptions = {}) {
     updateError: updateMutation.error as AgreementError | null,
 
     // Actions
-    setExtractionId: setCurrentExtractionId,
+    setExtractionId: (id: string | null) => {
+      if (id) {
+        uploadStore.setExtractionId(id);
+      }
+    },
     resetUpload: () => {
       uploadMutation.reset();
       uploadMutation.resetProgress();
-      setCurrentExtractionId(null);
+      uploadStore.reset();
     },
   };
 }

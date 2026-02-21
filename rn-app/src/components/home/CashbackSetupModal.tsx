@@ -82,10 +82,15 @@ export function CashbackSetupModal({
   useEffect(() => {
     if (visible) {
       Animated.parallel([
-        Animated.timing(slideAnim, {
+        Animated.spring(slideAnim, {
           toValue: 0,
-          duration: 300,
           useNativeDriver: true,
+          damping: 20,
+          mass: 1,
+          stiffness: 100,
+          overshootClamping: true,
+          restDisplacementThreshold: 0.01,
+          restSpeedThreshold: 2,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,

@@ -34,8 +34,6 @@ import {
 } from "../_shared/errors.ts";
 import { validateSchema, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { isTestMode, mockData } from "../_shared/test-mode.ts";
-
 // ==============================================
 // STATE MACHINE CONFIGURATION
 // ==============================================
@@ -143,11 +141,6 @@ serve(async (req: Request) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
-
-  // MD-131: Test mode support
-  if (isTestMode(req)) {
-    return handleTestMode(req);
-  }
 
   const supabase = createServiceClient();
 
@@ -454,43 +447,3 @@ function mapAgreementToTenancyStatus(agreementStatus: AgreementStatus): string {
   return mapping[agreementStatus] ?? "pending_verification";
 }
 
-// ==============================================
-// TEST MODE HANDLER
-// ==============================================
-
-function handleTestMode(req: Request): Response {
-  if (req.method === "GET") {
-    return jsonResponse({
-      success: true,
-      data: {
-        tenancy_id: mockData.agreement.tenancy_id,
-        current_status: mockData.agreement.status,
-        current_status_label: STATUS_LABELS[mockData.agreement.status as AgreementStatus],
-        allowed_transitions: VALID_TRANSITIONS[mockData.agreement.status as AgreementStatus],
-        allowed_transition_labels: (
-          VALID_TRANSITIONS[mockData.agreement.status as AgreementStatus] ?? []
-        ).map((s) => ({ status: s, label: STATUS_LABELS[s] })),
-        lease_start_date: "2026-01-01",
-        lease_end_date: "2027-01-01",
-        landlord_approved: true,
-        transition_history: mockData.agreement.transitions,
-        updated_at: "2026-02-17T10:00:00.000Z",
-      },
-    });
-  }
-
-  // POST
-  return jsonResponse({
-    success: true,
-    data: {
-      tenancy_id: mockData.agreement.tenancy_id,
-      previous_status: "active",
-      new_status: "expired",
-      new_status_label: "Expired",
-      reason: "Test transition",
-      transitioned_by: "user",
-      transitioned_at: new Date().toISOString(),
-      allowed_next_transitions: ["terminated"],
-    },
-  });
-}

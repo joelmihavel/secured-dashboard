@@ -32,8 +32,6 @@ import {
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sendEmail, MessageTemplates } from "../_shared/notifications.ts";
 import { generateSecureRandom } from "../_shared/crypto.ts";
-import { isTestMode, mockData } from "../_shared/test-mode.ts";
-
 // ==============================================
 // CONFIGURATION
 // ==============================================
@@ -103,11 +101,6 @@ serve(async (req: Request) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
-
-  // MD-131: Test mode support
-  if (isTestMode(req)) {
-    return handleTestMode(req);
-  }
 
   const supabase = createServiceClient();
 
@@ -438,75 +431,6 @@ async function handleUpdateLandlord(
       updated_fields: Object.keys(newValues),
       invite_invalidated: landlord_email !== undefined,
       message: "Landlord info updated successfully",
-    },
-  });
-}
-
-// ==============================================
-// TEST MODE HANDLER
-// ==============================================
-
-function handleTestMode(req: Request): Response {
-  const url = new URL(req.url);
-
-  if (req.method === "GET") {
-    return jsonResponse({
-      success: true,
-      data: {
-        tenancy_id: mockData.tenancy.id,
-        landlord: {
-          name: mockData.landlord.name,
-          phone: mockData.landlord.phone,
-          email_masked: "l***@t***.com",
-          approved: true,
-          approved_at: "2026-01-15T00:00:00.000Z",
-          response: "approved",
-          dispute_reason: null,
-        },
-        invite: {
-          sent_at: "2026-01-10T00:00:00.000Z",
-          invite_count: 1,
-        },
-        bank_accounts: [
-          {
-            id: "00000000-0000-0000-0000-000000000099",
-            account_holder_name: "Test Landlord",
-            account_number_masked: mockData.landlord.bank_account_masked,
-            ifsc_code: "SBIN0001234",
-            verified: true,
-          },
-        ],
-        property: {
-          address: mockData.tenancy.property_address,
-          city: mockData.tenancy.property_city,
-          monthly_rent: mockData.tenancy.monthly_rent_paise / 100,
-        },
-      },
-    });
-  }
-
-  if (req.method === "POST") {
-    return jsonResponse({
-      success: true,
-      data: {
-        invite_id: mockData.tenancy.id,
-        status: "sent",
-        sent_via: "email",
-        expires_at: "2026-02-20T10:00:00.000Z",
-        landlord_email_masked: "l***@t***.com",
-        message: "Landlord invitation email sent successfully (test mode)",
-      },
-    });
-  }
-
-  // PUT
-  return jsonResponse({
-    success: true,
-    data: {
-      tenancy_id: mockData.tenancy.id,
-      updated_fields: ["landlord_name"],
-      invite_invalidated: false,
-      message: "Landlord info updated successfully (test mode)",
     },
   });
 }

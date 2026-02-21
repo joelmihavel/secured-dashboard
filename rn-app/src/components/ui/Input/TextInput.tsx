@@ -18,7 +18,7 @@
  * - Filled text: #131313
  * - Border: #CBCBCB
  *
- * NOTE: #222222 is the INPUT CONTAINER background fill (invisible), NOT the placeholder text color.
+ * NOTE: #444444 is the INPUT CONTAINER background fill (invisible), NOT the placeholder text color.
  * All screens use this same component — do NOT rebuild inputs per screen.
  */
 
@@ -34,11 +34,11 @@ import { Text } from '../Typography';
 
 // Exact Figma color values - Dark theme
 // Verified from Figma blueprints: text node fills confirm #444444 for placeholder text.
-// #222222 was the CONTAINER background fill (visible:false), NOT the text color.
+// #444444 was the CONTAINER background fill (visible:false), NOT the text color.
 const INPUT_COLORS_DARK = {
   label: '#A9A9A9',                // Figma: neutral/500
   labelError: '#E5484D',
-  placeholder: '#222222',          // EXACT Figma parity: e.g. John Appleseed is #222222
+  placeholder: '#444444',          // EXACT Figma parity: e.g. John Appleseed is #444444
   hintText: '#878787',             // Figma: hint text color (neutral/600)
   textFilled: '#DDDDDD',           // Figma: neutral/200
   textError: '#E5484D',            // Figma: error text color
@@ -96,10 +96,28 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
 
     // Determine border color based on state
     // Figma REST API: border visible:false in empty state (1:29108)
-    const getBorderColor = () => {
+  const getBorderColor = () => {
       if (hasError) return INPUT_COLORS.borderError;
       if (isFocused) return INPUT_COLORS.borderFocus;
       return 'transparent';
+    };
+
+    const getBorderStyle = () => {
+      // In edit mode (indicated by being pre-filled with data or specifically having a hint "Edit"), 
+      // the input often has a bottom border.
+      if (variant === 'dark' && hintText === 'Edit') {
+        return {
+          borderWidth: 0,
+          borderBottomWidth: 0.5,
+          borderColor: isFocused ? INPUT_COLORS.borderFocus : '#0D0D0D', // Figma: #0d0d0d for inactive
+          borderRadius: 0,
+          paddingHorizontal: 0, // Figma: Edit fields have 0 horizontal padding
+        };
+      }
+      return {
+        borderWidth: 1,
+        borderColor: getBorderColor(),
+      };
     };
 
     // Dynamic styles based on variant
@@ -143,7 +161,7 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
           </View>
         ) : null}
 
-        <View style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
+        <View style={[styles.inputContainer, getBorderStyle()]}>
           <RNTextInput
             ref={ref}
             value={value}

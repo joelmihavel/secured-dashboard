@@ -37,5 +37,8 @@ export {
 // Setup
 export * from './setup';
 
+// Notifications
+export * from './notifications';
+
 // Waitlist
 export * from './waitlist';

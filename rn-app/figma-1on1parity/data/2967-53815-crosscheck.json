@@ -1,0 +1,393 @@
+{
+  "screenId": "2967-53815",
+  "screenName": "Onboarding / Agreement --modify agreement",
+  "figmaUrl": "https://www.figma.com/design/IP4bJwxg5koRNfZ63AQJBo/Flent-Secured_v1.2?node-id=2967-53815",
+  "generatedAt": "2026-02-21T07:44:15.480Z",
+  "checks": {
+    "nodeCount": 156,
+    "textNodeCount": 40,
+    "componentInstanceCount": 11,
+    "interactiveNodeCount": 2,
+    "imageAssetCount": 7,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "image 149",
+      "Rectangle 52",
+      "Frame 1686557300",
+      "Status Bar",
+      "Frame 1686557268"
+    ],
+    "textContents": [
+      {
+        "nodeId": "2967:53834",
+        "name": "Pay Rent",
+        "content": "Pay Rent",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53845",
+        "name": "Total payable rent",
+        "content": "Total payable rent",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "2967:53846",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53855",
+        "name": "saved ₹ 325 →",
+        "content": "saved ₹ 325 →",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#70BF73"
+      },
+      {
+        "nodeId": "2967:53856",
+        "name": "using flent cashback",
+        "content": "using flent cashback",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "2967:53860",
+        "name": "Paying to",
+        "content": "Paying to",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53861",
+        "name": "[Landlord Name]",
+        "content": "[Landlord Name]",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53865",
+        "name": "ICICI",
+        "content": "ICICI ",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53866",
+        "name": "XXXX XXXX XXXX 2003",
+        "content": "XXXX XXXX XXXX 2003",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53868",
+        "name": "Pay Now",
+        "content": "Pay Now",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "2967:53869",
+        "name": "All payments are 100% secure",
+        "content": "All payments are 100% secure",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53874",
+        "name": "PAY BY ANY APP INSTEAD",
+        "content": "PAY BY ANY APP INSTEAD",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "2967:53878",
+        "name": "Google Pay",
+        "content": "Google Pay",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53881",
+        "name": "PayTM",
+        "content": "PayTM",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "2967:53884",
+        "name": "PhonePe",
+        "content": "PhonePe",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "I2967:53887;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "2967:53892",
+        "name": "Let’s fix the details",
+        "content": "Let’s fix the details",
+        "fontSize": 48,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I2967:53894;47:5605",
+        "name": "Label",
+        "content": "Agreement ID",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53894;47:5609",
+        "name": "Text",
+        "content": "e.g. KIA123456789",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#222222"
+      },
+      {
+        "nodeId": "I2967:53895;47:5605",
+        "name": "Label",
+        "content": "Property Name",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53895;47:5609",
+        "name": "Text",
+        "content": "e.g. Prestow Glasglow",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#222222"
+      },
+      {
+        "nodeId": "I2967:53896;47:5593",
+        "name": "Label",
+        "content": "Tenant(s)",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53896;99:1467",
+        "name": "Hint text",
+        "content": "Edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I2967:53896;47:5597",
+        "name": "Text",
+        "content": "John Appleseed",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I2967:53897;47:5593",
+        "name": "Label",
+        "content": "Landlord(s)",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53897;99:1467",
+        "name": "Hint text",
+        "content": "Edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I2967:53897;47:5597",
+        "name": "Text",
+        "content": "Lisa Appleseed",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I2967:53898;47:5593",
+        "name": "Label",
+        "content": "Monthly Rent",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53898;99:1467",
+        "name": "Hint text",
+        "content": "Edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I2967:53898;47:5597",
+        "name": "Text",
+        "content": "₹ 40,000",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I2967:53899;47:5593",
+        "name": "Label",
+        "content": "One-Time Deposit",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53899;99:1467",
+        "name": "Hint text",
+        "content": "Edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I2967:53899;47:5597",
+        "name": "Text",
+        "content": "₹ 130,000",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I2967:53900;47:5593",
+        "name": "Label",
+        "content": "Rent Duration",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53900;99:1467",
+        "name": "Hint text",
+        "content": "Edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I2967:53900;47:5597",
+        "name": "Text",
+        "content": "11 Months",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I2967:53901;47:5593",
+        "name": "Label",
+        "content": "Exit Date",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I2967:53901;99:1467",
+        "name": "Hint text",
+        "content": "Edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I2967:53901;47:5597",
+        "name": "Text",
+        "content": "31 Dec 2027",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I2967:53902;100:1565",
+        "name": "Text",
+        "content": "Save Changes",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#222222",
+      "#4D4D4D",
+      "#70BF73",
+      "#878787",
+      "#A9A9A9",
+      "#D9D9D9",
+      "#DDDDDD",
+      "#EEEEEE",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      6,
+      8,
+      10,
+      15.19174861907959,
+      16,
+      24,
+      30.38349723815918,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "2005:686",
+      "2006:4742",
+      "2441:19108",
+      "2441:19104",
+      "2967:52892"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Frame 1686557209",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "2967:52896"
+      }
+    ]
+  }
+}

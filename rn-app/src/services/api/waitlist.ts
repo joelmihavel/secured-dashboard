@@ -26,6 +26,8 @@ export type WaitlistState =
 
 export interface WaitlistStatusData {
   state: WaitlistState;
+  /** Master journey state from users.user_status */
+  userStatus: string;
   position: number | null;
   estimatedWaitDays: number | null;
   submissionDate: string | null;
@@ -34,6 +36,23 @@ export interface WaitlistStatusData {
   estimatedReviewTime: string;
   rejectionReasons: string[];
   nextApplicationCountdown: number;
+  /** Whether user has claimed an invite code */
+  hasInviteCode: boolean;
+  /** Batch number the user is in */
+  batchNumber: number | null;
+  /** Current active batch from backend config */
+  currentBatch: number;
+  /** Days before rejected users can re-apply */
+  rejectionCooldownDays: number;
+}
+
+export interface ClaimInviteCodeResponse {
+  success: boolean;
+  data: {
+    code: string;
+    message: string;
+  } | null;
+  error: WaitlistError | null;
 }
 
 export interface ApplyReferralRequest {
@@ -76,10 +95,15 @@ export interface ValidateReferralResponse {
 
 export type WaitlistErrorCode =
   | 'NOT_AUTHENTICATED'
+  | 'AGREEMENT_NOT_CONFIRMED'
   | 'INVALID_REFERRAL'
   | 'REFERRAL_EXPIRED'
   | 'REFERRAL_ALREADY_USED'
   | 'ALREADY_APPLIED'
+  | 'INVALID_INVITE_CODE'
+  | 'INVITE_CODE_USED'
+  | 'INVITE_CODE_ALREADY_CLAIMED'
+  | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
   | 'UNKNOWN_ERROR';
 
@@ -96,6 +120,7 @@ export interface WaitlistError {
 interface RawWaitlistStatusResponse {
   success: boolean;
   has_entry: boolean;
+  user_status?: string;
   contract_status?: string;
   extraction_status?: string;
   requires_manual_review?: boolean;
@@ -107,6 +132,16 @@ interface RawWaitlistStatusResponse {
   admin_review?: string;
   onboarded_count?: number;
   total_member_slots?: number;
+  review_timeline?: {
+    hours: number;
+    display_text: string;
+  };
+  batch_config?: {
+    current_batch: number;
+    batch_size: number;
+    batch_launch_date: string | null;
+    rejection_cooldown_days: number;
+  };
   waitlist_entry?: {
     id: string;
     status: string;
@@ -120,6 +155,8 @@ interface RawWaitlistStatusResponse {
     rejection_reasons: string[];
     next_application_at: string | null;
     created_at: string;
+    has_invite_code: boolean;
+    batch_number: number | null;
   };
   extracted_info?: {
     property_name: string;
@@ -136,6 +173,18 @@ interface RawWaitlistStatusResponse {
     pending_total: number;
     credited_total: number;
   };
+}
+
+/** Raw response from claim-invite-code edge function */
+interface RawClaimInviteCodeResponse {
+  success: boolean;
+  data?: {
+    code: string;
+    message: string;
+  };
+  error?: boolean;
+  message?: string;
+  code?: string;
 }
 
 /** Raw response from join-waitlist edge function */
@@ -215,18 +264,28 @@ interface RawValidateReferralResponse {
  * - submissionDate: from waitlist_entry.created_at
  */
 function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistStatusData {
+  const batchConfig = raw.batch_config;
+  const reviewTimeline = raw.review_timeline;
+  const defaultReviewText = reviewTimeline?.display_text ?? 'Approximately 24 hrs';
+  const rejectionCooldownDays = batchConfig?.rejection_cooldown_days ?? 30;
+
   // No entry means user hasn't joined waitlist yet — treat as pending
   if (!raw.has_entry) {
     return {
       state: 'pending',
+      userStatus: raw.user_status ?? 'signed_up',
       position: null,
       estimatedWaitDays: null,
       submissionDate: null,
       currentOnboarded: 0,
-      totalMemberSlots: 150,
-      estimatedReviewTime: 'Approximately 24 hrs',
+      totalMemberSlots: batchConfig?.batch_size ?? 200,
+      estimatedReviewTime: defaultReviewText,
       rejectionReasons: [],
       nextApplicationCountdown: 0,
+      hasInviteCode: false,
+      batchNumber: null,
+      currentBatch: batchConfig?.current_batch ?? 1,
+      rejectionCooldownDays,
     };
   }
 
@@ -270,32 +329,50 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
     }
   }
 
-  // Estimated review time
-  let estimatedReviewTime = 'Approximately 24 hrs';
+  // Estimated review time — use backend value (dynamic)
+  let estimatedReviewTime = defaultReviewText;
   if (state === 'pending_long') {
-    estimatedReviewTime = 'Approximately 24-48 hrs';
+    // For pending_long, show a higher range if the backend provides hours
+    const hours = reviewTimeline?.hours ?? 24;
+    estimatedReviewTime = `Approximately ${hours}-${hours * 2} hrs`;
   }
 
-  // Calculate countdown from next_application_at if present
+  // Calculate countdown for rejected users
+  // Uses batch_launch_date + rejection_cooldown_days if available,
+  // otherwise falls back to next_application_at
   let nextApplicationCountdown = 0;
-  if (state === 'rejected' && raw.waitlist_entry?.next_application_at) {
-    const nextAt = new Date(raw.waitlist_entry.next_application_at).getTime();
-    const now = Date.now();
-    nextApplicationCountdown = Math.max(0, Math.floor((nextAt - now) / 1000));
-  } else if (state === 'rejected') {
-    nextApplicationCountdown = 86400; // default 24 hrs
+  if (state === 'rejected') {
+    if (raw.waitlist_entry?.next_application_at) {
+      const nextAt = new Date(raw.waitlist_entry.next_application_at).getTime();
+      const now = Date.now();
+      nextApplicationCountdown = Math.max(0, Math.floor((nextAt - now) / 1000));
+    } else if (batchConfig?.batch_launch_date) {
+      // Calculate from batch launch date + cooldown days
+      const launchDate = new Date(batchConfig.batch_launch_date).getTime();
+      const cooldownMs = rejectionCooldownDays * 24 * 60 * 60 * 1000;
+      const reopenAt = launchDate + cooldownMs;
+      const now = Date.now();
+      nextApplicationCountdown = Math.max(0, Math.floor((reopenAt - now) / 1000));
+    } else {
+      nextApplicationCountdown = rejectionCooldownDays * 24 * 60 * 60; // fallback
+    }
   }
 
   return {
     state,
+    userStatus: raw.user_status ?? 'signed_up',
     position,
     estimatedWaitDays,
     submissionDate,
     currentOnboarded: raw.onboarded_count ?? 0,
-    totalMemberSlots: raw.total_member_slots ?? 150,
+    totalMemberSlots: raw.total_member_slots ?? batchConfig?.batch_size ?? 200,
     estimatedReviewTime,
     rejectionReasons,
     nextApplicationCountdown,
+    hasInviteCode: raw.waitlist_entry?.has_invite_code ?? false,
+    batchNumber: raw.waitlist_entry?.batch_number ?? null,
+    currentBatch: batchConfig?.current_batch ?? 1,
+    rejectionCooldownDays,
   };
 }
 
@@ -511,6 +588,14 @@ export async function joinWaitlist(): Promise<{
   }
 
   if (!data?.success || !data.data) {
+    // Check for AGREEMENT_NOT_CONFIRMED gate error
+    const rawData = data as any;
+    if (rawData?.code === 'AGREEMENT_NOT_CONFIRMED') {
+      return {
+        data: null,
+        error: { code: 'AGREEMENT_NOT_CONFIRMED', message: rawData.message || 'Agreement not confirmed' },
+      };
+    }
     return {
       data: null,
       error: { code: 'UNKNOWN_ERROR', message: data?.message || 'Failed to join waitlist' },
@@ -575,6 +660,111 @@ export async function getMyReferralCode(): Promise<{
 }
 
 // ==============================================
+// CLAIM INVITE CODE
+// ==============================================
+
+/**
+ * Validate and claim an admin-generated invite code.
+ * Code format: 2 letters + 2 digits (4 characters, any order).
+ *
+ * @param code - 4-character invite code
+ * @returns Promise with success/error
+ */
+export async function claimInviteCode(
+  code: string
+): Promise<ClaimInviteCodeResponse> {
+  const trimmed = code.trim().toUpperCase();
+
+  // Client-side format validation
+  if (!trimmed || trimmed.length !== 4) {
+    return {
+      success: false,
+      data: null,
+      error: { code: 'INVALID_INVITE_CODE', message: 'Invite code must be 4 characters' },
+    };
+  }
+
+  if (!/^[A-Z0-9]{4}$/.test(trimmed)) {
+    return {
+      success: false,
+      data: null,
+      error: { code: 'INVALID_INVITE_CODE', message: 'Invite code must contain only letters and numbers' },
+    };
+  }
+
+  // Check for exactly 2 letters and 2 digits
+  const letters = trimmed.replace(/[^A-Z]/g, '').length;
+  const digits = trimmed.replace(/[^0-9]/g, '').length;
+  if (letters !== 2 || digits !== 2) {
+    return {
+      success: false,
+      data: null,
+      error: { code: 'INVALID_INVITE_CODE', message: 'Invite code must have 2 letters and 2 digits' },
+    };
+  }
+
+  const { data, error } = await callEdgeFunction<RawClaimInviteCodeResponse>(
+    'claim-invite-code',
+    { code: trimmed },
+    true // requireAuth
+  );
+
+  if (error) {
+    return {
+      success: false,
+      data: null,
+      error: mapInviteCodeError(error),
+    };
+  }
+
+  if (!data?.success) {
+    const errorCode = data?.code;
+    const errorMessage = data?.message ?? 'Failed to validate invite code';
+    return {
+      success: false,
+      data: null,
+      error: mapInviteCodeErrorFromCode(errorCode, errorMessage),
+    };
+  }
+
+  return {
+    success: true,
+    data: data.data ?? { code: trimmed, message: 'Invite code accepted!' },
+    error: null,
+  };
+}
+
+function mapInviteCodeError(errorMessage: string): WaitlistError {
+  const lower = errorMessage.toLowerCase();
+  if (lower.includes('rate') || lower.includes('too many')) {
+    return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment.' };
+  }
+  if (lower.includes('not authenticated') || lower.includes('unauthorized')) {
+    return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+  }
+  return { code: 'UNKNOWN_ERROR', message: errorMessage };
+}
+
+function mapInviteCodeErrorFromCode(code: string | undefined, message: string): WaitlistError {
+  switch (code) {
+    case 'INVALID_CODE':
+      return { code: 'INVALID_INVITE_CODE', message };
+    case 'ALREADY_USED':
+      return { code: 'INVITE_CODE_USED', message };
+    case 'ALREADY_CLAIMED':
+      return { code: 'INVITE_CODE_ALREADY_CLAIMED', message };
+    case 'CODE_REVOKED':
+      return { code: 'INVALID_INVITE_CODE', message };
+    case 'RATE_LIMITED':
+      return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment.' };
+    case 'AUTH_ERROR':
+      return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+    default:
+      return { code: 'UNKNOWN_ERROR', message };
+  }
+}
+
+// ==============================================
 // ERROR MAPPING
 // ==============================================
 
@@ -622,49 +812,4 @@ function mapWaitlistErrorFromCode(code: string | undefined, message: string): Wa
 }
 
 // ==============================================
-// MOCK DATA FOR DEVELOPMENT
-// ==============================================
-
-/**
- * Mock waitlist status for development/testing
- */
-export function getMockWaitlistStatus(state: WaitlistState = 'pending'): WaitlistStatusData {
-  const baseData = {
-    position: 42,
-    estimatedWaitDays: 1,
-    submissionDate: '27 Jan 2026',
-    currentOnboarded: 18,
-    totalMemberSlots: 150,
-    estimatedReviewTime: 'Approximately 24 hrs',
-    rejectionReasons: [],
-    nextApplicationCountdown: 0,
-  };
-
-  switch (state) {
-    case 'pending':
-      return { ...baseData, state: 'pending' };
-    case 'pending_long':
-      return {
-        ...baseData,
-        state: 'pending_long',
-        estimatedWaitDays: 7,
-        estimatedReviewTime: 'Approximately 24-48 hrs',
-      };
-    case 'approved':
-      return { ...baseData, state: 'approved', position: null };
-    case 'rejected':
-      return {
-        ...baseData,
-        state: 'rejected',
-        position: null,
-        rejectionReasons: [
-          "You're renting outside Bangalore",
-          'You did not use an invite code.',
-          "Your rent agreement didn't qualify.",
-        ],
-        nextApplicationCountdown: 102264, // ~28 hours in seconds
-      };
-    default:
-      return { ...baseData, state: 'pending' };
-  }
-}
+// (Mock data removed — all data comes from real API)

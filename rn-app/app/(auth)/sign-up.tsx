@@ -89,30 +89,15 @@ const FIGMA_LAYOUT = {
 
 export default function SignUpScreen({ background }: { background?: boolean } = {}) {
   const router = useRouter();
-  const { state } = useLocalSearchParams<{ state?: 'empty' | 'filled' | 'error' }>();
   const nameInputRef = useRef<RNTextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const { sendCode, status, error, isSendingOtp, clearError } = useAuth();
   const setUserName = useAuthStore((s) => s.setUserName);
   const setConsentForMobile360 = useAuthStore((s) => s.setConsentForMobile360);
 
-  // Mock data for testing states
-  const mockData = {
-    phone: '9876543210',
-    name: 'Rishabh Agnihotri',
-  };
-
-  // Initialize state based on query parameter for automated testing
-  const getInitialPhone = () => (state === 'filled' ? mockData.phone : '');
-  const getInitialName = () => (state === 'filled' ? mockData.name : '');
-  const getInitialConsent = () => true; // Always enabled unless explicitly disabled
-
-  const [phone, setPhone] = useState(getInitialPhone);
-  const [name, setName] = useState(getInitialName);
-  const [consent, setConsent] = useState(getInitialConsent);
-  const [mockError, setMockError] = useState<string | undefined>(
-    state === 'error' ? 'Enter valid number' : undefined
-  );
+  const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
+  const [consent, setConsent] = useState(true);
   const [phoneBlurError, setPhoneBlurError] = useState<string | undefined>();
 
   // Check if form is valid
@@ -146,8 +131,6 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
 
   // Error message mapping - only show phone-related errors, not OTP errors
   const getPhoneErrorMessage = (): string | undefined => {
-    // Return mock error for testing if set
-    if (mockError) return mockError;
     // Return blur validation error (local, before any API call)
     if (phoneBlurError) return phoneBlurError;
     if (!error) return undefined;
@@ -178,9 +161,8 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   const handlePhoneChange = useCallback((text: string) => {
     setPhone(text);
     if (phoneBlurError) setPhoneBlurError(undefined);
-    if (mockError) setMockError(undefined);
     if (error) clearError();
-  }, [error, clearError, mockError, phoneBlurError]);
+  }, [error, clearError, phoneBlurError]);
 
   const handlePhoneBlur = useCallback(() => {
     // Only validate if user has started typing (don't show error on untouched field)
@@ -223,10 +205,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
     sendCode(formattedPhone, 'whatsapp');
   }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
-  // Prevent flash of sign-up screen when transitioning out of auth flow
-  if (status === 'authenticated') {
-    return <View style={{ flex: 1, backgroundColor: colors.black[700] }} />;
-  }
+  const isAuthSuccess = status === 'authenticated';
 
   return (
     <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
@@ -235,7 +214,8 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        style={[styles.keyboardView, isAuthSuccess && { opacity: 0 }]}
+        pointerEvents={isAuthSuccess ? 'none' : 'auto'}
       >
         <ScrollView
           ref={scrollViewRef}

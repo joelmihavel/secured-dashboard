@@ -11,6 +11,7 @@ import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, V
 import { useAuthStore } from '../stores/auth';
 import { useRecordConsent, useIdentityFetch } from './useIdentityVerification';
 import { supabase } from '../services/supabase/client';
+import { queryClient as globalQueryClient } from '../providers/QueryProvider';
 
 // ==============================================
 // ERROR NORMALIZATION
@@ -65,6 +66,7 @@ export function useSendOtp() {
       }
       return result.data!;
     },
+    meta: { suppressGlobalError: true },
     onMutate: (variables) => {
       setPhoneNumber(variables.phone_number);
     },
@@ -94,6 +96,7 @@ export function useVerifyOtp() {
       }
       return result.data!;
     },
+    meta: { suppressGlobalError: true },
     onMutate: () => {
       setVerifying();
     },
@@ -127,6 +130,7 @@ export function useResendOtp() {
       }
       return result.data!;
     },
+    meta: { suppressGlobalError: true },
     onMutate: () => {
       clearError();
     },
@@ -235,6 +239,9 @@ export function useAuth() {
   const signOut = useCallback(async () => {
     await apiSignOut();
     authStore.reset();
+    // Wipe all cached server data so the next user (or re-login)
+    // starts fresh — prevents stale dashboard/waitlist/agreement data.
+    globalQueryClient.clear();
   }, [authStore]);
 
   return {

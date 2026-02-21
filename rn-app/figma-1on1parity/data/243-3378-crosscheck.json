@@ -1,0 +1,414 @@
+{
+  "screenId": "243-3378",
+  "screenName": "Home --active --complete setup /all methods -missed payment",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-21T12:50:38.823Z",
+  "checks": {
+    "nodeCount": 242,
+    "textNodeCount": 38,
+    "componentInstanceCount": 12,
+    "interactiveNodeCount": 8,
+    "imageAssetCount": 10,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 1686557229",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "243:3382",
+        "name": "⚠️ Your payment streak has been broken",
+        "content": "⚠️ Your payment streak has been broken",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "243:3384",
+        "name": "Your missed your December Rent",
+        "content": "Your missed your December Rent",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "243:3385",
+        "name": "Paying with:",
+        "content": "Paying with:",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#A6A6A6"
+      },
+      {
+        "nodeId": "243:3395",
+        "name": "SELECTED",
+        "content": "SELECTED",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "243:3397",
+        "name": "•••• 2341",
+        "content": "•••• 2341",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "243:3399",
+        "name": "EXPIRY 06/26",
+        "content": "EXPIRY 06/26",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#4D4D4D"
+      },
+      {
+        "nodeId": "243:3400",
+        "name": "CVV •••",
+        "content": "CVV •••",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#4D4D4D"
+      },
+      {
+        "nodeId": "243:3409",
+        "name": "CREDIT CARD",
+        "content": "CREDIT CARD",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "243:3480",
+        "name": "SELECTED",
+        "content": "SELECTED",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "243:3482",
+        "name": "•••• 2341",
+        "content": "•••• 2341",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "243:3484",
+        "name": "ICICI a/c - xxx23",
+        "content": "ICICI a/c -  xxx23",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#4D4D4D"
+      },
+      {
+        "nodeId": "243:3485",
+        "name": "rishabh@•••",
+        "content": "rishabh@•••",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#4D4D4D"
+      },
+      {
+        "nodeId": "243:3494",
+        "name": "UPI",
+        "content": "UPI",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "243:3502",
+        "name": "SELECTED",
+        "content": "SELECTED",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "243:3504",
+        "name": "•••• 2341",
+        "content": "•••• 2341",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "243:3506",
+        "name": "EXPIRY 06/26",
+        "content": "EXPIRY 06/26",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#4D4D4D"
+      },
+      {
+        "nodeId": "243:3507",
+        "name": "ICICI a/c - xxx23",
+        "content": "ICICI a/c -  xxx23",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#4D4D4D"
+      },
+      {
+        "nodeId": "243:3516",
+        "name": "NET BANKING",
+        "content": "NET BANKING",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "243:3523",
+        "name": "Setup your payment method to start",
+        "content": "Setup your payment method to start",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "243:3524",
+        "name": "Add UPI, card, or bank to start earning rewards",
+        "content": "Add UPI, card, or bank to start earning rewards",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I243:3525;100:1565",
+        "name": "Text",
+        "content": "+ Add Payment ",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3528",
+        "name": "NEW PAYMENT",
+        "content": "NEW PAYMENT",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "I243:3537;85:166",
+        "name": "Home",
+        "content": "Recent Payments",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I243:3538;85:168",
+        "name": "Home",
+        "content": "Cashbacks",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3544",
+        "name": "September rent",
+        "content": "September rent",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3548",
+        "name": "Paid · 15 Sep, 9:40am",
+        "content": "Paid · 15 Sep, 9:40am",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "243:3549",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 16,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3555",
+        "name": "August rent",
+        "content": "August rent",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3558",
+        "name": "Pending · 15 Sep, 9:40am",
+        "content": "Pending · 15 Sep, 9:40am",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "243:3559",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 16,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3565",
+        "name": "July rent",
+        "content": "July rent",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3568",
+        "name": "Failed · 15 Sep, 9:40am",
+        "content": "Failed · 15 Sep, 9:40am",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "243:3569",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 16,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3573",
+        "name": "Due in 10 Days",
+        "content": "Due in 10 Days",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "243:3574",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#EEEEEE"
+      },
+      {
+        "nodeId": "I243:3575;100:1565",
+        "name": "Text",
+        "content": "Review & pay",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I243:3578;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "243:3584",
+        "name": "Hi, Rishabh",
+        "content": "Hi, Rishabh",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#27803B",
+      "#4CAF50",
+      "#4D4D4D",
+      "#878787",
+      "#A6A6A6",
+      "#A9A9A9",
+      "#AE282E",
+      "#BABABA",
+      "#CBCBCB",
+      "#E5484D",
+      "#E9661C",
+      "#EEEEEE",
+      "#F06321",
+      "#FF9A6D",
+      "#FFB020",
+      "#FFCC8A",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      12,
+      16,
+      24,
+      28,
+      32,
+      40,
+      48,
+      64,
+      120,
+      130
+    ],
+    "componentIds": [
+      "1:7011",
+      "41:2847",
+      "104:3130",
+      "1:25517",
+      "1:25521",
+      "1:27952",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Vector 1",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Vector 1",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Vector 1",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "104:3131"
+      },
+      {
+        "sourceNode": "Vector 1",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "toggle",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "104:3131"
+      },
+      {
+        "sourceNode": "Vector 1",
+        "trigger": "ON_CLICK"
+      }
+    ]
+  }
+}

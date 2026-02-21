@@ -27,6 +27,7 @@ type JourneyTarget =
   | '/(auth)/beta-splash'
   | '/(agreement)/upload'
   | '/(waitlist)'
+  | '/(setup)'
   | '/(main)';
 
 export default function Index() {
@@ -44,7 +45,9 @@ export default function Index() {
       }
 
       if (data.state === 'approved') {
-        setTarget('/(main)');
+        // user_status 'active' = bank verified → home
+        // user_status 'approved' (or any non-active) = bank not done → setup
+        setTarget(data.userStatus === 'active' ? '/(main)' : '/(setup)');
       } else if (data.position === null && data.submissionDate === null) {
         // No waitlist position/submission → user hasn't uploaded agreement yet
         setTarget('/(agreement)/upload');

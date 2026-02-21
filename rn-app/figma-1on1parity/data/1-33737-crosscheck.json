@@ -1,0 +1,322 @@
+{
+  "screenId": "1-33737",
+  "screenName": "onboarding / Add Bank Details",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-21T10:06:08.637Z",
+  "checks": {
+    "nodeCount": 125,
+    "textNodeCount": 31,
+    "componentInstanceCount": 6,
+    "interactiveNodeCount": 2,
+    "imageAssetCount": 6,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": true,
+    "topLevelChildNames": [
+      "Background Shape",
+      "Vector 1",
+      "Rectangle 52",
+      "Frame 1686557300",
+      "Frame 2095586335"
+    ],
+    "textContents": [
+      {
+        "nodeId": "1:33755",
+        "name": "Pay Rent",
+        "content": "Pay Rent",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33766",
+        "name": "Total payable rent",
+        "content": "Total payable rent",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:33767",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33776",
+        "name": "saved ₹ 325 →",
+        "content": "saved ₹ 325 →",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#70BF73"
+      },
+      {
+        "nodeId": "1:33777",
+        "name": "using flent cashback",
+        "content": "using flent cashback",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "1:33781",
+        "name": "Paying to",
+        "content": "Paying to",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33782",
+        "name": "[Landlord Name]",
+        "content": "[Landlord Name]",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33786",
+        "name": "ICICI",
+        "content": "ICICI ",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33787",
+        "name": "XXXX XXXX XXXX 2003",
+        "content": "XXXX XXXX XXXX 2003",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33789",
+        "name": "Pay Now",
+        "content": "Pay Now",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:33790",
+        "name": "All payments are 100% secure",
+        "content": "All payments are 100% secure",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33795",
+        "name": "PAY BY ANY APP INSTEAD",
+        "content": "PAY BY ANY APP INSTEAD",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "1:33799",
+        "name": "Google Pay",
+        "content": "Google Pay",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33802",
+        "name": "PayTM",
+        "content": "PayTM",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "1:33805",
+        "name": "PhonePe",
+        "content": "PhonePe",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#000000"
+      },
+      {
+        "nodeId": "I1:33808;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "1:33817",
+        "name": "Add your Landlord’s  Bank Details",
+        "content": "Add your Landlord’s  Bank Details",
+        "fontSize": 48,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I1:33819;47:5565",
+        "name": "Label",
+        "content": "Account Holder Name",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I1:33819;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I1:33819;47:5569",
+        "name": "Text",
+        "content": "e.g. John Smith",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I1:33820;47:5565",
+        "name": "Label",
+        "content": "Account holder number",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I1:33820;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I1:33820;47:5569",
+        "name": "Text",
+        "content": "e.g. 1234567890",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I1:33821;47:5565",
+        "name": "Label",
+        "content": "IFSC Code",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I1:33821;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I1:33821;47:5569",
+        "name": "Text",
+        "content": "e.g. SBIN0002125",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I1:33822;47:5565",
+        "name": "Label",
+        "content": "PAN CARD",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I1:33822;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I1:33822;47:5569",
+        "name": "Text",
+        "content": "e.g. CSNPM9874A",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I1:33824;100:1575",
+        "name": "Text",
+        "content": "Proceed",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "1:33825",
+        "name": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
+        "content": "You may get a verification message from Cashfree to verify your profile and unlock benefits.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#202020",
+      "#222222",
+      "#444444",
+      "#4D4D4D",
+      "#70BF73",
+      "#878787",
+      "#A9A9A9",
+      "#CC7B57",
+      "#D9D9D9",
+      "#EEEEEE",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      6,
+      8,
+      10,
+      15.19174861907959,
+      16,
+      24,
+      30.38349723815918,
+      32,
+      40,
+      48,
+      64
+    ],
+    "componentIds": [
+      "1:7",
+      "1:25274",
+      "1:81"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Frame 1686557209",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_CLICK",
+        "destination": "1:78"
+      }
+    ]
+  }
+}

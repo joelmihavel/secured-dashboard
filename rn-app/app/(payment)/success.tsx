@@ -303,6 +303,10 @@ export default function SuccessScreen() {
             testID="download-receipt-button"
           />
 
+          <Text style={styles.settlementNote}>
+            Settlement to your landlord will take 1-2 business days.
+          </Text>
+
           <TouchableOpacity onPress={handleContactSupport} style={styles.linkButton}>
             <Text style={styles.linkText}>Contact Support</Text>
           </TouchableOpacity>
@@ -515,6 +519,13 @@ const styles = StyleSheet.create({
     gap: 16,                           // Figma: itemSpacing: 16
     alignItems: 'center',
     paddingBottom: 24,
+  },
+  settlementNote: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#878787',
+    textAlign: 'center',
   },
   linkButton: {
     alignItems: 'center',

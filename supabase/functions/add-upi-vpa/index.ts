@@ -172,10 +172,37 @@ serve(async (req: Request) => {
       true
     );
 
+    const verify_only = body.verify_only === true;
+
     // Normalize VPA to lowercase
     const normalizedVpa = upi_vpa.toLowerCase().trim();
 
-    // Check for duplicate VPA
+    // Validate VPA with Cashfree (optional)
+    const validation = await validateUpiVpa(normalizedVpa);
+    if (!validation.valid) {
+      throw new ValidationError(`Invalid UPI VPA: ${validation.message ?? "Account not found"}`, {
+        upi_vpa: "Invalid",
+      });
+    }
+
+    // Detect UPI provider
+    const provider = detectUpiProvider(normalizedVpa);
+
+    // If verify_only, return validation result without saving
+    if (verify_only) {
+      return jsonResponse({
+        success: true,
+        data: {
+          upi_vpa: normalizedVpa,
+          upi_provider: provider,
+          is_valid: validation.valid,
+          account_holder_name: validation.name,
+          message: validation.message,
+        },
+      });
+    }
+
+    // Check for duplicate VPA (only when saving)
     const { data: existing } = await supabase
       .from("payment_methods")
       .select("id")
@@ -189,24 +216,13 @@ serve(async (req: Request) => {
       throw new ValidationError("This UPI VPA is already saved", { upi_vpa: "Duplicate" });
     }
 
-    // Validate VPA with Cashfree (optional)
-    const validation = await validateUpiVpa(normalizedVpa);
-    if (!validation.valid) {
-      throw new ValidationError(`Invalid UPI VPA: ${validation.message ?? "Account not found"}`, {
-        upi_vpa: "Invalid",
-      });
-    }
-
-    // Detect UPI provider
-    const provider = detectUpiProvider(normalizedVpa);
-
     // If setting as primary, unset existing primary
     if (set_primary) {
       await supabase
         .from("payment_methods")
-        .update({ is_primary: false })
+        .update({ is_default: false })
         .eq("user_id", userId)
-        .eq("is_primary", true)
+        .eq("is_default", true)
         .is("deleted_at", null);
     }
 
@@ -222,7 +238,7 @@ serve(async (req: Request) => {
         upi_vpa: normalizedVpa,
         upi_provider: provider,
         is_verified: validation.valid,
-        is_primary: set_primary,
+        is_default: set_primary,
         nickname: displayNickname,
       })
       .select()
@@ -238,7 +254,7 @@ serve(async (req: Request) => {
       upi_vpa: normalizedVpa,
       upi_provider: provider,
       is_verified: validation.valid,
-      is_primary: set_primary,
+      is_default: set_primary,
       validation_name: validation.name,
     });
 
@@ -249,7 +265,7 @@ serve(async (req: Request) => {
         upi_vpa: paymentMethod.upi_vpa,
         upi_provider: paymentMethod.upi_provider,
         is_verified: paymentMethod.is_verified,
-        is_primary: paymentMethod.is_primary,
+        is_default: paymentMethod.is_default,
         nickname: paymentMethod.nickname,
         account_holder_name: validation.name,
       },

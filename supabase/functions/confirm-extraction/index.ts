@@ -247,11 +247,9 @@ serve(async (req) => {
         role: confirmedRole,
         is_role_locked: true,
         role_locked_at: new Date().toISOString(),
-        // V2: also update user_status to waitlisted
-        user_status: "waitlisted",
+        // V2: update user_status to agreement_confirmed (gated — must join waitlist separately)
+        user_status: "agreement_confirmed",
         status_updated_at: new Date().toISOString(),
-        // V2: mark as in KYC progress
-        kyc_status: "in_progress",
       })
       .eq("id", user.id)
       .eq("is_role_locked", false); // Only update if not already locked
@@ -335,7 +333,7 @@ serve(async (req) => {
       // Nested data object for iOS compatibility
       data: tenancyId ? {
         tenancy_id: tenancyId,
-        user_status: "waitlisted",
+        user_status: "agreement_confirmed",
       } : undefined,
     };
 

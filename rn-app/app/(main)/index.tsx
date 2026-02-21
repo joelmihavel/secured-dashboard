@@ -41,7 +41,7 @@
 
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
@@ -58,6 +58,7 @@ import {
   BottomFooter,
   HomeEmptyState,
   CashbackSetupModal,
+  RentAmountModal,
   EmptyPaymentsState,
   CashbackEmptyState,
   PaymentMethodSelectionSheet,
@@ -78,16 +79,11 @@ import type { DashboardState, MappedRecentPayment, MappedCashbackEntry } from '@
 
 // Import saved payment methods hook
 import { useSavedPaymentMethods } from '@/src/hooks/usePayments';
+import { usePaymentStore } from '@/src/stores/payment';
 
 // Import colors from theme
 import { colors } from '@/src/theme';
 
-// Import mock data for BuildBot screenshot capture mode
-import {
-  getMockDashboardData,
-  getMockSavedPaymentMethods,
-  type HomeScreenState,
-} from '@/src/hooks/useScreenshotMockData';
 import { mapRecentPayments, deriveCashbackEntries, getDashboardState } from '@/src/services/api/dashboard';
 
 // ==============================================
@@ -98,11 +94,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Read optional ?state= URL param for BuildBot screenshot capture mode.
-  // When present, mock data for the named state is used instead of (or as
-  // fallback for) real Supabase data so every Figma variant can be screenshotted.
-  const { state: stateParam } = useLocalSearchParams<{ state?: string }>();
-
   const dashboardResult = useDashboard();
   const {
     isLoading,
@@ -111,32 +102,7 @@ export default function HomeScreen() {
   } = dashboardResult;
   const refresh = useRefreshDashboard();
 
-  // ─── Mock data injection ───
-  // When ?state=<preset> is present AND the screen is loading, errored, or has
-  // no real data yet, inject the corresponding mock preset so BuildBot can
-  // screenshot every variant without needing a live Supabase session.
-  // Real data always wins when available to avoid disrupting the logged-in user.
-  const mockData = useMemo(() => {
-    if (!stateParam) return null;
-    const knownStates: HomeScreenState[] = [
-      'bank-upi', 'all-methods', 'late-payment', 'missed-payment',
-      'complete', 'upi-no-cashbacks', 'setup-payment', 'setup-upi', 'no-cashback',
-    ];
-    if (knownStates.includes(stateParam as HomeScreenState)) {
-      return getMockDashboardData(stateParam as HomeScreenState);
-    }
-    return null;
-  }, [stateParam]);
-
-  // Determine whether mock data should be active:
-  // - a valid ?state= param was supplied, AND
-  // - real data is unavailable (loading, error, or no tenancy data)
-  const useMockData = mockData !== null && (
-    isLoading || !!error || dashboardResult.data == null
-  );
-
-  // Resolve final data values from real query or mock
-  const resolvedData = useMockData ? mockData! : dashboardResult.data ?? null;
+  const resolvedData = dashboardResult.data ?? null;
   const dashboardState: DashboardState = getDashboardState(resolvedData);
   const user = resolvedData?.user ?? null;
   const tenancy = resolvedData?.tenancy ?? null;
@@ -158,28 +124,10 @@ export default function HomeScreen() {
   // Tab state for Recent Payments / Cashbacks
   const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
   const [showCashbackModal, setShowCashbackModal] = useState(false);
-  const [showPaymentSheet, setShowPaymentSheet] = useState(stateParam === 'setup-payment');
+  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
 
-  // Get saved payment methods — use mock methods when in mock mode
-  const { data: realSavedMethods } = useSavedPaymentMethods();
-  const mockSavedMethods = useMemo(() => {
-    if (!useMockData || !stateParam) return null;
-    const methodStateMap: Record<string, 'bank-upi' | 'all-methods' | 'upi-only' | 'none'> = {
-      'bank-upi': 'bank-upi',
-      'all-methods': 'all-methods',
-      'late-payment': 'bank-upi',
-      'missed-payment': 'bank-upi',
-      'complete': 'all-methods',
-      'upi-no-cashbacks': 'upi-only',
-      'setup-payment': 'none',
-      'setup-upi': 'upi-only',
-      'no-cashback': 'upi-only',
-    };
-    const methodState = methodStateMap[stateParam] ?? 'bank-upi';
-    return getMockSavedPaymentMethods(methodState);
-  }, [useMockData, stateParam]);
-
-  const savedMethods = useMockData ? mockSavedMethods : realSavedMethods;
+  // Get saved payment methods
+  const { data: savedMethods } = useSavedPaymentMethods();
 
   // ==============================================
   // DERIVED VALUES
@@ -259,7 +207,8 @@ export default function HomeScreen() {
   // Payment due calculations
   const daysUntilDue = upcomingPayment?.days_until_due ?? 0;
   const isOverdue = upcomingPayment?.is_overdue ?? false;
-  const isMissed = isOverdue && daysUntilDue < -30; // Missed if overdue by more than 30 days
+  const isMissed = isOverdue && daysUntilDue <= -30 && daysUntilDue > -60; // Missed if overdue by more than 30 days
+  const isMultipleOverdue = isOverdue && daysUntilDue <= -60;
   const rentAmount = upcomingPayment?.amount ?? tenancy?.monthly_rent ?? 0;
 
   // Derive the missed month name from rent_month (ISO date "YYYY-MM-DD")
@@ -308,9 +257,16 @@ export default function HomeScreen() {
       return 'empty_base';
     }
 
-    // Payment methods exist but landlord not yet approved
-    if (!verificationStatus?.landlord_approved) {
-      return 'invitation_sent';
+    // Map backend status to specific UI states based on invite timestamp and status
+    if (tenancy?.verification_status) {
+      const landlordStatus = tenancy.verification_status.landlord_approved;
+      // In a real app we'd check landlord_invite_status and sent_at timestamp
+      // For now we map to invitation_sent as default if not approved
+      if (!landlordStatus) {
+        return 'invitation_sent'; 
+        // Can be extended to: 'invitation_resent_recent', 'invitation_resent_old', 
+        // 'invitation_failed', 'invitation_declined'
+      }
     }
 
     // Landlord approved, check remaining verification steps
@@ -354,27 +310,53 @@ export default function HomeScreen() {
     router.push('/(payment)/select-method' as never);
   }, [router]);
 
-  const handleCashbackSetup = useCallback(() => {
-    setShowCashbackModal(false);
-    router.push('/(setup)/pending-steps' as never);
-  }, [router]);
+        const handleCashbackSetup = useCallback(() => {
+          setShowCashbackModal(false);
+          const verificationStatus = tenancy?.verification_status;
 
-  const handleCashbackSkip = useCallback(() => {
-    setShowCashbackModal(false);
-    router.push('/(payment)/select-method' as never);
-  }, [router]);
+          // Route to whichever verification step is pending, with reentry flag
+          if (!verificationStatus?.utility_verified) {
+            router.push('/(setup)/add-utility?reentry=true' as never);
+          } else if (!verificationStatus?.landlord_approved) {
+            router.push('/(setup)/invite-landlord?reentry=true' as never);
+          } else {
+            // All done — shouldn't reach here, but safe fallback
+            router.push('/(payment)/select-method' as never);
+          }
+        }, [router, tenancy]);
+      
+        const handleCashbackSkip = useCallback(() => {
+          setShowCashbackModal(false);
+          router.push('/(payment)/select-method' as never);
+        }, [router]);
+      
+        const handleFinishSetup = useCallback(() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          router.push('/(setup)/pending-steps' as never);
+        }, [router]);
+      
+        const [showRentAmountModal, setShowRentAmountModal] = useState(false);
+        const setPaymentAmount = usePaymentStore(state => state.setAmount);
 
-  const handleFinishSetup = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/(setup)/pending-steps' as never);
-  }, [router]);
+        const handlePayNow = useCallback(() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setShowRentAmountModal(true);
+        }, []);
 
-  const handlePayNow = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/(payment)/initiate' as never);
-  }, [router]);
-
-  const handleAddAgreement = useCallback(() => {
+        const handleRentAmountConfirm = useCallback((amount: string) => {
+          setShowRentAmountModal(false);
+          setPaymentAmount(parseFloat(amount));
+          
+          if (dashboardState === 'pending_verification') {
+            setTimeout(() => {
+              setShowCashbackModal(true);
+            }, 300);
+          } else {
+            // Push to select-method since they need to choose payment method,
+            // or initiate if that was the intended flow. Keeping it initiate as original.
+            router.push('/(payment)/initiate' as never);
+          }
+        }, [dashboardState, router, setPaymentAmount]);  const handleAddAgreement = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/(agreement)/upload' as never);
   }, [router]);
@@ -417,8 +399,7 @@ export default function HomeScreen() {
   // LOADING STATE
   // ==============================================
 
-  // Skip loading spinner when mock data is active (BuildBot screenshot mode)
-  if (isLoading && !useMockData) {
+  if (isLoading) {
     return (
       <Screen testID="home-screen-loading" padded={false}>
         <View style={styles.loadingContainer}>
@@ -436,8 +417,7 @@ export default function HomeScreen() {
   // ERROR STATE
   // ==============================================
 
-  // Skip error screen when mock data is active
-  if (error && !useMockData) {
+  if (error) {
     return (
       <Screen testID="home-screen-error" padded={false}>
         <View style={styles.errorContainer}>
@@ -488,11 +468,14 @@ export default function HomeScreen() {
 
         {/* Warning Banner for overdue/missed states */}
         {/* Figma 243-3170: WarningBanner handles its own paddingLeft: 64, paddingRight: 32 */}
-        {isOverdue && !isMissed && (
+        {isOverdue && !isMissed && !isMultipleOverdue && (
           <WarningBanner type="late" />
         )}
         {isMissed && (
           <WarningBanner type="missed" />
+        )}
+        {isMultipleOverdue && (
+          <WarningBanner type="multiple" />
         )}
 
         {/* Dashboard Content */}
@@ -507,6 +490,7 @@ export default function HomeScreen() {
           daysUntilDue,
           isOverdue,
           isMissed,
+          isMultipleOverdue,
           missedMonthName,
           activeTab,
           cashbackBalance,
@@ -532,8 +516,8 @@ export default function HomeScreen() {
           <BottomFooter
             dueInDays={daysUntilDue}
             amount={rentAmount}
-            buttonLabel={dashboardState === 'pending_verification' ? "Review" : "Review & pay"}
-            disabled={dashboardState === 'pending_verification' && !isSetupComplete}
+            buttonLabel="Review & pay"
+            disabled={false} // Removed disabled so pending_verification can trigger CashbackSetupModal
             onPress={handlePayNow}
           />
         </View>
@@ -549,12 +533,23 @@ export default function HomeScreen() {
         onAddNewMethod={handleSheetAddNewMethod}
       />
 
+      {/* Rent Amount Modal */}
+      <RentAmountModal
+        visible={showRentAmountModal}
+        initialAmount={tenancy?.monthly_rent ?? 0}
+        onClose={() => setShowRentAmountModal(false)}
+        onPay={handleRentAmountConfirm}
+      />
+
       {/* Cashback Setup Modal */}
       <CashbackSetupModal
         visible={showCashbackModal}
         onClose={() => setShowCashbackModal(false)}
         onSetup={handleCashbackSetup}
         onSkip={handleCashbackSkip}
+        bankDetailsComplete={verificationStatus?.bank_verified ?? false}
+        addressProofComplete={verificationStatus?.utility_verified ?? false}
+        landlordInvited={verificationStatus?.landlord_approved ?? false}
       />
     </Screen>
   );
@@ -575,6 +570,7 @@ interface ContentProps {
   daysUntilDue: number;
   isOverdue: boolean;
   isMissed: boolean;
+  isMultipleOverdue: boolean;
   missedMonthName: string;
   activeTab: TabId;
   cashbackBalance: number;
@@ -604,6 +600,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     daysUntilDue,
     isOverdue,
     isMissed,
+    isMultipleOverdue,
     missedMonthName,
     activeTab,
     cashbackBalance,
@@ -669,7 +666,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     case 'payment_due':
     case 'payment_overdue':
       // Active states with payment methods, tabs, and payment list
-      const headlineVariant = isMissed ? 'missed' : isOverdue ? 'overdue' : 'due';
+      const headlineVariant = isMultipleOverdue ? 'multiple_overdue' : isMissed ? 'missed' : isOverdue ? 'overdue' : 'due';
       const daysValue = isOverdue ? Math.abs(daysUntilDue) : daysUntilDue;
 
       return (

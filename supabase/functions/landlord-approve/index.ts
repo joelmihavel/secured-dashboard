@@ -462,7 +462,7 @@ async function handleApprove(
       account_number_masked: maskAccountNumber(account_number),
       ifsc_code: sanitizedIfsc,
       verified: false, // Will be verified via penny drop
-      is_primary: true,
+      is_default: true,
     })
     .select()
     .single();

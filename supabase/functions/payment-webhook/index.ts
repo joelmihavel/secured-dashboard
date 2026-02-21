@@ -32,7 +32,6 @@ if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
 
 // Cashback configuration
 const CASHBACK_RATE = 0.01; // 1% cashback on rent payments
-const CASHBACK_MAX_PAISE = 100000; // Max ₹1,000 cashback per payment
 
 // PayU status mapping - comprehensive list of all PayU statuses
 const PAYU_STATUS_MAP: Record<string, string> = {
@@ -192,10 +191,10 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
-    // Find the payment record with tenancy details
+    // Find the payment record with tenancy details (including monthly_rent_paise for cashback cap)
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
-      .select("*, tenancy:tenancies(user_id)")
+      .select("*, tenancy:tenancies(user_id, monthly_rent_paise, bank_verified, utility_verified, landlord_approved)")
       .eq("payu_txn_id", payload.txnid)
       .single();
 
@@ -267,20 +266,28 @@ serve(async (req: Request) => {
       );
     }
 
-    // Extract user_id from the joined tenancy
-    const userId = (payment.tenancy as { user_id: string } | null)?.user_id;
+    // Extract user_id and tenancy details from the joined tenancy
+    const tenancyData = payment.tenancy as {
+      user_id: string;
+      monthly_rent_paise: number;
+      bank_verified: boolean;
+      utility_verified: boolean;
+      landlord_approved: boolean;
+    } | null;
+    const userId = tenancyData?.user_id;
 
     // Map PayU status to our status
     const newStatus = PAYU_STATUS_MAP[payload.status.toLowerCase()] ?? "failed";
     const isSuccess = newStatus === "success";
 
-    // Update payment record
+    // Update payment record — store full webhook payload
     const updateData: Record<string, unknown> = {
       status: newStatus,
       payu_mihpayid: payload.mihpayid,
       payu_status: payload.status,
       payu_error_code: payload.error,
       payu_error_message: payload.error_Message,
+      payu_raw_response: payload,
       payment_method_details: {
         ...((payment.payment_method_details as Record<string, unknown>) ?? {}),
         bank_ref_no: payload.bank_ref_no,
@@ -295,12 +302,34 @@ serve(async (req: Request) => {
     if (isSuccess) {
       updateData.paid_at = new Date().toISOString();
 
-      // Calculate cashback earned (1% of rent amount)
+      // Calculate cashback earned using dynamic monthly cap (1% of agreement rent)
+      const monthlyRentPaise = tenancyData?.monthly_rent_paise ?? 0;
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      const monthlyCap = Math.floor(monthlyRentPaise * CASHBACK_RATE);
+
+      // How much already earned this month
+      const { data: monthlyEarnings } = await supabase
+        .from('cashback_ledger')
+        .select('amount_paise')
+        .eq('user_id', userId!)
+        .eq('transaction_type', 'earned')
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString());
+
+      const earnedThisMonth = (monthlyEarnings || []).reduce((sum: number, e: { amount_paise: number }) => sum + e.amount_paise, 0);
+      const capRemaining = Math.max(0, monthlyCap - earnedThisMonth);
+
       const cashbackEarnedPaise = Math.min(
         Math.floor(payment.rent_amount_paise * CASHBACK_RATE),
-        CASHBACK_MAX_PAISE
+        capRemaining
       );
       updateData.cashback_earned_paise = cashbackEarnedPaise;
+
+      // Queue landlord payout on success
+      updateData.landlord_payout_status = 'pending';
+      updateData.landlord_payout_paise = payment.rent_amount_paise;
     }
 
     const { error: updateError } = await supabase
@@ -311,6 +340,24 @@ serve(async (req: Request) => {
     if (updateError) {
       console.error("Failed to update payment:", updateError);
       throw new AppError("Failed to update payment", "DB_ERROR", 500);
+    }
+
+    // Cashback reversal on failure — if cashback was debited at initiation, reverse it
+    if (newStatus === "failed" && payment.cashback_applied_paise > 0 && userId) {
+      try {
+        await supabase.from("cashback_ledger").insert({
+          user_id: userId,
+          amount_paise: payment.cashback_applied_paise,
+          transaction_type: "reversal",
+          reference_type: "payment",
+          reference_id: payment.id,
+          description: "Cashback reversed due to payment failure",
+        });
+        console.log(`Reversed ${payment.cashback_applied_paise} paise cashback for failed payment ${payment.id}`);
+      } catch (reversalError) {
+        console.error("Failed to reverse cashback:", reversalError);
+        // Don't throw — reversal failure shouldn't fail the webhook
+      }
     }
 
     // If successful, credit cashback

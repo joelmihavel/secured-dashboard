@@ -20,10 +20,15 @@ import { setupNotificationHandlers } from '@/src/services/notifications';
 import { setupAutoUpdateCheck } from '@/src/config/updates';
 import { OfflineBanner } from '@/src/components/ui';
 import { useDeepLink } from '@/src/hooks/useDeepLink';
+import { useErrorNavigation } from '@/src/hooks/useErrorNavigation';
 import { markAppReady } from '@/src/services/performance';
+import { installGlobalErrorHandlers } from '@/src/services/globalErrorHandlers';
 
 // Initialize Sentry before app renders
 initSentry();
+
+// Install global error handlers (chains with Sentry's handlers)
+installGlobalErrorHandlers();
 
 // Keep splash screen visible while loading resources
 SplashScreen.preventAutoHideAsync();
@@ -60,6 +65,9 @@ function RootLayoutInner() {
   // Handle deep links (ST-107)
   useDeepLink();
 
+  // Bridge error event bus to router navigation
+  useErrorNavigation();
+
   // Mark app as ready for performance tracking (PR-115)
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -86,6 +94,7 @@ function RootLayoutInner() {
               }}
             >
               <Stack.Screen name="index" />
+              <Stack.Screen name="error" options={{ animation: 'fade' }} />
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(main)" />
               <Stack.Screen name="(setup)" />

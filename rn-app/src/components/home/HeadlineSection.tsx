@@ -47,7 +47,7 @@ function HeadlineSectionComponent({
       case 'overdue':
         return (
           <RNText style={styles.headline}>
-            <RNText style={styles.grayText}>Your rent is overdue by </RNText>
+            <RNText style={styles.grayText}>Your rent is overdue{'\n'}by </RNText>
             <RNText style={styles.accentText}>{daysOverdue} days</RNText>
           </RNText>
         );
@@ -63,7 +63,7 @@ function HeadlineSectionComponent({
       case 'multiple_overdue':
         return (
           <RNText style={styles.headline}>
-            <RNText style={styles.grayText}>Multiple payments </RNText>
+            <RNText style={styles.grayText}>Multiple payments{'\n'}</RNText>
             <RNText style={styles.accentText}>are overdue</RNText>
           </RNText>
         );

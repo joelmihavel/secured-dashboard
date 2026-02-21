@@ -39,9 +39,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Line } from 'react-native-svg';
 
-import { Screen, Text, PrimaryButton, Logo, DottedPattern } from '@/src/components';
-import { useVerificationStatus } from '@/src/hooks';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
+import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
+import { DottedPattern } from '@/src/components/patterns';
 import { colors } from '@/src/theme';
+import { s, sf } from '@/src/theme/scale';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -55,28 +63,25 @@ interface SetupStep {
 
 // Figma content from screens 41-10712, 41-10859, 41-11006
 // Text content and span boundaries extracted directly from blueprint typography.spans
+// Added newlines to match visual layout in Figma
 const SETUP_STEPS: SetupStep[] = [
   {
     id: 'bank',
     // Figma 160:3121: "Add your landlord's bank details to enable payouts"
-    // spans: [{start:0, end:24, color:#FF9A6D}, {start:25, end:32, color:#FF9A6D}]
-    // Combined orange range covers "Add your landlord's bank details " (chars 0-32)
-    description: "Add your landlord's bank details to enable payouts",
-    orangeEnd: 32,
+    description: "Add your landlord's\nbank details\nto enable payouts",
+    orangeEnd: 32, // "Add your landlord's\nbank details"
   },
   {
     id: 'address',
-    // Figma 160:3149: "Upload  address proof  to verify your tenancy"
-    // spans: [{start:0, end:23, color:#FF9A6D}]
-    description: 'Upload  address proof  to verify your tenancy',
-    orangeEnd: 23,
+    // Figma 160:3149: "Upload address proof to verify your tenancy"
+    description: 'Upload\naddress proof\nto verify your tenancy',
+    orangeEnd: 21, // "Upload\naddress proof "
   },
   {
     id: 'landlord',
-    // Figma 160:3177: "Invite your landlord  to finish setup"
-    // spans: [{start:0, end:20, color:#FF9A6D}]
-    description: 'Invite your landlord  to finish setup',
-    orangeEnd: 20,
+    // Figma 160:3177: "Invite your landlord to finish setup"
+    description: 'Invite your landlord\nto finish setup',
+    orangeEnd: 20, // "Invite your landlord"
   },
 ];
 
@@ -85,24 +90,24 @@ const FIGMA = {
   // Screen
   screenWidth: 393,
 
+  // Carousel
+  itemWidth: s(270),
+  itemGap: s(-23), // 270 - 247
+  snapInterval: s(247), // 270 + (-23)
+
   // Header frame (41:10824 / Frame 2095586400)
   // Position: x=48, y=124 from screen top
-  // Layout: column, gap=34, sizingV=HUG
-  headerX: 48, // Figma: relativeTransform x
-  headerY: 124, // Figma: relativeTransform y
-  headerWidth: 310, // Figma: geometry.width
-  headerGap: 34, // Figma: layout.gap
+  headerX: s(48),
+  headerY: s(124),
+  headerWidth: s(310),
+  headerGap: s(34),
 
   // Logo in header (41:10825 / Frame 1686557264)
-  // 32x38.4 frame containing white vector logo
-  headerLogoWidth: 32.04,
-  headerLogoHeight: 38.4,
+  headerLogoHeight: s(38.4),
 
   // Title text (160:3095)
-  // Position: y=72.4 within header frame (gap 34 from 38.4 logo)
-  titleWidth: 310,
-  titleFontSize: 32,
-  titleLineHeight: 48,
+  titleFontSize: sf(32),
+  titleLineHeight: sf(48),
   titleLetterSpacing: -1,
   // Span colors from typography.spans
   titleGrayColor: colors.neutral[500], // neutral.500 - chars 0-9 "Let's get"
@@ -110,90 +115,59 @@ const FIGMA = {
 
   // Card frame (160:3101 / Frame 2095586361)
   // Position: x=61, y=322
-  cardX: 61,
-  cardY: 322,
-  cardWidth: 270,
-  cardHeight: 321,
+  cardX: s(61),
+  cardY: s(322),
+  cardWidth: s(270),
+  cardHeight: s(321),
   cardBgColor: colors.black[500], // black.500
 
   // Card top perforations (Ellipse 21892-21905)
-  // 14 circles, 14px diameter, at y=-4 (half-clipped by card overflow:hidden)
-  // X positions: 4, 24, 44, 64, 84, 104, 124, 144, 164, 184, 204, 224, 244, 264
   perforationCount: 14,
-  perforationSize: 14,
-  perforationY: -4,
-  perforationStartX: 4,
-  perforationSpacing: 20, // 20px between each circle center-to-center
+  perforationSize: s(14),
+  perforationY: s(-4),
+  perforationStartX: s(4),
+  perforationSpacing: s(20),
 
   // Card content frame (160:3118 / Frame 2095586360)
   // Position within card: x=34, y=118
-  // Size: 204x144 (HUG height), column, gap=16
-  contentX: 34,
-  contentY: 118,
-  contentWidth: 204,
-  contentGap: 16,
+  contentX: s(34),
+  contentY: s(118),
+  contentWidth: s(204),
+  contentGap: s(16),
 
   // Card logo (160:3119 / Frame 1686557264 inside card)
-  // 26.7x32 white vector
-  cardLogoWidth: 26.7,
-  cardLogoHeight: 32,
+  cardLogoHeight: s(32),
 
   // Card description text (160:3121 etc.)
-  // Position: y=48 within content frame (gap 16 from 32h logo = 48)
-  descFontSize: 20,
-  descLineHeight: 32,
+  descFontSize: sf(20),
+  descLineHeight: sf(32),
   descBaseColor: colors.neutral[300], // neutral.300
   descAccentColor: colors.brand[500], // brand.500
 
   // Decorative crosshatch group (Group 59: 160:3122)
-  // Position within card: x=218, y=36
-  // Two diagonal lines (Vector 57, Vector 58), 20.5x20.5 each
-  // Stroked #4D4D4D, weight ~0.3
-  crosshatch1X: 218,
-  crosshatch1Y: 36,
-  crosshatchSize: 20.5,
-  crosshatchGap: 14.5, // Second line starts at y=14.5
-
-  // Decorative crosshatch group (Group 60: 160:3125)
-  // Position within card: x=44, y=28
-  crosshatch2X: 44,
-  crosshatch2Y: 28,
-
-  // Decorative dashed line (Vector 1: 160:3117)
-  // Position: x=8, y=-5.31, rotated ~2.86 degrees
-  // Stroke: #4D4D4D
-  dashedLineX: 8,
-  dashedLineY: -5.31,
+  crosshatch1X: s(218),
+  crosshatch1Y: s(36),
+  crosshatch2X: s(44),
+  crosshatch2Y: s(28),
+  crosshatchSize: s(20.5),
+  crosshatchGap: s(14.5),
 
   // Pagination dots (41:10855 / Frame 2095586316)
-  // Position: x=181, y=673
-  // Row, gap=4, 3 dots 8x8
-  paginationY: 673,
-  dotSize: 8,
-  dotGap: 4,
+  paginationY: s(673),
+  dotSize: s(8),
+  dotGap: s(4),
   dotActiveColor: colors.brand[500], // brand.500
   dotInactiveColor: colors.black[500], // black.500
 
   // Button (41:10823 disabled / 41:11076 active)
-  // Position: x=40, y=739
-  buttonX: 40,
-  buttonY: 739,
-  buttonWidth: 313,
-
-  // Disabled button: 56h, radius 12, bg #202020, border #202020 1px
-  buttonDisabledHeight: 56,
-  buttonDisabledRadius: 12,
-  buttonDisabledBg: colors.black[500], // black.500
-  buttonDisabledBorder: colors.black[500],
-  buttonDisabledTextColor: colors.neutral[800], // neutral.800
-  buttonDisabledTextSize: 16,
-  buttonDisabledLineHeight: 24,
+  buttonX: s(40),
+  buttonY: s(739),
+  buttonWidth: s(313),
 
   // Active button uses PrimaryButton component (step 3)
-  // 313x62 (HUG), includes divider 24x2 #4D4D4D + inner 313x52 gradient button
-  buttonActiveText: 'Start Flenting \u2192',
-  buttonActiveTextSize: 14,
-  buttonActiveLineHeight: 20,
+  buttonActiveText: 'Start Flenting',
+  buttonActiveTextSize: sf(16),
+  buttonActiveLineHeight: sf(24),
 } as const;
 
 // Decorative crosshatch SVG component - matches Figma Groups 59/60
@@ -301,8 +275,6 @@ export default function SetupIndexScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { step } = useLocalSearchParams<{ step?: string }>();
-  const { allVerified } = useVerificationStatus();
-
   // Support ?step=1|2|3 for automated testing - parse to 0-indexed
   const initialStep = step
     ? Math.max(0, Math.min(parseInt(step, 10) - 1, SETUP_STEPS.length - 1))
@@ -344,20 +316,67 @@ export default function SetupIndexScreen() {
 
   const handleStartFlenting = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (allVerified) {
-      router.replace('/(main)');
-    } else {
-      router.push('/(setup)/pending-steps');
-    }
-  }, [router, allVerified]);
+    router.push('/(setup)/add-bank');
+  }, [router]);
+
+  const scrollX = useSharedValue(initialStep * FIGMA.snapInterval);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollX.value = event.contentOffset.x;
+    },
+  });
 
   const renderItem = useCallback(
-    ({ item }: { item: SetupStep }) => (
-      <View style={styles.slideContainer}>
-        <SetupCard step={item} />
-      </View>
-    ),
-    []
+    ({ item, index }: { item: SetupStep; index: number }) => {
+      // Each item is spaced by snapInterval = 247
+      // Position calculation:
+      // index * snapInterval = the exact scrollX when this item is centered
+      const inputRange = [
+        (index - 1) * FIGMA.snapInterval,
+        index * FIGMA.snapInterval,
+        (index + 1) * FIGMA.snapInterval,
+      ];
+
+      const animatedStyle = useAnimatedStyle(() => {
+        // Active item scale = 1.0, adjacent item scale = 0.8
+        const scale = interpolate(
+          scrollX.value,
+          inputRange,
+          [0.8, 1, 0.8],
+          Extrapolation.CLAMP
+        );
+        // Translate Y to match Figma: Right/Left items are 92px lower down
+        // Since scale=0.8 reduces height from 321 to 256.8, the top edge drops by 32.1px naturally
+        // We need an additional translateY of 92.1 - 32.1 = 60px
+        const translateY = interpolate(
+          scrollX.value,
+          inputRange,
+          [s(60), 0, s(60)],
+          Extrapolation.CLAMP
+        );
+        
+        // Hide items further out to avoid crowding edges
+        const opacity = interpolate(
+          scrollX.value,
+          inputRange,
+          [0.6, 1, 0.6],
+          Extrapolation.CLAMP
+        );
+
+        return {
+          opacity,
+          transform: [{ translateY }, { scale }],
+        };
+      });
+
+      return (
+        <Animated.View style={[styles.slideContainer, animatedStyle]}>
+          <SetupCard step={item} />
+        </Animated.View>
+      );
+    },
+    [scrollX]
   );
 
   // Figma layout uses absolute positions from screen top.
@@ -372,15 +391,46 @@ export default function SetupIndexScreen() {
   // Card bottom to pagination = 673 - (322+321) = 30
   const cardToPaginationGap = FIGMA.paginationY - (FIGMA.cardY + FIGMA.cardHeight);
   // Pagination bottom to button = 739 - (673+8) = 58
-  const paginationToButtonGap = FIGMA.buttonY - (FIGMA.paginationY + FIGMA.dotSize);
-
-  return (
-    <Screen testID="setup-index-screen" padded={false} safeAreaBottom={false}>
-      {/* Background - Figma: #131313 with dotted pattern */}
-      <DottedPattern />
-
-      <View style={[styles.container, { paddingTop: Math.max(0, headerPaddingTop) }]}>
-        {/* Header frame - Figma 41:10824: x=48, column, gap=34 */}
+      const paginationToButtonGap = FIGMA.buttonY - (FIGMA.paginationY + FIGMA.dotSize);
+  
+      // Crossfading background shapes based on scroll position
+      const bgShapeOpacity1 = useAnimatedStyle(() => ({
+        opacity: interpolate(
+          scrollX.value,
+          [0, FIGMA.snapInterval],
+          [1, 0],
+          Extrapolation.CLAMP
+        ),
+      }));
+      const bgShapeOpacity2 = useAnimatedStyle(() => ({
+        opacity: interpolate(
+          scrollX.value,
+          [0, FIGMA.snapInterval, FIGMA.snapInterval * 2],
+          [0, 1, 0],
+          Extrapolation.CLAMP
+        ),
+      }));
+      const bgShapeOpacity3 = useAnimatedStyle(() => ({
+        opacity: interpolate(
+          scrollX.value,
+          [FIGMA.snapInterval, FIGMA.snapInterval * 2],
+          [0, 1],
+          Extrapolation.CLAMP
+        ),
+      }));
+  
+      return (
+        <Screen testID="setup-index-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
+          {/* Background Pattern - DottedPattern component with crossfading shapes */}
+          <DottedPattern showShape={true} backgroundShape="postapproval1" animatedOpacityStyle={bgShapeOpacity1} />
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <DottedPattern showShape={true} backgroundShape="postapproval2" animatedOpacityStyle={bgShapeOpacity2} />
+          </View>
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <DottedPattern showShape={true} backgroundShape="postapproval3" animatedOpacityStyle={bgShapeOpacity3} />
+          </View>
+  
+          <View style={[styles.container, { paddingTop: Math.max(0, headerPaddingTop) }]}>        {/* Header frame - Figma 41:10824: x=48, column, gap=34 */}
         <View style={styles.headerFrame}>
           {/* Logo - Figma 41:10825: 32x38.4 white */}
           <Logo size={FIGMA.headerLogoHeight} color={colors.white} />
@@ -389,7 +439,7 @@ export default function SetupIndexScreen() {
           {/* Spans: "Let's get " (0-9) #A9A9A9, " " (9-10) white, "you set up" (10-20) #FF9A6D */}
           <Text style={styles.titleText}>
             <Text inherit style={styles.titleGray}>
-              {"Let's get "}
+              {"Let's get\n"}
             </Text>
             <Text inherit style={styles.titleAccent}>
               you set up
@@ -397,24 +447,28 @@ export default function SetupIndexScreen() {
           </Text>
         </View>
 
-        {/* Card carousel area */}
-        <View style={[styles.carouselContainer, { marginTop: titleToCardGap }]}>
-          <FlatList
-            ref={flatListRef}
-            data={SETUP_STEPS}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={viewabilityConfig}
-            snapToAlignment="center"
-            decelerationRate="fast"
-            bounces={false}
-          />
-        </View>
-
+                  {/* Card carousel area */}
+                  <View style={[styles.carouselContainer, { marginTop: titleToCardGap }]}>
+                    <Animated.FlatList
+                      ref={flatListRef as any}
+                      data={SETUP_STEPS}
+                      renderItem={renderItem}
+                      keyExtractor={(item: SetupStep) => item.id}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      onScroll={scrollHandler}
+                      scrollEventThrottle={16}
+                      snapToInterval={FIGMA.snapInterval}
+                      decelerationRate="fast"
+                      bounces={false}
+                      onViewableItemsChanged={onViewableItemsChanged}
+                      viewabilityConfig={viewabilityConfig}
+                      contentContainerStyle={{
+                        paddingLeft: FIGMA.cardX,
+                        paddingRight: SCREEN_WIDTH - FIGMA.cardX - FIGMA.itemWidth,
+                      }}
+                    />
+                  </View>
         {/* Page indicator - Figma 41:10855: y=673, centered */}
         <View style={{ marginTop: cardToPaginationGap }}>
           <PageIndicator count={SETUP_STEPS.length} activeIndex={activeIndex} />
@@ -441,7 +495,7 @@ export default function SetupIndexScreen() {
             />
           ) : (
             <PrimaryButton
-              title="Start Flenting \u2192"
+              title="Start Flenting"
               onPress={handleStartFlenting}
               disabled
               testID="start-flenting-button"
@@ -487,10 +541,10 @@ const styles = StyleSheet.create({
     height: FIGMA.cardHeight, // 321
   },
 
-  // Each slide takes full screen width, card positioned at Figma x=61
+  // Coverflow items: width is cardWidth, and gap is handled via negative margin
   slideContainer: {
-    width: SCREEN_WIDTH,
-    paddingLeft: FIGMA.cardX, // 61 from left edge
+    width: FIGMA.itemWidth, // 270
+    marginRight: FIGMA.itemGap, // -23
   },
 
   // Card outer frame - Figma 160:3101

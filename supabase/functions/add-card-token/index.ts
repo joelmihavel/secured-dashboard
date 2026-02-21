@@ -207,9 +207,9 @@ serve(async (req: Request) => {
     if (set_primary) {
       await supabase
         .from("payment_methods")
-        .update({ is_primary: false })
+        .update({ is_default: false })
         .eq("user_id", userId)
-        .eq("is_primary", true)
+        .eq("is_default", true)
         .is("deleted_at", null);
     }
 
@@ -231,7 +231,7 @@ serve(async (req: Request) => {
         card_expiry_month,
         card_expiry_year,
         is_verified: true, // PayU tokens are pre-verified
-        is_primary: set_primary,
+        is_default: set_primary,
         nickname: displayNickname,
       })
       .select()
@@ -250,7 +250,7 @@ serve(async (req: Request) => {
       card_issuer,
       card_expiry_month,
       card_expiry_year,
-      is_primary: set_primary,
+      is_default: set_primary,
     });
 
     return jsonResponse({
@@ -263,7 +263,7 @@ serve(async (req: Request) => {
         card_issuer: paymentMethod.card_issuer,
         card_expiry_month: paymentMethod.card_expiry_month,
         card_expiry_year: paymentMethod.card_expiry_year,
-        is_primary: paymentMethod.is_primary,
+        is_default: paymentMethod.is_default,
         nickname: paymentMethod.nickname,
       },
     });

@@ -13,7 +13,7 @@ import {
   getMyReferralCode,
   applyReferralCode,
   validateReferralCode,
-  getMockWaitlistStatus,
+  claimInviteCode,
   WaitlistStatusData,
   WaitlistState,
 } from '../services/api/waitlist';
@@ -112,11 +112,6 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
   const query = useQuery({
     queryKey,
     queryFn: async (): Promise<WaitlistStatusData> => {
-      // Use mock data only when explicitly requested
-      if (useMock) {
-        return getMockWaitlistStatus(mockState);
-      }
-
       const result = await getWaitlistStatus();
       if (result.error) {
         throw result.error;
@@ -288,6 +283,43 @@ export function useValidateReferral(code: string) {
 }
 
 // ==============================================
+// CLAIM INVITE CODE MUTATION
+// ==============================================
+
+/**
+ * Hook to claim an admin-generated invite code.
+ * Validates format (2 letters + 2 digits) and claims atomically via backend.
+ */
+export function useClaimInviteCode() {
+  const queryClient = useQueryClient();
+  const store = useWaitlistStore();
+
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const result = await claimInviteCode(code);
+      if (result.error) {
+        throw result.error;
+      }
+      return result.data!;
+    },
+    onMutate: () => {
+      store.setApplyingReferral(true);
+      store.setReferralError(null);
+    },
+    onSuccess: (data) => {
+      store.setApplyingReferral(false);
+      store.setReferralApplied(true);
+      // Refresh waitlist status to get updated has_invite_code
+      queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
+    },
+    onError: (error: { code: string; message: string }) => {
+      store.setApplyingReferral(false);
+      store.setReferralError(error.message);
+    },
+  });
+}
+
+// ==============================================
 // COMBINED WAITLIST HOOK
 // ==============================================
 
@@ -312,8 +344,11 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
   // Apply referral mutation
   const applyReferralMutation = useApplyReferral();
 
+  // Claim invite code mutation
+  const claimInviteCodeMutation = useClaimInviteCode();
+
   // Countdown timer ref
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Start countdown when rejected
   useEffect(() => {
@@ -339,6 +374,16 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
       store.setReferralError('Please enter a valid referral code (4-10 characters)');
     }
   }, [store, applyReferralMutation]);
+
+  // Claim invite code using the 4-char input
+  const claimInviteCode = useCallback(() => {
+    const code = selectReferralCodeString(store);
+    if (code.length === 4) {
+      claimInviteCodeMutation.mutate(code);
+    } else {
+      store.setReferralError('Please enter a valid 4-character invite code');
+    }
+  }, [store, claimInviteCodeMutation]);
 
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
@@ -385,6 +430,9 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
     joinWaitlist: joinWaitlistAction,
     isJoiningWaitlist: joinWaitlistMutation.isPending,
     applyReferral,
+    claimInviteCode,
+    isClaimingInviteCode: claimInviteCodeMutation.isPending,
+    inviteCodeClaimed: statusQuery.data?.hasInviteCode ?? false,
     refresh,
     setReferralCharacter,
     toggleReferralExpanded: store.toggleReferralExpanded,

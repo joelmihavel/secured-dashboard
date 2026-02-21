@@ -21,8 +21,6 @@ import {
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
-import { isTestMode, mockData } from "../_shared/test-mode.ts";
-
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -33,18 +31,6 @@ serve(async (req: Request) => {
 
   if (req.method !== "GET") {
     return errorResponse("Method not allowed", 405);
-  }
-
-  // MD-131: Test mode support
-  if (isTestMode(req)) {
-    return jsonResponse({
-      success: true,
-      data: {
-        current_balance_paise: mockData.cashback.available_balance_paise,
-        entries: mockData.cashback.entries,
-        pagination: { page: 1, limit: 20, total: 2, total_pages: 1, has_next: false, has_previous: false },
-      },
-    });
   }
 
   const supabase = createServiceClient();

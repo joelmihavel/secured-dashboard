@@ -285,13 +285,13 @@ const styles = StyleSheet.create({
     gap: FIGMA.content.gap, // 30px - gap between title and benefits list
   },
 
-  // Title container - 265x80, centered
+  // Title container - 265x80
   // Node 41:11257
   titleContainer: {
     width: FIGMA.titleContainer.width,
     minHeight: FIGMA.titleContainer.height,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
 
   // Title text base styles
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     fontSize: FIGMA.titleText.fontSize,
     lineHeight: FIGMA.titleText.lineHeight,
     letterSpacing: FIGMA.titleText.letterSpacing,
-    textAlign: 'center',
+    textAlign: 'left',
   },
 
   // Title gray part - "What do you get" or "Why was I"
@@ -326,9 +326,8 @@ const styles = StyleSheet.create({
   // Nodes 41: sv(11260), 41: sv(11266), 41:11272
   benefitRow: {
     width: FIGMA.benefitRow.width,
-    height: FIGMA.benefitRow.height,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'center', // Center vertically with icon
     gap: FIGMA.benefitRow.gap,
   },
 
@@ -364,6 +363,7 @@ const styles = StyleSheet.create({
     lineHeight: FIGMA.benefitText.lineHeight,
     letterSpacing: FIGMA.benefitText.letterSpacing,
     color: FIGMA.colors.benefitText,
+    textAlign: 'left',
   },
 });
 

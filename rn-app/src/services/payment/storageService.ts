@@ -52,7 +52,7 @@ export async function uploadFile(
   try {
     // Read file as base64
     const base64 = await FileSystem.readAsStringAsync(document.uri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: 'base64',
     });
 
     // Convert to ArrayBuffer

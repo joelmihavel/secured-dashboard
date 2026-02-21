@@ -6,7 +6,8 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { supabase } from '../services/supabase/client';
 import {
   fetchDashboard,
   DashboardData,
@@ -75,6 +76,26 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     () => deriveCashbackEntries(query.data?.recent_payments ?? []),
     [query.data?.recent_payments]
   );
+
+  // Realtime subscription for tenancy status changes
+  const tenancyId = query.data?.tenancy?.id;
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!tenancyId) return;
+
+    const channel = supabase.channel(`tenancy-${tenancyId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tenancies',
+        filter: `id=eq.${tenancyId}`,
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [tenancyId, queryClient]);
 
   return {
     ...query,

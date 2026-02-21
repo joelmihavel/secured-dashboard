@@ -17,17 +17,17 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
-import Svg, { Path, Line, Circle } from 'react-native-svg';
+import Svg, { Path, Line } from 'react-native-svg';
 import { z } from 'zod';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
+import { CashbackPill } from '@/src/components/payment/CashbackPill';
 import { useDashboard } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import {
@@ -36,6 +36,7 @@ import {
   mockPayUCheckout,
   updatePaymentStatus,
 } from '@/src/services/payment';
+import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
 
 // Check if running in Expo Go (no native modules)
@@ -157,7 +158,8 @@ export default function InitiatePaymentScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Sync payment flow state to Zustand store for cross-screen coordination
-  const { setConfirming, setProcessing, setFailed, setAmount, setTenancyId, reset: resetPaymentStore } = usePaymentStore();
+  const { setConfirming, setProcessing, setFailed, setAmount, setTenancyId, setLastPayment, reset: resetPaymentStore } = usePaymentStore();
+  const storedAmount = usePaymentStore(state => state.amount);
 
   // Validate payment method from URL params
   const validatedParams = useMemo((): ValidatedPaymentParams => {
@@ -171,16 +173,23 @@ export default function InitiatePaymentScreen() {
 
   const method = validatedParams.method;
 
-  const rentAmount = tenancy?.monthly_rent ?? 30000;
+  const rentAmount = storedAmount || tenancy?.monthly_rent || 30000;
   const maintenanceAmount = 2500;
   const totalRent = rentAmount + maintenanceAmount; // 32500
 
   const cashbackAvailable = cashback?.available_balance ?? 350;
+  const agreementRent = tenancy?.monthly_rent ?? rentAmount;
   const isSetupComplete = tenancy?.verification_status?.bank_verified && tenancy?.verification_status?.utility_verified && tenancy?.verification_status?.landlord_approved;
-  
+
+  // New cashback formula: MIN(1% of rent, monthly_cap_remaining)
+  // monthly_cap = 1% of agreement rent
+  const monthlyCashbackCap = Math.round(agreementRent * 0.01);
+  const onePercentOfRent = Math.round(totalRent * 0.01);
+  const maxCashback = Math.min(onePercentOfRent, monthlyCashbackCap);
+
   // If setup isn't complete, cashback is locked. If complete, they can apply it.
   const isCashbackLocked = !isSetupComplete;
-  const cashbackToApply = (useCashback && !isCashbackLocked) ? Math.min(cashbackAvailable, totalRent) : 0;
+  const cashbackToApply = (useCashback && !isCashbackLocked) ? Math.min(maxCashback, cashbackAvailable) : 0;
 
   // Calculate fees based on method
   const getFee = () => {
@@ -236,6 +245,7 @@ export default function InitiatePaymentScreen() {
 
       // Update store with transaction ID for cross-screen tracking
       setProcessing(data.paymentId);
+      setLastPayment(data.paymentId);
 
       const checkoutResult = isExpoGo
         ? await mockPayUCheckout(data.payuParams)
@@ -252,24 +262,27 @@ export default function InitiatePaymentScreen() {
         return;
       }
 
-      // Navigate to processing screen with paymentId; let it poll for final status
+      // Navigate to processing screen with paymentId and cashback values
       router.replace({
         pathname: '/(payment)/processing',
         params: {
           paymentId: data.paymentId,
           amount: String(totalAmount),
           method,
+          cashbackApplied: String(cashbackToApply),
+          convenienceFee: String(fee),
         },
       } as never);
-    } catch (error) {
-      console.error('Payment error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while processing payment';
+    } catch (err) {
+      console.error('Payment error:', err);
+      const rawMessage = err instanceof Error ? err.message : 'An error occurred while processing payment';
+      const errorMessage = sanitizeErrorForUI(rawMessage);
       setFailed('PAYMENT_ERROR', errorMessage);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Payment Error', errorMessage);
       setIsProcessing(false);
     }
-  }, [isSetupComplete, tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setAmount, setTenancyId, resetPaymentStore]);
+  }, [isSetupComplete, tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setAmount, setTenancyId, setLastPayment, resetPaymentStore]);
 
   const ctaText = isSetupComplete 
     ? `Pay \u20B9${totalAmount.toLocaleString('en-IN')} now` 
@@ -304,14 +317,21 @@ export default function InitiatePaymentScreen() {
               <Text style={styles.topCardSubtitle}>
                 {isSetupComplete ? 'Cashback applied successfully' : 'Complete setup to unlock 1% cashback'}
               </Text>
-              
-              <View style={styles.cashbackPill}>
-                <Text style={styles.cashbackPillText}>
-                  {isSetupComplete 
-                    ? `\u20B9${cashbackToApply} cashback applied` 
-                    : `\u20B9${cashbackAvailable} available to unlock`}
-                </Text>
-              </View>
+
+              {isCashbackLocked ? (
+                <CashbackPill
+                  amount={maxCashback}
+                  label="Cashback"
+                  variant="accumulating"
+                  message="Complete bank verification, utility verification, and landlord onboarding to unlock cashback"
+                />
+              ) : (
+                <CashbackPill
+                  amount={cashbackToApply}
+                  label="Cashback applied"
+                  variant="applied"
+                />
+              )}
             </View>
             
             {/* Dark divider matching card curve */}
@@ -332,48 +352,32 @@ export default function InitiatePaymentScreen() {
           {/* Bottom Card Section (Breakdown) */}
           <View style={styles.bottomCard}>
             <View style={styles.breakdownInner}>
-              <BreakdownRow 
-                label="Base rent" 
-                value={`\u20B9 ${rentAmount.toLocaleString('en-IN')}`} 
+              <BreakdownRow
+                label="Rent"
+                value={`\u20B9 ${totalRent.toLocaleString('en-IN')}`}
               />
               <View style={styles.divider} />
-              
-              <BreakdownRow 
-                label="Maintenance" 
-                value={`\u20B9 ${maintenanceAmount.toLocaleString('en-IN')}`} 
+
+              {/* Cashback row */}
+              <BreakdownRow
+                label="Cashback"
+                value={`- \u20B9 ${isCashbackLocked ? maxCashback.toLocaleString('en-IN') : cashbackToApply.toLocaleString('en-IN')}`}
+                isCashback
+                isLocked={isCashbackLocked}
               />
-              
+
+              {/* Fee row */}
+              <BreakdownRow
+                label="Fee"
+                value={`+ \u20B9 ${fee.toLocaleString('en-IN')}`}
+              />
+
               <View style={styles.gapSpacer} />
               <View style={styles.divider} />
-              
-              <BreakdownRow 
-                label="Total Rent" 
-                value={`\u20B9  ${totalRent.toLocaleString('en-IN')}`} 
-              />
-              
-              {/* Cashback row */}
-              {(cashbackAvailable > 0) && (
-                <BreakdownRow 
-                  label="Cashback" 
-                  value={`- \u20B9  ${isCashbackLocked ? cashbackAvailable : cashbackToApply}`} 
-                  isCashback
-                  isLocked={isCashbackLocked}
-                />
-              )}
-              
-              {/* Fee row if applicable */}
-              {fee > 0 && (
-                <BreakdownRow 
-                  label="Convenience fee" 
-                  value={`+ \u20B9  ${fee.toLocaleString('en-IN')}`} 
-                />
-              )}
-              
-              <View style={styles.divider} />
-              
-              <BreakdownRow 
-                label="Payable Rent" 
-                value={`\u20B9  ${totalAmount.toLocaleString('en-IN')}`} 
+
+              <BreakdownRow
+                label="You Pay"
+                value={`\u20B9 ${totalAmount.toLocaleString('en-IN')}`}
                 isTotal
               />
             </View>
@@ -400,9 +404,9 @@ export default function InitiatePaymentScreen() {
           {/* Subtext below button */}
           {!isSetupComplete && (
             <Text style={styles.ctaSubtext}>
-              <Text inherit style={styles.ctaSubtextBase}>Finish setup in </Text>
-              <Text inherit style={styles.ctaSubtextUnderline}>28:12:12</Text>
-              <Text inherit style={styles.ctaSubtextBase}>{` to be eligible for\n\u20B9${cashbackAvailable} cashback on this payment`}</Text>
+              <Text inherit style={styles.ctaSubtextBase}>
+                {'Complete bank verification, utility verification,\nand landlord onboarding to unlock cashback'}
+              </Text>
             </Text>
           )}
         </View>
@@ -460,17 +464,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.neutral[300],
   },
-  cashbackPill: {
-    backgroundColor: colors.black[600],
-    borderRadius: 200,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  cashbackPillWrapper: {
     marginTop: 8,
-  },
-  cashbackPillText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: colors.brand[500],
+    alignSelf: 'center',
   },
   topCardDivider: {
     position: 'absolute',

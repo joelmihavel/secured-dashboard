@@ -178,7 +178,7 @@ serve(async (req: Request) => {
       .from("tenancies")
       .select(`
         id, user_id, status, monthly_rent_paise, landlord_name,
-        bank_verified, landlord_approved
+        bank_verified, utility_verified, landlord_approved
       `)
       .eq("id", tenancy_id)
       .single();
@@ -199,6 +199,22 @@ serve(async (req: Request) => {
       throw new PaymentError("Landlord bank account not verified yet", "BANK_NOT_VERIFIED");
     }
 
+    // Credit card requires landlord approval + utility verification
+    if (['card', 'CC'].includes(payment_method)) {
+      if (!tenancy.landlord_approved) {
+        throw new PaymentError(
+          "Credit card payments require landlord verification. Your landlord must accept the tenancy first.",
+          "LANDLORD_NOT_APPROVED"
+        );
+      }
+      if (!tenancy.utility_verified) {
+        throw new PaymentError(
+          "Credit card payments require utility bill verification to confirm landlord ownership.",
+          "UTILITY_NOT_VERIFIED"
+        );
+      }
+    }
+
     // Check for existing payment this month
     const rentMonthDate = `${rent_month}-01`;
     const { data: existingPayment } = await supabase
@@ -217,25 +233,55 @@ serve(async (req: Request) => {
     }
 
     // Calculate amounts
-    let amountPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
-    let cashbackAppliedPaise = 0;
+    const originalRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
+    const rentAmountPaise = originalRentPaise; // Preserve original for storage
 
-    // Calculate and apply cashback
-    if (apply_cashback) {
+    // Verification gate - cashback can only be APPLIED (deducted from payment) if all verifications complete
+    const canApplyCashback = apply_cashback
+      && tenancy.bank_verified
+      && tenancy.utility_verified
+      && tenancy.landlord_approved;
+
+    // Monthly cashback cap = 1% of agreement rent (not payment rent)
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const monthlyCap = Math.floor(tenancy.monthly_rent_paise * 0.01);
+
+    // How much earned this month already
+    const { data: monthlyEarnings } = await supabase
+      .from('cashback_ledger')
+      .select('amount_paise')
+      .eq('user_id', userId)
+      .eq('transaction_type', 'earned')
+      .gte('created_at', startOfMonth.toISOString())
+      .lte('created_at', endOfMonth.toISOString());
+
+    const earnedThisMonth = (monthlyEarnings || []).reduce((sum: number, e: { amount_paise: number }) => sum + e.amount_paise, 0);
+    const capRemaining = Math.max(0, monthlyCap - earnedThisMonth);
+    const maxCashback = Math.min(Math.floor(originalRentPaise * 0.01), capRemaining);
+
+    // Get available cashback wallet balance
+    let availableBalance = 0;
+    if (canApplyCashback) {
       const { data: cashbackBalance } = await supabase.rpc("get_available_cashback", {
         p_user_id: userId,
       });
-
-      if (cashbackBalance && cashbackBalance > 0) {
-        // Apply up to the full rent amount
-        cashbackAppliedPaise = Math.min(cashbackBalance, amountPaise);
-        amountPaise -= cashbackAppliedPaise;
-      }
+      availableBalance = cashbackBalance ?? 0;
     }
 
-    // Calculate PG fee
+    // Only apply if verification gate passes
+    const cashbackAppliedPaise = canApplyCashback ? Math.min(availableBalance, maxCashback) : 0;
+    const chargeableRentPaise = originalRentPaise - cashbackAppliedPaise;
+
+    // Calculate PG fee on the chargeable amount (what PayU actually charges)
     const feeRate = PG_FEE_RATES[payment_method] ?? 0.02;
-    const pgFeePaise = Math.ceil(amountPaise * feeRate);
+    const pgFeePaise = Math.ceil(chargeableRentPaise * feeRate);
+
+    // Total amount PayU charges the user
+    const totalAmountPaise = chargeableRentPaise + pgFeePaise;
+    // What Flent transfers to landlord (always original rent, unaffected by cashback)
+    const landlordPayoutPaise = originalRentPaise;
 
     // Generate transaction ID
     const txnId = generateTransactionId("FLENT");
@@ -250,11 +296,11 @@ serve(async (req: Request) => {
     const firstname = userProfile?.first_name ?? "User";
     const email = `${userId}@flent.app`; // PayU requires email
 
-    // Generate PayU hash
+    // Generate PayU hash — amount is what PayU charges (chargeableRent + pgFee)
     const productinfo = `Rent payment for ${rent_month}`;
-    const amountStr = (amountPaise / 100).toFixed(2); // PayU expects amount in rupees
+    const amountStr = (totalAmountPaise / 100).toFixed(2); // PayU expects amount in rupees
 
-    const hash = await generatePayUHash({
+    const payuParams = {
       key: PAYU_MERCHANT_KEY,
       txnid: txnId,
       amount: amountStr,
@@ -265,23 +311,24 @@ serve(async (req: Request) => {
       udf1: tenancy_id,
       udf2: rent_month,
       udf3: userId,
-    });
+    };
+
+    const hash = await generatePayUHash(payuParams);
 
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);
 
-    // Calculate total amount (rent + PG fee - cashback)
-    const totalAmountPaise = amountPaise + pgFeePaise;
-
-    // Create payment record
+    // Create payment record — rent_amount_paise stores the ORIGINAL rent, not the reduced amount
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .insert({
         tenancy_id,
-        rent_amount_paise: amountPaise,
+        user_id: userId,
+        rent_amount_paise: originalRentPaise,
         pg_fee_paise: pgFeePaise,
         cashback_applied_paise: cashbackAppliedPaise,
         total_amount_paise: totalAmountPaise,
+        landlord_payout_paise: landlordPayoutPaise,
         status: "initiated",
         payu_txn_id: txnId,
         payment_method,
@@ -292,6 +339,18 @@ serve(async (req: Request) => {
           upi_app,
           upi_vpa,
           bank_code,
+        },
+        payu_initiation_params: {
+          key: PAYU_MERCHANT_KEY,
+          txnid: txnId,
+          amount: amountStr,
+          productinfo,
+          firstname,
+          email,
+          phone: userProfile?.phone ?? "",
+          udf1: tenancy_id,
+          udf2: rent_month,
+          udf3: userId,
         },
         ip_address: req.headers.get("x-forwarded-for")?.split(",")[0] ?? null,
         user_agent: req.headers.get("user-agent"),
@@ -317,15 +376,20 @@ serve(async (req: Request) => {
         balance_after_paise: (currentBalance ?? 0) - cashbackAppliedPaise,
         payment_id: payment.id,
         tenancy_id,
+        reference_type: "payment",
+        reference_id: payment.id,
         description: `Cashback applied to rent payment for ${rent_month}`,
       });
     }
 
     // Log audit
     await audit.logSuccess(AuditActions.PAYMENT_INITIATED, "payment", "payment", payment.id, {
-      amount_paise: amountPaise,
+      original_rent_paise: originalRentPaise,
+      chargeable_rent_paise: chargeableRentPaise,
       pg_fee_paise: pgFeePaise,
       cashback_applied_paise: cashbackAppliedPaise,
+      total_amount_paise: totalAmountPaise,
+      landlord_payout_paise: landlordPayoutPaise,
       payment_method,
       rent_month,
     });
@@ -338,11 +402,20 @@ serve(async (req: Request) => {
     const responseData = {
       payment_id: payment.id,
       txn_id: txnId,
-      amount_paise: amountPaise,
-      pg_fee_paise: pgFeePaise,
+      original_rent_paise: originalRentPaise,
       cashback_applied_paise: cashbackAppliedPaise,
-      total_paise: amountPaise + pgFeePaise,
+      chargeable_rent_paise: chargeableRentPaise,
+      pg_fee_paise: pgFeePaise,
+      total_amount_paise: totalAmountPaise,
+      landlord_payout_paise: landlordPayoutPaise,
       payment_method,
+
+      cashback_eligibility: {
+        eligible: canApplyCashback,
+        reason: !canApplyCashback ? getVerificationBlockerReason(tenancy) : null,
+        max_cashback_paise: maxCashback,
+        wallet_balance_paise: availableBalance,
+      },
 
       // PayU params for client
       payu: {
@@ -420,6 +493,26 @@ function calculateDueDate(rentMonth: string): string {
   // Due date is 5th of the rent month
   const dueDate = new Date(year, month - 1, 5);
   return dueDate.toISOString().split("T")[0];
+}
+
+/**
+ * Returns a human-readable reason why cashback cannot be applied.
+ */
+function getVerificationBlockerReason(tenancy: {
+  bank_verified: boolean;
+  utility_verified: boolean;
+  landlord_approved: boolean;
+}): string {
+  if (!tenancy.bank_verified) {
+    return "Complete bank verification to unlock cashback";
+  }
+  if (!tenancy.utility_verified) {
+    return "Complete utility bill verification to unlock cashback";
+  }
+  if (!tenancy.landlord_approved) {
+    return "Landlord approval required to unlock cashback";
+  }
+  return "Complete all verifications to unlock cashback";
 }
 
 function buildUpiIntentUrl(params: {

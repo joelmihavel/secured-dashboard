@@ -101,3 +101,33 @@ export function logError(context: string, error: unknown): void {
 export function isError(value: unknown): value is Error {
   return value instanceof Error;
 }
+
+/**
+ * Navigate to the generic error screen.
+ * Works with any Expo Router instance.
+ *
+ * @param router - Expo Router instance from useRouter()
+ * @param options.title - Error title (default: "Something went wrong")
+ * @param options.message - Error description
+ * @param options.actionLabel - Button text (default: "Go Back")
+ * @param options.action - "back" | "home" | route path (default: "back")
+ */
+export function navigateToError(
+  router: { replace: (href: never) => void },
+  options: {
+    title?: string;
+    message?: string;
+    actionLabel?: string;
+    action?: string;
+  } = {}
+): void {
+  router.replace({
+    pathname: '/error',
+    params: {
+      title: options.title ?? 'Something went wrong',
+      message: options.message ?? 'An unexpected error occurred. Please try again.',
+      actionLabel: options.actionLabel ?? 'Go Back',
+      action: options.action ?? 'back',
+    },
+  } as never);
+}

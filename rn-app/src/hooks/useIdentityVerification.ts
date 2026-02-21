@@ -17,6 +17,7 @@ import { recordConsent, fetchIdentityWithConsent } from '../services/api/identit
 export function useRecordConsent() {
   return useMutation({
     mutationFn: recordConsent,
+    meta: { suppressGlobalError: true },
     onError: (err) => {
       console.warn('[identity] Consent recording failed (non-blocking):', err);
     },
@@ -31,6 +32,7 @@ export function useRecordConsent() {
 export function useIdentityFetch() {
   return useMutation({
     mutationFn: fetchIdentityWithConsent,
+    meta: { suppressGlobalError: true },
     onError: (err) => {
       console.warn('[identity] Mobile 360 fetch failed (non-blocking):', err);
     },

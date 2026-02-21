@@ -84,10 +84,10 @@ describe('SetupIndexScreen', () => {
     expect(getByTestId('start-flenting-button')).toBeTruthy();
   });
 
-  it('renders button text "Start Flenting →"', () => {
+  it('renders button text "Start Flenting"', () => {
     const { getAllByText } = render(<SetupIndexScreen />);
     // Both inactive and active button states may render via FlatList
-    expect(getAllByText('Start Flenting →').length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText('Start Flenting').length).toBeGreaterThanOrEqual(1);
   });
 
   it('matches snapshot', () => {

@@ -67,8 +67,8 @@ const TEXT_REL_Y = 74.6;
 const HINT_W = 42;
 const HINT_H = 40;
 
-/** Reference progress from Figma design (18/150) */
-const REF_PROGRESS = 18 / 150;
+/** Reference progress from Figma design (visually drawn at ~23% despite 18/150 text) */
+const REF_PROGRESS = 0.2305;
 
 /** Reference angle at 12% progress */
 const REF_ANGLE = Math.PI * (1 - REF_PROGRESS);
@@ -182,72 +182,18 @@ function rotateAroundCenter(px: number, py: number, angleDeg: number): { x: numb
 function ProgressArcComponent({
   current,
   total,
-  label = 'This\nrelease',
   testID,
-}: ProgressArcProps) {
+}: Omit<ProgressArcProps, 'label'>) {
   const progress = Math.min(current / Math.max(total, 1), 1);
 
-  const rotDelta = useMemo(() => rotationDelta(progress), [progress]);
   const bgPath = useMemo(() => bgArcPath(), []);
   const progressPath = useMemo(() => progressArcPath(progress), [progress]);
-
-  // Rotate hint text reference position around arc center
-  const hintCenter = useMemo(() => {
-    const refCenterX = HINT_REF_X + HINT_W / 2; // 38.5
-    const refCenterY = HINT_REF_Y + HINT_H / 2; // -8.4
-    const rotated = rotateAroundCenter(refCenterX, refCenterY, rotDelta);
-    return {
-      x: rotated.x - HINT_W / 2,
-      y: rotated.y - HINT_H / 2,
-    };
-  }, [rotDelta]);
 
   return (
     <View
       style={styles.outerWrapper}
       testID={testID}
     >
-      {/* "This release" hint label — node 41:11549 */}
-      <View
-        style={[
-          styles.hintContainer,
-          {
-            left: hintCenter.x,
-            top: hintCenter.y,
-            width: HINT_W,
-            height: HINT_H,
-          },
-        ]}
-      >
-        <RNText style={styles.hintText}>{label}</RNText>
-      </View>
-
-      {/* Callout SVG overlay — triangle + dashed line */}
-      {/* Uses rotate(delta, CX, CY) to move callout with progress */}
-      <Svg
-        style={styles.calloutSvg}
-        width={CONTAINER_W}
-        height={CONTAINER_H}
-      >
-        <G transform={`rotate(${rotDelta} ${CX} ${CY})`}>
-          {/* Dashed line — node 41: sv(11547), reference endpoints */}
-          <Line
-            x1={DASH_REF_X1}
-            y1={DASH_REF_Y1}
-            x2={DASH_REF_X2}
-            y2={DASH_REF_Y2}
-            stroke={DASHED_STROKE}
-            strokeWidth={0.5}
-            strokeDasharray="3 3"
-          />
-
-          {/* Triangle — node 41: sv(11548), using exact Figma relativeTransform matrix */}
-          <G transform={`matrix(${TRI_MATRIX})`}>
-            <Path d={TRIANGLE_PATH} fill={TRIANGLE_FILL} />
-          </G>
-        </G>
-      </Svg>
-
       {/* Gauge — thick stroked arcs clipped to top semicircle */}
       <View style={styles.gaugeClip}>
         <Svg
@@ -315,7 +261,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: CONTAINER_W,
     height: CONTAINER_H,
-    overflow: 'hidden',
+    overflow: 'visible', // Must be visible so the 13.9px bottom strokeLinecaps don't get chopped off!
   },
 
   textContainer: {

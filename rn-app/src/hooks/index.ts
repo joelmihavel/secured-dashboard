@@ -34,6 +34,7 @@ export {
   useAddPaymentMethod,
   useVerifyUpi,
   useDeletePaymentMethod,
+  useSetDefaultPaymentMethod,
   useGenerateReceipt,
   usePayments,
   usePaymentSchedules,
@@ -113,6 +114,15 @@ export {
 
 // Analytics (PR-112)
 export { useAnalytics, useScreenAnalytics } from './useAnalytics';
+
+// Notifications
+export {
+  useNotificationPreferences,
+  notificationKeys,
+} from './useNotifications';
+
+// Error Navigation
+export { useErrorNavigation } from './useErrorNavigation';
 
 // Waitlist
 export {

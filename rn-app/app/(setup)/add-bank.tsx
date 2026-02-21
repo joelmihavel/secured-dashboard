@@ -30,6 +30,7 @@ import React, { useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
+  Dimensions,
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -40,7 +41,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
 import { useVerifyBank, useDashboard, validateAccountNumber, validateIfscCode } from '@/src/hooks';
 import type { BankVerificationResponse, SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme';
@@ -67,10 +68,6 @@ export default function AddBankScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<BankVerificationResponse | null>(null);
-
-  const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
 
   // Clear field-level errors when user types
   const handleAccountHolderNameChange = useCallback((text: string) => {
@@ -137,7 +134,7 @@ export default function AddBankScreen() {
           setVerificationResult(data);
           if (data.verified) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setTimeout(() => router.back(), 1200);
+            setTimeout(() => router.replace('/(setup)/add-utility' as never), 1200);
           } else {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             setApiError(
@@ -177,9 +174,9 @@ export default function AddBankScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Back button */}
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.white} />
-          </TouchableOpacity>
+          <View style={styles.logoContainer}>
+            <Logo size={32} />
+          </View>
 
           {/* Title - Figma: gray="Add your Landlord's " accent="Bank Details" */}
           <View style={styles.titleContainer}>
@@ -279,18 +276,22 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  // Back button - Figma: back arrow icon
-  backButton: {
+  // Logo container
+  logoContainer: {
+    alignSelf: 'flex-start',
     marginBottom: 40,
   },
   // Title container - Figma: sectionGap 48 below title
   titleContainer: {
     marginBottom: 48,
   },
-  // Progress bar - Figma: marginBottom 48 (sectionGap)
+  // Progress bar - Figma: Full width
   progressContainer: {
     marginBottom: 48,
-    width: '100%',
+    marginHorizontal: -48,
+    width: Dimensions.get('window').width,
+    height: 3,
+    overflow: 'hidden',
   },
   // Figma: height 12, #4D4D4D track
   progressTrack: {
@@ -298,9 +299,9 @@ const styles = StyleSheet.create({
     backgroundColor: FIGMA_COLORS.progressTrack,
     width: '100%',
   },
-  // Figma: fill width 131px (~44% of 297px content, step 2 of 3)
+  // Figma: fill width 1/3 of full screen (step 1 of 3)
   progressFill: {
-    width: 131,
+    width: '33.33%',
     height: '100%',
     backgroundColor: FIGMA_COLORS.progressFill,
   },

@@ -43,7 +43,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, BackHandler, Text as RNText, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -97,7 +97,6 @@ const FIGMA_GAPS = {
 
 export default function OTPScreen() {
   const router = useRouter();
-  const { state } = useLocalSearchParams<{ state?: 'empty' | 'filled' | 'error1' | 'error2' }>();
   const {
     phoneNumber,
     status,
@@ -123,33 +122,7 @@ export default function OTPScreen() {
   // and router.replace() firing (getWaitlistStatus API call takes 1-2s).
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // Mock OTP for testing states
-  const getMockOtp = () => {
-    switch (state) {
-      case 'filled':
-        return '123456';
-      case 'error1':
-      case 'error2':
-        return '000000';
-      default:
-        return '';
-    }
-  };
-
-  // Mock error messages for testing
-  const getMockError = (): string | undefined => {
-    switch (state) {
-      case 'error1':
-        return 'Wrong Code';
-      case 'error2':
-        return 'Too many Attempts';
-      default:
-        return undefined;
-    }
-  };
-
-  const [otp, setOtp] = React.useState(getMockOtp);
-  const [mockError, setMockError] = React.useState<string | undefined>(getMockError);
+  const [otp, setOtp] = React.useState('');
   const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
 
   // OTP expiration timer -- Supabase OTPs expire after 5 minutes (300s)
@@ -173,7 +146,7 @@ export default function OTPScreen() {
 
   // Track failures for exponential backoff
   useEffect(() => {
-    if (error && !mockError) {
+    if (error) {
       failureCountRef.current += 1;
       lastFailureTimeRef.current = Date.now();
 
@@ -184,7 +157,7 @@ export default function OTPScreen() {
       );
       setCooldownRemaining(Math.ceil(cooldownMs / 1000));
     }
-  }, [error, mockError]);
+  }, [error]);
 
   // Countdown timer for cooldown display
   useEffect(() => {
@@ -195,9 +168,8 @@ export default function OTPScreen() {
     return () => clearTimeout(timer);
   }, [cooldownRemaining]);
 
-  // OTP expiration countdown -- ticks every second when not in mock mode
+  // OTP expiration countdown -- ticks every second
   useEffect(() => {
-    if (state) return; // Skip for mock/testing states
     if (isOtpExpired) return;
     if (otpExpirySeconds <= 0) {
       setIsOtpExpired(true);
@@ -207,12 +179,10 @@ export default function OTPScreen() {
       setOtpExpirySeconds((prev) => prev - 1);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [otpExpirySeconds, isOtpExpired, state]);
+  }, [otpExpirySeconds, isOtpExpired]);
 
   // Map error codes to user-friendly messages
   function getErrorMessage(): string | undefined {
-    // Return mock error for testing if set
-    if (mockError) return mockError;
     if (!error) return undefined;
 
     switch (error.code) {
@@ -236,9 +206,8 @@ export default function OTPScreen() {
   // Callbacks defined before effects that use them
   const handleOtpChange = useCallback((text: string) => {
     setOtp(text);
-    if (mockError) setMockError(undefined);
     if (error) clearError();
-  }, [error, clearError, mockError]);
+  }, [error, clearError]);
 
   const figmaTransition = { duration: 300, easing: Easing.out(Easing.quad) };
 
@@ -289,7 +258,6 @@ export default function OTPScreen() {
 
         if (error || !data) {
           // No waitlist data → new user, needs agreement upload
-          router.dismissAll();
           router.replace('/(agreement)/upload');
           return;
         }
@@ -461,7 +429,7 @@ export default function OTPScreen() {
                   </RNText>
                 ) : (
                   <RNText style={styles.resendText}>
-                    {!state && otpExpirySeconds > 0 && otpExpirySeconds <= 60
+                    {otpExpirySeconds > 0 && otpExpirySeconds <= 60
                       ? `Code expires in ${otpExpirySeconds}s. `
                       : "Didn't receive the code? "}
                     <RNText

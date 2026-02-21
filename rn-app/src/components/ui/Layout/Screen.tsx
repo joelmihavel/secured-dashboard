@@ -39,14 +39,13 @@ function ScreenComponent({
   ].filter(Boolean) as ('top' | 'bottom' | 'left' | 'right')[];
 
   return (
-    <View style={styles.container} testID={testID}>
+    <View style={[styles.container, style]} testID={testID}>
       <StatusBar barStyle="light-content" backgroundColor={colors.black[700]} />
       <SafeAreaView style={styles.safeArea} edges={edges}>
         <View
           style={[
             styles.content,
             padded && { paddingHorizontal: horizontalPadding },
-            style,
           ]}
         >
           {children}

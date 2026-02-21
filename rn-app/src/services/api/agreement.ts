@@ -26,7 +26,7 @@ import { callEdgeFunction, supabase } from '../supabase';
 export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 /** Status of the contract review */
-export type ContractStatus = 'uploading' | 'user_review' | 'manual_review' | 'confirmed';
+export type ContractStatus = 'uploading' | 'user_review' | 'manual_review' | 'expired' | 'invalid_document' | 'confirmed';
 
 /** Upload step 1 result: signed URL + extraction record */
 export interface UploadDocumentResult {
@@ -76,8 +76,6 @@ export interface ExtractedAgreementData {
   isCitySupported: boolean;
   needsManualReview: boolean;
   reviewReason?: string;
-  /** Backend-driven list of field keys that the user can edit (overrides static defaults) */
-  editableFields?: string[];
 }
 
 /** Confirmation result after user approves extracted data */
@@ -445,39 +443,43 @@ export async function processDocument(
  * Queries the extracted_rental_info table directly via Supabase client.
  * This avoids needing a dedicated edge function for read-only data.
  */
+/** Columns fetched for the review screen — must match extracted_rental_info schema */
+const EXTRACTION_SELECT_COLUMNS = [
+  'id',
+  'property_name',
+  'property_address',
+  'property_city',
+  'property_state',
+  'property_pincode',
+  'micromarket',
+  'monthly_rent_paise',
+  'security_deposit_paise',
+  'maintenance_paise',
+  'lease_start_date',
+  'lease_end_date',
+  'rent_duration_months',
+  'rent_due_day',
+  'rent_escalation_percent',
+  'tenant_names',
+  'tenant_name',
+  'landlord_names',
+  'landlord_name',
+  'confidence_score',
+  'certificate_no',
+  'extraction_status',
+  'is_city_supported',
+].join(',');
+
 export async function getExtractedAgreementData(
   extractionId: string
 ): Promise<{ data: ExtractedAgreementData | null; error: AgreementError | null }> {
-  const { data, error } = await supabase
+  const { data: raw, error } = await supabase
     .from('extracted_rental_info')
-    .select(`
-      id,
-      property_name,
-      property_address,
-      property_city,
-      property_state,
-      property_pincode,
-      micromarket,
-      monthly_rent_paise,
-      security_deposit_paise,
-      maintenance_paise,
-      lease_start_date,
-      lease_end_date,
-      rent_duration_months,
-      rent_due_day,
-      rent_escalation_percent,
-      tenant_names,
-      landlord_names,
-      confidence_score,
-      certificate_no,
-      extraction_status,
-      is_city_supported,
-      editable_fields
-    `)
+    .select(EXTRACTION_SELECT_COLUMNS)
     .eq('id', extractionId)
     .single();
 
-  if (error || !data) {
+  if (error || !raw) {
     return {
       data: null,
       error: {
@@ -487,33 +489,42 @@ export async function getExtractedAgreementData(
     };
   }
 
+  // Cast to Record — Supabase client has no generated types for this project
+  const data = raw as unknown as Record<string, unknown>;
+
+  // Safely handle both array and string (singular/plural) variations
+  const extractNames = (plural?: unknown, singular?: unknown): string[] => {
+    if (Array.isArray(plural)) return plural;
+    if (typeof plural === 'string') return [plural];
+    if (typeof singular === 'string') return [singular];
+    return [];
+  };
+
   // Map snake_case DB columns to camelCase UI types
   const mapped: ExtractedAgreementData = {
-    extractionId: data.id,
-    propertyName: data.property_name ?? undefined,
-    propertyAddress: data.property_address ?? undefined,
-    propertyCity: data.property_city ?? undefined,
-    propertyState: data.property_state ?? undefined,
-    propertyPincode: data.property_pincode ?? undefined,
-    micromarket: data.micromarket ?? undefined,
-    monthlyRentPaise: data.monthly_rent_paise ?? undefined,
-    securityDepositPaise: data.security_deposit_paise ?? undefined,
-    maintenancePaise: data.maintenance_paise ?? undefined,
-    leaseStartDate: data.lease_start_date ?? undefined,
-    leaseEndDate: data.lease_end_date ?? undefined,
-    rentDurationMonths: data.rent_duration_months ?? undefined,
-    rentDueDay: data.rent_due_day ?? undefined,
-    rentEscalationPercent: data.rent_escalation_percent ?? undefined,
-    tenantNames: data.tenant_names ?? [],
-    landlordNames: data.landlord_names ?? [],
-    confidenceScore: data.confidence_score ?? 0,
-    certificateNo: data.certificate_no ?? undefined,
-    // Derive contract status from extraction_status
+    extractionId: data.id as string,
+    propertyName: (data.property_name as string) ?? undefined,
+    propertyAddress: (data.property_address as string) ?? undefined,
+    propertyCity: (data.property_city as string) ?? undefined,
+    propertyState: (data.property_state as string) ?? undefined,
+    propertyPincode: (data.property_pincode as string) ?? undefined,
+    micromarket: (data.micromarket as string) ?? undefined,
+    monthlyRentPaise: (data.monthly_rent_paise as number) ?? undefined,
+    securityDepositPaise: (data.security_deposit_paise as number) ?? undefined,
+    maintenancePaise: (data.maintenance_paise as number) ?? undefined,
+    leaseStartDate: (data.lease_start_date as string) ?? undefined,
+    leaseEndDate: (data.lease_end_date as string) ?? undefined,
+    rentDurationMonths: (data.rent_duration_months as number) ?? undefined,
+    rentDueDay: (data.rent_due_day as number) ?? undefined,
+    rentEscalationPercent: (data.rent_escalation_percent as number) ?? undefined,
+    tenantNames: extractNames(data.tenant_names, data.tenant_name),
+    landlordNames: extractNames(data.landlord_names, data.landlord_name),
+    confidenceScore: (data.confidence_score as number) ?? 0,
+    certificateNo: (data.certificate_no as string) ?? undefined,
     contractStatus: data.extraction_status === 'completed' ? 'user_review' : 'uploading',
-    isCitySupported: data.is_city_supported ?? false,
+    isCitySupported: (data.is_city_supported as boolean) ?? false,
     needsManualReview: false,
     reviewReason: undefined,
-    editableFields: data.editable_fields ?? undefined,
   };
 
   return { data: mapped, error: null };
@@ -666,52 +677,6 @@ function mapAgreementErrorFromMessage(message: string): AgreementError {
   }
 
   return mapAgreementError(message);
-}
-
-// ==============================================
-// MOCK DATA FOR DEVELOPMENT
-// ==============================================
-
-export function getMockExtractedAgreementData(): ExtractedAgreementData {
-  return {
-    extractionId: 'mock-extraction-id',
-    propertyName: '2BHK, Koramangala',
-    propertyAddress: 'Block A, Flat 306, Whitefield Main Road',
-    propertyCity: 'Bangalore',
-    propertyState: 'Karnataka',
-    propertyPincode: '560066',
-    micromarket: 'Koramangala',
-    monthlyRentPaise: 3217500, // Rs 32,175
-    securityDepositPaise: 9652500, // Rs 96,525
-    maintenancePaise: 500000,
-    leaseStartDate: '2026-01-01',
-    leaseEndDate: '2026-11-30',
-    rentDurationMonths: 11,
-    rentDueDay: 5,
-    rentEscalationPercent: 5,
-    tenantNames: ['John Doe'],
-    landlordNames: ['Jane Smith'],
-    confidenceScore: 92,
-    certificateNo: 'KIA 123456789',
-    contractStatus: 'user_review',
-    isCitySupported: true,
-    needsManualReview: false,
-    editableFields: ['property_address', 'tenant_name', 'landlord_name'],
-  };
-}
-
-export function getMockProcessResult(): ProcessDocumentResult {
-  return {
-    success: true,
-    extractionId: 'mock-extraction-id',
-    confidenceScore: 92,
-    needsManualReview: false,
-    contractStatus: 'user_review',
-    isCitySupported: true,
-    extractionStatus: 'completed',
-    fieldsExtracted: 20,
-    totalFields: 24,
-  };
 }
 
 /**

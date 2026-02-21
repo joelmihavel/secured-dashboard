@@ -17,11 +17,12 @@
  * - All values are exact Figma pixels with design tokens
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text as RNText } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text as RNText, TouchableOpacity, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, FadeOut, withRepeat, withTiming, useSharedValue, useAnimatedStyle, Easing } from 'react-native-reanimated';
 
 
 import {
@@ -35,7 +36,6 @@ import {
   DottedPattern,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
-import { consumeDeepLinkParams, useDevMockState } from '@/src/hooks/useDeepLink';
 import { Dimensions } from 'react-native';
 import { colors } from '@/src/theme/colors';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -250,32 +250,6 @@ const FIGMA = {
 export default function WaitlistScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { state: stateParam } = useLocalSearchParams<{ state?: string }>();
-
-  // Reactive dev mock state — highest priority for BuildBot batch mode.
-  // When a deep link like /waitlist/state/accepted arrives while this screen
-  // is already mounted, router.navigate is a no-op. The pub/sub system in
-  // useDeepLink.ts publishes the new state, and this hook re-renders us.
-  const devMockReactiveState = useDevMockState();
-
-  // Deep link params — consumed once on mount for cold-start deep links.
-  const [deepLinkState] = useState<string | undefined>(() => {
-    return consumeDeepLinkParams()?.state;
-  });
-
-  // Priority: reactive pub/sub > URL search params > initial deep link params
-  const effectiveStateParam = devMockReactiveState || stateParam || deepLinkState;
-
-  // Map Figma state names to API state names
-  const apiStateMapping: Record<string, string> = {
-    accepted: 'approved',
-    referral: 'pending',
-    referral_invalid: 'pending',
-  };
-  const apiMockState = apiStateMapping[effectiveStateParam || ''] || effectiveStateParam;
-
-  // In dev mode, use mock data when ?state= param is provided (default to 'pending' for BuildBot)
-  const devMockState = __DEV__ ? (apiMockState || 'pending') as import('@/src/services/api/waitlist').WaitlistState : undefined;
 
   const {
     status,
@@ -283,33 +257,27 @@ export default function WaitlistScreen() {
     userName,
     referralCode,
     isReferralComplete,
-    isApplyingReferral,
+    referralApplied,
     referralError,
     countdownText,
     isLoading,
     isRefetching,
     error,
-    applyReferral,
     joinWaitlist,
     isJoiningWaitlist,
     setReferralCharacter,
     refresh,
-  } = useWaitlist(devMockState ? { useMock: true, mockState: devMockState } : {});
+    inviteCodeClaimed,
+    claimInviteCode,
+    isClaimingInviteCode,
+  } = useWaitlist();
 
-  // Redirect to approved screen when approved.
-  // In dev mock mode: skip redirect when explicitly testing "accepted" state inline,
-  // AND skip redirect when the approved viewState is stale from a previous mock state
-  // (i.e., the current mock state doesn't map to 'approved').
+  // Redirect to approved screen when approved
   useEffect(() => {
     if (viewState === 'approved') {
-      if (__DEV__ && devMockState) {
-        // Only redirect if the current mock state is actually 'approved' and
-        // the user didn't explicitly request the 'accepted' inline view
-        if (devMockState !== 'approved' || effectiveStateParam === 'accepted') return;
-      }
       router.replace('/(waitlist)/approved');
     }
-  }, [viewState, router, devMockState, effectiveStateParam]);
+  }, [viewState, router]);
 
   // Auto-join waitlist on first visit if no entry exists
   useEffect(() => {
@@ -318,23 +286,55 @@ export default function WaitlistScreen() {
     }
   }, [isLoading, viewState, status?.position]);
 
-  // Data from API — in dev mock mode, use Figma sample name when no auth session
-  const displayName = userName || (__DEV__ && devMockState ? 'Rishabh Agnihotri' : 'there');
+  // Handle AGREEMENT_NOT_CONFIRMED gate error — redirect to agreement upload
+  useEffect(() => {
+    if (error?.code === 'AGREEMENT_NOT_CONFIRMED') {
+      router.replace('/(agreement)/upload' as never);
+    }
+  }, [error?.code, router]);
+
+  const displayName = userName || 'there';
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';
   const membersOnboarded = status?.currentOnboarded ?? 0;
   const totalSlots = status?.totalMemberSlots ?? 150;
 
+  // Scroll state to show/hide the "scroll down" indicator
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+    setIsScrolledToBottom(isBottom);
+  };
+
+  const scrollToBottom = () => {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  };
+
+  // Bouncing animation for scroll indicator
+  const translateY = useSharedValue(0);
+
+  React.useEffect(() => {
+    translateY.value = withRepeat(
+      withTiming(10, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, [translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
   // ============================================
   // LOADING STATE
   // ============================================
-  // In dev mock mode, skip the loading skeleton — mock data resolves synchronously
-  // so isLoading is only true for 1 render frame. Showing the skeleton causes BuildBot
-  // to capture it instead of the actual content.
-  if ((viewState === 'loading' || isLoading) && !(__DEV__ && effectiveStateParam)) {
+  if (viewState === 'loading' || isLoading) {
     return (
       <View style={styles.screen}>
-        <DottedPattern backgroundShape="default" />
+        <DottedPattern backgroundShape="waitlist" />
         <View style={styles.loadingContainer}>
           {/* Skeleton header */}
           <Animated.View
@@ -380,7 +380,7 @@ export default function WaitlistScreen() {
   if (viewState === 'error') {
     return (
       <View style={styles.screen}>
-        <DottedPattern backgroundShape="default" />
+        <DottedPattern backgroundShape="waitlist" />
         <View style={[styles.errorContainer, { paddingTop: insets.top + spacing.huge }]}>
           <Animated.View
             entering={FadeInDown.duration(FIGMA.animation.duration)}
@@ -430,100 +430,6 @@ export default function WaitlistScreen() {
   }
 
   // ============================================
-  // ACCEPTED STATE (dev mock mode only)
-  // Figma: 41-11313 "Onboarding / Waitlist Screen -- Accepted"
-  // Shows congratulatory content when user is approved
-  // ============================================
-  if (viewState === 'approved' && __DEV__ && effectiveStateParam === 'accepted') {
-    const acceptedTimelineItems: TimelineItemData[] = [
-      {
-        label: 'Application Sent',
-        value: `Submitted on ${submissionDate}`,
-        status: 'complete',
-      },
-      {
-        label: 'In Review',
-        value: reviewTime,
-        status: 'complete',
-      },
-      {
-        label: 'Account Status',
-        value: 'Accepted',
-        status: 'accepted',
-      },
-    ];
-
-    return (
-      <View style={styles.screen}>
-        <DottedPattern backgroundShape="default" />
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: insets.top + spacing.huge,
-              paddingBottom: insets.bottom + sv(32), // Using 32px to match Figma typical bottom spacing
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* All content - single wrapper with gap 40 matching Figma */}
-          <View style={styles.contentWrapper}>
-            {/* Header Section */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-              style={styles.headerSection}
-            >
-              <View style={styles.logoContainer}>
-                <Logo size={38} color={FIGMA.colors.textPrimary} />
-              </View>
-
-              {/* Text Block - Figma node 41:11324 */}
-              <View style={styles.textBlock}>
-                {/* Title: "Rishabh Agnihotri, you're all set." */}
-                {/* Figma 41-11313: name in gray #A9A9A9, "you're all set." in orange #FF9A6D */}
-                <Text style={styles.titleBase}>
-                  <RNText style={styles.titleGray}>{displayName},</RNText>
-                  {'\n'}
-                  <RNText style={styles.titleAccent}>you're all set.</RNText>
-                </Text>
-
-                {/* Subtitle */}
-                <Text style={styles.subtitle}>
-                  Welcome to the right side of renting.
-                </Text>
-              </View>
-            </Animated.View>
-
-            {/* Timeline Card */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
-              style={styles.timelineCard}
-            >
-              <ApplicationTimeline items={acceptedTimelineItems} />
-            </Animated.View>
-
-            {/* "What do you get" Card - Figma node 160:3027 */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
-            >
-              <BenefitsCard variant="benefits" />
-            </Animated.View>
-
-            {/* "What's Coming your way" Card */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
-            >
-              <BenefitsCard variant="benefits" />
-            </Animated.View>
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // ============================================
   // REJECTED STATE
   // Figma: 41-11410 "Onboarding / Waitlist Screen -- Rejected"
   // ============================================
@@ -553,7 +459,7 @@ export default function WaitlistScreen() {
 
     return (
       <View style={styles.screen}>
-        <DottedPattern backgroundShape="default" />
+        <DottedPattern backgroundShape="waitlist" />
 
         <ScrollView
           style={styles.scrollView}
@@ -645,7 +551,7 @@ export default function WaitlistScreen() {
             >
               <PrimaryButton
                 title="Contact support"
-                onPress={() => {/* TODO: Open support */}}
+                onPress={() => Linking.openURL('mailto:secured@flent.in')}
               />
 
               {/* Countdown text */}
@@ -703,9 +609,10 @@ export default function WaitlistScreen() {
     <View style={styles.screen}>
       {/* Background Pattern + Shape (nodes 237:2761, 41:11207) */}
       {/* DottedPattern renders: dotted image (8% opacity) + background shape (40%) + gradient */}
-      <DottedPattern backgroundShape="default" />
+      <DottedPattern backgroundShape="waitlist" />
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -715,6 +622,8 @@ export default function WaitlistScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
         }
@@ -735,15 +644,19 @@ export default function WaitlistScreen() {
 
             {/* Text Block - Frame 2095586319 (node 41:11217) */}
             <View style={styles.textBlock}>
-              {/* Welcome Title - node 41:11218 */}
-              {/* Text: "Welcome,   Rishabh Agnihotri" - 313x192, single text with nested styles */}
-              {/* characterStyleOverrides: 0-9 (37): gray #A9A9A9, 11+ (36): orange #FF9A6D */}
-              {/* Uses RNText for inner spans so they inherit parent h1 fontSize/lineHeight */}
-              <Text style={styles.titleBase}>
-                <RNText style={styles.titleGray}>Welcome,</RNText>
-                {'\n'}
-                <RNText style={styles.titleAccent}>{displayName}</RNText>
-              </Text>
+              {isPendingLong ? (
+                <Text style={styles.titleBase}>
+                  <RNText style={styles.titleGray}>We're still</RNText>
+                  {'\n'}
+                  <RNText style={styles.titleAccent}>setting{'\n'}things up</RNText>
+                </Text>
+              ) : (
+                <Text style={styles.titleBase}>
+                  <RNText style={styles.titleGray}>Welcome,</RNText>
+                  {'\n'}
+                  <RNText style={styles.titleAccent}>{displayName}</RNText>
+                </Text>
+              )}
 
               {/* Subtitle - node 41:11219 */}
               {/* computedStyles: fontSize 14, lineHeight 20, color #A6A6A6 */}
@@ -775,41 +688,54 @@ export default function WaitlistScreen() {
               total={totalSlots}
             />
 
-            {/* Text Block - Frame 1686557332 (node 41:11250) */}
-            {/* Contains label + description with gap: 4 */}
-            <View style={styles.inviteTextBlock}>
-              {/* Label - "Have an Invite Code?" */}
-              {/* Node 41:11251: fontSize 12, lineHeight 20, color #878787 */}
-              <Text style={styles.inviteLabel}>
-                Have an Invite Code?
-              </Text>
+            <>
+              {/* Text Block - Frame 1686557332 (node 41:11250) */}
+              <View style={styles.inviteTextBlock}>
+                <Text style={styles.inviteLabel}>
+                  Have an Invite Code?
+                </Text>
+                <Text style={styles.inviteDescription}>
+                  Get priority access to the platform if you use a referral code
+                </Text>
+              </View>
 
-              {/* Description */}
-              {/* Node 41:11252: fontSize 14, lineHeight 20, color #CBCBCB, textAlign left, FILL */}
-              <Text style={styles.inviteDescription}>
-                Get priority access to the platform if you use a referral code
-              </Text>
-            </View>
-
-            {/* Referral Code Input - gap 24 from text block (from inviteCard gap) */}
-            <ReferralCodeInput
-              code={referralCode}
-              onCharacterChange={setReferralCharacter}
-              error={referralError ?? undefined}
-            />
-
-            {/* Hint text - only shown when there's an error */}
-            {referralError ? <Text style={styles.hintText}>{referralError}</Text> : null}
-
-            {/* Button group — Figma node 41:11254: gap 8px between divider and button */}
-            <View style={styles.buttonGroup}>
-              <View style={styles.divider} />
-              <PrimaryButton
-                title="Enter Invite Code"
-                onPress={applyReferral}
-                loading={isApplyingReferral}
+              {/* Referral Code Input - gap 24 from text block (from inviteCard gap) */}
+              <ReferralCodeInput
+                code={referralCode}
+                onCharacterChange={setReferralCharacter}
+                error={referralError ?? undefined}
+                disabled={referralApplied}
               />
-            </View>
+
+              {/* Hint text - only shown when there's an error */}
+              {referralError ? <Text style={styles.hintText}>{referralError}</Text> : null}
+
+              {referralApplied || inviteCodeClaimed ? (
+                <View style={styles.appliedReferralContainer}>
+                  <View style={styles.appliedButtonGroup}>
+                    <PrimaryButton
+                      title="All Set"
+                      onPress={() => {}}
+                      disabled={true}
+                      showDivider={true}
+                    />
+                    <Text style={styles.appliedReferralText}>
+                      Kudos! You've been bumped up 🚀
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.buttonGroup}>
+                  <PrimaryButton
+                    title={referralError ? "Invalid Code" : "Enter Invite Code"}
+                    onPress={claimInviteCode}
+                    disabled={!!referralError}
+                    loading={isClaimingInviteCode}
+                    showDivider={true}
+                  />
+                </View>
+              )}
+            </>
           </Animated.View>
 
           {/* Benefits Card - Frame 2095586390 (node 41:11255) */}
@@ -821,6 +747,23 @@ export default function WaitlistScreen() {
           </Animated.View>
         </View>
       </ScrollView>
+
+      {/* Scroll Down Indicator */}
+      {!isScrolledToBottom && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          activeOpacity={0.7}
+          style={styles.scrollIndicatorContainer}
+        >
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(300)}
+            style={animatedStyle}
+          >
+            <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
+          </Animated.View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -830,6 +773,15 @@ export default function WaitlistScreen() {
 // ============================================
 
 const styles = StyleSheet.create({
+  scrollIndicatorContainer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
   // Root screen - node 41:11206
   screen: {
     flex: 1,
@@ -980,6 +932,24 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     gap: 8,
+  },
+
+  // Applied referral styles - Figma node 41:11764
+  appliedReferralContainer: {
+    width: '100%',
+    marginTop: spacing.md,
+  },
+  appliedButtonGroup: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 16, // Figma node 41:11764: gap 16
+  },
+  appliedReferralText: {
+    fontFamily: FIGMA.typography.value.fontFamily,
+    fontSize: 14,
+    lineHeight: 20,
+    color: FIGMA.colors.textGray,
+    textAlign: 'center',
   },
 
   // Divider — 24x2, #4D4D4D, borderRadius 200

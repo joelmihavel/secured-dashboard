@@ -97,22 +97,22 @@ function LandlordStatusCardComponent({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1A1A1A', // Figma: #1A1A1A (black[600])
-    borderRadius: 12, // Figma: borderRadius 12
-    padding: 24, // Figma: padding 24
-    gap: 8, // Figma: gap 8
+    backgroundColor: '#202020',
+    borderRadius: 12,
+    padding: 16,
+    gap: 16,
   },
   title: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#FFFFFF', // Figma: #FFFFFF (white)
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#CBCBCB',
   },
   description: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#BABABA', // Figma: #BABABA (neutral[400])
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#878787',
   },
   actionLink: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400

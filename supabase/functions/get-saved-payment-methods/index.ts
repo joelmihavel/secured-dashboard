@@ -24,7 +24,7 @@ interface PaymentMethod {
   id: string;
   type: "upi" | "card" | "netbanking";
   display_name: string;
-  is_primary: boolean;
+  is_default: boolean;
   is_verified: boolean;
   nickname: string | null;
   created_at: string;
@@ -83,7 +83,7 @@ serve(async (req: Request) => {
 
     // Fetch payment methods ordered by default first, then by creation date
     // Filter out soft-deleted records
-    // Note: database uses is_default, iOS expects is_primary (aliased below)
+    // Fetch payment methods ordered by default first, then by creation date
     const { data: paymentMethods, error } = await supabase
       .from("payment_methods")
       .select("*")
@@ -126,7 +126,7 @@ serve(async (req: Request) => {
         id: m.id,
         type: m.type as "upi" | "card" | "netbanking",
         display_name: displayName,
-        is_primary: m.is_default, // DB uses is_default, iOS expects is_primary
+        is_default: m.is_default,
         is_verified: m.is_verified,
         nickname: m.nickname,
         created_at: m.created_at,

@@ -152,7 +152,7 @@ serve(async (req: Request) => {
     // Fetch the extraction record
     const { data: extraction, error: fetchError } = await supabase
       .from("extracted_rental_info")
-      .select("*, upload:document_uploads(user_id)")
+      .select("*")
       .eq("id", extraction_id)
       .single();
 
@@ -161,8 +161,7 @@ serve(async (req: Request) => {
     }
 
     // Verify ownership
-    const uploadUserId = (extraction.upload as { user_id: string } | null)?.user_id;
-    if (uploadUserId !== userId) {
+    if (extraction.user_id !== userId) {
       throw new AppError(
         "You don't have permission to modify this extraction",
         "FORBIDDEN",

@@ -20,18 +20,23 @@ const FIGMA_COLORS = {
   accentBorder: '#FF9A6D',  // brand.500
   mutedText: '#797979',     // neutral.600 - for incentive text
   successText: '#70BF73',   // success.default
+  accumulatingBorder: '#4D4D4D', // dashed border for locked cashback
+  accumulatingText: '#878787',   // text for locked cashback
 };
 
 export interface CashbackPillProps {
   amount: number;
   label?: string;
-  variant?: 'applied' | 'incentive' | 'success';
+  variant?: 'applied' | 'incentive' | 'success' | 'accumulating';
+  /** Optional message explaining WHY cashback is locked */
+  message?: string;
 }
 
 function CashbackPillComponent({
   amount,
   label = 'Cashback',
   variant = 'applied',
+  message,
 }: CashbackPillProps) {
   const getStyles = () => {
     switch (variant) {
@@ -50,17 +55,27 @@ function CashbackPillComponent({
           container: styles.containerSuccess,
           text: styles.textSuccess,
         };
+      case 'accumulating':
+        return {
+          container: styles.containerAccumulating,
+          text: styles.textAccumulating,
+        };
     }
   };
 
   const variantStyles = getStyles();
 
   return (
-    <View style={[styles.container, variantStyles.container]}>
-      <Text style={[styles.label, variantStyles.text]}>{label}</Text>
-      <Text style={[styles.amount, variantStyles.text]}>
-        ₹{amount.toLocaleString('en-IN')}
-      </Text>
+    <View>
+      <View style={[styles.container, variantStyles.container]}>
+        <Text style={[styles.label, variantStyles.text]}>{label}</Text>
+        <Text style={[styles.amount, variantStyles.text]}>
+          ₹{amount.toLocaleString('en-IN')}
+        </Text>
+      </View>
+      {variant === 'accumulating' && message ? (
+        <Text style={styles.accumulatingMessage}>{message}</Text>
+      ) : null}
     </View>
   );
 }
@@ -86,6 +101,12 @@ const styles = StyleSheet.create({
   containerSuccess: {
     backgroundColor: FIGMA_COLORS.successText + '20',
   },
+  containerAccumulating: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: FIGMA_COLORS.accumulatingBorder,
+    backgroundColor: 'transparent',
+  },
   label: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
@@ -100,10 +121,20 @@ const styles = StyleSheet.create({
   textSuccess: {
     color: FIGMA_COLORS.successText, // success.default #70BF73
   },
+  textAccumulating: {
+    color: FIGMA_COLORS.accumulatingText, // #878787
+  },
   amount: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 12,
     lineHeight: 20,
+  },
+  accumulatingMessage: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: FIGMA_COLORS.accumulatingText,
+    marginTop: 6,
   },
 });
 
