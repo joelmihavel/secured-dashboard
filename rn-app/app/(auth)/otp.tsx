@@ -245,14 +245,7 @@ export default function OTPScreen() {
 
     setIsNavigating(true);
 
-    // Fade overlay to fully opaque to mask the sign-up screen underneath
-    // during cross-group navigation (modal dismiss → new stack push).
-    overlayOpacity.value = withTiming(1, { duration: 200 });
-
     const resolveRoute = async () => {
-      // Brief delay for the opacity animation to complete
-      await new Promise((resolve) => setTimeout(resolve, 250));
-
       try {
         const { data, error } = await getWaitlistStatus();
 
@@ -263,19 +256,15 @@ export default function OTPScreen() {
         }
 
         if (data.state === 'approved') {
-          router.dismissAll();
           router.replace('/(main)');
         } else if (data.position === null && data.submissionDate === null) {
           // Has entry but no position/submission → hasn't uploaded agreement yet
-          router.dismissAll();
           router.replace('/(agreement)/upload');
         } else {
-          router.dismissAll();
           router.replace('/(waitlist)');
         }
       } catch {
         // Fail to agreement upload for new users (safe default)
-        router.dismissAll();
         router.replace('/(agreement)/upload');
       }
     };

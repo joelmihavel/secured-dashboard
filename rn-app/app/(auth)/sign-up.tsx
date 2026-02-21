@@ -205,8 +205,6 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
     sendCode(formattedPhone, 'whatsapp');
   }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
-  const isAuthSuccess = status === 'authenticated';
-
   return (
     <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
       {/* Background Pattern - uses actual Figma images with correct opacity (8%) */}
@@ -214,8 +212,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.keyboardView, isAuthSuccess && { opacity: 0 }]}
-        pointerEvents={isAuthSuccess ? 'none' : 'auto'}
+        style={styles.keyboardView}
       >
         <ScrollView
           ref={scrollViewRef}

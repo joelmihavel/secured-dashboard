@@ -435,7 +435,7 @@ export default function WaitlistScreen() {
   // ============================================
   if (viewState === 'rejected') {
     const rejectionReasons = status?.rejectionReasons || [];
-    const canReapply = countdownText === '00:00:00';
+    const canReapply = countdownText === '';
 
     // Timeline for rejected state
     // From Figma nodes 41:11430-41:11444
@@ -948,7 +948,7 @@ const styles = StyleSheet.create({
     fontFamily: FIGMA.typography.value.fontFamily,
     fontSize: 14,
     lineHeight: 20,
-    color: FIGMA.colors.textGray,
+    color: FIGMA.colors.textSecondary,
     textAlign: 'center',
   },
 

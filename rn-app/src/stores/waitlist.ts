@@ -222,18 +222,15 @@ export const selectShowConfetti = (state: WaitlistStore) => state.showConfetti;
 export const selectError = (state: WaitlistStore) => state.error;
 
 /**
- * Format countdown as DD:HH:MM:SS (for multi-day countdowns like 30-day rejection cooldown)
- * or HH:MM:SS (for countdowns under 24 hours).
+ * Format countdown for rejection timer.
+ * Shows "Xd Yh Zm" for multi-day countdowns, "Xh Ym" under 24h, empty string when done.
  */
 export const selectCountdownText = (state: WaitlistStore) => {
   const totalSeconds = state.nextApplicationCountdown;
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60;
+  if (totalSeconds <= 0) return '00:00:00';
 
-  const hh = hours.toString().padStart(2, '0');
-  const mm = minutes.toString().padStart(2, '0');
-  const ss = secs.toString().padStart(2, '0');
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
 
-  return `${hh}:${mm}:${ss}`;
+  return `${days}d : ${hours}h`;
 };
