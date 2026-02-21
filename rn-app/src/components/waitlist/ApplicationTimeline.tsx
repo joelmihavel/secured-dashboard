@@ -171,14 +171,16 @@ function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProp
 
         return (
           <View key={`${item.label}-${index}`} style={styles.timelineRow}>
-            {/* Left column: Dot and Line */}
-            <View style={styles.leftColumn}>
-              <View
-                style={[
-                  styles.indicatorDot,
-                  { backgroundColor: indicatorColor },
-                ]}
-              />
+            {/* Left column: Indicator dot + optional connector line */}
+            <View style={styles.indicatorColumn}>
+              <View style={styles.indicatorContainer}>
+                <View
+                  style={[
+                    styles.indicatorDot,
+                    { backgroundColor: indicatorColor },
+                  ]}
+                />
+              </View>
               {!isLast && (
                 <View
                   style={[
@@ -189,8 +191,8 @@ function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProp
               )}
             </View>
 
-            {/* Right column: Text (with padding bottom for spacing instead of gap) */}
-            <View style={[styles.textColumn, !isLast && styles.textColumnPadding]}>
+            {/* Right column: Text content */}
+            <View style={[styles.textColumn, isLast && { paddingBottom: 0 }]}>
               <RNText style={styles.labelText}>{item.label}</RNText>
               <RNText style={[styles.valueText, { color: valueColor }]}>
                 {item.value}
@@ -208,41 +210,75 @@ function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProp
 // ============================================
 
 const styles = StyleSheet.create({
+  // Timeline card container
+  // Node 41:11220: VERTICAL layout, gap 24
+  // The outer card wrapper (bg, padding, borderRadius) is rendered by the parent.
+  // This container just manages internal vertical flow.
   container: {
     width: '100%',
   },
+
+  // Timeline row
+  // Node 41:11221: 281x44, HORIZONTAL, gap 8, layoutSizingHorizontal FILL
   timelineRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: FIGMA.row.gap,
   },
-  leftColumn: {
-    width: 20, // FIGMA.indicatorContainer.width
+
+  indicatorColumn: {
+    width: FIGMA.indicatorContainer.width,
     alignItems: 'center',
   },
+
+  // Indicator container - exactly 20x20 with centered 12x12 dot
+  // Node 41:11222: 20x20, FIXED sizing both axes
+  indicatorContainer: {
+    width: FIGMA.indicatorContainer.width,
+    height: FIGMA.indicatorContainer.height,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Indicator dot - 12x12 circle
+  // Node 41:11223: Ellipse 21906, 12x12, centered in 20x20 container
   indicatorDot: {
-    width: 12, // FIGMA.indicator.size
-    height: 12,
-    borderRadius: 6,
-    // The label text has a lineHeight of 20px. 
-    // To perfectly center a 12px dot beside a 20px line of text: (20 - 12) / 2 = 4px
-    marginTop: 4, 
-    zIndex: 2,
+    width: FIGMA.indicator.size,
+    height: FIGMA.indicator.size,
+    borderRadius: FIGMA.indicator.size / 2,
   },
+
+  // Connector wrapper - aligns the 1px line centered under the 20px indicator column
+  connectorWrapper: {
+    width: FIGMA.indicatorContainer.width,
+    alignItems: 'center',
+  },
+
+  // Connector line
+  // Node 41:11224: Vector 59, width 0 (stroke-based = 1px), height 47
   connectorLine: {
-    width: 1, // FIGMA.connector.width
-    flex: 1, // Takes up remaining height in the row
-    marginTop: 4, // 4px gap below the dot
-    marginBottom: -4, // Pulls the line down 4px into the next row's space to exactly touch the next dot
-    zIndex: 1,
+    width: FIGMA.connector.width,
+    // The total height of a row in Figma is 44. The line sits below the 20px dot container.
+    // However, since we now nest it inside the row, we need it to fill the gap to the next item.
+    // Figma gap is 24 between rows + 44 row height = 68px.
+    // The text column itself is 44px (20px line + 4px gap + 20px line).
+    flex: 1,
+    minHeight: 24, // Bridge the gap completely to the next item
   },
+
+  // Text column
+  // Node 41:11225: 253x44, VERTICAL, primaryAxisAlignItems CENTER, gap 4
+  // layoutSizingHorizontal FILL = flex 1 in RN
   textColumn: {
     flex: 1,
-    marginLeft: 8, // FIGMA.row.gap
-    gap: 4, // FIGMA.textContainer.gap
-    justifyContent: 'flex-start',
+    gap: FIGMA.textContainer.gap,
+    justifyContent: 'center',
+    paddingBottom: 24, // Figma gap between timeline rows
   },
-  textColumnPadding: {
-    paddingBottom: 24, // Matches the Figma row gap. The row expands, causing the leftColumn line to stretch perfectly.
-  },
+
+  // Label text
+  // Node 41:11226: fontSize 12, lineHeight 20, fontWeight 400, color #878787
+  // PlusJakartaSans-Regular, textAlignHorizontal CENTER (but HUG width in FILL parent)
   labelText: {
     fontFamily: FIGMA.typography.label.fontFamily,
     fontSize: FIGMA.typography.label.fontSize,
@@ -250,6 +286,10 @@ const styles = StyleSheet.create({
     color: FIGMA.colors.textLabel,
     textAlign: 'left',
   },
+
+  // Value text
+  // Node 41:11227: fontSize 14, lineHeight 20, fontWeight 400, color #CBCBCB
+  // PlusJakartaSans-Regular, textAlignHorizontal LEFT, layoutSizingHorizontal FILL
   valueText: {
     fontFamily: FIGMA.typography.value.fontFamily,
     fontSize: FIGMA.typography.value.fontSize,
