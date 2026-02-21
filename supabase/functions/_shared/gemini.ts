@@ -134,7 +134,7 @@ async function callGemini(prompt: string, jsonMode = true): Promise<string> {
 export async function matchNamesWithGemini(
   name1: string,
   name2: string,
-  context: "landlord_verification" | "tenant_verification" | "bank_verification" = "landlord_verification"
+  context: "landlord_verification" | "tenant_verification" | "bank_verification" | "agreement_bank_verification" = "landlord_verification"
 ): Promise<NameMatchResult> {
   const prompt = `You are an expert at matching Indian names for ${context.replace("_", " ")}.
 Your task is to determine if these two names refer to the same person.
@@ -172,6 +172,7 @@ Rules for match_type:
 Context-specific guidance:
 - For landlord_verification: confirm the electricity bill holder is the landlord. Be reasonably lenient as real-world documents have variations.
 - For bank_verification: confirm the electricity bill consumer is the same person as the bank account holder. Bank records often have abbreviated or formally different name formats (e.g. "RAMESH K" in bank vs "RAMESH KUMAR SHARMA" on bill). Be lenient — only reject if the names clearly refer to different people. Partial matches, missing middle names, initials vs full names, and minor spelling differences should all PASS. The goal is to catch fraud (completely different person), NOT penalize formatting differences.
+- For agreement_bank_verification: confirm the bank account holder name (from Cashfree penny drop) matches a landlord/owner name from the rental agreement. Bank records use formal abbreviated names while agreements may use full names with titles or initials. Be lenient — only reject if the names clearly refer to different people. Initials vs full names, missing middle names, title differences (Mr/Shri), and minor spelling variations should all PASS. The goal is to catch fraud (tenant adding their own bank account instead of landlord's), NOT to penalize formatting differences between bank records and legal documents.
 - For tenant_verification: confirm the tenant identity matches. Apply standard matching rules.`;
 
   try {

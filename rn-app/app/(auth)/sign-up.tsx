@@ -106,9 +106,6 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   const isFormValid = isPhoneValid && isNameValid && consent;
 
   // Navigate to OTP screen when send-OTP mutation completes successfully.
-  // Uses isSendingOtp transition (true→false) instead of status alone, because:
-  // 1. Watching `status` + `router` caused double-push (router ref changes on push)
-  // 2. This approach also handles re-sends (each mutate() cycles isPending)
   const wasSendingOtpRef = useRef(false);
   useEffect(() => {
     if (!background && wasSendingOtpRef.current && !isSendingOtp && status === 'otp_sent') {
@@ -131,13 +128,9 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
 
   // Error message mapping - only show phone-related errors, not OTP errors
   const getPhoneErrorMessage = (): string | undefined => {
-    // Return blur validation error (local, before any API call)
     if (phoneBlurError) return phoneBlurError;
     if (!error) return undefined;
 
-    // Only display errors relevant to the phone input step.
-    // OTP-related errors (INVALID_OTP, OTP_EXPIRED, MAX_ATTEMPTS, SESSION_ERROR)
-    // are handled by the OTP screen and should not leak into the sign-up form.
     switch (error.code) {
       case 'INVALID_PHONE':
         return 'Enter valid number';
@@ -147,12 +140,6 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
         return 'Check your internet connection';
       case 'TIMEOUT':
         return 'Request timed out. Try again.';
-      case 'INVALID_OTP':
-      case 'OTP_EXPIRED':
-      case 'MAX_ATTEMPTS':
-      case 'SESSION_ERROR':
-        // OTP-related errors handled by OTP screen
-        return undefined;
       default:
         return 'Something went wrong. Try again.';
     }
@@ -165,7 +152,6 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   }, [error, clearError, phoneBlurError]);
 
   const handlePhoneBlur = useCallback(() => {
-    // Only validate if user has started typing (don't show error on untouched field)
     const digitCount = phone.replace(/\D/g, '').length;
     if (digitCount > 0 && digitCount < 10) {
       setPhoneBlurError('Enter valid number');
@@ -193,25 +179,24 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   const handleGetStarted = useCallback(() => {
     if (!isFormValid || isSendingRef.current || isSendingOtp) return;
 
-    // Format phone number: remove non-digits and add +91 country code (E.164 format)
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedPhone = `+91${cleanPhone}`;
 
     isSendingRef.current = true;
 
-    // Store name and consent in auth store (used during OTP verification)
     setUserName(name.trim());
     setConsentForMobile360(consent);
     sendCode(formattedPhone, 'whatsapp');
   }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
-  // Prevent flash of sign-up screen when transitioning out of auth flow.
-  const isAuthSuccess = status === 'authenticated';
-  
+  const authStatus = useAuthStore((s) => s.status);
+  const isAuthSuccess = authStatus === 'authenticated';
+
   if (isAuthSuccess) {
     return (
       <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
         <DottedPattern />
+        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' }} />
       </Screen>
     );
   }

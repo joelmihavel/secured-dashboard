@@ -227,7 +227,7 @@ export const selectError = (state: WaitlistStore) => state.error;
  */
 export const selectCountdownText = (state: WaitlistStore) => {
   const totalSeconds = state.nextApplicationCountdown;
-  if (totalSeconds <= 0) return '00:00:00';
+  if (totalSeconds <= 0) return '';
 
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);

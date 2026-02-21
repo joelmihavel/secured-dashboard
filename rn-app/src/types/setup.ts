@@ -38,6 +38,9 @@ export interface BankVerificationResponse {
   bankName: string | null;
   branch: string | null;
   message: string;
+  agreementNameMatched: boolean | null;
+  matchedLandlordName: string | null;
+  agreementMatchScore: number | null;
 }
 
 // ==============================================
@@ -59,6 +62,7 @@ export interface UtilityVerificationRequest {
   tenancyId: string;
   operatorCode: string;
   consumerNumber: string;
+  params?: Record<string, string>; // Additional params required by some operators (e.g., "Billing Unit")
 }
 
 /** Mapped RN response from verify-utility edge function */

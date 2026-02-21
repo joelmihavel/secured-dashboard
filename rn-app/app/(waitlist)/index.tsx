@@ -720,7 +720,7 @@ export default function WaitlistScreen() {
                       showDivider={true}
                     />
                     <Text style={styles.appliedReferralText}>
-                      Kudos! You've been bumped up 🚀
+                      Kudos! You've been bumped up
                     </Text>
                   </View>
                 </View>

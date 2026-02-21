@@ -139,7 +139,9 @@ export default function AddBankScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             setApiError(
               data.message ||
-                `Name mismatch: verified as "${data.verifiedName ?? 'unknown'}". Please check the account holder name.`
+                (data.agreementNameMatched === false
+                  ? `Account holder "${data.verifiedName ?? 'unknown'}" doesn't match any landlord in your agreement. Please check you're entering the landlord's bank details.`
+                  : `Name mismatch: verified as "${data.verifiedName ?? 'unknown'}". Please check the account holder name.`)
             );
           }
         },

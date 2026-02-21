@@ -105,6 +105,10 @@ verify_jwt = false
 [functions.verify-utility]
 verify_jwt = false
 
+# Invite code claiming - handles auth internally
+[functions.claim-invite-code]
+verify_jwt = false
+
 [edge_runtime]
 policy = "oneshot"
 inspector_port = 8083

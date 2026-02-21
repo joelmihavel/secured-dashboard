@@ -44,16 +44,30 @@ export default function Index() {
         return;
       }
 
-      if (data.state === 'approved') {
-        // user_status 'active' = bank verified → home
-        // user_status 'approved' (or any non-active) = bank not done → setup
-        setTarget(data.userStatus === 'active' ? '/(main)' : '/(setup)');
-      } else if (data.position === null && data.submissionDate === null) {
-        // No waitlist position/submission → user hasn't uploaded agreement yet
-        setTarget('/(agreement)/upload');
-      } else {
-        // pending, pending_long, rejected → waitlist screen
-        setTarget('/(waitlist)');
+      // Route based on userStatus (master journey state from users table)
+      switch (data.userStatus) {
+        case 'signed_up':
+          // Haven't confirmed agreement yet
+          setTarget('/(agreement)/upload');
+          break;
+        case 'agreement_confirmed':
+        case 'waitlisted':
+        case 'not_eligible':
+          // On waitlist or rejected — waitlist screen handles all sub-states
+          setTarget('/(waitlist)');
+          break;
+        case 'approved':
+          // Admin approved, setup pending
+          setTarget('/(setup)');
+          break;
+        case 'active':
+          // Fully onboarded
+          setTarget('/(main)');
+          break;
+        default:
+          // Unknown status — safe fallback
+          setTarget('/(agreement)/upload');
+          break;
       }
     } catch {
       // Fail-open for network errors

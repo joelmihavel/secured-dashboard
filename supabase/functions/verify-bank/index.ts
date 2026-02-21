@@ -32,6 +32,7 @@ import {
   IdempotencyManager,
   generateIdempotencyKey,
 } from "../_shared/idempotency.ts";
+import { matchNamesWithGemini } from "../_shared/gemini.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -182,7 +183,7 @@ serve(async (req: Request) => {
     // Verify tenancy belongs to user
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
-      .select("id, user_id, landlord_name")
+      .select("id, user_id, landlord_name, extracted_rental_info_id")
       .eq("id", tenancy_id)
       .single();
 
@@ -194,6 +195,26 @@ serve(async (req: Request) => {
       throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
     }
 
+    // Fetch landlord names from agreement extraction (handles multiple landlords)
+    let extractedLandlordNames: string[] = [];
+    if (tenancy.extracted_rental_info_id) {
+      const { data: extraction } = await supabase
+        .from("extracted_rental_info")
+        .select("landlord_names")
+        .eq("id", tenancy.extracted_rental_info_id)
+        .single();
+      if (extraction?.landlord_names?.length) {
+        extractedLandlordNames = extraction.landlord_names;
+      }
+    }
+
+    // Build deduplicated list: primary landlord_name + extracted names
+    const allLandlordNames: string[] = [];
+    if (tenancy.landlord_name) allLandlordNames.push(tenancy.landlord_name);
+    for (const name of extractedLandlordNames) {
+      if (name && !allLandlordNames.includes(name)) allLandlordNames.push(name);
+    }
+
     // Call Cashfree Penny Drop API
     const pennyDropResult = await callCashfreePennyDrop({
       account_number,
@@ -201,11 +222,79 @@ serve(async (req: Request) => {
       account_holder_name,
     });
 
-    // Calculate name match score
+    // Calculate name match score (user-typed name vs Cashfree name — kept as secondary data)
     const nameMatchScore = calculateNameMatchScore(
       account_holder_name,
       pennyDropResult.name_at_bank ?? ""
     );
+
+    // Match Cashfree's name_at_bank against agreement landlord names using Gemini AI
+    let agreementNameMatched = false;
+    let agreementMatchScore = 0;
+    let matchedLandlordName: string | null = null;
+    let agreementMatchDetails: Record<string, unknown> = {};
+
+    const nameAtBank = pennyDropResult.name_at_bank ?? "";
+
+    if (pennyDropResult.status === "SUCCESS" && nameAtBank && allLandlordNames.length > 0) {
+      try {
+        console.log("[verify-bank] Matching bank name against", allLandlordNames.length, "agreement landlord(s)");
+
+        let bestResult: { confidence: number; is_match: boolean; reasoning: string; match_type: string } | null = null;
+
+        for (const landlordName of allLandlordNames) {
+          const result = await matchNamesWithGemini(nameAtBank, landlordName, "agreement_bank_verification");
+          if (!bestResult || result.confidence > bestResult.confidence) {
+            bestResult = result;
+            matchedLandlordName = landlordName;
+          }
+        }
+
+        agreementMatchScore = bestResult!.confidence;
+        agreementNameMatched = bestResult!.is_match;
+        agreementMatchDetails = {
+          gemini_used: true,
+          reasoning: bestResult!.reasoning,
+          match_type: bestResult!.match_type,
+          matched_landlord_name: matchedLandlordName,
+          all_landlord_names: allLandlordNames.length > 1 ? allLandlordNames : undefined,
+          name_at_bank: nameAtBank,
+        };
+
+        console.log("[verify-bank] Agreement name match result:", {
+          matched: agreementNameMatched,
+          score: agreementMatchScore,
+          matched_landlord: matchedLandlordName,
+          landlord_count: allLandlordNames.length,
+        });
+      } catch (error) {
+        console.error("[verify-bank] Gemini agreement name matching failed, using Levenshtein fallback:", error);
+
+        // Fallback: Levenshtein against each landlord name
+        let bestScore = 0;
+        for (const landlordName of allLandlordNames) {
+          const score = calculateNameMatchScore(nameAtBank, landlordName);
+          if (score > bestScore) {
+            bestScore = score;
+            matchedLandlordName = landlordName;
+          }
+        }
+        agreementMatchScore = Math.round(bestScore * 100);
+        agreementNameMatched = bestScore >= NAME_MATCH_THRESHOLD;
+        agreementMatchDetails = {
+          gemini_used: false,
+          fallback_score: agreementMatchScore,
+          matched_landlord_name: matchedLandlordName,
+          all_landlord_names: allLandlordNames.length > 1 ? allLandlordNames : undefined,
+          name_at_bank: nameAtBank,
+        };
+      }
+    } else if (allLandlordNames.length === 0) {
+      // No landlord names in agreement — skip agreement matching, allow penny drop only
+      console.warn("[verify-bank] No landlord names found in agreement, skipping agreement name match");
+      agreementNameMatched = true; // Don't block if no agreement data
+      agreementMatchDetails = { skipped: true, reason: "no_landlord_names_in_agreement" };
+    }
 
     // Encrypt account number for storage
     const encryptedAccountNumber = await encrypt(account_number);
@@ -220,7 +309,7 @@ serve(async (req: Request) => {
         account_number_encrypted: encryptedAccountNumber,
         account_number_masked: maskAccountNumber(account_number),
         ifsc_code: sanitizedIfsc,
-        verified: pennyDropResult.status === "SUCCESS" && nameMatchScore >= NAME_MATCH_THRESHOLD,
+        verified: pennyDropResult.status === "SUCCESS" && agreementNameMatched,
         penny_drop_txn_id: pennyDropResult.reference_id?.toString(),
         penny_drop_reference_id: pennyDropResult.reference_id,
         penny_drop_status: pennyDropResult.status,
@@ -229,6 +318,9 @@ serve(async (req: Request) => {
         verified_at:
           pennyDropResult.status === "SUCCESS" ? new Date().toISOString() : null,
         is_default: true, // First account added is primary
+        agreement_name_matched: agreementNameMatched,
+        agreement_name_match_score: agreementMatchScore,
+        agreement_name_match_details: agreementMatchDetails,
       })
       .select()
       .single();
@@ -271,9 +363,13 @@ serve(async (req: Request) => {
       await audit.logFailure(
         AuditActions.BANK_VERIFICATION_FAILED,
         "verification",
-        pennyDropResult.status === "SUCCESS" ? "NAME_MISMATCH" : pennyDropResult.status,
         pennyDropResult.status === "SUCCESS"
-          ? `Name match score ${(nameMatchScore * 100).toFixed(0)}% below threshold`
+          ? (!agreementNameMatched ? "AGREEMENT_NAME_MISMATCH" : "NAME_MISMATCH")
+          : pennyDropResult.status,
+        pennyDropResult.status === "SUCCESS"
+          ? (!agreementNameMatched
+            ? `Bank name "${nameAtBank}" did not match agreement landlords: ${allLandlordNames.join(", ")}`
+            : `Name match score ${(nameMatchScore * 100).toFixed(0)}% below threshold`)
           : pennyDropResult.message ?? "Verification failed",
         "bank_account",
         bankAccount.id,
@@ -281,6 +377,9 @@ serve(async (req: Request) => {
           name_match_score: nameMatchScore,
           provided_name: account_holder_name,
           bank_name: pennyDropResult.name_at_bank,
+          agreement_name_matched: agreementNameMatched,
+          agreement_match_score: agreementMatchScore,
+          matched_landlord_name: matchedLandlordName,
         }
       );
     }
@@ -298,11 +397,16 @@ serve(async (req: Request) => {
         verification_status: pennyDropResult.status,
         bank_name: pennyDropResult.bank_name,
         branch: pennyDropResult.branch,
+        agreement_name_matched: agreementNameMatched,
+        matched_landlord_name: matchedLandlordName,
+        agreement_match_score: agreementMatchScore,
         message: bankAccount.verified
           ? "Bank account verified successfully"
-          : pennyDropResult.status === "SUCCESS"
-          ? `Name mismatch: provided "${account_holder_name}", bank returned "${pennyDropResult.name_at_bank}"`
-          : pennyDropResult.message ?? "Verification failed",
+          : pennyDropResult.status !== "SUCCESS"
+          ? pennyDropResult.message ?? "Bank account verification failed"
+          : !agreementNameMatched
+          ? `The account holder "${nameAtBank}" does not match any landlord name in your agreement. Expected: ${allLandlordNames.join(" or ")}`
+          : "Verification failed",
       },
     };
 

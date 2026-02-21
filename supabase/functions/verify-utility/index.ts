@@ -36,7 +36,8 @@ import { matchNamesWithGemini, matchAddressesWithGemini } from "../_shared/gemin
 // ==============================================
 
 const API_CLUB_KEY = Deno.env.get("API_CLUB_KEY");
-const API_CLUB_BASE_URL = "https://api.apiclub.in/api/v1";
+const API_CLUB_BASE_URL =
+  Deno.env.get("API_CLUB_BASE_URL") ?? "https://prod.apiclub.in/api/v1";
 
 // Matching thresholds (used as fallback if Gemini fails)
 const ADDRESS_MATCH_THRESHOLD = 0.7; // 70%
@@ -57,6 +58,7 @@ interface VerifyUtilityRequest {
   tenancy_id: string;
   consumer_number: string;
   operator_code: string;
+  params?: Record<string, string>; // Additional params required by some operators (e.g., "Billing Unit")
 }
 
 interface BillFetchResponse {
@@ -98,6 +100,7 @@ const requestSchema = {
   tenancy_id: { required: true, type: "string" as const },
   consumer_number: { required: true, type: "string" as const, minLength: 5, maxLength: 30 },
   operator_code: { required: true, type: "string" as const, minLength: 2, maxLength: 30 },
+  params: { required: false, type: "object" as const },
 };
 
 // ==============================================
@@ -138,6 +141,7 @@ async function handleGetOperators(): Promise<Response> {
     const response = await fetchWithRetry(`${API_CLUB_BASE_URL}/fetch_bill_operator`, {
       headers: {
         "x-api-key": API_CLUB_KEY,
+        "X-Request-Id": `FLENT_OP_${Date.now()}`,
       },
     });
 
@@ -252,7 +256,7 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       true
     );
 
-    const { tenancy_id, consumer_number, operator_code } = validatedBody;
+    const { tenancy_id, consumer_number, operator_code, params: operatorParams } = validatedBody;
 
     // Log verification initiation
     await audit.logSuccess(
@@ -312,7 +316,7 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       .eq("party_type", "landlord");
 
     // Fetch electricity bill from API Club
-    const billResult = await fetchElectricityBill(consumer_number, operator_code);
+    const billResult = await fetchElectricityBill(consumer_number, operator_code, operatorParams);
 
     // Build addresses for comparison
     const tenancyAddress = buildAddress(
@@ -670,23 +674,33 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
 
 async function fetchElectricityBill(
   consumerNumber: string,
-  operatorCode: string
+  operatorCode: string,
+  params?: Record<string, string>
 ): Promise<BillFetchResponse> {
   if (!API_CLUB_KEY) {
     throw new ExternalServiceError("API Club", "API key not configured");
   }
 
+  const requestId = `FLENT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
   try {
+    const requestBody: Record<string, unknown> = {
+      consumer_no: consumerNumber,
+      operator: operatorCode,
+    };
+    // Forward operator-specific params (e.g., "Billing Unit" for some operators)
+    if (params && Object.keys(params).length > 0) {
+      requestBody.params = params;
+    }
+
     const response = await fetchWithRetry(`${API_CLUB_BASE_URL}/fetch_bill`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": API_CLUB_KEY,
+        "X-Request-Id": requestId,
       },
-      body: JSON.stringify({
-        consumer_no: consumerNumber,
-        operator: operatorCode,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();

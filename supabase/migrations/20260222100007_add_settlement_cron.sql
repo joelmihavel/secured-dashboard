@@ -11,4 +11,5 @@ SELECT cron.schedule(
   )$$
 );
 
-COMMENT ON COLUMN cron.job.command IS 'SERVICE_ROLE_KEY placeholder is replaced at deploy time';
+-- Note: SERVICE_ROLE_KEY placeholder in the cron command must be replaced
+-- manually via Supabase Dashboard > Database > Extensions > pg_cron.

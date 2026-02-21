@@ -47,6 +47,9 @@ interface RawVerifyBankResponse {
     bank_name: string | null;
     branch: string | null;
     message: string;
+    agreement_name_matched: boolean | null;
+    matched_landlord_name: string | null;
+    agreement_match_score: number | null;
   };
 }
 
@@ -129,6 +132,9 @@ function mapBankResponse(raw: RawVerifyBankResponse): BankVerificationResponse {
     bankName: d.bank_name,
     branch: d.branch,
     message: d.message,
+    agreementNameMatched: d.agreement_name_matched ?? null,
+    matchedLandlordName: d.matched_landlord_name ?? null,
+    agreementMatchScore: d.agreement_match_score ?? null,
   };
 }
 
@@ -304,11 +310,14 @@ export async function verifyUtility(
   request: UtilityVerificationRequest
 ): Promise<{ data: UtilityVerificationResponse | null; error: SetupError | null }> {
   // Map camelCase request to snake_case for edge function
-  const body = {
+  const body: Record<string, unknown> = {
     tenancy_id: request.tenancyId,
     consumer_number: request.consumerNumber,
     operator_code: request.operatorCode,
   };
+  if (request.params && Object.keys(request.params).length > 0) {
+    body.params = request.params;
+  }
 
   const { data, error } = await callEdgeFunction<RawVerifyUtilityResponse>(
     'verify-utility',
