@@ -245,14 +245,7 @@ export default function OTPScreen() {
 
     setIsNavigating(true);
 
-    // Fade overlay to fully opaque to mask the sign-up screen underneath
-    // during cross-group navigation (modal dismiss → new stack push).
-    overlayOpacity.value = withTiming(1, { duration: 250 });
-
     const resolveRoute = async () => {
-      // Brief delay for the opacity animation to complete
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
       try {
         const { data, error } = await getWaitlistStatus();
 

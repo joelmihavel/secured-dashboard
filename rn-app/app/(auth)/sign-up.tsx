@@ -207,6 +207,14 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
 
   // Prevent flash of sign-up screen when transitioning out of auth flow.
   const isAuthSuccess = status === 'authenticated';
+  
+  if (isAuthSuccess) {
+    return (
+      <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
+        <View style={{ flex: 1, backgroundColor: colors.black[700] }} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
@@ -287,12 +295,6 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* Freeze overlay to prevent flash during root stack transition.
-          Keeps the inputs visible but darkened when the OTP modal unmounts. */}
-      {isAuthSuccess && (
-        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' }} pointerEvents="none" />
-      )}
     </Screen>
   );
 }
