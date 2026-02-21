@@ -135,13 +135,9 @@ function PrimaryButtonComponent({
         {/* Divider: Figma Rectangle 140 — 24x2 #4D4D4D radius 200 */}
         {showDivider && <Animated.View style={[styles.divider, dividerAnimatedStyle]} />}
 
-        {isDisabled ? (
+        {disabled && !loading ? (
           <View style={styles.buttonDisabled}>
-            {loading ? (
-              <ActivityIndicator color={colors.neutral[800]} size="small" />
-            ) : (
-              <RNText style={styles.textDisabled}>{title}</RNText>
-            )}
+            <RNText style={styles.textDisabled}>{title}</RNText>
           </View>
         ) : (
           /* ACTIVE STATE — 3D button with gradient, glow border, inner shadows */

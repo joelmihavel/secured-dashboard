@@ -245,7 +245,14 @@ export default function OTPScreen() {
 
     setIsNavigating(true);
 
+    // Fade overlay to fully opaque to mask the sign-up screen underneath
+    // during cross-group navigation (modal dismiss → new stack push).
+    overlayOpacity.value = withTiming(1, { duration: 250 });
+
     const resolveRoute = async () => {
+      // Brief delay for the opacity animation to complete
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       try {
         const { data, error } = await getWaitlistStatus();
 
@@ -272,12 +279,12 @@ export default function OTPScreen() {
     resolveRoute();
   }, [status, router, isNavigating, overlayOpacity]);
 
-  const handleProceed = useCallback((otpValue?: string) => {
+  const handleProceed = useCallback((otpValue?: string | any) => {
     // Ref-based guard: prevents double-fire even before React Query isPending updates.
     // isNavigating: prevents re-submission after verification succeeds (during async navigation).
     if (isSubmittingRef.current || isVerifyingOtp || isNavigating) return;
 
-    const code = otpValue ?? otp;
+    const code = typeof otpValue === 'string' ? otpValue : otp;
     if (code.length !== 6) return;
 
     // Enforce exponential backoff cooldown between retries

@@ -206,14 +206,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
   // Prevent flash of sign-up screen when transitioning out of auth flow.
-  if (status === 'authenticated') {
-    return (
-      <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
-        <DottedPattern />
-        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' }} />
-      </Screen>
-    );
-  }
+  const isAuthSuccess = status === 'authenticated';
 
   return (
     <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
@@ -294,6 +287,12 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Freeze overlay to prevent flash during root stack transition.
+          Keeps the inputs visible but darkened when the OTP modal unmounts. */}
+      {isAuthSuccess && (
+        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' }} pointerEvents="none" />
+      )}
     </Screen>
   );
 }
