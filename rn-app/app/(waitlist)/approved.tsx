@@ -186,7 +186,7 @@ export default function WaitlistApprovedScreen() {
   return (
     <View style={styles.screen}>
       {/* Background Pattern + Shape (nodes 237:2758, 41:11314) */}
-      <DottedPattern backgroundShape="default" />
+      <DottedPattern backgroundShape="waitlist" />
 
       {/* Confetti Animation Overlay */}
       {showConfetti && (

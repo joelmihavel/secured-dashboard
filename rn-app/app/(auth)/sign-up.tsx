@@ -205,6 +205,16 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
     sendCode(formattedPhone, 'whatsapp');
   }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
+  // Prevent flash of sign-up screen when transitioning out of auth flow.
+  if (status === 'authenticated') {
+    return (
+      <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
+        <DottedPattern />
+        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' }} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
       {/* Background Pattern - uses actual Figma images with correct opacity (8%) */}
