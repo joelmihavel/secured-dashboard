@@ -211,7 +211,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   if (isAuthSuccess) {
     return (
       <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
-        <View style={{ flex: 1, backgroundColor: colors.black[700] }} />
+        <DottedPattern />
       </Screen>
     );
   }
