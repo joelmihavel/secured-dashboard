@@ -232,5 +232,5 @@ export const selectCountdownText = (state: WaitlistStore) => {
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
 
-  return `${days}d : ${hours}h`;
+  return `${days}d: ${hours}h`;
 };

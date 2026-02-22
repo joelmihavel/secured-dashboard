@@ -368,11 +368,10 @@ export interface AddPaymentMethodResult {
 }
 
 /**
- * Hook to add a new payment method (UPI, card, or netbanking).
+ * Hook to add a new payment method (UPI only).
  *
- * For UPI: calls addUpiVpa with correct edge function field names.
- * For card: calls addCardToken when a card_token is provided in metadata,
- *           otherwise falls back to mock for dev mode.
+ * Card and netbanking are handled natively by PayU Checkout Pro SDK.
+ * Only UPI VPA addresses can be saved directly.
  *
  * @returns Mutation object with standard React Query mutation fields.
  */
@@ -381,7 +380,6 @@ export function useAddPaymentMethod() {
 
   return useMutation({
     mutationFn: async (request: AddPaymentMethodRequest): Promise<AddPaymentMethodResult> => {
-      // For UPI, use the addUpiVpa function with correct field mapping
       if (request.type === 'upi') {
         const { data, error } = await addUpiVpa(
           request.details,
@@ -399,36 +397,11 @@ export function useAddPaymentMethod() {
         };
       }
 
-      // For card with a token, use addCardToken
-      if (request.type === 'card' && request.metadata?.card_token) {
-        const cardNetwork = (request.metadata.cardNetwork ?? 'visa') as AddCardTokenRequest['card_network'];
-        const cardType = (request.metadata.cardType ?? 'credit') as AddCardTokenRequest['card_type'];
-        const [expiryMonth, expiryYear] = (request.metadata.expiryDate ?? '01/30').split('/').map(Number);
-
-        const { data, error } = await addCardToken({
-          card_token: request.metadata.card_token,
-          card_last4: request.details,
-          card_network: cardNetwork,
-          card_type: cardType,
-          card_expiry_month: expiryMonth,
-          card_expiry_year: 2000 + expiryYear,
-          card_issuer: request.metadata.cardIssuer,
-          nickname: request.metadata.cardholderName,
-          set_primary: request.isDefault,
-        });
-        if (error) {
-          throw new Error(error);
-        }
-        return {
-          id: data!.id,
-          type: 'card',
-          details: request.details,
-          is_default: request.isDefault ?? false,
-        };
-      }
-
-      // Card/netbanking without a token cannot be added
-      throw new Error(`Cannot add ${request.type} without a valid token. Please complete the payment gateway flow first.`);
+      // Card and netbanking are handled by PayU Checkout Pro SDK natively
+      throw new Error(
+        `${request.type} payment methods are managed through PayU Checkout Pro. ` +
+        'Only UPI VPA addresses can be saved directly.'
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });

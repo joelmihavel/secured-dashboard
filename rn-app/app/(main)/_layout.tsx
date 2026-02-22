@@ -14,11 +14,8 @@ export default function MainLayout() {
   const { isReady } = useRequireAuth();
 
   if (!isReady) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.brand[500]} />
-      </View>
-    );
+    // Return a black screen with no indicator to match stack transition aesthetics
+    return <View style={{ flex: 1, backgroundColor: colors.black[700] }} />;
   }
 
   return (

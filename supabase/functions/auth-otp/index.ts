@@ -25,6 +25,7 @@ import {
 } from "../_shared/errors.ts";
 import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, isValidIndianPhone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { extractFirstName } from "../_shared/name-utils.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -405,10 +406,26 @@ async function handleVerifyOtp(
 
     if (existingUser) {
       userId = existingUser.id;
-      // Update phone to consistent format if using old format
+      // Update phone + name for returning users
+      const updatePayload: Record<string, any> = { phone: phoneWithCountryCode };
+      if (name) {
+        // Only overwrite name if user doesn't already have M360-verified name
+        const { data: existingUserData } = await supabase
+          .from("users")
+          .select("name_source")
+          .eq("id", userId)
+          .single();
+        if (existingUserData?.name_source !== "m360") {
+          const extracted = extractFirstName(name);
+          updatePayload.full_name = name;
+          updatePayload.first_name = extracted.first_name;
+          updatePayload.last_name = extracted.last_name;
+          updatePayload.name_source = "user_input";
+        }
+      }
       await supabase
         .from("users")
-        .update({ phone: phoneWithCountryCode })
+        .update(updatePayload)
         .eq("id", userId);
     } else {
       // Edge case: auth user exists but profile doesn't
@@ -420,12 +437,16 @@ async function handleVerifyOtp(
   } else {
     userId = authData.user!.id;
 
-    // Update user profile with name
+    // Update user profile with extracted name
     if (name) {
+      const extracted = extractFirstName(name);
       await supabase
         .from("users")
         .update({
           full_name: name,
+          first_name: extracted.first_name,
+          last_name: extracted.last_name,
+          name_source: "user_input",
           phone: phoneWithCountryCode,
         })
         .eq("id", userId);

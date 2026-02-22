@@ -31,8 +31,6 @@ export default function PaymentLayout() {
     >
       <Stack.Screen name="select-method" />
       <Stack.Screen name="add-upi" />
-      <Stack.Screen name="add-card" />
-      <Stack.Screen name="add-netbanking" />
       <Stack.Screen name="first-rent" />
       <Stack.Screen name="initiate" />
       <Stack.Screen name="processing" />

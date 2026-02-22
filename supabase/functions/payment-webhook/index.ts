@@ -13,7 +13,7 @@ import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { verifyPayUWebhookHash } from "../_shared/crypto.ts";
+import { verifyPayUWebhookHashWithCharges } from "../_shared/crypto.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -108,6 +108,7 @@ interface PayUWebhookPayload {
   field9?: string;
   net_amount_debit?: string;
   unmappedstatus?: string;
+  additional_charges?: string;
 }
 
 // ==============================================
@@ -161,8 +162,8 @@ serve(async (req: Request) => {
       mihpayid: payload.mihpayid,
     });
 
-    // Verify hash
-    const isValidHash = await verifyPayUWebhookHash({
+    // Verify hash (supports additional_charges in hash formula)
+    const isValidHash = await verifyPayUWebhookHashWithCharges({
       key: PAYU_MERCHANT_KEY,
       txnid: payload.txnid,
       amount: payload.amount,
@@ -172,6 +173,7 @@ serve(async (req: Request) => {
       status: payload.status,
       salt: PAYU_MERCHANT_SALT,
       hash: payload.hash,
+      additionalCharges: payload.additional_charges,
       udf1: payload.udf1,
       udf2: payload.udf2,
       udf3: payload.udf3,
@@ -201,6 +203,19 @@ serve(async (req: Request) => {
     if (paymentError || !payment) {
       console.error("Payment not found for txnid:", payload.txnid);
       throw new PaymentError("Payment not found", "PAYMENT_NOT_FOUND");
+    }
+
+    // S9: Cross-validate UDFs against payment record
+    if (payload.udf1 && payload.udf1 !== payment.tenancy_id) {
+      console.error(`[SECURITY] UDF1 mismatch: payload=${payload.udf1}, payment=${payment.tenancy_id}`);
+      await audit.logFailure(
+        "PAYMENT_UDF_MISMATCH",
+        "security",
+        "UDF_MISMATCH",
+        `Webhook UDF1 doesn't match payment tenancy_id`,
+        "payment",
+        payment.id
+      );
     }
 
     // Idempotency check 1: Skip if payment is already in terminal state
@@ -280,14 +295,32 @@ serve(async (req: Request) => {
     const newStatus = PAYU_STATUS_MAP[payload.status.toLowerCase()] ?? "failed";
     const isSuccess = newStatus === "success";
 
-    // Update payment record — store full webhook payload
+    // S6: Sanitize webhook payload — only store allowlisted fields
+    const SAFE_WEBHOOK_FIELDS = [
+      "mihpayid", "status", "txnid", "amount", "productinfo", "firstname",
+      "email", "mode", "PG_TYPE", "bankcode", "bank_ref_no", "error",
+      "error_Message", "addedon", "udf1", "udf2", "udf3", "udf4", "udf5",
+      "field1", "field2", "field3", "field4", "field5", "field6", "field7",
+      "field8", "field9", "net_amount_debit", "unmappedstatus", "additional_charges",
+    ];
+    const sanitizedPayload: Record<string, unknown> = {};
+    for (const key of SAFE_WEBHOOK_FIELDS) {
+      if (key in payload) {
+        sanitizedPayload[key] = payload[key as keyof PayUWebhookPayload];
+      }
+    }
+    if (payload.card_no) {
+      sanitizedPayload.card_last4 = payload.card_no.slice(-4);
+    }
+
+    // Update payment record — store sanitized webhook payload
     const updateData: Record<string, unknown> = {
       status: newStatus,
       payu_mihpayid: payload.mihpayid,
       payu_status: payload.status,
       payu_error_code: payload.error,
       payu_error_message: payload.error_Message,
-      payu_raw_response: payload,
+      payu_raw_response: sanitizedPayload,
       payment_method_details: {
         ...((payment.payment_method_details as Record<string, unknown>) ?? {}),
         bank_ref_no: payload.bank_ref_no,
@@ -295,7 +328,6 @@ serve(async (req: Request) => {
         mode: payload.mode,
         pg_type: payload.PG_TYPE,
         card_last4: payload.card_no?.slice(-4),
-        name_on_card: payload.name_on_card,
       },
     };
 
@@ -332,31 +364,51 @@ serve(async (req: Request) => {
       updateData.landlord_payout_paise = payment.rent_amount_paise;
     }
 
-    const { error: updateError } = await supabase
+    // S5/S8: Optimistic lock — only update if status hasn't changed concurrently
+    const { data: updatedRow, error: updateError } = await supabase
       .from("payments")
       .update(updateData)
-      .eq("id", payment.id);
+      .eq("id", payment.id)
+      .eq("status", payment.status)
+      .select("id")
+      .maybeSingle();
 
     if (updateError) {
       console.error("Failed to update payment:", updateError);
       throw new AppError("Failed to update payment", "DB_ERROR", 500);
     }
 
-    // Cashback reversal on failure — if cashback was debited at initiation, reverse it
-    if (newStatus === "failed" && payment.cashback_applied_paise > 0 && userId) {
+    if (!updatedRow) {
+      // Status was changed concurrently — re-fetch and check
+      const { data: freshPayment } = await supabase
+        .from("payments")
+        .select("id, status")
+        .eq("id", payment.id)
+        .single();
+
+      if (freshPayment && TERMINAL_STATES.includes(freshPayment.status)) {
+        return jsonResponse({ status: "success", message: "Payment already in terminal state" });
+      }
+      throw new AppError("Failed to update payment - concurrent modification", "CONCURRENT_UPDATE", 409);
+    }
+
+    // S16: Debit cashback on success (not at initiation) — intended_cashback_paise was stored but not debited
+    if (isSuccess && payment.intended_cashback_paise > 0 && userId) {
       try {
+        const { data: currentBalance } = await supabase.rpc("get_cashback_balance", { p_user_id: userId });
         await supabase.from("cashback_ledger").insert({
           user_id: userId,
-          amount_paise: payment.cashback_applied_paise,
-          transaction_type: "reversal",
+          transaction_type: "applied",
+          amount_paise: payment.intended_cashback_paise,
+          balance_after_paise: (currentBalance ?? 0) - payment.intended_cashback_paise,
+          payment_id: payment.id,
+          tenancy_id: payment.tenancy_id,
           reference_type: "payment",
           reference_id: payment.id,
-          description: "Cashback reversed due to payment failure",
+          description: `Cashback applied to rent payment`,
         });
-        console.log(`Reversed ${payment.cashback_applied_paise} paise cashback for failed payment ${payment.id}`);
-      } catch (reversalError) {
-        console.error("Failed to reverse cashback:", reversalError);
-        // Don't throw — reversal failure shouldn't fail the webhook
+      } catch (e) {
+        console.error("Failed to debit cashback on success:", e);
       }
     }
 

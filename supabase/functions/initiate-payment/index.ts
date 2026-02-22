@@ -18,12 +18,13 @@ import {
   AppError,
   ValidationError,
   PaymentError,
+  RateLimitError,
   handleError,
 } from "../_shared/errors.ts";
 import { validateSchema, isValidAmountPaise, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
-import { generatePayUHash, generateTransactionId } from "../_shared/crypto.ts";
+import { generatePayUHash, generateTransactionId, sha512 } from "../_shared/crypto.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -31,7 +32,7 @@ import { generatePayUHash, generateTransactionId } from "../_shared/crypto.ts";
 
 const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY")!;
 const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
-const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://sandboxsecure.payu.in";
+const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://test.payu.in";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 
 // PG fee rates (approximate)
@@ -92,6 +93,7 @@ const requestSchema = {
   card_token: { required: false, type: "string" as const },
   bank_code: { required: false, type: "string" as const },
   apply_cashback: { required: false, type: "boolean" as const },
+  checkout_mode: { required: false, type: "string" as const, enum: ["sdk", "seamless"] },
   rent_month: {
     required: true,
     type: "string" as const,
@@ -127,6 +129,18 @@ serve(async (req: Request) => {
     // Initialize audit logger
     audit = AuditLogger.fromRequest(supabase, req, userId, "initiate-payment");
 
+    // S15: Rate limit — max 5 payment initiations per user per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentPayments } = await supabase
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", oneHourAgo);
+
+    if ((recentPayments ?? 0) >= 5) {
+      throw new RateLimitError(3600);
+    }
+
     // Parse and validate request body
     const body = await req.json();
     const validatedBody = validateSchema<InitiatePaymentRequest>(
@@ -145,6 +159,7 @@ serve(async (req: Request) => {
       apply_cashback = true,
       rent_month,
     } = validatedBody;
+    const checkout_mode = (validatedBody as Record<string, unknown>).checkout_mode as string | undefined;
 
     // Normalize payment method (iOS sends net_banking, credit_card, debit_card)
     const payment_method = normalizePaymentMethod(rawPaymentMethod);
@@ -163,14 +178,18 @@ serve(async (req: Request) => {
     }
 
     // Validate payment method specific requirements
+    // Phase 3.2: SDK mode lets PayU handle instrument selection, so card_token/bank_code not required
+    const isSDKMode = checkout_mode === "sdk";
     if (payment_method === "upi_collect" && !upi_vpa) {
       throw new ValidationError("UPI VPA is required for UPI collect", { upi_vpa: "Required" });
     }
-    if (payment_method === "card" && !card_token) {
-      throw new ValidationError("Card token is required for card payments", { card_token: "Required" });
-    }
-    if (payment_method === "netbanking" && !bank_code) {
-      throw new ValidationError("Bank code is required for netbanking", { bank_code: "Required" });
+    if (!isSDKMode) {
+      if (payment_method === "card" && !card_token) {
+        throw new ValidationError("Card token is required for seamless card payments", { card_token: "Required" });
+      }
+      if (payment_method === "netbanking" && !bank_code) {
+        throw new ValidationError("Bank code is required for seamless netbanking", { bank_code: "Required" });
+      }
     }
 
     // Fetch tenancy and validate
@@ -197,6 +216,12 @@ serve(async (req: Request) => {
 
     if (!tenancy.bank_verified) {
       throw new PaymentError("Landlord bank account not verified yet", "BANK_NOT_VERIFIED");
+    }
+
+    // S1: Server-side amount validation — never trust client amount below canonical rent
+    const canonicalAmountPaise = tenancy.monthly_rent_paise;
+    if (validatedBody.amount_paise && validatedBody.amount_paise < canonicalAmountPaise) {
+      throw new PaymentError("Amount cannot be less than monthly rent", "AMOUNT_TOO_LOW");
     }
 
     // Credit card requires landlord approval + utility verification
@@ -315,6 +340,11 @@ serve(async (req: Request) => {
 
     const hash = await generatePayUHash(payuParams);
 
+    // Phase 3.4: Pre-compute static SDK hashes
+    const userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
+    const vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
+    const paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
+
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);
 
@@ -327,6 +357,7 @@ serve(async (req: Request) => {
         rent_amount_paise: originalRentPaise,
         pg_fee_paise: pgFeePaise,
         cashback_applied_paise: cashbackAppliedPaise,
+        intended_cashback_paise: cashbackAppliedPaise,
         total_amount_paise: totalAmountPaise,
         landlord_payout_paise: landlordPayoutPaise,
         status: "initiated",
@@ -363,24 +394,8 @@ serve(async (req: Request) => {
       throw new PaymentError("Failed to initiate payment", "DB_ERROR");
     }
 
-    // Record cashback debit if applied
-    if (cashbackAppliedPaise > 0) {
-      const { data: currentBalance } = await supabase.rpc("get_cashback_balance", {
-        p_user_id: userId,
-      });
-
-      await supabase.from("cashback_ledger").insert({
-        user_id: userId,
-        transaction_type: "applied",
-        amount_paise: cashbackAppliedPaise,
-        balance_after_paise: (currentBalance ?? 0) - cashbackAppliedPaise,
-        payment_id: payment.id,
-        tenancy_id,
-        reference_type: "payment",
-        reference_id: payment.id,
-        description: `Cashback applied to rent payment for ${rent_month}`,
-      });
-    }
+    // S16: Cashback debit is deferred to webhook success handler
+    // intended_cashback_paise is stored on the payment record but NOT debited from the ledger here
 
     // Log audit
     await audit.logSuccess(AuditActions.PAYMENT_INITIATED, "payment", "payment", payment.id, {
@@ -433,6 +448,9 @@ serve(async (req: Request) => {
         udf1: tenancy_id,
         udf2: rent_month,
         udf3: userId,
+        user_credential: userCredential,
+        vas_for_mobile_sdk_hash: vasHash,
+        payment_related_details_for_mobile_sdk_hash: paymentRelatedHash,
       },
 
       // Method-specific data

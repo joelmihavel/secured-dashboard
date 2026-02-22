@@ -9,6 +9,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, VerifyOtpRequest } from '../services/api/auth';
 import { useAuthStore } from '../stores/auth';
+import { useUploadStore } from '../stores/upload';
+import { useWaitlistStore } from '../stores/waitlist';
+import { usePaymentStore } from '../stores/payment';
+import { useSetupStore } from '../stores/setup';
+import { useProfileStore } from '../stores/profile';
 import { useRecordConsent, useIdentityFetch } from './useIdentityVerification';
 import { supabase } from '../services/supabase/client';
 import { queryClient as globalQueryClient } from '../providers/QueryProvider';
@@ -238,9 +243,15 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     await apiSignOut();
+    // Reset ALL stores so the next user starts completely fresh.
+    // Critical for persisted stores (upload, payment) which survive app kills.
     authStore.reset();
-    // Wipe all cached server data so the next user (or re-login)
-    // starts fresh — prevents stale dashboard/waitlist/agreement data.
+    useUploadStore.getState().reset();
+    useWaitlistStore.getState().reset();
+    usePaymentStore.getState().reset();
+    useSetupStore.getState().reset();
+    useProfileStore.getState().reset();
+    // Wipe all cached server data — prevents stale dashboard/waitlist/agreement data.
     globalQueryClient.clear();
   }, [authStore]);
 

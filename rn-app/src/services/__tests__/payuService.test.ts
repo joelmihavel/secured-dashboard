@@ -20,10 +20,28 @@ jest.mock('../../services/supabase/client', () => ({
   getFunctionsUrl: jest.fn(),
 }));
 
+// Also mock the barrel (for lazy import in verifyPaymentStatus)
+jest.mock('../supabase', () => ({
+  __esModule: true,
+  callEdgeFunction: (...args: unknown[]) => mockCallEdgeFunction(...args),
+  supabase: {
+    from: (...args: unknown[]) => mockSupabaseFrom(...args),
+  },
+}));
+
 jest.mock('react-native', () => ({
   Alert: {
     alert: jest.fn(),
   },
+  NativeEventEmitter: jest.fn(() => ({
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeAllListeners: jest.fn(),
+  })),
+  DeviceEventEmitter: {
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+    removeAllListeners: jest.fn(),
+  },
+  Platform: { OS: 'ios' },
 }));
 
 import {
@@ -31,7 +49,6 @@ import {
   launchPayUCheckout,
   mockPayUCheckout,
   verifyPaymentStatus,
-  updatePaymentStatus,
 } from '../payment/payuService';
 
 import type { PayUPaymentParams } from '../payment/payuService';
@@ -73,7 +90,7 @@ describe('PayU Service', () => {
           data: {
             payment_id: 'pay-001',
             txn_id: 'txn-001',
-            amount_paise: 2500000,
+            total_amount_paise: 2500000,
             payu: SAMPLE_PAYU_PARAMS,
           },
         },
@@ -82,7 +99,6 @@ describe('PayU Service', () => {
 
       const result = await initiatePayUPayment({
         tenancyId: 'ten-001',
-        amountPaise: 2500000,
         paymentMethod: 'upi',
         applyCashback: true,
         rentMonth: '2026-02',
@@ -95,10 +111,10 @@ describe('PayU Service', () => {
 
       const [, body] = mockCallEdgeFunction.mock.calls[0];
       expect(body.tenancy_id).toBe('ten-001');
-      expect(body.amount_paise).toBe(2500000);
       expect(body.payment_method).toBe('upi');
       expect(body.apply_cashback).toBe(true);
       expect(body.rent_month).toBe('2026-02');
+      expect(body.checkout_mode).toBe('sdk');
     });
 
     it('returns error on edge function failure', async () => {
@@ -109,7 +125,6 @@ describe('PayU Service', () => {
 
       const result = await initiatePayUPayment({
         tenancyId: 'ten-001',
-        amountPaise: 2500000,
         paymentMethod: 'upi',
         applyCashback: false,
         rentMonth: '2026-02',
@@ -126,7 +141,6 @@ describe('PayU Service', () => {
 
       const result = await initiatePayUPayment({
         tenancyId: 'ten-001',
-        amountPaise: 2500000,
         paymentMethod: 'card',
         applyCashback: false,
         rentMonth: '2026-02',
@@ -143,7 +157,7 @@ describe('PayU Service', () => {
     it('uses mock checkout when SDK is not available (Expo Go)', async () => {
       // PayUBizSdk is null in test environment (no native module)
       // mockPayUCheckout uses setTimeout which needs fake timer advancement
-      const resultPromise = launchPayUCheckout(SAMPLE_PAYU_PARAMS);
+      const resultPromise = launchPayUCheckout('pay-001', SAMPLE_PAYU_PARAMS);
       jest.advanceTimersByTime(5000);
       const result = await resultPromise;
 
@@ -271,45 +285,4 @@ describe('PayU Service', () => {
     });
   });
 
-  // =========================================================================
-  // updatePaymentStatus
-  // =========================================================================
-  describe('updatePaymentStatus', () => {
-    function mockUpdateChain(error: unknown = null) {
-      const chain = {
-        update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error }),
-      };
-      mockSupabaseFrom.mockReturnValue(chain);
-      return chain;
-    }
-
-    it('stores client SDK response as metadata', async () => {
-      const chain = mockUpdateChain();
-
-      const result = await updatePaymentStatus('pay-001', {
-        status: 'success',
-        txnid: 'txn-001',
-      });
-
-      expect(result.success).toBe(true);
-      expect(chain.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          payment_method_details: expect.objectContaining({
-            client_sdk_response: { status: 'success', txnid: 'txn-001' },
-            client_reported_status: 'success',
-          }),
-        })
-      );
-    });
-
-    it('returns error on supabase failure', async () => {
-      mockUpdateChain({ message: 'Update denied' });
-
-      const result = await updatePaymentStatus('pay-001', { status: 'failure' });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Update denied');
-    });
-  });
 });

@@ -17,6 +17,8 @@ import { callEdgeFunction } from '../supabase';
 import type {
   BankVerificationRequest,
   BankVerificationResponse,
+  PanVerificationRequest,
+  PanVerificationResponse,
   UtilityVerificationRequest,
   UtilityVerificationResponse,
   UtilityOperator,
@@ -50,6 +52,21 @@ interface RawVerifyBankResponse {
     agreement_name_matched: boolean | null;
     matched_landlord_name: string | null;
     agreement_match_score: number | null;
+  };
+}
+
+/** Raw response from verify-pan edge function */
+interface RawVerifyPanResponse {
+  success: boolean;
+  data: {
+    pan_verified: boolean;
+    pan_valid: boolean;
+    pan_type: string;
+    registered_name: string;
+    name_matched: boolean;
+    name_match_score: number;
+    matched_landlord_name: string | null;
+    message: string;
   };
 }
 
@@ -116,6 +133,21 @@ interface RawSendInviteResponse {
 // ==============================================
 // MAPPING FUNCTIONS (snake_case -> camelCase)
 // ==============================================
+
+function mapPanResponse(raw: RawVerifyPanResponse): PanVerificationResponse {
+  const d = raw.data;
+  return {
+    success: raw.success,
+    panVerified: d.pan_verified,
+    panValid: d.pan_valid,
+    panType: d.pan_type,
+    registeredName: d.registered_name,
+    nameMatched: d.name_matched,
+    nameMatchScore: d.name_match_score,
+    matchedLandlordName: d.matched_landlord_name,
+    message: d.message,
+  };
+}
 
 function mapBankResponse(raw: RawVerifyBankResponse): BankVerificationResponse {
   const d = raw.data;
@@ -192,7 +224,7 @@ function mapInviteResponse(raw: RawSendInviteResponse): LandlordInviteResponse {
 function mapSetupError(errorMessage: string): SetupError {
   const lower = errorMessage.toLowerCase();
 
-  if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('auth')) {
+  if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('missing authorization') || lower.includes('invalid jwt') || lower.includes('jwt expired')) {
     return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
   }
   if (lower.includes('validation') || lower.includes('invalid') || lower.includes('required')) {
@@ -248,7 +280,7 @@ export async function verifyBank(
     party_type: request.partyType ?? 'landlord',
   };
 
-  const { data, error } = await callEdgeFunction<RawVerifyBankResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawVerifyBankResponse>(
     'verify-bank',
     body,
     true,   // requireAuth
@@ -257,7 +289,28 @@ export async function verifyBank(
   );
 
   if (error) {
-    return { data: null, error: mapSetupError(error) };
+    const base = mapSetupError(error);
+    // Backend ValidationError nests fields under details: { error, message, code, details: { fields } }
+    const details = errorBody?.details as Record<string, unknown> | undefined;
+    const fields = (details?.fields ?? errorBody?.fields) as Record<string, string> | undefined;
+    if (fields && typeof fields === 'object') {
+      const camel: Record<string, string> = {};
+      const map: Record<string, string> = {
+        account_holder_name: 'accountHolderName',
+        account_number: 'accountNumber',
+        ifsc_code: 'ifscCode',
+        pan_card: 'panCard',
+      };
+      for (const [key, value] of Object.entries(fields)) {
+        if (typeof value === 'string') {
+          camel[map[key] ?? key] = value;
+        }
+      }
+      if (Object.keys(camel).length > 0) {
+        return { data: null, error: { ...base, fields: camel } };
+      }
+    }
+    return { data: null, error: base };
   }
 
   if (!data?.success || !data.data) {
@@ -265,6 +318,62 @@ export async function verifyBank(
   }
 
   return { data: mapBankResponse(data), error: null };
+}
+
+/**
+ * Verify PAN card via Cashfree PAN Verification.
+ *
+ * Edge function: POST /functions/v1/verify-pan
+ * Auth: Required (JWT)
+ * Request mapping: camelCase -> snake_case
+ * Response mapping: snake_case -> camelCase
+ * Timeout: 30s (external API call + Gemini matching)
+ */
+export async function verifyPan(
+  request: PanVerificationRequest
+): Promise<{ data: PanVerificationResponse | null; error: SetupError | null }> {
+  const body = {
+    tenancy_id: request.tenancyId,
+    pan_number: request.panNumber,
+    bank_account_id: request.bankAccountId,
+  };
+
+  const { data, error, errorBody } = await callEdgeFunction<RawVerifyPanResponse>(
+    'verify-pan',
+    body,
+    true,   // requireAuth
+    'POST',
+    30_000  // 30s timeout
+  );
+
+  if (error) {
+    const base = mapSetupError(error);
+    const details = errorBody?.details as Record<string, unknown> | undefined;
+    const fields = (details?.fields ?? errorBody?.fields) as Record<string, string> | undefined;
+    if (fields && typeof fields === 'object') {
+      const camel: Record<string, string> = {};
+      const map: Record<string, string> = {
+        pan_number: 'panNumber',
+        tenancy_id: 'tenancyId',
+        bank_account_id: 'bankAccountId',
+      };
+      for (const [key, value] of Object.entries(fields)) {
+        if (typeof value === 'string') {
+          camel[map[key] ?? key] = value;
+        }
+      }
+      if (Object.keys(camel).length > 0) {
+        return { data: null, error: { ...base, fields: camel } };
+      }
+    }
+    return { data: null, error: base };
+  }
+
+  if (!data?.success || !data.data) {
+    return { data: null, error: { code: 'VERIFICATION_FAILED', message: 'PAN verification failed' } };
+  }
+
+  return { data: mapPanResponse(data), error: null };
 }
 
 /**
@@ -319,7 +428,7 @@ export async function verifyUtility(
     body.params = request.params;
   }
 
-  const { data, error } = await callEdgeFunction<RawVerifyUtilityResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawVerifyUtilityResponse>(
     'verify-utility',
     body,
     true,   // requireAuth
@@ -328,7 +437,27 @@ export async function verifyUtility(
   );
 
   if (error) {
-    return { data: null, error: mapSetupError(error) };
+    const base = mapSetupError(error);
+    // Extract field-level errors (backend nests under details.fields)
+    const details = errorBody?.details as Record<string, unknown> | undefined;
+    const fields = (details?.fields ?? errorBody?.fields) as Record<string, string> | undefined;
+    if (fields && typeof fields === 'object') {
+      const camel: Record<string, string> = {};
+      const map: Record<string, string> = {
+        consumer_number: 'consumerNumber',
+        operator_code: 'operator',
+        tenancy_id: 'tenancyId',
+      };
+      for (const [key, value] of Object.entries(fields)) {
+        if (typeof value === 'string') {
+          camel[map[key] ?? key] = value;
+        }
+      }
+      if (Object.keys(camel).length > 0) {
+        return { data: null, error: { ...base, fields: camel } };
+      }
+    }
+    return { data: null, error: base };
   }
 
   if (!data?.success || !data.data) {

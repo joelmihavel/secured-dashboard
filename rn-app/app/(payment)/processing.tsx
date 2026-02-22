@@ -146,7 +146,7 @@ export default function ProcessingScreen() {
   const { clearLastPayment } = usePaymentStore();
 
   // Network awareness
-  const { isConnected } = useNetworkStatus(5000);
+  const { isConnected } = useNetworkStatus();
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 

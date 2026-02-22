@@ -26,7 +26,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput as RNTextInput, Keyboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
-import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput } from '@/src/components';
+import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput, SkeletonLoader } from '@/src/components';
 import { DottedPattern, ConsentToggle } from '@/src/components';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
@@ -87,6 +87,10 @@ const FIGMA_LAYOUT = {
   contentTopOffset: 101,                // Figma: 101px total from top of screen
 } as const;
 
+// Extra padding at bottom of scroll content so that when we scroll-to-end on keyboard show,
+// the focused input (e.g. name) stays well above the keyboard. Reusable for any form screen.
+const KEYBOARD_AVOID_EXTRA_PADDING = 300;
+
 export default function SignUpScreen({ background }: { background?: boolean } = {}) {
   const router = useRouter();
   const nameInputRef = useRef<RNTextInput>(null);
@@ -114,13 +118,13 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
     wasSendingOtpRef.current = isSendingOtp;
   }, [isSendingOtp, status, background]);
 
-  // Auto-scroll to reveal focused input when keyboard appears
+  // Auto-scroll so focused input stays above keyboard (scrollToEnd + extra padding in content)
   useEffect(() => {
     const sub = Keyboard.addListener('keyboardDidShow', () => {
       if (nameInputRef.current?.isFocused()) {
         setTimeout(() => {
           scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        }, 150);
       }
     });
     return () => sub.remove();
@@ -193,12 +197,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   const isAuthSuccess = authStatus === 'authenticated';
 
   if (isAuthSuccess) {
-    return (
-      <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
-        <DottedPattern />
-        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' }} />
-      </Screen>
-    );
+    return <SkeletonLoader />;
   }
 
   return (
@@ -290,6 +289,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: KEYBOARD_AVOID_EXTRA_PADDING,
   },
   container: {
     flex: 1,

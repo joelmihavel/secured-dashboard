@@ -42,7 +42,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable, BackHandler, Text as RNText, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, BackHandler, Text as RNText, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -59,7 +59,6 @@ import { Screen, Text, PrimaryButton, OTPInput } from '@/src/components';
 import { colors, springConfig, duration, radius, spacing, typography } from '@/src/theme';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
-import { getWaitlistStatus } from '@/src/services/api/waitlist';
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
@@ -238,38 +237,22 @@ export default function OTPScreen() {
   // Navigate based on user journey state after authentication.
   // Sets isNavigating=true immediately to lock the UI (prevents double-press),
   // then fades the overlay to fully opaque to hide sign-up underneath during
-  // the cross-group transition from (auth) modal → (agreement) stack.
+  // the cross-group transition from (auth) → destination.
   useEffect(() => {
     if (status !== 'authenticated') return;
     if (isNavigating) return; // Prevent duplicate runs
 
     setIsNavigating(true);
+    Keyboard.dismiss();
 
-    const resolveRoute = async () => {
-      try {
-        const { data, error } = await getWaitlistStatus();
-
-        if (error || !data) {
-          // No waitlist data → new user, needs agreement upload
-          router.replace('/(agreement)/upload');
-          return;
-        }
-
-        if (data.state === 'approved') {
-          router.replace('/(main)');
-        } else if (data.position === null && data.submissionDate === null) {
-          // Has entry but no position/submission → hasn't uploaded agreement yet
-          router.replace('/(agreement)/upload');
-        } else {
-          router.replace('/(waitlist)');
-        }
-      } catch {
-        // Fail to agreement upload for new users (safe default)
-        router.replace('/(agreement)/upload');
+    // Fade overlay fully opaque to mask the cross-group transition,
+    // then navigate to root index which resolves the user's journey
+    // (agreement/upload for new users, waitlist for waitlisted, etc.).
+    overlayOpacity.value = withTiming(1, { duration: 150 }, (finished) => {
+      if (finished) {
+        runOnJS(router.replace)('/');
       }
-    };
-
-    resolveRoute();
+    });
   }, [status, router, isNavigating, overlayOpacity]);
 
   const handleProceed = useCallback((otpValue?: string | any) => {
@@ -324,9 +307,11 @@ export default function OTPScreen() {
     transform: [{ translateY: translateY.value }],
   }));
 
-  const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value, // Figma: 40% opacity (0.4 target)
-  }));
+  const overlayAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: overlayOpacity.value, // Start at 0.4, stays there until dismissed
+    };
+  });
 
   // Figma: Button is ACTIVE (gradient) in error states -- only disabled when OTP incomplete,
   // during cooldown/expiry, or when navigating after successful verification.

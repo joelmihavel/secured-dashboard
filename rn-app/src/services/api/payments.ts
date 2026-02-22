@@ -1070,10 +1070,10 @@ export async function checkPaymentStatus(
   paymentId: string
 ): Promise<{ data: CheckPaymentStatusResponse | null; error: string | null }> {
   const { data, error } = await callEdgeFunction<{ data: CheckPaymentStatusResponse }>(
-    'check-payment-status',
-    { payment_id: paymentId },
+    `check-payment-status?payment_id=${encodeURIComponent(paymentId)}`,
+    {},
     true,
-    'POST'
+    'GET'  // S19: Changed from POST to GET - server expects GET
   );
 
   if (error) return { data: null, error };

@@ -34,6 +34,8 @@ import {
 } from "../_shared/errors.ts";
 import { validateSchema, sanitizePhone, maskAadhaar, maskPan } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { extractFirstName } from "../_shared/name-utils.ts";
+import { computeRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -531,20 +533,44 @@ async function handleVerifyOtp(
     throw new AppError("Failed to save verification result", "DB_ERROR", 500);
   }
 
-  // Update user profile with verified name if successful
+  // Update user profile with M360-verified name
   if (m360Result.status === "SUCCESS" && m360Result.data?.full_name) {
-    const nameParts = m360Result.data.full_name.split(" ");
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(" ");
+    const extracted = extractFirstName(m360Result.data.full_name);
 
     await supabase
       .from("users")
       .update({
-        first_name: firstName,
-        last_name: lastName || null,
+        first_name: extracted.first_name,
+        last_name: extracted.last_name,
         full_name: m360Result.data.full_name,
+        name_source: "m360",
       })
       .eq("id", userId);
+
+    // Sync user_metadata.name so Zustand hydration reads the M360-verified name
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: { name: extracted.first_name },
+    });
+
+    // Recompute risk now that M360 data is available
+    try {
+      const { data: waitlistEntry } = await supabase
+        .from("waitlist_entries")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (waitlistEntry) {
+        const riskResult = await computeRisk(userId, supabase);
+        await supabase.from("waitlist_entries").update({
+          risk_level: riskResult.risk_level,
+          risk_factors: riskResult.risk_factors,
+          risk_computed_at: new Date().toISOString(),
+        }).eq("user_id", userId);
+      }
+    } catch (riskError) {
+      console.error("[verify-identity] Risk recomputation failed (non-fatal):", riskError);
+    }
   }
 
   // Log result
@@ -1141,20 +1167,44 @@ async function handleFetchWithConsent(
     throw new AppError("Failed to save verification result", "DB_ERROR", 500);
   }
 
-  // Update user profile with verified name if successful
+  // Update user profile with M360-verified name
   if (m360Result.status === "SUCCESS" && m360Result.data?.full_name) {
-    const nameParts = m360Result.data.full_name.split(" ");
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(" ");
+    const extracted = extractFirstName(m360Result.data.full_name);
 
     await supabase
       .from("users")
       .update({
-        first_name: firstName,
-        last_name: lastName || null,
+        first_name: extracted.first_name,
+        last_name: extracted.last_name,
         full_name: m360Result.data.full_name,
+        name_source: "m360",
       })
       .eq("id", userId);
+
+    // Sync user_metadata.name so Zustand hydration reads the M360-verified name
+    await supabase.auth.admin.updateUserById(userId, {
+      user_metadata: { name: extracted.first_name },
+    });
+
+    // Recompute risk now that M360 data is available
+    try {
+      const { data: waitlistEntry } = await supabase
+        .from("waitlist_entries")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (waitlistEntry) {
+        const riskResult = await computeRisk(userId, supabase);
+        await supabase.from("waitlist_entries").update({
+          risk_level: riskResult.risk_level,
+          risk_factors: riskResult.risk_factors,
+          risk_computed_at: new Date().toISOString(),
+        }).eq("user_id", userId);
+      }
+    } catch (riskError) {
+      console.error("[verify-identity] Risk recomputation failed (non-fatal):", riskError);
+    }
   }
 
   // Log result

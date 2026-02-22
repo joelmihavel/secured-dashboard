@@ -24,6 +24,8 @@
  * - Disabled: bg #202020, text #444444
  *
  * Footer: 12px/20px PlusJakartaSans-Regular #A9A9A9
+ *
+ * Flow: Bank verification → PAN verification → Navigate to add-utility
  */
 
 import React, { useCallback, useState } from 'react';
@@ -32,18 +34,16 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
-import { useVerifyBank, useDashboard, validateAccountNumber, validateIfscCode } from '@/src/hooks';
-import type { BankVerificationResponse, SetupError } from '@/src/types/setup';
+import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
+import { useVerifyBank, useVerifyPan, useDashboard, validateAccountNumber, validateIfscCode } from '@/src/hooks';
+import type { BankVerificationResponse, PanVerificationResponse, SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
 // Figma exact color values from 1-33737 blueprint
@@ -55,19 +55,32 @@ const FIGMA_COLORS = {
   white: colors.white,
 } as const;
 
+// PAN format: 5 letters + 4 digits + 1 letter (e.g. ABCDE1234F)
+function isValidPanFormat(pan: string): boolean {
+  return /^[A-Z]{5}\d{4}[A-Z]$/.test(pan.toUpperCase());
+}
+
 export default function AddBankScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const verifyBank = useVerifyBank();
+  const verifyPanMutation = useVerifyPan();
   const { tenancy } = useDashboard();
 
+  // Bank form state
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
   const [panCard, setPanCard] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Verification results
   const [verificationResult, setVerificationResult] = useState<BankVerificationResponse | null>(null);
+  const [panResult, setPanResult] = useState<PanVerificationResponse | null>(null);
+
+  // Track which step we're on: 'bank' or 'pan'
+  const bankVerified = verificationResult?.verified === true;
 
   // Clear field-level errors when user types
   const handleAccountHolderNameChange = useCallback((text: string) => {
@@ -94,7 +107,8 @@ export default function AddBankScreen() {
     setApiError(null);
   }, []);
 
-  const validateForm = useCallback((): boolean => {
+  // Validate bank fields only (PAN validated separately)
+  const validateBankForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
     if (!accountHolderName.trim()) newErrors.accountHolderName = 'Required';
     if (!accountNumber.trim()) newErrors.accountNumber = 'Required';
@@ -102,13 +116,15 @@ export default function AddBankScreen() {
     if (!ifscCode.trim()) newErrors.ifscCode = 'Required';
     else if (!validateIfscCode(ifscCode)) newErrors.ifscCode = 'Invalid IFSC format';
     if (!panCard.trim()) newErrors.panCard = 'Required';
+    else if (!isValidPanFormat(panCard)) newErrors.panCard = 'Invalid PAN format';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [accountHolderName, accountNumber, ifscCode, panCard]);
 
-  const handleSubmit = useCallback(() => {
-    if (!validateForm()) {
+  // Step 1: Submit bank verification
+  const handleBankSubmit = useCallback(() => {
+    if (!validateBankForm()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -120,6 +136,7 @@ export default function AddBankScreen() {
 
     setApiError(null);
     setVerificationResult(null);
+    setPanResult(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     verifyBank.mutate(
@@ -134,7 +151,8 @@ export default function AddBankScreen() {
           setVerificationResult(data);
           if (data.verified) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setTimeout(() => router.replace('/(setup)/add-utility' as never), 1200);
+            // Bank verified — now automatically trigger PAN verification
+            handlePanVerify(data.bankAccountId);
           } else {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             setApiError(
@@ -148,16 +166,69 @@ export default function AddBankScreen() {
         onError: (error: SetupError) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           setApiError(error.message || 'Bank verification failed. Please try again.');
+          if (error.fields && typeof error.fields === 'object') {
+            setErrors((prev) => ({ ...prev, ...error.fields }));
+          }
         },
       }
     );
-  }, [validateForm, verifyBank, accountNumber, ifscCode, accountHolderName, tenancy?.id, router]);
+  }, [validateBankForm, verifyBank, accountNumber, ifscCode, accountHolderName, tenancy?.id]);
+
+  // Step 2: PAN verification (called automatically after bank success)
+  const handlePanVerify = useCallback((bankAccountId: string) => {
+    if (!tenancy?.id) return;
+
+    setApiError(null);
+    setPanResult(null);
+
+    verifyPanMutation.mutate(
+      {
+        tenancyId: tenancy.id,
+        panNumber: panCard.toUpperCase(),
+        bankAccountId,
+      },
+      {
+        onSuccess: (data) => {
+          setPanResult(data);
+          if (data.panVerified) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            // Both bank + PAN verified — navigate to next step
+            setTimeout(() => router.replace('/(setup)/add-utility' as never), 1200);
+          } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            setApiError(data.message || 'PAN verification failed. The name on PAN does not match any landlord in your agreement.');
+          }
+        },
+        onError: (error: SetupError) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          setApiError(error.message || 'PAN verification failed. Please try again.');
+          if (error.fields && typeof error.fields === 'object') {
+            setErrors((prev) => ({ ...prev, ...error.fields }));
+          }
+        },
+      }
+    );
+  }, [tenancy?.id, panCard, verifyPanMutation, router]);
+
+  // Retry PAN verification (when bank already passed but PAN failed)
+  const handleRetryPan = useCallback(() => {
+    if (!verificationResult?.bankAccountId) return;
+    handlePanVerify(verificationResult.bankAccountId);
+  }, [verificationResult?.bankAccountId, handlePanVerify]);
 
   const isFormValid =
     accountHolderName.length > 0 &&
     accountNumber.length > 0 &&
     ifscCode.length > 0 &&
     panCard.length > 0;
+
+  const isLoading = verifyBank.isPending || verifyPanMutation.isPending;
+  const bankFieldsDisabled = isLoading || bankVerified;
+
+  // Determine button state
+  const buttonTitle = bankVerified && !panResult?.panVerified
+    ? 'Verifying PAN...'
+    : 'Proceed';
 
   return (
     <View style={styles.container}>
@@ -195,11 +266,19 @@ export default function AddBankScreen() {
           {/* API Error Banner */}
           {apiError && <AlertBanner type="error" message={apiError} />}
 
-          {/* Verification Success Banner */}
-          {verificationResult?.verified && (
-            <AlertBanner 
-              type="success" 
-              message={`Bank verified${verificationResult.bankName ? ` - ${verificationResult.bankName}` : ''}${verificationResult.branch ? `, ${verificationResult.branch}` : ''}`} 
+          {/* Bank Verification Success Banner */}
+          {bankVerified && (
+            <AlertBanner
+              type="success"
+              message={`Bank verified${verificationResult.bankName ? ` - ${verificationResult.bankName}` : ''}${verificationResult.branch ? `, ${verificationResult.branch}` : ''}`}
+            />
+          )}
+
+          {/* PAN Verification Success Banner */}
+          {panResult?.panVerified && (
+            <AlertBanner
+              type="success"
+              message={`PAN verified — ${panResult.registeredName}${panResult.panType !== 'Individual' ? ` (${panResult.panType})` : ''}`}
             />
           )}
 
@@ -212,7 +291,7 @@ export default function AddBankScreen() {
               placeholder="e.g. John Smith"
               error={errors.accountHolderName}
               hintText="edit"
-              disabled={verifyBank.isPending}
+              disabled={bankFieldsDisabled}
               autoCapitalize="words"
             />
 
@@ -223,7 +302,7 @@ export default function AddBankScreen() {
               placeholder="e.g. 1234567890"
               error={errors.accountNumber}
               hintText="edit"
-              disabled={verifyBank.isPending}
+              disabled={bankFieldsDisabled}
               keyboardType="number-pad"
             />
 
@@ -234,7 +313,7 @@ export default function AddBankScreen() {
               placeholder="e.g. SBIN0002125"
               error={errors.ifscCode}
               hintText="edit"
-              disabled={verifyBank.isPending}
+              disabled={bankFieldsDisabled}
               autoCapitalize="characters"
             />
 
@@ -245,7 +324,7 @@ export default function AddBankScreen() {
               placeholder="e.g. CSNPM9874A"
               error={errors.panCard}
               hintText="edit"
-              disabled={verifyBank.isPending}
+              disabled={isLoading}
               autoCapitalize="characters"
             />
           </View>
@@ -253,10 +332,10 @@ export default function AddBankScreen() {
           {/* Button + Footer section - Figma: gap 16 */}
           <View style={styles.buttonSection}>
             <PrimaryButton
-              title="Proceed"
-              onPress={handleSubmit}
+              title={buttonTitle}
+              onPress={bankVerified && !panResult?.panVerified ? handleRetryPan : handleBankSubmit}
               disabled={!isFormValid}
-              loading={verifyBank.isPending}
+              loading={isLoading}
             />
 
             {/* Footer */}

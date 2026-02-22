@@ -265,7 +265,74 @@ export async function verifyPayUWebhookHash(params: {
   const hashString = `${salt}|${status}||||||${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email}|${firstname}|${productinfo}|${amount}|${txnid}|${key}`;
 
   const computedHash = await sha512(hashString);
-  return computedHash.toLowerCase() === hash.toLowerCase();
+  return timingSafeCompare(computedHash, hash);
+}
+
+/**
+ * Timing-safe string comparison to prevent timing attacks on hash verification.
+ */
+export function timingSafeCompare(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const aBuf = encoder.encode(a.toLowerCase());
+  const bBuf = encoder.encode(b.toLowerCase());
+  if (aBuf.length !== bBuf.length) return false;
+  try {
+    return crypto.subtle.timingSafeEqual(aBuf, bBuf);
+  } catch {
+    // Fallback: constant-time comparison
+    let result = 0;
+    for (let i = 0; i < aBuf.length; i++) {
+      result |= aBuf[i] ^ bBuf[i];
+    }
+    return result === 0;
+  }
+}
+
+/**
+ * Verifies PayU webhook hash when additional_charges are present.
+ * Formula with additional_charges:
+ * sha512(additionalCharges|salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+ */
+export async function verifyPayUWebhookHashWithCharges(params: {
+  key: string;
+  txnid: string;
+  amount: string;
+  productinfo: string;
+  firstname: string;
+  email: string;
+  status: string;
+  salt: string;
+  hash: string;
+  additionalCharges?: string;
+  udf1?: string;
+  udf2?: string;
+  udf3?: string;
+  udf4?: string;
+  udf5?: string;
+}): Promise<boolean> {
+  const { additionalCharges, ...baseParams } = params;
+
+  if (additionalCharges && parseFloat(additionalCharges) > 0) {
+    const hashString = `${additionalCharges}|${baseParams.salt}|${baseParams.status}||||||${baseParams.udf5 ?? ""}|${baseParams.udf4 ?? ""}|${baseParams.udf3 ?? ""}|${baseParams.udf2 ?? ""}|${baseParams.udf1 ?? ""}|${baseParams.email}|${baseParams.firstname}|${baseParams.productinfo}|${baseParams.amount}|${baseParams.txnid}|${baseParams.key}`;
+    const computedHash = await sha512(hashString);
+    return timingSafeCompare(computedHash, baseParams.hash);
+  }
+
+  return verifyPayUWebhookHash(baseParams);
+}
+
+/**
+ * Generates a hash for PayU SDK commands.
+ * Formula: sha512(key|command|var1|salt)
+ */
+export async function generateSDKHash(params: {
+  key: string;
+  salt: string;
+  command: string;
+  var1: string;
+}): Promise<string> {
+  const hashString = `${params.key}|${params.command}|${params.var1}|${params.salt}`;
+  return sha512(hashString);
 }
 
 // ==============================================

@@ -739,7 +739,7 @@ function mapInviteCodeError(errorMessage: string): WaitlistError {
   if (lower.includes('rate') || lower.includes('too many')) {
     return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment.' };
   }
-  if (lower.includes('not authenticated') || lower.includes('unauthorized')) {
+  if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('invalid jwt') || lower.includes('jwt expired')) {
     return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
   }
   return { code: 'UNKNOWN_ERROR', message: errorMessage };
@@ -771,7 +771,7 @@ function mapInviteCodeErrorFromCode(code: string | undefined, message: string): 
 function mapWaitlistError(errorMessage: string): WaitlistError {
   const lowerMessage = errorMessage.toLowerCase();
 
-  if (lowerMessage.includes('not authenticated') || lowerMessage.includes('unauthorized') || lowerMessage.includes('auth')) {
+  if (lowerMessage.includes('not authenticated') || lowerMessage.includes('unauthorized') || lowerMessage.includes('missing authorization') || lowerMessage.includes('invalid jwt') || lowerMessage.includes('jwt expired')) {
     return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
   }
 

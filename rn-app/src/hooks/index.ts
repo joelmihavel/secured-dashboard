@@ -56,6 +56,7 @@ export {
 // Setup
 export {
   useVerifyBank,
+  useVerifyPan,
   useVerifyUtility,
   useUtilityOperators,
   useSendLandlordInvite,
@@ -123,6 +124,13 @@ export {
 
 // Error Navigation
 export { useErrorNavigation } from './useErrorNavigation';
+
+// Payment Recovery (Phase 4.8 - crash recovery)
+export { usePaymentRecovery } from './usePaymentRecovery';
+
+// Extraction Status (background-aware agreement processing)
+export { useExtractionStatus } from './useExtractionStatus';
+export type { UseExtractionStatusReturn } from './useExtractionStatus';
 
 // Waitlist
 export {

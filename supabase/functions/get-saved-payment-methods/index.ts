@@ -86,7 +86,7 @@ serve(async (req: Request) => {
     // Fetch payment methods ordered by default first, then by creation date
     const { data: paymentMethods, error } = await supabase
       .from("payment_methods")
-      .select("*")
+      .select("id, user_id, type, display_name, is_default, is_verified, nickname, created_at, upi_vpa, upi_provider, card_last4, card_network, card_type, card_issuer, card_expiry_month, card_expiry_year, bank_code, bank_name, deleted_at")
       .eq("user_id", userId)
       .is("deleted_at", null)
       .order("is_default", { ascending: false })

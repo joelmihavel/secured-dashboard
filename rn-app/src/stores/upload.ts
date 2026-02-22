@@ -18,12 +18,13 @@ import * as SecureStore from 'expo-secure-store';
 // ==============================================
 
 export type UploadPhase =
-  | 'idle'            // No upload in progress
-  | 'requesting_url'  // Step 1: calling upload-document for signed URL
-  | 'uploading_file'  // Step 2: XHR PUT to signed URL
-  | 'processing'      // Step 3: process-document called, awaiting OCR/AI
-  | 'completed'       // Extraction completed, ready for review
-  | 'failed';         // Any step failed
+  | 'idle'               // No upload in progress
+  | 'requesting_url'     // Step 1: calling upload-document for signed URL
+  | 'uploading_file'     // Step 2: XHR PUT to signed URL
+  | 'processing'         // Step 3: process-document called, awaiting OCR/AI
+  | 'server_processing'  // Handed off to backend — useExtractionStatus drives UI
+  | 'completed'          // Extraction completed, ready for review
+  | 'failed';            // Any step failed
 
 interface UploadState {
   extractionId: string | null;
@@ -153,6 +154,7 @@ export const useUploadStore = create<UploadStore>()(
       isStale: () => {
         const { uploadPhase, lastUpdatedAt } = get();
         // completed phase is never stale — requires explicit navigation
+        // idle has nothing to go stale
         if (uploadPhase === 'idle' || uploadPhase === 'completed') return false;
         if (lastUpdatedAt === 0) return false;
         return Date.now() - lastUpdatedAt > STALENESS_MS;
@@ -197,3 +199,5 @@ export const selectUploadFileName = (state: UploadStore) => state.fileName;
 export const selectHasHydrated = (state: UploadStore) => state._hasHydrated;
 export const selectIsUploadActive = (state: UploadStore) =>
   state.uploadPhase !== 'idle' && state.uploadPhase !== 'failed' && !state.isStale();
+export const selectIsServerProcessing = (state: UploadStore) =>
+  state.uploadPhase === 'server_processing' || state.uploadPhase === 'processing';

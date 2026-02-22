@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import {
   verifyBank,
+  verifyPan,
   verifyUtility,
   getUtilityOperators,
   sendLandlordInvite,
@@ -22,6 +23,8 @@ import {
 import type {
   BankVerificationRequest,
   BankVerificationResponse,
+  PanVerificationRequest,
+  PanVerificationResponse,
   UtilityVerificationRequest,
   UtilityVerificationResponse,
   UtilityOperator,
@@ -67,6 +70,33 @@ export function useVerifyBank() {
     },
     onSuccess: (_data, variables) => {
       // Invalidate dashboard to refresh verification status
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+    },
+  });
+}
+
+// ==============================================
+// PAN VERIFICATION
+// ==============================================
+
+/**
+ * Hook for PAN card verification via Cashfree PAN API.
+ *
+ * Usage:
+ *   const verifyPanMutation = useVerifyPan();
+ *   verifyPanMutation.mutate(request, { onSuccess, onError });
+ */
+export function useVerifyPan() {
+  const queryClient = useQueryClient();
+
+  return useMutation<PanVerificationResponse, SetupError, PanVerificationRequest>({
+    mutationFn: async (request) => {
+      const { data, error } = await verifyPan(request);
+      if (error) throw error;
+      if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
+      return data;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });

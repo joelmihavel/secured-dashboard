@@ -395,7 +395,7 @@ export async function getSavedPaymentMethods(): Promise<{
 function mapProfileError(errorMessage: string): ProfileError {
   const lower = errorMessage.toLowerCase();
 
-  if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('auth')) {
+  if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('missing authorization') || lower.includes('invalid jwt') || lower.includes('jwt expired')) {
     return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
   }
 

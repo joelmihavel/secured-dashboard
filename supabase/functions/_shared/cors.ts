@@ -14,24 +14,28 @@
 
 /**
  * Allowed origins for CORS.
- * Production should restrict to specific domains.
+ * Environment-dependent: production restricts to known domains only.
  */
-const ALLOWED_ORIGINS = [
-  // Production domains
+const IS_PRODUCTION = Deno.env.get("ENVIRONMENT") === "production";
+
+const PRODUCTION_ORIGINS = [
   "https://flentsecured.com",
   "https://www.flentsecured.com",
   "https://app.flentsecured.com",
   "https://landlord.flentsecured.com",
-  // Supabase project URL
-  "https://uowjtrzmszuaiokqxgir.supabase.co",
-  // Development/preview branches
   "https://zqlowjveyqiagnbmfwsb.supabase.co",
-  // Local development
+];
+
+const DEVELOPMENT_ORIGINS = [
+  ...PRODUCTION_ORIGINS,
+  "https://uowjtrzmszuaiokqxgir.supabase.co",
   "http://localhost:3000",
   "http://localhost:8081",
-  "capacitor://localhost", // iOS Capacitor
-  "http://localhost", // Android Capacitor
+  "capacitor://localhost",
+  "http://localhost",
 ];
+
+const ALLOWED_ORIGINS = IS_PRODUCTION ? PRODUCTION_ORIGINS : DEVELOPMENT_ORIGINS;
 
 /**
  * Check if origin is allowed.

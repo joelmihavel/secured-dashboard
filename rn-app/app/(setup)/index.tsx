@@ -45,6 +45,8 @@ import Animated, {
   useAnimatedStyle,
   interpolate,
   Extrapolation,
+  FadeIn,
+  FadeInDown,
 } from 'react-native-reanimated';
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
@@ -69,19 +71,19 @@ const SETUP_STEPS: SetupStep[] = [
     id: 'bank',
     // Figma 160:3121: "Add your landlord's bank details to enable payouts"
     description: "Add your landlord's\nbank details\nto enable payouts",
-    orangeEnd: 32, // "Add your landlord's\nbank details"
+    orangeEnd: 0, // No orange styling in Figma blueprint
   },
   {
     id: 'address',
     // Figma 160:3149: "Upload address proof to verify your tenancy"
     description: 'Upload\naddress proof\nto verify your tenancy',
-    orangeEnd: 21, // "Upload\naddress proof "
+    orangeEnd: 0, // No orange styling in Figma blueprint
   },
   {
     id: 'landlord',
     // Figma 160:3177: "Invite your landlord to finish setup"
     description: 'Invite your landlord\nto finish setup',
-    orangeEnd: 20, // "Invite your landlord"
+    orangeEnd: 0, // No orange styling in Figma blueprint
   },
 ];
 
@@ -234,14 +236,9 @@ function SetupCard({ step }: { step: SetupStep }) {
         <Logo size={FIGMA.cardLogoHeight} color={colors.white} />
 
         {/* Description text - Figma multi-color spans */}
-        {/* Orange part from start to orangeEnd, gray for remainder */}
+        {/* All text is #CBCBCB according to blueprint */}
         <Text style={styles.cardDescText}>
-          <Text inherit style={styles.cardDescAccent}>
-            {orangePart}
-          </Text>
-          <Text inherit style={styles.cardDescBase}>
-            {grayPart}
-          </Text>
+          {step.description}
         </Text>
       </View>
     </View>
@@ -420,90 +417,97 @@ export default function SetupIndexScreen() {
       }));
   
       return (
-        <Screen testID="setup-index-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
-          {/* Background Pattern - DottedPattern component with crossfading shapes */}
-          <DottedPattern showShape={true} backgroundShape="postapproval1" animatedOpacityStyle={bgShapeOpacity1} />
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <DottedPattern showShape={true} backgroundShape="postapproval2" animatedOpacityStyle={bgShapeOpacity2} />
-          </View>
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <DottedPattern showShape={true} backgroundShape="postapproval3" animatedOpacityStyle={bgShapeOpacity3} />
-          </View>
-  
-          <View style={[styles.container, { paddingTop: Math.max(0, headerPaddingTop) }]}>        {/* Header frame - Figma 41:10824: x=48, column, gap=34 */}
-        <View style={styles.headerFrame}>
-          {/* Logo - Figma 41:10825: 32x38.4 white */}
-          <Logo size={FIGMA.headerLogoHeight} color={colors.white} />
+      <Screen testID="setup-index-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
+        {/* Background Pattern - DottedPattern component with crossfading shapes */}
+        <DottedPattern showShape={true} backgroundShape="postapproval1" animatedOpacityStyle={bgShapeOpacity1} />
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <DottedPattern showShape={true} backgroundShape="postapproval2" animatedOpacityStyle={bgShapeOpacity2} />
+        </View>
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <DottedPattern showShape={true} backgroundShape="postapproval3" animatedOpacityStyle={bgShapeOpacity3} />
+        </View>
 
-          {/* Title - Figma 160:3095: 310px wide, fontSize 32, lineHeight 48 */}
-          {/* Spans: "Let's get " (0-9) #A9A9A9, " " (9-10) white, "you set up" (10-20) #FF9A6D */}
-          <Text style={styles.titleText}>
-            <Text inherit style={styles.titleGray}>
-              {"Let's get\n"}
+        <View style={[styles.container, { paddingTop: Math.max(0, headerPaddingTop) }]}>
+          {/* Header frame - Figma 41:10824: x=48, column, gap=34 */}
+          <Animated.View 
+            entering={FadeInDown.delay(100).duration(400)}
+            style={styles.headerFrame}
+          >
+            {/* Logo - Figma 41:10825: 32x38.4 white */}
+            <Logo size={FIGMA.headerLogoHeight} color={colors.white} />
+
+            {/* Title - Figma 160:3095: 310px wide, fontSize 32, lineHeight 48 */}
+            {/* Note: Figma blueprint shows no style overrides (all white text) */}
+            <Text style={styles.titleText}>
+              Let's get{"\n"}you set up
             </Text>
-            <Text inherit style={styles.titleAccent}>
-              you set up
-            </Text>
-          </Text>
-        </View>
+          </Animated.View>
 
-                  {/* Card carousel area */}
-                  <View style={[styles.carouselContainer, { marginTop: titleToCardGap }]}>
-                    <Animated.FlatList
-                      ref={flatListRef as any}
-                      data={SETUP_STEPS}
-                      renderItem={renderItem}
-                      keyExtractor={(item: SetupStep) => item.id}
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      onScroll={scrollHandler}
-                      scrollEventThrottle={16}
-                      snapToInterval={FIGMA.snapInterval}
-                      decelerationRate="fast"
-                      bounces={false}
-                      onViewableItemsChanged={onViewableItemsChanged}
-                      viewabilityConfig={viewabilityConfig}
-                      contentContainerStyle={{
-                        paddingLeft: FIGMA.cardX,
-                        paddingRight: SCREEN_WIDTH - FIGMA.cardX - FIGMA.itemWidth,
-                      }}
-                    />
-                  </View>
-        {/* Page indicator - Figma 41:10855: y=673, centered */}
-        <View style={{ marginTop: cardToPaginationGap }}>
-          <PageIndicator count={SETUP_STEPS.length} activeIndex={activeIndex} />
-        </View>
-
-        {/* Spacer pushes button toward bottom */}
-        <View style={{ flex: 1, minHeight: paginationToButtonGap }} />
-
-        {/* Button - Figma: x=40, y=739 */}
-        {/* Steps 1-2: disabled style (41:10823) */}
-        {/* Step 3: active PrimaryButton (41:11076) */}
-        <View
-          style={[
-            styles.buttonContainer,
-            { paddingBottom: insets.bottom > 0 ? insets.bottom : 34 },
-          ]}
-        >
-          {isLastStep ? (
-            <PrimaryButton
-              title={FIGMA.buttonActiveText}
-              onPress={handleStartFlenting}
-              showDivider
-              testID="start-flenting-button"
+          {/* Card carousel area */}
+          <Animated.View 
+            entering={FadeInDown.delay(200).duration(400)}
+            style={[styles.carouselContainer, { marginTop: titleToCardGap }]}
+          >
+            <Animated.FlatList
+              ref={flatListRef as any}
+              data={SETUP_STEPS}
+              renderItem={renderItem}
+              keyExtractor={(item: SetupStep) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              onScroll={scrollHandler}
+              scrollEventThrottle={16}
+              snapToInterval={FIGMA.snapInterval}
+              decelerationRate="fast"
+              bounces={false}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewabilityConfig}
+              contentContainerStyle={{
+                paddingLeft: FIGMA.cardX,
+                paddingRight: SCREEN_WIDTH - FIGMA.cardX - FIGMA.itemWidth,
+              }}
             />
-          ) : (
-            <PrimaryButton
-              title="Start Flenting"
-              onPress={handleStartFlenting}
-              disabled
-              testID="start-flenting-button"
-            />
-          )}
+          </Animated.View>
+          
+          {/* Page indicator - Figma 41:10855: y=673, centered */}
+          <Animated.View 
+            entering={FadeIn.delay(300).duration(400)}
+            style={{ marginTop: cardToPaginationGap }}
+          >
+            <PageIndicator count={SETUP_STEPS.length} activeIndex={activeIndex} />
+          </Animated.View>
+
+          {/* Spacer pushes button toward bottom */}
+          <View style={{ flex: 1, minHeight: paginationToButtonGap }} />
+
+          {/* Button - Figma: x=40, y=739 */}
+          {/* Steps 1-2: disabled style (41:10823) */}
+          {/* Step 3: active PrimaryButton (41:11076) */}
+          <Animated.View
+            entering={FadeInDown.delay(400).duration(400)}
+            style={[
+              styles.buttonContainer,
+              { paddingBottom: insets.bottom > 0 ? insets.bottom : 34 },
+            ]}
+          >
+            {isLastStep ? (
+              <PrimaryButton
+                title={FIGMA.buttonActiveText}
+                onPress={handleStartFlenting}
+                showDivider
+                testID="start-flenting-button"
+              />
+            ) : (
+              <PrimaryButton
+                title="Start Flenting"
+                onPress={handleStartFlenting}
+                disabled
+                testID="start-flenting-button"
+              />
+            )}
+          </Animated.View>
         </View>
-      </View>
-    </Screen>
+      </Screen>
   );
 }
 
@@ -521,19 +525,14 @@ const styles = StyleSheet.create({
   },
 
   // Title text - Figma 160:3095
-  // fontSize 32, lineHeight 48, letterSpacing -1
+  // fontSize 32, lineHeight 48, letterSpacing -1, color #FFFFFF
   titleText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: FIGMA.titleFontSize, // 32
     lineHeight: FIGMA.titleLineHeight, // 48
     letterSpacing: FIGMA.titleLetterSpacing, // -1
+    color: colors.white, // All white
     textAlign: 'left',
-  },
-  titleGray: {
-    color: FIGMA.titleGrayColor, // #A9A9A9
-  },
-  titleAccent: {
-    color: FIGMA.titleAccentColor, // #FF9A6D
   },
 
   // Carousel container - holds FlatList with card height
@@ -600,12 +599,6 @@ const styles = StyleSheet.create({
     lineHeight: FIGMA.descLineHeight, // 32
     color: FIGMA.descBaseColor, // #CBCBCB
     textAlign: 'left',
-  },
-  cardDescAccent: {
-    color: FIGMA.descAccentColor, // #FF9A6D
-  },
-  cardDescBase: {
-    color: FIGMA.descBaseColor, // #CBCBCB
   },
 
   // Pagination - Figma 41:10855

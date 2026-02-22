@@ -162,6 +162,9 @@ export default function AddUtilityScreen() {
         onError: (error: SetupError) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           setApiError(error.message || 'Utility verification failed. Please try again.');
+          if (error.fields && typeof error.fields === 'object') {
+            setErrors((prev) => ({ ...prev, ...error.fields }));
+          }
         },
       }
     );

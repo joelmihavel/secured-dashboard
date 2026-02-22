@@ -21,16 +21,14 @@
  * - All values are exact Figma pixels, no scaling
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   Alert,
   StyleSheet,
-  AppState,
   Image,
-  type AppStateStatus,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,13 +49,13 @@ import Svg, { Path } from 'react-native-svg';
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
+import { useExtractionStatus } from '@/src/hooks/useExtractionStatus';
 import {
   getMimeType,
   validateFileSize,
   validateAgreementType,
 } from '@/src/services/payment';
 import { navigateToError } from '@/src/utils';
-import { supabase } from '@/src/services/supabase/client';
 import { useUploadStore } from '@/src/stores/upload';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
@@ -602,14 +600,13 @@ export default function UploadScreen() {
 
   // Persisted upload store — survives app kills
   const hasHydrated = useUploadStore((s) => s._hasHydrated);
-  const persistedPhase = useUploadStore((s) => s.uploadPhase);
-  const persistedFileName = useUploadStore((s) => s.fileName);
-  const persistedErrorMessage = useUploadStore((s) => s.errorMessage);
-  const uploadStore = useUploadStore();
 
   // Use real API via useAgreement hook
   const agreement = useAgreement();
   const { isConnected } = useNetworkStatus();
+
+  // Extraction status tracking — polling + Realtime + AppState recovery
+  const extractionStatus = useExtractionStatus({ enabled: hasHydrated });
 
   // Derive initial upload state from persisted store or URL params
   const getInitialUploadState = (): UploadState => {
@@ -624,9 +621,10 @@ export default function UploadScreen() {
       case 'requesting_url':
       case 'uploading_file':
       case 'processing':
+      case 'server_processing':
         return 'uploading';
       case 'completed':
-        // findResumableExtraction will redirect to review
+        // useExtractionStatus will detect and redirect to review
         return 'uploading';
       case 'failed':
         return 'error_expired';
@@ -659,7 +657,8 @@ export default function UploadScreen() {
     if (forceNew !== 'true' && !store.isStale()) {
       switch (store.uploadPhase) {
         case 'uploading_file': return 40;
-        case 'processing': return 75;
+        case 'processing':
+        case 'server_processing': return 75;
         case 'completed': return 100;
         default: return 0;
       }
@@ -702,244 +701,115 @@ export default function UploadScreen() {
   }, [agreement.isUploading, agreement.uploadProgress]);
 
   // ============================================
-  // APP LIFECYCLE HANDLING
-  // Handles: app minimize during upload, app kill during upload,
-  // and app reopen after processing completed in background.
-  //
-  // SAFETY:
-  // - mountedRef prevents state updates after unmount
-  // - uploadStateRef avoids stale closures in async callbacks
-  // - Direct Supabase queries (not React Query) to avoid cache pollution
-  // - agreement.setExtractionId() only called for completed extractions
-  //   so useExtractedData never caches incomplete data
-  // - supabase.auth.getSession() is read-only; does not affect auth state
+  // STORE RESET SYNC
+  // If mount discovery finds the persisted extractionId no longer exists
+  // in the DB (user deleted, record cleaned up, etc.), it resets the store
+  // to idle. Sync that reset to local screen state.
   // ============================================
 
-  const mountedRef = useRef(true);
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const uploadStateRef = useRef<UploadState>(uploadState);
-
-  // Track mounted state for async safety
+  const storePhase = useUploadStore((s) => s.uploadPhase);
   useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
-
-  // Keep ref in sync so async callbacks see current value
-  useEffect(() => {
-    uploadStateRef.current = uploadState;
-  }, [uploadState]);
-
-  const clearPollTimer = useCallback(() => {
-    if (pollTimerRef.current) {
-      clearTimeout(pollTimerRef.current);
-      pollTimerRef.current = null;
+    if (storePhase === 'idle' && uploadState === 'uploading' && !agreement.isUploading) {
+      setUploadState('idle');
+      setUploadProgress(0);
+      setDocument(null);
+      setErrorOverrideMessage(null);
     }
-  }, []);
+  }, [storePhase, uploadState, agreement.isUploading]);
 
-  // Cleanup poll on unmount
-  useEffect(() => clearPollTimer, [clearPollTimer]);
+  // ============================================
+  // EXTRACTION STATUS → UI STATE (single navigation authority)
+  // React to query data from useExtractionStatus to drive all
+  // status transitions and navigation. This is the ONLY place
+  // that navigates to the review screen.
+  // ============================================
 
-  // Check extraction status on backend; poll if still processing.
-  // Uses direct Supabase query (NOT React Query) to avoid polluting the
-  // useExtractedData cache with incomplete data.
-  const checkAndPollStatus = useCallback(
-    async (extractionId: string, attemptsLeft = 24) => {
-      clearPollTimer();
+  useEffect(() => {
+    const status = extractionStatus.data;
+    if (!status) return;
 
-      // Stop if state already moved past uploading (user tapped retry, or promise settled)
-      if (!mountedRef.current || uploadStateRef.current !== 'uploading') return;
+    switch (status.extractionStatus) {
+      case 'completed': {
+        const eid = status.extractionId;
+        setUploadProgress(100);
+        agreement.setExtractionId(eid);
 
-      try {
-        const { data } = await supabase
-          .from('extracted_rental_info')
-          .select('id, extraction_status, is_city_supported')
-          .eq('id', extractionId)
-          .single();
-
-        // Re-check after async gap
-        if (!mountedRef.current || uploadStateRef.current !== 'uploading') return;
-
-        if (!data || data.extraction_status === 'failed') {
-          useUploadStore.getState().setError('PROCESSING_FAILED', 'Document processing failed.');
-          setUploadState('error_expired');
-          setErrorOverrideMessage('Document processing failed. Please try uploading again.');
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          return;
-        }
-
-        if (data.extraction_status === 'completed') {
-          setUploadProgress(100);
-          // Only set extraction ID when data is complete — this triggers
-          // useExtractedData, which will now fetch fully populated data
-          agreement.setExtractionId(extractionId);
-          if (data.is_city_supported === false) {
-            setUploadState('manual_review');
-            setErrorOverrideMessage(
-              "Our team will review it manually and get back to you within 24 hours."
-            );
-          } else {
-            setUploadState('success');
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setTimeout(() => {
-              if (mountedRef.current) {
-                router.replace({
-                  pathname: '/(agreement)/review',
-                  params: { extractionId },
-                } as never);
-              }
-            }, FIGMA.animation.duration);
-          }
-          return;
-        }
-
-        // Still processing — schedule next check
-        if (attemptsLeft <= 0) {
-          setUploadState('error_expired');
+        // Check for manual review conditions
+        if (status.needsManualReview || !status.isCitySupported) {
+          setUploadState('manual_review');
           setErrorOverrideMessage(
-            'Processing is taking longer than expected. Please try again later.'
+            status.extractionError ??
+            "Our team will review it manually and get back to you within 24 hours."
           );
           return;
         }
 
-        pollTimerRef.current = setTimeout(() => {
-          checkAndPollStatus(extractionId, attemptsLeft - 1);
-        }, 5000);
-      } catch {
-        if (mountedRef.current && uploadStateRef.current === 'uploading') {
+        // Check for expired/invalid contract status
+        if (status.contractStatus === 'expired' || status.contractStatus === 'invalid_document') {
           setUploadState('error_expired');
-          setErrorOverrideMessage('Connection lost. Please try again.');
-        }
-      }
-    },
-    [clearPollTimer, agreement, router]
-  );
-
-  // Query the DB for the user's latest in-progress/completed extraction.
-  // Used by both the mount check and the foreground handler.
-  // Returns the extraction ID if a resumable record was found, or null.
-  const findResumableExtraction = useCallback(async (): Promise<string | null> => {
-    if (forceNew === 'true') return null; // Force a fresh upload state
-
-    try {
-      // Read-only — does not modify auth state or trigger token refresh
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) return null;
-
-      const { data } = await supabase
-        .from('extracted_rental_info')
-        .select('id, extraction_status, is_city_supported, updated_at, user_verified')
-        .eq('user_id', session.user.id)
-        .in('extraction_status', ['pending', 'processing', 'completed'])
-        .eq('user_verified', false)    // Exclude already-confirmed extractions
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!data || !mountedRef.current) {
-        // No server-side record — reset persisted store if it thinks we're uploading
-        const store = useUploadStore.getState();
-        if (store.uploadPhase !== 'idle' && store.uploadPhase !== 'failed') {
-          store.reset();
-          if (mountedRef.current) {
-            setUploadState('idle');
-            setDocument(null);
-            setUploadProgress(0);
-          }
-        }
-        return null;
-      }
-
-      if (data.extraction_status === 'completed') {
-        // Set extraction ID only now (data is complete → safe for React Query cache)
-        agreement.setExtractionId(data.id);
-        useUploadStore.getState().setPhase('completed');
-        router.replace({
-          pathname: '/(agreement)/review',
-          params: { extractionId: data.id },
-        } as never);
-        return data.id;
-      }
-
-      if (data.extraction_status === 'processing') {
-        // Skip stale records — backend resets them after 5 min
-        const ageMs = Date.now() - new Date(data.updated_at).getTime();
-        if (ageMs > 5 * 60 * 1000) {
-          useUploadStore.getState().reset();
-          return null;
+          setErrorOverrideMessage(
+            status.extractionError ??
+            'The agreement is invalid or expired. Please upload a valid one.'
+          );
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
         }
 
-        // DO NOT call agreement.setExtractionId() here — extraction data is
-        // incomplete, and setting it would trigger useExtractedData to cache
-        // partial results with a 5-min staleTime.
-        useUploadStore.getState().setPhase('processing');
-        setDocument({
-          uri: 'resumed://processing',
-          name: useUploadStore.getState().fileName ?? 'Processing your document...',
-          type: 'pdf',
-        });
-        setUploadState('uploading');
-        setUploadProgress(75);
-        checkAndPollStatus(data.id);
-        return data.id;
+        // Happy path: completed and valid
+        setUploadState('success');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setTimeout(() => {
+          router.replace({
+            pathname: '/(agreement)/review',
+            params: { extractionId: eid },
+          } as never);
+        }, FIGMA.animation.duration);
+        break;
       }
-
-      if (data.extraction_status === 'pending') {
-        // App was killed between getting signed URL and uploading file
-        const ageMs = Date.now() - new Date(data.updated_at).getTime();
-        if (ageMs > 5 * 60 * 1000) {
-          // Stale pending record — ignore, let user upload fresh
-          useUploadStore.getState().reset();
-          return null;
+      case 'failed': {
+        // Map extraction_error to user-friendly messages
+        const errorMsg = status.extractionError;
+        if (errorMsg?.includes('OCR') || errorMsg?.includes('read')) {
+          setErrorOverrideMessage('We couldn\'t read the document. Please upload a clearer PDF.');
+        } else if (errorMsg?.includes('invalid') || errorMsg?.includes('not a rental')) {
+          setErrorOverrideMessage('This doesn\'t appear to be a rental agreement. Please upload your rental agreement.');
+        } else {
+          setErrorOverrideMessage(errorMsg ?? 'Document processing failed. Please try uploading again.');
         }
-        // Fresh pending record — upload didn't complete
-        useUploadStore.getState().reset();
         setUploadState('error_expired');
-        setErrorOverrideMessage('Your previous upload didn\'t complete. Please try again.');
-        return null;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        break;
       }
-
-      return null;
-    } catch {
-      return null; // Silent fail — user can upload normally
-    }
-  }, [agreement, router, checkAndPollStatus]);
-
-  // On mount: check for existing in-progress extraction (handles app kill + reopen)
-  useEffect(() => {
-    findResumableExtraction();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Handle app foreground/background transitions
-  useEffect(() => {
-    const subscription = AppState.addEventListener(
-      'change',
-      (nextAppState: AppStateStatus) => {
-        const wasBg = appStateRef.current.match(/inactive|background/);
-        appStateRef.current = nextAppState;
-
-        if (wasBg && nextAppState === 'active' && uploadStateRef.current === 'uploading') {
-          // App returned to foreground during upload — verify backend status.
-          // If extractionId is available, poll by ID (fast path).
-          // If not (promise died before mutateAsync resolved), check DB (slow path).
-          const eid = agreement.extractionId;
-          if (eid) {
-            checkAndPollStatus(eid);
-          } else {
-            findResumableExtraction();
-          }
+      case 'processing': {
+        // Resume: show scanning state at 75%
+        if (uploadState !== 'uploading') {
+          setUploadState('uploading');
+          setUploadProgress(75);
+          setDocument({
+            uri: 'resumed://processing',
+            name: useUploadStore.getState().fileName ?? 'Processing your document...',
+            type: 'pdf',
+          });
         }
+        break;
       }
-    );
-
-    return () => subscription.remove();
-  }, [agreement.extractionId, checkAndPollStatus, findResumableExtraction]);
+      // 'pending' is never tracked by useExtractionStatus — pending means
+      // the file was never uploaded, so mount discovery skips it and the
+      // store resets to idle (user sees fresh upload screen).
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extractionStatus.data]);
 
   const handlePickDocument = useCallback(async () => {
+    // Block file picker while an extraction is actively processing
+    if (extractionStatus.hasActiveExtraction) {
+      Alert.alert(
+        'Processing In Progress',
+        'Your document is still being processed. Please wait for it to complete.'
+      );
+      return;
+    }
+
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf'],
@@ -960,28 +830,23 @@ export default function UploadScreen() {
     } catch (error) {
       console.error('Document picker error:', error);
     }
-  }, []);
+  }, [extractionStatus.hasActiveExtraction]);
 
   const handleRemoveDocument = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clearPollTimer();
+    extractionStatus.reset();
     setDocument(null);
     setUploadState('idle');
     setUploadProgress(0);
     setErrorOverrideMessage(null);
     agreement.resetUpload();
-  }, [agreement, clearPollTimer]);
+  }, [agreement, extractionStatus]);
 
   const handleUpload = useCallback(async () => {
     if (!document) return;
 
-    // Deduplication: block new upload while one is actively in progress
-    const store = useUploadStore.getState();
-    if (
-      store.uploadPhase !== 'idle' &&
-      store.uploadPhase !== 'failed' &&
-      !store.isStale()
-    ) {
+    // Deduplication: block new upload while an extraction is actively processing
+    if (extractionStatus.hasActiveExtraction) {
       Alert.alert(
         'Upload In Progress',
         'A document is already being processed. Please wait for it to complete.'
@@ -1024,9 +889,15 @@ export default function UploadScreen() {
         document.size ?? 0
       );
 
+      // Upload + process-document edge function completed.
+      // Set phase to server_processing — the useExtractionStatus hook
+      // will detect the completed status and drive navigation via the
+      // useEffect above. Do NOT navigate here (prevents double-nav race).
+      useUploadStore.getState().setPhase('server_processing');
       setUploadProgress(100);
 
-      // If the backend specifically flags the document as invalid or expired
+      // If the backend specifically flags the document as invalid or expired,
+      // handle immediately (process-document returned synchronously)
       if (
         result.processResult.contractStatus === 'invalid_document' ||
         result.processResult.contractStatus === 'expired'
@@ -1041,10 +912,9 @@ export default function UploadScreen() {
         return;
       }
 
-      // Check processing result for manual review (for edge cases not explicitly flagged invalid)
+      // Check processing result for manual review
       if (result.processResult.needsManualReview) {
         setUploadState('manual_review');
-        // Use backend review reason if available
         if (result.processResult.reviewReason) {
           setErrorOverrideMessage(result.processResult.reviewReason);
         }
@@ -1057,16 +927,9 @@ export default function UploadScreen() {
         return;
       }
 
-      setUploadState('success');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      // Navigate to review with extraction ID
-      setTimeout(() => {
-        router.replace({
-          pathname: '/(agreement)/review',
-          params: { extractionId: result.extractionId },
-        } as never);
-      }, FIGMA.animation.duration);
+      // Happy path: process-document returned completed synchronously.
+      // The useEffect reacting to extractionStatus.data will detect the
+      // completed status and auto-navigate to review. No navigation here.
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1142,16 +1005,16 @@ export default function UploadScreen() {
           break;
       }
     }
-  }, [document, agreement, router, isConnected]);
+  }, [document, agreement, router, isConnected, extractionStatus.hasActiveExtraction]);
 
   const handleRetry = useCallback(() => {
-    clearPollTimer();
+    extractionStatus.reset();
     setUploadState('idle');
     setUploadProgress(0);
     setDocument(null);
     setErrorOverrideMessage(null);
     agreement.resetUpload();
-  }, [agreement, clearPollTimer]);
+  }, [agreement, extractionStatus]);
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

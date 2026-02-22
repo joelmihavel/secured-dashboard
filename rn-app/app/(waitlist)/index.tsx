@@ -22,7 +22,7 @@ import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text a
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeIn, FadeOut, withRepeat, withTiming, useSharedValue, useAnimatedStyle, Easing } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, FadeOut, withRepeat, withTiming, useSharedValue, useAnimatedStyle, Easing, runOnJS } from 'react-native-reanimated';
 
 
 import {
@@ -34,6 +34,7 @@ import {
   ProgressArc,
   BenefitsCard,
   DottedPattern,
+  SkeletonLoader,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
 import { Dimensions } from 'react-native';
@@ -272,12 +273,20 @@ export default function WaitlistScreen() {
     isClaimingInviteCode,
   } = useWaitlist();
 
+  const [isNavigating, setIsNavigating] = useState(false);
+  const transitionOpacity = useSharedValue(0);
+
   // Redirect to approved screen when approved
   useEffect(() => {
-    if (viewState === 'approved') {
-      router.replace('/(waitlist)/approved');
+    if (viewState === 'approved' && !isNavigating) {
+      setIsNavigating(true);
+      transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(router.replace)('/(waitlist)/approved');
+        }
+      });
     }
-  }, [viewState, router]);
+  }, [viewState, router, isNavigating, transitionOpacity]);
 
   // Auto-join waitlist on first visit if no entry exists
   useEffect(() => {
@@ -288,10 +297,15 @@ export default function WaitlistScreen() {
 
   // Handle AGREEMENT_NOT_CONFIRMED gate error — redirect to agreement upload
   useEffect(() => {
-    if (error?.code === 'AGREEMENT_NOT_CONFIRMED') {
-      router.replace('/(agreement)/upload' as never);
+    if (error?.code === 'AGREEMENT_NOT_CONFIRMED' && !isNavigating) {
+      setIsNavigating(true);
+      transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(router.replace)('/(agreement)/upload' as never);
+        }
+      });
     }
-  }, [error?.code, router]);
+  }, [error?.code, router, isNavigating, transitionOpacity]);
 
   const displayName = userName || 'there';
   const submissionDate = status?.submissionDate ?? '';
@@ -328,50 +342,15 @@ export default function WaitlistScreen() {
     transform: [{ translateY: translateY.value }],
   }));
 
+  const transitionAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: transitionOpacity.value,
+  }));
+
   // ============================================
   // LOADING STATE
   // ============================================
   if (viewState === 'loading' || isLoading) {
-    return (
-      <View style={styles.screen}>
-        <DottedPattern backgroundShape="waitlist" />
-        <View style={styles.loadingContainer}>
-          {/* Skeleton header */}
-          <Animated.View
-            entering={FadeIn.duration(FIGMA.animation.duration)}
-            style={[styles.headerSection, { paddingTop: insets.top + spacing.huge }]}
-          >
-            <View style={styles.logoContainer}>
-              <Logo size={38} color={FIGMA.colors.textPrimary} />
-            </View>
-            <View style={styles.textBlock}>
-              {/* Shimmer placeholder for title */}
-              <View style={styles.skeletonTitle} />
-              <View style={styles.skeletonTitleLine2} />
-              {/* Shimmer placeholder for subtitle */}
-              <View style={styles.skeletonSubtitle} />
-            </View>
-          </Animated.View>
-
-          {/* Skeleton card */}
-          <Animated.View
-            entering={FadeIn.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-            style={styles.skeletonCard}
-          >
-            <View style={styles.skeletonCardLine} />
-            <View style={styles.skeletonCardLine} />
-            <View style={styles.skeletonCardLineShort} />
-          </Animated.View>
-
-          {/* Loading indicator */}
-          <ActivityIndicator
-            size="small"
-            color={FIGMA.colors.textAccent}
-            style={styles.loadingIndicator}
-          />
-        </View>
-      </View>
-    );
+    return <SkeletonLoader backgroundShape="waitlist" />;
   }
 
   // ============================================
@@ -434,7 +413,12 @@ export default function WaitlistScreen() {
   // Figma: 41-11410 "Onboarding / Waitlist Screen -- Rejected"
   // ============================================
   if (viewState === 'rejected') {
-    const rejectionReasons = status?.rejectionReasons || [];
+    // Figma 41:11410 statically shows 3 reasons
+    const rejectionReasons = [
+      "You're renting outside Bangalore",
+      "You did not use an invite code.",
+      "You rent agreement didn't qualify.",
+    ];
     const canReapply = countdownText === '';
 
     // Timeline for rejected state
@@ -461,20 +445,23 @@ export default function WaitlistScreen() {
       <View style={styles.screen}>
         <DottedPattern backgroundShape="waitlist" />
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: insets.top + spacing.huge,
-              paddingBottom: insets.bottom + sv(32), // Using 32px to match Figma typical bottom spacing
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
-          }
-        >
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + spacing.huge,
+            paddingBottom: insets.bottom + sv(32), // Using 32px to match Figma typical bottom spacing
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
+        }
+      >
           {/* All content - single wrapper with gap 40 matching Figma */}
           <View style={styles.contentWrapper}>
             {/* Header Section */}
@@ -516,31 +503,8 @@ export default function WaitlistScreen() {
             {/* Figma node 160:3051: fill=#202020, radius=12, padding 32/24, gap 24 */}
             <Animated.View
               entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
-              style={styles.rejectionCard}
             >
-              <View style={styles.rejectionCardInner}>
-                {/* Title section - node 160:3053 */}
-                <View style={styles.rejectionTitleSection}>
-                  {/* "Why was I Rejected?" */}
-                  {/* Figma: #FFFFFF base, "Rejected?" in orange #FF9A6D, two-line layout */}
-                  <Text style={styles.rejectionTitle}>
-                    <RNText style={{ color: FIGMA.colors.textPrimary }}>Why was I{'\n'}</RNText>
-                    <RNText style={{ color: FIGMA.colors.textAccent }}>Rejected?</RNText>
-                  </Text>
-                </View>
-
-                {/* Reasons list - node 160:3075, gap 24 between items */}
-                <View style={styles.rejectionReasonsList}>
-                  {rejectionReasons.map((reason, index) => (
-                    <View key={index} style={styles.rejectionReasonItem}>
-                      {/* Bullet indicator */}
-                      <View style={styles.rejectionBullet} />
-                      {/* Reason text - Figma: #A9A9A9, fontSize 12, lineHeight 20 */}
-                      <Text style={styles.rejectionReasonText}>{reason}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
+              <BenefitsCard variant="rejected" />
             </Animated.View>
 
             {/* Contact Support + Countdown */}
@@ -555,23 +519,41 @@ export default function WaitlistScreen() {
               />
 
               {/* Countdown text */}
-              {/* Figma node 41:11470: "Next applications open in 28:24:24" */}
-              {/* Color: #797979, fontSize 14, lineHeight 20 */}
+              {/* Figma node 41:11470 */}
               {!canReapply && (
                 <Text style={styles.countdownText}>
-                  Next applications open in {countdownText}
+                  You can try again in next batch, applications open in {countdownText}
                 </Text>
               )}
             </Animated.View>
-
-            {/* Benefits Card - same as pending state */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
-            >
-              <BenefitsCard variant="benefits" />
-            </Animated.View>
           </View>
         </ScrollView>
+
+        {/* Scroll Down Indicator */}
+        {!isScrolledToBottom && !isNavigating && (
+          <TouchableOpacity
+            onPress={scrollToBottom}
+            activeOpacity={0.7}
+            style={styles.scrollIndicatorContainer}
+          >
+            <Animated.View
+              entering={FadeIn.duration(300)}
+              exiting={FadeOut.duration(300)}
+              style={animatedStyle}
+            >
+              <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
+            </Animated.View>
+          </TouchableOpacity>
+        )}
+
+      {/* Transition Overlay */}
+      <Animated.View 
+        style={[
+          StyleSheet.absoluteFill, 
+          { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
+          transitionAnimatedStyle
+        ]} 
+      />
       </View>
     );
   }
@@ -749,7 +731,7 @@ export default function WaitlistScreen() {
       </ScrollView>
 
       {/* Scroll Down Indicator */}
-      {!isScrolledToBottom && (
+      {!isScrolledToBottom && !isNavigating && (
         <TouchableOpacity
           onPress={scrollToBottom}
           activeOpacity={0.7}
@@ -764,6 +746,15 @@ export default function WaitlistScreen() {
           </Animated.View>
         </TouchableOpacity>
       )}
+
+      {/* Transition Overlay */}
+      <Animated.View 
+        style={[
+          StyleSheet.absoluteFill, 
+          { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
+          transitionAnimatedStyle
+        ]} 
+      />
     </View>
   );
 }
@@ -964,60 +955,6 @@ const styles = StyleSheet.create({
   // LOADING STATE STYLES
   // ============================================
 
-  loadingContainer: {
-    flex: 1,
-    paddingHorizontal: FIGMA.layout.containerPadding,
-    gap: FIGMA.layout.contentGap,
-  },
-
-  skeletonTitle: {
-    width: 200,
-    height: 48,
-    backgroundColor: FIGMA.colors.cardBackground,
-    borderRadius: radius.sm,
-  },
-
-  skeletonTitleLine2: {
-    width: 260,
-    height: 48,
-    backgroundColor: FIGMA.colors.cardBackground,
-    borderRadius: radius.sm,
-    marginTop: 4,
-  },
-
-  skeletonSubtitle: {
-    width: 220,
-    height: 20,
-    backgroundColor: FIGMA.colors.cardBackground,
-    borderRadius: radius.sm,
-    marginTop: FIGMA.layout.textGap,
-  },
-
-  skeletonCard: {
-    width: FIGMA.layout.contentWidth,
-    alignSelf: 'center',
-    backgroundColor: FIGMA.colors.cardBackground,
-    borderRadius: FIGMA.card.borderRadius,
-    paddingVertical: FIGMA.card.paddingVertical,
-    paddingHorizontal: FIGMA.card.paddingHorizontal,
-    gap: spacing.md,
-  },
-
-  skeletonCardLine: {
-    width: '80%',
-    height: 16,
-    backgroundColor: colors.black[400],
-    borderRadius: radius.sm,
-    opacity: 0.3,
-  },
-
-  skeletonCardLineShort: {
-    width: '50%',
-    height: 16,
-    backgroundColor: colors.black[400],
-    borderRadius: radius.sm,
-    opacity: 0.3,
-  },
 
   loadingIndicator: {
     marginTop: spacing.lg,
@@ -1074,68 +1011,6 @@ const styles = StyleSheet.create({
   // REJECTED STATE STYLES
   // All values from Figma node 41-11410
   // ============================================
-
-  // Rejection Reasons Card - node 160:3051
-  // fill=#202020, radius=12, padding 32/24, gap 24
-  rejectionCard: {
-    backgroundColor: FIGMA.colors.cardBackground,
-    borderRadius: FIGMA.rejectionCard.borderRadius,
-    paddingVertical: FIGMA.rejectionCard.paddingVertical, // 32
-    paddingHorizontal: FIGMA.rejectionCard.paddingHorizontal, // 24
-  },
-
-  // Inner container - node 160:3052, gap 30
-  rejectionCardInner: {
-    gap: FIGMA.rejectionCard.innerGap, // 30
-  },
-
-  // Title section - node 160:3053, gap 10
-  rejectionTitleSection: {
-    gap: FIGMA.rejectionCard.titleGap, // 10
-  },
-
-  // "Why was I Rejected?" - node 160:3054
-  // Figma: #FFFFFF, fontSize 28, lineHeight 40, letterSpacing -1
-  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
-  rejectionTitle: {
-    fontFamily: FIGMA.typography.cardHeading.fontFamily,
-    fontSize: FIGMA.typography.cardHeading.fontSize,
-    lineHeight: FIGMA.typography.cardHeading.lineHeight,
-    letterSpacing: FIGMA.typography.cardHeading.letterSpacing,
-    color: FIGMA.colors.textPrimary,
-  },
-
-  // Reasons list container - node 160:3075, gap 24
-  rejectionReasonsList: {
-    gap: FIGMA.rejectionCard.reasonsGap, // 24
-  },
-
-  // Each reason item - node 160:3076, gap 16
-  rejectionReasonItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: FIGMA.rejectionCard.reasonItemGap, // 16
-  },
-
-  // Bullet indicator - matches timeline indicator style
-  rejectionBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: FIGMA.colors.errorRed, // #E5484D for rejected
-    marginTop: 7, // Center with 20px line height text
-  },
-
-  // Reason text - node 160:3081, etc.
-  // Figma: #A9A9A9, fontSize 12, lineHeight 20
-  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
-  rejectionReasonText: {
-    fontFamily: FIGMA.typography.label.fontFamily,
-    fontSize: FIGMA.typography.label.fontSize,
-    lineHeight: FIGMA.typography.label.lineHeight,
-    color: FIGMA.colors.textGray, // #A9A9A9
-    flex: 1,
-  },
 
   // Actions container - node 41:11468, gap 16
   rejectionActionsContainer: {

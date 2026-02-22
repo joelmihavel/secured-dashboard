@@ -112,6 +112,30 @@ export interface LandlordInviteResponse {
 }
 
 // ==============================================
+// PAN VERIFICATION
+// ==============================================
+
+/** RN client request shape (camelCase) - mapped to snake_case for edge function */
+export interface PanVerificationRequest {
+  tenancyId: string;
+  panNumber: string;
+  bankAccountId: string;
+}
+
+/** Mapped RN response from verify-pan edge function */
+export interface PanVerificationResponse {
+  success: boolean;
+  panVerified: boolean;
+  panValid: boolean;
+  panType: string;
+  registeredName: string;
+  nameMatched: boolean;
+  nameMatchScore: number;
+  matchedLandlordName: string | null;
+  message: string;
+}
+
+// ==============================================
 // SETUP PROGRESS (derived from dashboard data)
 // ==============================================
 
@@ -179,7 +203,22 @@ export type SetupErrorCode =
   | 'NETWORK_ERROR'
   | 'UNKNOWN_ERROR';
 
+/** Field keys for add-bank form; backend may use snake_case (e.g. account_number). */
+export type BankDetailsErrorFields = Partial<{
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  panCard: string;
+  /** Snake_case keys from backend */
+  account_holder_name: string;
+  account_number: string;
+  ifsc_code: string;
+  pan_card: string;
+}>;
+
 export interface SetupError {
   code: SetupErrorCode;
   message: string;
+  /** Optional field-level errors from backend (camelCase keys after service-layer mapping). */
+  fields?: Record<string, string>;
 }

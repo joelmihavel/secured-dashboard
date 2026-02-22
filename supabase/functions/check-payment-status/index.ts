@@ -29,7 +29,7 @@ import { sha512 } from "../_shared/crypto.ts";
 
 const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY")!;
 const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
-const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://sandboxsecure.payu.in";
+const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://test.payu.in";
 
 // How old a payment must be (in ms) before we check PayU directly
 const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes

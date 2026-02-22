@@ -30,6 +30,11 @@ import {
 import { validateSchema } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { matchNamesWithGemini, matchAddressesWithGemini } from "../_shared/gemini.ts";
+import {
+  resolveAgreementNames,
+  matchAgainstAgreementNames,
+  calculateNameMatchScore as sharedCalculateNameMatchScore,
+} from "../_shared/name-match-service.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -295,18 +300,10 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
     }
 
-    // Fetch extracted rental info for multiple landlord names (joint ownership)
-    let extractedLandlordNames: string[] = [];
-    if (tenancy.extracted_rental_info_id) {
-      const { data: extraction } = await supabase
-        .from("extracted_rental_info")
-        .select("landlord_names")
-        .eq("id", tenancy.extracted_rental_info_id)
-        .single();
-      if (extraction?.landlord_names?.length) {
-        extractedLandlordNames = extraction.landlord_names;
-      }
-    }
+    // Resolve landlord names from agreement (shared service)
+    const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
+    const allLandlordNames = resolved.names;
+    const primaryLandlordName = resolved.primaryName;
 
     // Fetch landlord bank accounts for bank name cross-check
     const { data: landlordBankAccounts } = await supabase
@@ -335,16 +332,6 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
     // Determine if bill was fetched successfully
     const isBillFetched = billResult.status === "success" && billResult.response;
     const consumerName = billResult.response?.consumer_name ?? "";
-
-    // Build list of ALL landlord names (primary + extracted from agreement)
-    const allLandlordNames: string[] = [];
-    if (tenancy.landlord_name) allLandlordNames.push(tenancy.landlord_name);
-    if (extractedLandlordNames.length) {
-      for (const name of extractedLandlordNames) {
-        if (name && !allLandlordNames.includes(name)) allLandlordNames.push(name);
-      }
-    }
-    const primaryLandlordName = allLandlordNames[0] ?? "";
 
     // Calculate match scores - use Gemini AI if available, fallback to algorithmic
     let addressMatchScore = 0;
@@ -376,43 +363,41 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
         matchDetails.address_reasoning = addressResult.reasoning;
         matchDetails.address_match_type = addressResult.match_type;
 
-        // 2. Name matching — match consumer name against EACH landlord name, take the best
-        let bestNameResult: { confidence: number; is_match: boolean; reasoning: string; match_type: string } | null = null;
+        // 2. Name matching — use shared service
+        const nameMatchResult = await matchAgainstAgreementNames({
+          verifiedName: consumerName,
+          candidateNames: allLandlordNames,
+          context: "landlord_verification",
+          matchThreshold: NAME_MATCH_THRESHOLD,
+        });
 
-        for (const landlordName of allLandlordNames) {
-          const nameResult = await matchNamesWithGemini(consumerName, landlordName, "landlord_verification");
-          if (!bestNameResult || nameResult.confidence > bestNameResult.confidence) {
-            bestNameResult = nameResult;
-            bestMatchLandlordName = landlordName;
-          }
-        }
-
-        nameMatchScore = bestNameResult!.confidence / 100;
-        isNameVerified = bestNameResult!.is_match;
+        nameMatchScore = nameMatchResult.score / 100;
+        isNameVerified = nameMatchResult.matched;
+        bestMatchLandlordName = nameMatchResult.matchedName ?? primaryLandlordName;
 
         matchDetails = {
           ...matchDetails,
-          gemini_used: true,
-          name_reasoning: bestNameResult!.reasoning,
-          name_match_type: bestNameResult!.match_type,
+          gemini_used: nameMatchResult.details.gemini_used,
+          name_reasoning: nameMatchResult.details.reasoning,
+          name_match_type: nameMatchResult.details.match_type,
           matched_landlord_name: bestMatchLandlordName,
           all_landlord_names: allLandlordNames.length > 1 ? allLandlordNames : undefined,
         };
 
-        console.log("[verify-utility] Gemini landlord matching result:", {
+        console.log("[verify-utility] Landlord matching result:", {
           name_match: isNameVerified,
-          name_confidence: bestNameResult!.confidence,
+          name_score: nameMatchResult.score,
           address_match: isAddressVerified,
           address_confidence: addressResult.confidence,
           matched_landlord: bestMatchLandlordName,
           landlord_count: allLandlordNames.length,
         });
       } catch (geminiError) {
-        console.warn("[verify-utility] Gemini matching failed, falling back to algorithmic:", geminiError);
+        console.warn("[verify-utility] Matching failed, falling back to algorithmic:", geminiError);
         addressMatchScore = calculateAddressMatchScore(tenancyAddress, billAddress);
         nameMatchScore = 0;
         for (const landlordName of allLandlordNames) {
-          const score = calculateNameMatchScore(landlordName, consumerName);
+          const score = sharedCalculateNameMatchScore(landlordName, consumerName);
           if (score > nameMatchScore) {
             nameMatchScore = score;
             bestMatchLandlordName = landlordName;
@@ -427,7 +412,7 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       nameMatchScore = 0;
       if (isBillFetched && consumerName) {
         for (const landlordName of allLandlordNames) {
-          const score = calculateNameMatchScore(landlordName, consumerName);
+          const score = sharedCalculateNameMatchScore(landlordName, consumerName);
           if (score > nameMatchScore) {
             nameMatchScore = score;
             bestMatchLandlordName = landlordName;
@@ -468,7 +453,7 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
             console.warn("[verify-utility] Gemini bank name matching failed for account, using algorithmic:", geminiError);
             // Algorithmic fallback — but use a lower threshold (60%) since
             // Levenshtein can't understand Indian name semantics
-            const score = calculateNameMatchScore(consumerName, bankName);
+            const score = sharedCalculateNameMatchScore(consumerName, bankName);
             if (score > bankNameMatchScore) {
               bankNameMatchScore = score;
               isBankNameVerified = score >= 0.6; // Lower threshold for algorithmic
@@ -476,7 +461,7 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
             }
           }
         } else {
-          const score = calculateNameMatchScore(consumerName, bankName);
+          const score = sharedCalculateNameMatchScore(consumerName, bankName);
           if (score > bankNameMatchScore) {
             bankNameMatchScore = score;
             isBankNameVerified = score >= 0.6;
@@ -778,84 +763,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// ==============================================
-// NAME MATCHING
-// ==============================================
-
-/**
- * Calculates name match score using Levenshtein distance.
- * Handles common Indian name variations (initials, middle names, etc.)
- */
-function calculateNameMatchScore(name1: string, name2: string): number {
-  // Normalize names
-  const normalize = (s: string) =>
-    s
-      .toUpperCase()
-      .replace(/[^A-Z\s]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const n1 = normalize(name1);
-  const n2 = normalize(name2);
-
-  if (n1 === n2) return 1;
-  if (!n1 || !n2) return 0;
-
-  // Split into words and compare
-  const words1 = n1.split(" ");
-  const words2 = n2.split(" ");
-
-  // Check if one name contains initials (single letter words)
-  const hasInitials1 = words1.some((w) => w.length === 1);
-  const hasInitials2 = words2.some((w) => w.length === 1);
-
-  // If initials present, expand comparison
-  if (hasInitials1 || hasInitials2) {
-    // Compare first letters of each word
-    const initials1 = words1.map((w) => w[0]).join("");
-    const initials2 = words2.map((w) => w[0]).join("");
-
-    if (initials1 === initials2) {
-      return 0.85; // High match for matching initials
-    }
-
-    // Check if full name contains initial pattern
-    const fullWords1 = words1.filter((w) => w.length > 1);
-    const fullWords2 = words2.filter((w) => w.length > 1);
-
-    const fullInitials1 = fullWords1.map((w) => w[0]).join("");
-    const fullInitials2 = fullWords2.map((w) => w[0]).join("");
-
-    if (fullInitials1.includes(initials2.replace(/[^A-Z]/g, "")) ||
-        fullInitials2.includes(initials1.replace(/[^A-Z]/g, ""))) {
-      return 0.8;
-    }
-  }
-
-  // Calculate Levenshtein distance
-  const matrix: number[][] = [];
-  for (let i = 0; i <= n1.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= n2.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  for (let i = 1; i <= n1.length; i++) {
-    for (let j = 1; j <= n2.length; j++) {
-      const cost = n1[i - 1] === n2[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      );
-    }
-  }
-
-  const distance = matrix[n1.length][n2.length];
-  const maxLen = Math.max(n1.length, n2.length);
-  return 1 - distance / maxLen;
-}
+// NOTE: calculateNameMatchScore is now imported from _shared/name-match-service.ts as sharedCalculateNameMatchScore
 
 // ==============================================
 // ADDRESS MATCHING

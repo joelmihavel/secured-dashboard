@@ -68,7 +68,6 @@ jest.mock('@/src/services/payment', () => ({
   initiatePayUPayment: jest.fn().mockResolvedValue({ data: null, error: null }),
   launchPayUCheckout: jest.fn().mockResolvedValue({ status: 'success' }),
   mockPayUCheckout: jest.fn().mockResolvedValue({ status: 'success' }),
-  updatePaymentStatus: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/src/components/payment', () => {

@@ -139,7 +139,7 @@ const FIGMA = {
 // TYPES
 // ============================================
 
-export type BenefitsCardVariant = 'benefits' | 'rejected';
+export type BenefitsCardVariant = 'benefits' | 'rejected' | 'coming-soon';
 
 export interface BenefitsCardProps {
   variant?: BenefitsCardVariant;
@@ -154,10 +154,16 @@ const DEFAULT_BENEFITS = [
   'Unlock exclusive renting benefits over time',
 ];
 
+const DEFAULT_COMING_SOON = [
+  'Earn 1% cashback on on-time rent',
+  'Build a stronger rent history',
+  'Unlock smarter benefits over time',
+];
+
 const DEFAULT_REJECTION_REASONS = [
   "You're renting outside Bangalore",
-  'You did not use an invite code.',
-  "Your rent agreement didn't qualify.",
+  "You did not use an invite code.",
+  "You rent agreement didn't qualify.",
 ];
 
 // ============================================
@@ -237,14 +243,26 @@ function BenefitsCardComponent({
   items,
   testID,
 }: BenefitsCardProps) {
-  const displayItems = items || (variant === 'benefits' ? DEFAULT_BENEFITS : DEFAULT_REJECTION_REASONS);
+  let displayItems = items;
+  if (!displayItems) {
+    if (variant === 'benefits') displayItems = DEFAULT_BENEFITS;
+    else if (variant === 'rejected') displayItems = DEFAULT_REJECTION_REASONS;
+    else if (variant === 'coming-soon') displayItems = DEFAULT_COMING_SOON;
+    else displayItems = [];
+  }
 
   // Title text based on variant
   // For "benefits": "What do you get " (gray) + "with Flent Secured?" (orange)
   // For "rejected": "Why was I " (gray) + "Rejected?" (orange)
-  const titleParts = variant === 'benefits'
-    ? { gray: 'What do you get', orange: '\nwith Flent Secured?' }
-    : { gray: 'Why was I', orange: '\nRejected?' };
+  // For "coming-soon": "What's " (gray) + "\nComing your way?" (orange)
+  let titleParts = { gray: '', orange: '' };
+  if (variant === 'benefits') {
+    titleParts = { gray: 'What do you get', orange: '\nwith Flent Secured?' };
+  } else if (variant === 'rejected') {
+    titleParts = { gray: 'Why was I', orange: '\nRejected?' };
+  } else if (variant === 'coming-soon') {
+    titleParts = { gray: 'What\'s', orange: '\nComing your way?' };
+  }
 
   return (
     <View style={styles.card} testID={testID}>
@@ -303,20 +321,20 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 
-  // Title gray part - "What do you get" or "Why was I"
+  // Title gray part - "What do you get" or "Why was I" or "What's"
   // styleOverrideTable "41": color #A9A9A9
   titleGray: {
     color: FIGMA.colors.titleGray,
   },
 
-  // Title orange part - "with Flent Secured?" or "Rejected?"
+  // Title orange part - "with Flent Secured?" or "Rejected?" or "\nComing your way?"
   // styleOverrideTable "39": color #FF9A6D
   titleOrange: {
     color: FIGMA.colors.titleOrange,
   },
 
   // Benefits list container - 265x168, gap 24
-  // Node 41:11259
+  // Node 41:11259 / 41:11389
   benefitsList: {
     width: FIGMA.benefitsList.width,
     gap: FIGMA.benefitsList.gap,

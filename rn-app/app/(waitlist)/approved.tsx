@@ -18,18 +18,24 @@
  *   - 41:11375 bottom sheet section (separate)
  */
 
-import React, { useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text as RNText } from 'react-native';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
+import { View, StyleSheet, ScrollView, Text as RNText, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withDelay,
   withTiming,
+  withRepeat,
   FadeInDown,
+  FadeIn,
+  FadeOut,
+  Easing,
+  runOnJS,
 } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
 
@@ -126,6 +132,35 @@ export default function WaitlistApprovedScreen() {
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';
 
+  // Scroll state to show/hide the "scroll down" indicator
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
+    setIsScrolledToBottom(isBottom);
+  };
+
+  const scrollToBottom = () => {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  };
+
+  // Bouncing animation for scroll indicator
+  const scrollIndicatorTranslateY = useSharedValue(0);
+
+  useEffect(() => {
+    scrollIndicatorTranslateY.value = withRepeat(
+      withTiming(10, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, [scrollIndicatorTranslateY]);
+
+  const scrollIndicatorAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: scrollIndicatorTranslateY.value }],
+  }));
+
   // Animation values
   const confettiRef = useRef<LottieView>(null);
   const headerScale = useSharedValue(0.8);
@@ -177,11 +212,24 @@ export default function WaitlistApprovedScreen() {
     opacity: timelineOpacity.value,
   }));
 
+  const [isNavigating, setIsNavigating] = useState(false);
+  const transitionOpacity = useSharedValue(0);
+
+  const transitionAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: transitionOpacity.value,
+  }));
+
   // Handle "Step Inside" button
   const handleStepInside = useCallback(() => {
+    if (isNavigating) return;
+    setIsNavigating(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(setup)' as never);
-  }, [router]);
+    transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
+      if (finished) {
+        runOnJS(router.replace)('/(setup)' as never);
+      }
+    });
+  }, [router, isNavigating, transitionOpacity]);
 
   return (
     <View style={styles.screen}>
@@ -200,6 +248,7 @@ export default function WaitlistApprovedScreen() {
       )}
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -209,6 +258,8 @@ export default function WaitlistApprovedScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* All content - Frame 1686557318 (node 41:11320) */}
         {/* Single wrapper with gap 40 matching Figma structure */}
@@ -269,11 +320,38 @@ export default function WaitlistApprovedScreen() {
             <PrimaryButton
               title="Step Inside"
               onPress={handleStepInside}
+              loading={isNavigating}
               testID="step-inside-button"
             />
           </Animated.View>
         </View>
       </ScrollView>
+
+      {/* Scroll Down Indicator */}
+      {!isScrolledToBottom && !isNavigating && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          activeOpacity={0.7}
+          style={styles.scrollIndicatorContainer}
+        >
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(300)}
+            style={scrollIndicatorAnimatedStyle}
+          >
+            <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
+          </Animated.View>
+        </TouchableOpacity>
+      )}
+
+      {/* Transition Overlay */}
+      <Animated.View 
+        style={[
+          StyleSheet.absoluteFill, 
+          { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
+          transitionAnimatedStyle
+        ]} 
+      />
     </View>
   );
 }
@@ -287,6 +365,16 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: FIGMA.colors.screenBackground,
+  },
+
+  scrollIndicatorContainer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
 
   confetti: {

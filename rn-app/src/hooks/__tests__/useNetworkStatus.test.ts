@@ -31,7 +31,7 @@ describe('useNetworkStatus', () => {
   it('should report connected when fetch succeeds', async () => {
     mockFetch.mockResolvedValue({ status: 204, ok: true });
 
-    const { result } = renderHook(() => useNetworkStatus(60_000));
+    const { result } = renderHook(() => useNetworkStatus());
 
     await waitFor(() => {
       expect(result.current.isConnected).toBe(true);
@@ -43,7 +43,7 @@ describe('useNetworkStatus', () => {
   it('should report disconnected when fetch fails', async () => {
     mockFetch.mockRejectedValue(new Error('Network error'));
 
-    const { result } = renderHook(() => useNetworkStatus(60_000));
+    const { result } = renderHook(() => useNetworkStatus());
 
     await waitFor(() => {
       expect(result.current.isConnected).toBe(false);

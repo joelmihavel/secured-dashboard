@@ -34,17 +34,12 @@ import {
   initiatePayUPayment,
   launchPayUCheckout,
   mockPayUCheckout,
-  updatePaymentStatus,
 } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
 
 // Check if running in Expo Go (no native modules)
 const isExpoGo = Constants.appOwnership === 'expo';
-
-// Payment fee constants
-const CARD_FEE_PERCENTAGE = 0.01; // 1% fee for card payments
-const NETBANKING_FEE_RUPEES = 10; // Fixed fee for netbanking
 
 // ==============================================
 // INPUT VALIDATION SCHEMA
@@ -158,7 +153,7 @@ export default function InitiatePaymentScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Sync payment flow state to Zustand store for cross-screen coordination
-  const { setConfirming, setProcessing, setFailed, setAmount, setTenancyId, setLastPayment, reset: resetPaymentStore } = usePaymentStore();
+  const { setConfirming, setProcessing, setFailed, setTenancyId, setLastPayment, reset: resetPaymentStore } = usePaymentStore();
   const storedAmount = usePaymentStore(state => state.amount);
 
   // Validate payment method from URL params
@@ -191,22 +186,7 @@ export default function InitiatePaymentScreen() {
   const isCashbackLocked = !isSetupComplete;
   const cashbackToApply = (useCashback && !isCashbackLocked) ? Math.min(maxCashback, cashbackAvailable) : 0;
 
-  // Calculate fees based on method
-  const getFee = () => {
-    switch (method) {
-      case 'card':
-        return Math.round(rentAmount * CARD_FEE_PERCENTAGE);
-      case 'netbanking':
-        return NETBANKING_FEE_RUPEES;
-      case 'upi':
-        return 0;
-      default:
-        return 0;
-    }
-  };
-
-  const fee = getFee();
-  const totalAmount = totalRent + fee - cashbackToApply;
+  const totalAmount = totalRent - cashbackToApply;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 28;
 
   const handleBack = useCallback(() => {
@@ -216,7 +196,6 @@ export default function InitiatePaymentScreen() {
 
   const handlePayNow = useCallback(async () => {
     if (!isSetupComplete) {
-      // First visit flow: they must set up payment method first
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       router.push('/(setup)/index' as never);
       return;
@@ -224,17 +203,13 @@ export default function InitiatePaymentScreen() {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsProcessing(true);
-
-    // Sync payment state to Zustand store
     setConfirming();
-    setAmount(totalAmount);
     setTenancyId(tenancy?.id ?? '');
 
     try {
       const { data, error } = await initiatePayUPayment({
         tenancyId: tenancy?.id ?? '',
-        amountPaise: totalAmount * 100,
-        paymentMethod: method, // Already validated by Zod schema
+        paymentMethod: method,
         applyCashback: useCashback,
         rentMonth: upcomingPayment?.rent_month ?? new Date().toISOString().slice(0, 7),
       });
@@ -243,46 +218,45 @@ export default function InitiatePaymentScreen() {
         throw new Error(error ?? 'Failed to initiate payment');
       }
 
-      // Update store with transaction ID for cross-screen tracking
       setProcessing(data.paymentId);
       setLastPayment(data.paymentId);
 
       const checkoutResult = isExpoGo
         ? await mockPayUCheckout(data.payuParams)
-        : await launchPayUCheckout(data.payuParams);
-
-      // Store client-side SDK response as metadata
-      if (checkoutResult.payuResponse) {
-        await updatePaymentStatus(data.paymentId, checkoutResult.payuResponse);
-      }
+        : await launchPayUCheckout(data.paymentId, data.payuParams);
 
       if (checkoutResult.status === 'cancelled') {
-        resetPaymentStore();
-        setIsProcessing(false);
+        if (checkoutResult.isTxnInitiated) {
+          // Bank may be processing - go to processing screen
+          router.replace({
+            pathname: '/(payment)/processing',
+            params: { paymentId: data.paymentId, amount: String(totalAmount), method },
+          } as never);
+        } else {
+          resetPaymentStore();
+          setIsProcessing(false);
+        }
         return;
       }
 
-      // Navigate to processing screen with paymentId and cashback values
       router.replace({
         pathname: '/(payment)/processing',
         params: {
           paymentId: data.paymentId,
           amount: String(totalAmount),
           method,
-          cashbackApplied: String(cashbackToApply),
-          convenienceFee: String(fee),
         },
       } as never);
     } catch (err) {
       console.error('Payment error:', err);
-      const rawMessage = err instanceof Error ? err.message : 'An error occurred while processing payment';
+      const rawMessage = err instanceof Error ? err.message : 'An error occurred';
       const errorMessage = sanitizeErrorForUI(rawMessage);
       setFailed('PAYMENT_ERROR', errorMessage);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Payment Error', errorMessage);
       setIsProcessing(false);
     }
-  }, [isSetupComplete, tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setAmount, setTenancyId, setLastPayment, resetPaymentStore]);
+  }, [isSetupComplete, tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setTenancyId, setLastPayment, resetPaymentStore, isExpoGo]);
 
   const ctaText = isSetupComplete 
     ? `Pay \u20B9${totalAmount.toLocaleString('en-IN')} now` 
@@ -364,12 +338,6 @@ export default function InitiatePaymentScreen() {
                 value={`- \u20B9 ${isCashbackLocked ? maxCashback.toLocaleString('en-IN') : cashbackToApply.toLocaleString('en-IN')}`}
                 isCashback
                 isLocked={isCashbackLocked}
-              />
-
-              {/* Fee row */}
-              <BreakdownRow
-                label="Fee"
-                value={`+ \u20B9 ${fee.toLocaleString('en-IN')}`}
               />
 
               <View style={styles.gapSpacer} />

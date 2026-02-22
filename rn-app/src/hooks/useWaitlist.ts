@@ -5,8 +5,9 @@
  * Wraps waitlist API calls with caching and mutation handling.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, focusManager } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
+import { AppState, Platform } from 'react-native';
 import {
   getWaitlistStatus,
   joinWaitlist,
@@ -37,6 +38,21 @@ export const waitlistKeys = {
 };
 
 // ==============================================
+// APP STATE → REACT QUERY FOCUS (React Native has no window focus events)
+// ==============================================
+
+function useAppStateFocusManager() {
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (status) => {
+      if (Platform.OS !== 'web') {
+        focusManager.setFocused(status === 'active');
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+}
+
+// ==============================================
 // POLLING INTERVAL
 // ==============================================
 
@@ -60,6 +76,10 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
   const { enabled = true, useMock = false, mockState = 'pending' } = options;
   const store = useWaitlistStore();
   const queryClient = useQueryClient();
+
+  // Wire AppState changes to React Query's focus manager so
+  // refetchOnWindowFocus works on React Native
+  useAppStateFocusManager();
 
   // Realtime subscription — instantly refetch when admin approves/rejects
   useEffect(() => {
@@ -120,15 +140,19 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
     },
     enabled,
     refetchInterval: (query) => {
-      // Only poll if status is pending (realtime handles instant updates,
-      // polling is a fallback for connection drops)
+      // Poll at different rates depending on state.
+      // Realtime handles instant updates; polling is a fallback for
+      // connection drops (common on mobile).
       const data = query.state.data;
       if (data?.state === 'pending' || data?.state === 'pending_long') {
-        return POLLING_INTERVAL;
+        return POLLING_INTERVAL; // 30s — actively waiting
       }
-      return false;
+      // Keep polling for approved/rejected so admin changes reflect
+      // even if the realtime WebSocket silently disconnects.
+      return POLLING_INTERVAL * 2; // 60s
     },
     staleTime: 10000,
+    refetchOnWindowFocus: 'always',
     retry: 2,
   });
 
@@ -136,6 +160,9 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
   useEffect(() => {
     if (query.data) {
       const data = query.data;
+      // Clear any prior error state (e.g., from a failed initial fetch that
+      // succeeded on retry). Without this, the error viewState is sticky.
+      store.clearError();
       switch (data.state) {
         case 'pending':
           store.setViewState('pending');

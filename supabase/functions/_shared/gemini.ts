@@ -134,9 +134,9 @@ async function callGemini(prompt: string, jsonMode = true): Promise<string> {
 export async function matchNamesWithGemini(
   name1: string,
   name2: string,
-  context: "landlord_verification" | "tenant_verification" | "bank_verification" | "agreement_bank_verification" = "landlord_verification"
+  context: "landlord_verification" | "tenant_verification" | "bank_verification" | "agreement_bank_verification" | "pan_verification" | "pan_huf_verification" = "landlord_verification"
 ): Promise<NameMatchResult> {
-  const prompt = `You are an expert at matching Indian names for ${context.replace("_", " ")}.
+  const prompt = `You are an expert at matching Indian names for ${context.replace(/_/g, " ")}.
 Your task is to determine if these two names refer to the same person.
 
 Name 1 (from user input): "${name1}"
@@ -173,7 +173,9 @@ Context-specific guidance:
 - For landlord_verification: confirm the electricity bill holder is the landlord. Be reasonably lenient as real-world documents have variations.
 - For bank_verification: confirm the electricity bill consumer is the same person as the bank account holder. Bank records often have abbreviated or formally different name formats (e.g. "RAMESH K" in bank vs "RAMESH KUMAR SHARMA" on bill). Be lenient — only reject if the names clearly refer to different people. Partial matches, missing middle names, initials vs full names, and minor spelling differences should all PASS. The goal is to catch fraud (completely different person), NOT penalize formatting differences.
 - For agreement_bank_verification: confirm the bank account holder name (from Cashfree penny drop) matches a landlord/owner name from the rental agreement. Bank records use formal abbreviated names while agreements may use full names with titles or initials. Be lenient — only reject if the names clearly refer to different people. Initials vs full names, missing middle names, title differences (Mr/Shri), and minor spelling variations should all PASS. The goal is to catch fraud (tenant adding their own bank account instead of landlord's), NOT to penalize formatting differences between bank records and legal documents.
-- For tenant_verification: confirm the tenant identity matches. Apply standard matching rules.`;
+- For tenant_verification: confirm the app user is one of the tenants listed in the rental agreement. The user may have typed a casual/shortened name (e.g. 'Rishabh') while the agreement has their formal legal name (e.g. 'RISHABH KUMAR AGNIHOTRI'). Be lenient — initials vs full names, missing middle names, case differences, and minor spelling variations should all PASS. Only reject if the names clearly refer to different people.
+- For pan_verification: confirm the PAN card holder matches a landlord/owner in the rental agreement. PAN records use formal legal names (e.g. "RISHABH KUMAR AGNIHOTRI") while agreements may have variations. Be lenient with initials, titles, middle names, and case. Only reject if clearly different people.
+- For pan_huf_verification: the PAN belongs to a Hindu Undivided Family (HUF). The registered name is the Karta (primary member) — e.g. "RISHABH KUMAR AGNIHOTRI (HUF)". Strip "(HUF)" suffix and match the Karta name against landlord names. HUF properties are common in India — the Karta managing the HUF's property IS the landlord for our purposes. Be lenient with name variations.`;
 
   try {
     const result = await callGemini(prompt);

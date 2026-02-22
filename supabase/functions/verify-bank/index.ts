@@ -32,7 +32,11 @@ import {
   IdempotencyManager,
   generateIdempotencyKey,
 } from "../_shared/idempotency.ts";
-import { matchNamesWithGemini } from "../_shared/gemini.ts";
+import {
+  resolveAgreementNames,
+  matchAgainstAgreementNames,
+  calculateNameMatchScore,
+} from "../_shared/name-match-service.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -195,25 +199,9 @@ serve(async (req: Request) => {
       throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
     }
 
-    // Fetch landlord names from agreement extraction (handles multiple landlords)
-    let extractedLandlordNames: string[] = [];
-    if (tenancy.extracted_rental_info_id) {
-      const { data: extraction } = await supabase
-        .from("extracted_rental_info")
-        .select("landlord_names")
-        .eq("id", tenancy.extracted_rental_info_id)
-        .single();
-      if (extraction?.landlord_names?.length) {
-        extractedLandlordNames = extraction.landlord_names;
-      }
-    }
-
-    // Build deduplicated list: primary landlord_name + extracted names
-    const allLandlordNames: string[] = [];
-    if (tenancy.landlord_name) allLandlordNames.push(tenancy.landlord_name);
-    for (const name of extractedLandlordNames) {
-      if (name && !allLandlordNames.includes(name)) allLandlordNames.push(name);
-    }
+    // Resolve landlord names from agreement (shared service)
+    const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
+    const allLandlordNames = resolved.names;
 
     // Call Cashfree Penny Drop API
     const pennyDropResult = await callCashfreePennyDrop({
@@ -228,7 +216,7 @@ serve(async (req: Request) => {
       pennyDropResult.name_at_bank ?? ""
     );
 
-    // Match Cashfree's name_at_bank against agreement landlord names using Gemini AI
+    // Match Cashfree's name_at_bank against agreement landlord names (shared service)
     let agreementNameMatched = false;
     let agreementMatchScore = 0;
     let matchedLandlordName: string | null = null;
@@ -237,58 +225,27 @@ serve(async (req: Request) => {
     const nameAtBank = pennyDropResult.name_at_bank ?? "";
 
     if (pennyDropResult.status === "SUCCESS" && nameAtBank && allLandlordNames.length > 0) {
-      try {
-        console.log("[verify-bank] Matching bank name against", allLandlordNames.length, "agreement landlord(s)");
+      const matchResult = await matchAgainstAgreementNames({
+        verifiedName: nameAtBank,
+        candidateNames: allLandlordNames,
+        context: "agreement_bank_verification",
+        matchThreshold: NAME_MATCH_THRESHOLD,
+      });
 
-        let bestResult: { confidence: number; is_match: boolean; reasoning: string; match_type: string } | null = null;
+      agreementNameMatched = matchResult.matched;
+      agreementMatchScore = matchResult.score;
+      matchedLandlordName = matchResult.matchedName;
+      agreementMatchDetails = {
+        ...matchResult.details,
+        name_at_bank: nameAtBank,
+      };
 
-        for (const landlordName of allLandlordNames) {
-          const result = await matchNamesWithGemini(nameAtBank, landlordName, "agreement_bank_verification");
-          if (!bestResult || result.confidence > bestResult.confidence) {
-            bestResult = result;
-            matchedLandlordName = landlordName;
-          }
-        }
-
-        agreementMatchScore = bestResult!.confidence;
-        agreementNameMatched = bestResult!.is_match;
-        agreementMatchDetails = {
-          gemini_used: true,
-          reasoning: bestResult!.reasoning,
-          match_type: bestResult!.match_type,
-          matched_landlord_name: matchedLandlordName,
-          all_landlord_names: allLandlordNames.length > 1 ? allLandlordNames : undefined,
-          name_at_bank: nameAtBank,
-        };
-
-        console.log("[verify-bank] Agreement name match result:", {
-          matched: agreementNameMatched,
-          score: agreementMatchScore,
-          matched_landlord: matchedLandlordName,
-          landlord_count: allLandlordNames.length,
-        });
-      } catch (error) {
-        console.error("[verify-bank] Gemini agreement name matching failed, using Levenshtein fallback:", error);
-
-        // Fallback: Levenshtein against each landlord name
-        let bestScore = 0;
-        for (const landlordName of allLandlordNames) {
-          const score = calculateNameMatchScore(nameAtBank, landlordName);
-          if (score > bestScore) {
-            bestScore = score;
-            matchedLandlordName = landlordName;
-          }
-        }
-        agreementMatchScore = Math.round(bestScore * 100);
-        agreementNameMatched = bestScore >= NAME_MATCH_THRESHOLD;
-        agreementMatchDetails = {
-          gemini_used: false,
-          fallback_score: agreementMatchScore,
-          matched_landlord_name: matchedLandlordName,
-          all_landlord_names: allLandlordNames.length > 1 ? allLandlordNames : undefined,
-          name_at_bank: nameAtBank,
-        };
-      }
+      console.log("[verify-bank] Agreement name match result:", {
+        matched: agreementNameMatched,
+        score: agreementMatchScore,
+        matched_landlord: matchedLandlordName,
+        landlord_count: allLandlordNames.length,
+      });
     } else if (allLandlordNames.length === 0) {
       // No landlord names in agreement — skip agreement matching, allow penny drop only
       console.warn("[verify-bank] No landlord names found in agreement, skipping agreement name match");
@@ -509,50 +466,4 @@ async function callCashfreePennyDrop(params: {
   }
 }
 
-// ==============================================
-// NAME MATCHING
-// ==============================================
-
-/**
- * Calculates similarity score between two names using Levenshtein distance.
- * Returns a score between 0 and 1.
- */
-function calculateNameMatchScore(name1: string, name2: string): number {
-  // Normalize names
-  const normalize = (s: string) =>
-    s
-      .toLowerCase()
-      .replace(/[^a-z\s]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const s1 = normalize(name1);
-  const s2 = normalize(name2);
-
-  if (s1 === s2) return 1;
-  if (s1.length === 0 || s2.length === 0) return 0;
-
-  // Levenshtein distance
-  const len1 = s1.length;
-  const len2 = s2.length;
-  const dp: number[][] = Array(len1 + 1)
-    .fill(null)
-    .map(() => Array(len2 + 1).fill(0));
-
-  for (let i = 0; i <= len1; i++) dp[i][0] = i;
-  for (let j = 0; j <= len2; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= len1; i++) {
-    for (let j = 1; j <= len2; j++) {
-      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1, // deletion
-        dp[i][j - 1] + 1, // insertion
-        dp[i - 1][j - 1] + cost // substitution
-      );
-    }
-  }
-
-  const maxLen = Math.max(len1, len2);
-  return 1 - dp[len1][len2] / maxLen;
-}
+// NOTE: calculateNameMatchScore is now imported from _shared/name-match-service.ts

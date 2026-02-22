@@ -13,11 +13,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Redirect } from 'expo-router';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { supabase } from '@/src/services/supabase/client';
 import { getWaitlistStatus } from '@/src/services/api/waitlist';
 import { DISABLE_SCREEN_PICKER, DEV_DIRECT_SCREEN } from './(dev)/screen-picker';
-import { colors } from '@/src/theme';
+import { SkeletonLoader } from '@/src/components';
 
 // Global screenshot params for buildbot pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
@@ -34,13 +33,22 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const [target, setTarget] = useState<JourneyTarget>('/(auth)/beta-splash');
 
-  const resolveAuthenticatedJourney = useCallback(async () => {
+  const resolveAuthenticatedJourney = useCallback(async (retryCount = 0) => {
     try {
       const { data, error } = await getWaitlistStatus();
 
       if (error || !data) {
-        // Fail-open: if waitlist check fails, go to main (returning user likely)
-        setTarget('/(main)');
+        // First attempt may fail due to race condition (session not fully
+        // established right after OTP verification). Retry once after a
+        // short delay before falling back.
+        if (retryCount < 1) {
+          setTimeout(() => resolveAuthenticatedJourney(retryCount + 1), 1000);
+          return;
+        }
+        // After retry, fail to agreement upload (safe for new users)
+        // rather than main dashboard (which shows "Loading your dashboard").
+        setTarget('/(agreement)/upload');
+        setIsLoading(false);
         return;
       }
 
@@ -69,10 +77,14 @@ export default function Index() {
           setTarget('/(agreement)/upload');
           break;
       }
+      setIsLoading(false);
     } catch {
-      // Fail-open for network errors
-      setTarget('/(main)');
-    } finally {
+      if (retryCount < 1) {
+        setTimeout(() => resolveAuthenticatedJourney(retryCount + 1), 1000);
+        return;
+      }
+      // After retry, fail to agreement upload (safe default)
+      setTarget('/(agreement)/upload');
       setIsLoading(false);
     }
   }, []);
@@ -115,11 +127,7 @@ export default function Index() {
   }, [resolveAuthenticatedJourney]);
 
   if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#FF9A6D" />
-      </View>
-    );
+    return <SkeletonLoader />;
   }
 
   // Dev mode: jump directly to a specific screen
@@ -134,12 +142,3 @@ export default function Index() {
 
   return <Redirect href={target} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.black[700],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

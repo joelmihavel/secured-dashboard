@@ -42,8 +42,8 @@
 | Screen | Figma ID | State | Route | Extraction | PM | Code Fix | QA | Status |
 |--------|----------|-------|-------|------------|-----|----------|-----|--------|
 | Waitlist (pending) | 41-11206 | default | /(waitlist) | -- | -- | -- | -- | Pending |
-| Waitlist (accepted) | 41-11313 | accepted | /(waitlist) | -- | -- | -- | -- | Pending |
-| Waitlist (rejected) | 41-11410 | rejected | /(waitlist) | -- | -- | -- | -- | Pending |
+| Waitlist (accepted) | 41-11313 | accepted | /(waitlist)/approved | Done | PASS | Done | -- | Done |
+| Waitlist (rejected) | 41-11410 | rejected | /(waitlist) | Done | PASS | Done | -- | Done |
 | Waitlist (24hrs) | 41-11506 | 24hrs | /(waitlist) | -- | -- | -- | -- | Pending |
 | Waitlist (referral) | 41-11613 | referral | /(waitlist) | -- | -- | -- | -- | Pending |
 | Waitlist (referral-invalid) | 41-11720 | referral-invalid | /(waitlist) | -- | -- | -- | -- | Pending |
@@ -59,12 +59,13 @@
 
 | Screen | Figma ID | State | Route | Extraction | PM | Code Fix | QA | Status |
 |--------|----------|-------|-------|------------|-----|----------|-----|--------|
-| Setup Step 1 | 41-10712 | step1 | /(setup) | -- | -- | -- | -- | Pending |
-| Setup Step 2 | 41-10859 | step2 | /(setup) | -- | -- | -- | -- | Pending |
-| Setup Step 3 | 41-11006 | step3 | /(setup) | -- | -- | -- | -- | Pending |
-| Add Bank | 1-33737 | default | /(setup)/add-bank | -- | -- | -- | -- | Pending |
-| Add Utility | 1-34343 | default | /(setup)/add-utility | -- | -- | -- | -- | Pending |
-| Invite Landlord | 1-34150 | default | /(setup)/invite-landlord | -- | -- | -- | -- | Pending |
+| Setup Step 1 | 41-10712 | step1 | /(setup) | Done | PASS | Done | -- | Done |
+| Setup Step 2 | 41-10859 | step2 | /(setup) | Done | PASS | Done | -- | Done |
+| Setup Step 3 | 41-11006 | step3 | /(setup) | Done | PASS | Done | -- | Done |
+| Add Bank | 1-33737 | default | /(setup)/add-bank | Done | PASS | Done | -- | Done |
+| Add Utility | 1-34343 | default | /(setup)/add-utility | Done | PASS | Done | -- | Done |
+| Invite Landlord | 1-34150 | default | /(setup)/invite-landlord | Done | PASS | Done | -- | Done |
+| Pending Steps | 1-34236 | summary | /(setup)/pending-steps | Done | PASS | Done | -- | Done |
 
 ### Home Screens
 

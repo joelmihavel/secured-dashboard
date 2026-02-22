@@ -1,0 +1,423 @@
+/**
+ * Flent Secured v2 - Verify PAN Edge Function
+ *
+ * Verifies PAN card ownership using Cashfree PAN Verification API.
+ * Matches PAN registered name against landlord names from rental agreement.
+ *
+ * Endpoint: POST /functions/v1/verify-pan
+ * Auth: Required (JWT)
+ */
+
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import {
+  createServiceClient,
+  createAuthenticatedClient,
+} from "../_shared/supabase.ts";
+import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
+import {
+  AppError,
+  ValidationError,
+  ExternalServiceError,
+  handleError,
+} from "../_shared/errors.ts";
+import { validateSchema, isValidPan, maskPan } from "../_shared/validation.ts";
+import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { encrypt } from "../_shared/crypto.ts";
+import {
+  IdempotencyManager,
+  generateIdempotencyKey,
+} from "../_shared/idempotency.ts";
+import {
+  resolveAgreementNames,
+  matchAgainstAgreementNames,
+} from "../_shared/name-match-service.ts";
+
+// ==============================================
+// CONFIGURATION
+// ==============================================
+
+const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
+const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
+const CASHFREE_BASE_URL =
+  Deno.env.get("CASHFREE_BASE_URL") ?? "https://sandbox.cashfree.com/verification";
+
+// ==============================================
+// TYPES
+// ==============================================
+
+interface VerifyPanRequest {
+  tenancy_id: string;
+  pan_number: string;
+  bank_account_id: string;
+}
+
+interface CashfreePanResponse {
+  valid: boolean;
+  registered_name?: string;
+  name_pan_card?: string;
+  type?: string; // "Individual", "HUF", "Company", etc.
+  pan_status?: string;
+  reference_id?: number;
+  message?: string;
+}
+
+// ==============================================
+// VALIDATION SCHEMA
+// ==============================================
+
+const requestSchema = {
+  tenancy_id: { required: true, type: "string" as const },
+  pan_number: {
+    required: true,
+    type: "string" as const,
+    minLength: 10,
+    maxLength: 10,
+    custom: (v: unknown) => isValidPan(v as string) || "Invalid PAN format (e.g. ABCDE1234F)",
+  },
+  bank_account_id: { required: true, type: "string" as const },
+};
+
+// ==============================================
+// MAIN HANDLER
+// ==============================================
+
+serve(async (req: Request) => {
+  // Handle CORS preflight
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  // Only allow POST
+  if (req.method !== "POST") {
+    return errorResponse("Method not allowed", 405);
+  }
+
+  const supabase = createServiceClient();
+  let audit: AuditLogger | null = null;
+  let userId: string | null = null;
+  let idempotencyKey: string | undefined;
+
+  try {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    const { userId: uid } = await createAuthenticatedClient(authHeader);
+    userId = uid;
+
+    // Initialize audit logger
+    audit = AuditLogger.fromRequest(supabase, req, userId, "verify-pan");
+
+    // Parse and validate request body
+    const body = await req.json();
+    const validatedBody = validateSchema<VerifyPanRequest>(body, requestSchema, true);
+
+    const { tenancy_id, pan_number, bank_account_id } = validatedBody;
+    const sanitizedPan = pan_number.toUpperCase();
+
+    // Generate idempotency key (PAN verification costs money)
+    idempotencyKey = await generateIdempotencyKey(
+      "verify-pan",
+      tenancy_id,
+      sanitizedPan
+    );
+
+    // Check idempotency
+    const idempotency = new IdempotencyManager(supabase);
+    const idempotencyResult = await idempotency.check(idempotencyKey, validatedBody, {
+      userId,
+      endpoint: "verify-pan",
+      ttlHours: 24,
+    });
+
+    if (!idempotencyResult.isNew && idempotencyResult.cachedResponse) {
+      console.log("[verify-pan] Returning cached response for idempotency key");
+      return new Response(
+        JSON.stringify(idempotencyResult.cachedResponse.body),
+        {
+          status: idempotencyResult.cachedResponse.status,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Idempotency-Cached": "true",
+          },
+        }
+      );
+    }
+
+    // Log verification initiation
+    await audit.logSuccess(
+      AuditActions.PAN_VERIFICATION_INITIATED,
+      "verification",
+      "pan_verification",
+      undefined,
+      {
+        tenancy_id,
+        pan_masked: maskPan(sanitizedPan),
+        bank_account_id,
+      }
+    );
+
+    // Verify tenancy belongs to user
+    const { data: tenancy, error: tenancyError } = await supabase
+      .from("tenancies")
+      .select("id, user_id")
+      .eq("id", tenancy_id)
+      .single();
+
+    if (tenancyError || !tenancy) {
+      throw new ValidationError("Tenancy not found", { tenancy_id: "Not found" });
+    }
+
+    if (tenancy.user_id !== userId) {
+      throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
+    }
+
+    // Verify bank account exists and belongs to user
+    const { data: bankAccount, error: bankError } = await supabase
+      .from("bank_accounts")
+      .select("id, user_id")
+      .eq("id", bank_account_id)
+      .eq("user_id", userId)
+      .single();
+
+    if (bankError || !bankAccount) {
+      throw new ValidationError("Bank account not found", { bank_account_id: "Not found" });
+    }
+
+    // Call Cashfree PAN Verification API
+    const panResult = await callCashfreePanVerify(sanitizedPan);
+
+    // Extract results
+    const registeredName = panResult.registered_name ?? panResult.name_pan_card ?? "";
+    const panValid = panResult.valid;
+    const panType = panResult.type ?? determinePanType(sanitizedPan);
+    const panStatus = panResult.pan_status ?? (panValid ? "VALID" : "INVALID");
+
+    // Determine Gemini context based on PAN type
+    const geminiContext = (panType === "HUF" || sanitizedPan[3] === "H")
+      ? "pan_huf_verification" as const
+      : "pan_verification" as const;
+
+    // Strip "(HUF)" suffix for HUF PANs before matching
+    let nameForMatching = registeredName;
+    if (geminiContext === "pan_huf_verification") {
+      nameForMatching = registeredName.replace(/\s*\(HUF\)\s*$/i, "").trim();
+    }
+
+    // Resolve landlord names from agreement
+    const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
+
+    // Match PAN name against landlord names
+    let matchResult;
+    if (panValid && nameForMatching && resolved.names.length > 0) {
+      matchResult = await matchAgainstAgreementNames({
+        verifiedName: nameForMatching,
+        candidateNames: resolved.names,
+        context: geminiContext,
+      });
+    } else if (resolved.names.length === 0) {
+      // No landlord names — skip matching, don't block
+      matchResult = {
+        matched: true,
+        matchedName: null,
+        score: 0,
+        details: { gemini_used: false, skipped: true, reason: "no_landlord_names_in_agreement" },
+      };
+    } else {
+      matchResult = {
+        matched: false,
+        matchedName: null,
+        score: 0,
+        details: { gemini_used: false, skipped: true, reason: panValid ? "empty_registered_name" : "pan_invalid" },
+      };
+    }
+
+    // Encrypt PAN for storage
+    const encryptedPan = await encrypt(sanitizedPan);
+
+    // Update bank_accounts row with PAN columns
+    const { error: updateError } = await supabase
+      .from("bank_accounts")
+      .update({
+        pan_number_encrypted: encryptedPan,
+        pan_number_masked: maskPan(sanitizedPan),
+        pan_verified: panValid && matchResult.matched,
+        pan_type: panType,
+        pan_registered_name: registeredName,
+        pan_status: panStatus,
+        pan_name_match_score: matchResult.score,
+        pan_name_matched: matchResult.matched,
+        pan_verification_details: matchResult.details,
+        pan_verified_at: panValid && matchResult.matched ? new Date().toISOString() : null,
+      })
+      .eq("id", bank_account_id);
+
+    if (updateError) {
+      console.error("[verify-pan] Failed to update bank account:", updateError);
+      throw new AppError("Failed to save PAN verification result", "DB_ERROR", 500);
+    }
+
+    // Update tenancy pan_verified if matched
+    if (panValid && matchResult.matched) {
+      await supabase
+        .from("tenancies")
+        .update({ pan_verified: true })
+        .eq("id", tenancy_id);
+    }
+
+    // Log result
+    if (panValid && matchResult.matched) {
+      await audit.logSuccess(
+        AuditActions.PAN_VERIFICATION_SUCCESS,
+        "verification",
+        "pan_verification",
+        bank_account_id,
+        {
+          pan_type: panType,
+          name_match_score: matchResult.score,
+          matched_landlord_name: matchResult.matchedName,
+        }
+      );
+    } else {
+      await audit.logFailure(
+        AuditActions.PAN_VERIFICATION_FAILED,
+        "verification",
+        !panValid ? "PAN_INVALID" : "PAN_NAME_MISMATCH",
+        !panValid
+          ? `PAN ${maskPan(sanitizedPan)} is not valid`
+          : `PAN name "${registeredName}" did not match agreement landlords: ${resolved.names.join(", ")}`,
+        "pan_verification",
+        bank_account_id,
+        {
+          pan_type: panType,
+          pan_valid: panValid,
+          registered_name: registeredName,
+          name_match_score: matchResult.score,
+          matched_landlord_name: matchResult.matchedName,
+        }
+      );
+    }
+
+    // Build message
+    let message: string;
+    if (panValid && matchResult.matched) {
+      message = "PAN verified successfully";
+    } else if (!panValid) {
+      message = "PAN card is not valid. Please check the PAN number.";
+    } else {
+      message = `PAN holder "${registeredName}" does not match any landlord in your agreement. Expected: ${resolved.names.join(" or ")}`;
+    }
+
+    const responseBody = {
+      success: true,
+      data: {
+        pan_verified: panValid && matchResult.matched,
+        pan_valid: panValid,
+        pan_type: panType,
+        registered_name: registeredName,
+        name_matched: matchResult.matched,
+        name_match_score: matchResult.score,
+        matched_landlord_name: matchResult.matchedName,
+        message,
+      },
+    };
+
+    // Cache response for idempotency
+    await idempotency.complete(idempotencyKey, 200, responseBody);
+
+    return jsonResponse(responseBody);
+  } catch (error) {
+    // Mark idempotency as failed
+    if (idempotencyKey) {
+      const idempotency = new IdempotencyManager(supabase);
+      await idempotency.fail(
+        idempotencyKey,
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+
+    if (audit && userId) {
+      await audit.logFailure(
+        AuditActions.PAN_VERIFICATION_FAILED,
+        "verification",
+        error instanceof AppError ? error.code : "UNKNOWN_ERROR",
+        error instanceof Error ? error.message : "Unknown error",
+        "pan_verification"
+      );
+    }
+
+    return handleError(error, req.headers.get("x-request-id") ?? undefined);
+  }
+});
+
+// ==============================================
+// CASHFREE PAN VERIFICATION API
+// ==============================================
+
+async function callCashfreePanVerify(panNumber: string): Promise<CashfreePanResponse> {
+  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    throw new ExternalServiceError("Cashfree", "API credentials not configured");
+  }
+
+  try {
+    const response = await fetch(`${CASHFREE_BASE_URL}/pan`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-client-id": CASHFREE_APP_ID,
+        "x-client-secret": CASHFREE_SECRET_KEY,
+      },
+      body: JSON.stringify({ pan: panNumber }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("[verify-pan] Cashfree API error:", data);
+      throw new ExternalServiceError(
+        "Cashfree",
+        data.message ?? `HTTP ${response.status}`
+      );
+    }
+
+    return {
+      valid: data.valid ?? false,
+      registered_name: data.registered_name,
+      name_pan_card: data.name_pan_card,
+      type: data.type,
+      pan_status: data.pan_status,
+      reference_id: data.reference_id,
+      message: data.message,
+    };
+  } catch (error) {
+    if (error instanceof ExternalServiceError) throw error;
+
+    console.error("[verify-pan] Cashfree PAN verification failed:", error);
+    throw new ExternalServiceError(
+      "Cashfree",
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
+}
+
+// ==============================================
+// HELPERS
+// ==============================================
+
+/**
+ * Determines PAN type from the 4th character of PAN number.
+ * PAN format: ABCDE1234F where 4th char indicates entity type.
+ */
+function determinePanType(pan: string): string {
+  const typeChar = pan[3]?.toUpperCase();
+  const typeMap: Record<string, string> = {
+    P: "Individual",
+    H: "HUF",
+    C: "Company",
+    T: "Trust",
+    A: "AOP",
+    B: "BOI",
+    G: "Government",
+    J: "AJP",
+    L: "LLP",
+    F: "Firm",
+  };
+  return typeMap[typeChar] ?? "Individual";
+}

@@ -21,6 +21,7 @@ import { setupAutoUpdateCheck } from '@/src/config/updates';
 import { OfflineBanner } from '@/src/components/ui';
 import { useDeepLink } from '@/src/hooks/useDeepLink';
 import { useErrorNavigation } from '@/src/hooks/useErrorNavigation';
+import { usePaymentRecovery } from '@/src/hooks/usePaymentRecovery';
 import { markAppReady } from '@/src/services/performance';
 import { installGlobalErrorHandlers } from '@/src/services/globalErrorHandlers';
 
@@ -68,6 +69,9 @@ function RootLayoutInner() {
   // Bridge error event bus to router navigation
   useErrorNavigation();
 
+  // Crash recovery: resume polling for in-progress payments
+  usePaymentRecovery();
+
   // Mark app as ready for performance tracking (PR-115)
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -90,17 +94,17 @@ function RootLayoutInner() {
               screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: colors.black[700] },
-                animation: 'slide_from_right',
+                animation: 'fade', // Smooth cross-fade transition to avoid flashes
               }}
             >
               <Stack.Screen name="index" />
               <Stack.Screen name="error" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(main)" />
-              <Stack.Screen name="(setup)" />
-              <Stack.Screen name="(payment)" />
-              <Stack.Screen name="(waitlist)" />
-              <Stack.Screen name="(agreement)" />
+              <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} /> {/* Auth still slides in */}
+              <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
               <Stack.Screen name="(transactions)" />
               <Stack.Screen name="(profile)" />
               {/* Development only screens */}

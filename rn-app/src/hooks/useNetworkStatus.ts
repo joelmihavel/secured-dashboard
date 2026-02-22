@@ -1,9 +1,9 @@
 /**
  * Network Status Hook (ST-105)
  *
- * Provides real-time network connectivity detection using React Native's
- * built-in NetInfo-compatible approach via expo. Queues failed mutations
- * for automatic retry when connectivity is restored.
+ * Provides real-time network connectivity detection using @react-native-community/netinfo.
+ * Instant OS-level network events replace the old 15s polling approach.
+ * Queues failed mutations for automatic retry when connectivity is restored.
  *
  * Usage:
  *   const { isConnected, isInternetReachable, networkType } = useNetworkStatus();
@@ -12,8 +12,9 @@
  *   queueMutation('update-profile', async () => updateProfile({ fullName: 'John' }));
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { AppState, AppStateStatus, Platform } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
+import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
 import { addBreadcrumb } from '../config/sentry';
 
 // ==============================================
@@ -131,7 +132,7 @@ export function clearMutationQueue(): void {
 }
 
 // ==============================================
-// CONNECTIVITY CHECK
+// NETINFO MAPPING
 // ==============================================
 
 let lastKnownStatus: NetworkStatus = {
@@ -141,34 +142,21 @@ let lastKnownStatus: NetworkStatus = {
 };
 
 /**
- * Probe connectivity by fetching a small resource.
- * Uses a lightweight endpoint that returns quickly.
+ * Map NetInfo state to our NetworkStatus interface.
  */
-async function checkConnectivity(): Promise<NetworkStatus> {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    // Use a lightweight connectivity check
-    const response = await fetch('https://clients3.google.com/generate_204', {
-      method: 'HEAD',
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    return {
-      isConnected: true,
-      isInternetReachable: response.status === 204 || response.ok,
-      networkType: 'unknown', // Will be refined below
-    };
-  } catch {
-    return {
-      isConnected: false,
-      isInternetReachable: false,
-      networkType: 'none',
-    };
-  }
+function mapNetInfoState(state: NetInfoState): NetworkStatus {
+  return {
+    isConnected: state.isConnected ?? false,
+    isInternetReachable: state.isInternetReachable ?? false,
+    networkType:
+      state.type === 'wifi'
+        ? 'wifi'
+        : state.type === 'cellular'
+          ? 'cellular'
+          : state.isConnected
+            ? 'unknown'
+            : 'none',
+  };
 }
 
 // ==============================================
@@ -178,54 +166,49 @@ async function checkConnectivity(): Promise<NetworkStatus> {
 /**
  * Hook to monitor network connectivity status.
  *
- * Polls connectivity on app foreground and periodically.
- * Processes queued mutations when connectivity is restored.
+ * Uses @react-native-community/netinfo for instant OS-level network events
+ * instead of polling. Processes queued mutations when connectivity is restored.
  *
- * @param pollIntervalMs - How often to check connectivity (default: 15s)
  * @returns Current network status
  */
-export function useNetworkStatus(pollIntervalMs = 15_000): NetworkStatus {
+export function useNetworkStatus(): NetworkStatus {
   const [status, setStatus] = useState<NetworkStatus>(lastKnownStatus);
   const previouslyConnected = useRef(lastKnownStatus.isConnected);
 
-  const updateStatus = useCallback(async () => {
-    const newStatus = await checkConnectivity();
-    lastKnownStatus = newStatus;
-    setStatus(newStatus);
+  // Subscribe to OS-level network changes (instant, no polling)
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const newStatus = mapNetInfoState(state);
+      lastKnownStatus = newStatus;
+      setStatus(newStatus);
 
-    // If we just came back online, process the queue
-    if (newStatus.isConnected && !previouslyConnected.current) {
-      addBreadcrumb('Network restored, processing queue', 'network', {
-        queueLength: mutationQueue.length,
-      });
-      processQueue();
-    }
+      // Process mutation queue when coming back online
+      if (newStatus.isConnected && !previouslyConnected.current) {
+        addBreadcrumb('Network restored (NetInfo event)', 'network', {
+          queueLength: mutationQueue.length,
+          type: state.type,
+        });
+        processQueue();
+      }
+      previouslyConnected.current = newStatus.isConnected;
+    });
 
-    previouslyConnected.current = newStatus.isConnected;
+    return unsubscribe;
   }, []);
 
-  // Check on mount
+  // Belt-and-suspenders: also check on foreground resume
   useEffect(() => {
-    updateStatus();
-  }, [updateStatus]);
-
-  // Check when app comes to foreground
-  useEffect(() => {
-    const handleAppState = (nextState: AppStateStatus) => {
+    const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
-        updateStatus();
+        NetInfo.fetch().then((state) => {
+          const newStatus = mapNetInfoState(state);
+          lastKnownStatus = newStatus;
+          setStatus(newStatus);
+        });
       }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppState);
-    return () => subscription.remove();
-  }, [updateStatus]);
-
-  // Periodic polling
-  useEffect(() => {
-    const interval = setInterval(updateStatus, pollIntervalMs);
-    return () => clearInterval(interval);
-  }, [updateStatus, pollIntervalMs]);
+    });
+    return () => sub.remove();
+  }, []);
 
   return status;
 }

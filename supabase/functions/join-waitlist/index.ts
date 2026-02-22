@@ -23,6 +23,7 @@ import { createServiceClient, createAuthenticatedClient } from "../_shared/supab
 import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
+import { computeRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
 // TYPES
@@ -119,6 +120,22 @@ serve(async (req: Request) => {
       if (statusError) {
         console.error("[join-waitlist] Failed to advance user_status:", statusError);
         // Non-fatal — waitlist entry was created, status can be corrected
+      }
+    }
+
+    // Compute risk assessment for the waitlist entry
+    if (result.is_new) {
+      try {
+        const riskResult = await computeRisk(userId, supabase);
+        await supabase.from("waitlist_entries").update({
+          risk_level: riskResult.risk_level,
+          risk_factors: riskResult.risk_factors,
+          risk_computed_at: new Date().toISOString(),
+        }).eq("id", result.entry_id);
+        console.log(`[join-waitlist] Risk computed: ${riskResult.risk_level} for entry ${result.entry_id}`);
+      } catch (riskError) {
+        console.error("[join-waitlist] Risk computation failed (non-fatal):", riskError);
+        // risk_level stays 'PENDING' (column default)
       }
     }
 

@@ -633,6 +633,65 @@ export async function updateExtraction(
 }
 
 // ==============================================
+// EXTRACTION STATUS QUERY (lightweight status-only)
+// ==============================================
+
+/** Lightweight status data for polling — does NOT fetch full extraction fields */
+export interface ExtractionStatusData {
+  extractionId: string;
+  extractionStatus: ExtractionStatus;
+  contractStatus: string | null;
+  isCitySupported: boolean;
+  extractionError: string | null;
+  needsManualReview: boolean;
+  updatedAt: string;
+  userVerified: boolean;
+}
+
+/** Columns fetched for status polling — minimal set for fast queries */
+const STATUS_SELECT_COLUMNS = [
+  'id',
+  'extraction_status',
+  'contract_status',
+  'is_city_supported',
+  'extraction_error',
+  'needs_manual_review',
+  'updated_at',
+  'user_verified',
+].join(',');
+
+/**
+ * Fetch extraction status only (lightweight).
+ *
+ * Used by useExtractionStatus for polling — returns only status fields,
+ * NOT the full extracted agreement data. This keeps polling fast and
+ * avoids polluting the useExtractedData React Query cache.
+ */
+export async function fetchExtractionStatus(
+  extractionId: string
+): Promise<ExtractionStatusData | null> {
+  const { data, error } = await supabase
+    .from('extracted_rental_info')
+    .select(STATUS_SELECT_COLUMNS)
+    .eq('id', extractionId)
+    .single();
+
+  if (error || !data) return null;
+
+  const row = data as unknown as Record<string, unknown>;
+  return {
+    extractionId: row.id as string,
+    extractionStatus: row.extraction_status as ExtractionStatus,
+    contractStatus: (row.contract_status as string) ?? null,
+    isCitySupported: (row.is_city_supported as boolean) ?? false,
+    extractionError: (row.extraction_error as string) ?? null,
+    needsManualReview: (row.needs_manual_review as boolean) ?? false,
+    updatedAt: row.updated_at as string,
+    userVerified: (row.user_verified as boolean) ?? false,
+  };
+}
+
+// ==============================================
 // ERROR MAPPING
 // ==============================================
 

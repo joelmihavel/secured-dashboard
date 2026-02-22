@@ -96,7 +96,7 @@ export async function callEdgeFunction<T = unknown>(
   requireAuth = false,
   method: 'GET' | 'POST' = 'POST',
   timeoutMs: number = EDGE_FUNCTION_TIMEOUT_MS
-): Promise<{ data: T | null; error: string | null }> {
+): Promise<{ data: T | null; error: string | null; errorBody?: Record<string, unknown> }> {
   // AbortController for timeout enforcement
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -114,7 +114,20 @@ export async function callEdgeFunction<T = unknown>(
       if (!session?.access_token) {
         return { data: null, error: 'Not authenticated' };
       }
-      headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      // Check if token is expired or about to expire (within 60s buffer)
+      const expiresAt = session.expires_at; // Unix timestamp in seconds
+      const now = Math.floor(Date.now() / 1000);
+      if (expiresAt && expiresAt - now < 60) {
+        const { data: { session: refreshed }, error: refreshErr } =
+          await supabase.auth.refreshSession();
+        if (refreshErr || !refreshed?.access_token) {
+          return { data: null, error: 'Not authenticated' };
+        }
+        headers['Authorization'] = `Bearer ${refreshed.access_token}`;
+      } else {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
     }
 
     const fetchOptions: RequestInit = {
@@ -142,17 +155,34 @@ export async function callEdgeFunction<T = unknown>(
       fetchOptions.body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, fetchOptions);
+    let response = await fetch(url, fetchOptions);
+    let data = await response.json();
 
-    const data = await response.json();
+    // Retry once on 401 with a refreshed token (handles stale JWT edge cases)
+    if (response.status === 401 && requireAuth) {
+      const { data: { session: retrySession }, error: retryErr } =
+        await supabase.auth.refreshSession();
+      if (!retryErr && retrySession?.access_token) {
+        headers['Authorization'] = `Bearer ${retrySession.access_token}`;
+        const retryController = new AbortController();
+        const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
+        try {
+          response = await fetch(url, { ...fetchOptions, signal: retryController.signal });
+          data = await response.json();
+        } finally {
+          clearTimeout(retryTimeoutId);
+        }
+      }
+    }
 
     if (!response.ok) {
       // Parse error from backend structured error responses
-      // Backend returns: { error: true, message: "...", code: "..." }
+      // Backend may return: { error: true, message: "...", code: "...", fields?: Record<string, string> }
       const errorMessage = data.message ?? data.error?.message ?? `HTTP ${response.status}`;
       return {
         data: null,
         error: errorMessage,
+        errorBody: data as Record<string, unknown> | undefined,
       };
     }
 

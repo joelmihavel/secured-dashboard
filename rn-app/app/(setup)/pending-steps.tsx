@@ -142,9 +142,9 @@ export default function PendingStepsScreen() {
       >
         {/* Title -- Figma 160:3185 */}
         <View style={styles.titleContainer}>
-          <Text variant="h2" color="muted">
-            Here is your{"\n"}
-            <Text inherit color="accent">personalized cashback plan</Text>
+          <Text style={styles.titleText}>
+            <Text inherit style={styles.titleGray}>Here is your{"\n"}</Text>
+            <Text inherit style={styles.titleAccent}>personalized cashback plan</Text>
           </Text>
         </View>
 
@@ -247,6 +247,18 @@ const styles = StyleSheet.create({
   titleContainer: {
     width: FIGMA.title.width,
     marginBottom: s(32),
+  },
+  titleText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 40,
+    lineHeight: 56,
+    letterSpacing: -1,
+  },
+  titleGray: {
+    color: '#A9A9A9',
+  },
+  titleAccent: {
+    color: '#FF9A6D',
   },
   cardContainer: {
     alignItems: 'center',

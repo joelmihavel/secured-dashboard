@@ -293,6 +293,7 @@ Deno.serve(async (req) => {
     if (!document_path.toLowerCase().endsWith('.pdf')) {
       await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
+        extraction_error: "Only PDF documents are allowed",
       });
 
       return jsonResponse({
@@ -434,6 +435,9 @@ Deno.serve(async (req) => {
         raw_extraction_data: extractedData.raw_doc_ai_data,
         // Update extraction status
         extraction_status: "completed",
+        // Persist evaluation results for client-side polling (useExtractionStatus)
+        contract_status: evaluationResult.contract_status,
+        needs_manual_review: evaluationResult.needs_manual_review,
       })
       .eq("id", extraction_id)
       .select()
@@ -522,10 +526,11 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("[process-document] Error:", error);
 
-    // Update status to failed
+    // Update status to failed with error details for client-side display
     if (extraction_id) {
       await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
+        extraction_error: error.message,
       });
     }
 

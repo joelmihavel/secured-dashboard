@@ -192,17 +192,11 @@ const PaymentMethodRow = memo(({
         </View>
       </View>
 
-      {/* Right side: "Set it up" pill or fee text */}
+      {/* Right side: fee text */}
       {!isDisabled && (
-        !method.isSetUp ? (
-          <View style={styles.setItUpPill}>
-            <RNText style={styles.setItUpText}>Set it up</RNText>
-          </View>
-        ) : (
-          <RNText style={styles.feeText}>
-            {method.fee}
-          </RNText>
-        )
+        <RNText style={styles.feeText}>
+          {method.fee}
+        </RNText>
       )}
     </Pressable>
   );
@@ -327,13 +321,8 @@ export default function SelectPaymentMethodScreen() {
 
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethod);
 
-  // Determine CTA text based on setup state
-  // Figma 41-8901 (no-setup): "Set up Credit Card" (selected method)
-  // Figma 41-9004 (all-setup): "Pay Rs32,500"
   const allSetUp = paymentMethods.every(m => m.isSetUp);
-  const ctaText = allSetUp
-    ? `Pay \u20B9${rentAmount.toLocaleString('en-IN')}`
-    : `Set up ${selectedPaymentMethod?.title ?? 'Credit Card'}`;
+  const ctaText = `Pay \u20B9${rentAmount.toLocaleString('en-IN')}`;
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -347,25 +336,17 @@ export default function SelectPaymentMethodScreen() {
   const handleProceed = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const method = paymentMethods.find(m => m.id === selectedMethod);
-    const methodType = method?.type ?? 'card';
-
-    // Find the default saved method for this type (if any)
-    const defaultSaved = savedMethods?.find(
-      (m: SavedMethod) => m.type === methodType && m.is_default
-    ) ?? savedMethods?.find((m: SavedMethod) => m.type === methodType);
+    const methodType = method?.type ?? 'upi';
 
     router.push({
       pathname: '/(payment)/initiate',
       params: {
         method: methodType,
         tenancyId: tenancy?.id ?? '',
-        rentAmount: String(rentAmount),
-        cashbackAvailable: String(cashbackAvailable),
         rentMonth: getCurrentRentMonth(),
-        savedMethodId: defaultSaved?.id ?? '',
       },
     } as never);
-  }, [router, selectedMethod, paymentMethods, savedMethods, tenancy?.id, rentAmount, cashbackAvailable]);
+  }, [router, selectedMethod, paymentMethods, tenancy?.id]);
 
   const formatCurrency = (amount: number) => {
     return `\u20B9 ${amount.toLocaleString('en-IN')}`;
@@ -752,22 +733,7 @@ const styles = StyleSheet.create({
     color: FIGMA_COLORS.subtitleText, // #CBCBCB
   },
 
-  // "Set it up" pill - Figma: bg #202020, radius 40, padding 4/12, gap 10
-  setItUpPill: {
-    backgroundColor: FIGMA_COLORS.cardSurface, // #202020
-    borderRadius: 40,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-  },
-  setItUpText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA_COLORS.pillText, // #DDDDDD
-    textAlign: 'center',
-  },
-
-  // Fee text (all-setup variant) - Figma: 14px Regular, lineHeight 20, #CBCBCB
+  // Fee text - Figma: 14px Regular, lineHeight 20, #CBCBCB
   feeText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,

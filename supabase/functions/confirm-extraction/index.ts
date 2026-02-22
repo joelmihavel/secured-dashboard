@@ -21,6 +21,7 @@ import {
   handleError,
 } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
+import { matchNamesWithGemini } from "../_shared/gemini.ts";
 
 // ==============================================
 // TYPES
@@ -257,6 +258,66 @@ serve(async (req) => {
     if (roleError) {
       console.error("Failed to lock user role:", roleError);
       // Don't throw - extraction is confirmed, role lock is secondary
+    }
+
+    // ==============================================
+    // TENANT IDENTIFICATION VIA GEMINI
+    // ==============================================
+    // Match the authenticated user against tenant names in the agreement
+
+    try {
+      const { data: userForMatch } = await adminClient
+        .from("users")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+
+      // Get tenant_names: prefer user-corrected data, fall back to DB
+      const tenantNames: string[] = updateData.tenant_names
+        ?? (extractedInfo.tenant_names as string[])
+        ?? [];
+
+      if (userForMatch?.full_name && tenantNames.length > 0) {
+        let bestMatchIndex = -1;
+        let bestMatchScore = 0;
+        let bestMatchType = "no_match";
+
+        for (let i = 0; i < tenantNames.length; i++) {
+          const matchResult = await matchNamesWithGemini(
+            userForMatch.full_name,
+            tenantNames[i],
+            "tenant_verification"
+          );
+          if (matchResult.confidence > bestMatchScore) {
+            bestMatchScore = matchResult.confidence;
+            bestMatchType = matchResult.match_type;
+            bestMatchIndex = i;
+          }
+        }
+
+        await adminClient
+          .from("users")
+          .update({
+            matched_tenant_index: bestMatchIndex >= 0 ? bestMatchIndex : null,
+            tenant_match_score: bestMatchScore,
+            tenant_match_type: bestMatchType,
+          })
+          .eq("id", user.id);
+
+        console.log(`[confirm-extraction] Tenant match: index=${bestMatchIndex}, score=${bestMatchScore}, type=${bestMatchType}`);
+      } else {
+        // Cannot match — mark as no_match
+        await adminClient
+          .from("users")
+          .update({
+            tenant_match_type: "no_match",
+            tenant_match_score: 0,
+          })
+          .eq("id", user.id);
+        console.log("[confirm-extraction] Skipping tenant match: missing full_name or tenant_names");
+      }
+    } catch (tenantMatchError) {
+      console.error("[confirm-extraction] Tenant identification failed (non-fatal):", tenantMatchError);
     }
 
     // ==============================================

@@ -49,6 +49,9 @@ interface WaitlistStatusResponse {
     created_at: string;
     has_invite_code: boolean;
     batch_number: number | null;
+    risk_level: string;
+    risk_factors: unknown[];
+    risk_computed_at: string | null;
   };
   extracted_info?: {
     property_name: string;
@@ -359,6 +362,9 @@ serve(async (req) => {
         created_at: waitlistEntry.created_at,
         has_invite_code: !!waitlistEntry.invite_code_id,
         batch_number: waitlistEntry.batch_number ?? null,
+        risk_level: waitlistEntry.risk_level ?? "PENDING",
+        risk_factors: waitlistEntry.risk_factors ?? [],
+        risk_computed_at: waitlistEntry.risk_computed_at ?? null,
       },
 
       // Counts

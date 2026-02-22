@@ -39,7 +39,7 @@
  * - All text alignment matches Figma CENTER specification
  */
 
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -104,6 +104,16 @@ export default function HomeScreen() {
 
   const resolvedData = dashboardResult.data ?? null;
   const dashboardState: DashboardState = getDashboardState(resolvedData);
+
+  // If user has no tenancy, they shouldn't be on the main dashboard.
+  // Redirect to agreement upload — the most likely next step for a user
+  // without tenancy data. Using a specific route (not '/') avoids a
+  // potential redirect loop if the journey router's API call fails.
+  useEffect(() => {
+    if (!isLoading && dashboardState === 'no_tenancy') {
+      router.replace('/(agreement)/upload' as never);
+    }
+  }, [isLoading, dashboardState, router]);
   const user = resolvedData?.user ?? null;
   const tenancy = resolvedData?.tenancy ?? null;
   const upcomingPayment = resolvedData?.upcoming_payment ?? null;
@@ -620,23 +630,11 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
 
   switch (state) {
     case 'no_tenancy':
-      return (
-        <View style={styles.contentContainer}>
-          <View style={styles.emptyStateContainer}>
-            <Text variant="h4" color="primary" align="center">
-              Welcome to Flent
-            </Text>
-            <Text variant="bodyMd2" color="muted" align="center" style={styles.emptyStateText}>
-              Upload your rental agreement to get started with cashback rewards
-            </Text>
-            <PrimaryButton
-              title="Upload Agreement"
-              onPress={onAddAgreement}
-              style={styles.emptyStateButton}
-            />
-          </View>
-        </View>
-      );
+      // Users without a tenancy should never reach the main dashboard —
+      // the journey router (index.tsx) gates on user_status and redirects
+      // to agreement/waitlist/setup as appropriate. Return null; the
+      // component-level useEffect below will redirect back to the router.
+      return null;
 
     case 'pending_verification':
       const verificationStatus = tenancy?.verification_status;
