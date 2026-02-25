@@ -36,8 +36,12 @@ export {
   selectTransactionId,
   selectLastPaymentId,
   selectLastPaymentTimestamp,
+  selectActiveGateway,
+  selectPayuSessionParams,
+  selectUseCoreSdk,
+  selectSelectedInstrument,
 } from './payment';
-export type { PaymentMethodType, PaymentStatus, SelectedPaymentMethod } from './payment';
+export type { PaymentMethodType, PaymentStatus, SelectedPaymentMethod, PayUSessionParams } from './payment';
 
 export {
   useSetupStore,

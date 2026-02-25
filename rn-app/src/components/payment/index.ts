@@ -19,3 +19,6 @@ export * from './CreditCardSelect';
 export * from './UPICardSelect';
 export * from './NetbankingCardSelect';
 export * from './AddMoreCard';
+
+// Secure Card Input (Core SDK flow)
+export * from './SecureCardInput';

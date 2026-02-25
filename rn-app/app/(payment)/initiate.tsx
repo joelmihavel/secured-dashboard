@@ -22,7 +22,6 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Constants from 'expo-constants';
 import Svg, { Path, Line } from 'react-native-svg';
 import { z } from 'zod';
 
@@ -31,15 +30,12 @@ import { CashbackPill } from '@/src/components/payment/CashbackPill';
 import { useDashboard } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import {
-  initiatePayUPayment,
-  launchPayUCheckout,
-  mockPayUCheckout,
+  initiatePayment,
+  launchCheckout,
 } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
+import { getGatewayFeeRates } from '@/src/services/payment';
 import { colors } from '@/src/theme';
-
-// Check if running in Expo Go (no native modules)
-const isExpoGo = Constants.appOwnership === 'expo';
 
 // ==============================================
 // INPUT VALIDATION SCHEMA
@@ -149,12 +145,13 @@ export default function InitiatePaymentScreen() {
   const rawParams = useLocalSearchParams<{ method: string }>();
   const { tenancy, upcomingPayment, cashback } = useDashboard();
 
-  const [useCashback, setUseCashback] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Sync payment flow state to Zustand store for cross-screen coordination
-  const { setConfirming, setProcessing, setFailed, setTenancyId, setLastPayment, reset: resetPaymentStore } = usePaymentStore();
+  const { setConfirming, setProcessing, setFailed, setTenancyId, setLastPayment, setPayuSessionParams, reset: resetPaymentStore } = usePaymentStore();
   const storedAmount = usePaymentStore(state => state.amount);
+  const activeGateway = usePaymentStore(state => state.activeGateway);
+  const useCoreSdk = usePaymentStore(state => state.useCoreSdk);
 
   // Validate payment method from URL params
   const validatedParams = useMemo((): ValidatedPaymentParams => {
@@ -169,24 +166,23 @@ export default function InitiatePaymentScreen() {
   const method = validatedParams.method;
 
   const rentAmount = storedAmount || tenancy?.monthly_rent || 30000;
-  const maintenanceAmount = 2500;
-  const totalRent = rentAmount + maintenanceAmount; // 32500
-
-  const cashbackAvailable = cashback?.available_balance ?? 350;
   const agreementRent = tenancy?.monthly_rent ?? rentAmount;
   const isSetupComplete = tenancy?.verification_status?.bank_verified && tenancy?.verification_status?.utility_verified && tenancy?.verification_status?.landlord_approved;
 
-  // New cashback formula: MIN(1% of rent, monthly_cap_remaining)
-  // monthly_cap = 1% of agreement rent
-  const monthlyCashbackCap = Math.round(agreementRent * 0.01);
-  const onePercentOfRent = Math.round(totalRent * 0.01);
-  const maxCashback = Math.min(onePercentOfRent, monthlyCashbackCap);
+  // Instant 1% discount — automatic, no toggle, server-authoritative
+  // Frontend is preview-only; server computes final amounts
+  const verificationComplete = isSetupComplete ?? false;
+  const cashbackDiscount = verificationComplete
+    ? Math.min(
+        Math.floor(rentAmount * 100 * 0.01), // 1% of entered amount (in paise)
+        Math.floor(agreementRent * 100 * 0.01) // capped at 1% of agreement rent
+      ) / 100 // back to rupees
+    : 0;
 
-  // If setup isn't complete, cashback is locked. If complete, they can apply it.
-  const isCashbackLocked = !isSetupComplete;
-  const cashbackToApply = (useCashback && !isCashbackLocked) ? Math.min(maxCashback, cashbackAvailable) : 0;
-
-  const totalAmount = totalRent - cashbackToApply;
+  const netRent = rentAmount - cashbackDiscount;
+  const feeRates = useMemo(() => getGatewayFeeRates(activeGateway), [activeGateway]);
+  const pgFee = Math.ceil(netRent * 100 * (feeRates[method] ?? 0)) / 100;
+  const totalAmount = netRent + pgFee;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 28;
 
   const handleBack = useCallback(() => {
@@ -207,11 +203,12 @@ export default function InitiatePaymentScreen() {
     setTenancyId(tenancy?.id ?? '');
 
     try {
-      const { data, error } = await initiatePayUPayment({
+      const currentGateway = usePaymentStore.getState().activeGateway;
+      const { data, error } = await initiatePayment({
         tenancyId: tenancy?.id ?? '',
         paymentMethod: method,
-        applyCashback: useCashback,
         rentMonth: upcomingPayment?.rent_month ?? new Date().toISOString().slice(0, 7),
+        preferredGateway: currentGateway,
       });
 
       if (error || !data) {
@@ -221,24 +218,55 @@ export default function InitiatePaymentScreen() {
       setProcessing(data.paymentId);
       setLastPayment(data.paymentId);
 
-      const checkoutResult = isExpoGo
-        ? await mockPayUCheckout(data.payuParams)
-        : await launchPayUCheckout(data.paymentId, data.payuParams);
+      // For Core SDK flow: store PayU params before launching checkout
+      // launchCheckout will check the useCoreSdk flag internally
+      if (useCoreSdk && data.gateway === 'payu' && data.payuParams) {
+        const p = data.payuParams as Record<string, string>;
+        setPayuSessionParams({
+          key: p.key,
+          txnid: p.txnid,
+          amount: p.amount,
+          productinfo: p.productinfo,
+          firstname: p.firstname,
+          email: p.email,
+          phone: p.phone,
+          surl: p.surl,
+          furl: p.furl,
+          hash: p.hash,
+          vas_hash: p.vas_for_mobile_sdk_hash,
+          prd_hash: p.payment_related_details_for_mobile_sdk_hash,
+          user_credential: p.user_credential ?? `${p.key}:${p.email}`,
+          udf1: p.udf1,
+          udf2: p.udf2,
+          udf3: p.udf3,
+          udf4: p.udf4,
+          udf5: p.udf5,
+        });
+      }
 
-      if (checkoutResult.status === 'cancelled') {
-        if (checkoutResult.isTxnInitiated) {
-          // Bank may be processing - go to processing screen
-          router.replace({
-            pathname: '/(payment)/processing',
-            params: { paymentId: data.paymentId, amount: String(totalAmount), method },
-          } as never);
-        } else {
-          resetPaymentStore();
-          setIsProcessing(false);
-        }
+      const { outcome, error: checkoutError } = await launchCheckout(data);
+
+      if (outcome === 'cancelled') {
+        resetPaymentStore();
+        setIsProcessing(false);
         return;
       }
 
+      // Core SDK flow: navigate to instrument screen
+      if (outcome === 'navigating_to_instrument') {
+        const instrumentScreen =
+          method === 'card' ? '/(payment)/add-card' :
+          method === 'netbanking' ? '/(payment)/add-netbanking' :
+          '/(payment)/add-upi';
+        router.push({
+          pathname: instrumentScreen as never,
+          params: { paymentId: data.paymentId },
+        } as never);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Both 'needs_verification' and 'failure' navigate to processing screen
       router.replace({
         pathname: '/(payment)/processing',
         params: {
@@ -256,7 +284,7 @@ export default function InitiatePaymentScreen() {
       Alert.alert('Payment Error', errorMessage);
       setIsProcessing(false);
     }
-  }, [isSetupComplete, tenancy?.id, totalAmount, method, useCashback, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setTenancyId, setLastPayment, resetPaymentStore, isExpoGo]);
+  }, [isSetupComplete, tenancy?.id, totalAmount, method, upcomingPayment?.rent_month, router, setConfirming, setProcessing, setFailed, setTenancyId, setLastPayment, resetPaymentStore]);
 
   const ctaText = isSetupComplete 
     ? `Pay \u20B9${totalAmount.toLocaleString('en-IN')} now` 
@@ -289,21 +317,21 @@ export default function InitiatePaymentScreen() {
             <View style={styles.topCardContent}>
               <Text style={styles.topCardTitle}>Rent due in {daysUntilDue} days</Text>
               <Text style={styles.topCardSubtitle}>
-                {isSetupComplete ? 'Cashback applied successfully' : 'Complete setup to unlock 1% cashback'}
+                {verificationComplete ? `You save \u20B9${cashbackDiscount.toLocaleString('en-IN')} with Flent` : 'Complete setup to unlock 1% rent discount'}
               </Text>
 
-              {isCashbackLocked ? (
+              {verificationComplete ? (
                 <CashbackPill
-                  amount={maxCashback}
-                  label="Cashback"
-                  variant="accumulating"
-                  message="Complete bank verification, utility verification, and landlord onboarding to unlock cashback"
+                  amount={cashbackDiscount}
+                  label="1% discount applied"
+                  variant="applied"
                 />
               ) : (
                 <CashbackPill
-                  amount={cashbackToApply}
-                  label="Cashback applied"
-                  variant="applied"
+                  amount={Math.round(agreementRent * 0.01)}
+                  label="1% discount"
+                  variant="accumulating"
+                  message="Complete bank verification, utility verification, and landlord onboarding to unlock 1% rent discount"
                 />
               )}
             </View>
@@ -328,16 +356,23 @@ export default function InitiatePaymentScreen() {
             <View style={styles.breakdownInner}>
               <BreakdownRow
                 label="Rent"
-                value={`\u20B9 ${totalRent.toLocaleString('en-IN')}`}
+                value={`\u20B9 ${rentAmount.toLocaleString('en-IN')}`}
               />
               <View style={styles.divider} />
 
-              {/* Cashback row */}
+              {/* 1% Discount row */}
               <BreakdownRow
-                label="Cashback"
-                value={`- \u20B9 ${isCashbackLocked ? maxCashback.toLocaleString('en-IN') : cashbackToApply.toLocaleString('en-IN')}`}
+                label="1% Cashback"
+                value={`- \u20B9 ${verificationComplete ? cashbackDiscount.toLocaleString('en-IN') : Math.round(agreementRent * 0.01).toLocaleString('en-IN')}`}
                 isCashback
-                isLocked={isCashbackLocked}
+                isLocked={!verificationComplete}
+              />
+              <View style={styles.divider} />
+
+              {/* Convenience fee row */}
+              <BreakdownRow
+                label="Convenience Fee"
+                value={pgFee > 0 ? `+ \u20B9 ${pgFee.toLocaleString('en-IN')}` : 'Free'}
               />
 
               <View style={styles.gapSpacer} />
@@ -370,10 +405,10 @@ export default function InitiatePaymentScreen() {
           />
 
           {/* Subtext below button */}
-          {!isSetupComplete && (
+          {!verificationComplete && (
             <Text style={styles.ctaSubtext}>
               <Text inherit style={styles.ctaSubtextBase}>
-                {'Complete bank verification, utility verification,\nand landlord onboarding to unlock cashback'}
+                {'Complete bank verification, utility verification,\nand landlord onboarding to unlock 1% rent discount'}
               </Text>
             </Text>
           )}

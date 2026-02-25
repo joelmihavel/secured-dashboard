@@ -37,10 +37,11 @@ export {
   useSetDefaultPaymentMethod,
   useGenerateReceipt,
   usePayments,
+  usePaymentStamps,
   usePaymentSchedules,
   useCreateSchedule,
   useManageSchedule,
-  useCashbackHistory,
+  useSavingsHistory,
   paymentKeys,
 } from './usePayments';
 
@@ -127,6 +128,10 @@ export { useErrorNavigation } from './useErrorNavigation';
 
 // Payment Recovery (Phase 4.8 - crash recovery)
 export { usePaymentRecovery } from './usePaymentRecovery';
+
+// Payment Flow (Core SDK orchestration)
+export { usePaymentFlow } from './usePaymentFlow';
+export type { PaymentFlowOutcome } from './usePaymentFlow';
 
 // Extraction Status (background-aware agreement processing)
 export { useExtractionStatus } from './useExtractionStatus';

@@ -33,13 +33,15 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
 import { useAddUpiVpa, useVerifyUpi } from '@/src/hooks';
+import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
+import { usePaymentStore } from '@/src/stores';
 import { colors } from '@/src/theme';
 
 // Figma-exact color constants from blueprint 41-8369
@@ -76,11 +78,18 @@ export default function AddUpiScreen() {
   const insets = useSafeAreaInsets();
   const addUpi = useAddUpiVpa();
   const verifyUpi = useVerifyUpi();
+  const params = useLocalSearchParams<{ paymentId?: string }>();
+
+  const sessionParams = usePaymentStore((s) => s.payuSessionParams);
+  const useCoreSdk = usePaymentStore((s) => s.useCoreSdk);
+  const isCoreSdkFlow = useCoreSdk && !!sessionParams && !!params.paymentId;
+  const { executePayment } = usePaymentFlow();
 
   const [accountName, setAccountName] = useState('');
   const [upiId, setUpiId] = useState('');
   const [error, setError] = useState('');
   const [isVerified, setIsVerified] = useState(false);
+  const [isPayingUpi, setIsPayingUpi] = useState(false);
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -157,8 +166,27 @@ export default function AddUpiScreen() {
     );
   }, [addUpi, upiId, accountName, router]);
 
+  // Core SDK UPI Pay handler
+  const handlePayUpi = useCallback(async () => {
+    if (!isCoreSdkFlow || isPayingUpi) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setIsPayingUpi(true);
+
+    const outcome = await executePayment(
+      'upi',
+      { vpa: upiId.trim() },
+      params.paymentId!,
+      () => {}, // No sensitive data to clear for UPI
+    );
+
+    if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+      setIsPayingUpi(false);
+    }
+  }, [isCoreSdkFlow, isPayingUpi, upiId, params.paymentId, executePayment]);
+
   const isFormValid = accountName.length > 0 && upiId.includes('@');
-  const isLoading = addUpi.isPending || verifyUpi.isPending;
+  const isLoading = addUpi.isPending || verifyUpi.isPending || isPayingUpi;
 
   return (
     <Screen testID="add-upi-screen" padded={false} style={styles.screen}>
@@ -225,7 +253,7 @@ export default function AddUpiScreen() {
 
           {/* Button + Footer Section - Figma: Frame 1686557317, gap 16px */}
           <View style={styles.buttonFooterSection}>
-            {/* Verify + Proceed Buttons */}
+            {/* Verify + Pay/Proceed Buttons */}
             {!isVerified && isFormValid ? (
               <PrimaryButton
                 title={verifyUpi.isPending ? 'Verifying...' : 'Verify UPI'}
@@ -233,6 +261,14 @@ export default function AddUpiScreen() {
                 disabled={!isFormValid || verifyUpi.isPending}
                 loading={verifyUpi.isPending}
                 testID="verify-upi-button"
+              />
+            ) : isCoreSdkFlow && isVerified ? (
+              <PrimaryButton
+                title={`Pay \u20B9${parseFloat(sessionParams?.amount ?? '0').toLocaleString('en-IN')}`}
+                onPress={handlePayUpi}
+                disabled={!isFormValid || isPayingUpi}
+                loading={isPayingUpi}
+                testID="pay-upi-button"
               />
             ) : (
               <PrimaryButton

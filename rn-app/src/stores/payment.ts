@@ -37,6 +37,32 @@ export interface SelectedPaymentMethod {
   isPrimary?: boolean;
 }
 
+/**
+ * PayU session params from initiate-payment edge function.
+ * Stored in memory only (never persisted) for Core SDK Mode B flow.
+ * Contains pre-computed hashes — no salt on client.
+ */
+export interface PayUSessionParams {
+  key: string;
+  txnid: string;
+  amount: string;
+  productinfo: string;
+  firstname: string;
+  email: string;
+  phone: string;
+  surl: string;
+  furl: string;
+  hash: string;
+  vas_hash?: string;
+  prd_hash?: string;
+  user_credential: string;
+  udf1?: string;
+  udf2?: string;
+  udf3?: string;
+  udf4?: string;
+  udf5?: string;
+}
+
 interface PaymentState {
   status: PaymentStatus;
   selectedMethod: SelectedPaymentMethod | null;
@@ -51,6 +77,13 @@ interface PaymentState {
   // Persisted recovery fields
   lastPaymentId: string | null;
   lastPaymentTimestamp: number | null;
+  // Gateway selection
+  activeGateway: 'payu' | 'cashfree';
+  lastPaymentGateway: string | null;
+  // Core SDK fields (in-memory only, never persisted)
+  payuSessionParams: PayUSessionParams | null;
+  useCoreSdk: boolean;
+  selectedInstrument: { type: PaymentMethodType; bankCode?: string } | null;
 }
 
 interface PaymentActions {
@@ -69,6 +102,12 @@ interface PaymentActions {
   reset: () => void;
   setLastPayment: (id: string) => void;
   clearLastPayment: () => void;
+  setActiveGateway: (gateway: 'payu' | 'cashfree') => void;
+  // Core SDK actions
+  setPayuSessionParams: (params: PayUSessionParams) => void;
+  clearPayuSessionParams: () => void;
+  setUseCoreSdk: (enabled: boolean) => void;
+  setSelectedInstrument: (instrument: { type: PaymentMethodType; bankCode?: string } | null) => void;
 }
 
 type PaymentStore = PaymentState & PaymentActions;
@@ -87,6 +126,12 @@ const initialState: PaymentState = {
   error: null,
   lastPaymentId: null,
   lastPaymentTimestamp: null,
+  activeGateway: 'cashfree',
+  lastPaymentGateway: null,
+  // Core SDK fields — never persisted (card data security)
+  payuSessionParams: null,
+  useCoreSdk: false,
+  selectedInstrument: null,
 };
 
 // ==============================================
@@ -207,6 +252,32 @@ export const usePaymentStore = create<PaymentStore>()(
           state.lastPaymentId = null;
           state.lastPaymentTimestamp = null;
         }),
+
+      setActiveGateway: (gateway) =>
+        set((state) => {
+          state.activeGateway = gateway;
+        }),
+
+      // Core SDK actions — memory only, never persisted
+      setPayuSessionParams: (params) =>
+        set((state) => {
+          state.payuSessionParams = params;
+        }),
+
+      clearPayuSessionParams: () =>
+        set((state) => {
+          state.payuSessionParams = null;
+        }),
+
+      setUseCoreSdk: (enabled) =>
+        set((state) => {
+          state.useCoreSdk = enabled;
+        }),
+
+      setSelectedInstrument: (instrument) =>
+        set((state) => {
+          state.selectedInstrument = instrument;
+        }),
     })),
     {
       name: 'payment-recovery',
@@ -214,6 +285,8 @@ export const usePaymentStore = create<PaymentStore>()(
       partialize: (state) => ({
         lastPaymentId: state.lastPaymentId,
         lastPaymentTimestamp: state.lastPaymentTimestamp,
+        activeGateway: state.activeGateway,
+        lastPaymentGateway: state.lastPaymentGateway,
       }),
     }
   )
@@ -232,3 +305,7 @@ export const selectIsProcessing = (state: PaymentStore) =>
 export const selectTransactionId = (state: PaymentStore) => state.transactionId;
 export const selectLastPaymentId = (state: PaymentStore) => state.lastPaymentId;
 export const selectLastPaymentTimestamp = (state: PaymentStore) => state.lastPaymentTimestamp;
+export const selectActiveGateway = (state: PaymentStore) => state.activeGateway;
+export const selectPayuSessionParams = (state: PaymentStore) => state.payuSessionParams;
+export const selectUseCoreSdk = (state: PaymentStore) => state.useCoreSdk;
+export const selectSelectedInstrument = (state: PaymentStore) => state.selectedInstrument;

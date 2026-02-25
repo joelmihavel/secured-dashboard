@@ -32,10 +32,12 @@ import {
   Linking,
   AppState,
   AppStateStatus,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path, Rect, Line } from 'react-native-svg';
 import LottieView from 'lottie-react-native';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
@@ -59,8 +61,8 @@ const FIGMA_COLORS = {
 };
 
 const VERIFICATION_INTERVAL_MS = 3000;
-const VERIFICATION_TIMEOUT_MS = 120000; // 120 seconds
-const MAX_VERIFICATION_ATTEMPTS = Math.ceil(VERIFICATION_TIMEOUT_MS / VERIFICATION_INTERVAL_MS);
+const VERIFICATION_TIMEOUT_MS_DEFAULT = 120000; // 120 seconds
+const VERIFICATION_TIMEOUT_MS_UPI = 360000;     // 360 seconds (6 min) for UPI collect
 
 type ScreenState = 'verifying' | 'processing' | 'timed_out';
 
@@ -76,13 +78,21 @@ const Paperclip = () => (
   </Svg>
 );
 
-// Credit card icon for info rows
-const CreditCardIcon = () => (
-  <Svg width={32} height={24} viewBox="0 0 32 24" fill="none">
-    <Rect x="1" y="1" width="30" height="22" rx="4" stroke={FIGMA_COLORS.iconColor} strokeWidth="1.5" fill="none" />
-    <Path d="M1 8H31" stroke={FIGMA_COLORS.iconColor} strokeWidth="1.5" />
-    <Rect x="4" y="14" width="8" height="4" rx="1" fill={FIGMA_COLORS.iconColor} />
-  </Svg>
+// Timeline Icon from Figma Frame 2095586326
+const TimelineIcon = () => (
+  <View style={{ width: 52.5, height: 40, position: 'relative' }}>
+    <Image 
+      source={require('@/assets/images/processing-icon.png')} 
+      style={{ position: 'absolute', left: 6.72, top: 0.46, width: 39, height: 39 }} 
+    />
+    <Svg width="6.72" height="40" viewBox="0 0 6.72 40" style={{ position: 'absolute', right: 0, transform: [{ rotate: '180deg' }] }}>
+      <Path
+        d="M0 0L0 -0.305344L-0.305344 -0.305344L-0.305344 0L0 0ZM0 40L-0.305344 40L-0.305344 40.3053L0 40.3053L0 40ZM6.71756 0L6.71756 -0.305344L0 -0.305344L0 0L0 0.305344L6.71756 0.305344L6.71756 0ZM0 0L-0.305344 0L-0.305344 40L0 40L0.305344 40L0.305344 0L0 0ZM0 40L0 40.3053L6.71756 40.3053L6.71756 40L6.71756 39.6947L0 39.6947L0 40Z"
+        fill={colors.neutral[800]}
+        fillRule="nonzero"
+      />
+    </Svg>
+  </View>
 );
 
 // Perforation Edge - 14 circular holes at top of receipt card
@@ -97,21 +107,45 @@ const PerforationEdge = () => {
   );
 };
 
+// Star decoration for stamps
+const Star = ({ color }: { color: string }) => (
+  <View style={styles.starIcon}>
+    <Svg width={8} height={8} viewBox="0 0 8 8" fill="none">
+      <Path
+        d="M4 0L5.236 2.404L7.804 2.764L5.902 4.636L6.382 7.236L4 6.13L1.618 7.236L2.098 4.636L0.196 2.764L2.764 2.404L4 0Z"
+        fill={color}
+      />
+    </Svg>
+  </View>
+);
+
+// Grid lines behind the card (Figma Vector 45)
+const GridLines = () => (
+  <View style={styles.gridContainer} pointerEvents="none">
+    <Svg width={369} height={235} viewBox="0 0 369 235" fill="none">
+      <Line x1={36.8} y1={0} x2={36.8} y2={235} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+      <Line x1={0} y1={36.8} x2={369} y2={36.8} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+      <Line x1={339.5} y1={0} x2={339.5} y2={235} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+      <Line x1={0} y1={197.8} x2={369} y2={197.8} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+    </Svg>
+  </View>
+);
+
 // PENDING Stamp Component - Figma: Inter ExtraBold, color #C7C9D9
 const PendingStamp = () => (
   <View style={styles.stampContainer}>
     <View style={styles.stampOuter}>
       <View style={styles.stampInner}>
         <View style={styles.starsRow}>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
         </View>
-        <Text style={styles.stampText}>PENDING</Text>
+        <Text style={styles.stampText}>pending</Text>
         <View style={styles.starsRow}>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
         </View>
       </View>
     </View>
@@ -125,7 +159,7 @@ interface InfoRowProps {
 // Info row - Figma: row direction, gap 16, paddingHorizontal 32
 const InfoRow = ({ text }: InfoRowProps) => (
   <View style={styles.infoRow}>
-    <CreditCardIcon />
+    <TimelineIcon />
     <Text style={styles.infoText}>{text}</Text>
   </View>
 );
@@ -138,6 +172,9 @@ export default function ProcessingScreen() {
     method?: string;
   }>();
   const { paymentId, amount, method } = params;
+  const isUpi = method === 'upi';
+  const verificationTimeoutMs = isUpi ? VERIFICATION_TIMEOUT_MS_UPI : VERIFICATION_TIMEOUT_MS_DEFAULT;
+  const maxVerificationAttempts = Math.ceil(verificationTimeoutMs / VERIFICATION_INTERVAL_MS);
   const lottieRef = useRef<LottieView>(null);
   const [screenState, setScreenState] = useState<ScreenState>('verifying');
   const attemptsRef = useRef(0);
@@ -217,7 +254,7 @@ export default function ProcessingScreen() {
         setScreenState('processing');
       }
 
-      if (attemptsRef.current < MAX_VERIFICATION_ATTEMPTS) {
+      if (attemptsRef.current < maxVerificationAttempts) {
         pollTimeoutRef.current = setTimeout(() => {
           isPollingRef.current = false;
           pollStatus();
@@ -230,7 +267,7 @@ export default function ProcessingScreen() {
       if (screenState === 'verifying') {
         setScreenState('processing');
       }
-      if (attemptsRef.current < MAX_VERIFICATION_ATTEMPTS) {
+      if (attemptsRef.current < maxVerificationAttempts) {
         pollTimeoutRef.current = setTimeout(() => {
           isPollingRef.current = false;
           pollStatus();
@@ -247,7 +284,7 @@ export default function ProcessingScreen() {
   useEffect(() => {
     if (!paymentId) {
       // Demo mode — auto-navigate after delay
-      const DEMO_DELAY_MS = 5000;
+      const DEMO_DELAY_MS = 50000; // Increased for UI parity testing
       const timer = setTimeout(() => {
         router.replace({
           pathname: '/(payment)/success',
@@ -322,44 +359,74 @@ export default function ProcessingScreen() {
 
   const titleText = getTitleText();
 
-  // Info rows based on screen state
-  const getInfoRows = () => {
-    switch (screenState) {
-      case 'verifying':
-        return [
-          "Confirming your payment with the bank...",
-          "This usually takes a few seconds.",
-          "Please don't close the app.",
-        ];
-      case 'processing':
-        return [
-          "We've received your payment request.",
-          "This can take a few minutes depending on your bank.",
-          "You'll see confirmation here once it's complete.",
-        ];
-      case 'timed_out':
-        return [
-          "Your payment is still being processed by your bank.",
-          "This is taking longer than expected. Please check back later.",
-          "You'll receive a notification once the payment is confirmed.",
-        ];
+  // Info rows based on screen state + payment method
+  const getInfoRows = (): string[] => {
+    if (isUpi && screenState === 'verifying') {
+      return [
+        'Open your UPI app to approve the payment.',
+        'You have 6 minutes to complete the approval.',
+        'Please don\'t close the app.',
+      ];
     }
+    if (isUpi && screenState === 'processing') {
+      return [
+        'Waiting for approval on your UPI app.',
+        'This can take a few minutes. Please check your UPI app.',
+        'You\'ll see confirmation here once approved.',
+      ];
+    }
+    if (isUpi && screenState === 'timed_out') {
+      return [
+        'UPI payment request has expired.',
+        'The approval window has closed. Please try again.',
+        'You can retry with the same or a different payment method.',
+      ];
+    }
+    if (screenState === 'verifying') {
+      return [
+        'Confirming your payment with the bank...',
+        'This usually takes a few seconds.',
+        'Please don\'t close the app.',
+      ];
+    }
+    if (screenState === 'processing') {
+      return [
+        'We\'ve received your payment request.',
+        'This can take a few minutes depending on your bank.',
+        'You\'ll see confirmation here once it\'s complete.',
+      ];
+    }
+    // timed_out
+    return [
+      'Your payment is still being processed by your bank.',
+      'This is taking longer than expected. Please check back later.',
+      'You\'ll receive a notification once the payment is confirmed.',
+    ];
   };
+
+  const insets = useSafeAreaInsets();
+  const cardMarginTop = Math.max(0, 183 - insets.top);
 
   return (
     <Screen testID="processing-screen" padded={false} style={styles.screen}>
       <OfflineBanner message="No internet connection. Polling paused." />
       <View style={styles.container}>
         {/* Receipt Card */}
-        <View style={styles.receiptContainer}>
-          {/* Paperclip decoration */}
-          <View style={styles.paperclipContainer}>
-            <Paperclip />
-          </View>
+        <View style={[styles.receiptContainer, { marginTop: cardMarginTop }]}>
+          {/* Background grid lines */}
+          <GridLines />
 
           {/* Card with notches and perforations */}
-          <View style={styles.receiptCard}>
-            <PerforationEdge />
+          <View style={styles.cardShadowWrapper}>
+            <View style={styles.cardBackground} />
+            
+            {/* Paperclip decoration */}
+            <View style={styles.paperclipContainer}>
+              <Paperclip />
+            </View>
+
+            <View style={styles.receiptCardContent}>
+              <PerforationEdge />
 
             {/* Left notch */}
             <View style={[styles.notch, styles.notchLeft]} />
@@ -373,8 +440,11 @@ export default function ProcessingScreen() {
 
             {/* Title */}
             <View style={styles.titleSection}>
-              <Text style={styles.titleWhite}>{titleText.top}</Text>
-              <Text style={styles.titleAccent}>{titleText.bottom}</Text>
+              <Text style={styles.titleWhite}>
+                {titleText.top}
+                {'\n'}
+                <Text style={styles.titleAccent}>{titleText.bottom}</Text>
+              </Text>
             </View>
 
             {/* Info Rows */}
@@ -382,6 +452,7 @@ export default function ProcessingScreen() {
               {getInfoRows().map((text, i) => (
                 <InfoRow key={i} text={text} />
               ))}
+            </View>
             </View>
           </View>
         </View>
@@ -429,18 +500,39 @@ const styles = StyleSheet.create({
   receiptContainer: {
     position: 'relative',
     alignItems: 'center',
-    marginTop: 12,
+    // margin top is handled via inline style from useSafeAreaInsets
+  },
+  // Background grid
+  gridContainer: {
+    position: 'absolute',
+    top: 0,
+    left: -49, // 49px to the left of the 270px card
+    width: 369,
+    height: 235,
+    zIndex: -1,
   },
   paperclipContainer: {
     position: 'absolute',
-    top: -20,
-    left: -16,
+    top: -5,
+    left: 8,
     zIndex: 10,
   },
-  receiptCard: {
-    width: 270,                        // Figma: Frame 2095586361 width: 270
+  cardShadowWrapper: {
+    width: 270,
+    minHeight: 481,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.15,
+    shadowRadius: 30,
+    elevation: 10,
+  },
+  cardBackground: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: FIGMA_COLORS.cardBackground,
-    borderRadius: 16,
+    borderRadius: 0,
+  },
+  receiptCardContent: {
+    flex: 1,
     padding: 24,
     paddingTop: 80,
     position: 'relative',
@@ -467,8 +559,7 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     backgroundColor: FIGMA_COLORS.background,
-    top: '50%',
-    marginTop: -7,
+    top: 256,
   },
   notchLeft: {
     left: -7,
@@ -507,14 +598,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 2,
   },
-  star: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 8,
-    color: FIGMA_COLORS.stampColor,
-    textAlign: 'center',
+  starIcon: {
+    width: 8,
+    height: 8,
   },
   stampText: {
-    fontFamily: 'Inter-ExtraBold',     // Figma: fontPostScriptName Inter-ExtraBold
+    fontFamily: 'PlusJakartaSans-Bold',     // Figma: fontPostScriptName PlusJakartaSans-Bold
     fontSize: 13.51,                   // Figma: fontSize 13.51
     lineHeight: 16.35,                 // Figma: lineHeightPx 16.35
     color: FIGMA_COLORS.stampColor,
@@ -525,6 +614,7 @@ const styles = StyleSheet.create({
   // Title - Figma 41:9485: textAlign left, x:34 inside card
   titleSection: {
     marginBottom: 32,
+    marginLeft: 10, // Matching offset
   },
   titleWhite: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -543,6 +633,7 @@ const styles = StyleSheet.create({
   // Info section - Figma 41:9486: column, gap 24, width 269
   infoSection: {
     gap: 24,
+    marginLeft: 10,
   },
   // Info row - Figma 41:9487: row, gap 16, paddingHorizontal 32, alignItems center
   infoRow: {
@@ -569,5 +660,6 @@ const styles = StyleSheet.create({
     gap: 16,
     alignItems: 'center',
     paddingBottom: 24,
+    marginTop: 40,
   },
 });
