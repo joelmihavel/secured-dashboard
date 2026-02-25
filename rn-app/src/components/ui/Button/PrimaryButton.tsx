@@ -73,19 +73,19 @@ function PrimaryButtonComponent({
   const pressed = useSharedValue(0);
   const isDisabled = disabled || loading;
 
-  // 3D press: button sinks down, shadow shrinks
+  // 3D press: button sinks down, shadow disappears, inner shadow appears
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateY: interpolate(pressed.value, [0, 1], [0, 2], Extrapolation.CLAMP) },
       { scale: interpolate(pressed.value, [0, 1], [1, 0.985], Extrapolation.CLAMP) },
     ],
-    // Shadow shrinks when pressed (button closer to surface)
+    // Shadow completely disappears when pressed deeply
     shadowOffset: {
       width: 0,
-      height: interpolate(pressed.value, [0, 1], [4, 1], Extrapolation.CLAMP),
+      height: interpolate(pressed.value, [0, 1], [4, 0], Extrapolation.CLAMP),
     },
-    shadowRadius: interpolate(pressed.value, [0, 1], [5, 2], Extrapolation.CLAMP),
-    shadowOpacity: interpolate(pressed.value, [0, 1], [0.24, 0.16], Extrapolation.CLAMP),
+    shadowRadius: interpolate(pressed.value, [0, 1], [5, 0], Extrapolation.CLAMP),
+    shadowOpacity: interpolate(pressed.value, [0, 1], [0.24, 0], Extrapolation.CLAMP),
   }));
 
   // Bottom highlight dims when pressed (light source effect)
@@ -97,8 +97,19 @@ function PrimaryButtonComponent({
     )
   }));
 
-  const highlightAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(pressed.value, [0, 1], [1, 0.3], Extrapolation.CLAMP),
+  // Unpressed state overlays (bottom shadow & highlight) disappear when pressed
+  const unpressedOverlayStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(pressed.value, [0, 1], [1, 0], Extrapolation.CLAMP),
+  }));
+
+  // Deep press overlay (top inner shadow) appears when pressed
+  const deepPressOverlayStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(pressed.value, [0, 1], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  // Bottom highlight shifts down to the very edge when the dark edge fades out
+  const bottomHighlightAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(pressed.value, [0, 1], [0, 5], Extrapolation.CLAMP) }]
   }));
 
   const handlePressIn = useCallback(() => {
@@ -142,28 +153,26 @@ function PrimaryButtonComponent({
         ) : (
           /* ACTIVE STATE — 3D button with gradient, glow border, inner shadows */
           <Animated.View style={[styles.shadowHost, buttonAnimatedStyle]}>
-            {/* Main button face — gradient #202020 → #0D0D0D */}
-            <LinearGradient
-              colors={['#202020', '#0d0d0d']}
-              locations={[0, 0.9018]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.buttonFace}
-            >
-              {/* Text */}
-              {loading ? (
-                <ActivityIndicator color={colors.white} size="small" />
-              ) : (
-                <RNText style={styles.textActive}>{title}</RNText>
-              )}
+            {/* Main button face container */}
+            <View style={styles.buttonFace}>
+              
+              {/* Unpressed Gradient Background */}
+              <LinearGradient
+                colors={['#202020', '#0d0d0d']}
+                locations={[0, 0.9018]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
 
-              {/* Inner shadow simulation: dark edge for recessed 3D depth */}
-              {/* Figma: inset -2px -4px 0px 1px rgba(0,0,0,1) */}
-              <View style={styles.darkEdgeOverlay} />
+              {/* Pressed Dark Matte Background */}
+              <Animated.View style={[styles.pressedDarkBackground, deepPressOverlayStyle]} />
+
+              {/* Unpressed Glow Border Overlay */}
+              <Animated.View style={[styles.glowBorder, unpressedOverlayStyle]} pointerEvents="none" />
 
               {/* Inner shadow simulation: bottom white highlight for 3D depth */}
-              {/* Figma: inset 0px -3px 4px 1px rgba(255,255,255,0.12) */}
-              <Animated.View style={[styles.bottomHighlight, highlightAnimatedStyle]}>
+              <Animated.View style={[styles.bottomHighlight, bottomHighlightAnimatedStyle]} pointerEvents="none">
                 <LinearGradient
                   colors={['transparent', 'rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.12)']}
                   locations={[0, 0.4, 1]}
@@ -172,7 +181,30 @@ function PrimaryButtonComponent({
                   style={styles.bottomHighlightGradient}
                 />
               </Animated.View>
-            </LinearGradient>
+
+              {/* Raised Dark Edge (Unpressed) */}
+              <Animated.View style={[styles.darkEdgeOverlay, unpressedOverlayStyle]} pointerEvents="none" />
+
+              {/* Deep Press Inner Shadow (Pressed) */}
+              <Animated.View style={[StyleSheet.absoluteFill, deepPressOverlayStyle]} pointerEvents="none">
+                {/* Sharp dark rim for the physical edge */}
+                <View style={styles.pressedInnerRim} />
+                {/* Soft gradient shadow for depth */}
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.8)', 'transparent']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={styles.pressedTopShadow}
+                />
+              </Animated.View>
+
+              {/* Text */}
+              {loading ? (
+                <ActivityIndicator color={colors.white} size="small" />
+              ) : (
+                <RNText style={styles.textActive}>{title}</RNText>
+              )}
+            </View>
           </Animated.View>
         )}
       </View>
@@ -228,8 +260,6 @@ const styles = StyleSheet.create({
   // Figma: stroke #FF9A6D 0.1px INSIDE, radius 8, padding 16
   buttonFace: {
     width: '100%',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 154, 109, 0.25)',
     borderRadius: 8,
     borderCurve: 'continuous',
     // Compensation for 3D depth: push content up and left to center on the raised face
@@ -240,6 +270,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+  },
+
+  // Glow border (orange tint) — only visible when unpressed
+  glowBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 154, 109, 0.25)',
+    borderRadius: 8,
+    borderCurve: 'continuous',
   },
 
   // Bottom highlight — simulates Figma inner shadow:
@@ -260,9 +299,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 7,
   },
 
-  // Dark edge bottom — simulates Figma inner shadow:
-  // inset -2px -4px 0px 1px rgba(0,0,0,1)
-  // Hard 1px black line at the very bottom (spread=1, blur=0)
+  // Raised dark edge bottom (Unpressed)
   darkEdgeOverlay: {
     ...StyleSheet.absoluteFillObject,
     borderBottomWidth: 5, // Spread 1 + offset 4 = 5px
@@ -270,6 +307,32 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     borderRadius: 8,
     borderCurve: 'continuous',
+  },
+
+  // Deep press flat dark background
+  pressedDarkBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#111111',
+    borderRadius: 8,
+  },
+
+  // Sharp inner rim for pressed state
+  pressedInnerRim: {
+    ...StyleSheet.absoluteFillObject,
+    borderTopWidth: 2,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 8,
+    borderCurve: 'continuous',
+  },
+
+  // Soft gradient shadow for depth
+  pressedTopShadow: {
+    width: '100%',
+    height: 16,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
 
   // Text — Figma: PlusJakartaSans-Medium 16px/24px #444444
