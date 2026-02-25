@@ -267,6 +267,7 @@ export default function WaitlistScreen() {
     joinWaitlist,
     isJoiningWaitlist,
     setReferralCharacter,
+    clearReferralCode,
     refresh,
     inviteCodeClaimed,
     claimInviteCode,
@@ -306,6 +307,7 @@ export default function WaitlistScreen() {
       });
     }
   }, [error?.code, router, isNavigating, transitionOpacity]);
+
 
   const displayName = userName || 'there';
   const submissionDate = status?.submissionDate ?? '';
@@ -659,7 +661,7 @@ export default function WaitlistScreen() {
             <ApplicationTimeline items={timelineItems} />
           </Animated.View>
 
-          {/* Progress & Invite Card - Frame 2095586389 (node 41:11242) */}
+          {/* Progress & Invite Card - Frame 2095586389 */}
           <Animated.View
             entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
             style={styles.inviteCard}
@@ -670,54 +672,54 @@ export default function WaitlistScreen() {
               total={totalSlots}
             />
 
-            <>
-              {/* Text Block - Frame 1686557332 (node 41:11250) */}
-              <View style={styles.inviteTextBlock}>
-                <Text style={styles.inviteLabel}>
-                  Have an Invite Code?
-                </Text>
-                <Text style={styles.inviteDescription}>
-                  Get priority access to the platform if you use a referral code
+            {referralApplied || inviteCodeClaimed ? (
+              // Success State - Frame 2095586525 (node 3099:27830)
+              <View style={styles.successBanner}>
+                <Text style={styles.successBannerText}>
+                  Kudos! You've been bumped up 🤌
                 </Text>
               </View>
+            ) : (
+              <>
+                {/* Text Block - Frame 1686557332 */}
+                <View style={styles.inviteTextBlock}>
+                  <Text style={styles.inviteLabel}>
+                    Have an Invite Code?
+                  </Text>
+                  <Text style={styles.inviteDescription}>
+                    Get priority access to the platform if you use a referral code
+                  </Text>
+                </View>
 
-              {/* Referral Code Input - gap 24 from text block (from inviteCard gap) */}
-              <ReferralCodeInput
-                code={referralCode}
-                onCharacterChange={setReferralCharacter}
-                error={referralError ?? undefined}
-                disabled={referralApplied}
-              />
+                {/* Referral Code Input */}
+                <ReferralCodeInput
+                  code={referralCode}
+                  onCharacterChange={setReferralCharacter}
+                  error={referralError ?? undefined}
+                  disabled={referralApplied}
+                />
 
-              {/* Hint text - only shown when there's an error */}
-              {referralError ? <Text style={styles.hintText}>{referralError}</Text> : null}
-
-              {referralApplied || inviteCodeClaimed ? (
-                <View style={styles.appliedReferralContainer}>
-                  <View style={styles.appliedButtonGroup}>
+                <View style={styles.buttonGroup}>
+                  {referralError ? (
+                    // Error State - button instance (node 3099:27758)
                     <PrimaryButton
-                      title="All Set"
-                      onPress={() => {}}
-                      disabled={true}
+                      title="Clear Code"
+                      onPress={clearReferralCode}
                       showDivider={true}
                     />
-                    <Text style={styles.appliedReferralText}>
-                      Kudos! You've been bumped up
-                    </Text>
-                  </View>
+                  ) : (
+                    // Default State
+                    <PrimaryButton
+                      title="Enter Invite Code"
+                      onPress={claimInviteCode}
+                      disabled={false}
+                      loading={isClaimingInviteCode}
+                      showDivider={true}
+                    />
+                  )}
                 </View>
-              ) : (
-                <View style={styles.buttonGroup}>
-                  <PrimaryButton
-                    title={referralError ? "Invalid Code" : "Enter Invite Code"}
-                    onPress={claimInviteCode}
-                    disabled={!!referralError}
-                    loading={isClaimingInviteCode}
-                    showDivider={true}
-                  />
-                </View>
-              )}
-            </>
+              </>
+            )}
           </Animated.View>
 
           {/* Benefits Card - Frame 2095586390 (node 41:11255) */}
@@ -907,15 +909,20 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // Hint text
-  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
-  hintText: {
-    fontFamily: FIGMA.typography.value.fontFamily,
-    fontSize: FIGMA.typography.value.fontSize,
-    lineHeight: FIGMA.typography.value.lineHeight,
-    color: FIGMA.colors.textHint,
+  successBanner: {
+    backgroundColor: FIGMA.colors.cardBackgroundSecondary, // #1A1A1A
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     width: '100%',
-    marginTop: spacing.sm,
+    alignItems: 'center',
+  },
+  successBannerText: {
+    fontFamily: FIGMA.typography.subtitle.fontFamily, // 'PlusJakartaSans-Regular'
+    fontSize: 14,
+    lineHeight: 20,
+    color: FIGMA.colors.textSecondary, // #A6A6A6
+    textAlign: 'center',
   },
 
   // Button group — Figma node 41:11554: gap 8px between divider and button
@@ -923,24 +930,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     gap: 8,
-  },
-
-  // Applied referral styles - Figma node 41:11764
-  appliedReferralContainer: {
-    width: '100%',
-    marginTop: spacing.md,
-  },
-  appliedButtonGroup: {
-    width: '100%',
-    alignItems: 'center',
-    gap: 16, // Figma node 41:11764: gap 16
-  },
-  appliedReferralText: {
-    fontFamily: FIGMA.typography.value.fontFamily,
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA.colors.textSecondary,
-    textAlign: 'center',
   },
 
   // Divider — 24x2, #4D4D4D, borderRadius 200

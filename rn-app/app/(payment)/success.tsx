@@ -29,12 +29,16 @@ import {
   Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path } from 'react-native-svg';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import Svg, { Path, Line } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
 import { DashedDivider } from '@/src/components/payment';
 import { useGenerateReceipt } from '@/src/hooks';
+import { buildReceiptHtml } from '@/src/utils/receiptHtml';
 import { colors } from '@/src/theme';
 
 // Exact Figma colors - from 41-9388 / 41-9563 blueprint extraction
@@ -83,21 +87,45 @@ const PerforatedEdge = () => {
   );
 };
 
+// Star decoration for stamps
+const Star = ({ color }: { color: string }) => (
+  <View style={styles.starIcon}>
+    <Svg width={8} height={8} viewBox="0 0 8 8" fill="none">
+      <Path
+        d="M4 0L5.236 2.404L7.804 2.764L5.902 4.636L6.382 7.236L4 6.13L1.618 7.236L2.098 4.636L0.196 2.764L2.764 2.404L4 0Z"
+        fill={color}
+      />
+    </Svg>
+  </View>
+);
+
+// Grid lines behind the card (Figma Vector 45)
+const GridLines = () => (
+  <View style={styles.gridContainer} pointerEvents="none">
+    <Svg width={369} height={235} viewBox="0 0 369 235" fill="none">
+      <Line x1={36.8} y1={0} x2={36.8} y2={235} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+      <Line x1={0} y1={36.8} x2={369} y2={36.8} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+      <Line x1={339.5} y1={0} x2={339.5} y2={235} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+      <Line x1={0} y1={197.8} x2={369} y2={197.8} stroke={FIGMA_COLORS.dividerColor} strokeWidth={0.3} />
+    </Svg>
+  </View>
+);
+
 // PAID Stamp Component - Inter ExtraBold per Figma
 const PaidStamp = () => (
   <View style={styles.stampContainer}>
     <View style={styles.stampOuter}>
       <View style={styles.stampInner}>
         <View style={styles.starsRow}>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
         </View>
-        <Text style={styles.stampText}>PAID</Text>
+        <Text style={styles.stampText}>paid</Text>
         <View style={styles.starsRow}>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
-          <Text style={styles.star}>*</Text>
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
+          <Star color={FIGMA_COLORS.stampColor} />
         </View>
       </View>
     </View>
@@ -109,11 +137,9 @@ const ReceiptIcon = () => (
   <View style={styles.hashIcon}>
     <Svg width={11} height={12} viewBox="0 0 11 12" fill="none">
       <Path
-        d="M1.5 4H9.5M1.5 8H9.5M3 1L2 11M8 1L7 11"
-        stroke={FIGMA_COLORS.iconColor}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M2.52285 7.33333L2.80313 4.66667L0 4.66667L0 3.33333L2.94327 3.33333L3.29362 0L4.63427 0L4.28393 3.33333L6.94327 3.33333L7.2936 0L8.63427 0L8.28393 3.33333L10.6667 3.33333L10.6667 4.66667L8.1438 4.66667L7.86353 7.33333L10.6667 7.33333L10.6667 8.66667L7.7234 8.66667L7.37307 12L6.0324 12L6.38273 8.66667L3.72339 8.66667L3.37305 12L2.03237 12L2.38271 8.66667L0 8.66667L0 7.33333L2.52285 7.33333ZM3.86353 7.33333L6.52287 7.33333L6.80313 4.66667L4.1438 4.66667L3.86353 7.33333Z"
+        fill={FIGMA_COLORS.iconColor}
+        fillRule="nonzero"
       />
     </Svg>
   </View>
@@ -158,6 +184,8 @@ export default function SuccessScreen() {
     cashback?: string;
     transactionId?: string;
     method?: string;
+    landlordName?: string;
+    utr?: string;
   }>();
 
   // Real values from params, with fallbacks for demo
@@ -166,6 +194,8 @@ export default function SuccessScreen() {
   const cashback = params.cashback ?? '350';
   const transactionId = params.transactionId ?? 'SEC12345678';
   const method = params.method ?? 'UPI (joel@oksbi)';
+  const landlordName = params.landlordName ?? '';
+  const utr = params.utr ?? '';
   const hasCashback = Number(cashback) > 0;
 
   useEffect(() => {
@@ -178,44 +208,51 @@ export default function SuccessScreen() {
     if (paymentId) {
       try {
         const receipt = await generateReceiptAsync(paymentId);
-        const receiptText = [
-          `Payment Receipt - ${receipt.receiptNumber}`,
-          '',
-          `Amount: \u20B9${receipt.payment.amount.toLocaleString('en-IN')}`,
-          `Date: ${new Date(receipt.payment.paidAt).toLocaleDateString('en-IN')}`,
-          `Transaction ID: ${receipt.payment.transactionId ?? transactionId}`,
-          `Method: ${receipt.payment.paymentMethod ?? method}`,
-          `Rent Month: ${receipt.payment.rentMonthDisplay}`,
-          '',
-          `Tenant: ${receipt.tenant.name}`,
-          `Property: ${receipt.property.address}`,
-          `Landlord: ${receipt.landlord.name}`,
-          '',
-          `Net Amount Paid: \u20B9${receipt.payment.netAmountPaid.toLocaleString('en-IN')}`,
-          receipt.payment.cashbackApplied > 0
-            ? `Cashback Applied: \u20B9${receipt.payment.cashbackApplied.toLocaleString('en-IN')}`
-            : '',
-          '',
-          `Receipt #: ${receipt.receiptNumber}`,
-          `${receipt.company.name}`,
-          `GSTIN: ${receipt.company.gstin}`,
-        ].filter(Boolean).join('\n');
+        const html = buildReceiptHtml({
+          receiptNumber: receipt.receiptNumber,
+          payment: {
+            amount: receipt.payment.amount,
+            netAmountPaid: receipt.payment.netAmountPaid,
+            pgFee: receipt.payment.pgFee,
+            cashbackApplied: receipt.payment.cashbackApplied,
+            cashbackEarned: receipt.payment.cashbackEarned,
+            paymentMethod: receipt.payment.paymentMethod,
+            paidAt: receipt.payment.paidAt,
+            rentMonthDisplay: receipt.payment.rentMonthDisplay,
+            utr: receipt.payment.utr ?? null,
+            timeliness: receipt.payment.timeliness ?? null,
+            transactionId: receipt.payment.transactionId,
+          },
+          tenant: receipt.tenant,
+          property: receipt.property,
+          landlord: {
+            name: receipt.landlord.name,
+            panMasked: receipt.landlord.panMasked ?? null,
+          },
+          agreement: {
+            certId: receipt.agreement?.certId ?? null,
+          },
+          company: receipt.company,
+        });
 
-        await Share.share({
-          message: receiptText,
-          title: `Receipt ${receipt.receiptNumber}`,
+        const { uri } = await Print.printToFileAsync({ html, base64: false });
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Receipt ${receipt.receiptNumber}`,
+          UTI: 'com.adobe.pdf',
         });
         return;
       } catch (err) {
         if (__DEV__) {
-          console.warn('Receipt generation failed, falling back to basic share:', err);
+          console.warn('PDF receipt generation failed, falling back to text share:', err);
         }
       }
     }
 
+    // Fallback to basic text share
     try {
       await Share.share({
-        message: `Payment Receipt\n\nAmount: \u20B9${amount}\nDate: ${new Date().toLocaleDateString()}\nTransaction ID: ${transactionId}\nMethod: ${method}`,
+        message: `Payment Receipt\n\nAmount: \u20B9${amount}\nDate: ${new Date().toLocaleDateString()}\nTransaction ID: ${utr || transactionId}\nMethod: ${method}`,
         title: 'Payment Receipt',
       });
     } catch (err) {
@@ -223,27 +260,37 @@ export default function SuccessScreen() {
         console.log('Share error:', err);
       }
     }
-  }, [paymentId, amount, transactionId, method, generateReceiptAsync]);
+  }, [paymentId, amount, transactionId, utr, method, generateReceiptAsync]);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Linking.openURL('mailto:support@flentsecured.com');
   }, []);
 
+  const insets = useSafeAreaInsets();
+  // Figma card Y is 183. Screen handles safe area, so we offset by 183 - safeAreaTop
+  const cardMarginTop = Math.max(0, 183 - insets.top);
+
   return (
     <Screen testID="success-screen" padded={false} style={styles.screen}>
       <View style={styles.container}>
         {/* Receipt Card */}
-        <View style={styles.receiptContainer}>
-          {/* Paperclip decoration */}
-          <View style={styles.paperclipContainer}>
-            <Paperclip />
-          </View>
+        <View style={[styles.receiptContainer, { marginTop: cardMarginTop }]}>
+          {/* Background grid lines */}
+          <GridLines />
 
           {/* Card with notches */}
-          <View style={styles.receiptCard}>
-            {/* Perforated top edge */}
-            <PerforatedEdge />
+          <View style={styles.cardShadowWrapper}>
+            <View style={styles.cardBackground} />
+            
+            {/* Paperclip decoration */}
+            <View style={styles.paperclipContainer}>
+              <Paperclip />
+            </View>
+
+            <View style={styles.receiptCardContent}>
+              {/* Perforated top edge */}
+              <PerforatedEdge />
 
             {/* Left notch */}
             <View style={[styles.notch, styles.notchLeft]} />
@@ -255,10 +302,13 @@ export default function SuccessScreen() {
               <PaidStamp />
             </View>
 
-            {/* Title - Figma: single text node with span, "Payment" white + "Succesful" orange */}
+            {/* Title - Figma: single text node with span */}
             <View style={styles.titleSection}>
-              <Text style={styles.titleWhite}>Payment</Text>
-              <Text style={styles.titleAccent}>Succesful</Text>
+              <Text style={styles.titleWhite}>
+                Payment
+                {'\n'}
+                <Text style={styles.titleAccent}>Succesful</Text>
+              </Text>
             </View>
 
             {/* Receipt Details */}
@@ -275,18 +325,31 @@ export default function SuccessScreen() {
 
               <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
 
-              <ReceiptRow label="Transaction ID" value={transactionId} />
+              <ReceiptRow label="Landlord" value={landlordName || 'N/A'} />
 
-              {/* Cashback section - 41-9388 vs 41-9563 */}
+              <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+
+              <ReceiptRow label="PAN Card" value="Pending" />
+
+              <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+
+              <ReceiptRow label="Agreement ID" value="Pending" />
+
+              <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+
+              <ReceiptRow label="Transaction ID" value={utr || transactionId} />
+
+              {/* Savings section - discount applied vs setup CTA */}
               {hasCashback ? (
-                <CashbackPill text={`\u20B9${cashback} cashback applied`} />
+                <CashbackPill text={`You saved \u20B9${cashback} with Flent`} />
               ) : (
-                <CashbackPill text="Pay by the 7th to earn cashback." />
+                <CashbackPill text="Complete setup to save 1% on rent" />
               )}
 
               <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
 
               <ReceiptRow label="Payable Rent" value={`\u20B9  ${amount}`} isPayableRent />
+            </View>
             </View>
           </View>
         </View>
@@ -306,10 +369,6 @@ export default function SuccessScreen() {
           <Text style={styles.settlementNote}>
             Settlement to your landlord will take 1-2 business days.
           </Text>
-
-          <TouchableOpacity onPress={handleContactSupport} style={styles.linkButton}>
-            <Text style={styles.linkText}>Contact Support</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Screen>
@@ -329,20 +388,40 @@ const styles = StyleSheet.create({
   receiptContainer: {
     position: 'relative',
     alignItems: 'center',
-    // Figma: card frame at y:183, top section at y:111
-    // With safe area ~59px, card offset from top section ~72px
-    marginTop: 12,
+    // margin top is handled via inline style from useSafeAreaInsets
+  },
+  // Background grid
+  gridContainer: {
+    position: 'absolute',
+    top: 0,
+    left: -49, // 49px to the left of the 270px card
+    width: 369,
+    height: 235,
+    zIndex: -1,
   },
   paperclipContainer: {
     position: 'absolute',
-    top: -20,
-    left: -16, // Offset from 40px padding to match card edge
+    top: -5,
+    left: 8,
     zIndex: 10,
   },
-  receiptCard: {
-    width: 270,                    // Figma: Frame 2095586361 width: 270
+  cardShadowWrapper: {
+    width: 270,
+    minHeight: 481,
+    // Add same shadows as Setup Dashboard (approximating Figma 3 layers)
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.15,
+    shadowRadius: 30,
+    elevation: 10,
+  },
+  cardBackground: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: FIGMA_COLORS.cardBackground,
-    borderRadius: 16,
+    borderRadius: 0, // Ticket style
+  },
+  receiptCardContent: {
+    flex: 1,
     padding: 24,
     paddingTop: 80,
     position: 'relative',
@@ -369,8 +448,7 @@ const styles = StyleSheet.create({
     height: 14,                    // Figma: Ellipse 21890/21891 height: 14
     borderRadius: 7,               // Circular (half of 14)
     backgroundColor: FIGMA_COLORS.background,
-    top: '50%',
-    marginTop: -7,                 // Center vertically (half of 14)
+    top: 256,                      // Absolute position from Figma
   },
   notchLeft: {
     left: -7,                      // Half inside, half outside (7 = 14/2)
@@ -409,14 +487,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 2,
   },
-  star: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 8,
-    color: FIGMA_COLORS.stampColor,
-    textAlign: 'center',
+  starIcon: {
+    width: 8,
+    height: 8,
   },
   stampText: {
-    fontFamily: 'Inter-ExtraBold',     // Figma: Inter fontWeight 800
+    fontFamily: 'PlusJakartaSans-Bold',     // Figma: Inter fontWeight 800
     fontSize: 13.51,                   // Figma: fontSize: 13.51
     lineHeight: 16.35,                 // Figma: lineHeightPx: 16.35
     color: FIGMA_COLORS.stampColor,
@@ -427,6 +503,7 @@ const styles = StyleSheet.create({
   // Title - Figma 41:9452: "Payment\nSuccesful", textAlign left, x:19, y:68
   titleSection: {
     marginBottom: 24,
+    marginLeft: 10,
     // Figma: text node at x:19 inside 270px card with 24px padding = left-aligned
   },
   titleWhite: {
@@ -519,6 +596,7 @@ const styles = StyleSheet.create({
     gap: 16,                           // Figma: itemSpacing: 16
     alignItems: 'center',
     paddingBottom: 24,
+    marginTop: 40,
   },
   settlementNote: {
     fontFamily: 'PlusJakartaSans-Regular',

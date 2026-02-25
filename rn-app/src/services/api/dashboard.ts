@@ -40,6 +40,8 @@ export interface DashboardTenancy {
   monthly_rent: number; // In rupees
   rent_due_day: number;
   lease_end_date: string | null;
+  lease_start_date: string | null;
+  agreement_cert_id: string | null;
   landlord_name: string;
   verification_status: TenancyVerificationStatus;
 }
@@ -55,10 +57,20 @@ export interface UpcomingPayment {
 }
 
 export interface CashbackBalance {
-  available_balance: number; // In rupees
-  pending_balance: number;
-  total_earned: number;
-  total_used: number;
+  // Instant discount model (new)
+  discount_rate: number;
+  max_discount_paise: number;
+  max_discount: number;
+  verification_complete: boolean;
+  total_savings_paise: number;
+  total_savings: number;
+  // Legacy (transition period)
+  legacy_wallet_balance: number;
+  // DEPRECATED — kept for backward compat during transition
+  available_balance?: number;
+  pending_balance?: number;
+  total_earned?: number;
+  total_used?: number;
 }
 
 /** Raw recent payment shape from edge function */
@@ -82,6 +94,17 @@ export interface Notification {
   read: boolean;
 }
 
+export interface DashboardPaymentStamps {
+  summary: {
+    on_time: number;
+    late: number;
+    missed: number;
+    pending: number;
+    total_months: number;
+  };
+  current_month_status: 'on_time' | 'late' | 'missed' | 'pending';
+}
+
 export interface DashboardData {
   user: DashboardUser;
   tenancy: DashboardTenancy | null;
@@ -90,6 +113,7 @@ export interface DashboardData {
   recent_payments: RawRecentPayment[];
   notifications: Notification[];
   unread_notification_count: number;
+  payment_stamps: DashboardPaymentStamps | null;
 }
 
 export interface DashboardResponse {

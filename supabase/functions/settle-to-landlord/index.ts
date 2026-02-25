@@ -16,12 +16,13 @@ import { createServiceClient, verifyServiceRole } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
+import { createBeneficiary, createTransfer, getTransferStatus, createSettlementAdjustment } from "../_shared/cashfree-payouts.ts";
 
 // ==============================================
 // CONFIGURATION
 // ==============================================
 
-const BATCH_SIZE = 50; // Max payments to process per invocation
+const BATCH_SIZE = 10; // Max payments to process per invocation (payout fraud control)
 
 // ==============================================
 // MAIN HANDLER
@@ -57,7 +58,9 @@ serve(async (req: Request) => {
       .from("payments")
       .select(`
         id, tenancy_id, user_id, rent_amount_paise, landlord_payout_paise,
+        total_amount_paise, flent_subsidy_paise,
         landlord_payout_status, payu_settlement_status, payu_txn_id,
+        payment_gateway, gateway_order_id, gateway_settlement_status,
         payment_month, paid_at,
         tenancy:tenancies(
           id, landlord_name, landlord_phone, property_address,
@@ -66,7 +69,7 @@ serve(async (req: Request) => {
       `)
       .eq("status", "success")
       .in("landlord_payout_status", ["pending", "ready"])
-      .eq("payu_settlement_status", "settled")
+      .or("payu_settlement_status.eq.settled,gateway_settlement_status.eq.settled")
       .order("paid_at", { ascending: true })
       .limit(BATCH_SIZE);
 
@@ -118,13 +121,40 @@ serve(async (req: Request) => {
       if (tenancy.landlord_bank_account_id) {
         const { data: bank } = await supabase
           .from("bank_accounts")
-          .select("id, account_holder_name, account_number_masked, ifsc_code, verified")
+          .select("id, account_holder_name, account_number_masked, ifsc_code, verified, cf_beneficiary_id")
           .eq("id", tenancy.landlord_bank_account_id)
           .single();
         bankAccount = bank;
       }
 
       const payoutAmountPaise = payment.landlord_payout_paise ?? payment.rent_amount_paise;
+
+      // Security check: payout must not exceed the original rent amount.
+      // With instant discount, total_amount_paise (net_rent + pg_fee) can be less than
+      // landlord_payout_paise (full rent), so we compare against rent_amount_paise instead.
+      const maxAllowedPayout = payment.rent_amount_paise;
+      if (payoutAmountPaise > maxAllowedPayout) {
+        console.error(
+          `[SECURITY] Payout ${payoutAmountPaise} exceeds rent amount ${maxAllowedPayout} for payment ${payment.id}`
+        );
+        await audit.logFailure(
+          "LANDLORD_PAYOUT_FAILED",
+          "security",
+          "PAYOUT_EXCEEDS_RENT",
+          `Payout ${payoutAmountPaise} exceeds rent amount ${maxAllowedPayout}`,
+          "payment",
+          payment.id,
+          { tenancy_id: tenancy?.id, payout_paise: payoutAmountPaise, rent_paise: maxAllowedPayout },
+        );
+        results.push({
+          payment_id: payment.id,
+          status: "failed",
+          amount_paise: payoutAmountPaise,
+          landlord_name: tenancy?.landlord_name ?? "Unknown",
+          error: "Payout exceeds rent amount",
+        });
+        continue;
+      }
 
       if (!bankAccount || !bankAccount.verified) {
         // Cannot process — bank not verified
@@ -160,8 +190,105 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // MVP: Log payout details for manual processing
-      // V2: Call payout API here (Cashfree Payouts / RazorpayX)
+      // Route to appropriate payout method based on gateway
+      if (payment.payment_gateway === 'cashfree') {
+        // Cashfree Payouts API
+        try {
+          // Check/create beneficiary
+          const beneficiaryId = bankAccount.cf_beneficiary_id;
+          if (!beneficiaryId) {
+            // Beneficiary must be pre-created during bank verification (verify-bank function).
+            // We cannot create one here because we only have the masked account number.
+            throw new Error(
+              `No Cashfree beneficiary found for bank account ${tenancy.landlord_bank_account_id}. ` +
+              `Re-verify the bank account to create the beneficiary.`
+            );
+          }
+
+          // Create transfer
+          const transferId = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
+          const transfer = await createTransfer({
+            transferId,
+            amount: payoutAmountPaise / 100, // Cashfree expects rupees
+            transferMode: "IMPS",
+            beneficiaryId,
+            remarks: `Rent payout for ${payment.payment_month}`,
+          });
+
+          // If there's a Flent subsidy (1% instant discount), create a settlement
+          // adjustment to cover the gap from merchant balance so landlord gets full rent.
+          const subsidyPaise = payment.flent_subsidy_paise ?? 0;
+          if (subsidyPaise > 0 && payment.gateway_order_id) {
+            try {
+              await createSettlementAdjustment(
+                payment.gateway_order_id,
+                subsidyPaise,
+                `Flent 1% instant discount subsidy for payment ${payment.id}`,
+              );
+              console.log(
+                `[CASHFREE_ADJUSTMENT] Created ${subsidyPaise} paise adjustment for payment ${payment.id}`
+              );
+            } catch (adjError) {
+              // Log but don't block the payout — adjustment can be retried or handled manually
+              console.error(
+                `[CASHFREE_ADJUSTMENT] Failed for payment ${payment.id}:`,
+                adjError,
+              );
+              await audit.logFailure(
+                "SETTLEMENT_ADJUSTMENT_FAILED",
+                "payment",
+                "CASHFREE_ADJUSTMENT_ERROR",
+                adjError instanceof Error ? adjError.message : "Adjustment API error",
+                "payment",
+                payment.id,
+                { subsidy_paise: subsidyPaise, order_id: payment.gateway_order_id },
+              );
+            }
+          }
+
+          // Update payment with payout details
+          await supabase
+            .from("payments")
+            .update({
+              landlord_payout_status: "processing",
+              landlord_payout_ref: transferId,
+              landlord_payout_initiated_at: new Date().toISOString(),
+              gateway_payout_id: transfer.transfer_id,
+              gateway_payout_status: transfer.status,
+            })
+            .eq("id", payment.id);
+
+          results.push({
+            payment_id: payment.id,
+            status: "processing",
+            amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name,
+          });
+          continue;
+        } catch (payoutError) {
+          console.error(`Cashfree payout failed for payment ${payment.id}:`, payoutError);
+
+          // Persist failure status to DB so it is not retried blindly
+          await supabase
+            .from("payments")
+            .update({
+              landlord_payout_status: "failed",
+              landlord_payout_error: payoutError instanceof Error ? payoutError.message : "Payout API error",
+            })
+            .eq("id", payment.id);
+
+          results.push({
+            payment_id: payment.id,
+            status: "failed",
+            amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name,
+            error: payoutError instanceof Error ? payoutError.message : "Payout API error",
+          });
+          continue;
+        }
+      }
+
+      // PayU path: existing manual logging (unchanged)
       const payoutRef = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
 
       console.log("[LANDLORD_PAYOUT] Ready for manual processing:", {

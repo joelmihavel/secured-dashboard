@@ -1,0 +1,199 @@
+{
+  "screenId": "41-9388",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Successful",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-25T05:31:44.263Z",
+  "checks": {
+    "nodeCount": 108,
+    "textNodeCount": 16,
+    "componentInstanceCount": 4,
+    "interactiveNodeCount": 1,
+    "imageAssetCount": 1,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 2095586361",
+      "Frame 2095586363",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "41:9403",
+        "name": "Amount paid",
+        "content": "Amount paid",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:9404",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "41:9410",
+        "name": "Date",
+        "content": "Date",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:9411",
+        "name": "4 Nov 2026",
+        "content": "4 Nov 2026",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "41:9417",
+        "name": "Method",
+        "content": "Method",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:9418",
+        "name": "UPI (joel@oksbi)",
+        "content": "UPI (joel@oksbi)",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "41:9424",
+        "name": "Transaction ID",
+        "content": "Transaction ID",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:9425",
+        "name": "SEC12345678",
+        "content": "SEC12345678",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "41:9427",
+        "name": "₹350 cashback applied",
+        "content": "₹350 cashback applied",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "41:9434",
+        "name": "Payable Rent",
+        "content": "Payable Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "41:9435",
+        "name": "₹ 32,175",
+        "content": "₹  32,175",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I41:9451;5:396",
+        "name": "Text here",
+        "content": "paid",
+        "fontSize": 13.511569023132324,
+        "fontWeight": 800,
+        "color": "#06C270"
+      },
+      {
+        "nodeId": "41:9452",
+        "name": "Payment Succesful",
+        "content": "Payment Succesful",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I41:9454;100:1565",
+        "name": "Text",
+        "content": "Download Receipt",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "41:9455",
+        "name": "Contact Support",
+        "content": "Contact Support",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I41:9459;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#06C270",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#4D4D4D",
+      "#878787",
+      "#A6A6A6",
+      "#A9A9A9",
+      "#CBCBCB",
+      "#DDDDDD",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      12,
+      16,
+      23,
+      24,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:23982",
+      "1:27996",
+      "597:3220",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      }
+    ]
+  }
+}

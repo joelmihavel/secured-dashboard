@@ -51,8 +51,10 @@ interface DashboardData {
     property_city: string | null;
     monthly_rent: number;
     rent_due_day: number;
+    lease_start_date: string | null;
     lease_end_date: string | null;
     landlord_name: string;
+    agreement_cert_id: string | null;
     verification_status: {
       bank_verified: boolean;
       utility_verified: boolean;
@@ -69,10 +71,14 @@ interface DashboardData {
     rent_month: string;
   } | null;
   cashback: {
-    available_balance: number;
-    pending_balance: number;
-    total_earned: number;
-    total_used: number;
+    discount_rate: number;
+    max_discount_paise: number;
+    max_discount: number;
+    verification_complete: boolean;
+    total_savings_paise: number;
+    total_savings: number;
+    // Legacy (transition period)
+    legacy_wallet_balance: number;
   };
   recent_payments: Array<{
     id: string;
@@ -93,6 +99,98 @@ interface DashboardData {
     read: boolean;
   }>;
   unread_notification_count: number;
+  payment_stamps: {
+    summary: {
+      on_time: number;
+      late: number;
+      missed: number;
+      pending: number;
+      total_months: number;
+    };
+    current_month_status: 'on_time' | 'late' | 'missed' | 'pending';
+  } | null;
+}
+
+// ==============================================
+// HELPERS: Payment Stamps
+// ==============================================
+
+function statusPriority(status: string): number {
+  switch (status) {
+    case 'success': return 3;
+    case 'processing': return 2;
+    case 'initiated': return 1;
+    default: return 0;
+  }
+}
+
+function computePaymentStamps(
+  tenancy: { lease_start_date: string; lease_end_date: string | null; rent_due_day: number },
+  payments: Array<{ payment_month: string; paid_at: string | null; status: string }>
+): DashboardData['payment_stamps'] {
+  const now = new Date();
+  const leaseStart = new Date(tenancy.lease_start_date);
+  const leaseEnd = tenancy.lease_end_date ? new Date(tenancy.lease_end_date) : null;
+
+  // Determine range: lease_start to min(lease_end, current_month)
+  const endDate = leaseEnd && leaseEnd < now ? leaseEnd : now;
+
+  const summary = { on_time: 0, late: 0, missed: 0, pending: 0, total_months: 0 };
+  let currentMonthStatus: 'on_time' | 'late' | 'missed' | 'pending' = 'pending';
+
+  // Build a map of payment_month -> payment for O(1) lookup
+  const paymentMap = new Map<string, { paid_at: string | null; status: string }>();
+  for (const p of payments) {
+    const monthKey = p.payment_month.slice(0, 7); // "YYYY-MM"
+    // Keep the "best" payment (success > processing > initiated)
+    const existing = paymentMap.get(monthKey);
+    if (!existing || statusPriority(p.status) > statusPriority(existing.status)) {
+      paymentMap.set(monthKey, p);
+    }
+  }
+
+  // Iterate each month from lease start to end
+  let cursor = new Date(leaseStart.getFullYear(), leaseStart.getMonth(), 1);
+  const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+
+  while (cursor <= endMonth) {
+    summary.total_months++;
+    const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    const dueDay = tenancy.rent_due_day;
+    const dueDate = new Date(cursor.getFullYear(), cursor.getMonth(), dueDay);
+    // Due cutoff: end of due_date in IST (UTC+05:30) = 18:29:59.999 UTC
+    const dueCutoff = new Date(dueDate);
+    dueCutoff.setUTCHours(18, 29, 59, 999);
+
+    const payment = paymentMap.get(monthKey);
+    const isCurrentMonth = cursor.getFullYear() === now.getFullYear() && cursor.getMonth() === now.getMonth();
+    const isFutureMonth = cursor > now;
+
+    let status: 'on_time' | 'late' | 'missed' | 'pending';
+
+    if (isFutureMonth || (isCurrentMonth && now <= dueCutoff)) {
+      if (payment?.status === 'success') {
+        status = new Date(payment.paid_at!) <= dueCutoff ? 'on_time' : 'late';
+      } else if (payment && ['processing', 'initiated'].includes(payment.status)) {
+        status = 'pending';
+      } else {
+        status = 'pending';
+      }
+    } else if (payment?.status === 'success') {
+      status = new Date(payment.paid_at!) <= dueCutoff ? 'on_time' : 'late';
+    } else if (payment && ['processing', 'initiated'].includes(payment.status)) {
+      status = 'pending';
+    } else {
+      status = 'missed';
+    }
+
+    summary[status]++;
+    if (isCurrentMonth) currentMonthStatus = status;
+
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+  }
+
+  return { summary, current_month_status: currentMonthStatus };
 }
 
 // ==============================================
@@ -140,8 +238,9 @@ serve(async (req: Request) => {
         .from("tenancies")
         .select(`
           id, status, property_address, property_city,
-          monthly_rent_paise, rent_due_day, lease_end_date,
-          landlord_name, bank_verified, utility_verified, landlord_approved
+          monthly_rent_paise, rent_due_day, lease_start_date, lease_end_date,
+          landlord_name, agreement_cert_id,
+          bank_verified, utility_verified, landlord_approved
         `)
         .eq("user_id", userId)
         .in("status", ["active", "pending_verification"])
@@ -149,14 +248,15 @@ serve(async (req: Request) => {
         .limit(1)
         .maybeSingle(),
 
-      // 3. Available cashback balance
-      supabase.rpc("get_available_cashback", { p_user_id: userId }),
-
-      // 4. Cashback stats (earned/used totals)
+      // 3. Total instant discount savings
       supabase
         .from("cashback_ledger")
-        .select("transaction_type, amount_paise")
-        .eq("user_id", userId),
+        .select("amount_paise")
+        .eq("user_id", userId)
+        .eq("transaction_type", "discount"),
+
+      // 4. Legacy wallet balance (transition period)
+      supabase.rpc("get_available_cashback", { p_user_id: userId }),
 
       // 5. Recent payments (last 5)
       supabase
@@ -182,11 +282,25 @@ serve(async (req: Request) => {
 
     const userProfile = userProfileResult.data;
     const tenancy = tenancyResult.data;
-    const availableBalance = cashbackBalanceResult.data ?? 0;
-    const cashbackStats = cashbackStatsResult.data ?? [];
+    const discountEntries = cashbackBalanceResult.data ?? [];
+    const legacyWalletBalance = cashbackStatsResult.data ?? 0;
     const payments = paymentsResult.data ?? [];
     const notifications = notificationsResult.data ?? [];
     const unreadCount = unreadCountResult.data ?? 0;
+
+    // ============================================
+    // PHASE 1.5: Fetch stamp payments (depends on tenancy)
+    // ============================================
+    let allTenancyPayments: any[] = [];
+    if (tenancy?.id) {
+      const { data: stampPayments } = await supabase
+        .from("payments")
+        .select("payment_month, paid_at, status")
+        .eq("tenancy_id", tenancy.id)
+        .in("status", ["success", "processing", "initiated"])
+        .order("payment_month", { ascending: true });
+      allTenancyPayments = stampPayments ?? [];
+    }
 
     // ============================================
     // PHASE 2: Dependent calculations
@@ -232,22 +346,15 @@ serve(async (req: Request) => {
       }
     }
 
-    // Calculate cashback summary
-    let totalEarned = 0;
-    let totalUsed = 0;
-    let pendingBalance = 0;
-
-    for (const entry of cashbackStats) {
-      if (entry.transaction_type === "earned" || entry.transaction_type === "bonus") {
-        totalEarned += entry.amount_paise;
-      } else if (entry.transaction_type === "applied") {
-        totalUsed += entry.amount_paise;
-      }
-    }
-
-    if (tenancy && (!tenancy.landlord_approved || !tenancy.utility_verified)) {
-      pendingBalance = availableBalance;
-    }
+    // Calculate savings summary (instant discount model)
+    const totalSavingsPaise = discountEntries.reduce(
+      (sum: number, e: { amount_paise: number }) => sum + e.amount_paise, 0
+    );
+    const legacyBalance = (legacyWalletBalance ?? 0) / 100;
+    const maxDiscountPaise = tenancy ? Math.floor(tenancy.monthly_rent_paise * 0.01) : 0;
+    const verificationComplete = tenancy
+      ? tenancy.bank_verified && tenancy.utility_verified && tenancy.landlord_approved
+      : false;
 
     // Format recent payments
     const recentPayments = payments.map((p: any) => ({
@@ -296,8 +403,10 @@ serve(async (req: Request) => {
             property_city: tenancy.property_city,
             monthly_rent: tenancy.monthly_rent_paise / 100,
             rent_due_day: tenancy.rent_due_day,
+            lease_start_date: tenancy.lease_start_date ?? null,
             lease_end_date: tenancy.lease_end_date,
             landlord_name: tenancy.landlord_name,
+            agreement_cert_id: tenancy.agreement_cert_id ?? null,
             verification_status: {
               bank_verified: tenancy.bank_verified,
               utility_verified: tenancy.utility_verified,
@@ -307,14 +416,20 @@ serve(async (req: Request) => {
         : null,
       upcoming_payment: upcomingPayment,
       cashback: {
-        available_balance: availableBalance / 100,
-        pending_balance: pendingBalance / 100,
-        total_earned: totalEarned / 100,
-        total_used: totalUsed / 100,
+        discount_rate: 0.01,
+        max_discount_paise: maxDiscountPaise,
+        max_discount: maxDiscountPaise / 100,
+        verification_complete: verificationComplete,
+        total_savings_paise: totalSavingsPaise,
+        total_savings: totalSavingsPaise / 100,
+        legacy_wallet_balance: legacyBalance,
       },
       recent_payments: recentPayments,
       notifications: formattedNotifications,
       unread_notification_count: unreadCount,
+      payment_stamps: tenancy?.lease_start_date
+        ? computePaymentStamps(tenancy, allTenancyPayments)
+        : null,
     };
 
     return jsonResponse(

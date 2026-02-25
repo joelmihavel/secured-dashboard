@@ -73,40 +73,77 @@ port = 54327
 vector_port = 54328
 
 [functions]
-# Edge function settings
+# All functions handle auth internally via getUser() — gateway JWT verification
+# is disabled because Supabase now issues ES256 user JWTs which the gateway's
+# HS256 verify_jwt check rejects. Each function validates auth in its own code.
+
 [functions.payment-webhook]
 verify_jwt = false
 
 [functions.initiate-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.verify-bank]
-verify_jwt = true
+verify_jwt = false
 
 [functions.verify-identity]
-verify_jwt = true
+verify_jwt = false
 
 [functions.auth-otp]
 verify_jwt = false
 
-# Document upload - handles auth internally
 [functions.upload-document]
 verify_jwt = false
 
-# Longer timeout for document processing
 [functions.process-document]
 verify_jwt = false
 
-# Confirm extraction - handles auth internally
 [functions.confirm-extraction]
 verify_jwt = false
 
-# Utility verification - JWT disabled for GET operators, POST handles auth internally
 [functions.verify-utility]
 verify_jwt = false
 
-# Invite code claiming - handles auth internally
 [functions.claim-invite-code]
+verify_jwt = false
+
+[functions.get-waitlist-status]
+verify_jwt = false
+
+[functions.dashboard-data]
+verify_jwt = false
+
+[functions.update-profile]
+verify_jwt = false
+
+[functions.calculate-cashback]
+verify_jwt = false
+
+[functions.get-payment-history]
+verify_jwt = false
+
+[functions.send-landlord-invite]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.generate-receipt]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.send-whatsapp]
+verify_jwt = false
+
+[functions.send-sms]
+verify_jwt = false
+
+[functions.landlord-approve]
+verify_jwt = false
+
+[functions.delete-auth-user]
 verify_jwt = false
 
 [edge_runtime]

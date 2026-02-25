@@ -48,6 +48,8 @@ const MOCK_DASHBOARD: DashboardData = {
     rent_due_day: 5,
     lease_end_date: '2027-03-31',
     landlord_name: 'Priya Sharma',
+    lease_start_date: '2026-01-01',
+    agreement_cert_id: 'FS-AGR-202601-A1B2C3D4',
     verification_status: {
       bank_verified: true,
       utility_verified: true,
@@ -76,6 +78,7 @@ const MOCK_DASHBOARD: DashboardData = {
   ],
   notifications: [],
   unread_notification_count: 2,
+  payment_stamps: null,
 };
 
 // ==============================================

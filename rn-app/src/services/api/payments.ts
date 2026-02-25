@@ -36,7 +36,6 @@ export interface InitiatePaymentRequest {
   upi_vpa?: string;
   card_token?: string;
   bank_code?: string;
-  apply_cashback?: boolean;
   rent_month: string; // YYYY-MM format
 }
 
@@ -57,11 +56,16 @@ export interface PayUParams {
   udf3: string;
 }
 
-export interface CashbackEligibility {
-  eligible: boolean;
+export interface CashfreeParams {
+  order_id: string;
+  payment_session_id: string;
+}
+
+export interface CashbackDiscount {
+  discount_paise: number;
+  discount_rupees: number;
+  verification_complete: boolean;
   reason: string | null;
-  max_cashback_paise: number;
-  wallet_balance_paise: number;
 }
 
 export interface InitiatePaymentData {
@@ -72,13 +76,15 @@ export interface InitiatePaymentData {
   cashback_applied_paise: number;
   total_paise: number;
   payment_method: PaymentMethod;
-  payu: PayUParams;
+  payu?: PayUParams;
+  cashfree?: CashfreeParams;
   intent_url?: string;
-  cashback_eligibility: CashbackEligibility;
+  cashback_discount: CashbackDiscount;
   original_rent_paise: number;
-  chargeable_rent_paise: number;
+  net_rent_paise: number;
   landlord_payout_paise: number;
   convenience_fee_paise: number;
+  verification_complete: boolean;
 }
 
 export interface InitiatePaymentResponse {
@@ -109,7 +115,9 @@ export interface PaymentHistoryItem {
   paid_at: string | null;
   /** Whether a receipt can be downloaded for this payment */
   can_download_receipt: boolean;
-  /** PayU settlement status */
+  /** Gateway settlement status */
+  settlement_status?: 'pending' | 'processing' | 'settled' | 'failed' | null;
+  /** PayU settlement status (legacy) */
   payu_settlement_status?: 'pending' | 'processing' | 'settled' | 'failed' | null;
   /** Landlord payout status */
   landlord_payout_status?: 'pending' | 'ready' | 'processing' | 'settled' | 'failed' | null;
@@ -286,6 +294,8 @@ interface RawReceiptData {
     rent_month: string;
     rent_month_display: string;
     paid_at: string;
+    utr: string | null;
+    timeliness: 'on_time' | 'late' | null;
   };
   tenant: {
     name: string;
@@ -299,6 +309,10 @@ interface RawReceiptData {
   landlord: {
     name: string;
     bank_account_masked: string | null;
+    pan_masked: string | null;
+  };
+  agreement: {
+    cert_id: string | null;
   };
   company: {
     name: string;
@@ -359,6 +373,8 @@ export interface ReceiptData {
     rentMonth: string;
     rentMonthDisplay: string;
     paidAt: string;
+    utr: string | null;
+    timeliness: 'on_time' | 'late' | null;
   };
   tenant: {
     name: string;
@@ -372,6 +388,10 @@ export interface ReceiptData {
   landlord: {
     name: string;
     bankAccountMasked: string | null;
+    panMasked: string | null;
+  };
+  agreement: {
+    certId: string | null;
   };
   company: {
     name: string;
@@ -467,12 +487,18 @@ function mapRawReceiptData(raw: RawReceiptData): ReceiptData {
       rentMonth: raw.payment.rent_month,
       rentMonthDisplay: raw.payment.rent_month_display,
       paidAt: raw.payment.paid_at,
+      utr: raw.payment.utr,
+      timeliness: raw.payment.timeliness,
     },
     tenant: raw.tenant,
     property: raw.property,
     landlord: {
       name: raw.landlord.name,
       bankAccountMasked: raw.landlord.bank_account_masked,
+      panMasked: raw.landlord.pan_masked,
+    },
+    agreement: {
+      certId: raw.agreement?.cert_id ?? null,
     },
     company: {
       name: raw.company.name,
@@ -923,7 +949,6 @@ export interface CreateScheduleRequest {
   tenancy_id: string;
   payment_method: PaymentMethod;
   scheduled_day: number;
-  auto_apply_cashback?: boolean;
   upi_vpa?: string;
   card_token?: string;
   bank_code?: string;
@@ -934,7 +959,6 @@ export interface PaymentSchedule {
   tenancy_id: string;
   payment_method: string;
   scheduled_day: number;
-  auto_apply_cashback: boolean;
   status: 'active' | 'paused' | 'cancelled';
   next_execution_date: string | null;
   monthly_rent_paise: number;
@@ -996,51 +1020,30 @@ export async function getPaymentSchedules(
 // CASHBACK HISTORY
 // ==============================================
 
-export interface CashbackEntry {
+export interface SavingsEntry {
   id: string;
-  transaction_type: 'earned' | 'redeemed' | 'reversed' | 'expired';
+  type: 'discount';
   amount_paise: number;
-  balance_after_paise: number;
-  description: string;
+  amount: number;
   payment_id: string | null;
-  tenancy_id: string | null;
+  description: string;
   created_at: string;
 }
 
-export interface CashbackHistoryData {
-  current_balance_paise: number;
-  entries: CashbackEntry[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    total_pages: number;
-    has_next: boolean;
-    has_previous: boolean;
-  };
+export interface SavingsHistoryData {
+  discount_rate: number;
+  total_savings_paise: number;
+  total_savings: number;
+  discount_count: number;
+  legacy_wallet_balance_paise: number;
+  legacy_wallet_balance: number;
+  history: SavingsEntry[];
 }
 
-export async function getCashbackHistory(
-  page = 1,
-  limit = 20,
-  filters?: { tenancy_id?: string; type?: string }
-): Promise<{ data: CashbackHistoryData | null; error: string | null }> {
-  const params = new URLSearchParams();
-  params.set('page', String(page));
-  params.set('limit', String(limit));
-  if (filters?.tenancy_id) params.set('tenancy_id', filters.tenancy_id);
-  if (filters?.type) params.set('type', filters.type);
-
-  const queryParams: Record<string, unknown> = {
-    page: String(page),
-    limit: String(limit),
-  };
-  if (filters?.tenancy_id) queryParams.tenancy_id = filters.tenancy_id;
-  if (filters?.type) queryParams.type = filters.type;
-
-  const { data, error } = await callEdgeFunction<{ data: CashbackHistoryData }>(
-    'get-cashback-history',
-    queryParams,
+export async function getSavingsHistory(): Promise<{ data: SavingsHistoryData | null; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{ data: SavingsHistoryData }>(
+    'calculate-cashback',
+    {},
     true,
     'GET'
   );
@@ -1054,8 +1057,10 @@ export async function getCashbackHistory(
 
 export interface CheckPaymentStatusResponse {
   payment_id: string;
-  status: 'pending' | 'initiated' | 'processing' | 'success' | 'failed' | 'refunded';
-  payu_verified: boolean;
+  status: 'pending' | 'initiated' | 'processing' | 'success' | 'failed' | 'refunded' | 'expired';
+  gateway_verified: boolean;
+  /** @deprecated Use gateway_verified */
+  payu_verified?: boolean;
   amount_paise: number;
   cashback_earned_paise: number;
   paid_at: string | null;
@@ -1102,6 +1107,48 @@ const DB_INTERNAL_PATTERNS = [
  * Strips database internals (column names, SQL, relation names) and
  * returns a safe, user-friendly message.
  */
+// ==============================================
+// PAYMENT STAMPS
+// ==============================================
+
+export interface PaymentStampEntry {
+  month: string;
+  month_display: string;
+  status: 'on_time' | 'late' | 'missed' | 'pending';
+  payment_id: string | null;
+  paid_at: string | null;
+  due_date: string;
+  days_late: number | null;
+  amount_paise: number | null;
+}
+
+export interface PaymentStampSummary {
+  total_months: number;
+  on_time: number;
+  late: number;
+  missed: number;
+  pending: number;
+}
+
+export interface PaymentStampsResponse {
+  stamps: PaymentStampEntry[];
+  summary: PaymentStampSummary;
+}
+
+export async function fetchPaymentStamps(
+  tenancyId: string
+): Promise<{ data: PaymentStampsResponse | null; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{ success: boolean; data: PaymentStampsResponse }>(
+    `get-payment-stamps?tenancy_id=${encodeURIComponent(tenancyId)}`,
+    {},
+    true,
+    'GET'
+  );
+  if (error) return { data: null, error };
+  if (!data?.success) return { data: null, error: 'Failed to fetch payment stamps' };
+  return { data: data.data, error: null };
+}
+
 export function sanitizeErrorForUI(errorMessage: string): string {
   if (!errorMessage) return 'Something went wrong. Please try again.';
 

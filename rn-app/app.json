@@ -111,17 +111,8 @@
           "username": "flent"
         }
       ],
-      "./plugins/withPayU",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "extraMavenRepos": [
-              "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android"
-            ]
-          }
-        }
-      ]
+      "./plugins/withCashfree",
+      "expo-build-properties"
     ],
     "updates": {
       "url": "https://u.expo.dev/YOUR_PROJECT_ID",

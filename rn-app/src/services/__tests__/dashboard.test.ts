@@ -47,6 +47,8 @@ function makeDashboardData(overrides: Partial<DashboardData> = {}): DashboardDat
       rent_due_day: 5,
       lease_end_date: '2027-03-31',
       landlord_name: 'Priya',
+      lease_start_date: '2026-01-01',
+      agreement_cert_id: 'FS-AGR-202601-A1B2C3D4',
       verification_status: {
         bank_verified: true,
         utility_verified: true,
@@ -80,6 +82,7 @@ function makeDashboardData(overrides: Partial<DashboardData> = {}): DashboardDat
     ],
     notifications: [],
     unread_notification_count: 0,
+    payment_stamps: null,
     ...overrides,
   };
 }

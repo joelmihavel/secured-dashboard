@@ -841,7 +841,7 @@ IMPORTANT:
 
   // Use Vertex AI Gemini endpoint
   // Note: Relies on Edge Function timeout (150s default, 400s on paid plans)
-  const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-2.5-flash:generateContent`;
+  const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent`;
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -960,7 +960,7 @@ IMPORTANT:
 
     // Note: Relies on Edge Function timeout (150s default, 400s on paid plans)
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

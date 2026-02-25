@@ -53,10 +53,15 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import Svg, { Path, Circle, Text as SvgText, G } from 'react-native-svg';
+import { useQuery } from '@tanstack/react-query';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { usePaymentHistory, useGenerateReceipt } from '@/src/hooks/usePayments';
+import { usePaymentHistory } from '@/src/hooks/usePayments';
+import { generateReceipt, ReceiptData } from '@/src/services/api/payments';
+import { buildReceiptHtml } from '@/src/utils/receiptHtml';
 import { colors } from '@/src/theme';
 
 // ===========================================
@@ -230,13 +235,32 @@ export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { data: historyData, isLoading } = usePaymentHistory();
-  const generateReceiptMutation = useGenerateReceipt();
 
   const transaction = useMemo(() => {
     const payments = historyData?.payments;
     if (!payments || !id) return null;
     return payments.find((t) => t.id === id) ?? null;
   }, [historyData, id]);
+
+  // Eagerly fetch receipt data for additional fields (landlord, PAN, agreement, UTR)
+  const receiptQuery = useQuery({
+    queryKey: ['receipt', id],
+    queryFn: async () => {
+      const { data, error } = await generateReceipt(id!);
+      if (error) throw new Error(error);
+      return data!;
+    },
+    enabled: !!transaction && transaction.status === 'success',
+    staleTime: 1000 * 60 * 30, // 30 min
+  });
+
+  // Derive display values (safe when transaction is null)
+  const isPaid = transaction?.status === 'success';
+  const formattedAmount = transaction ? formatRupees(transaction.amount) : '';
+  const formattedDate = transaction ? formatDate(transaction.created_at) : '';
+  const paymentMethod = transaction ? formatPaymentMethod(transaction.payment_method) : '';
+  const transactionId = transaction ? `SEC${transaction.id.slice(0, 8).toUpperCase()}` : '';
+  const totalPayable = transaction ? formatRupees(transaction.net_amount + transaction.pg_fee) : '';
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -248,21 +272,63 @@ export default function TransactionDetailScreen() {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    generateReceiptMutation.mutate(transaction.id, {
-      onSuccess: (receiptData) => {
-        const message =
-          `Receipt #${receiptData.receiptNumber}\n` +
-          `Amount: ${formatRupees(receiptData.payment.amount)}\n` +
-          `Date: ${formatDate(receiptData.payment.paidAt)}\n` +
-          `Status: ${receiptData.payment.status.toUpperCase()}\n\n` +
-          `Paid via Flent Secured`;
+    try {
+      // Use cached receipt data if available, otherwise fetch
+      let receipt: ReceiptData | undefined = receiptQuery.data ?? undefined;
+      if (!receipt) {
+        const { data, error } = await generateReceipt(transaction.id);
+        if (error || !data) {
+          // Fallback to text share
+          Share.share({
+            message: `Payment Receipt\nAmount: ${formattedAmount}\nDate: ${formattedDate}\nTransaction ID: ${transactionId}`,
+            title: 'Payment Receipt',
+          });
+          return;
+        }
+        receipt = data;
+      }
 
-        Share.share({ message, title: 'Payment Receipt' }).catch(() => {
-          // User cancelled share
-        });
-      },
-    });
-  }, [transaction, generateReceiptMutation]);
+      const html = buildReceiptHtml({
+        receiptNumber: receipt.receiptNumber,
+        payment: {
+          amount: receipt.payment.amount,
+          netAmountPaid: receipt.payment.netAmountPaid,
+          pgFee: receipt.payment.pgFee,
+          cashbackApplied: receipt.payment.cashbackApplied,
+          cashbackEarned: receipt.payment.cashbackEarned,
+          paymentMethod: receipt.payment.paymentMethod,
+          paidAt: receipt.payment.paidAt,
+          rentMonthDisplay: receipt.payment.rentMonthDisplay,
+          utr: receipt.payment.utr ?? null,
+          timeliness: receipt.payment.timeliness ?? null,
+          transactionId: receipt.payment.transactionId,
+        },
+        tenant: receipt.tenant,
+        property: receipt.property,
+        landlord: {
+          name: receipt.landlord.name,
+          panMasked: receipt.landlord.panMasked ?? null,
+        },
+        agreement: {
+          certId: receipt.agreement?.certId ?? null,
+        },
+        company: receipt.company,
+      });
+
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: `Receipt ${receipt.receiptNumber}`,
+        UTI: 'com.adobe.pdf',
+      });
+    } catch (_err) {
+      // Fallback to basic text share
+      Share.share({
+        message: `Payment Receipt\nAmount: ${formattedAmount}\nDate: ${formattedDate}`,
+        title: 'Payment Receipt',
+      });
+    }
+  }, [transaction, receiptQuery.data, formattedAmount, formattedDate, transactionId]);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -291,13 +357,6 @@ export default function TransactionDetailScreen() {
       </Screen>
     );
   }
-
-  const isPaid = transaction.status === 'success';
-  const formattedAmount = formatRupees(transaction.amount);
-  const formattedDate = formatDate(transaction.created_at);
-  const paymentMethod = formatPaymentMethod(transaction.payment_method);
-  const transactionId = `SEC${transaction.id.slice(0, 8).toUpperCase()}`;
-  const totalPayable = formatRupees(transaction.net_amount + transaction.pg_fee);
 
   return (
     <Screen testID="transaction-detail-screen" padded={false}>
@@ -355,13 +414,21 @@ export default function TransactionDetailScreen() {
               <TableDivider />
               <ReceiptRow label="Method" value={paymentMethod} />
               <TableDivider />
-              <ReceiptRow label="Transaction ID" value={transactionId} />
+              <ReceiptRow label="Landlord" value={receiptQuery.data?.landlord?.name ?? transaction.tenancy?.landlord_name ?? 'N/A'} />
+              <TableDivider />
+              <ReceiptRow label="PAN Card" value={receiptQuery.data?.landlord?.panMasked ?? 'Not provided'} />
+              <TableDivider />
+              <ReceiptRow label="Agreement ID" value={receiptQuery.data?.agreement?.certId ?? 'N/A'} />
+              <TableDivider />
+              <ReceiptRow label="Transaction ID" value={receiptQuery.data?.payment?.utr ?? transactionId} />
             </View>
 
-            {/* Cashback note */}
+            {/* Cashback pill */}
             <View style={styles.cashbackNote}>
               <Text style={styles.cashbackNoteText}>
-                Pay by the 7th to earn cashback.
+                {transaction.cashback_applied > 0
+                  ? `\u20B9${transaction.cashback_applied} cashback applied`
+                  : 'Pay by the 7th to earn cashback.'}
               </Text>
             </View>
 
@@ -445,9 +512,9 @@ export default function TransactionDetailScreen() {
         {/* === FOOTER: Download Receipt + Contact Support === */}
         <View style={styles.footer}>
           <PrimaryButton
-            title={generateReceiptMutation.isPending ? 'Generating...' : 'Download Receipt'}
+            title={receiptQuery.isLoading ? 'Loading...' : 'Download Receipt'}
             onPress={handleDownloadReceipt}
-            disabled={generateReceiptMutation.isPending}
+            disabled={receiptQuery.isLoading}
             testID="download-receipt-button"
           />
           <TouchableOpacity

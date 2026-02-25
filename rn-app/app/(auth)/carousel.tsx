@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Logo, Text } from '@/src/components';
+import { Screen, Logo, Text, DottedGridPattern, DottedGridPresets } from '@/src/components';
 import { CarouselDots } from '@/src/components';
 import { colors } from '@/src/theme';
 
@@ -44,7 +44,7 @@ const slides: Slide[] = [
     ],
     description: 'For every timely payment made via UPI, netbanking or credit cards.',
     descriptionColor: FIGMA_COLORS.bodyText,
-    backgroundShape: require('@/src/assets/figma-assets/1-28985_background-shape.png'),
+    backgroundShape: require('@/src/assets/figma-assets/684-3107_background-shape.png'),
     
   },
   {
@@ -55,7 +55,7 @@ const slides: Slide[] = [
     ],
     description: 'Keep paying via Secured to unlock exclusive renting benefits over time',
     descriptionColor: FIGMA_COLORS.bodyTextAlt,
-    backgroundShape: require('@/src/assets/figma-assets/1-29025_background-shape.png'),
+    backgroundShape: require('@/src/assets/figma-assets/684-3107_background-shape.png'),
     
   },
   {
@@ -69,7 +69,7 @@ const slides: Slide[] = [
     ],
     description: '3 months of rent payments unlock a free vacancy cover for your landlord',
     descriptionColor: FIGMA_COLORS.bodyTextAlt,
-    backgroundShape: require('@/src/assets/figma-assets/1-29065_background-shape.png'),
+    backgroundShape: require('@/src/assets/figma-assets/684-3107_background-shape.png'),
     
   },
 ];
@@ -112,7 +112,7 @@ export default function CarouselScreen() {
       {/* Background shape for this specific slide */}
       <Image
         source={item.backgroundShape}
-        style={[styles.backgroundShape, { left: sv(-44), top: 0, width: sv(481), height: sv(405) }]}
+        style={[styles.backgroundShape, { left: sv(-44), top: sv(-100), width: sv(481), height: sv(405), opacity: 0.48 }]}
         contentFit="fill"
       />
       {/* Outer Container (160:2668) */}
@@ -154,12 +154,8 @@ export default function CarouselScreen() {
 
   return (
     <Screen padded={false} testID="carousel-screen" safeAreaTop={false} safeAreaBottom={false} style={styles.screen}>
-      {/* Static Dotted Pattern Background */}
-      <Image
-        source={require('@/src/assets/figma-assets/1-28055_image-149.png')}
-        style={[styles.image149, { left: sv(-463), top: sv(-747), width: sv(1319), height: sv(2346) }]}
-        contentFit="fill"
-      />
+      {/* Static Dotted Pattern Background using DottedGridPattern */}
+      <DottedGridPattern {...DottedGridPresets.darkTheme} fadeMask={false} />
 
       <FlatList
         ref={flatListRef}
@@ -185,11 +181,6 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: colors.black[700],
     flex: 1,
-  },
-  image149: {
-    position: 'absolute',
-    opacity: 0.08,
-    transform: [{ rotate: '90deg' }], 
   },
   backgroundShape: {
     position: 'absolute',

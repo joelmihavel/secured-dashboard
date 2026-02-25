@@ -25,7 +25,7 @@ import { colors, typography } from '@/src/theme';
 
 // Set to true to bypass screen picker and go straight to the app
 // (useful during parity testing when auto-heal navigates via deep links)
-export const DISABLE_SCREEN_PICKER = true;
+export const DISABLE_SCREEN_PICKER = false;
 
 // Set to a route path to jump directly to that screen on launch (e.g. '/(auth)/splash')
 // The app will boot straight to this screen, bypassing the screen picker.

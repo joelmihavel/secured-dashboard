@@ -109,7 +109,9 @@ export default function HomeScreen() {
   // Redirect to agreement upload — the most likely next step for a user
   // without tenancy data. Using a specific route (not '/') avoids a
   // potential redirect loop if the journey router's API call fails.
+  // Skip in __DEV__ so the dev screen picker can access the dashboard freely.
   useEffect(() => {
+    if (__DEV__) return;
     if (!isLoading && dashboardState === 'no_tenancy') {
       router.replace('/(agreement)/upload' as never);
     }

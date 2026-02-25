@@ -1,7 +1,7 @@
 /**
  * Flent Secured v2 - Gemini AI Helper
  *
- * Uses Google's Vertex AI Gemini 2.5 Flash for intelligent matching and verification.
+ * Uses Google's Gemini 3 Flash for intelligent matching and verification.
  * Used for semantic name matching and address verification.
  */
 
@@ -14,7 +14,7 @@ const VERTEX_AI_PROJECT_ID = Deno.env.get("VERTEX_AI_PROJECT_ID") || "flent-ai-p
 const VERTEX_AI_LOCATION = Deno.env.get("VERTEX_AI_LOCATION") || "us-central1";
 
 // Gemini API endpoints
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent";
 
 // ==============================================
 // TYPES

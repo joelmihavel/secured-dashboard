@@ -16,38 +16,116 @@ exports[`DottedPattern renders correctly - agreement background shape 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={
@@ -251,38 +329,116 @@ exports[`DottedPattern renders correctly - carousel1 background shape 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={
@@ -486,38 +642,116 @@ exports[`DottedPattern renders correctly - carousel2 background shape 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={
@@ -721,38 +955,116 @@ exports[`DottedPattern renders correctly - carousel3 background shape 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={
@@ -956,38 +1268,116 @@ exports[`DottedPattern renders correctly - default (with shape) 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={
@@ -1191,38 +1581,116 @@ exports[`DottedPattern renders correctly - splash background shape 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={
@@ -1426,38 +1894,116 @@ exports[`DottedPattern renders correctly - without shape 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
 </View>
 `;
@@ -1478,38 +2024,116 @@ exports[`DottedPattern renders default shape key correctly 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={
@@ -1713,38 +2337,116 @@ exports[`DottedPattern renders with custom numeric image source 1`] = `
   }
 >
   <View
+    pointerEvents="none"
     style={
       {
-        "alignItems": "center",
-        "height": 2346,
-        "justifyContent": "center",
-        "left": -284.5,
-        "opacity": 0.08,
+        "bottom": 0,
+        "left": 0,
+        "overflow": "hidden",
         "position": "absolute",
-        "top": -506,
-        "width": 1319,
+        "right": 0,
+        "top": 0,
+        "zIndex": -1,
       }
     }
   >
-    <Image
-      resizeMode="cover"
-      source="dotted-pattern-image"
+    <RNSVGSvgView
+      bbHeight="100%"
+      bbWidth="100%"
+      focusable={false}
+      height="100%"
       style={
         [
           {
-            "height": 1319,
-            "width": 2346,
+            "backgroundColor": "transparent",
+            "borderWidth": 0,
           },
           {
-            "transform": [
-              {
-                "rotate": "90deg",
-              },
-            ],
+            "flex": 0,
+            "height": "100%",
+            "width": "100%",
           },
         ]
       }
-    />
+      width="100%"
+    >
+      <RNSVGGroup
+        fill={
+          {
+            "payload": 4278190080,
+            "type": 0,
+          }
+        }
+      >
+        <RNSVGDefs>
+          <RNSVGPattern
+            height={8}
+            matrix={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            name="dotted-pattern-1-8-0.2"
+            patternContentUnits={1}
+            patternTransform={
+              [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+              ]
+            }
+            patternUnits={1}
+            width={8}
+            x="0%"
+            y="0%"
+          >
+            <RNSVGCircle
+              cx={4}
+              cy={4}
+              fill={
+                {
+                  "payload": 4286212954,
+                  "type": 0,
+                }
+              }
+              fillOpacity={0.2}
+              propList={
+                [
+                  "fill",
+                  "fillOpacity",
+                ]
+              }
+              r={0.5}
+            />
+          </RNSVGPattern>
+        </RNSVGDefs>
+        <RNSVGRect
+          fill={
+            {
+              "brushRef": "dotted-pattern-1-8-0.2",
+              "type": 1,
+            }
+          }
+          height="100%"
+          propList={
+            [
+              "fill",
+            ]
+          }
+          width="100%"
+          x={0}
+          y={0}
+        />
+      </RNSVGGroup>
+    </RNSVGSvgView>
   </View>
   <View
     style={

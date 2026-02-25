@@ -13,7 +13,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import '../global.css';
 import { colors } from '@/src/theme';
-import { QueryProvider } from '@/src/providers';
+import { QueryProvider, AuthProvider } from '@/src/providers';
+import { DevNavigator } from '@/src/components/dev/DevNavigator';
 import { ErrorBoundary } from '@/src/components/ui';
 import { initSentry, wrapWithSentry } from '@/src/config/sentry';
 import { setupNotificationHandlers } from '@/src/services/notifications';
@@ -86,32 +87,35 @@ function RootLayoutInner() {
   return (
     <ErrorBoundary>
       <QueryProvider>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
-          <SafeAreaProvider>
-            <StatusBar style="light" backgroundColor={colors.black[700]} />
-            <OfflineBanner />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.black[700] },
-                animation: 'fade', // Smooth cross-fade transition to avoid flashes
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="error" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} /> {/* Auth still slides in */}
-              <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
-              <Stack.Screen name="(transactions)" />
-              <Stack.Screen name="(profile)" />
-              {/* Development only screens */}
-              {__DEV__ && <Stack.Screen name="(dev)" />}
-            </Stack>
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
+        <AuthProvider>
+          <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
+            <SafeAreaProvider>
+              <StatusBar style="light" backgroundColor={colors.black[700]} />
+              <OfflineBanner />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.black[700] },
+                  animation: 'fade', // Smooth cross-fade transition to avoid flashes
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="error" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} /> {/* Auth still slides in */}
+                <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
+                <Stack.Screen name="(transactions)" />
+                <Stack.Screen name="(profile)" />
+                {/* Development only screens */}
+                {__DEV__ && <Stack.Screen name="(dev)" />}
+              </Stack>
+              {__DEV__ && <DevNavigator />}
+            </SafeAreaProvider>
+          </GestureHandlerRootView>
+        </AuthProvider>
       </QueryProvider>
     </ErrorBoundary>
   );

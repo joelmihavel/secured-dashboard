@@ -27,26 +27,81 @@ if (!SUPABASE_ANON_KEY) {
 }
 
 /**
- * Custom storage adapter using expo-secure-store
- * Provides encrypted persistence for auth tokens
+ * Custom storage adapter using expo-secure-store with chunking.
+ *
+ * Expo Go limits SecureStore values to 2048 bytes. Supabase sessions
+ * (JWT + refresh token + user metadata) easily exceed this. This adapter
+ * splits large values across numbered chunks and reassembles on read,
+ * so sessions persist correctly in both Expo Go and development builds.
  */
+const CHUNK_SIZE = 1800; // leave headroom below the 2048-byte limit
+
 const ExpoSecureStoreAdapter = {
   getItem: async (key: string): Promise<string | null> => {
     try {
-      return await SecureStore.getItemAsync(key);
+      const first = await SecureStore.getItemAsync(key);
+      if (first === null) return null;
+
+      // Check if value was chunked
+      const countRaw = await SecureStore.getItemAsync(`${key}_chunks`);
+      if (!countRaw) return first; // single-chunk value
+
+      const count = parseInt(countRaw, 10);
+      const parts: string[] = [first];
+      for (let i = 1; i < count; i++) {
+        const chunk = await SecureStore.getItemAsync(`${key}_${i}`);
+        if (chunk === null) return null; // corrupted — treat as missing
+        parts.push(chunk);
+      }
+      return parts.join('');
     } catch {
       return null;
     }
   },
+
   setItem: async (key: string, value: string): Promise<void> => {
     try {
-      await SecureStore.setItemAsync(key, value);
+      // Clean up any previous chunks first
+      const oldCount = await SecureStore.getItemAsync(`${key}_chunks`);
+      if (oldCount) {
+        const n = parseInt(oldCount, 10);
+        for (let i = 1; i < n; i++) {
+          await SecureStore.deleteItemAsync(`${key}_${i}`);
+        }
+        await SecureStore.deleteItemAsync(`${key}_chunks`);
+      }
+
+      if (value.length <= CHUNK_SIZE) {
+        await SecureStore.setItemAsync(key, value);
+        return;
+      }
+
+      // Split into chunks
+      const chunks: string[] = [];
+      for (let i = 0; i < value.length; i += CHUNK_SIZE) {
+        chunks.push(value.slice(i, i + CHUNK_SIZE));
+      }
+
+      await SecureStore.setItemAsync(key, chunks[0]);
+      for (let i = 1; i < chunks.length; i++) {
+        await SecureStore.setItemAsync(`${key}_${i}`, chunks[i]);
+      }
+      await SecureStore.setItemAsync(`${key}_chunks`, String(chunks.length));
     } catch {
       console.error('SecureStore setItem failed:', key);
     }
   },
+
   removeItem: async (key: string): Promise<void> => {
     try {
+      const countRaw = await SecureStore.getItemAsync(`${key}_chunks`);
+      if (countRaw) {
+        const n = parseInt(countRaw, 10);
+        for (let i = 1; i < n; i++) {
+          await SecureStore.deleteItemAsync(`${key}_${i}`);
+        }
+        await SecureStore.deleteItemAsync(`${key}_chunks`);
+      }
       await SecureStore.deleteItemAsync(key);
     } catch {
       console.error('SecureStore removeItem failed:', key);
@@ -112,13 +167,8 @@ export async function callEdgeFunction<T = unknown>(
     if (requireAuth) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        return { data: null, error: 'Not authenticated' };
-      }
-
-      // Check if token is expired or about to expire (within 60s buffer)
-      const expiresAt = session.expires_at; // Unix timestamp in seconds
-      const now = Math.floor(Date.now() / 1000);
-      if (expiresAt && expiresAt - now < 60) {
+        // Session missing from cache — attempt refresh before failing
+        // (handles transient null during token refresh / background return)
         const { data: { session: refreshed }, error: refreshErr } =
           await supabase.auth.refreshSession();
         if (refreshErr || !refreshed?.access_token) {
@@ -126,7 +176,19 @@ export async function callEdgeFunction<T = unknown>(
         }
         headers['Authorization'] = `Bearer ${refreshed.access_token}`;
       } else {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+        // Check if token is expired or about to expire (within 60s buffer)
+        const expiresAt = session.expires_at; // Unix timestamp in seconds
+        const now = Math.floor(Date.now() / 1000);
+        if (expiresAt && expiresAt - now < 60) {
+          const { data: { session: refreshed }, error: refreshErr } =
+            await supabase.auth.refreshSession();
+          if (refreshErr || !refreshed?.access_token) {
+            return { data: null, error: 'Not authenticated' };
+          }
+          headers['Authorization'] = `Bearer ${refreshed.access_token}`;
+        } else {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
       }
     }
 

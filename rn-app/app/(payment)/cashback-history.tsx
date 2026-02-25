@@ -1,11 +1,11 @@
 /**
- * Cashback History Screen
+ * Savings History Screen (formerly Cashback History)
  *
- * Displays cashback balance summary and paginated transaction history.
- * Uses FlatList with onEndReached for infinite scroll.
+ * Displays total lifetime savings from 1% instant rent discount,
+ * and a list of per-payment discount entries.
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -19,8 +19,8 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text } from '@/src/components';
 import { useCashback } from '@/src/hooks';
-import { useCashbackHistory } from '@/src/hooks/usePayments';
-import type { CashbackEntry } from '@/src/services/api/payments';
+import { useSavingsHistory } from '@/src/hooks/usePayments';
+import type { SavingsEntry } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
 
 // ==============================================
@@ -34,10 +34,7 @@ const COLORS = {
   label: '#878787',
   value: '#CBCBCB',
   white: colors.white,
-  earned: '#4CAF50',
-  applied: colors.brand[500],
-  expired: '#878787',
-  reversed: '#2196F3',
+  savingsGreen: '#4CAF50',
   emptyText: '#A9A9A9',
 };
 
@@ -61,36 +58,7 @@ const BackArrowIcon = () => (
 // HELPERS
 // ==============================================
 
-function getEntryColor(type: CashbackEntry['transaction_type']): string {
-  switch (type) {
-    case 'earned':
-      return COLORS.earned;
-    case 'redeemed':
-      return COLORS.applied;
-    case 'expired':
-      return COLORS.expired;
-    case 'reversed':
-      return COLORS.reversed;
-    default:
-      return COLORS.value;
-  }
-}
-
-function getEntryPrefix(type: CashbackEntry['transaction_type']): string {
-  switch (type) {
-    case 'earned':
-    case 'reversed':
-      return '+';
-    case 'redeemed':
-    case 'expired':
-      return '-';
-    default:
-      return '';
-  }
-}
-
-function formatPaise(paise: number): string {
-  const rupees = Math.abs(paise) / 100;
+function formatRupees(rupees: number): string {
   return rupees.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
@@ -104,39 +72,39 @@ function formatDate(dateString: string): string {
 }
 
 // ==============================================
-// BALANCE CARD
+// SAVINGS SUMMARY CARD
 // ==============================================
 
-interface BalanceCardProps {
-  available: number;
-  totalEarned: number;
-  totalUsed: number;
+interface SavingsCardProps {
+  totalSavings: number;
+  discountCount: number;
+  discountRate: number;
   isLoading: boolean;
 }
 
-function BalanceCard({ available, totalEarned, totalUsed, isLoading }: BalanceCardProps) {
+function SavingsCard({ totalSavings, discountCount, discountRate, isLoading }: SavingsCardProps) {
   return (
     <View style={styles.balanceCard}>
       {isLoading ? (
         <ActivityIndicator size="small" color={COLORS.accent} />
       ) : (
         <>
-          <Text style={styles.balanceLabel}>Available Cashback</Text>
+          <Text style={styles.balanceLabel}>Total Savings with Flent</Text>
           <Text style={styles.balanceAmount}>
-            {'\u20B9'}{formatPaise(available)}
+            {'\u20B9'}{formatRupees(totalSavings)}
           </Text>
           <View style={styles.balanceRow}>
             <View style={styles.balanceStat}>
-              <Text style={styles.statLabel}>Total Earned</Text>
+              <Text style={styles.statLabel}>Payments</Text>
               <Text style={styles.statValue}>
-                {'\u20B9'}{formatPaise(totalEarned)}
+                {discountCount}
               </Text>
             </View>
             <View style={styles.balanceDivider} />
             <View style={styles.balanceStat}>
-              <Text style={styles.statLabel}>Total Used</Text>
+              <Text style={styles.statLabel}>Discount Rate</Text>
               <Text style={styles.statValue}>
-                {'\u20B9'}{formatPaise(totalUsed)}
+                {(discountRate * 100).toFixed(0)}%
               </Text>
             </View>
           </View>
@@ -150,21 +118,18 @@ function BalanceCard({ available, totalEarned, totalUsed, isLoading }: BalanceCa
 // HISTORY ITEM
 // ==============================================
 
-function HistoryItem({ entry }: { entry: CashbackEntry }) {
-  const entryColor = getEntryColor(entry.transaction_type);
-  const prefix = getEntryPrefix(entry.transaction_type);
-
+function HistoryItem({ entry }: { entry: SavingsEntry }) {
   return (
     <View style={styles.historyItem}>
-      <View style={[styles.historyDot, { backgroundColor: entryColor }]} />
+      <View style={[styles.historyDot, { backgroundColor: COLORS.savingsGreen }]} />
       <View style={styles.historyContent}>
         <Text style={styles.historyDescription} numberOfLines={2}>
           {entry.description}
         </Text>
         <Text style={styles.historyDate}>{formatDate(entry.created_at)}</Text>
       </View>
-      <Text style={[styles.historyAmount, { color: entryColor }]}>
-        {prefix}{'\u20B9'}{formatPaise(entry.amount_paise)}
+      <Text style={[styles.historyAmount, { color: COLORS.savingsGreen }]}>
+        -{'\u20B9'}{formatRupees(entry.amount)}
       </Text>
     </View>
   );
@@ -177,7 +142,7 @@ function HistoryItem({ entry }: { entry: CashbackEntry }) {
 function EmptyState() {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No cashback history yet</Text>
+      <Text style={styles.emptyText}>No savings yet. Complete setup to start saving 1% on rent.</Text>
     </View>
   );
 }
@@ -186,34 +151,27 @@ function EmptyState() {
 // MAIN COMPONENT
 // ==============================================
 
-export default function CashbackHistoryScreen() {
+export default function SavingsHistoryScreen() {
   const router = useRouter();
-  const { availableBalance, totalEarned, totalUsed, isLoading: isBalanceLoading } = useCashback();
-  const [page, setPage] = useState(1);
-  const { data: historyData, isLoading: isHistoryLoading } = useCashbackHistory(page, 20);
+  const { totalSavings, discountRate, isLoading: isBalanceLoading } = useCashback();
+  const { data: savingsData, isLoading: isHistoryLoading } = useSavingsHistory();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   }, [router]);
 
-  const handleEndReached = useCallback(() => {
-    if (historyData?.pagination?.has_next) {
-      setPage((prev) => prev + 1);
-    }
-  }, [historyData]);
-
   const renderItem = useCallback(
-    ({ item }: { item: CashbackEntry }) => <HistoryItem entry={item} />,
+    ({ item }: { item: SavingsEntry }) => <HistoryItem entry={item} />,
     []
   );
 
-  const keyExtractor = useCallback((item: CashbackEntry) => item.id, []);
+  const keyExtractor = useCallback((item: SavingsEntry) => item.id, []);
 
-  const entries = historyData?.entries ?? [];
+  const entries = savingsData?.history ?? [];
 
   return (
-    <Screen testID="cashback-history-screen" padded={false}>
+    <Screen testID="savings-history-screen" padded={false}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -225,7 +183,7 @@ export default function CashbackHistoryScreen() {
         >
           <BackArrowIcon />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cashback</Text>
+        <Text style={styles.headerTitle}>Savings</Text>
       </View>
 
       <FlatList
@@ -235,10 +193,10 @@ export default function CashbackHistoryScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <BalanceCard
-            available={availableBalance}
-            totalEarned={totalEarned}
-            totalUsed={totalUsed}
+          <SavingsCard
+            totalSavings={totalSavings}
+            discountCount={savingsData?.discount_count ?? 0}
+            discountRate={discountRate}
             isLoading={isBalanceLoading}
           />
         }
@@ -251,8 +209,6 @@ export default function CashbackHistoryScreen() {
           ) : null
         }
         ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.3}
       />
     </Screen>
   );
@@ -380,12 +336,14 @@ const styles = StyleSheet.create({
   emptyContainer: {
     paddingVertical: 48,
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   emptyText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
     color: COLORS.emptyText,
+    textAlign: 'center',
   },
   footerLoader: {
     paddingVertical: 16,

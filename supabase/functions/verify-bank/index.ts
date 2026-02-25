@@ -37,6 +37,7 @@ import {
   matchAgainstAgreementNames,
   calculateNameMatchScore,
 } from "../_shared/name-match-service.ts";
+import { createBeneficiary } from "../_shared/cashfree-payouts.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -285,6 +286,35 @@ serve(async (req: Request) => {
     if (insertError) {
       console.error("Failed to insert bank account:", insertError);
       throw new AppError("Failed to save bank account", "DB_ERROR", 500);
+    }
+
+    // Create Cashfree Payout beneficiary for verified bank accounts
+    // This is non-blocking — failure does NOT fail bank verification
+    if (bankAccount.verified) {
+      try {
+        const beneId = `BENE_${bankAccount.id.slice(0, 8)}_${Date.now().toString(36)}`;
+        const beneResult = await createBeneficiary({
+          beneficiaryId: beneId,
+          name: account_holder_name,
+          email: `landlord_${tenancy_id.slice(0, 8)}@flent.app`,
+          phone: "",
+          bankAccount: account_number,
+          ifsc: sanitizedIfsc,
+        });
+
+        await supabase
+          .from("bank_accounts")
+          .update({
+            cf_beneficiary_id: beneResult.beneficiary_id ?? beneId,
+            cf_beneficiary_status: "active",
+          })
+          .eq("id", bankAccount.id);
+
+        console.log(`[verify-bank] Created Cashfree beneficiary ${beneId} for bank account ${bankAccount.id}`);
+      } catch (beneError) {
+        // Non-fatal — beneficiary can be created later during payout
+        console.warn("[verify-bank] Failed to create Cashfree beneficiary (non-fatal):", beneError);
+      }
     }
 
     // Update tenancy verification status if landlord account verified

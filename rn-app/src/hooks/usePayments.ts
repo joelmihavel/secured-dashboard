@@ -19,7 +19,7 @@ import {
   createPaymentSchedule,
   managePaymentSchedule,
   getPaymentSchedules,
-  getCashbackHistory,
+  getSavingsHistory,
   verifyUpiVpa,
   InitiatePaymentRequest,
   InitiatePaymentData,
@@ -33,8 +33,10 @@ import {
   CreateScheduleRequest,
   PaymentSchedule,
   ManageScheduleRequest,
-  CashbackEntry,
-  CashbackHistoryData,
+  SavingsEntry,
+  SavingsHistoryData,
+  fetchPaymentStamps,
+  PaymentStampsResponse,
 } from '../services/api/payments';
 import { dashboardKeys } from './useDashboard';
 
@@ -49,6 +51,7 @@ export const paymentKeys = {
   receipt: (paymentId: string) => [...paymentKeys.all, 'receipt', paymentId] as const,
   schedules: () => [...paymentKeys.all, 'schedules'] as const,
   cashback: () => [...paymentKeys.all, 'cashback'] as const,
+  stamps: (tenancyId: string) => [...paymentKeys.all, 'stamps', tenancyId] as const,
 };
 
 // ==============================================
@@ -87,6 +90,24 @@ export function usePaymentHistory(
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+// ==============================================
+// PAYMENT STAMPS QUERY
+// ==============================================
+
+export function usePaymentStamps(tenancyId: string | undefined) {
+  return useQuery({
+    queryKey: paymentKeys.stamps(tenancyId ?? ''),
+    queryFn: async (): Promise<PaymentStampsResponse> => {
+      if (!tenancyId) throw new Error('No tenancy ID');
+      const { data, error } = await fetchPaymentStamps(tenancyId);
+      if (error) throw new Error(error);
+      return data!;
+    },
+    enabled: !!tenancyId,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 }
 
@@ -512,18 +533,14 @@ export function useSetDefaultPaymentMethod() {
 }
 
 // ==============================================
-// CASHBACK HISTORY HOOK
+// SAVINGS HISTORY HOOK (replaces cashback history)
 // ==============================================
 
-export function useCashbackHistory(
-  page = 1,
-  limit = 20,
-  filters?: { tenancy_id?: string; type?: string }
-) {
+export function useSavingsHistory() {
   return useQuery({
-    queryKey: [...paymentKeys.cashback(), page, limit, filters],
+    queryKey: [...paymentKeys.cashback(), 'savings'],
     queryFn: async () => {
-      const { data, error } = await getCashbackHistory(page, limit, filters);
+      const { data, error } = await getSavingsHistory();
       if (error) throw new Error(error);
       return data!;
     },

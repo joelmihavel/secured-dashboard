@@ -59,7 +59,6 @@ export interface PayUCheckoutResult {
 export interface InitiatePaymentParams {
   tenancyId: string;
   paymentMethod: 'upi' | 'card' | 'netbanking';
-  applyCashback: boolean;
   rentMonth: string;
   checkoutMode?: 'sdk' | 'seamless';
 }
@@ -70,12 +69,13 @@ export interface InitiatePaymentParams {
 
 const PAYU_MERCHANT_KEY = process.env.EXPO_PUBLIC_PAYU_KEY;
 
-// S7: No fallback key. Crash if missing in production.
-if (!PAYU_MERCHANT_KEY && !__DEV__) {
-  throw new Error(
-    'FATAL: EXPO_PUBLIC_PAYU_KEY environment variable is not set. ' +
-    'Cannot run payment system without merchant key.'
-  );
+function requirePayUKey(): string {
+  if (!PAYU_MERCHANT_KEY) {
+    throw new Error(
+      'EXPO_PUBLIC_PAYU_KEY not set. PayU payments unavailable.'
+    );
+  }
+  return PAYU_MERCHANT_KEY;
 }
 
 // ==============================================
@@ -134,7 +134,6 @@ export async function initiatePayUPayment(
   }>('initiate-payment', {
     tenancy_id: params.tenancyId,
     payment_method: params.paymentMethod,
-    apply_cashback: params.applyCashback,
     rent_month: params.rentMonth,
     checkout_mode: params.checkoutMode ?? 'sdk',
   }, true);

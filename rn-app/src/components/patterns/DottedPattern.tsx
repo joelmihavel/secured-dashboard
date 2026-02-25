@@ -22,7 +22,7 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, StyleSheet, Dimensions, Image, Animated as RNAnimated } from 'react-native';
 import Animated from 'react-native-reanimated';
 import Svg, {
   Defs,
@@ -34,11 +34,9 @@ import Svg, {
 
 import { colors } from '@/src/theme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { DottedGridPattern, DottedGridPresets } from './DottedGridPattern';
 
-// Figma exported images
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const dottedPatternImage = require('@/src/assets/images/image_149_dotted.png');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Screen-specific background shapes from Figma
 // Each screen has a unique silhouette/image in the "Background Shape" node
@@ -200,17 +198,8 @@ function DottedPatternComponent({
 
   return (
     <View style={styles.container} pointerEvents="none">
-      {/* image 149: Full-screen dotted pattern - rotated 90°, centered, 8% opacity */}
-      <View style={styles.dottedPatternContainer}>
-        <Image
-          source={dottedPatternImage}
-          style={[
-            styles.dottedPatternImage,
-            { transform: [{ rotate: '90deg' }] }
-          ]}
-          resizeMode="cover"
-        />
-      </View>
+      {/* High-performance generated Dotted Pattern */}
+      <DottedGridPattern {...DottedGridPresets.darkTheme} />
 
       {/* Background Shape: CENTER-TOP position (left-1/2, top-0), 40% opacity */}
       {/* Image is LARGER than container and offset per Figma: h-121.14% w-152.81% left--7.69% top--25.38% */}
@@ -225,7 +214,7 @@ function DottedPatternComponent({
           )}
           {animatedOpacityStyle ? (
              // @ts-ignore (Animated.Image supports style array)
-             <Animated.Image
+             <RNAnimated.Image
                source={backgroundShapeImage}
                style={[styles.shapeImage, getShapeStyle(backgroundShape), animatedOpacityStyle]}
                resizeMode="cover"
@@ -286,22 +275,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: -1,
     overflow: 'hidden',
-  },
-  // image 149: Figma shows container w-[1319px] h-[2346px] centered (left-1/2 top-1/2 -translate-x/y-1/2)
-  // The inner image is w-[2346px] h-[1319px] then rotate-90
-  dottedPatternContainer: {
-    position: 'absolute',
-    width: FIGMA.container.width,  // 1319px from Figma container
-    height: FIGMA.container.height, // 2346px from Figma container
-    left: (SCREEN_WIDTH - FIGMA.container.width) / 2,   // Center horizontally
-    top: (SCREEN_HEIGHT - FIGMA.container.height) / 2,  // Center vertically
-    opacity: FIGMA.image.opacity,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dottedPatternImage: {
-    width: FIGMA.image.width,   // 2346px (before rotation)
-    height: FIGMA.image.height, // 1319px (before rotation)
   },
   // Background Shape: CENTER-TOP position per Figma MCP (left-1/2 -translate-x-1/2 top-0)
   // 481x405px, 40% opacity, overflow-hidden to clip the larger image

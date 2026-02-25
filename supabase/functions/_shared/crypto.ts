@@ -336,6 +336,38 @@ export async function generateSDKHash(params: {
 }
 
 // ==============================================
+// CASHFREE HMAC-SHA256 (Base64 output)
+// ==============================================
+
+/**
+ * Computes HMAC-SHA256 with Base64 output.
+ * Cashfree webhook verification requires Base64 (NOT hex like PayU).
+ * Input: timestamp + rawBody
+ */
+export async function hmacSha256Base64(
+  message: string,
+  secret: string
+): Promise<string> {
+  const encoder = new TextEncoder();
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(message)
+  );
+
+  return arrayBufferToBase64(signature);
+}
+
+// ==============================================
 // UTILITY FUNCTIONS
 // ==============================================
 

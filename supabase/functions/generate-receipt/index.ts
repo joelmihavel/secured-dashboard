@@ -46,6 +46,8 @@ interface ReceiptData {
     rent_month: string;
     rent_month_display: string;
     paid_at: string;
+    utr: string | null;
+    timeliness: 'on_time' | 'late' | null;
   };
 
   tenant: {
@@ -64,6 +66,11 @@ interface ReceiptData {
   landlord: {
     name: string;
     bank_account_masked: string | null;
+    pan_masked: string | null;
+  };
+
+  agreement: {
+    cert_id: string | null;
   };
 
   tax: {
@@ -145,12 +152,13 @@ serve(async (req: Request) => {
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .select(`
-        id, payu_txn_id, payu_mihpayid,
+        id, payu_txn_id, payu_mihpayid, payu_bank_ref_num,
+        payment_gateway, gateway_payment_id, payment_method_details,
         amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
-        payment_method, status, rent_month, paid_at, created_at,
+        payment_method, status, rent_month, paid_at, created_at, due_date,
         tenancies (
           id, property_address, property_city, property_state, property_pincode,
-          landlord_name,
+          landlord_name, landlord_pan_masked, agreement_cert_id, rent_due_day,
           users!tenancies_user_id_fkey (
             first_name, last_name, phone
           ),
@@ -231,6 +239,8 @@ serve(async (req: Request) => {
         rent_month: payment.rent_month,
         rent_month_display: rentMonthDisplay,
         paid_at: payment.paid_at,
+        utr: resolveUtr(payment),
+        timeliness: computeTimeliness(payment.paid_at, payment.due_date, tenancy?.rent_due_day, payment.rent_month),
       },
 
       tenant: {
@@ -249,6 +259,11 @@ serve(async (req: Request) => {
       landlord: {
         name: tenancy?.landlord_name ?? "N/A",
         bank_account_masked: landlordBankMasked,
+        pan_masked: tenancy?.landlord_pan_masked ?? null,
+      },
+
+      agreement: {
+        cert_id: tenancy?.agreement_cert_id ?? null,
       },
 
       tax: taxData,
@@ -361,4 +376,49 @@ function formatPaymentMethod(method: string | null): string | null {
     wallet: "Wallet",
   };
   return methodMap[method.toLowerCase()] ?? method;
+}
+
+/**
+ * Resolves UTR (Unique Transaction Reference) from payment data.
+ * For Cashfree: bank_reference from payment_method_details, fallback to gateway_payment_id.
+ * For PayU: payu_bank_ref_num, fallback to payu_mihpayid.
+ */
+function resolveUtr(payment: any): string | null {
+  if (payment.payment_gateway === 'cashfree') {
+    const bankRef = payment.payment_method_details?.bank_reference;
+    return bankRef || payment.gateway_payment_id || null;
+  }
+  // PayU
+  return payment.payu_bank_ref_num || payment.payu_mihpayid || null;
+}
+
+/**
+ * Computes whether the payment was on time or late relative to the due date.
+ * Uses explicit due_date if available, otherwise derives from rent_due_day + rent_month.
+ * Due cutoff is end of day IST (23:59:59.999 IST = 18:29:59.999 UTC).
+ */
+function computeTimeliness(
+  paidAt: string | null,
+  dueDate: string | null,
+  rentDueDay: number | null,
+  rentMonth: string | null
+): 'on_time' | 'late' | null {
+  if (!paidAt) return null;
+
+  let dueDateObj: Date;
+  if (dueDate) {
+    dueDateObj = new Date(dueDate);
+  } else if (rentDueDay && rentMonth) {
+    const monthDate = new Date(rentMonth);
+    dueDateObj = new Date(monthDate.getFullYear(), monthDate.getMonth(), rentDueDay);
+  } else {
+    return null;
+  }
+
+  // Set due cutoff to end of day IST (23:59:59 IST = 18:29:59 UTC)
+  const dueCutoff = new Date(dueDateObj);
+  dueCutoff.setUTCHours(18, 29, 59, 999); // 23:59:59.999 IST
+
+  const paidDate = new Date(paidAt);
+  return paidDate <= dueCutoff ? 'on_time' : 'late';
 }

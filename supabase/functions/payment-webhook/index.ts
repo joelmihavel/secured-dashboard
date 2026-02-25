@@ -30,9 +30,6 @@ if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
   );
 }
 
-// Cashback configuration
-const CASHBACK_RATE = 0.01; // 1% cashback on rent payments
-
 // PayU status mapping - comprehensive list of all PayU statuses
 const PAYU_STATUS_MAP: Record<string, string> = {
   // Success statuses
@@ -334,30 +331,8 @@ serve(async (req: Request) => {
     if (isSuccess) {
       updateData.paid_at = new Date().toISOString();
 
-      // Calculate cashback earned using dynamic monthly cap (1% of agreement rent)
-      const monthlyRentPaise = tenancyData?.monthly_rent_paise ?? 0;
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-      const monthlyCap = Math.floor(monthlyRentPaise * CASHBACK_RATE);
-
-      // How much already earned this month
-      const { data: monthlyEarnings } = await supabase
-        .from('cashback_ledger')
-        .select('amount_paise')
-        .eq('user_id', userId!)
-        .eq('transaction_type', 'earned')
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString());
-
-      const earnedThisMonth = (monthlyEarnings || []).reduce((sum: number, e: { amount_paise: number }) => sum + e.amount_paise, 0);
-      const capRemaining = Math.max(0, monthlyCap - earnedThisMonth);
-
-      const cashbackEarnedPaise = Math.min(
-        Math.floor(payment.rent_amount_paise * CASHBACK_RATE),
-        capRemaining
-      );
-      updateData.cashback_earned_paise = cashbackEarnedPaise;
+      // In instant-discount model, cashback_earned_paise is deprecated (set to 0)
+      updateData.cashback_earned_paise = 0;
 
       // Queue landlord payout on success
       updateData.landlord_payout_status = 'pending';
@@ -392,41 +367,28 @@ serve(async (req: Request) => {
       throw new AppError("Failed to update payment - concurrent modification", "CONCURRENT_UPDATE", 409);
     }
 
-    // S16: Debit cashback on success (not at initiation) — intended_cashback_paise was stored but not debited
-    if (isSuccess && payment.intended_cashback_paise > 0 && userId) {
+    // Log instant discount as audit trail entry
+    if (isSuccess && payment.cashback_applied_paise > 0 && userId) {
       try {
-        const { data: currentBalance } = await supabase.rpc("get_cashback_balance", { p_user_id: userId });
         await supabase.from("cashback_ledger").insert({
           user_id: userId,
-          transaction_type: "applied",
-          amount_paise: payment.intended_cashback_paise,
-          balance_after_paise: (currentBalance ?? 0) - payment.intended_cashback_paise,
+          transaction_type: "discount",
+          amount_paise: payment.cashback_applied_paise,
+          balance_after_paise: 0,
           payment_id: payment.id,
           tenancy_id: payment.tenancy_id,
           reference_type: "payment",
           reference_id: payment.id,
-          description: `Cashback applied to rent payment`,
+          description: `1% instant discount on rent payment`,
         });
       } catch (e) {
-        console.error("Failed to debit cashback on success:", e);
+        console.error("Failed to log cashback discount:", e);
       }
-    }
-
-    // If successful, credit cashback
-    if (isSuccess && userId && (updateData.cashback_earned_paise as number) > 0) {
-      await creditCashback(
-        supabase,
-        userId,
-        updateData.cashback_earned_paise as number,
-        payment.id,
-        payment.tenancy_id,
-        payload.udf2 ?? "" // rent_month
-      );
     }
 
     // Send notifications
     if (isSuccess && userId) {
-      await sendPaymentSuccessNotification(supabase, userId, payment, updateData.cashback_earned_paise as number);
+      await sendPaymentSuccessNotification(supabase, userId, payment, payment.cashback_applied_paise ?? 0);
     } else if (newStatus === "failed" && userId) {
       await sendPaymentFailedNotification(supabase, userId, payment, payload.error_Message);
     }
@@ -470,49 +432,6 @@ serve(async (req: Request) => {
 });
 
 // ==============================================
-// CASHBACK CREDITING
-// ==============================================
-
-async function creditCashback(
-  supabase: ReturnType<typeof createServiceClient>,
-  userId: string,
-  amountPaise: number,
-  paymentId: string,
-  tenancyId: string,
-  rentMonth: string
-): Promise<void> {
-  try {
-    // Get current balance
-    const { data: currentBalance } = await supabase.rpc("get_cashback_balance", {
-      p_user_id: userId,
-    });
-
-    const newBalance = (currentBalance ?? 0) + amountPaise;
-
-    // Calculate expiry (90 days from now)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 90);
-
-    // Insert ledger entry
-    await supabase.from("cashback_ledger").insert({
-      user_id: userId,
-      transaction_type: "earned",
-      amount_paise: amountPaise,
-      balance_after_paise: newBalance,
-      payment_id: paymentId,
-      tenancy_id: tenancyId,
-      description: `1% cashback earned on rent payment for ${rentMonth}`,
-      expires_at: expiresAt.toISOString(),
-    });
-
-    console.log(`Credited ${amountPaise} paise cashback to user ${userId}`);
-  } catch (error) {
-    console.error("Failed to credit cashback:", error);
-    // Don't throw - cashback failure shouldn't fail the payment
-  }
-}
-
-// ==============================================
 // NOTIFICATIONS
 // ==============================================
 
@@ -520,7 +439,7 @@ async function sendPaymentSuccessNotification(
   supabase: ReturnType<typeof createServiceClient>,
   userId: string,
   payment: Record<string, unknown>,
-  cashbackEarnedPaise: number
+  savedPaise: number
 ): Promise<void> {
   try {
     // Get user details
@@ -533,7 +452,7 @@ async function sendPaymentSuccessNotification(
     if (!user) return;
 
     const amountRupees = ((payment.rent_amount_paise as number) / 100).toFixed(0);
-    const cashbackRupees = (cashbackEarnedPaise / 100).toFixed(0);
+    const savedRupees = (savedPaise / 100).toFixed(0);
     const firstName = user.full_name?.split(" ")[0] ?? "there";
 
     // Queue WhatsApp notification
@@ -542,7 +461,7 @@ async function sendPaymentSuccessNotification(
       notification_type: "whatsapp",
       payload: {
         to: user.phone,
-        body: `Hi ${firstName}, your rent payment of ₹${amountRupees} was successful! You earned ₹${cashbackRupees} cashback.`,
+        body: `Hi ${firstName}, your rent payment of ₹${amountRupees} was successful! You saved ₹${savedRupees} with Flent!`,
       },
       status: "pending",
     });
@@ -560,7 +479,7 @@ async function sendPaymentSuccessNotification(
         payload: {
           device_token: dt.token,
           title: "Payment Successful!",
-          body: `Rent payment of ₹${amountRupees} completed. +₹${cashbackRupees} cashback!`,
+          body: `Rent payment of ₹${amountRupees} completed. You saved ₹${savedRupees}!`,
           data: {
             type: "payment_success",
             payment_id: payment.id,

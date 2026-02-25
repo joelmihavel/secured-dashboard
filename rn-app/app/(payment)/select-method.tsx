@@ -45,6 +45,7 @@ import { BlurView } from 'expo-blur';
 import { Screen, PrimaryButton } from '@/src/components';
 import { useDashboard, useSavedPaymentMethods } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores/payment';
+import { getGatewayFeeRates } from '@/src/services/payment';
 import { getCurrentRentMonth } from '@/src/services/api/payments';
 import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
@@ -212,6 +213,7 @@ export default function SelectPaymentMethodScreen() {
   const router = useRouter();
   const { tenancy, upcomingPayment, cashback } = useDashboard();
   const storedAmount = usePaymentStore(state => state.amount);
+  const activeGateway = usePaymentStore(state => state.activeGateway);
   const { data: savedMethods, isLoading: isLoadingMethods } = useSavedPaymentMethods();
   const landlordApprovedInit = tenancy?.verification_status?.landlord_approved ?? false;
   const utilityVerifiedInit = tenancy?.verification_status?.utility_verified ?? false;
@@ -221,7 +223,6 @@ export default function SelectPaymentMethodScreen() {
 
   // Rent data from dashboard
   const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
-  const cashbackAvailable = cashback?.available_balance ?? 350;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
   const isOverdue = upcomingPayment?.is_overdue ?? false;
   const rentMonth = upcomingPayment?.rent_month ?? 'December 2025';
@@ -284,40 +285,47 @@ export default function SelectPaymentMethodScreen() {
       ? 'Available after utility bill verification'
       : undefined;
 
-  // Payment methods with proper data
-  const paymentMethods: PaymentMethod[] = useMemo(() => [
-    {
-      id: 'card-1',
-      type: 'card' as const,
-      title: 'Credit Card',
-      subtitle: hasSavedCard ? (getSavedMethodSubtitle('card') ?? '\u2022\u2022\u2022\u2022 2345') : null,
-      fee: `\u20B9325 fee`,
-      feeAmount: Math.round(rentAmount * 0.01),
-      isSetUp: hasSavedCard,
-      isDisabled: cardDisabled,
-      disabledReason: cardDisabledReason,
-    },
-    {
-      id: 'upi-1',
-      type: 'upi' as const,
-      title: 'UPI',
-      subtitle: hasSavedUpi ? (getSavedMethodSubtitle('upi') ?? '\u2022\u2022\u2022\u2022el@oksbi') : null,
-      fee: 'Free',
-      feeAmount: 0,
-      isSetUp: hasSavedUpi,
-    },
-    {
-      id: 'netbanking-1',
-      type: 'netbanking' as const,
-      title: 'Net Banking',
-      subtitle: hasSavedNetbanking
-        ? (getSavedMethodSubtitle('netbanking') ?? '\u2022\u2022\u2022\u2022 2345')
-        : null,
-      fee: `\u20B910 fee`,
-      feeAmount: 10,
-      isSetUp: hasSavedNetbanking,
-    },
-  ], [rentAmount, savedMethods, hasSavedCard, hasSavedUpi, hasSavedNetbanking, cardDisabled, cardDisabledReason]);
+  // Payment methods with proper data — fees driven by active gateway
+  const paymentMethods: PaymentMethod[] = useMemo(() => {
+    const rates = getGatewayFeeRates(activeGateway);
+    const cardFee = Math.round(rentAmount * rates.card);
+    const upiFee = Math.round(rentAmount * rates.upi);
+    const netbankingFee = Math.round(rentAmount * rates.netbanking);
+
+    return [
+      {
+        id: 'card-1',
+        type: 'card' as const,
+        title: 'Credit Card',
+        subtitle: hasSavedCard ? (getSavedMethodSubtitle('card') ?? '\u2022\u2022\u2022\u2022 2345') : null,
+        fee: `\u20B9${cardFee.toLocaleString('en-IN')} fee`,
+        feeAmount: cardFee,
+        isSetUp: hasSavedCard,
+        isDisabled: cardDisabled,
+        disabledReason: cardDisabledReason,
+      },
+      {
+        id: 'upi-1',
+        type: 'upi' as const,
+        title: 'UPI',
+        subtitle: hasSavedUpi ? (getSavedMethodSubtitle('upi') ?? '\u2022\u2022\u2022\u2022el@oksbi') : null,
+        fee: rates.upi === 0 ? 'Free' : `\u20B9${upiFee.toLocaleString('en-IN')} fee`,
+        feeAmount: upiFee,
+        isSetUp: hasSavedUpi,
+      },
+      {
+        id: 'netbanking-1',
+        type: 'netbanking' as const,
+        title: 'Net Banking',
+        subtitle: hasSavedNetbanking
+          ? (getSavedMethodSubtitle('netbanking') ?? '\u2022\u2022\u2022\u2022 2345')
+          : null,
+        fee: `\u20B9${netbankingFee.toLocaleString('en-IN')} fee`,
+        feeAmount: netbankingFee,
+        isSetUp: hasSavedNetbanking,
+      },
+    ];
+  }, [rentAmount, savedMethods, hasSavedCard, hasSavedUpi, hasSavedNetbanking, cardDisabled, cardDisabledReason, activeGateway]);
 
   const selectedPaymentMethod = paymentMethods.find(m => m.id === selectedMethod);
 
@@ -415,10 +423,10 @@ export default function SelectPaymentMethodScreen() {
               </View>
             </View>
 
-            {/* Cashback pill below the card - 1% of rent, capped at 1% of agreement rent per month */}
+            {/* Cashback pill below the card - 1% instant discount on every payment */}
             <View style={styles.cashbackRow}>
               <RNText style={styles.cashbackText}>
-                {`\uD83D\uDD12 Earn 1% cashback (up to \u20B9${Math.round(rentAmount * 0.01).toLocaleString('en-IN')}/mo)`}
+                {`\uD83D\uDCB0 1% instant cashback on every payment (save \u20B9${Math.round(rentAmount * 0.01).toLocaleString('en-IN')}/mo)`}
               </RNText>
             </View>
           </View>
@@ -449,12 +457,12 @@ export default function SelectPaymentMethodScreen() {
                   </RNText>
                 </View>
 
-                {/* Cashback earned text (all-setup variant) */}
-                {/* 1% of rent, capped at 1% of agreement rent per month */}
+                {/* Cashback savings text (all-setup variant) */}
+                {/* 1% instant discount on rent */}
                 {allSetUp && (
                   <View style={styles.cashbackEarnedRow}>
                     <RNText style={styles.cashbackEarnedText}>
-                      {`You'll earn up to \u20B9${Math.round(rentAmount * 0.01).toLocaleString('en-IN')} cashback (1% of rent)`}
+                      {`Save \u20B9${Math.round(rentAmount * 0.01).toLocaleString('en-IN')} instantly with 1% cashback on rent`}
                     </RNText>
                   </View>
                 )}
@@ -495,7 +503,7 @@ export default function SelectPaymentMethodScreen() {
                   <RNText style={styles.ctaSubtext}>
                     {allSetUp
                       ? "You'll see the final amount before payment"
-                      : 'Complete setup to unlock cashback on payments.'}
+                      : 'Complete setup to unlock 1% instant cashback.'}
                   </RNText>
                 </View>
               </View>

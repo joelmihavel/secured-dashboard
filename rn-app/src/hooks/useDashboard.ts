@@ -17,6 +17,7 @@ import {
   deriveCashbackEntries,
   MappedRecentPayment,
   MappedCashbackEntry,
+  DashboardPaymentStamps,
 } from '../services/api/dashboard';
 
 // ==============================================
@@ -110,6 +111,9 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     notifications: query.data?.notifications ?? [],
     unreadCount: query.data?.unread_notification_count ?? 0,
 
+    // Payment stamps
+    paymentStamps: query.data?.payment_stamps ?? null,
+
     // UI-mapped data for home screen components
     recentPayments: mappedRecentPayments,
     cashbackEntries: mappedCashbackEntries,
@@ -176,7 +180,7 @@ export function useVerificationStatus() {
 }
 
 /**
- * Hook to get cashback info
+ * Hook to get savings/cashback info (instant discount model)
  */
 export function useCashback() {
   const { cashback, isLoading, error } = useDashboard();
@@ -184,10 +188,12 @@ export function useCashback() {
   return {
     isLoading,
     error,
-    availableBalance: cashback?.available_balance ?? 0,
-    pendingBalance: cashback?.pending_balance ?? 0,
-    totalEarned: cashback?.total_earned ?? 0,
-    totalUsed: cashback?.total_used ?? 0,
-    hasBalance: (cashback?.available_balance ?? 0) > 0,
+    discountRate: cashback?.discount_rate ?? 0.01,
+    maxDiscountPaise: cashback?.max_discount_paise ?? 0,
+    maxDiscount: cashback?.max_discount ?? 0,
+    verificationComplete: cashback?.verification_complete ?? false,
+    totalSavingsPaise: cashback?.total_savings_paise ?? 0,
+    totalSavings: cashback?.total_savings ?? 0,
+    legacyWalletBalance: cashback?.legacy_wallet_balance ?? 0,
   };
 }

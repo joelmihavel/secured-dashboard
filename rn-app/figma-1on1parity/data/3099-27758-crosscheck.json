@@ -1,0 +1,137 @@
+{
+  "screenId": "3099-27758",
+  "screenName": "Frame 2095586389",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-25T02:08:06.335Z",
+  "checks": {
+    "nodeCount": 30,
+    "textNodeCount": 9,
+    "componentInstanceCount": 6,
+    "interactiveNodeCount": 1,
+    "imageAssetCount": 1,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#202020",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586334",
+      "Frame 1686557332",
+      "OTP",
+      "button"
+    ],
+    "textContents": [
+      {
+        "nodeId": "3099:27762",
+        "name": "18 / 150  members onboarded",
+        "content": "18 / 150  members onboarded",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "3099:27765",
+        "name": "Hint text",
+        "content": "This  release",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#797979"
+      },
+      {
+        "nodeId": "3099:27767",
+        "name": "Have an Invite Code?",
+        "content": "Have an Invite Code?",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "3099:27768",
+        "name": "Get priority access to the platform if you use a referral code",
+        "content": "Get priority access to the platform if you use a referral code",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "I3099:27769;50:331;1106:66617",
+        "name": "Text",
+        "content": "0",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I3099:27769;50:332;1106:66617",
+        "name": "Text",
+        "content": "A",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I3099:27769;50:333;1106:66617",
+        "name": "Text",
+        "content": "0",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I3099:27769;50:334;1106:66617",
+        "name": "Text",
+        "content": "A",
+        "fontSize": 48,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I3099:35956;100:1565",
+        "name": "Text",
+        "content": "Clear Code",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#1A1A1A",
+      "#202020",
+      "#222222",
+      "#4D4D4D",
+      "#797979",
+      "#878787",
+      "#CBCBCB",
+      "#CC7B57",
+      "#FF9A6D",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      16,
+      24,
+      48
+    ],
+    "componentIds": [
+      "2544:24194",
+      "2016:730",
+      "2714:6028"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "2714:6030"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "2714:6029"
+      }
+    ]
+  }
+}

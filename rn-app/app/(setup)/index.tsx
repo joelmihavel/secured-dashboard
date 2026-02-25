@@ -29,10 +29,12 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import {
   View,
+  Text as RNText,
   StyleSheet,
   Dimensions,
   FlatList,
   ViewToken,
+  Animated as RNAnimated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,6 +49,7 @@ import Animated, {
   Extrapolation,
   FadeIn,
   FadeInDown,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { DottedPattern } from '@/src/components/patterns';
@@ -69,21 +72,21 @@ interface SetupStep {
 const SETUP_STEPS: SetupStep[] = [
   {
     id: 'bank',
-    // Figma 160:3121: "Add your landlord's bank details to enable payouts"
-    description: "Add your landlord's\nbank details\nto enable payouts",
-    orangeEnd: 0, // No orange styling in Figma blueprint
+    // Figma 160:3121: "Add your landlord’s bank details to enable payouts"
+    description: 'Add your landlord’s\nbank details\nto enable payouts',
+    orangeEnd: 32, // "Add your landlord’s\nbank details"
   },
   {
     id: 'address',
     // Figma 160:3149: "Upload address proof to verify your tenancy"
     description: 'Upload\naddress proof\nto verify your tenancy',
-    orangeEnd: 0, // No orange styling in Figma blueprint
+    orangeEnd: 20, // "Upload\naddress proof"
   },
   {
     id: 'landlord',
     // Figma 160:3177: "Invite your landlord to finish setup"
     description: 'Invite your landlord\nto finish setup',
-    orangeEnd: 0, // No orange styling in Figma blueprint
+    orangeEnd: 20, // "Invite your landlord"
   },
 ];
 
@@ -92,10 +95,10 @@ const FIGMA = {
   // Screen
   screenWidth: 393,
 
-  // Carousel
+  // Carousel updated to standard Flickity style (no coverflow scaling)
   itemWidth: s(270),
-  itemGap: s(-23), // 270 - 247
-  snapInterval: s(247), // 270 + (-23)
+  itemGap: s(16),
+  snapInterval: s(286), // 270 + 16
 
   // Header frame (41:10824 / Frame 2095586400)
   // Position: x=48, y=124 from screen top
@@ -167,7 +170,7 @@ const FIGMA = {
   buttonWidth: s(313),
 
   // Active button uses PrimaryButton component (step 3)
-  buttonActiveText: 'Start Flenting',
+  buttonActiveText: 'Start Flenting \u2192',
   buttonActiveTextSize: sf(16),
   buttonActiveLineHeight: sf(24),
 } as const;
@@ -201,46 +204,59 @@ function Crosshatch({ x, y }: { x: number; y: number }) {
 
 // Setup card component - exact Figma structure from blueprint
 function SetupCard({ step }: { step: SetupStep }) {
-  const orangePart = step.description.substring(0, step.orangeEnd);
-  const grayPart = step.description.substring(step.orangeEnd);
+  // Split description based on orangeEnd
+  const isOrange = step.orangeEnd > 0;
+  const orangePart = isOrange ? step.description.substring(0, step.orangeEnd) : '';
+  const grayPart = isOrange ? step.description.substring(step.orangeEnd) : step.description;
 
   return (
-    <View style={styles.cardFrame}>
-      {/* Background rectangle - Figma 160:3102: 270x321 #202020 with shadows */}
-      <View style={styles.cardBackground} />
+    <View style={styles.cardShadowWrapper}>
+      <View style={styles.cardFrame}>
+        {/* Background rectangle - Figma 160:3102: 270x321 #202020 */}
+        <View style={styles.cardBackground} />
 
-      {/* Top perforations - 14 circles at y=-4, clipped by card overflow */}
-      {/* Figma: Ellipse 21892-21905, 14px circles, x: 4,24,44,...264 */}
-      {[...Array(FIGMA.perforationCount)].map((_, i) => (
-        <View
-          key={`perf-${i}`}
-          style={[
-            styles.perforation,
-            {
-              left: FIGMA.perforationStartX + i * FIGMA.perforationSpacing,
-              top: FIGMA.perforationY,
-            },
-          ]}
-        />
-      ))}
+        {/* Top perforations - 14 circles at y=-4, clipped by card overflow */}
+        {/* Figma: Ellipse 21892-21905, 14px circles, x: 4,24,44,...264 */}
+        {[...Array(FIGMA.perforationCount)].map((_, i) => (
+          <View
+            key={`perf-${i}`}
+            style={[
+              styles.perforation,
+              {
+                left: FIGMA.perforationStartX + i * FIGMA.perforationSpacing,
+                top: FIGMA.perforationY,
+              },
+            ]}
+          />
+        ))}
 
-      {/* Decorative crosshatch at top-left area */}
-      <Crosshatch x={FIGMA.crosshatch2X} y={FIGMA.crosshatch2Y} />
+        {/* Decorative crosshatch at top-left area */}
+        <Crosshatch x={FIGMA.crosshatch2X} y={FIGMA.crosshatch2Y} />
 
-      {/* Decorative crosshatch at top-right area */}
-      <Crosshatch x={FIGMA.crosshatch1X} y={FIGMA.crosshatch1Y} />
+        {/* Decorative crosshatch at top-right area */}
+        <Crosshatch x={FIGMA.crosshatch1X} y={FIGMA.crosshatch1Y} />
 
-      {/* Content frame - Figma 160:3118: x=34, y=118, 204px wide, column, gap=16 */}
-      <View style={styles.cardContent}>
-        {/* Card logo - Figma 160:3119: 26.7x32 white vector */}
-        <Logo size={FIGMA.cardLogoHeight} color={colors.white} />
+        {/* Content frame - Figma 160:3118: x=34, y=118, 204px wide, column, gap=16 */}
+        <View style={styles.cardContent}>
+          {/* Card logo - Figma 160:3119: 26.7x32 white vector */}
+          <Logo size={FIGMA.cardLogoHeight} color={colors.white} />
 
-        {/* Description text - Figma multi-color spans */}
-        {/* All text is #CBCBCB according to blueprint */}
-        <Text style={styles.cardDescText}>
-          {step.description}
-        </Text>
+          {/* Description text - Figma multi-color spans */}
+          <Text style={styles.cardDescText}>
+            {isOrange ? <RNText style={{ color: FIGMA.descAccentColor }}>{orangePart}</RNText> : null}
+            <RNText style={{ color: FIGMA.descBaseColor }}>{grayPart}</RNText>
+          </Text>
+        </View>
       </View>
+    </View>
+  );
+}
+
+// Carousel item component
+function CarouselSlide({ item }: { item: SetupStep }) {
+  return (
+    <View style={styles.slideContainer}>
+      <SetupCard step={item} />
     </View>
   );
 }
@@ -316,64 +332,13 @@ export default function SetupIndexScreen() {
     router.push('/(setup)/add-bank');
   }, [router]);
 
-  const scrollX = useSharedValue(initialStep * FIGMA.snapInterval);
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
-    },
-  });
+  const scrollX = useRef(new RNAnimated.Value(initialStep * FIGMA.snapInterval)).current;
 
   const renderItem = useCallback(
-    ({ item, index }: { item: SetupStep; index: number }) => {
-      // Each item is spaced by snapInterval = 247
-      // Position calculation:
-      // index * snapInterval = the exact scrollX when this item is centered
-      const inputRange = [
-        (index - 1) * FIGMA.snapInterval,
-        index * FIGMA.snapInterval,
-        (index + 1) * FIGMA.snapInterval,
-      ];
-
-      const animatedStyle = useAnimatedStyle(() => {
-        // Active item scale = 1.0, adjacent item scale = 0.8
-        const scale = interpolate(
-          scrollX.value,
-          inputRange,
-          [0.8, 1, 0.8],
-          Extrapolation.CLAMP
-        );
-        // Translate Y to match Figma: Right/Left items are 92px lower down
-        // Since scale=0.8 reduces height from 321 to 256.8, the top edge drops by 32.1px naturally
-        // We need an additional translateY of 92.1 - 32.1 = 60px
-        const translateY = interpolate(
-          scrollX.value,
-          inputRange,
-          [s(60), 0, s(60)],
-          Extrapolation.CLAMP
-        );
-        
-        // Hide items further out to avoid crowding edges
-        const opacity = interpolate(
-          scrollX.value,
-          inputRange,
-          [0.6, 1, 0.6],
-          Extrapolation.CLAMP
-        );
-
-        return {
-          opacity,
-          transform: [{ translateY }, { scale }],
-        };
-      });
-
-      return (
-        <Animated.View style={[styles.slideContainer, animatedStyle]}>
-          <SetupCard step={item} />
-        </Animated.View>
-      );
-    },
-    [scrollX]
+    ({ item }: { item: SetupStep }) => (
+      <CarouselSlide item={item} />
+    ),
+    []
   );
 
   // Figma layout uses absolute positions from screen top.
@@ -388,43 +353,34 @@ export default function SetupIndexScreen() {
   // Card bottom to pagination = 673 - (322+321) = 30
   const cardToPaginationGap = FIGMA.paginationY - (FIGMA.cardY + FIGMA.cardHeight);
   // Pagination bottom to button = 739 - (673+8) = 58
-      const paginationToButtonGap = FIGMA.buttonY - (FIGMA.paginationY + FIGMA.dotSize);
-  
-      // Crossfading background shapes based on scroll position
-      const bgShapeOpacity1 = useAnimatedStyle(() => ({
-        opacity: interpolate(
-          scrollX.value,
-          [0, FIGMA.snapInterval],
-          [1, 0],
-          Extrapolation.CLAMP
-        ),
-      }));
-      const bgShapeOpacity2 = useAnimatedStyle(() => ({
-        opacity: interpolate(
-          scrollX.value,
-          [0, FIGMA.snapInterval, FIGMA.snapInterval * 2],
-          [0, 1, 0],
-          Extrapolation.CLAMP
-        ),
-      }));
-      const bgShapeOpacity3 = useAnimatedStyle(() => ({
-        opacity: interpolate(
-          scrollX.value,
-          [FIGMA.snapInterval, FIGMA.snapInterval * 2],
-          [0, 1],
-          Extrapolation.CLAMP
-        ),
-      }));
-  
-      return (
+  const paginationToButtonGap = FIGMA.buttonY - (FIGMA.paginationY + FIGMA.dotSize);
+
+  // Crossfading background shapes based on scroll position
+  const bgShapeOpacity1 = scrollX.interpolate({
+    inputRange: [0, FIGMA.snapInterval],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const bgShapeOpacity2 = scrollX.interpolate({
+    inputRange: [0, FIGMA.snapInterval, FIGMA.snapInterval * 2],
+    outputRange: [0, 1, 0],
+    extrapolate: 'clamp',
+  });
+  const bgShapeOpacity3 = scrollX.interpolate({
+    inputRange: [FIGMA.snapInterval, FIGMA.snapInterval * 2],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  return (
       <Screen testID="setup-index-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
         {/* Background Pattern - DottedPattern component with crossfading shapes */}
-        <DottedPattern showShape={true} backgroundShape="postapproval1" animatedOpacityStyle={bgShapeOpacity1} />
+        <DottedPattern showShape={true} backgroundShape="postapproval1" animatedOpacityStyle={{ opacity: bgShapeOpacity1 }} />
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <DottedPattern showShape={true} backgroundShape="postapproval2" animatedOpacityStyle={bgShapeOpacity2} />
+          <DottedPattern showShape={true} backgroundShape="postapproval2" animatedOpacityStyle={{ opacity: bgShapeOpacity2 }} />
         </View>
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <DottedPattern showShape={true} backgroundShape="postapproval3" animatedOpacityStyle={bgShapeOpacity3} />
+          <DottedPattern showShape={true} backgroundShape="postapproval3" animatedOpacityStyle={{ opacity: bgShapeOpacity3 }} />
         </View>
 
         <View style={[styles.container, { paddingTop: Math.max(0, headerPaddingTop) }]}>
@@ -437,9 +393,9 @@ export default function SetupIndexScreen() {
             <Logo size={FIGMA.headerLogoHeight} color={colors.white} />
 
             {/* Title - Figma 160:3095: 310px wide, fontSize 32, lineHeight 48 */}
-            {/* Note: Figma blueprint shows no style overrides (all white text) */}
             <Text style={styles.titleText}>
-              Let's get{"\n"}you set up
+              <RNText style={{ color: FIGMA.titleGrayColor }}>Let's get{"\n"}</RNText>
+              <RNText style={{ color: FIGMA.titleAccentColor }}>you set up</RNText>
             </Text>
           </Animated.View>
 
@@ -448,14 +404,17 @@ export default function SetupIndexScreen() {
             entering={FadeInDown.delay(200).duration(400)}
             style={[styles.carouselContainer, { marginTop: titleToCardGap }]}
           >
-            <Animated.FlatList
+            <RNAnimated.FlatList
               ref={flatListRef as any}
               data={SETUP_STEPS}
               renderItem={renderItem}
               keyExtractor={(item: SetupStep) => item.id}
               horizontal
               showsHorizontalScrollIndicator={false}
-              onScroll={scrollHandler}
+              onScroll={RNAnimated.event(
+                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                { useNativeDriver: true }
+              )}
               scrollEventThrottle={16}
               snapToInterval={FIGMA.snapInterval}
               decelerationRate="fast"
@@ -499,7 +458,7 @@ export default function SetupIndexScreen() {
               />
             ) : (
               <PrimaryButton
-                title="Start Flenting"
+                title={'Start Flenting \u2192'}
                 onPress={handleStartFlenting}
                 disabled
                 testID="start-flenting-button"
@@ -540,18 +499,24 @@ const styles = StyleSheet.create({
     height: FIGMA.cardHeight, // 321
   },
 
-  // Coverflow items: width is cardWidth, and gap is handled via negative margin
+  // Flickity-style items: width is cardWidth, and gap is handled via positive margin
   slideContainer: {
     width: FIGMA.itemWidth, // 270
-    marginRight: FIGMA.itemGap, // -23
+    marginRight: FIGMA.itemGap, // 16
   },
 
   // Card outer frame - Figma 160:3101
-  // 270x321, overflow hidden to clip perforations
+  // 270x321, no overflow hidden so shadow can render
+  cardShadowWrapper: {
+    width: FIGMA.cardWidth,
+    height: FIGMA.cardHeight,
+  },
+
+  // Card outer frame - Figma 160:3101
+  // 270x321, no overflow hidden so shadow can render
   cardFrame: {
     width: FIGMA.cardWidth, // 270
     height: FIGMA.cardHeight, // 321
-    overflow: 'hidden',
   },
 
   // Card background rectangle - Figma 160:3102
@@ -559,12 +524,16 @@ const styles = StyleSheet.create({
   cardBackground: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: FIGMA.cardBgColor, // #202020
-    // Figma shadow 1: rgba(0,0,0,0.1) offset(0,9) blur 19
-    shadowColor: colors.black[900],
-    shadowOffset: { width: 0, height: 9 },
-    shadowOpacity: 0.1,
-    shadowRadius: 19,
+    // Combined Figma shadow for React Native (approximating the 3 layers)
+    // 1: rgba(0,0,0,0.1) offset(0,9) blur 19
+    // 2: rgba(0,0,0,0.09) offset(0,35) blur 35
+    // 3: rgba(0,0,0,0.05) offset(0,78) blur 47
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: s(24) },
+    shadowOpacity: 0.15,
+    shadowRadius: s(30),
     elevation: 10,
+    borderRadius: 0, // Sharp corners as per Figma
   },
 
   // Top perforations - Figma Ellipse 21892-21905

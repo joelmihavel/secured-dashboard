@@ -1052,7 +1052,7 @@ function shouldSkipNode(
 
 function processFills(rawFills: unknown[]): BlueprintFill[] {
   if (!Array.isArray(rawFills)) return [];
-  return rawFills.map((fill: Record<string, unknown>) => {
+  return rawFills.map((fill: any) => {
     const result: BlueprintFill = {
       type: (fill.type as string) || 'SOLID',
       visible: fill.visible !== false,
@@ -1140,7 +1140,7 @@ function processStrokes(rawStrokes: unknown[], node: Record<string, unknown>): B
   const dashPattern = node.strokeDashes as number[] | undefined;
 
   return rawStrokes
-    .map((s: Record<string, unknown>) => {
+    .map((s: any) => {
       const color = s.color as { r: number; g: number; b: number; a?: number };
       const strokeOpacity = s.opacity as number | undefined;
       const strokeBlendMode = s.blendMode as string | undefined;
@@ -1162,7 +1162,7 @@ function processStrokes(rawStrokes: unknown[], node: Record<string, unknown>): B
 function processEffects(rawEffects: unknown[]): BlueprintEffect[] {
   if (!Array.isArray(rawEffects)) return [];
   return rawEffects
-    .map((e: Record<string, unknown>) => {
+    .map((e: any) => {
       const color = e.color as { r: number; g: number; b: number; a?: number } | undefined;
       const offset = e.offset as { x: number; y: number } | undefined;
       const effectBlendMode = e.blendMode as string | undefined;

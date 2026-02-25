@@ -2,9 +2,10 @@
  * Flent Secured v2 - Poll Settlement Status Edge Function
  *
  * Cron job (every 30 min) that handles:
- * TIER 1: PayU -> Flent settlement tracking (checks if PayU has settled to Flent)
- * TIER 2: Flent -> Landlord payout tracking (queues ready payouts)
- * RECONCILIATION: Resolves stuck payments by verifying with PayU
+ * TIER 1a: PayU -> Flent settlement tracking (checks if PayU has settled to Flent)
+ * TIER 1b: Cashfree -> Flent settlement tracking (Cashfree settlement recon API)
+ * TIER 2: Flent -> Landlord payout tracking (queues ready payouts + Cashfree payout status)
+ * RECONCILIATION: Resolves stuck payments by verifying with PayU or Cashfree
  *
  * Endpoint: POST /functions/v1/poll-settlement-status
  * Auth: Service role only (called by pg_cron or admin)
@@ -16,6 +17,9 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
+import { getCashfreeSettlements, getCashfreeOrder, getCashfreePayments } from "../_shared/cashfree-orders.ts";
+import { getTransferStatus } from "../_shared/cashfree-payouts.ts";
+import { CF_STATUS_MAP, CF_ORDER_STATUS_MAP } from "../_shared/cashfree-errors.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -80,9 +84,14 @@ serve(async (req: Request) => {
 
     const startTime = Date.now();
 
-    // Run all three tiers
-    const [tier1Result, tier2Result, reconciliationResult] = await Promise.all([
+    // Tier 1: settlement tracking (can run in parallel)
+    const [tier1Result, tier1CfResult] = await Promise.all([
       pollPayUSettlement(supabase, audit),
+      pollCashfreeSettlement(supabase, audit),
+    ]);
+
+    // Tier 2 + Reconciliation: depend on Tier 1 marking payments as ready
+    const [tier2Result, reconciliationResult] = await Promise.all([
       pollLandlordPayoutReadiness(supabase, audit),
       reconcileStuckPayments(supabase, audit),
     ]);
@@ -97,6 +106,7 @@ serve(async (req: Request) => {
       {
         duration_ms: durationMs,
         tier1: tier1Result,
+        tier1_cf: tier1CfResult,
         tier2: tier2Result,
         reconciliation: reconciliationResult,
       },
@@ -107,6 +117,7 @@ serve(async (req: Request) => {
       data: {
         duration_ms: durationMs,
         tier1_payu_settlement: tier1Result,
+        tier1_cashfree_settlement: tier1CfResult,
         tier2_landlord_payout: tier2Result,
         reconciliation: reconciliationResult,
       },
@@ -225,6 +236,96 @@ async function pollPayUSettlement(
 }
 
 // ==============================================
+// TIER 1b: Cashfree -> Flent Settlement
+// ==============================================
+
+/**
+ * Polls Cashfree settlement recon API for successful Cashfree payments
+ * where settlement to Flent is still pending.
+ */
+async function pollCashfreeSettlement(
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger,
+): Promise<TierResult> {
+  const result: TierResult = { checked: 0, updated: 0, errors: 0 };
+
+  try {
+    const lookbackDate = new Date(Date.now() - SETTLEMENT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: pendingPayments } = await supabase
+      .from("payments")
+      .select("id, gateway_order_id, gateway_payment_id, total_amount_paise, paid_at")
+      .eq("status", "success")
+      .eq("payment_gateway", "cashfree")
+      .in("gateway_settlement_status", ["pending", "processing"])
+      .not("gateway_payment_id", "is", null)
+      .gt("created_at", lookbackDate)
+      .order("paid_at", { ascending: true })
+      .limit(BATCH_SIZE);
+
+    if (!pendingPayments || pendingPayments.length === 0) {
+      return result;
+    }
+
+    result.checked = pendingPayments.length;
+
+    // Query Cashfree settlement recon
+    try {
+      const startDate = new Date(Date.now() - SETTLEMENT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+      const endDate = new Date();
+
+      const settlements = await getCashfreeSettlements({
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+      });
+
+      if (!settlements) return result;
+
+      // Build lookup map of settled payments
+      const settledMap = new Map<string, Record<string, unknown>>();
+      const settlementData = settlements.data ?? [];
+      if (Array.isArray(settlementData)) {
+        for (const s of settlementData) {
+          const orderId = String(s.order_id ?? "");
+          if (orderId) settledMap.set(orderId, s);
+        }
+      }
+
+      for (const payment of pendingPayments) {
+        try {
+          const settlement = settledMap.get(payment.gateway_order_id);
+          if (settlement) {
+            const utr = String(settlement.settlement_utr ?? settlement.utr ?? "");
+            await supabase
+              .from("payments")
+              .update({
+                gateway_settlement_status: "settled",
+                gateway_settlement_utr: utr || null,
+                gateway_settled_at: settlement.settlement_date ?? new Date().toISOString(),
+                landlord_payout_status: "ready",
+              })
+              .eq("id", payment.id);
+
+            result.updated++;
+          }
+        } catch (err) {
+          console.error(`Failed to process Cashfree settlement for payment ${payment.id}:`, err);
+          result.errors++;
+        }
+      }
+    } catch (err) {
+      console.error("Cashfree settlement recon API error:", err);
+      result.errors++;
+    }
+  } catch (err) {
+    console.error("TIER 1b Cashfree settlement polling error:", err);
+    result.errors++;
+  }
+
+  return result;
+}
+
+// ==============================================
 // TIER 2: Flent -> Landlord Payout Readiness
 // ==============================================
 
@@ -278,6 +379,50 @@ async function pollLandlordPayoutReadiness(
       }
     }
 
+    // Also poll Cashfree payout transfer status for payments in "processing" state
+    const { data: processingPayouts } = await supabase
+      .from("payments")
+      .select("id, gateway_payout_id, gateway_payout_status, landlord_payout_paise, rent_amount_paise")
+      .eq("status", "success")
+      .eq("payment_gateway", "cashfree")
+      .eq("landlord_payout_status", "processing")
+      .not("gateway_payout_id", "is", null)
+      .order("paid_at", { ascending: true })
+      .limit(BATCH_SIZE);
+
+    for (const payout of processingPayouts ?? []) {
+      try {
+        const transferStatus = await getTransferStatus(payout.gateway_payout_id);
+        const status = String(transferStatus.status ?? "").toUpperCase();
+        const utr = String(transferStatus.utr ?? transferStatus.bank_reference_no ?? "");
+
+        if (status === "SUCCESS") {
+          await supabase
+            .from("payments")
+            .update({
+              landlord_payout_status: "settled",
+              gateway_payout_status: "SUCCESS",
+              gateway_payout_utr: utr || null,
+            })
+            .eq("id", payout.id);
+          result.updated++;
+        } else if (status === "FAILED" || status === "REVERSED") {
+          await supabase
+            .from("payments")
+            .update({
+              landlord_payout_status: "failed",
+              gateway_payout_status: status,
+            })
+            .eq("id", payout.id);
+          result.updated++;
+        }
+        // PENDING/PROCESSING — no update needed
+      } catch (err) {
+        console.error(`Failed to poll payout status for payment ${payout.id}:`, err);
+        result.errors++;
+      }
+    }
+
     // Log summary for ops
     if (readyPayments.length > 0) {
       const totalPaise = readyPayments.reduce(
@@ -311,7 +456,7 @@ async function pollLandlordPayoutReadiness(
 
 /**
  * Reconciles payments stuck in initiated/processing state for > 15 minutes.
- * Calls PayU verify_payment to get actual status.
+ * Calls PayU verify_payment or Cashfree order/payment APIs based on gateway.
  */
 async function reconcileStuckPayments(
   supabase: ReturnType<typeof createServiceClient>,
@@ -322,13 +467,13 @@ async function reconcileStuckPayments(
   try {
     const stuckThreshold = new Date(Date.now() - STUCK_THRESHOLD_MINUTES * 60 * 1000).toISOString();
 
-    // Find stuck payments
+    // Find stuck payments — both PayU (payu_txn_id) and Cashfree (gateway_order_id)
     const { data: stuckPayments } = await supabase
       .from("payments")
-      .select("id, user_id, tenancy_id, payu_txn_id, status, rent_amount_paise, cashback_applied_paise, payment_month, created_at")
+      .select("id, user_id, tenancy_id, payu_txn_id, payment_gateway, gateway_order_id, status, rent_amount_paise, cashback_applied_paise, intended_cashback_paise, payment_month, created_at")
       .in("status", ["initiated", "processing"])
       .lt("created_at", stuckThreshold)
-      .not("payu_txn_id", "is", null)
+      .or("payu_txn_id.not.is.null,gateway_order_id.not.is.null")
       .order("created_at", { ascending: true })
       .limit(BATCH_SIZE);
 
@@ -341,102 +486,122 @@ async function reconcileStuckPayments(
 
     for (const payment of stuckPayments) {
       try {
-        const payuResult = await verifyWithPayU(payment.payu_txn_id);
+        let mappedStatus: string | undefined;
+        let gatewayStatus: string | undefined;
+        let gatewayPaymentId: string | null = null;
+        const updateData: Record<string, unknown> = {};
 
-        if (!payuResult || !payuResult.status) {
-          console.warn(`[RECONCILIATION] No PayU result for ${payment.payu_txn_id}`);
+        if (payment.payment_gateway === "cashfree" && payment.gateway_order_id) {
+          // --- Cashfree reconciliation ---
+          const orderData = await getCashfreeOrder(payment.gateway_order_id);
+          const orderStatus = orderData?.order_status;
+
+          if (orderStatus === "EXPIRED") {
+            mappedStatus = "expired";
+            gatewayStatus = orderStatus;
+          } else if (orderStatus === "PAID") {
+            mappedStatus = "success";
+            gatewayStatus = orderStatus;
+            // Get payment ID from payment attempts
+            const payments = await getCashfreePayments(payment.gateway_order_id);
+            const successfulPayment = payments?.find(
+              (p: Record<string, unknown>) => p.payment_status === "SUCCESS",
+            );
+            if (successfulPayment) {
+              gatewayPaymentId = String(successfulPayment.cf_payment_id);
+            }
+          } else if (orderStatus === "ACTIVE") {
+            // Check if there are any in-progress payment attempts
+            const payments = await getCashfreePayments(payment.gateway_order_id);
+            const hasActiveAttempt = payments?.some(
+              (p: Record<string, unknown>) =>
+                p.payment_status === "PENDING" || p.payment_status === "SUCCESS",
+            );
+            if (hasActiveAttempt) {
+              const successAttempt = payments?.find(
+                (p: Record<string, unknown>) => p.payment_status === "SUCCESS",
+              );
+              if (successAttempt) {
+                mappedStatus = "success";
+                gatewayStatus = "SUCCESS";
+                gatewayPaymentId = String(successAttempt.cf_payment_id);
+              } else {
+                // Still processing, skip
+                continue;
+              }
+            } else {
+              // Active order with no active attempts — treat as expired
+              mappedStatus = "expired";
+              gatewayStatus = "ACTIVE_NO_ATTEMPTS";
+            }
+          } else {
+            mappedStatus = CF_ORDER_STATUS_MAP[orderStatus] || "failed";
+            gatewayStatus = orderStatus;
+          }
+
+          updateData.gateway_status = gatewayStatus;
+          if (gatewayPaymentId) {
+            updateData.gateway_payment_id = gatewayPaymentId;
+          }
+        } else if (payment.payu_txn_id) {
+          // --- PayU reconciliation ---
+          const payuResult = await verifyWithPayU(payment.payu_txn_id);
+
+          if (!payuResult || !payuResult.status) {
+            console.warn(`[RECONCILIATION] No PayU result for ${payment.payu_txn_id}`);
+            continue;
+          }
+
+          const payuStatus = String(payuResult.status).toLowerCase();
+          mappedStatus = PAYU_STATUS_MAP[payuStatus];
+          gatewayStatus = payuResult.status;
+
+          updateData.payu_status = payuResult.status;
+          updateData.payu_mihpayid = payuResult.mihpayid ?? null;
+        } else {
+          // No gateway identifier — skip
           continue;
         }
-
-        const payuStatus = String(payuResult.status).toLowerCase();
-        const mappedStatus = PAYU_STATUS_MAP[payuStatus];
 
         if (!mappedStatus || mappedStatus === payment.status) {
-          // No change needed
           continue;
         }
 
-        const updateData: Record<string, unknown> = {
-          status: mappedStatus,
-          payu_status: payuResult.status,
-          payu_mihpayid: payuResult.mihpayid ?? null,
-        };
+        updateData.status = mappedStatus;
 
         if (mappedStatus === "success") {
           updateData.paid_at = new Date().toISOString();
           updateData.landlord_payout_status = "pending";
           updateData.landlord_payout_paise = payment.rent_amount_paise;
 
-          // Calculate and credit cashback
-          const { data: tenancyData } = await supabase
-            .from("tenancies")
-            .select("monthly_rent_paise")
-            .eq("id", payment.tenancy_id)
-            .single();
+          // Deprecated in instant-discount model — no cashback earning
+          updateData.cashback_earned_paise = 0;
 
-          if (tenancyData && payment.user_id) {
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-            const monthlyCap = Math.floor(tenancyData.monthly_rent_paise * 0.01);
-
-            const { data: monthlyEarnings } = await supabase
-              .from("cashback_ledger")
-              .select("amount_paise")
-              .eq("user_id", payment.user_id)
-              .eq("transaction_type", "earned")
-              .gte("created_at", startOfMonth.toISOString())
-              .lte("created_at", endOfMonth.toISOString());
-
-            const earnedThisMonth = (monthlyEarnings || []).reduce(
-              (sum: number, e: { amount_paise: number }) => sum + e.amount_paise,
-              0,
-            );
-            const capRemaining = Math.max(0, monthlyCap - earnedThisMonth);
-            const cashbackEarned = Math.min(
-              Math.floor(payment.rent_amount_paise * 0.01),
-              capRemaining,
-            );
-
-            updateData.cashback_earned_paise = cashbackEarned;
-
-            if (cashbackEarned > 0) {
-              const { data: currentBalance } = await supabase.rpc("get_cashback_balance", {
-                p_user_id: payment.user_id,
-              });
-              const expiresAt = new Date();
-              expiresAt.setDate(expiresAt.getDate() + 90);
-
+          // Log discount audit entry if applicable
+          if (payment.cashback_applied_paise > 0 && payment.user_id) {
+            try {
               await supabase.from("cashback_ledger").insert({
                 user_id: payment.user_id,
-                transaction_type: "earned",
-                amount_paise: cashbackEarned,
-                balance_after_paise: (currentBalance ?? 0) + cashbackEarned,
+                transaction_type: "discount",
+                amount_paise: payment.cashback_applied_paise,
+                balance_after_paise: 0,
                 payment_id: payment.id,
                 tenancy_id: payment.tenancy_id,
-                description: `1% cashback earned on rent payment for ${payment.payment_month}`,
-                expires_at: expiresAt.toISOString(),
+                reference_type: "payment",
+                reference_id: payment.id,
+                description: "1% instant discount on rent payment (reconciliation)",
               });
+            } catch (e) {
+              console.error("Failed to log discount audit on reconciliation:", e);
             }
           }
-        }
-
-        // Cashback reversal on failure
-        if (mappedStatus === "failed" && payment.cashback_applied_paise > 0 && payment.user_id) {
-          await supabase.from("cashback_ledger").insert({
-            user_id: payment.user_id,
-            amount_paise: payment.cashback_applied_paise,
-            transaction_type: "reversal",
-            reference_type: "payment",
-            reference_id: payment.id,
-            description: "Cashback reversed due to payment failure (reconciliation)",
-          });
         }
 
         await supabase
           .from("payments")
           .update(updateData)
-          .eq("id", payment.id);
+          .eq("id", payment.id)
+          .eq("status", payment.status);
 
         result.updated++;
 
@@ -448,12 +613,13 @@ async function reconcileStuckPayments(
           {
             old_status: payment.status,
             new_status: mappedStatus,
-            payu_status: payuResult.status,
-            txn_id: payment.payu_txn_id,
+            gateway: payment.payment_gateway ?? "payu",
+            gateway_status: gatewayStatus,
+            txn_id: payment.payu_txn_id ?? payment.gateway_order_id,
           },
         );
 
-        console.log(`[RECONCILIATION] Payment ${payment.id}: ${payment.status} -> ${mappedStatus}`);
+        console.log(`[RECONCILIATION] Payment ${payment.id} (${payment.payment_gateway ?? "payu"}): ${payment.status} -> ${mappedStatus}`);
       } catch (err) {
         console.error(`[RECONCILIATION] Failed to reconcile payment ${payment.id}:`, err);
         result.errors++;
