@@ -25,7 +25,6 @@ export interface HeadlineSectionProps {
   daysUntilDue?: number;
   daysOverdue?: number;
   missedMonth?: string;
-  showPayingWith?: boolean; // Show "Paying with:" label
 }
 
 function HeadlineSectionComponent({
@@ -33,7 +32,6 @@ function HeadlineSectionComponent({
   daysUntilDue = 10,
   daysOverdue = 0,
   missedMonth = '',
-  showPayingWith = true,
 }: HeadlineSectionProps) {
   const renderHeadline = () => {
     switch (variant) {
@@ -75,9 +73,6 @@ function HeadlineSectionComponent({
   return (
     <View style={styles.container}>
       {renderHeadline()}
-      {showPayingWith && (
-        <RNText style={styles.payingWithLabel}>Paying with:</RNText>
-      )}
     </View>
   );
 }
@@ -109,16 +104,6 @@ const styles = StyleSheet.create({
   },
   accentText: {
     color: '#FF9A6D', // Figma 243:3384: #FF9A6D (brand[500])
-  },
-  payingWithLabel: {
-    // Figma 243-3378 node 243:3385 "Paying with:"
-    width: 265, // Figma: width 265
-    height: 20, // Figma: height 20
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    color: '#A6A6A6', // Figma: #A6A6A6 (black[200])
-    textAlign: 'left', // Figma: textAlignHorizontal LEFT
   },
 });
 

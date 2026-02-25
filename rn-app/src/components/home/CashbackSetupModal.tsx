@@ -1,13 +1,13 @@
 /**
- * Cashback Setup Modal
- * Figma Reference: 243-6731 (Setup to earn cashback bottom sheet)
+ * Verification Check Sheet (formerly CashbackSetupModal)
+ * Figma Reference: 684-11916 (Verification check bottom sheet)
  *
- * Modal that appears when user tries to pay without completing setup.
- * - Bottom sheet design with blur overlay
- * - Title: "Set up to earn cashback on this payment."
- * - Setup Checklist
- * - Primary Action: "Finish Setup" -> Go to pending-steps
- * - Secondary Action: "I'll do it later" -> Continue to payment
+ * Bottom sheet shown when user presses "Review & Pay" without completing verification.
+ * Shows pending verification steps (utility address, landlord approval).
+ * - Primary Action: "Finish Setup" -> Go to /(setup)/pending-steps
+ * - Secondary Action: "I will do it later" -> Skip to payment flow
+ *
+ * @deprecated CashbackSetupModal — use VerificationCheckSheet instead
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -28,12 +28,21 @@ import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
 import { colors } from '@/src/theme';
 import { scaledSpacing } from '@/src/theme/scale';
 
+export interface VerificationCheckSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  onFinishSetup: () => void;
+  onSkipToPayment: () => void;
+  utilityVerified: boolean;
+  landlordApproved: boolean;
+}
+
+/** @deprecated Use VerificationCheckSheetProps */
 interface CashbackSetupModalProps {
   visible: boolean;
   onClose: () => void;
   onSetup: () => void;
   onSkip: () => void;
-  // Optional props to show actual progress
   bankDetailsComplete?: boolean;
   addressProofComplete?: boolean;
   landlordInvited?: boolean;
@@ -334,4 +343,29 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
+
+/**
+ * VerificationCheckSheet — New API wrapping CashbackSetupModal
+ * Shows only pending verification steps (utility, landlord).
+ */
+export function VerificationCheckSheet({
+  visible,
+  onClose,
+  onFinishSetup,
+  onSkipToPayment,
+  utilityVerified,
+  landlordApproved,
+}: VerificationCheckSheetProps) {
+  return (
+    <CashbackSetupModal
+      visible={visible}
+      onClose={onClose}
+      onSetup={onFinishSetup}
+      onSkip={onSkipToPayment}
+      bankDetailsComplete={true}
+      addressProofComplete={utilityVerified}
+      landlordInvited={landlordApproved}
+    />
+  );
+}
 

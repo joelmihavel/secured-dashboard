@@ -22,9 +22,8 @@
 
 import React, { memo, useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
-import { Text } from '@/src/components/ui';
+import { Text, PrimaryButton } from '@/src/components/ui';
 import { colors } from '@/src/theme';
 
 export interface SetupItem {
@@ -39,6 +38,8 @@ export interface SetupProgressCardProps {
   landlordInvited?: boolean;
   countdownSeconds?: number;
   onFinishSetup?: () => void;
+  onCtaPress?: () => void;
+  ctaLabel?: string;
 }
 
 function SetupProgressCardComponent({
@@ -47,6 +48,8 @@ function SetupProgressCardComponent({
   landlordInvited = false,
   countdownSeconds = 28 * 3600 + 12 * 60 + 12, // Default: 28:12:12
   onFinishSetup,
+  onCtaPress,
+  ctaLabel,
 }: SetupProgressCardProps) {
   const [seconds, setSeconds] = useState(countdownSeconds);
 
@@ -106,6 +109,16 @@ function SetupProgressCardComponent({
           />
         ))}
       </View>
+
+      {/* CTA Button */}
+      {onCtaPress && (
+        <PrimaryButton
+          title={ctaLabel ?? 'How to invite your landlord?'}
+          onPress={onCtaPress}
+          showDivider={true}
+          testID="setup-progress-cta"
+        />
+      )}
     </View>
   );
 }
@@ -151,7 +164,9 @@ function SetupItemRow({ title, subtitle, isActive, isLast }: SetupItemRowProps) 
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 32, // Figma: centered with 32px margins
-    width: 329, // Figma: width 329
+    width: '100%', // Responsive: fills available width
+    maxWidth: 329, // Figma: max width 329
+    alignSelf: 'center', // Figma: centered
     backgroundColor: '#202020', // Figma: #202020 (black[500])
     borderRadius: 12, // Figma: borderRadius 12
     paddingVertical: 24, // Figma: paddingVertical 24

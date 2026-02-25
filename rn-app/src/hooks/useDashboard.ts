@@ -78,6 +78,37 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     [query.data?.recent_payments]
   );
 
+  // Derive status notification from tenancy + payment state
+  const statusNotification = useMemo(() => {
+    const tenancy = query.data?.tenancy ?? null;
+    const upcomingPayment = query.data?.upcoming_payment ?? null;
+    if (!tenancy) return null;
+    const vs = tenancy.verification_status;
+
+    // Priority 1: Landlord disputed/rejected
+    if (vs?.landlord_response === 'disputed') {
+      return { type: 'landlord_rejected' as const, message: undefined };
+    }
+
+    // Priority 2: Verifications pending (any incomplete)
+    const allVerified = vs?.bank_verified && vs?.utility_verified && vs?.landlord_approved;
+    if (!allVerified) {
+      return { type: 'verification_pending' as const, message: undefined };
+    }
+
+    // Priority 3: Rent due reminder (1st to 7th of month)
+    const dayOfMonth = new Date().getDate();
+    if (dayOfMonth >= 1 && dayOfMonth <= 7 && upcomingPayment?.due_date) {
+      const dueDate = new Date(upcomingPayment.due_date);
+      const formatted = !isNaN(dueDate.getTime())
+        ? `${dueDate.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dueDate.getMonth()]}`
+        : upcomingPayment.due_date;
+      return { type: 'rent_due' as const, message: `Your rent is due on ${formatted}` };
+    }
+
+    return null;
+  }, [query.data?.tenancy, query.data?.upcoming_payment]);
+
   // Realtime subscription for tenancy status changes
   const tenancyId = query.data?.tenancy?.id;
   const queryClient = useQueryClient();
@@ -113,6 +144,9 @@ export function useDashboard(options: UseDashboardOptions = {}) {
 
     // Payment stamps
     paymentStamps: query.data?.payment_stamps ?? null,
+
+    // Status notification (derived from tenancy + payment state)
+    statusNotification,
 
     // UI-mapped data for home screen components
     recentPayments: mappedRecentPayments,

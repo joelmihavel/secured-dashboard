@@ -478,6 +478,7 @@ async function handleApprove(
     .update({
       landlord_approved: true,
       landlord_approved_at: new Date().toISOString(),
+      landlord_response: "approved",
       status: "active", // Activate tenancy on landlord approval
     })
     .eq("id", tenancy.id);
@@ -551,7 +552,21 @@ async function handleDispute(
     throw new NotFoundError("Tenancy", token);
   }
 
-  // Log the dispute (don't update status - needs manual review)
+  // Update tenancy with dispute status
+  const { error: updateError } = await supabase
+    .from("tenancies")
+    .update({
+      landlord_response: "disputed",
+      landlord_dispute_reason: dispute_reason,
+      landlord_disputed_at: new Date().toISOString(),
+    })
+    .eq("id", tenancy.id);
+
+  if (updateError) {
+    console.error("Failed to update tenancy with dispute:", updateError);
+  }
+
+  // Log the dispute
   await audit.log({
     action: AuditActions.LANDLORD_DISPUTED,
     category: "landlord",

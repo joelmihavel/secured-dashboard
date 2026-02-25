@@ -11,6 +11,11 @@
 import { callEdgeFunction } from '../supabase';
 
 // ==============================================
+// DEV MOCK — set to true to bypass API and use mock data
+// ==============================================
+const DEV_USE_MOCK_DASHBOARD = __DEV__ && true;
+
+// ==============================================
 // TYPES — Edge Function Response (raw from backend)
 // ==============================================
 
@@ -30,6 +35,7 @@ export interface TenancyVerificationStatus {
   bank_verified: boolean;
   utility_verified: boolean;
   landlord_approved: boolean;
+  landlord_response?: 'approved' | 'disputed' | 'pending' | null;
 }
 
 export interface DashboardTenancy {
@@ -312,6 +318,12 @@ export async function fetchDashboard(): Promise<{
   data: DashboardData | null;
   error: string | null;
 }> {
+  // In dev mode, return mock data for visual testing
+  if (DEV_USE_MOCK_DASHBOARD) {
+    const { MOCK_DASHBOARD_DATA } = await import('./__mocks__/dashboard-mock');
+    return { data: MOCK_DASHBOARD_DATA, error: null };
+  }
+
   const { data, error } = await callEdgeFunction<DashboardResponse>(
     'dashboard-data',
     {},

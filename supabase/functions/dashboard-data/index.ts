@@ -59,6 +59,7 @@ interface DashboardData {
       bank_verified: boolean;
       utility_verified: boolean;
       landlord_approved: boolean;
+      landlord_response: string | null;
     };
   } | null;
   upcoming_payment: {
@@ -240,7 +241,7 @@ serve(async (req: Request) => {
           id, status, property_address, property_city,
           monthly_rent_paise, rent_due_day, lease_start_date, lease_end_date,
           landlord_name, agreement_cert_id,
-          bank_verified, utility_verified, landlord_approved
+          bank_verified, utility_verified, landlord_approved, landlord_response
         `)
         .eq("user_id", userId)
         .in("status", ["active", "pending_verification"])
@@ -411,6 +412,7 @@ serve(async (req: Request) => {
               bank_verified: tenancy.bank_verified,
               utility_verified: tenancy.utility_verified,
               landlord_approved: tenancy.landlord_approved,
+              landlord_response: tenancy.landlord_response ?? null,
             },
           }
         : null,

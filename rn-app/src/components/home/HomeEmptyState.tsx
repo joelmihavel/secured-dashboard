@@ -25,7 +25,7 @@ import { View, StyleSheet } from 'react-native';
 import { HeadlineSection } from './HeadlineSection';
 import { PaymentSetupCard } from './PaymentSetupCard';
 import { SetupProgressCard } from './SetupProgressCard';
-import { PaymentMethodCarousel } from './PaymentMethodCarousel';
+import { RentStatusCarousel, CarouselCardItem } from './RentStatusCarousel';
 import { FinishSetupSection } from './FinishSetupSection';
 import { TabSwitcher, TabId } from './TabSwitcher';
 import { EmptyPaymentsState } from './EmptyPaymentsState';
@@ -61,6 +61,7 @@ export interface HomeEmptyStateProps {
 
   // Payment methods (for UPI variants)
   paymentMethods?: PaymentMethod[];
+  carouselItems?: CarouselCardItem[];
 
   // Cashback stats
   cashbackAccrued?: number;
@@ -70,6 +71,7 @@ export interface HomeEmptyStateProps {
   // Callbacks
   onAddPayment?: () => void;
   onFinishSetup?: () => void;
+  onCtaPress?: () => void;
   onSendReminder?: () => void;
   onContactSupport?: () => void;
   onPaymentMethodPress?: (method: PaymentMethod) => void;
@@ -84,11 +86,13 @@ function HomeEmptyStateComponent({
   addressProofComplete = false,
   landlordInvited = false,
   paymentMethods = [],
+  carouselItems = [],
   cashbackAccrued = 0,
   cashbackAllTime = 0,
   cashbackRate = 0.8,
   onAddPayment,
   onFinishSetup,
+  onCtaPress,
   onSendReminder,
   onContactSupport,
   onPaymentMethodPress,
@@ -117,6 +121,7 @@ function HomeEmptyStateComponent({
   const landlordStatus = getLandlordStatus();
   const hasUPI = paymentMethods.length > 0;
   const showPaymentCarousel =
+    (carouselItems && carouselItems.length > 0) ||
     variant === 'empty_with_upi' ||
     variant === 'empty_with_upi_payments' ||
     (landlordStatus !== null && hasUPI);
@@ -126,12 +131,14 @@ function HomeEmptyStateComponent({
   const showSetupProgress =
     variant === 'empty_base' || (showFinishSetup && !hasUPI);
   const showPaymentSetupCard =
-    variant === 'empty_base' ||
-    variant === 'invitation_sent' ||
-    variant === 'invitation_resent_recent' ||
-    variant === 'invitation_resent_old' ||
-    variant === 'invitation_failed' ||
-    variant === 'invitation_declined';
+    !showPaymentCarousel && (
+      variant === 'empty_base' ||
+      variant === 'invitation_sent' ||
+      variant === 'invitation_resent_recent' ||
+      variant === 'invitation_resent_old' ||
+      variant === 'invitation_failed' ||
+      variant === 'invitation_declined'
+    );
 
   return (
     <View style={styles.container}>
@@ -141,17 +148,13 @@ function HomeEmptyStateComponent({
       <HeadlineSection
         variant="due"
         daysUntilDue={daysUntilDue}
-        showPayingWith={false}
       />
 
-      {/* Payment Method Carousel (for UPI variants) */}
+      {/* Rent Status Carousel (for UPI variants) */}
       {showPaymentCarousel && (
         <View style={styles.section}>
-          <PaymentMethodCarousel
-            methods={paymentMethods}
-            showLabel
-            onMethodPress={onPaymentMethodPress}
-            onMethodEdit={onPaymentMethodEdit}
+          <RentStatusCarousel
+            items={carouselItems}
           />
         </View>
       )}
@@ -210,11 +213,14 @@ function HomeEmptyStateComponent({
       {/* Setup Progress Card (for base empty state) */}
       {showSetupProgress && !showFinishSetup && !showTabSwitcher && (
         <View style={styles.section}>
+          {/* Divider — Figma 684:9207 */}
+          <View style={styles.sectionDivider} />
           <SetupProgressCard
             bankDetailsComplete={bankDetailsComplete}
             addressProofComplete={addressProofComplete}
             landlordInvited={landlordInvited}
             onFinishSetup={onFinishSetup}
+            onCtaPress={onCtaPress}
           />
         </View>
       )}
@@ -235,6 +241,12 @@ const styles = StyleSheet.create({
   standalonePaymentCardWrapper: {
     paddingLeft: 64, // Figma: paddingLeft 64 matches Headline
     paddingRight: 32, // Figma: paddingRight 32
+  },
+  sectionDivider: {
+    height: 1, // Figma 684:9207: thin divider
+    backgroundColor: '#2A2A2A',
+    marginHorizontal: 32,
+    marginBottom: 16,
   },
   // Figma: Tab section wraps toggle + content together
   // Same structure as active state Frame 1686557297

@@ -3,13 +3,32 @@ import { View, StyleSheet, Pressable, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
+  withDelay,
+  withSequence,
   interpolate,
+  interpolateColor,
   Extrapolation,
+  Easing,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '@/src/components';
 import { colors } from '@/src/theme';
+import { PaymentBadge } from './PaymentBadge';
+import type { BadgeVariant } from './PaymentBadge';
+
+// Pre-load static assets for the card back animations
+const PATTERN_IMG = require('../../../assets/images/card-back/pattern.png');
+const FRONT_PATTERN = require('../../../assets/images/card-front/front-pattern.png');
+const INNER_PLATE = require('../../../assets/images/card-front/inner-plate.svg');
+const INNER_PLATE_BACK = require('../../../assets/images/card-back/inner-plate-back.svg');
+const FLENT_LOGO = require('../../../assets/images/card-back/flent-logo.svg');
+const CHAIR_GREEN = require('../../../assets/images/card-back/chair-green.png');
+const CHAIR_RED = require('../../../assets/images/card-back/chair-red.png');
+const SOFA_YELLOW = require('../../../assets/images/card-back/sofa-yellow.png');
+const STICKER_PAID = require('../../../assets/images/card-back/sticker-paid.png');
+const STICKER_UNPAID = require('../../../assets/images/card-front/sticker-unpaid.png');
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -18,13 +37,21 @@ const CARD_WIDTH = 300;
 const CARD_HEIGHT = 440;
 
 export type PaymentStampStatus = 'paid' | 'pending' | 'missed' | 'late' | 'future';
+export type PaymentStatusType = 'paid' | 'late' | 'missed' | 'upcoming';
 
 export interface PaymentMonthData {
   monthName: string;
   cashbackEarned: number;
   isInsider?: boolean;
+  status: PaymentStatusType;
   onViewReceipt?: () => void;
   yearlyStamps: PaymentStampStatus[]; // Array of 12 statuses for the back of the card
+  /** Cumulative late payment count (for red badge number) */
+  lateCount?: number;
+  /** Cumulative missed payment count (for yellow badge number) */
+  missedCount?: number;
+  /** Action for zero state when there are no payment methods setup */
+  onAddPaymentMethod?: () => void;
 }
 
 interface PaymentFlipCardProps {
@@ -35,13 +62,54 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
   const [flipped, setFlipped] = useState(false);
   const flipAnim = useSharedValue(0);
 
+  // Randomly select furniture for the back of the card once on mount
+  const furnitureType = React.useMemo(() => (Math.random() > 0.5 ? 'sofa' : 'chair'), []);
+
+  // Single shared value for the chosen furniture piece
+  const furnitureAnim = useSharedValue(0);
+
   const handlePress = () => {
-    setFlipped(!flipped);
-    flipAnim.value = withSpring(flipped ? 0 : 1, {
-      damping: 15,
-      stiffness: 120,
+    const toFlipped = !flipped;
+    setFlipped(toFlipped);
+
+    // Smooth card flip (600ms ease-in-out)
+    flipAnim.value = withTiming(toFlipped ? 1 : 0, {
+      duration: 600,
+      easing: Easing.inOut(Easing.cubic),
     });
+
+    if (toFlipped) {
+      furnitureAnim.value = 0;
+      furnitureAnim.value = withDelay(
+        300,
+        withSequence(
+          withTiming(1.08, { duration: 600, easing: Easing.out(Easing.cubic) }),
+          withTiming(0.97, { duration: 200, easing: Easing.inOut(Easing.quad) }),
+          withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) }),
+        ),
+      );
+    } else {
+      furnitureAnim.value = withTiming(0, { duration: 250 });
+    }
   };
+
+  const furnitureStyle = useAnimatedStyle(() => {
+    const p = furnitureAnim.value;
+    const clampedP = Math.min(p, 1);
+    // Drop from slightly above center to the center
+    const translateY = interpolate(clampedP, [0, 1], [-50, 0], Extrapolation.CLAMP);
+    const scale = interpolate(clampedP, [0, 0.5, 1], [0.5, 1.05, 1], Extrapolation.CLAMP);
+    const opacity = interpolate(clampedP, [0, 0.3], [0, 1], Extrapolation.CLAMP);
+
+    return {
+      opacity,
+      transform: [
+        { perspective: 500 },
+        { translateY: translateY + (p > 1 ? interpolate(p, [1, 1.08], [0, -6], Extrapolation.CLAMP) : 0) },
+        { scale },
+      ],
+    };
+  });
 
   // Front card rotates from 0 to 180 (hidden at 90)
   const frontAnimatedStyle = useAnimatedStyle(() => {
@@ -74,60 +142,179 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
     };
   });
 
+  const backBgAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: interpolateColor(flipAnim.value, [0.5, 1], ['#1A1A1A', '#131313']),
+    };
+  });
+
+  const getStatusConfig = () => {
+    switch (data.status) {
+      case 'late':
+        return { badgeVariant: 'late' as BadgeVariant, badgeCount: data.lateCount ?? 1, label: 'Cashback\nEarned', showReceipt: true };
+      case 'missed':
+        return { badgeVariant: 'missed' as BadgeVariant, badgeCount: data.missedCount ?? 1, label: 'Cashback\nEarned', showReceipt: true };
+      case 'upcoming':
+        return { badgeVariant: 'upcoming' as BadgeVariant, badgeCount: 0, label: 'Cashback\nPotential', showReceipt: false };
+      case 'paid':
+      default:
+        return { badgeVariant: 'paid' as BadgeVariant, badgeCount: 0, label: 'Cashback\nEarned', showReceipt: true };
+    }
+  };
+
+  const config = getStatusConfig();
+
   const renderFront = () => (
     <Animated.View style={[styles.cardContainer, frontAnimatedStyle]}>
-      {/* Background Split - Left #1A1A1A, Right #202020 */}
+      {/* Background Split - Left #202020, Right #1A1A1A */}
       <View style={styles.backgroundSplit}>
         <View style={styles.bgLeft} />
         <View style={styles.bgRight} />
       </View>
 
-      {/* Decorative Texture Overlay (Rectangle 145/140) */}
-      <View style={styles.textureOverlay} />
-      <View style={styles.innerBorder} />
+      {/* Decorative Texture Overlay — Figma 687:7852 Rectangle 145 at 48% opacity */}
+      <Image source={FRONT_PATTERN} style={[StyleSheet.absoluteFillObject, { opacity: 0.48 }]} contentFit="cover" />
+
+      {/* 4 Corner Cross Marks (Outline Icon Library + Vectors) */}
+      <View style={[styles.cornerCross, { left: 4, top: 9 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+      <View style={[styles.cornerCross, { left: 282, top: 9 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+      <View style={[styles.cornerCross, { left: 4, top: 424 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+      <View style={[styles.cornerCross, { left: 282, top: 424 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+
+      {/* Frame 2095586545 - Vectorized Outline (Rectangle 140) */}
+      <View style={styles.outlineBox} pointerEvents="none">
+        <Image source={INNER_PLATE} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+      </View>
 
       <View style={styles.contentPadding}>
         {/* Top: Insider Sticker */}
         <View style={styles.topSection}>
-          <Text style={styles.insiderText}>flent_insider</Text>
-          <View style={styles.stickerCircle}>
-            <Text style={styles.stickerText}>you did it</Text>
-          </View>
+          <Text style={styles.insiderText}>
+            flent<Text style={styles.insiderAccent} inherit>_insider</Text>
+          </Text>
+          {data.onAddPaymentMethod ? (
+            <Image source={STICKER_UNPAID} style={styles.stickerImage} contentFit="contain" />
+          ) : (
+            <PaymentBadge
+              variant={config.badgeVariant}
+              count={config.badgeCount}
+              size={94}
+            />
+          )}
         </View>
 
         {/* Middle: Month & View Receipt */}
         <View style={styles.middleSection}>
           <Text style={styles.monthText}>{data.monthName}</Text>
-          <Pressable onPress={data.onViewReceipt}>
-            <Text style={styles.viewReceiptText}>View Rent Receipt</Text>
-          </Pressable>
+          {config.showReceipt ? (
+            <Pressable onPress={data.onViewReceipt}>
+              <Text style={styles.viewReceiptText}>View Rent Receipt</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.upcomingPaymentText}>Upcoming Payment</Text>
+          )}
         </View>
 
-        {/* Bottom: Cashback */}
-        <View style={styles.bottomSection}>
-          <Text style={styles.cashbackLabel}>Cashback{'\n'}Earned</Text>
-          <Text style={styles.cashbackAmount}>
-            ₹  {data.cashbackEarned.toFixed(2)}
-          </Text>
-        </View>
+        {/* Bottom: Cashback Box (Frame 2095586539) or Add Payment Method */}
+        {data.onAddPaymentMethod ? (
+          <LinearGradient
+            colors={['rgba(77, 77, 77, 0.08)', 'rgba(179, 179, 179, 0.08)']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.cashbackBox}
+          >
+            <Pressable 
+              onPress={data.onAddPaymentMethod} 
+              style={styles.addPaymentContainer}
+            >
+              <Text style={styles.addPaymentText}>+ add new payment method</Text>
+            </Pressable>
+          </LinearGradient>
+        ) : (
+          <LinearGradient
+            colors={['rgba(77, 77, 77, 0.08)', 'rgba(179, 179, 179, 0.08)']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.cashbackBox}
+          >
+            <View style={styles.cashbackRow}>
+              <Text style={styles.cashbackLabel}>{config.label}</Text>
+              <View style={styles.cashbackAmountContainer}>
+                <Text style={styles.currencySymbol}>₹  </Text>
+                <Text style={styles.cashbackAmount}>{Math.floor(data.cashbackEarned)}</Text>
+                <Text style={styles.cashbackDecimals}>
+                  {(data.cashbackEarned % 1).toFixed(2).substring(1)}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        )}
       </View>
     </Animated.View>
   );
 
   const renderBack = () => (
     <Animated.View style={[styles.cardContainer, backAnimatedStyle]}>
-      <View style={styles.backgroundSplit}>
-        <View style={styles.bgLeft} />
-        <View style={styles.bgRight} />
-      </View>
+      {/* Solid background matching figma node 696:8140 */}
+      <Animated.View style={[styles.backSolidBackground, backBgAnimatedStyle]} />
       <View style={styles.textureOverlay} />
-      <View style={styles.innerBorder} />
+
+      {/* 4 Corner Cross Marks */}
+      <View style={[styles.cornerCross, { left: 4, top: 9 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+      <View style={[styles.cornerCross, { left: 282, top: 9 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+      <View style={[styles.cornerCross, { left: 4, top: 424 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+      <View style={[styles.cornerCross, { left: 282, top: 424 }]}>
+        <View style={styles.crossV} />
+        <View style={styles.crossH} />
+      </View>
+
+      {/* Adding pattern background matching figma node 696:8157 Rectangle 145 */}
+      <Image source={PATTERN_IMG} style={styles.patternBackground} contentFit="cover" />
+
+      {/* Frame 2095586545 - Vectorized Outline (Rectangle 140) and Vector 1 (Flent Logo) */}
+      <View style={styles.outlineBox} pointerEvents="none">
+        <Image source={INNER_PLATE_BACK} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+        <Image source={FLENT_LOGO} style={styles.flentLogo} contentFit="contain" />
+      </View>
+
+      {/* Animated Furniture from 696-8140 */}
+      <View style={styles.furnitureContainer} pointerEvents="none">
+        <Animated.View style={[styles.furnitureCenteredWrapper, furnitureStyle]}>
+          <Image
+            source={furnitureType === 'sofa' ? SOFA_YELLOW : CHAIR_GREEN}
+            style={furnitureType === 'sofa' ? styles.sofaYellow : styles.chairGreen}
+            contentFit="contain"
+          />
+        </Animated.View>
+      </View>
 
       <View style={[styles.contentPadding, styles.backContent]}>
-        {/* Top: Header */}
-        <View style={styles.backHeader}>
-          <Text style={styles.backTitle}>Flent Insider</Text>
-          <Text style={styles.backSubtitle}>since {data.monthName}</Text>
+        {/* Top: Insider Sticker */}
+        <View style={styles.topSection}>
+          <Text style={styles.insiderText}>
+            flent<Text style={styles.insiderAccent} inherit>_insider</Text>
+          </Text>
         </View>
 
         {/* Grid of 12 Stamps */}
@@ -159,9 +346,9 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: 16, // Assuming standard radius
+    borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#000',
+    backgroundColor: '#1A1A1A',
     backfaceVisibility: 'hidden',
   },
   backgroundSplit: {
@@ -169,28 +356,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   bgLeft: {
-    width: 206, // Figma explicit size
-    height: '100%',
-    backgroundColor: colors.black[600], // #1A1A1A
-  },
-  bgRight: {
-    flex: 1,
+    width: 94, // Figma 694:6562 — left strip #202020
     height: '100%',
     backgroundColor: colors.black[500], // #202020
+  },
+  bgRight: {
+    flex: 1, // Figma 694:6561 — rest is #1A1A1A (same as card base)
+    height: '100%',
+    backgroundColor: colors.black[600], // #1A1A1A
   },
   textureOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.03)', // Approximation of noise overlay
   },
-  innerBorder: {
+  outlineBox: {
     position: 'absolute',
     top: 15,
-    left: 10.5,
-    right: 11.5,
-    bottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    left: 11,
+    width: 278,
+    height: 415,
     borderRadius: 12,
+    overflow: 'hidden',
+  },
+  cornerCross: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+  },
+  crossV: {
+    position: 'absolute',
+    left: 5.5,
+    top: 2.5,
+    width: 1,
+    height: 7,
+    backgroundColor: '#FF9A6D',
+    borderRadius: 1,
+  },
+  crossH: {
+    position: 'absolute',
+    left: 2.5,
+    top: 5.5,
+    width: 7,
+    height: 1,
+    backgroundColor: '#FF9A6D',
+    borderRadius: 1,
   },
   contentPadding: {
     flex: 1,
@@ -198,65 +407,131 @@ const styles = StyleSheet.create({
     paddingRight: 28,
     paddingTop: 32,
     paddingBottom: 32,
-    justifyContent: 'space-between',
   },
   topSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    position: 'absolute',
+    left: 28,
+    top: 32,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  stickerImage: {
+    width: 94,
+    height: 94,
   },
   insiderText: {
     color: '#BABABA',
-    fontSize: 12,
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12, // Figma: Font Size/Body/sm = 12px
+    lineHeight: 20, // Figma: Line Height/Body/sm = 20px
+    fontFamily: 'PlusJakartaSans-Medium',
+    zIndex: 10, // Ensure it sits above anything else on the back card
   },
-  stickerCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FF9A6D',
-    justifyContent: 'center',
-    alignItems: 'center',
+  insiderAccent: {
+    color: '#FF9A6D',
   },
-  stickerText: {
-    fontSize: 8,
-    color: '#000',
-    textAlign: 'center',
+  badgeContainer: {
+    width: 94,
+    height: 94,
   },
   middleSection: {
-    marginTop: 'auto',
-    marginBottom: 'auto',
+    position: 'absolute',
+    left: 28,
+    top: 250,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
   },
   monthText: {
     color: '#BABABA',
     fontSize: 16,
+    lineHeight: 24,
     fontFamily: 'PlusJakartaSans-Regular',
-    marginBottom: 4,
   },
   viewReceiptText: {
     color: '#FF9A6D',
     fontSize: 16,
+    lineHeight: 24,
     fontFamily: 'PlusJakartaSans-Regular',
-    textDecorationLine: 'underline',
+    textDecorationLine: 'underline', // Figma 694:6573
   },
-  bottomSection: {
+  upcomingPaymentText: {
+    color: '#BABABA',
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: 'PlusJakartaSans-Regular',
+  },
+  cashbackBox: {
+    position: 'absolute',
+    left: 28,
+    top: 325,
+    width: 245,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: '#4D4D4D',
+    padding: 16, // Figma 694:6582: p-16 all sides
+  },
+  cashbackRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    width: 213,
   },
   cashbackLabel: {
     color: '#BABABA',
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 20,
     fontFamily: 'PlusJakartaSans-Regular',
+  },
+  cashbackAmountContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  currencySymbol: {
+    color: '#878787', // Figma 694:6585
+    fontSize: 14, // Figma: 14px
+    lineHeight: 20,
+    fontFamily: 'PlusJakartaSans-Regular',
+    marginRight: 4,
   },
   cashbackAmount: {
     color: '#FF9A6D',
-    fontSize: 28,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 32, // Figma: 32px
+    lineHeight: 48, // Figma: 48px
+    letterSpacing: -1, // Figma: tracking -1px
+    fontFamily: 'PlusJakartaSans-Regular',
+  },
+  cashbackDecimals: {
+    color: '#878787', // Figma 694:6585
+    fontSize: 14, // Figma: 14px
+    lineHeight: 20,
+    fontFamily: 'PlusJakartaSans-Regular',
+  },
+  addPaymentContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addPaymentText: {
+    color: '#FF9A6D',
+    fontSize: 12,
+    lineHeight: 20,
+    fontFamily: 'PlusJakartaSans-Regular',
+    textAlign: 'center',
   },
   
   // BACK CARD
+  backSolidBackground: {
+    ...StyleSheet.absoluteFillObject,
+    // Base color overridden by animated style
+  },
+  flentLogo: {
+    position: 'absolute',
+    left: 127,
+    top: 40,
+    width: 27,
+    height: 32,
+  },
   backContent: {
     justifyContent: 'flex-start',
   },
@@ -278,6 +553,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 16,
     justifyContent: 'center',
+    marginTop: 88, // Push down to avoid overlapping the absolute topSection
   },
   stampSlot: {
     width: 60,
@@ -306,4 +582,35 @@ const styles = StyleSheet.create({
   stamp_future: {
     // defaults to empty slot style
   },
+  
+  // FURNITURE & PATTERN
+  patternBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.48, // matching figma: opacity 0.48
+  },
+  furnitureContainer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+    zIndex: 5,
+  },
+  furnitureCenteredWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 140, // vertically centered manually
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sofaYellow: {
+    width: 225.4,
+    height: 104.12,
+  },
+  chairGreen: {
+    width: 180.68,
+    height: 148.83,
+  }
 });
