@@ -1,0 +1,324 @@
+{
+  "screenId": "684-5545",
+  "screenName": "Pay Rent / Add Credit Payment",
+  "figmaUrl": "https://www.figma.com/design/HZaVuwWn6B6jOjrmxZ7Kzv/Flent-Secured-v1.2---Dev?node-id=684-5545&m=dev",
+  "generatedAt": "2026-02-25T15:57:39.333Z",
+  "checks": {
+    "nodeCount": 134,
+    "textNodeCount": 30,
+    "componentInstanceCount": 9,
+    "interactiveNodeCount": 2,
+    "imageAssetCount": 2,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 2095586361",
+      "Frame 2095586363",
+      "Rectangle 54",
+      "Frame 2095586317",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "694:7217",
+        "name": "Rent due in 10 days",
+        "content": "Rent due in 10 days",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "694:7218",
+        "name": "December 2025",
+        "content": "December 2025",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "694:7219",
+        "name": "₹ 32,500 →",
+        "content": "₹  32,500 →",
+        "fontSize": 16,
+        "fontWeight": 600,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "694:7235",
+        "name": "Base rent",
+        "content": "Base rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "694:7236",
+        "name": "₹ 30,000",
+        "content": "₹ 30,000",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "694:7242",
+        "name": "Maintenance",
+        "content": "Maintenance",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "694:7243",
+        "name": "₹2,000",
+        "content": "₹2,000",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "694:7249",
+        "name": "Other charges",
+        "content": "Other charges",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "694:7250",
+        "name": "₹500",
+        "content": "₹500",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "694:7257",
+        "name": "Payable Rent",
+        "content": "Payable Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "694:7258",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "694:7262",
+        "name": "🔒 ₹350 cashback waiting for you",
+        "content": "🔒 ₹350 cashback waiting for you",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I694:7264;100:1565",
+        "name": "Text",
+        "content": "Pay ₹32,500 now",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "694:7265",
+        "name": "Complete setup to unlock cashback on payments.",
+        "content": "Complete setup to unlock cashback on payments.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "694:7280",
+        "name": "Add your  Credit Card",
+        "content": "Add your  Credit Card",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I694:7639;47:5565",
+        "name": "Label",
+        "content": "Cardholder name",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I694:7639;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I694:7639;47:5569",
+        "name": "Text",
+        "content": "e.g. John Smith",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I694:7640;47:5565",
+        "name": "Label",
+        "content": "Card number",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I694:7640;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I694:7640;47:5569",
+        "name": "Text",
+        "content": "e.g. 1234 5678 9012 3456",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I694:7641;47:5565",
+        "name": "Label",
+        "content": "Expiry date",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I694:7641;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I694:7641;47:5569",
+        "name": "Text",
+        "content": "e.g. MM / YY",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I694:7642;47:5565",
+        "name": "Label",
+        "content": "CVV",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I694:7642;99:1459",
+        "name": "Hint text",
+        "content": "edit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "I694:7642;47:5569",
+        "name": "Text",
+        "content": "e.g. ***",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "I694:7644;100:1575",
+        "name": "Text",
+        "content": "Save Card",
+        "fontSize": 16,
+        "fontWeight": 500,
+        "color": "#444444"
+      },
+      {
+        "nodeId": "694:7645",
+        "name": "You may get a verification message to verify your Card and unlock benefits.",
+        "content": "You may get a verification message to verify your Card and unlock benefits.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I694:7318;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#222222",
+      "#444444",
+      "#4D4D4D",
+      "#878787",
+      "#A6A6A6",
+      "#A9A9A9",
+      "#CBCBCB",
+      "#DDDDDD",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      6,
+      8,
+      10,
+      12,
+      15,
+      15.19174861907959,
+      16,
+      24,
+      30.38349723815918,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:23982",
+      "597:3220",
+      "597:4417",
+      "1:81",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_CLICK",
+        "destination": "1:78"
+      }
+    ]
+  }
+}

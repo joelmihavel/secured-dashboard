@@ -2,8 +2,7 @@
  * Flent Secured v2 - Check Payment Status Edge Function
  *
  * Checks the current status of a payment. If the payment is stuck in
- * initiated/processing state for > 2 minutes, verifies with the originating
- * gateway (PayU or Cashfree) directly.
+ * initiated/processing state for > 2 minutes, verifies with PayU directly.
  *
  * Endpoint: GET /functions/v1/check-payment-status?payment_id=xxx
  * Auth: Required (JWT)
@@ -23,8 +22,6 @@ import {
 } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
-import { getCashfreeOrder, getCashfreePayments } from "../_shared/cashfree-orders.ts";
-import { CF_STATUS_MAP, CF_ORDER_STATUS_MAP } from "../_shared/cashfree-errors.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -126,22 +123,25 @@ serve(async (req: Request) => {
     const ageMs = Date.now() - createdAt;
     const isStale = ageMs > STALE_THRESHOLD_MS;
 
-    const hasGatewayId = payment.payu_txn_id || payment.gateway_order_id;
-    if (isStuck && isStale && hasGatewayId) {
+    if (isStuck && isStale && payment.payu_txn_id) {
       try {
-        if (payment.payment_gateway === "cashfree" && payment.gateway_order_id) {
-          // ---- Cashfree verification path ----
-          const cfResult = await verifyWithCashfree(payment.gateway_order_id);
-          payuVerified = true; // reuse flag name for backward compat
+        // PayU verification path
+        payuVerifyResult = await verifyWithPayU(payment.payu_txn_id);
+        payuVerified = true;
 
-          if (cfResult.status && cfResult.status !== payment.status && ["success", "failed", "expired"].includes(cfResult.status)) {
+        if (payuVerifyResult && payuVerifyResult.status) {
+          const payuStatus = String(payuVerifyResult.status).toLowerCase();
+          const mappedStatus = PAYU_STATUS_MAP[payuStatus] ?? "failed";
+
+          // If PayU shows a terminal state but our DB doesn't, update
+          if (mappedStatus !== payment.status && ["success", "failed"].includes(mappedStatus)) {
             const updateData: Record<string, unknown> = {
-              status: cfResult.status,
-              gateway_status: cfResult.status,
-              gateway_payment_id: cfResult.paymentId,
+              status: mappedStatus,
+              payu_status: payuVerifyResult.status,
+              payu_mihpayid: payuVerifyResult.mihpayid ?? payment.payu_mihpayid,
             };
 
-            if (cfResult.status === "success") {
+            if (mappedStatus === "success") {
               updateData.paid_at = new Date().toISOString();
               updateData.cashback_earned_paise = 0; // Deprecated in instant-discount model
               updateData.landlord_payout_status = "pending";
@@ -162,7 +162,7 @@ serve(async (req: Request) => {
                     description: "1% instant discount on rent payment (status check reconciliation)",
                   });
                 } catch (e) {
-                  console.error("Failed to log discount audit on Cashfree status check success:", e);
+                  console.error("Failed to log discount audit on PayU status check success:", e);
                 }
               }
             }
@@ -174,9 +174,9 @@ serve(async (req: Request) => {
               .eq("status", payment.status);
 
             // Update local payment object for response
-            payment.status = cfResult.status;
-            payment.gateway_status = cfResult.status;
-            if (cfResult.status === "success") {
+            payment.status = mappedStatus;
+            payment.payu_status = String(payuVerifyResult.status);
+            if (mappedStatus === "success") {
               payment.cashback_earned_paise = 0;
               payment.landlord_payout_status = "pending";
             }
@@ -188,85 +188,14 @@ serve(async (req: Request) => {
               payment.id,
               {
                 old_status: "initiated/processing",
-                new_status: cfResult.status,
-                source: "cashfree_verify",
+                new_status: mappedStatus,
+                source: "payu_verify",
               }
             );
           }
-        } else if (payment.payu_txn_id) {
-          // ---- PayU verification path (existing, unchanged) ----
-          payuVerifyResult = await verifyWithPayU(payment.payu_txn_id);
-          payuVerified = true;
-
-          if (payuVerifyResult && payuVerifyResult.status) {
-            const payuStatus = String(payuVerifyResult.status).toLowerCase();
-            const mappedStatus = PAYU_STATUS_MAP[payuStatus] ?? "failed";
-
-            // If PayU shows a terminal state but our DB doesn't, update
-            if (mappedStatus !== payment.status && ["success", "failed"].includes(mappedStatus)) {
-              const updateData: Record<string, unknown> = {
-                status: mappedStatus,
-                payu_status: payuVerifyResult.status,
-                payu_mihpayid: payuVerifyResult.mihpayid ?? payment.payu_mihpayid,
-              };
-
-              if (mappedStatus === "success") {
-                updateData.paid_at = new Date().toISOString();
-                updateData.cashback_earned_paise = 0; // Deprecated in instant-discount model
-                updateData.landlord_payout_status = "pending";
-                updateData.landlord_payout_paise = payment.rent_amount_paise;
-
-                // Log discount audit entry if applicable
-                if (payment.cashback_applied_paise > 0) {
-                  try {
-                    await supabase.from("cashback_ledger").insert({
-                      user_id: userId,
-                      transaction_type: "discount",
-                      amount_paise: payment.cashback_applied_paise,
-                      balance_after_paise: 0,
-                      payment_id: payment.id,
-                      tenancy_id: payment.tenancy_id,
-                      reference_type: "payment",
-                      reference_id: payment.id,
-                      description: "1% instant discount on rent payment (status check reconciliation)",
-                    });
-                  } catch (e) {
-                    console.error("Failed to log discount audit on PayU status check success:", e);
-                  }
-                }
-              }
-
-              await supabase
-                .from("payments")
-                .update(updateData)
-                .eq("id", payment.id)
-                .eq("status", payment.status);
-
-              // Update local payment object for response
-              payment.status = mappedStatus;
-              payment.payu_status = String(payuVerifyResult.status);
-              if (mappedStatus === "success") {
-                payment.cashback_earned_paise = 0;
-                payment.landlord_payout_status = "pending";
-              }
-
-              await audit.logSuccess(
-                "PAYMENT_STATUS_RECONCILED",
-                "payment",
-                "payment",
-                payment.id,
-                {
-                  old_status: "initiated/processing",
-                  new_status: mappedStatus,
-                  source: "payu_verify",
-                }
-              );
-            }
-          }
         }
       } catch (verifyError) {
-        const gateway = payment.payment_gateway === "cashfree" ? "Cashfree" : "PayU";
-        console.error(`${gateway} verify_payment failed:`, verifyError);
+        console.error("PayU verify_payment failed:", verifyError);
         // Non-fatal — return DB status
       }
     }
@@ -345,40 +274,3 @@ async function verifyWithPayU(txnId: string): Promise<Record<string, unknown>> {
   return {};
 }
 
-// ==============================================
-// CASHFREE VERIFY PAYMENT API
-// ==============================================
-
-/**
- * Verifies payment status with Cashfree PG API.
- * Checks BOTH order status AND payment attempts (order can be ACTIVE with SUCCESS payment).
- */
-async function verifyWithCashfree(orderId: string): Promise<{ status: string; paymentId?: string; paymentMethod?: string }> {
-  // Check order status
-  const order = await getCashfreeOrder(orderId);
-
-  // Also check payment attempts — order ACTIVE can have SUCCESS payment
-  const payments = await getCashfreePayments(orderId);
-
-  // Find latest terminal payment attempt
-  const terminalPayment = payments
-    .filter((p: Record<string, unknown>) => ["SUCCESS", "FAILED", "CANCELLED", "USER_DROPPED", "VOID"].includes(String(p.payment_status)))
-    .sort((a: Record<string, unknown>, b: Record<string, unknown>) =>
-      new Date(String(b.payment_time ?? 0)).getTime() - new Date(String(a.payment_time ?? 0)).getTime()
-    )[0];
-
-  if (terminalPayment) {
-    const paymentStatus = String(terminalPayment.payment_status);
-    return {
-      status: CF_STATUS_MAP[paymentStatus] ?? "failed",
-      paymentId: String(terminalPayment.cf_payment_id ?? ""),
-      paymentMethod: terminalPayment.payment_method ? JSON.stringify(terminalPayment.payment_method) : undefined,
-    };
-  }
-
-  // Fall back to order status
-  const orderStatus = String(order.order_status ?? "ACTIVE");
-  return {
-    status: CF_ORDER_STATUS_MAP[orderStatus] ?? "pending",
-  };
-}

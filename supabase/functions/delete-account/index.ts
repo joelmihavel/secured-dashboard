@@ -198,6 +198,9 @@ serve(async (req) => {
           tenancies_data: tenanciesData || [],
           payments_data: paymentsData,
           bank_accounts_data: bankAccountsData || [],
+          identity_verifications_data: identityVerificationsData || [],
+          cashback_data: cashbackData || [],
+          device_tokens_data: deviceTokensData || [],
         },
         { onConflict: "original_user_id" }
       );

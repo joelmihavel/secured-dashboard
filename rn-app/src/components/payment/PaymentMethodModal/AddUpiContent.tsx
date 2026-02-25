@@ -20,7 +20,8 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Text, PrimaryButton, TextInput, ScreenTitle } from '@/src/components';
+import { Text, PrimaryButton, TextInput } from '@/src/components';
+import { Text as RNText } from 'react-native';
 import { useVerifyUpi } from '@/src/hooks';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
 import { usePaymentStore } from '@/src/stores';
@@ -153,7 +154,10 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
       </TouchableOpacity>
 
       {/* Title */}
-      <ScreenTitle gray="Add your " accent="UPI Method" />
+      <RNText style={styles.title}>
+        {'Add your\n'}
+        <RNText style={styles.titleAccent}>UPI Method</RNText>
+      </RNText>
 
       {/* Form Section */}
       <View style={styles.formSection}>
@@ -244,6 +248,17 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'flex-start',
+  },
+  title: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 28,
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: colors.white,
+    textAlign: 'left',
+  },
+  titleAccent: {
+    color: colors.brand[500],
   },
   formSection: {
     gap: 16,

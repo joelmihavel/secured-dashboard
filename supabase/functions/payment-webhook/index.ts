@@ -386,6 +386,54 @@ serve(async (req: Request) => {
       }
     }
 
+    // Auto-save payment method on success (server-side, more reliable than client)
+    if (isSuccess && userId) {
+      try {
+        const mode = payload.mode?.toUpperCase();
+        const methodType = mode === 'CC' || mode === 'DC' ? 'card'
+          : mode === 'UPI' ? 'upi'
+          : mode === 'NB' ? 'netbanking'
+          : null;
+
+        if (methodType) {
+          const methodData: Record<string, unknown> = {
+            user_id: userId,
+            tenancy_id: payment.tenancy_id,
+            type: methodType,
+            is_primary: false,
+            is_verified: true,
+            created_at: new Date().toISOString(),
+          };
+
+          if (methodType === 'card') {
+            methodData.card_last4 = payload.card_no?.slice(-4) ?? null;
+            methodData.card_network = payload.bankcode ?? null;
+            methodData.card_type = mode === 'CC' ? 'credit' : 'debit';
+            methodData.display_name = `${payload.bankcode ?? 'Card'} ****${payload.card_no?.slice(-4) ?? ''}`;
+          } else if (methodType === 'upi') {
+            methodData.upi_vpa = payload.field7 ?? null;
+            methodData.display_name = `UPI - ${payload.field7 ?? 'Unknown'}`;
+          } else if (methodType === 'netbanking') {
+            methodData.bank_code = payload.bankcode ?? null;
+            methodData.bank_name = payload.bankcode ?? null;
+            methodData.display_name = `Net Banking - ${payload.bankcode ?? 'Bank'}`;
+          }
+
+          // Upsert: don't create duplicates for same user + type + identifier
+          const conflictKey = methodType === 'card' ? 'user_id,type,card_last4'
+            : methodType === 'upi' ? 'user_id,type,upi_vpa'
+            : 'user_id,type,bank_code';
+
+          await supabase
+            .from("saved_payment_methods")
+            .upsert(methodData, { onConflict: conflictKey, ignoreDuplicates: true });
+        }
+      } catch (e) {
+        // Non-blocking: payment success is more important than method save
+        console.error("Failed to auto-save payment method:", e);
+      }
+    }
+
     // Send notifications
     if (isSuccess && userId) {
       await sendPaymentSuccessNotification(supabase, userId, payment, payment.cashback_applied_paise ?? 0);

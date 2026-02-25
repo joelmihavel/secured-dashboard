@@ -1,8 +1,8 @@
 /**
  * Flent Secured v2 - Initiate Payment Edge Function
  *
- * Initiates a rent payment via PayU or Cashfree, determined by
- * the gateway router. Returns gateway-specific params for the client.
+ * Initiates a rent payment via PayU. Returns PayU-specific params
+ * for the client to complete the payment flow.
  *
  * Endpoint: POST /functions/v1/initiate-payment
  * Auth: Required (JWT)
@@ -25,8 +25,6 @@ import { validateSchema, isValidAmountPaise, isValidUuid } from "../_shared/vali
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generatePayUHash, generateTransactionId, sha512 } from "../_shared/crypto.ts";
-import { getGatewayForUser } from "../_shared/gateway-router.ts";
-import { createCashfreeOrder } from "../_shared/cashfree-orders.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -45,15 +43,6 @@ const PG_FEE_RATES: Record<string, number> = {
   card: 0.02, // 2%
   netbanking: 0.015, // 1.5%
   wallet: 0.02, // 2%
-};
-
-const CF_PG_FEE_RATES: Record<string, number> = {
-  upi: 0,
-  upi_intent: 0,
-  upi_collect: 0,
-  card: 0.02, // ~2% (credit), ~0.9% (debit) — using higher estimate
-  netbanking: 0.015,
-  wallet: 0.02,
 };
 
 // Normalize payment method values from iOS
@@ -83,7 +72,6 @@ interface InitiatePaymentRequest {
   card_token?: string; // For card payments (tokenized)
   bank_code?: string; // For netbanking
   rent_month: string; // YYYY-MM format
-  preferred_gateway?: 'payu' | 'cashfree'; // Client hint (only honored in sandbox)
 }
 
 // ==============================================
@@ -104,7 +92,6 @@ const requestSchema = {
   card_token: { required: false, type: "string" as const },
   bank_code: { required: false, type: "string" as const },
   checkout_mode: { required: false, type: "string" as const, enum: ["sdk", "seamless"] },
-  preferred_gateway: { required: false, type: "string" as const, enum: ["payu", "cashfree"] },
   rent_month: {
     required: true,
     type: "string" as const,
@@ -285,13 +272,8 @@ serve(async (req: Request) => {
 
     const netRentPaise = originalRentPaise - cashbackDiscountPaise;
 
-    // Determine which payment gateway to use
-    const preferred_gateway = (validatedBody as Record<string, unknown>).preferred_gateway as string | undefined;
-    const gateway = await getGatewayForUser(supabase, userId, preferred_gateway as 'payu' | 'cashfree' | undefined);
-    const feeRates = gateway === 'cashfree' ? CF_PG_FEE_RATES : PG_FEE_RATES;
-
     // PG fee on net payable (what the gateway actually charges)
-    const feeRate = feeRates[payment_method] ?? 0.02;
+    const feeRate = PG_FEE_RATES[payment_method] ?? 0.02;
     const pgFeePaise = Math.ceil(netRentPaise * feeRate);
 
     // Total amount the gateway charges the user
@@ -302,7 +284,7 @@ serve(async (req: Request) => {
     // Generate transaction ID
     const txnId = generateTransactionId("FLENT");
 
-    // Get user details for gateway order creation
+    // Get user details for PayU order creation
     const { data: userProfile } = await supabase
       .from("users")
       .select("first_name, last_name, phone")
@@ -329,49 +311,11 @@ serve(async (req: Request) => {
       udf3: userId,
     };
 
-    let cashfreeData: { cf_order_id: string; payment_session_id: string } | null = null;
-    let payuHash: string | null = null;
-    let vasHash: string | null = null;
-    let paymentRelatedHash: string | null = null;
-    let userCredential: string | null = null;
-
-    if (gateway === 'cashfree') {
-      // Create Cashfree order
-      const SUPABASE_URL_FOR_WEBHOOK = Deno.env.get("SUPABASE_URL")!;
-      const orderExpiryTime = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes
-
-      const cfOrder = await createCashfreeOrder({
-        orderId: txnId,
-        amount: totalAmountPaise / 100, // Cashfree expects rupees as float
-        currency: "INR",
-        customerDetails: {
-          customer_id: userId,
-          customer_name: firstname,
-          customer_email: email,
-          customer_phone: userProfile?.phone ?? "",
-        },
-        orderMeta: {
-          notify_url: `${SUPABASE_URL_FOR_WEBHOOK}/functions/v1/cashfree-webhook`,
-        },
-        orderTags: {
-          tenancy_id: tenancy_id,
-          rent_month: rent_month,
-          user_id: userId,
-        },
-        orderExpiryTime,
-      });
-
-      cashfreeData = {
-        cf_order_id: cfOrder.cf_order_id,
-        payment_session_id: cfOrder.payment_session_id,
-      };
-    } else {
-      // PayU hash generation (existing logic)
-      userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
-      payuHash = await generatePayUHash(payuParams);
-      vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
-      paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
-    }
+    // PayU hash generation
+    const userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
+    const payuHash = await generatePayUHash(payuParams);
+    const vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
+    const paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
 
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);
@@ -392,11 +336,9 @@ serve(async (req: Request) => {
         flent_subsidy_paise: cashbackDiscountPaise,
         status: "initiated",
         payu_txn_id: txnId,
-        payment_gateway: gateway,
-        gateway_order_id: gateway === 'cashfree' ? cashfreeData!.cf_order_id : txnId,
-        gateway_metadata: gateway === 'cashfree'
-          ? { order_id: cashfreeData!.cf_order_id, payment_session_id: cashfreeData!.payment_session_id }
-          : { key: PAYU_MERCHANT_KEY, txnid: txnId, amount: amountStr },
+        payment_gateway: "payu",
+        gateway_order_id: txnId,
+        gateway_metadata: { key: PAYU_MERCHANT_KEY, txnid: txnId, amount: amountStr },
         payment_method,
         idempotency_key: idempotencyKey,
         payment_month: rentMonthDate,
@@ -406,7 +348,7 @@ serve(async (req: Request) => {
           upi_vpa,
           bank_code,
         },
-        payu_initiation_params: gateway === 'payu' ? {
+        payu_initiation_params: {
           key: PAYU_MERCHANT_KEY,
           txnid: txnId,
           amount: amountStr,
@@ -417,7 +359,7 @@ serve(async (req: Request) => {
           udf1: tenancy_id,
           udf2: rent_month,
           udf3: userId,
-        } : null,
+        },
         ip_address: req.headers.get("x-forwarded-for")?.split(",")[0] ?? null,
         user_agent: req.headers.get("user-agent"),
       })
@@ -449,7 +391,7 @@ serve(async (req: Request) => {
     const responseData = {
       payment_id: payment.id,
       txn_id: txnId,
-      gateway,
+      gateway: "payu" as const,
       original_rent_paise: originalRentPaise,
       cashback_applied_paise: cashbackDiscountPaise,
       net_rent_paise: netRentPaise,
@@ -466,36 +408,29 @@ serve(async (req: Request) => {
       },
       verification_complete: verificationComplete,
 
-      // Gateway-specific params for client
-      ...(gateway === 'cashfree' ? {
-        cashfree: {
-          order_id: cashfreeData!.cf_order_id,
-          payment_session_id: cashfreeData!.payment_session_id,
-        },
-      } : {
-        payu: {
-          key: PAYU_MERCHANT_KEY,
-          txnid: txnId,
-          amount: amountStr,
-          productinfo,
-          firstname,
-          email,
-          phone: userProfile?.phone ?? "",
-          hash: payuHash!,
-          surl,
-          furl,
-          curl,
-          udf1: tenancy_id,
-          udf2: rent_month,
-          udf3: userId,
-          user_credential: userCredential!,
-          vas_for_mobile_sdk_hash: vasHash!,
-          payment_related_details_for_mobile_sdk_hash: paymentRelatedHash!,
-        },
-      }),
+      // PayU params for client
+      payu: {
+        key: PAYU_MERCHANT_KEY,
+        txnid: txnId,
+        amount: amountStr,
+        productinfo,
+        firstname,
+        email,
+        phone: userProfile?.phone ?? "",
+        hash: payuHash,
+        surl,
+        furl,
+        curl,
+        udf1: tenancy_id,
+        udf2: rent_month,
+        udf3: userId,
+        user_credential: userCredential,
+        vas_for_mobile_sdk_hash: vasHash,
+        payment_related_details_for_mobile_sdk_hash: paymentRelatedHash,
+      },
 
       // Method-specific data (PayU UPI intent only)
-      ...(gateway !== 'cashfree' && payment_method === "upi_intent" && {
+      ...(payment_method === "upi_intent" && {
         intent_url: buildUpiIntentUrl({
           key: PAYU_MERCHANT_KEY,
           txnid: txnId,
@@ -503,7 +438,7 @@ serve(async (req: Request) => {
           productinfo,
           firstname,
           email,
-          hash: payuHash!,
+          hash: payuHash,
           upi_app,
         }),
       }),

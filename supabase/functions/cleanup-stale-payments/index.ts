@@ -13,8 +13,6 @@ import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 import { sha512 } from "../_shared/crypto.ts";
-import { getCashfreeOrder, getCashfreePayments } from "../_shared/cashfree-orders.ts";
-import { CF_STATUS_MAP, CF_ORDER_STATUS_MAP } from "../_shared/cashfree-errors.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -44,13 +42,13 @@ serve(async (req: Request) => {
 
     const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS).toISOString();
 
-    // Find stale initiated payments with no gateway confirmation
+    // Find stale initiated payments with no PayU confirmation
     const { data: stalePayments, error } = await supabase
       .from("payments")
-      .select("id, payu_txn_id, status, created_at, payment_gateway, gateway_order_id")
+      .select("id, payu_txn_id, status, created_at")
       .eq("status", "initiated")
       .lt("created_at", cutoff)
-      .or("and(payu_mihpayid.is.null,payment_gateway.neq.cashfree),and(gateway_payment_id.is.null,payment_gateway.eq.cashfree)")
+      .is("payu_mihpayid", null)
       .limit(50);
 
     if (error) {
@@ -61,56 +59,7 @@ serve(async (req: Request) => {
     let stillProcessing = 0;
 
     for (const payment of stalePayments ?? []) {
-      if (payment.payment_gateway === 'cashfree' && payment.gateway_order_id) {
-        // Verify with Cashfree
-        try {
-          const order = await getCashfreeOrder(payment.gateway_order_id);
-          const orderStatus = String(order.order_status ?? "");
-
-          if (orderStatus === "EXPIRED") {
-            // Cashfree already expired it
-            const { data: updated } = await supabase
-              .from("payments")
-              .update({ status: "expired", gateway_status: "EXPIRED" })
-              .eq("id", payment.id)
-              .eq("status", "initiated")
-              .select("id")
-              .maybeSingle();
-            if (updated) expired++;
-            continue;
-          }
-
-          if (orderStatus === "PAID" || orderStatus === "ACTIVE") {
-            // Check payment attempts
-            const payments_list = await getCashfreePayments(payment.gateway_order_id);
-            const hasActivePayment = payments_list.some(
-              (p: Record<string, unknown>) => ["SUCCESS", "PENDING"].includes(String(p.payment_status))
-            );
-            if (hasActivePayment) {
-              stillProcessing++;
-              continue;
-            }
-          }
-
-          // No active payments — safe to expire
-          const { data: updated } = await supabase
-            .from("payments")
-            .update({ status: "expired", gateway_status: orderStatus })
-            .eq("id", payment.id)
-            .eq("status", "initiated")
-            .select("id")
-            .maybeSingle();
-          if (updated) expired++;
-        } catch (cfError) {
-          // Cashfree API error — do NOT expire; the payment may still be valid.
-          // Skip this payment and let the next cleanup cycle retry.
-          console.error(`Cashfree verification failed for payment ${payment.id}, skipping:`, cfError);
-          continue;
-        }
-        continue;
-      }
-
-      // Existing PayU path (unchanged)
+      // Verify with PayU before expiring
       if (payment.payu_txn_id) {
         // Verify with PayU before expiring
         try {

@@ -500,10 +500,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Method Label -- Figma: 14px Regular
+  // Method Label -- Figma: 12px Regular
   methodLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
   },
 
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   maskedDetail: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 20,
     color: FIGMA.maskedText,
   },
 

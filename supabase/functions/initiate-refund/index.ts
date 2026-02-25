@@ -23,8 +23,6 @@ import { AppError, ValidationError, NotFoundError, ExternalServiceError, Payment
 import { validateSchema, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
-import { initiateCashfreeRefund } from "../_shared/cashfree-orders.ts";
-import { CF_REFUND_STATUS_MAP } from "../_shared/cashfree-errors.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -259,12 +257,8 @@ serve(async (req: Request) => {
       throw new PaymentError("Payment has already been refunded", "ALREADY_REFUNDED");
     }
 
-    // Check gateway-specific transaction IDs
-    if (payment.payment_gateway === 'cashfree') {
-      if (!payment.gateway_order_id) {
-        throw new PaymentError("Cannot refund: Cashfree order ID not found", "MISSING_GATEWAY_ID");
-      }
-    } else if (!payment.payu_mihpayid) {
+    // Check PayU transaction ID
+    if (!payment.payu_mihpayid) {
       throw new PaymentError("Cannot refund: PayU transaction ID not found", "MISSING_PAYU_ID");
     }
 
@@ -316,62 +310,27 @@ serve(async (req: Request) => {
     // Convert to rupees for PayU
     const refundAmountRupees = (refundAmountPaise / 100).toFixed(2);
 
-    // Route refund to correct gateway
+    // Initiate refund via PayU
     let refundResult: { success: boolean; refundId?: string; status: string; message?: string };
 
-    if (payment.payment_gateway === 'cashfree' && payment.gateway_order_id) {
-      // Cashfree refund
-      try {
-        // Determine payment method for speed constraint
-        const paymentMethodDetails = payment.payment_method_details as Record<string, unknown> | null;
-        const isUpi = payment.payment_method?.startsWith('upi');
-
-        const cfRefund = await initiateCashfreeRefund(payment.gateway_order_id, {
-          refundAmount: refundAmountPaise / 100, // Cashfree expects rupees
-          refundId: `REFUND-${refund.id.slice(0, 8)}`,
-          refundSpeed: isUpi ? 'STANDARD' : 'INSTANT', // UPI only supports STANDARD
-          refundNote: reason,
-        });
-
-        const cfStatus = CF_REFUND_STATUS_MAP[cfRefund.refund_status] ?? "processing";
-        refundResult = {
-          success: cfStatus !== "failed",
-          refundId: cfRefund.refund_id,
-          status: cfStatus === "failed" ? "failed" : "processing",
-          message: cfRefund.status_description,
-        };
-      } catch (cfError) {
-        // Update refund status to failed
-        await supabase
-          .from("refunds")
-          .update({
-            status: "failed",
-            gateway_metadata: { error: cfError instanceof Error ? cfError.message : "Unknown error" },
-          })
-          .eq("id", refund.id);
-        throw cfError;
-      }
-    } else {
-      // PayU refund (existing path)
-      try {
-        const payuResponse = await initiatePayURefund(payment.payu_mihpayid, refundAmountRupees);
-        const isSuccess = payuResponse.status === 1 || payuResponse.msg?.toLowerCase().includes("success");
-        refundResult = {
-          success: isSuccess,
-          refundId: payuResponse.request_id,
-          status: isSuccess ? "processing" : "failed",
-          message: payuResponse.msg,
-        };
-      } catch (payuError) {
-        await supabase
-          .from("refunds")
-          .update({
-            status: "failed",
-            payu_response: { error: payuError instanceof Error ? payuError.message : "Unknown error" },
-          })
-          .eq("id", refund.id);
-        throw payuError;
-      }
+    try {
+      const payuResponse = await initiatePayURefund(payment.payu_mihpayid, refundAmountRupees);
+      const isSuccess = payuResponse.status === 1 || payuResponse.msg?.toLowerCase().includes("success");
+      refundResult = {
+        success: isSuccess,
+        refundId: payuResponse.request_id,
+        status: isSuccess ? "processing" : "failed",
+        message: payuResponse.msg,
+      };
+    } catch (payuError) {
+      await supabase
+        .from("refunds")
+        .update({
+          status: "failed",
+          payu_response: { error: payuError instanceof Error ? payuError.message : "Unknown error" },
+        })
+        .eq("id", refund.id);
+      throw payuError;
     }
 
     // Process refund result
@@ -383,16 +342,12 @@ serve(async (req: Request) => {
       .from("refunds")
       .update({
         status: refundResult.status,
-        payment_gateway: payment.payment_gateway ?? 'payu',
+        payment_gateway: "payu",
         gateway_refund_id: refundResult.refundId,
         gateway_refund_status: refundResult.status,
-        ...(payment.payment_gateway !== 'cashfree' ? {
-          payu_refund_id: refundResult.refundId,
-          payu_status: refundResult.message,
-          payu_response: refundResult,
-        } : {
-          gateway_metadata: refundResult,
-        }),
+        payu_refund_id: refundResult.refundId,
+        payu_status: refundResult.message,
+        payu_response: refundResult,
         processed_at: refundResult.success ? new Date().toISOString() : null,
         processed_by: "system",
       })
@@ -437,7 +392,7 @@ serve(async (req: Request) => {
         payment_id,
         refund_amount_paise: refundAmountPaise,
         reason,
-        gateway: payment.payment_gateway ?? 'payu',
+        gateway: "payu",
         gateway_response: refundResult,
         cashback_earned_paise: payment.cashback_earned_paise,
       },
@@ -471,7 +426,7 @@ serve(async (req: Request) => {
         payment_id,
         amount_paise: refundAmountPaise,
         status: newStatus,
-        gateway: payment.payment_gateway ?? 'payu',
+        gateway: "payu",
         gateway_refund_id: refundResult.refundId,
         message: isSuccess
           ? "Refund initiated successfully. It will be credited within 5-7 business days."

@@ -1,0 +1,494 @@
+{
+  "screenId": "684-12836",
+  "screenName": "Home --active --complete setup / all methods",
+  "figmaUrl": "https://www.figma.com/design/HZaVuwWn6B6jOjrmxZ7Kzv/Flent-Secured-v1.2---Dev?node-id=684-12836",
+  "generatedAt": "2026-02-25T13:09:27.488Z",
+  "checks": {
+    "nodeCount": 224,
+    "textNodeCount": 46,
+    "componentInstanceCount": 22,
+    "interactiveNodeCount": 9,
+    "imageAssetCount": 13,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 1686557229",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "684:12839",
+        "name": "Your rent is due in 10 days",
+        "content": "Your rent is due in 10 days",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6909",
+        "name": "January ‘26",
+        "content": "January ‘26",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6910",
+        "name": "View Rent Reciept",
+        "content": "View Rent Reciept",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "687:6912",
+        "name": "flent_insider",
+        "content": "flent_insider",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6921",
+        "name": "Cashback Earned",
+        "content": "Cashback Earned",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6922",
+        "name": "₹ 325.00",
+        "content": "₹  325.00",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "687:6934",
+        "name": "February ‘26",
+        "content": "February ‘26",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6935",
+        "name": "View Rent Reciept",
+        "content": "View Rent Reciept",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "687:6937",
+        "name": "flent_insider",
+        "content": "flent_insider",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6941",
+        "name": "2",
+        "content": "2",
+        "fontSize": 35.099998474121094,
+        "fontWeight": 400,
+        "color": "#FFD079"
+      },
+      {
+        "nodeId": "687:6946",
+        "name": "Cashback Earned",
+        "content": "Cashback Earned",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6947",
+        "name": "₹ 325.00",
+        "content": "₹  325.00",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "687:6959",
+        "name": "February ‘26",
+        "content": "February ‘26",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6960",
+        "name": "View Rent Reciept",
+        "content": "View Rent Reciept",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "687:6962",
+        "name": "flent_insider",
+        "content": "flent_insider",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6966",
+        "name": "3",
+        "content": "3",
+        "fontSize": 35.099998474121094,
+        "fontWeight": 400,
+        "color": "#EF9194"
+      },
+      {
+        "nodeId": "687:6971",
+        "name": "Cashback Earned",
+        "content": "Cashback Earned",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6972",
+        "name": "₹ 00.00",
+        "content": "₹  00.00",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "687:6984",
+        "name": "February ‘26",
+        "content": "February ‘26",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6985",
+        "name": "Upcoming Payment",
+        "content": "Upcoming Payment",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6987",
+        "name": "flent_insider",
+        "content": "flent_insider",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6991",
+        "name": "4",
+        "content": "4",
+        "fontSize": 35.099998474121094,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "687:6996",
+        "name": "Cashback Potential",
+        "content": "Cashback Potential",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "687:6997",
+        "name": "₹ 325.00",
+        "content": "₹  325.00",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "I684:12991;2641:16721",
+        "name": "Recent Payments",
+        "content": "Recent Payments",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#656565"
+      },
+      {
+        "nodeId": "I684:12992;2641:16696",
+        "name": "Recent Payments",
+        "content": "Cashbacks",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:12996",
+        "name": "Label",
+        "content": "CASHBACK BALANCE",
+        "fontSize": 12,
+        "fontWeight": 500,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "684:12997",
+        "name": "₹ 325.00",
+        "content": "₹  325.00",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "684:13000",
+        "name": "All-time Total",
+        "content": "All-time Total",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "684:13001",
+        "name": "₹ 3,256.00",
+        "content": "₹  3,256.00",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "684:13004",
+        "name": "Cashback Rate",
+        "content": "Cashback Rate",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "684:13005",
+        "name": "0.8% Avg",
+        "content": "0.8% Avg",
+        "fontSize": 28,
+        "fontWeight": 400,
+        "color": "#BABABA"
+      },
+      {
+        "nodeId": "684:13011",
+        "name": "September Cashback",
+        "content": "September Cashback",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:13015",
+        "name": "Paid · On Time",
+        "content": "Paid · On Time",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:13016",
+        "name": "₹ 325",
+        "content": "₹  325",
+        "fontSize": 16,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:13020",
+        "name": "August Cashback",
+        "content": "August Cashback",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:13023",
+        "name": "Paid · Delayed",
+        "content": "Paid · Delayed",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:13024",
+        "name": "NA",
+        "content": "NA",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:13028",
+        "name": "August Cashback",
+        "content": "August Cashback",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:13031",
+        "name": "Missed · No Payment",
+        "content": "Missed · No Payment",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:13032",
+        "name": "NA",
+        "content": "NA",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:13036",
+        "name": "Due in 10 Days",
+        "content": "Due in 10 Days",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "684:13037",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 12,
+        "fontWeight": 600,
+        "color": "#EEEEEE"
+      },
+      {
+        "nodeId": "I684:13038;100:1565",
+        "name": "Text",
+        "content": "Review & pay",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I684:13041;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:13047",
+        "name": "Hi, Rishabh",
+        "content": "Hi, Rishabh",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#0D0D0D",
+      "#0F0F0E",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#4CAF50",
+      "#4D4D4D",
+      "#656565",
+      "#878787",
+      "#892B2E",
+      "#995C41",
+      "#996A13",
+      "#A9A9A9",
+      "#BABABA",
+      "#CBCBCB",
+      "#DDDDDD",
+      "#E5484D",
+      "#EEEEEE",
+      "#EF9194",
+      "#FF9A6D",
+      "#FFB020",
+      "#FFCC8A",
+      "#FFD079",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      2.924999952316284,
+      4,
+      7.3125,
+      8,
+      10,
+      12,
+      16,
+      24,
+      32,
+      40,
+      48,
+      64
+    ],
+    "componentIds": [
+      "1:6119",
+      "243:2678",
+      "243:2671",
+      "1:27952",
+      "597:3220",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "Card 1",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Vector 1",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Card 2",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Card 3",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Card 4",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Component 6",
+        "trigger": "ON_CLICK"
+      },
+      {
+        "sourceNode": "Component 7",
+        "trigger": "ON_PRESS",
+        "destination": "243:2674"
+      },
+      {
+        "sourceNode": "Component 7",
+        "trigger": "ON_CLICK",
+        "destination": "684:12836"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      },
+      {
+        "sourceNode": "Vector 1",
+        "trigger": "ON_CLICK"
+      }
+    ]
+  }
+}

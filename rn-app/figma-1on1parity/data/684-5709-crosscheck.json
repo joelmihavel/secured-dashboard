@@ -1,0 +1,199 @@
+{
+  "screenId": "684-5709",
+  "screenName": "Pay Rent / Transaction Page --with cashback",
+  "figmaUrl": "https://www.figma.com/design/HZaVuwWn6B6jOjrmxZ7Kzv/Flent-Secured-v1.2---Dev?node-id=684-5709&m=dev",
+  "generatedAt": "2026-02-25T15:56:34.288Z",
+  "checks": {
+    "nodeCount": 83,
+    "textNodeCount": 16,
+    "componentInstanceCount": 3,
+    "interactiveNodeCount": 1,
+    "imageAssetCount": 1,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 2095586361",
+      "Frame 2095586363",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "684:5716",
+        "name": "Rent due in 10 days",
+        "content": "Rent due in 10 days",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:5717",
+        "name": "Complete setup to unlock 1% cashback",
+        "content": "Complete setup to unlock 1% cashback",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "684:5719",
+        "name": "₹350 cashback applied",
+        "content": "₹350 cashback applied",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "684:5735",
+        "name": "Base rent",
+        "content": "Base rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:5736",
+        "name": "₹ 30,000",
+        "content": "₹ 30,000",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "684:5742",
+        "name": "Maintenance",
+        "content": "Maintenance",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:5743",
+        "name": "₹2,500",
+        "content": "₹2,500",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "684:5750",
+        "name": "Total Rent",
+        "content": "Total Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:5751",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "684:5756",
+        "name": "Cashback",
+        "content": "Cashback ",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:5757",
+        "name": "- ₹ 325",
+        "content": "- ₹  325",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#EF9194"
+      },
+      {
+        "nodeId": "684:5763",
+        "name": "Payable Rent",
+        "content": "Payable Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "684:5764",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I684:5768;100:1565",
+        "name": "Text",
+        "content": "Pay ₹32,175 now",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "684:5769",
+        "name": "Pay by 7 Dec to earn ₹ 350 cashback on this payment",
+        "content": "Pay by 7 Dec to earn ₹ 350 cashback on this payment",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I684:5773;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#4D4D4D",
+      "#878787",
+      "#A6A6A6",
+      "#A9A9A9",
+      "#CBCBCB",
+      "#DDDDDD",
+      "#EF9194",
+      "#FF9A6D",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      12,
+      16,
+      24,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:23982",
+      "597:3220",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      }
+    ]
+  }
+}

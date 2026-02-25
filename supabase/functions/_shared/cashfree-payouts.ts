@@ -9,7 +9,7 @@ import {
   cashfreeRequest,
   CF_PAYOUT_API_VERSION,
   getPayoutConfig,
-} from "./cashfree-common.ts";
+} from "./cashfree-shared.ts";
 
 // ==============================================
 // TYPES

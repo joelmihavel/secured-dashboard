@@ -1,0 +1,43 @@
+Root Layout: {
+  direction: 'none',
+  justifyContent: 'flex-start',
+  alignItems: 'flex-start',
+  gap: 0,
+  padding: { top: 0, right: 0, bottom: 0, left: 0 },
+  wrap: 'NO_WRAP',
+  sizingH: 'FIXED',
+  sizingV: 'FIXED'
+}
+
+Child: Frame 2095586343 | Layout: {
+  direction: 'column',
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  gap: 24,
+  padding: { top: 0, right: 0, bottom: 48, left: 0 },
+  wrap: 'NO_WRAP',
+  sizingH: 'FIXED',
+  sizingV: 'HUG'
+} | Geom: x=0, y=157, w=393, h=1191
+
+Child: Frame 1686557229 | Layout: {
+  direction: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 24,
+  padding: { top: 16, right: 32, bottom: 40, left: 32 },
+  wrap: 'NO_WRAP',
+  sizingH: 'FIXED',
+  sizingV: 'HUG'
+} | Geom: x=0, y=1383, w=393, h=118
+
+Child: Frame 2095586357 | Layout: {
+  direction: 'column',
+  justifyContent: 'flex-start',
+  alignItems: 'flex-start',
+  gap: 0,
+  padding: { top: 0, right: 0, bottom: 24, left: 0 },
+  wrap: 'NO_WRAP',
+  sizingH: 'FIXED',
+  sizingV: 'HUG'
+} | Geom: x=0, y=0, w=393, h=157
