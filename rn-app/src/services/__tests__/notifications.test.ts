@@ -85,10 +85,10 @@ describe('Notifications Service', () => {
   describe('NOTIFICATION_ROUTES', () => {
     it('maps known notification types to routes', () => {
       expect(NOTIFICATION_ROUTES.waitlist_approved).toBe('/(waitlist)/approved');
-      expect(NOTIFICATION_ROUTES.payment_success).toBe('/(payment)/success');
-      expect(NOTIFICATION_ROUTES.payment_failed).toBe('/(payment)/failed');
+      expect(NOTIFICATION_ROUTES.payment_success).toBe('/(payment)/status');
+      expect(NOTIFICATION_ROUTES.payment_failed).toBe('/(payment)/status');
       expect(NOTIFICATION_ROUTES.landlord_approved).toBe('/(setup)/pending-steps');
-      expect(NOTIFICATION_ROUTES.rent_reminder).toBe('/(payment)/select-method');
+      expect(NOTIFICATION_ROUTES.rent_reminder).toBe('/(payment)/confirm');
     });
   });
 
@@ -133,12 +133,12 @@ describe('Notifications Service', () => {
   describe('handleNotificationResponse', () => {
     it('navigates to route from notification data', () => {
       handleNotificationResponse({
-        route: '/(payment)/success',
+        route: '/(payment)/status',
         params: { paymentId: 'pay-001' },
       });
 
       expect(mockRouterPush).toHaveBeenCalledWith({
-        pathname: '/(payment)/success',
+        pathname: '/(payment)/status',
         params: { paymentId: 'pay-001' },
       });
     });

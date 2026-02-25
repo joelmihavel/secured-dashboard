@@ -26,7 +26,7 @@ jest.mock('react-native-safe-area-context', () => {
 
 // DottedPattern (heavy SVG component)
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 // useVerificationStatus hook

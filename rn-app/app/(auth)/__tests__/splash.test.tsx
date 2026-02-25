@@ -47,9 +47,9 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// Mock DottedPattern (heavy SVG component — not relevant to splash logic)
+// Mock DottedGridPattern (heavy SVG component — not relevant to splash logic)
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 // ── Tests ────────────────────────────────────────────────────────────────────

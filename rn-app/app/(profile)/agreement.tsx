@@ -40,6 +40,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text } from '@/src/components';
+import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
@@ -197,6 +198,7 @@ export default function ProfileAgreementScreen() {
 
   return (
     <Screen testID="profile-agreement-screen" padded={false}>
+      <DottedGridPattern animated={true} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}

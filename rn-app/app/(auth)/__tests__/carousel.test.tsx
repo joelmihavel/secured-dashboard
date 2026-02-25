@@ -48,7 +48,7 @@ jest.mock('react-native-safe-area-context', () => {
 
 // Mock DottedPattern (from patterns module)
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 // Mock CarouselDots (from composed/auth module)

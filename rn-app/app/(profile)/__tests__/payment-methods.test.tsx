@@ -20,7 +20,7 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 jest.mock('@expo/vector-icons', () => {
@@ -31,11 +31,12 @@ jest.mock('@expo/vector-icons', () => {
 const mockMutate = jest.fn();
 
 jest.mock('@/src/hooks', () => ({
-  useProfilePaymentMethods: () => ({
-    data: null,
+  useSavedPaymentMethods: () => ({
+    data: [],
     isLoading: false,
   }),
-  useAddPaymentMethod: () => ({ mutate: mockMutate, isPending: false }),
+  useDeletePaymentMethod: () => ({ mutate: mockMutate, isPending: false }),
+  useSetDefaultPaymentMethod: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
 jest.mock('@/src/services/supabase/client', () => ({
@@ -57,29 +58,14 @@ describe('PaymentMethodsScreen', () => {
     expect(getByTestId('payment-methods-screen')).toBeTruthy();
   });
 
-  it('renders "Edit your" title prefix', () => {
+  it('renders Payment Methods header title', () => {
     const { getByText } = render(<PaymentMethodsScreen />);
-    expect(getByText(/Edit your/)).toBeTruthy();
+    expect(getByText('Payment Methods')).toBeTruthy();
   });
 
-  it('renders UPI Method type name for upi tab', () => {
+  it('renders empty state when no methods', () => {
     const { getByText } = render(<PaymentMethodsScreen />);
-    expect(getByText('UPI Method')).toBeTruthy();
-  });
-
-  it('renders Save Changes button', () => {
-    const { getByText } = render(<PaymentMethodsScreen />);
-    expect(getByText('Save Changes')).toBeTruthy();
-  });
-
-  it('renders UPI ID input field', () => {
-    const { getByTestId } = render(<PaymentMethodsScreen />);
-    expect(getByTestId('input-upiId')).toBeTruthy();
-  });
-
-  it('renders account holder name input field', () => {
-    const { getByTestId } = render(<PaymentMethodsScreen />);
-    expect(getByTestId('input-holderName')).toBeTruthy();
+    expect(getByText('No saved payment methods')).toBeTruthy();
   });
 
   it('matches snapshot', () => {

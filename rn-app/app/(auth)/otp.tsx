@@ -288,8 +288,6 @@ export default function OTPScreen() {
 
   // Pan gesture for dismiss
   const panGesture = Gesture.Pan()
-    .activeOffsetY([-20, 20]) // Increase threshold slightly
-    .failOffsetX([-10, 10])   // Do not activate on horizontal movement
     .onUpdate((event) => {
       if (event.translationY > 0) {
         translateY.value = event.translationY;

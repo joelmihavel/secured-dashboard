@@ -3,11 +3,11 @@
  * "Hi, [Name]" greeting with Flent logo and user avatar
  * Figma Reference: 243-2762, 243-2967, 243-3170, 243-3378, 243-4062
  *
- * Figma Pixel-Perfect Values:
- * - Container: paddingHorizontal 32px, paddingTop 24px, paddingBottom 24px
+ * Figma Pixel-Perfect Values (684:9047):
+ * - Container: paddingHorizontal 32px, paddingVertical 24px
  * - Logo: 32x32 (via Logo component)
  * - Greeting: "Hi, Rishabh", fontSize 14, lineHeight 20, color #CBCBCB
- * - Gap between logo and greeting: 12px
+ * - Gap between logo and greeting: 16px (Figma 684:9049)
  * - Avatar: 32x32, borderRadius 16, backgroundColor #FFCC8A (brand[300])
  * - Avatar initial: fontSize 14, fontWeight 600, color white
  */
@@ -68,13 +68,6 @@ function HomeHeaderComponent({
             </Text>
           </View>
         )}
-        {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Text>
-          </View>
-        )}
       </TouchableOpacity>
     </View>
   );
@@ -85,14 +78,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 32, // Figma: 32px exact
-    paddingTop: 24, // Figma: paddingTop 24px
-    paddingBottom: 24, // Figma: paddingBottom 24px
+    paddingHorizontal: 32, // Figma 684:9047: paddingHorizontal 32
+    paddingTop: 24, // Figma 684:9047: paddingVertical 24
+    paddingBottom: 24, // Figma 684:9047: paddingVertical 24
   },
   leftContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12, // Figma: gap 12px
+    gap: 16, // Figma 684:9049: gap 16 between logo and greeting
   },
   greeting: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
@@ -112,7 +105,7 @@ const styles = StyleSheet.create({
     width: 32, // Figma: 32px
     height: 32, // Figma: 32px
     borderRadius: 16, // Figma: fully rounded
-    backgroundColor: '#FFCC8A', // Figma: #FFCC8A (brand[300])
+    backgroundColor: colors.brand[500], // Brand orange #FF9A6D
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -120,23 +113,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
     fontSize: 14, // Figma: fontSize 14
     color: colors.white,
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#E5484D', // Figma: error.radix #E5484D
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    fontFamily: 'PlusJakartaSans-SemiBold', // fontWeight 600
-    color: colors.white,
-    fontSize: 10,
   },
 });
 

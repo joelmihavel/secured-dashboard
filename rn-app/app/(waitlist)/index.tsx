@@ -33,7 +33,7 @@ import {
   ReferralCodeInput,
   ProgressArc,
   BenefitsCard,
-  DottedPattern,
+  DottedGridPattern,
   SkeletonLoader,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
@@ -361,7 +361,7 @@ export default function WaitlistScreen() {
   if (viewState === 'error') {
     return (
       <View style={styles.screen}>
-        <DottedPattern backgroundShape="waitlist" />
+        <DottedGridPattern fadeMask={false} />
         <View style={[styles.errorContainer, { paddingTop: insets.top + spacing.huge }]}>
           <Animated.View
             entering={FadeInDown.duration(FIGMA.animation.duration)}
@@ -445,7 +445,7 @@ export default function WaitlistScreen() {
 
     return (
       <View style={styles.screen}>
-        <DottedPattern backgroundShape="waitlist" />
+        <DottedGridPattern fadeMask={false} />
 
       <ScrollView
         ref={scrollViewRef}
@@ -593,7 +593,7 @@ export default function WaitlistScreen() {
     <View style={styles.screen}>
       {/* Background Pattern + Shape (nodes 237:2761, 41:11207) */}
       {/* DottedPattern renders: dotted image (8% opacity) + background shape (40%) + gradient */}
-      <DottedPattern backgroundShape="waitlist" />
+      <DottedGridPattern fadeMask={false} />
 
       <ScrollView
         ref={scrollViewRef}

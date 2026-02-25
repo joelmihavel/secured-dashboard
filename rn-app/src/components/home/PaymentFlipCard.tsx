@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Dimensions, Text as RNText } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Text as SvgText, TextPath, Defs, Path } from 'react-native-svg';
 import { Text } from '@/src/components';
 import { colors } from '@/src/theme';
 import { PaymentBadge } from './PaymentBadge';
@@ -28,7 +29,6 @@ const CHAIR_GREEN = require('../../../assets/images/card-back/chair-green.png');
 const CHAIR_RED = require('../../../assets/images/card-back/chair-red.png');
 const SOFA_YELLOW = require('../../../assets/images/card-back/sofa-yellow.png');
 const STICKER_PAID = require('../../../assets/images/card-back/sticker-paid.png');
-const STICKER_UNPAID = require('../../../assets/images/card-front/sticker-unpaid.png');
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -52,7 +52,70 @@ export interface PaymentMonthData {
   missedCount?: number;
   /** Action for zero state when there are no payment methods setup */
   onAddPaymentMethod?: () => void;
+  /** Rent due day of month (e.g. 4 for 4th) — shown in upcoming stamp */
+  rentDueDay?: number;
+  /** Unique index to cycle between 3D furniture assets */
+  cardIndex?: number;
 }
+
+// Figma 705:6514 — Circular stamp with due date and curved "upcoming payment" text
+const STAMP_SIZE = 94; // Figma: 93.6px rounded up
+const STAMP_RING_OUTER = 93.6;
+const STAMP_RING_INNER = 54.112;
+
+function UpcomingStamp({ dueDay }: { dueDay: number }) {
+  const cx = STAMP_SIZE / 2;
+  const cy = STAMP_SIZE / 2;
+  // Circular path for curved text (radius slightly inside outer ring)
+  const textR = 32;
+  const textPath = `M ${cx},${cy - textR} A ${textR},${textR} 0 1,1 ${cx - 0.01},${cy - textR}`;
+
+  return (
+    <View style={stampStyles.container}>
+      <Svg width={STAMP_SIZE} height={STAMP_SIZE} viewBox={`0 0 ${STAMP_SIZE} ${STAMP_SIZE}`}>
+        {/* Outer ring — Figma Ellipse 21916 */}
+        <Circle
+          cx={cx} cy={cy} r={STAMP_RING_OUTER / 2 - 0.5}
+          stroke="#4D4D4D" strokeWidth={0.8} fill="none"
+        />
+        {/* Inner ring — Figma Ellipse 21915 */}
+        <Circle
+          cx={cx} cy={cy} r={STAMP_RING_INNER / 2 - 0.5}
+          stroke="#4D4D4D" strokeWidth={0.6} fill="none"
+        />
+        {/* Curved "upcoming payment" text */}
+        <Defs>
+          <Path id="stampTextPath" d={textPath} />
+        </Defs>
+        <SvgText fill="#878787" fontSize={7.5} fontFamily="PlusJakartaSans-Regular" letterSpacing={1.5}>
+          <TextPath href="#stampTextPath" startOffset="0%">
+            upcoming payment \ upcoming payment \
+          </TextPath>
+        </SvgText>
+      </Svg>
+      {/* Center date number — Figma 705:6516: fontSize 35.1, color #878787 */}
+      <RNText style={stampStyles.dateText}>{dueDay}</RNText>
+    </View>
+  );
+}
+
+const stampStyles = StyleSheet.create({
+  container: {
+    width: STAMP_SIZE,
+    height: STAMP_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateText: {
+    position: 'absolute',
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 35,
+    lineHeight: 47,
+    letterSpacing: -1.46,
+    color: '#878787',
+    textAlign: 'center',
+  },
+});
 
 interface PaymentFlipCardProps {
   data: PaymentMonthData;
@@ -62,8 +125,13 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
   const [flipped, setFlipped] = useState(false);
   const flipAnim = useSharedValue(0);
 
-  // Randomly select furniture for the back of the card once on mount
-  const furnitureType = React.useMemo(() => (Math.random() > 0.5 ? 'sofa' : 'chair'), []);
+  // Cycle through furniture sequentially: Sofa Yellow -> Chair Green -> Chair Red -> repeat
+  const furnitureType = React.useMemo(() => {
+    const cycle = (data.cardIndex ?? 0) % 3;
+    if (cycle === 0) return 'sofa-yellow';
+    if (cycle === 1) return 'chair-green';
+    return 'chair-red';
+  }, [data.cardIndex]);
 
   // Single shared value for the chosen furniture piece
   const furnitureAnim = useSharedValue(0);
@@ -204,8 +272,8 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
           <Text style={styles.insiderText}>
             flent<Text style={styles.insiderAccent} inherit>_insider</Text>
           </Text>
-          {data.onAddPaymentMethod ? (
-            <Image source={STICKER_UNPAID} style={styles.stickerImage} contentFit="contain" />
+          {data.status === 'upcoming' && data.rentDueDay ? (
+            <UpcomingStamp dueDay={data.rentDueDay} />
           ) : (
             <PaymentBadge
               variant={config.badgeVariant}
@@ -302,8 +370,16 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
       <View style={styles.furnitureContainer} pointerEvents="none">
         <Animated.View style={[styles.furnitureCenteredWrapper, furnitureStyle]}>
           <Image
-            source={furnitureType === 'sofa' ? SOFA_YELLOW : CHAIR_GREEN}
-            style={furnitureType === 'sofa' ? styles.sofaYellow : styles.chairGreen}
+            source={
+              furnitureType === 'sofa-yellow' ? SOFA_YELLOW :
+              furnitureType === 'chair-green' ? CHAIR_GREEN :
+              CHAIR_RED
+            }
+            style={
+              furnitureType === 'sofa-yellow' ? styles.sofaYellow :
+              furnitureType === 'chair-green' ? styles.chairGreen :
+              styles.chairRed
+            }
             contentFit="contain"
           />
         </Animated.View>
@@ -416,10 +492,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 16,
   },
-  stickerImage: {
-    width: 94,
-    height: 94,
-  },
   insiderText: {
     color: '#BABABA',
     fontSize: 12, // Figma: Font Size/Body/sm = 12px
@@ -518,6 +590,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontFamily: 'PlusJakartaSans-Regular',
     textAlign: 'center',
+    textDecorationLine: 'underline', // Figma 705:6521
   },
   
   // BACK CARD
@@ -612,5 +685,9 @@ const styles = StyleSheet.create({
   chairGreen: {
     width: 180.68,
     height: 148.83,
+  },
+  chairRed: {
+    width: 182.82,
+    height: 160.0,
   }
 });

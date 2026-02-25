@@ -3,10 +3,13 @@
 exports[`PaymentMethodsScreen matches snapshot 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
   testID="payment-methods-screen"
 >
@@ -32,612 +35,245 @@ exports[`PaymentMethodsScreen matches snapshot 1`] = `
             "flex": 1,
           },
           false,
-          undefined,
         ]
       }
     >
       <View
-        onLayout={[Function]}
         style={
-          [
-            {
-              "flex": 1,
-            },
-            {
-              "paddingBottom": 0,
-            },
-          ]
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 16,
+            "paddingBottom": 24,
+            "paddingHorizontal": 24,
+            "paddingTop": 8,
+          }
         }
       >
-        <RCTScrollView
-          contentContainerStyle={
+        <View
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          accessibilityState={
             {
-              "flexGrow": 1,
-              "paddingBottom": 48,
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
             }
           }
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          hitSlop={
+            {
+              "bottom": 8,
+              "left": 8,
+              "right": 8,
+              "top": 8,
+            }
+          }
+          onClick={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
           style={
             {
-              "flex": 1,
+              "alignItems": "center",
+              "height": 32,
+              "justifyContent": "center",
+              "opacity": 1,
+              "width": 32,
             }
           }
         >
-          <View>
-            <View
-              style={
+          <RNSVGSvgView
+            align="xMidYMid"
+            bbHeight={24}
+            bbWidth={24}
+            fill="none"
+            focusable={false}
+            height={24}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
+            style={
+              [
                 {
-                  "gap": 48,
-                  "paddingHorizontal": 48,
-                }
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {
+                  "flex": 0,
+                  "height": 24,
+                  "width": 24,
+                },
+              ]
+            }
+            vbHeight={24}
+            vbWidth={24}
+            width={24}
+          >
+            <RNSVGGroup
+              fill={null}
+              propList={
+                [
+                  "fill",
+                ]
               }
             >
-              <View
-                accessibilityLabel="Go back"
-                accessibilityRole="button"
-                accessibilityState={
+              <RNSVGPath
+                d="M19 12H5M5 12L12 19M5 12L12 5"
+                fill={
                   {
-                    "busy": undefined,
-                    "checked": undefined,
-                    "disabled": undefined,
-                    "expanded": undefined,
-                    "selected": undefined,
+                    "payload": 4278190080,
+                    "type": 0,
                   }
                 }
-                accessibilityValue={
-                  {
-                    "max": undefined,
-                    "min": undefined,
-                    "now": undefined,
-                    "text": undefined,
-                  }
-                }
-                accessible={true}
-                collapsable={false}
-                focusable={true}
-                hitSlop={
-                  {
-                    "bottom": 8,
-                    "left": 8,
-                    "right": 8,
-                    "top": 8,
-                  }
-                }
-                onClick={[Function]}
-                onResponderGrant={[Function]}
-                onResponderMove={[Function]}
-                onResponderRelease={[Function]}
-                onResponderTerminate={[Function]}
-                onResponderTerminationRequest={[Function]}
-                onStartShouldSetResponder={[Function]}
-                style={
-                  {
-                    "alignItems": "flex-start",
-                    "height": 32,
-                    "justifyContent": "center",
-                    "opacity": 1,
-                    "width": 32,
-                  }
-                }
-              >
-                <View
-                  color="#FFFFFF"
-                  name="arrow-back"
-                  size={24}
-                />
-              </View>
-              <Text
-                style={
+                propList={
                   [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
-                      "letterSpacing": 0,
-                      "lineHeight": 24,
-                      "textAlign": "left",
-                    },
-                    {
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 48,
-                      "letterSpacing": -1,
-                      "lineHeight": 64,
-                      "maxWidth": 297,
-                    },
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
                   ]
                 }
-              >
-                <Text
-                  style={
-                    [
-                      undefined,
-                      {
-                        "color": "#A9A9A9",
-                      },
-                    ]
-                  }
-                >
-                  Edit your  
-                </Text>
-                <Text
-                  style={
-                    [
-                      undefined,
-                      {
-                        "color": "#FF9A6D",
-                      },
-                    ]
-                  }
-                >
-                  UPI Method
-                </Text>
-              </Text>
-              <View
-                style={
+                stroke={
                   {
-                    "gap": 16,
+                    "payload": 4294967295,
+                    "type": 0,
                   }
                 }
-              >
-                <View
-                  style={
-                    {
-                      "width": "100%",
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "justifyContent": "space-between",
-                        "marginBottom": 6,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Medium",
-                              "fontSize": 12,
-                              "lineHeight": 20,
-                            },
-                            {
-                              "color": "#A9A9A9",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      Account holder name
-                    </Text>
-                    <View
-                      accessibilityLabel="edit for Account holder name"
-                      accessibilityRole="button"
-                      accessibilityState={
-                        {
-                          "busy": undefined,
-                          "checked": undefined,
-                          "disabled": undefined,
-                          "expanded": undefined,
-                          "selected": undefined,
-                        }
-                      }
-                      accessibilityValue={
-                        {
-                          "max": undefined,
-                          "min": undefined,
-                          "now": undefined,
-                          "text": undefined,
-                        }
-                      }
-                      accessible={true}
-                      collapsable={false}
-                      focusable={true}
-                      hitSlop={
-                        {
-                          "bottom": 8,
-                          "left": 8,
-                          "right": 8,
-                          "top": 8,
-                        }
-                      }
-                      onClick={[Function]}
-                      onResponderGrant={[Function]}
-                      onResponderMove={[Function]}
-                      onResponderRelease={[Function]}
-                      onResponderTerminate={[Function]}
-                      onResponderTerminationRequest={[Function]}
-                      onStartShouldSetResponder={[Function]}
-                      style={
-                        {
-                          "opacity": 1,
-                        }
-                      }
-                    >
-                      <Text
-                        style={
-                          [
-                            {
-                              "color": "#FFFFFF",
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
-                              "letterSpacing": 0,
-                              "lineHeight": 24,
-                              "textAlign": "left",
-                            },
-                            [
-                              {
-                                "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 14,
-                                "lineHeight": 20,
-                                "textAlign": "right",
-                              },
-                              {
-                                "color": "#878787",
-                              },
-                            ],
-                          ]
-                        }
-                      >
-                        edit
-                      </Text>
-                    </View>
-                  </View>
-                  <View
-                    style={
-                      [
-                        {
-                          "borderColor": "transparent",
-                          "borderRadius": 12,
-                          "borderWidth": 1,
-                        },
-                        {
-                          "borderColor": "transparent",
-                        },
-                      ]
-                    }
-                  >
-                    <TextInput
-                      accessibilityLabel="Account holder name"
-                      accessibilityState={
-                        {
-                          "disabled": false,
-                        }
-                      }
-                      editable={true}
-                      onBlur={[Function]}
-                      onChangeText={[Function]}
-                      onFocus={[Function]}
-                      placeholder="John Smith"
-                      placeholderTextColor="#444444"
-                      style={
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 20,
-                            "lineHeight": 32,
-                            "paddingHorizontal": 0,
-                            "paddingVertical": 16,
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                          false,
-                          false,
-                          undefined,
-                        ]
-                      }
-                      testID="input-holderName"
-                      value=""
-                    />
-                  </View>
-                </View>
-                <View
-                  style={
-                    {
-                      "width": "100%",
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "justifyContent": "space-between",
-                        "marginBottom": 6,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Medium",
-                              "fontSize": 12,
-                              "lineHeight": 20,
-                            },
-                            {
-                              "color": "#A9A9A9",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      UPI ID
-                    </Text>
-                    <View
-                      accessibilityLabel="edit for UPI ID"
-                      accessibilityRole="button"
-                      accessibilityState={
-                        {
-                          "busy": undefined,
-                          "checked": undefined,
-                          "disabled": undefined,
-                          "expanded": undefined,
-                          "selected": undefined,
-                        }
-                      }
-                      accessibilityValue={
-                        {
-                          "max": undefined,
-                          "min": undefined,
-                          "now": undefined,
-                          "text": undefined,
-                        }
-                      }
-                      accessible={true}
-                      collapsable={false}
-                      focusable={true}
-                      hitSlop={
-                        {
-                          "bottom": 8,
-                          "left": 8,
-                          "right": 8,
-                          "top": 8,
-                        }
-                      }
-                      onClick={[Function]}
-                      onResponderGrant={[Function]}
-                      onResponderMove={[Function]}
-                      onResponderRelease={[Function]}
-                      onResponderTerminate={[Function]}
-                      onResponderTerminationRequest={[Function]}
-                      onStartShouldSetResponder={[Function]}
-                      style={
-                        {
-                          "opacity": 1,
-                        }
-                      }
-                    >
-                      <Text
-                        style={
-                          [
-                            {
-                              "color": "#FFFFFF",
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
-                              "letterSpacing": 0,
-                              "lineHeight": 24,
-                              "textAlign": "left",
-                            },
-                            [
-                              {
-                                "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 14,
-                                "lineHeight": 20,
-                                "textAlign": "right",
-                              },
-                              {
-                                "color": "#878787",
-                              },
-                            ],
-                          ]
-                        }
-                      >
-                        edit
-                      </Text>
-                    </View>
-                  </View>
-                  <View
-                    style={
-                      [
-                        {
-                          "borderColor": "transparent",
-                          "borderRadius": 12,
-                          "borderWidth": 1,
-                        },
-                        {
-                          "borderColor": "transparent",
-                        },
-                      ]
-                    }
-                  >
-                    <TextInput
-                      accessibilityLabel="UPI ID"
-                      accessibilityState={
-                        {
-                          "disabled": false,
-                        }
-                      }
-                      editable={true}
-                      onBlur={[Function]}
-                      onChangeText={[Function]}
-                      onFocus={[Function]}
-                      placeholder="john@oksbi"
-                      placeholderTextColor="#444444"
-                      style={
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 20,
-                            "lineHeight": 32,
-                            "paddingHorizontal": 0,
-                            "paddingVertical": 16,
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                          false,
-                          false,
-                          undefined,
-                        ]
-                      }
-                      testID="input-upiId"
-                      value=""
-                    />
-                  </View>
-                </View>
-              </View>
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                  }
-                }
-              >
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "borderRadius": 200,
-                      "height": 2,
-                      "marginBottom": 8,
-                      "width": 24,
-                    }
-                  }
-                />
-                <View
-                  accessibilityLabel="Save changes"
-                  accessibilityRole="button"
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": true,
-                      "expanded": undefined,
-                      "selected": undefined,
-                    }
-                  }
-                  accessibilityValue={
-                    {
-                      "max": undefined,
-                      "min": undefined,
-                      "now": undefined,
-                      "text": undefined,
-                    }
-                  }
-                  accessible={true}
-                  collapsable={false}
-                  focusable={false}
-                  onClick={[Function]}
-                  onResponderGrant={[Function]}
-                  onResponderMove={[Function]}
-                  onResponderRelease={[Function]}
-                  onResponderTerminate={[Function]}
-                  onResponderTerminationRequest={[Function]}
-                  onStartShouldSetResponder={[Function]}
-                  style={
-                    {
-                      "borderRadius": 8,
-                      "opacity": 1,
-                      "overflow": "hidden",
-                      "width": "100%",
-                    }
-                  }
-                >
-                  <LinearGradient
-                    colors={
-                      [
-                        "#202020",
-                        "#0d0d0d",
-                      ]
-                    }
-                    end={
-                      {
-                        "x": 0,
-                        "y": 1,
-                      }
-                    }
-                    locations={
-                      [
-                        0,
-                        0.9018,
-                      ]
-                    }
-                    start={
-                      {
-                        "x": 0,
-                        "y": 0,
-                      }
-                    }
-                    style={
-                      [
-                        {
-                          "alignItems": "center",
-                          "borderColor": "#FF9A6D",
-                          "borderRadius": 8,
-                          "borderWidth": 0.1,
-                          "height": 56,
-                          "justifyContent": "center",
-                        },
-                        {
-                          "opacity": 0.5,
-                        },
-                      ]
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 16,
-                            "lineHeight": 24,
-                          },
-                        ]
-                      }
-                    >
-                      Save Changes
-                    </Text>
-                  </LinearGradient>
-                </View>
-              </View>
-            </View>
-          </View>
-        </RCTScrollView>
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={2}
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 16,
+                "letterSpacing": 0,
+                "lineHeight": 24,
+                "textAlign": "left",
+              },
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-SemiBold",
+                "fontSize": 20,
+                "lineHeight": 28,
+              },
+            ]
+          }
+        >
+          Payment Methods
+        </Text>
       </View>
+      <RCTScrollView
+        ItemSeparatorComponent={[Function]}
+        ListEmptyComponent={[Function]}
+        contentContainerStyle={
+          {
+            "flexGrow": 1,
+            "paddingBottom": 32,
+            "paddingHorizontal": 24,
+          }
+        }
+        data={[]}
+        getItem={[Function]}
+        getItemCount={[Function]}
+        keyExtractor={[Function]}
+        onContentSizeChange={[Function]}
+        onLayout={[Function]}
+        onMomentumScrollBegin={[Function]}
+        onMomentumScrollEnd={[Function]}
+        onScroll={[Function]}
+        onScrollBeginDrag={[Function]}
+        onScrollEndDrag={[Function]}
+        removeClippedSubviews={false}
+        renderItem={[Function]}
+        scrollEventThrottle={0.0001}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[]}
+        viewabilityConfigCallbackPairs={[]}
+      >
+        <View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "flex": 1,
+                "justifyContent": "center",
+                "paddingHorizontal": 40,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  {
+                    "color": "#CBCBCB",
+                    "fontFamily": "PlusJakartaSans-Medium",
+                    "fontSize": 16,
+                    "lineHeight": 24,
+                    "marginBottom": 8,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              No saved payment methods
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  {
+                    "color": "#A9A9A9",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 14,
+                    "lineHeight": 20,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              Add a payment method when you make your first payment.
+            </Text>
+          </View>
+        </View>
+      </RCTScrollView>
     </View>
   </View>
 </View>

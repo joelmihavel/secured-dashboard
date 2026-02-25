@@ -30,7 +30,7 @@ jest.mock('@expo/vector-icons', () => {
 
 // Mock DottedPattern
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 // Mock hooks

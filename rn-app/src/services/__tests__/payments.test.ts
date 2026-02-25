@@ -29,7 +29,7 @@ import {
   createPaymentSchedule,
   managePaymentSchedule,
   getPaymentSchedules,
-  getCashbackHistory,
+  getSavingsHistory,
   formatAmount,
   formatRupees,
   getCurrentRentMonth,
@@ -526,7 +526,7 @@ describe('Payments API Service', () => {
   // =========================================================================
   // Cashback history
   // =========================================================================
-  describe('getCashbackHistory', () => {
+  describe('getSavingsHistory', () => {
     it('returns cashback entries with pagination', async () => {
       mockCallEdgeFunction.mockResolvedValue({
         data: {
@@ -550,7 +550,7 @@ describe('Payments API Service', () => {
         error: null,
       });
 
-      const result = await getCashbackHistory(1, 20);
+      const result = await getSavingsHistory(1, 20);
 
       expect(result.data?.current_balance_paise).toBe(20000);
       expect(result.data?.entries).toHaveLength(1);

@@ -45,7 +45,7 @@ import {
   createPaymentSchedule,
   managePaymentSchedule,
   getPaymentSchedules,
-  getCashbackHistory,
+  getSavingsHistory,
 } from '../api/payments';
 
 import { fetchDashboard } from '../api/dashboard';
@@ -807,7 +807,7 @@ describe('Edge Functions -- Frontend Service Integration', () => {
         error: null,
       });
 
-      await getCashbackHistory(1, 20, { tenancy_id: TEST_TENANCY_ID, type: 'earned' });
+      await getSavingsHistory(1, 20, { tenancy_id: TEST_TENANCY_ID, type: 'earned' });
 
       expect(mockCallEdgeFunction).toHaveBeenCalledWith(
         'get-cashback-history',
@@ -828,7 +828,7 @@ describe('Edge Functions -- Frontend Service Integration', () => {
         error: null,
       });
 
-      const result = await getCashbackHistory();
+      const result = await getSavingsHistory();
 
       expect(result.data).not.toBeNull();
       expect(result.data!.current_balance_paise).toBe(150000);
@@ -844,7 +844,7 @@ describe('Edge Functions -- Frontend Service Integration', () => {
         error: null,
       });
 
-      const result = await getCashbackHistory();
+      const result = await getSavingsHistory();
       const pagination = result.data!.pagination;
 
       expect(pagination.page).toBe(1);
@@ -861,7 +861,7 @@ describe('Edge Functions -- Frontend Service Integration', () => {
         error: 'Unauthorized',
       });
 
-      const result = await getCashbackHistory();
+      const result = await getSavingsHistory();
 
       expect(result.data).toBeNull();
       expect(result.error).toBe('Unauthorized');
@@ -1139,13 +1139,13 @@ describe('Edge Functions -- Frontend Service Integration', () => {
       expect(mockCallEdgeFunction.mock.calls[0][3]).toBe('POST');
     });
 
-    it('getCashbackHistory uses GET method', async () => {
+    it('getSavingsHistory uses GET method', async () => {
       mockCallEdgeFunction.mockResolvedValue({
         data: { data: MOCK_CASHBACK_HISTORY.data },
         error: null,
       });
 
-      await getCashbackHistory();
+      await getSavingsHistory();
 
       expect(mockCallEdgeFunction.mock.calls[0][3]).toBe('GET');
     });

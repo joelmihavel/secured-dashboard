@@ -81,6 +81,19 @@ export default function AddUtilityScreen() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [showOperatorPicker, setShowOperatorPicker] = useState(false);
 
+  // Set default operator to BESSCOM/BESCOM when operators are loaded
+  React.useEffect(() => {
+    if (operators && !selectedOperator) {
+      const defaultOp = operators.find(op => 
+        op.operatorName.toUpperCase().includes('BESCOM') || 
+        op.operatorName.toUpperCase().includes('BESSCOM')
+      );
+      if (defaultOp) {
+        setSelectedOperator(defaultOp);
+      }
+    }
+  }, [operators, selectedOperator]);
+
   const handleBack = useCallback(() => {
     if (reentry) {
       router.replace('/(main)' as never);
@@ -220,12 +233,18 @@ export default function AddUtilityScreen() {
             <View>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Electricity Operator</Text>
-                {errors.operator && (
+                {errors.operator ? (
                   <Text style={styles.errorHint}>{errors.operator}</Text>
+                ) : (
+                  <Text style={styles.hintText}>edit</Text>
                 )}
               </View>
               <TouchableOpacity
-                style={[styles.inputContainer, errors.operator && styles.inputError]}
+                style={[
+                  styles.inputContainer,
+                  showOperatorPicker && styles.inputFocused,
+                  errors.operator && styles.inputError
+                ]}
                 onPress={() => setShowOperatorPicker(true)}
                 disabled={verifyUtility.isPending}
               >
@@ -375,24 +394,26 @@ const styles = StyleSheet.create({
   },
   // Label row - Figma: flexDirection row, justifyContent space-between
   labelRow: {
+    paddingHorizontal: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
   },
-  // Label - Figma: 12px/20px PlusJakartaSans-Medium #A9A9A9
+  // Label - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9
   label: {
-    fontFamily: 'PlusJakartaSans-Medium',
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: colors.neutral[500],
     textAlign: 'left',
   },
-  // Input container - Figma: border #4D4D4D, radius 12
+  // Input container - aligned with TextInput "edit" variant
   inputContainer: {
-    borderWidth: 1,
-    borderColor: FIGMA_COLORS.inputBorder,
-    borderRadius: 12,
+    borderWidth: 0,
+    borderBottomWidth: 0.5,
+    borderColor: '#0D0D0D',
+    borderRadius: 0,
     paddingVertical: 16,
     paddingHorizontal: 0,
     flexDirection: 'row',
@@ -401,6 +422,10 @@ const styles = StyleSheet.create({
   // Input error state
   inputError: {
     borderColor: FIGMA_COLORS.inputBorderError,
+  },
+  // Input focused state
+  inputFocused: {
+    borderColor: FIGMA_COLORS.accent,
   },
   // Input text - Figma: 20px/32px PlusJakartaSans-Regular #DDDDDD
   inputText: {
@@ -420,6 +445,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: colors.error.radix,
+    textAlign: 'right' as const,
+  },
+  // Hint text - Figma: 14px/20px PlusJakartaSans-Regular #878787
+  hintText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.neutral[600],
     textAlign: 'right' as const,
   },
   // Button section - Figma: gap 16

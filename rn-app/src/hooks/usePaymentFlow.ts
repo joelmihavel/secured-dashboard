@@ -12,6 +12,7 @@
 import { useCallback, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { usePaymentStore } from '@/src/stores';
 import {
@@ -20,6 +21,7 @@ import {
   type CorePaymentOutcome,
   type InstrumentParams,
 } from '@/src/services/payment/payuCoreService';
+import { addCardToken, addUpiVpa } from '@/src/services/api/payments';
 
 export type PaymentFlowOutcome =
   | { status: 'success' | 'navigating' }
@@ -39,6 +41,7 @@ interface UsePaymentFlowReturn {
 
 export function usePaymentFlow(): UsePaymentFlowReturn {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isExecutingRef = useRef(false);
   const { setLastPayment, clearPayuSessionParams } = usePaymentStore();
 
@@ -69,30 +72,60 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         );
 
         switch (outcome.status) {
-          case 'success':
+          case 'success': {
             // Payment succeeded at SDK level — navigate to processing for server verification
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setLastPayment(paymentId);
+
+            // Best-effort: save payment method from PayU response
+            // Server-side webhook also saves, so this is a fallback for faster UX
+            const payuResponse = outcome.payuResponse ?? {};
+            try {
+              if ((paymentMode === 'CC' || paymentMode === 'DC') && payuResponse.store_card_token) {
+                await addCardToken({
+                  card_token: String(payuResponse.store_card_token),
+                  card_last4: String(payuResponse.card_no ?? '').slice(-4),
+                  card_network: (String(payuResponse.bankcode ?? '').toLowerCase()) as 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro',
+                  card_type: paymentMode === 'CC' ? 'credit' : 'debit',
+                  card_expiry_month: 0,
+                  card_expiry_year: 0,
+                });
+              } else if (paymentMode === 'upi' && payuResponse.field7) {
+                await addUpiVpa(String(payuResponse.field7));
+              }
+              // Netbanking: no client-side save needed — webhook handles it
+            } catch (saveErr) {
+              // Non-blocking: webhook will handle server-side save
+              console.warn('Client-side payment method save failed (webhook will retry):', saveErr);
+            }
+
+            // Invalidate React Query cache so home screen reflects saved method
+            queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+
             router.replace({
-              pathname: '/(payment)/processing',
+              pathname: '/(payment)/status',
               params: {
                 paymentId,
                 amount: sessionParams.amount,
                 method: paymentMode === 'NB' ? 'netbanking' : paymentMode === 'upi' ? 'upi' : 'card',
+                initialStatus: 'pending',
               },
             } as never);
             return { status: 'navigating' };
+          }
 
           case 'cancelled':
             if (outcome.isTxnInitiated) {
-              // Txn was initiated before cancel — must go to processing
+              // Txn was initiated before cancel — must go to status for verification
               setLastPayment(paymentId);
               router.replace({
-                pathname: '/(payment)/processing',
+                pathname: '/(payment)/status',
                 params: {
                   paymentId,
                   amount: sessionParams.amount,
                   method: paymentMode === 'NB' ? 'netbanking' : paymentMode === 'upi' ? 'upi' : 'card',
+                  initialStatus: 'pending',
                 },
               } as never);
               return { status: 'navigating' };
@@ -103,11 +136,12 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
           case 'failure':
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             router.replace({
-              pathname: '/(payment)/failed',
+              pathname: '/(payment)/status',
               params: {
                 paymentId,
                 amount: sessionParams.amount,
                 method: paymentMode === 'NB' ? 'netbanking' : paymentMode === 'upi' ? 'upi' : 'card',
+                initialStatus: 'failed',
                 error: outcome.error ?? 'Payment failed',
               },
             } as never);
@@ -124,10 +158,11 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
       } finally {
         // S2: Zero sensitive data immediately
         onClearSensitiveData();
+        clearPayuSessionParams();
         isExecutingRef.current = false;
       }
     },
-    [router, setLastPayment, clearPayuSessionParams],
+    [router, setLastPayment, clearPayuSessionParams, queryClient],
   );
 
   return {

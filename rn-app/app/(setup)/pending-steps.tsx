@@ -1,89 +1,63 @@
 /**
  * Pending Steps / Personalized Cashback Plan Screen
- * Figma Reference: 1-34236
+ * Figma Reference: 684:4968
  *
  * Screen: "onboarding / summary"
- * Blueprint: /buildbot/data/blueprints/1-34236-blueprint.json
- *
- * Figma structure:
- * - Background: #131313 + DottedPattern + Background Shape
- * - Vector 45 (decorative grid lines at y:462)
- * - Title (160:3185): "Here is your personalized cashback plan"
- *   - x:62, y:128, width:269, height:168
- *   - fontSize 40, lineHeight 56, letterSpacing -1, PlusJakartaSans-Medium
- *   - Spans: "Here is your " (0-12) = #A9A9A9, newline (12-13) = #FFFFFF,
- *     "personalized cashback plan" (13-39) = #FF9A6D
- * - Card (1:34308): x:61, y:371, width:270, height:321
- *   - Rectangle 136 bg: #202020, shadow rgba(0,0,0) y:9 blur:19
- *   - Perforations, avatar circle, user name, welcome text
- *   - Cashback rate section, monthly amount
- *   - Flent logo vector (32x38.4, #A9A9A9)
- * - Start Earning button (I1:34342): 313x52, border #FF9A6D, radius 8
- *   - Text: "Start Earning" -- 14/20, #FFFFFF, PlusJakartaSans-Medium
- *
- * The "Start Earning" button is a floating CTA at bottom.
+ * Blueprint: Figma design HZaVuwWn6B6jOjrmxZ7Kzv
  */
 
 import React, { useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, Text as RNText } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Line, G } from 'react-native-svg';
+import Svg, { Line, G, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text, Logo } from '@/src/components';
-import { DottedPattern } from '@/src/components/patterns/DottedPattern';
+import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
+import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard } from '@/src/hooks';
 import { colors } from '@/src/theme';
-import { s } from '@/src/theme/scale';
+// Scale utilities removed — this screen uses raw Figma values to fit in one viewport
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Figma exact values from 1-34236 blueprint
+// Figma exact values from 684:4968 blueprint — raw pixel values, no scaling
 const FIGMA = {
   // Background
   backgroundColor: colors.black[700],
 
-  // Title (node 160:3185)
-  title: {
-    width: s(269),
-  },
-
-  // Card (node 1:34308)
+  // Card (node 684:5039) — raw Figma values, no scaling
   card: {
-    width: s(270),
-    height: s(321),
+    width: 270,
+    height: 321,
     backgroundColor: colors.black[500],
-    shadowColor: colors.black[900],
-    shadowOffsetY: s(9),
-    shadowRadius: s(19),
   },
 
-  // Grid / Decorative lines
+  // Grid / Decorative lines (Vector 45)
   gridLineColor: colors.black[400],
-  gridStrokeWidth: 1,
+  gridStrokeWidth: 0.3,
 
-  // Perforations
-  perforationSize: s(14),
-
-  // Button (I1:34342;100:1564)
-  button: {
-    width: s(313),
-    height: s(52),
-    borderColor: colors.brand[500],
-    borderRadius: s(8),
-    shadowColor: '#995C41',
-    shadowOffsetY: s(6),
-    shadowRadius: s(12),
-  },
+  // Perforations — raw values
+  perforationCount: 14,
+  perforationSize: 14,
+  perforationStartX: 4,
+  perforationSpacing: 20,
 } as const;
+
+function DecorativeVector({ x, y }: { x: number; y: number }) {
+  return (
+    <View style={[{ position: 'absolute', left: x, top: y }]} pointerEvents="none">
+      <Svg width={23} height={41} viewBox="0 0 40 77" fill="none">
+        <Path d="M9.31406 43.5656C6.31081 33.3271 2.93346 23.1227 0.285513 12.7861C-1.78135 4.71751 7.79641 -3.42527 15.3453 1.49182C17.5802 2.94776 18.5578 5.21169 19.3025 7.63414C20.6419 11.9912 21.8696 16.3857 23.1526 20.7596C26.1163 30.8633 29.4203 40.9296 32.0592 51.1234C34.6064 60.963 20.0241 64.5599 16.576 55.3506C12.9734 45.7289 18.4379 62.0525 15.5448 52.1895C15.1031 50.6838 17.4422 49.995 17.8845 51.5031C20.2408 59.5361 14.8808 40.9086 17.237 48.9413C17.8825 51.1418 18.2536 53.9553 19.5012 55.9455C22.7183 61.0772 31.1521 57.6639 29.7195 51.8099C27.7818 43.892 25.1069 36.085 22.8129 28.2646C20.78 21.3339 19.1796 14.0605 16.6596 7.28701C14.3132 0.980362 4.88219 1.41027 2.64005 7.80349C1.92735 9.836 2.31652 11.0471 2.86679 12.923C5.38623 21.5121 7.90574 30.1015 10.4252 38.6908C12.9447 47.2799 15.4643 55.8695 17.9837 64.4586C19.0499 68.0934 20.2951 72.0847 24.0086 73.814C28.2291 75.7798 34.0983 73.668 36.3873 69.7526C39.6346 64.1975 34.903 54.4459 33.3132 49.0261C30.7428 40.2632 28.1724 31.5005 25.6021 22.7378C25.1604 21.2321 27.4995 20.5435 27.9419 22.0514C30.7573 31.6495 33.5726 41.2475 36.3881 50.8458C38.1118 56.722 41.8552 64.5717 38.7363 70.558C36.7426 74.3842 32.1956 76.8618 27.9219 76.9942C22.4104 77.165 18.5051 73.3633 16.6564 68.4303C13.6442 60.3937 11.7275 51.7934 9.31406 43.5656Z" fill={colors.black[400]}/>
+      </Svg>
+    </View>
+  );
+}
 
 // Decorative grid lines from Figma Vector 45 at y:462
 function GridBackground() {
   return (
     <View style={gridStyles.container} pointerEvents="none">
       <Svg width="100%" height="235" style={StyleSheet.absoluteFill}>
-        <G stroke={FIGMA.gridLineColor} strokeWidth={FIGMA.gridStrokeWidth} opacity={0.5}>
+        <G stroke={FIGMA.gridLineColor} strokeWidth={FIGMA.gridStrokeWidth} opacity={1}>
           {/* Vertical line at x ~37 (from vector path) */}
           <Line x1="37" y1="0" x2="37" y2="235" />
           {/* Vertical line at x ~339 */}
@@ -99,10 +73,10 @@ function GridBackground() {
 const gridStyles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: s(462),
-    left: s(12),
-    right: s(12),
-    height: s(235),
+    top: 462,
+    left: 12,
+    right: 12,
+    height: 235,
   },
 });
 
@@ -116,7 +90,7 @@ export default function PendingStepsScreen() {
     ? `${user.first_name}${user.last_name ? ` ${user.last_name}` : ''}`
     : 'Rohan Joshi';
   const cashbackRate = 1;
-  const monthlyRent = tenancy?.monthly_rent ?? 32175;
+  const monthlyRent = tenancy?.monthly_rent ?? 32500;
   const monthlyCashback = Math.floor(monthlyRent * cashbackRate / 100);
 
   const handleStartEarning = useCallback(() => {
@@ -125,9 +99,16 @@ export default function PendingStepsScreen() {
   }, [router]);
 
   return (
-    <Screen testID="pending-steps-screen" padded={false} style={{ backgroundColor: FIGMA.backgroundColor }}>
+    <Screen testID="pending-steps-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: FIGMA.backgroundColor }}>
       {/* Background pattern */}
-      <DottedPattern backgroundShape="summary" />
+      <DottedGridPattern fadeMask={false} />
+      
+      {/* Background Shape */}
+      <Image 
+        source={require('@/assets/images/background_shape.png')} 
+        style={styles.backgroundShape} 
+        resizeMode="contain" 
+      />
 
       {/* Grid decorative lines */}
       <GridBackground />
@@ -136,34 +117,41 @@ export default function PendingStepsScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + s(48) },
+          { paddingTop: insets.top + 40 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title -- Figma 160:3185 */}
+        {/* Title -- Figma 684:5074 */}
         <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>
-            <Text inherit style={styles.titleGray}>Here is your{"\n"}</Text>
-            <Text inherit style={styles.titleAccent}>personalized cashback plan</Text>
-          </Text>
+          <RNText style={styles.titleText}>
+            <RNText style={styles.titleGray}>Here is your{'\n'}</RNText>
+            <RNText style={styles.titleAccent}>personalized cashback plan</RNText>
+          </RNText>
         </View>
 
-        {/* Cashback Card -- Figma 1:34308 */}
+        {/* Cashback Card -- Figma 684:5039 */}
         <View style={styles.cardContainer}>
           <View style={styles.card}>
-            {/* Top perforations */}
-            <View style={styles.cardPerforations}>
-              {[...Array(8)].map((_, i) => (
-                <View key={i} style={styles.perforation} />
-              ))}
-            </View>
+            {/* Top perforations - 14 circles */}
+            {[...Array(FIGMA.perforationCount)].map((_, i) => (
+              <View
+                key={`perf-${i}`}
+                style={[
+                  styles.perforation,
+                  {
+                    left: FIGMA.perforationStartX + i * FIGMA.perforationSpacing,
+                    top: -4,
+                  },
+                ]}
+              />
+            ))}
 
-            {/* Card header with Flent logo */}
-            <View style={styles.cardHeader}>
-              <Logo size={s(24)} color={colors.white} />
-              <View style={styles.logoRight}>
-                <Logo size={s(38)} color={colors.neutral[500]} />
-              </View>
+            {/* Top Left Vector - 684:5058 */}
+            <DecorativeVector x={8} y={-5} />
+
+            {/* Top Right Logo - 684:5064 */}
+            <View style={styles.logoRight}>
+              <Logo size={38} color={colors.neutral[500]} />
             </View>
 
             {/* Welcome section -- avatar + name + subtitle */}
@@ -176,33 +164,33 @@ export default function PendingStepsScreen() {
               </View>
 
               <View style={styles.nameContainer}>
-                <Text variant="bodyMd2Medium" color="primary">{userName}</Text>
-                <Text variant="bodySm" color="muted">Welcome to Flent Secured</Text>
+                <Text variant="bodyMd2Medium" color="muted">{userName}</Text>
+                <Text variant="bodySm" style={{ color: colors.neutral[600] }}>Welcome to Flent Secured</Text>
               </View>
             </View>
 
-            {/* Cashback section -- Figma 1:34335 */}
+            {/* Cashback section -- Figma 684:5066 */}
             <View style={styles.cashbackSection}>
               <View style={styles.cashbackHeaderRow}>
-                <Text variant="bodySm" color="muted">Your Cashback Rate</Text>
+                <Text variant="bodySm" style={{ color: colors.neutral[600] }}>Your Cashback Rate</Text>
               </View>
 
               <View style={styles.cashbackRateSection}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={styles.cashbackBadgeContainer}>
                   <View style={styles.cashbackBadge}>
-                    <Text variant="bodySmSemiBold" style={{ color: colors.black[900] }}>
+                    <Text variant="bodySmMedium" style={{ color: colors.black[900] }}>
                       {cashbackRate}% back
                     </Text>
                   </View>
-                  <Text variant="bodyMd2" color="muted">on every on-time rent</Text>
+                  <Text variant="bodyMd2Medium" color="muted">on every on-time rent</Text>
                 </View>
 
-                {/* Monthly amount -- Figma 1:34341 */}
+                {/* Monthly amount -- Figma 684:5072 */}
                 <View style={styles.amountRow}>
-                  <Text variant="bodyMd" color="primary">
-                    <Text inherit variant="bodySm">₹  </Text>
+                  <Text style={styles.amountText}>
+                    <Text inherit style={styles.amountSymbol}>₹  </Text>
                     {monthlyCashback.toLocaleString('en-IN')}
-                    <Text inherit variant="bodyMd2" color="muted"> /month</Text>
+                    <Text inherit style={styles.amountUnit}> /month</Text>
                   </Text>
                 </View>
               </View>
@@ -217,17 +205,16 @@ export default function PendingStepsScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom button -- Figma I1:34342 */}
-      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + s(24) }]}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleStartEarning}
-          testID="start-earning-button"
-        >
-          <Text variant="button" color="primary" style={{ color: colors.white }}>
-            Start Earning
-          </Text>
-        </TouchableOpacity>
+      {/* Bottom button -- Figma 684:5073 */}
+      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 8 }]}>
+        <View style={styles.buttonWrapper}>
+          <PrimaryButton
+            title="Start Earning"
+            onPress={handleStartEarning}
+            showDivider
+            testID="start-earning-button"
+          />
+        </View>
       </View>
     </Screen>
   );
@@ -237,107 +224,130 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  backgroundShape: {
+    position: 'absolute',
+    left: -44,
+    top: -100,
+    width: 481,
+    height: 405,
+    opacity: 0.8,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: s(62),
+    paddingHorizontal: 62, // Figma: left 62px — raw value, no scaling
   },
   titleContainer: {
-    width: FIGMA.title.width,
-    marginBottom: s(32),
+    width: 269, // Figma 684:5074: width 269px
+    marginBottom: 40,
   },
   titleText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 40,
-    lineHeight: 56,
-    letterSpacing: -1,
+    fontFamily: 'PlusJakartaSans-Medium', // Figma: weight 500
+    fontSize: 40, // Figma: Scale/40 — raw, not scaled
+    lineHeight: 56, // Figma: Line Height/Heading/h2
+    letterSpacing: -1, // Figma: Paragraph Spacing/Heading/h2
   },
   titleGray: {
-    color: '#A9A9A9',
+    color: '#A9A9A9', // Figma 684:5074: "Here is your" in neutral gray
   },
   titleAccent: {
-    color: '#FF9A6D',
+    color: '#FF9A6D', // Figma 684:5074: "personalized cashback plan" in brand orange
   },
   cardContainer: {
     alignItems: 'center',
-    marginBottom: s(32),
+    marginBottom: 24,
+    marginLeft: -1, // Adjusting to visually match x=61 if container is 62
   },
   card: {
     width: FIGMA.card.width,
     height: FIGMA.card.height,
     backgroundColor: FIGMA.card.backgroundColor,
-    overflow: 'hidden',
-    shadowColor: FIGMA.card.shadowColor,
-    shadowOffset: { width: 0, height: FIGMA.card.shadowOffsetY },
-    shadowOpacity: 0.1,
-    shadowRadius: FIGMA.card.shadowRadius,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.15,
+    shadowRadius: 30,
     elevation: 10,
   },
-  cardPerforations: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    paddingVertical: s(4),
-    marginTop: s(-7),
-  },
   perforation: {
+    position: 'absolute',
     width: FIGMA.perforationSize,
     height: FIGMA.perforationSize,
     borderRadius: FIGMA.perforationSize / 2,
     backgroundColor: colors.black[700],
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: s(26),
-    paddingTop: s(16),
+  logoRight: {
+    position: 'absolute',
+    left: 218,
+    top: 36,
   },
-  logoRight: {},
   welcomeSection: {
-    paddingHorizontal: s(26),
-    paddingTop: s(12),
-    marginBottom: s(24),
+    position: 'absolute',
+    left: 26,
+    top: 68,
+    width: 145,
+    gap: 16,
   },
   avatar: {
-    width: s(32),
-    height: s(32),
-    borderRadius: s(16),
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#E91E63',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: s(8),
   },
   nameContainer: {
-    gap: s(4),
+    gap: 8,
   },
   cashbackSection: {
-    paddingHorizontal: s(26),
-    gap: s(4),
+    position: 'absolute',
+    left: 26,
+    top: 216,
+    width: 233,
+    gap: 4,
   },
   cashbackHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: s(8),
+    height: 20,
+    justifyContent: 'center',
   },
   cashbackRateSection: {
-    gap: s(12),
+    gap: 12,
+  },
+  cashbackBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cashbackBadge: {
     backgroundColor: colors.brand[500],
-    borderRadius: s(4),
-    paddingHorizontal: s(6),
-    paddingVertical: s(2),
-    marginRight: s(8),
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 8,
+    marginLeft: -4,
   },
   amountRow: {
-    marginTop: s(4),
+    // No extra margin
+  },
+  amountText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 16, // Figma 684:5072
+    lineHeight: 23,
+    color: colors.white,
+  },
+  amountSymbol: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 12, // Figma: rupee symbol at 12px
+    color: colors.white,
+  },
+  amountUnit: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14, // Figma: "/month" at 14px
+    color: colors.white,
   },
   cardSidePerforations: {
     position: 'absolute',
-    bottom: s(24),
+    top: 256,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -350,29 +360,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[700],
   },
   perforationLeft: {
-    marginLeft: s(-7),
+    marginLeft: -7,
   },
   perforationRight: {
-    marginRight: s(-7),
+    marginRight: -7,
   },
   buttonContainer: {
-    paddingHorizontal: s(40),
-    paddingTop: s(16),
+    paddingHorizontal: 40, // Figma 684:5073: left 40px
+    paddingTop: 12,
     alignItems: 'center',
   },
-  button: {
-    width: FIGMA.button.width,
-    height: FIGMA.button.height,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: FIGMA.button.borderColor,
-    borderRadius: FIGMA.button.borderRadius,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.black[900],
-    shadowColor: FIGMA.button.shadowColor,
-    shadowOffset: { width: 0, height: FIGMA.button.shadowOffsetY },
-    shadowOpacity: 0.24,
-    shadowRadius: FIGMA.button.shadowRadius,
-    elevation: 8,
+  buttonWrapper: {
+    width: 297, // Figma 684:5073: width 297px
   },
 });

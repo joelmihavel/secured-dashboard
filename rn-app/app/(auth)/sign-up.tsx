@@ -27,7 +27,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput, SkeletonLoader } from '@/src/components';
-import { DottedPattern, ConsentToggle } from '@/src/components';
+import { DottedGridPattern, ConsentToggle } from '@/src/components';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, typography } from '@/src/theme';
@@ -203,7 +203,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   return (
     <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
       {/* Background Pattern - uses actual Figma images with correct opacity (8%) */}
-      <DottedPattern />
+      <DottedGridPattern fadeMask={false} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -57,7 +57,7 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// --- Mock react-native-svg (DottedPattern uses SVG which does not render in JSDOM) ---
+// --- Mock react-native-svg (DottedGridPattern uses SVG which does not render in JSDOM) ---
 jest.mock('react-native-svg', () => {
   const { View } = require('react-native');
   return {
@@ -277,7 +277,7 @@ describe('SplashScreen', () => {
     it('has no conditional rendering branches based on external state', () => {
       // The component imports useRouter and useCallback but no data hooks.
       // Rendering is deterministic -- no conditionals based on props or state.
-      // Note: DottedPattern generates a random gradient ID per render, so we
+      // Note: DottedGridPattern generates a random mask ID per render, so we
       // compare structural equivalence by checking all key content elements
       // appear consistently across multiple renders.
       const renderA = render(<SplashScreen />);

@@ -45,7 +45,7 @@ import {
   PrimaryButton,
   ApplicationTimeline,
   BenefitsCard,
-  DottedPattern,
+  DottedGridPattern,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
 import { colors } from '@/src/theme/colors';
@@ -234,7 +234,7 @@ export default function WaitlistApprovedScreen() {
   return (
     <View style={styles.screen}>
       {/* Background Pattern + Shape (nodes 237:2758, 41:11314) */}
-      <DottedPattern backgroundShape="waitlist" />
+      <DottedGridPattern fadeMask={false} />
 
       {/* Confetti Animation Overlay */}
       {showConfetti && (

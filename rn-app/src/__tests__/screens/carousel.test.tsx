@@ -62,7 +62,7 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// --- Mock react-native-svg (DottedPattern uses SVG) ---
+// --- Mock react-native-svg (DottedGridPattern uses SVG) ---
 jest.mock('react-native-svg', () => {
   const { View } = require('react-native');
   return {
@@ -71,6 +71,7 @@ jest.mock('react-native-svg', () => {
     Svg: View,
     Defs: View,
     LinearGradient: View,
+    RadialGradient: View,
     Stop: View,
     Rect: View,
     Circle: View,
@@ -320,12 +321,11 @@ describe('CarouselScreen', () => {
       expect(getByText(EXPECTED_TEXT.slide1.heading)).toBeTruthy();
     });
 
-    it('each slide has a unique background shape key in FlatList data', () => {
+    it('slides array has exactly 3 items without backgroundShape inside', () => {
       const { UNSAFE_getAllByType } = render(<CarouselScreen />);
       const flatLists = UNSAFE_getAllByType(FlatList);
       const data = flatLists[0].props.data;
-      const bgShapes = data.map((item: any) => item.backgroundShape);
-      expect(bgShapes).toEqual(['carousel1', 'carousel2', 'carousel3']);
+      expect(data.length).toBe(3);
     });
 
     it('slide 1 has accent-first heading segments (orange then gray)', () => {

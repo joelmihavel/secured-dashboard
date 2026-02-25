@@ -33,14 +33,16 @@ import {
   Platform,
   Image,
   Alert,
+  ActionSheetIOS,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-// expo-image-picker removed — requires dev build (native module).
-// Avatar editing is a non-critical feature; skip until dev build is available.
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { Screen, Text, TextInput, PhoneInput } from '@/src/components';
+import { Screen, Text, TextInput, PhoneInput, PrimaryButton } from '@/src/components';
+import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard, useUpdateProfile, useUploadAvatar } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
@@ -51,8 +53,6 @@ const FIGMA_COLORS = {
   editButtonText: colors.white,     // button text
   titleGray: colors.neutral[500],          // colors.neutral[500]
   accentOrange: colors.brand[500],       // colors.brand[500]
-  saveButtonBg: colors.brand[500],       // Save button fill (solid, not gradient)
-  saveButtonText: colors.white,     // Save button text
 } as const;
 
 export default function EditProfileScreen() {
@@ -77,10 +77,59 @@ export default function EditProfileScreen() {
     router.back();
   }, [router]);
 
-  const handleEditPicture = useCallback(async () => {
+  const launchPicker = useCallback(async (source: 'camera' | 'library') => {
+    let result: ImagePicker.ImagePickerResult;
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Camera access is required to take a photo.');
+        return;
+      }
+      result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+    } else {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+    }
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setAvatarUri(asset.uri);
+      uploadAvatar.mutate({
+        fileUri: asset.uri,
+        contentType: asset.mimeType ?? 'image/jpeg',
+      });
+    }
+  }, [uploadAvatar]);
+
+  const handleEditPicture = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Not Available', 'Photo picker requires a development build.');
-  }, []);
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Take Photo', 'Choose from Library'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) launchPicker('camera');
+          else if (buttonIndex === 2) launchPicker('library');
+        },
+      );
+    } else {
+      Alert.alert('Edit Picture', 'Choose a source', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Take Photo', onPress: () => launchPicker('camera') },
+        { text: 'Choose from Library', onPress: () => launchPicker('library') },
+      ]);
+    }
+  }, [launchPicker]);
 
   const handleSave = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -104,6 +153,7 @@ export default function EditProfileScreen() {
 
   return (
     <Screen testID="edit-profile-screen" padded={false}>
+      <DottedGridPattern animated={false} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -128,11 +178,9 @@ export default function EditProfileScreen() {
                 <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.editButtonText} />
               </TouchableOpacity>
 
-              {/* Title (41:8884): "My  Profile" width=313, height=128 */}
+              {/* Title (41:8884): "My \nProfile" width=313, height=128 */}
               <Text style={styles.titleBase}>
-                <Text inherit style={styles.titleGray}>{'My '}</Text>
-                <Text inherit style={styles.titleSpace}>{' '}</Text>
-                <Text inherit style={styles.titleAccent}>{'Profile'}</Text>
+                {'My \nProfile'}
               </Text>
             </View>
 
@@ -159,9 +207,14 @@ export default function EditProfileScreen() {
                 accessibilityLabel="Edit picture"
               >
                 {/* Inner frame (41:8888): 99x28, pad=4/16 */}
-                <View style={styles.editPictureInner}>
+                <LinearGradient
+                  colors={['#FF9A6D', '#CC7B57']}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={styles.editPictureInner}
+                >
                   <Text style={styles.editPictureText}>Edit Picture</Text>
-                </View>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
 
@@ -204,19 +257,13 @@ export default function EditProfileScreen() {
 
             {/* Button area (41:8895): column, gap=16, paddingH=40 */}
             <View style={styles.buttonSection}>
-              <TouchableOpacity
-                style={styles.saveButton}
+              <PrimaryButton
+                title="Save Changes"
                 onPress={handleSave}
                 disabled={updateProfile.isPending}
-                accessibilityRole="button"
-                accessibilityLabel="Save changes"
-              >
-                <View style={styles.saveButtonInner}>
-                  <Text style={styles.saveButtonText}>
-                    {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                loading={updateProfile.isPending}
+                testID="save-changes-button"
+              />
             </View>
           </View>
         </ScrollView>
@@ -275,11 +322,11 @@ const styles = StyleSheet.create({
   titleAccent: {
     color: colors.brand[500],
   },
-  // Avatar section (41:8885): row, gap=10, paddingH=40, alignItems=center
+  // Avatar section (41:8885): row, paddingH=40, alignItems=center
   avatarSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
     paddingHorizontal: 40,
   },
   avatarWrapper: {
@@ -340,7 +387,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 16,
     gap: 10,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   // Label (41:8889): "Edit Picture" 12px/20 Medium #FFFFFF
   editPictureText: {
@@ -358,26 +405,5 @@ const styles = StyleSheet.create({
   // Button area (41:8895): column, gap=16, paddingH=40
   buttonSection: {
     paddingHorizontal: 40,
-  },
-  // Save button outer (41:8896): 313x52
-  saveButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  // Save button inner (I41:8896;100:1564): row, pad=16, center
-  saveButtonInner: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: FIGMA_COLORS.saveButtonBg,
-    borderRadius: 12,
-  },
-  // Save button text: "Save Changes" 14px/20 Medium #FFFFFF
-  saveButtonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.saveButtonText,
-    textAlign: 'center',
   },
 });

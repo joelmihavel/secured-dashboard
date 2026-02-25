@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Logo } from './Layout';
-import { DottedPattern } from '../patterns';
+import { DottedGridPattern } from '../patterns';
 import { colors, spacing, radius } from '@/src/theme';
 
 const ANIMATION_DURATION = 300;
@@ -23,7 +23,7 @@ const ANIMATION_STAGGER = 150;
 
 interface SkeletonLoaderProps {
   /** DottedPattern backgroundShape — defaults to 'default' */
-  backgroundShape?: 'splash' | 'carousel1' | 'carousel2' | 'carousel3' | 'agreement' | 'waitlist' | 'default';
+  backgroundShape?: 'agreement' | 'waitlist' | 'default';
   /** Whether to show the skeleton card below the header lines */
   showCard?: boolean;
 }
@@ -33,7 +33,7 @@ export function SkeletonLoader({ backgroundShape = 'default', showCard = true }:
 
   return (
     <View style={styles.screen}>
-      <DottedPattern backgroundShape={backgroundShape} />
+      <DottedGridPattern fadeMask={false} />
       <View style={styles.container}>
         {/* Skeleton header */}
         <Animated.View

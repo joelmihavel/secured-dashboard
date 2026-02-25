@@ -92,6 +92,8 @@ export type ProfileErrorCode =
   | 'VALIDATION_ERROR'
   | 'UPDATE_FAILED'
   | 'UPLOAD_FAILED'
+  | 'DELETE_FAILED'
+  | 'ARCHIVE_ERROR'
   | 'NETWORK_ERROR'
   | 'UNKNOWN_ERROR';
 
@@ -103,6 +105,14 @@ export interface ProfileError {
 // ==============================================
 // TYPES -- Edge Function Raw Responses
 // ==============================================
+
+/** Raw response from delete-account edge function */
+interface RawDeleteAccountResponse {
+  success: boolean;
+  message: string;
+  archived_at?: string;
+  error?: string;
+}
 
 /** Raw response from update-profile edge function */
 interface RawUpdateProfileResponse {
@@ -386,6 +396,35 @@ export async function getSavedPaymentMethods(): Promise<{
   }
 
   return { data: mapRawPaymentMethods(data.data), error: null };
+}
+
+/**
+ * Request account deletion.
+ *
+ * Calls POST /functions/v1/delete-account
+ * Edge function archives all user data, then deletes from all tables + auth.
+ */
+export async function requestAccountDeletion(
+  reason?: string
+): Promise<{ data: { archivedAt: string } | null; error: ProfileError | null }> {
+  const { data, error } = await callEdgeFunction<RawDeleteAccountResponse>(
+    'delete-account',
+    reason ? { reason } : {},
+    true
+  );
+
+  if (error) {
+    return { data: null, error: mapProfileError(error) };
+  }
+
+  if (!data?.success) {
+    return {
+      data: null,
+      error: { code: 'DELETE_FAILED', message: data?.message ?? 'Failed to delete account' },
+    };
+  }
+
+  return { data: { archivedAt: data.archived_at ?? new Date().toISOString() }, error: null };
 }
 
 // ==============================================

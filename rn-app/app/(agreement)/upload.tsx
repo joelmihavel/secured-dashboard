@@ -47,7 +47,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
-import { DottedPattern } from '@/src/components/patterns';
+import { DottedGridPattern } from '@/src/components/patterns';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
 import { useExtractionStatus } from '@/src/hooks/useExtractionStatus';
 import {
@@ -1054,7 +1054,7 @@ export default function UploadScreen() {
   return (
     <Screen testID="upload-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
       {/* Background Pattern - DottedPattern component with agreement-specific shape */}
-      <DottedPattern showShape={true} backgroundShape="agreement" />
+      <DottedGridPattern fadeMask={false} />
 
       <ScrollView
         style={styles.scrollView}

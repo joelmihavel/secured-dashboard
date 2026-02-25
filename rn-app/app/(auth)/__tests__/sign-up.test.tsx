@@ -69,9 +69,9 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// Mock DottedPattern (heavy image component -- not relevant to sign-up logic)
+// Mock DottedPattern (heavy SVG component -- not relevant to sign-up logic)
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 // Mock ConsentToggle with a controllable Switch so tests can toggle consent

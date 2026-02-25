@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text } from '@/src/components';
+import { DottedGridPattern } from '@/src/components/patterns';
 import {
   useSavedPaymentMethods,
   useDeletePaymentMethod,
@@ -120,13 +121,14 @@ function MethodTypeIcon({ type }: { type: string }) {
 
 interface MethodCardProps {
   method: SavedPaymentMethod;
+  onEdit: (method: SavedPaymentMethod) => void;
   onDelete: (id: string) => void;
   onSetDefault: (id: string) => void;
   isDeleting: boolean;
   isSettingDefault: boolean;
 }
 
-function MethodCard({ method, onDelete, onSetDefault, isDeleting, isSettingDefault }: MethodCardProps) {
+function MethodCard({ method, onEdit, onDelete, onSetDefault, isDeleting, isSettingDefault }: MethodCardProps) {
   const displayInfo = useMemo(() => {
     switch (method.type) {
       case 'upi':
@@ -177,15 +179,21 @@ function MethodCard({ method, onDelete, onSetDefault, isDeleting, isSettingDefau
     onSetDefault(method.id);
   }, [method.id, method.is_default, onSetDefault]);
 
+  const handlePress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onEdit(method);
+  }, [method, onEdit]);
+
   return (
     <TouchableOpacity
       style={styles.methodCard}
+      onPress={handlePress}
       onLongPress={handleLongPress}
       activeOpacity={0.7}
       disabled={isDeleting}
       accessibilityRole="button"
       accessibilityLabel={`${typeName} ${displayInfo}${method.is_default ? ', default' : ''}`}
-      accessibilityHint="Long press to delete"
+      accessibilityHint="Tap to edit, long press to delete"
     >
       <View style={styles.methodCardContent}>
         <View style={styles.methodIconContainer}>
@@ -269,23 +277,35 @@ export default function PaymentMethodsScreen() {
     [setDefault]
   );
 
+  const handleEdit = useCallback(
+    (method: SavedPaymentMethod) => {
+      router.push({
+        pathname: '/(profile)/edit-payment-method',
+        params: { type: method.type, id: method.id },
+      } as never);
+    },
+    [router]
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: SavedPaymentMethod }) => (
       <MethodCard
         method={item}
+        onEdit={handleEdit}
         onDelete={handleDelete}
         onSetDefault={handleSetDefault}
         isDeleting={deleteMethod.isPending}
         isSettingDefault={setDefault.isPending}
       />
     ),
-    [handleDelete, handleSetDefault, deleteMethod.isPending, setDefault.isPending]
+    [handleEdit, handleDelete, handleSetDefault, deleteMethod.isPending, setDefault.isPending]
   );
 
   const keyExtractor = useCallback((item: SavedPaymentMethod) => item.id, []);
 
   return (
     <Screen testID="payment-methods-screen" padded={false}>
+      <DottedGridPattern animated={false} />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity

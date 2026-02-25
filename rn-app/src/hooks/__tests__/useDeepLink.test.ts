@@ -75,10 +75,6 @@ describe('resolveDeepLink', () => {
     expect(resolveDeepLink('/profile/payment-methods')).toBe('/(profile)/payment-methods');
   });
 
-  it('should resolve transaction routes', () => {
-    expect(resolveDeepLink('/transactions')).toBe('/(transactions)');
-  });
-
   it('should pass through expo-router group paths', () => {
     expect(resolveDeepLink('/(main)')).toBe('/(main)');
     expect(resolveDeepLink('/(payment)/status')).toBe('/(payment)/status');

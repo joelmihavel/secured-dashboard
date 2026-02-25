@@ -7,6 +7,7 @@ export * from './PaymentMethodRow';
 export * from './RadioButton';
 export * from './ReceiptCard';
 export * from './PaymentStamp';
+export * from './PaymentReceiptCard';
 export * from './DashedDivider';
 export * from './PaymentInfoRow';
 export * from './ReceiptRow';
@@ -22,3 +23,11 @@ export * from './AddMoreCard';
 
 // Secure Card Input (Core SDK flow)
 export * from './SecureCardInput';
+
+// Payment Method Modal (inline overlay for initiate.tsx)
+export { PaymentMethodModal } from './PaymentMethodModal';
+export type {
+  ModalView,
+  PaymentMethodModalProps,
+  AddMethodContentProps,
+} from './PaymentMethodModal/types';

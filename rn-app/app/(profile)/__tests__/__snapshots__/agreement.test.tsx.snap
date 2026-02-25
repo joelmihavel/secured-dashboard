@@ -3,10 +3,13 @@
 exports[`ProfileAgreementScreen matches snapshot 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
   testID="profile-agreement-screen"
 >
@@ -32,7 +35,6 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
             "flex": 1,
           },
           false,
-          undefined,
         ]
       }
     >

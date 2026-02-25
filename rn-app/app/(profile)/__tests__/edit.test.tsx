@@ -19,7 +19,7 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 jest.mock('@expo/vector-icons', () => {
@@ -29,7 +29,9 @@ jest.mock('@expo/vector-icons', () => {
 
 jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(),
-  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+  launchCameraAsync: jest.fn(),
+  requestCameraPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
   MediaTypeOptions: { Images: 'Images' },
 }));
 
@@ -69,14 +71,9 @@ describe('EditProfileScreen', () => {
     expect(getByTestId('edit-profile-screen')).toBeTruthy();
   });
 
-  it('renders profile title with "My " text', () => {
+  it('renders profile title with "My \\nProfile" text', () => {
     const { getByText } = render(<EditProfileScreen />);
-    expect(getByText('My ')).toBeTruthy();
-  });
-
-  it('renders profile title with "Profile" accent text', () => {
-    const { getByText } = render(<EditProfileScreen />);
-    expect(getByText('Profile')).toBeTruthy();
+    expect(getByText('My \nProfile')).toBeTruthy();
   });
 
   it('renders Edit Picture button', () => {

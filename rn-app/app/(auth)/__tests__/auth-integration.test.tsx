@@ -167,9 +167,9 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// Mock DottedPattern (heavy image component)
+// Mock DottedGridPattern (heavy image component)
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 // Mock ConsentToggle with controllable Switch

@@ -89,13 +89,6 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    label: 'Transactions',
-    screens: [
-      { name: 'Transaction History', path: '/(transactions)' },
-      { name: 'Transaction Detail', path: '/(transactions)/txn_sample_001' },
-    ],
-  },
-  {
     label: 'Agreement',
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },

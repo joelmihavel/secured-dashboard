@@ -55,12 +55,11 @@ const FIGMA_COLORS = {
   sheetBg: '#1A1A1A',
   handle: '#4D4D4D',
   titleWhite: '#FFFFFF',
-  titleAccent: '#FF9A6D',
   itemTitle: '#CBCBCB',
   itemSubtitle: '#878787',
   indicatorActive: '#FF9A6D',
   indicatorInactive: '#1A1A1A',
-  lineActive: 'rgba(255, 154, 109, 0.5)',
+  lineActive: '#FFAE8A',
   lineInactive: '#A6A6A6',
 };
 
@@ -182,8 +181,7 @@ export function CashbackSetupModal({
           <View style={styles.content}>
             {/* Title */}
             <Text style={styles.title}>
-              Set up to <Text inherit style={styles.titleAccent}>earn cashback{'\n'}</Text>
-              on this payment.
+              Set up to earn cashback{'\n'}on this payment.
             </Text>
 
             {/* Checklist */}
@@ -285,11 +283,8 @@ const styles = StyleSheet.create({
     color: FIGMA_COLORS.titleWhite,
     marginBottom: 24,
   },
-  titleAccent: {
-    color: FIGMA_COLORS.titleAccent,
-  },
   checklist: {
-    gap: 16,
+    gap: 24,
     marginBottom: 32,
   },
   itemRow: {
@@ -308,7 +303,7 @@ const styles = StyleSheet.create({
   },
   connectingLine: {
     width: 1,
-    height: 35,
+    height: 52,
     marginTop: 4,
   },
   itemTextContainer: {
@@ -340,7 +335,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     color: FIGMA_COLORS.titleWhite,
-    textDecorationLine: 'underline',
   },
 });
 

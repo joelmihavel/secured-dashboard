@@ -340,6 +340,21 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
       setErrors({});
     }, []);
 
+    // S2: Auto-zero on unmount — prevent card data lingering if caller forgets clearCardData
+    React.useEffect(() => {
+      return () => {
+        cardNumberRef.current = '';
+        cvvRef.current = '';
+        expiryRef.current = '';
+        nameRef.current = '';
+        setDisplayCardNumber('');
+        setDisplayExpiry('');
+        setDisplayCvv('');
+        setDisplayName('');
+        setNetwork('unknown');
+      };
+    }, []);
+
     const validate = useCallback((): { valid: boolean; errors: string[] } => {
       const errs: string[] = [];
       const digits = cardNumberRef.current;
@@ -425,6 +440,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
               autoCorrect={false}
               spellCheck={false}
               textContentType="none"
+              contextMenuHidden
               importantForAutofill="no"
             />
             {network !== 'unknown' && (
@@ -460,6 +476,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
                 autoComplete="off"
                 autoCorrect={false}
                 textContentType="none"
+                contextMenuHidden
               />
             </View>
           </View>
@@ -520,6 +537,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
               autoComplete="off"
               autoCorrect={false}
               textContentType="none"
+              contextMenuHidden
             />
           </View>
         </View>

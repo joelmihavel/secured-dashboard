@@ -107,7 +107,6 @@ function RootLayoutInner() {
                 <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
                 <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
                 <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(transactions)" />
                 <Stack.Screen name="(profile)" />
                 {/* Development only screens */}
                 {__DEV__ && <Stack.Screen name="(dev)" />}

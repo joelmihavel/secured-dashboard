@@ -50,11 +50,11 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// --- Mock DottedPattern (SVG does not render in Jest JSDOM) ---
-jest.mock('@/src/components/patterns/DottedPattern', () => {
+// --- Mock DottedGridPattern (SVG does not render in Jest JSDOM) ---
+jest.mock('@/src/components/patterns/DottedGridPattern', () => {
   const { View } = require('react-native');
   return {
-    DottedPattern: ({ children, testID }: any) => (
+    DottedGridPattern: ({ children, testID }: any) => (
       <View testID={testID || 'dotted-pattern'}>{children}</View>
     ),
   };

@@ -68,7 +68,6 @@ const SECTIONS: Section[] = [
     label: 'Payment',
     icon: 'P',
     screens: [
-      { name: 'First Rent', path: '/(payment)/first-rent' },
       { name: 'Confirm Payment', path: '/(payment)/confirm' },
       { name: 'Payment Status', path: '/(payment)/status' },
     ],
@@ -100,14 +99,6 @@ const SECTIONS: Section[] = [
     screens: [
       { name: 'Waitlist', path: '/(waitlist)', figmaNode: '41:11206' },
       { name: 'Approved', path: '/(waitlist)/approved' },
-    ],
-  },
-  {
-    label: 'Transactions',
-    icon: 'T',
-    screens: [
-      { name: 'Transaction History', path: '/(transactions)', figmaNode: '243:5870' },
-      { name: 'Transaction Detail', path: '/(transactions)/txn_sample_001' },
     ],
   },
   {

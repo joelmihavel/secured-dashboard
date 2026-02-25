@@ -20,15 +20,20 @@
  * - 243-5870: With cashbacks
  * - 243-6296: No cashbacks
  *
- * Figma Key Values (243-3170):
+ * Figma Key Values (684:8846 / 243-3170):
  * - Screen background: #131313 (black[700])
- * - Main container gap: 24px (itemSpacing between sections)
- * - Main container paddingBottom: 48px
+ * - Main content gap: 24px (Figma 684:8847 itemSpacing)
+ * - Main content paddingBottom: 48px (Figma 684:8847)
+ * - Header paddingVertical: 24px, paddingHorizontal: 32px (Figma 684:9047)
+ * - Header logo-to-greeting gap: 16px (Figma 684:9049)
  * - Headline/Carousel paddingLeft: 64px, paddingRight: 32px
+ * - Tab section gap: 48px (Figma 684:9002)
  * - Bottom footer height: 118px
  *
- * Pixel-Perfect Parity Fixes Applied:
+ * Pixel-Perfect Parity Fixes Applied (Figma 684:8846):
  * - Root background: #131313 (colors.black[700]) via Screen component
+ * - Spacing restored to exact Figma values: gap 24, paddingBottom 48, tabSection gap 48
+ * - HomeHeader padding restored: paddingV 24, gap 16 (Figma 684:9047/9049)
  * - Removed double-padding on headlineContainer (HeadlineSection handles its own 64px padding)
  * - Removed double-padding on carouselSection (PaymentMethodCarousel handles its own 64/32px padding)
  * - Removed double-padding on tabContent (sub-components handle their own 32px padding)
@@ -285,8 +290,9 @@ export default function HomeScreen() {
     if (!tenancy) return [];
 
     const items: CarouselCardItem[] = [];
+    let cardCounter = 0;
 
-    // Always add upcoming payment card if available (even in zero state)
+    // 1. Upcoming payment (if any)
     if (upcomingPayment && rentAmount > 0) {
       const formatMonth = (dateStr: string) => {
         try {
@@ -313,6 +319,8 @@ export default function HomeScreen() {
           lateCount: paymentStamps?.summary?.late ?? 0,
           missedCount: paymentStamps?.summary?.missed ?? 0,
           onAddPaymentMethod: paymentMethods.length === 0 ? handleAddPayment : undefined,
+          rentDueDay: tenancy.rent_due_day,
+          cardIndex: cardCounter++,
         }
       });
     }
@@ -348,6 +356,7 @@ export default function HomeScreen() {
           yearlyStamps: [],
           lateCount: paymentStamps?.summary?.late ?? 0,
           missedCount: paymentStamps?.summary?.missed ?? 0,
+          cardIndex: cardCounter++,
         }
       });
     });
@@ -520,11 +529,25 @@ export default function HomeScreen() {
 
   const handlePaymentPress = useCallback((payment: RecentPayment) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const statusMap: Record<string, string> = {
+      paid: 'success',
+      pending: 'pending',
+      failed: 'failed',
+      processing: 'pending',
+    };
+    // Look up raw payment data for additional fields
+    const rawPayment = resolvedData?.recent_payments?.find(p => p.id === payment.id);
     router.push({
-      pathname: '/(transactions)/[id]' as never,
-      params: { id: payment.id },
+      pathname: '/(payment)/status' as never,
+      params: {
+        paymentId: payment.id,
+        initialStatus: statusMap[payment.status] ?? 'pending',
+        amount: String(payment.amount),
+        cashback: String(rawPayment?.cashback_earned ?? 0),
+        transactionId: payment.id,
+      },
     });
-  }, [router]);
+  }, [router, resolvedData?.recent_payments]);
 
   // ==============================================
   // LOADING STATE
@@ -997,13 +1020,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 48, // Figma 243-3170: paddingBottom 48 (main container)
-    gap: 24, // Figma 243-3170: itemSpacing 24 between sections
+    paddingBottom: 48, // Figma 684:8847: paddingBottom 48
+    gap: 24, // Figma 684:8847: itemSpacing 24
   },
   scrollContentWithFooter: {
-    // Figma: Frame 1686557229 (floating bottom bar) has height 118px
-    // Footer height (118) + Content padding (48) = 166px total bottom clearance
-    paddingBottom: 166,
+    // Footer height (~118) + base padding = total bottom clearance
+    paddingBottom: 148,
   },
   // Figma: BottomFooter absolutely positioned at bottom of screen
   // Figma nodes: frame_1686557229 across 243-2762, 243-2967, 243-3170, 243-3378
@@ -1047,7 +1069,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    gap: 24, // Figma 243-3170: itemSpacing 24 between sections (headline, carousel, tabs, content)
+    gap: 24, // Figma 684:8847: itemSpacing 24 between sections
   },
   sectionDivider: {
     height: 1, // Figma 684:9207: thin divider
@@ -1064,10 +1086,11 @@ const styles = StyleSheet.create({
   // direction: column, alignItems: center, gap: 32
   // paddingTop: 8, paddingLeft: 32, paddingRight: 32, clipsContent: true
   tabSection: {
-    gap: 32, // Figma 684:12989: gap 32 between toggle and content
-    paddingTop: 8, // Figma: paddingTop 8
+    gap: 48, // Figma 684:9002: gap 48 between toggle and content
+    paddingTop: 8, // Figma 684:9002: paddingTop 8
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER
     overflow: 'hidden', // Figma: clipsContent true
+    // NOTE: paddingHorizontal 32 is handled by child components (RecentPaymentsList, CashbacksList, etc.)
   },
   emptyStateContainer: {
     flex: 1,

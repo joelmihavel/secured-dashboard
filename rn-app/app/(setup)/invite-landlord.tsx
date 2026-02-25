@@ -43,7 +43,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle } from '@/src/components';
-import { DottedPattern } from '@/src/components/patterns/DottedPattern';
+import { DottedGridPattern, DottedGridPresets } from '@/src/components/patterns/DottedGridPattern';
 import { useSendLandlordInvite, useDashboard } from '@/src/hooks';
 import type { SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme';
@@ -158,7 +158,7 @@ export default function InviteLandlordScreen() {
   return (
     <Screen padded={false} testID="invite-landlord-screen">
       {/* Background pattern */}
-      <DottedPattern backgroundShape="default" />
+      <DottedGridPattern fadeMask={false} />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}

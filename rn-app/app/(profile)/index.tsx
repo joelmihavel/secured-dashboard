@@ -11,11 +11,6 @@
  *     - Header frame (41:8762): column, gap=24, paddingH=40
  *       - Back arrow icon (41:8763): 32x32, rotated (left arrow), stroke #FFFFFF
  *       - Title text (41:8764): "My  Profile" 48px Regular, width=313 (forces 2-line wrap)
- *     - Payment history section (41:8765): column, gap=24, paddingH=40, clipsContent
- *       - Section title (41:8767): "Your payment history" 12px SemiBold #878787 uppercase
- *       - Chart wrapper (41:8768): column, gap=24, clipsContent
- *         - Chart bars frame (41:8769): row, gap=16, paddingH=16, width=345, height=161
- *         - Scroll indicator (41:8825): centered pill 24x2
  *     - Secured Account section (41:8828): column, gap=24, paddingH=40
  *       - Menu stack (41:8830): column, gap=4
  *         - User info row (41:8831): row, gap=16, padding 16/24, bg #202020, radius=12
@@ -31,7 +26,7 @@
  *         - Sign Out, divider, Delete Account
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -39,13 +34,16 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as StoreReview from 'expo-store-review';
 
 import { Screen, Text } from '@/src/components';
-import { useDashboard, useAuth, usePaymentHistory } from '@/src/hooks';
+import { DottedGridPattern } from '@/src/components/patterns';
+import { useDashboard, useAuth, useDeleteAccount } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
 // Blueprint colors (verified against 41-8760-blueprint.json)
@@ -59,24 +57,6 @@ const FIGMA_COLORS = {
   menuItemText: colors.neutral[300],     // colors.neutral[300]
   divider: colors.black[400],          // colors.black[400]
 } as const;
-
-// Demo chart data matching Figma design exactly (verified via Figma REST API node 41:8769)
-// JAN: bar h=99, #FFFFFF, legend "on time" | FEB: bar h=56, #FFFFFF, legend "Paid late"
-// MAR: bar h=1, #4D4D4D, legend "Not Paid", month label #FF9A6D | APR-DEC: bar h=1, #4D4D4D
-const DEMO_CHART_DATA: Array<{ month: string; status: 'ontime' | 'late' | 'unpaid' }> = [
-  { month: 'JAN', status: 'ontime' },
-  { month: 'FEB', status: 'late' },
-  { month: 'MAR', status: 'unpaid' },
-  { month: 'APR', status: 'unpaid' },
-  { month: 'MAY', status: 'unpaid' },
-  { month: 'JUN', status: 'unpaid' },
-  { month: 'JUL', status: 'unpaid' },
-  { month: 'AUG', status: 'unpaid' },
-  { month: 'SEP', status: 'unpaid' },
-  { month: 'OCT', status: 'unpaid' },
-  { month: 'NOV', status: 'unpaid' },
-  { month: 'DEC', status: 'unpaid' },
-];
 
 interface MenuItemProps {
   title: string;
@@ -134,106 +114,11 @@ function CardDivider() {
   return <View style={styles.cardDivider} />;
 }
 
-interface PaymentHistoryChartProps {
-  data: Array<{ month: string; status: 'ontime' | 'late' | 'unpaid' }>;
-  selectedMonth?: string;
-}
-
-// Blueprint chart frame (41:8769): width=345, height=161
-// Bar columns (41:8771 etc): 24px wide, gap=16 between columns
-// Bars: 16px wide, heights: ontime=99, late=56, unpaid=1
-// Unpaid bar color: #4D4D4D, other bars: #FFFFFF
-// Chart padding: left=16, right=16
-const CHART_COLUMN_WIDTH = 24;
-const CHART_GAP = 16;
-const CHART_BAR_WIDTH = 16;
-const CHART_HEIGHT = 161;
-const CHART_PADDING_H = 16;
-
-function PaymentHistoryChart({ data, selectedMonth = 'MAR' }: PaymentHistoryChartProps) {
-  const chartContentWidth = CHART_PADDING_H * 2 + data.length * CHART_COLUMN_WIDTH + (data.length - 1) * CHART_GAP;
-
-  return (
-    <View style={styles.chartContainer}>
-      {/* Horizontal scrolling chart per blueprint */}
-      <View style={styles.chartClipWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chartScrollContent}
-        >
-          <View style={[styles.chartInner, { width: chartContentWidth }]}>
-            {/* First vertical divider line (dashed, #4D4D4D, 0.5 weight) */}
-            <View style={styles.chartDividerLine} />
-
-            {/* Bar columns */}
-            <View style={styles.chartBarsContainer}>
-              {data.map((item, index) => {
-                // Heights from blueprint: ontime=99 (41:8772), late=56 (41:8778), unpaid=1 (41:8784)
-                const barHeight = item.status === 'ontime' ? 99 : item.status === 'late' ? 56 : 1;
-                const isSelected = item.month === selectedMonth;
-                // Unpaid bars use #4D4D4D (41:8784), others use #FFFFFF (41:8772)
-                const barColor = item.status === 'unpaid' ? FIGMA_COLORS.divider : colors.white;
-
-                // Determine legend text if applicable (matching Figma demo state)
-                let legendText = null;
-                if (item.month === 'JAN') legendText = 'on time';
-                else if (item.month === 'FEB') legendText = 'Paid late';
-                else if (item.month === 'MAR') legendText = 'Not Paid';
-
-                return (
-                  <View key={item.month} style={styles.chartColumn}>
-                    {/* Legend pill - absolute positioned above the bar */}
-                    {legendText && (
-                      <View style={[styles.legendItem, { position: 'absolute', top: -30 }]}>
-                        <Text style={styles.legendText}>{legendText}</Text>
-                      </View>
-                    )}
-
-                    {/* Bar rectangle */}
-                    <View
-                      style={[
-                        styles.chartBar,
-                        {
-                          height: barHeight,
-                          backgroundColor: barColor,
-                        },
-                      ]}
-                    />
-                    {/* Month label - blueprint: 12px/16.92 Regular, letterSpacing -0.24, center */}
-                    <Text
-                      style={[
-                        styles.chartMonthLabel,
-                        isSelected && styles.chartMonthLabelSelected,
-                      ]}
-                    >
-                      {item.month}
-                    </Text>
-                    {/* Vertical dashed dividers between columns */}
-                    {index < data.length - 1 && <View style={styles.chartColumnDivider} />}
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* Scroll indicator - blueprint (41:8825/41:8826): centered pill 24x2, bg #4D4D4D, radius 100 */}
-      <View style={styles.scrollIndicatorContainer}>
-        <View style={styles.scrollIndicator}>
-          <View style={styles.scrollIndicatorProgress} />
-        </View>
-      </View>
-    </View>
-  );
-}
-
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useDashboard();
   const { signOut } = useAuth();
-  const { data: paymentHistoryData } = usePaymentHistory();
+  const deleteAccount = useDeleteAccount();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -257,13 +142,18 @@ export default function ProfileScreen() {
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(profile)/help' as never);
-  }, [router]);
+    Linking.openURL('mailto:secured@flent.in?subject=Help%20Request');
+  }, []);
 
-  const handleRateApp = useCallback(() => {
+  const handleRateApp = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(profile)/about' as never);
-  }, [router]);
+    const available = await StoreReview.isAvailableAsync();
+    if (available) {
+      await StoreReview.requestReview();
+    } else {
+      Linking.openURL('https://apps.apple.com/in/app/secured-by-flent/id6757275258');
+    }
+  }, []);
 
   const handleSignOut = useCallback(() => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -286,46 +176,12 @@ export default function ProfileScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            // TODO: Wire to delete account edge function
+            deleteAccount.mutate({ reason: 'user_requested' });
           },
         },
       ],
     );
-  }, []);
-
-  // Chart data from real payment history, or demo data when empty
-  const MONTH_LABELS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-
-  const chartData = useMemo(() => {
-    const payments = paymentHistoryData?.payments ?? [];
-
-    if (payments.length === 0) {
-      return DEMO_CHART_DATA;
-    }
-
-    const monthStatusMap = new Map<number, 'ontime' | 'late' | 'unpaid'>();
-    for (const payment of payments) {
-      if (!payment.rent_month) continue;
-      const parts = payment.rent_month.split('-');
-      const monthIndex = parseInt(parts[1], 10) - 1;
-      if (monthIndex < 0 || monthIndex > 11) continue;
-
-      if (payment.status === 'success') {
-        const paidDate = payment.paid_at ? new Date(payment.paid_at) : null;
-        const isLate = paidDate ? paidDate.getDate() > 7 : false;
-        monthStatusMap.set(monthIndex, isLate ? 'late' : 'ontime');
-      } else if (payment.status === 'failed') {
-        if (!monthStatusMap.has(monthIndex)) {
-          monthStatusMap.set(monthIndex, 'unpaid');
-        }
-      }
-    }
-
-    return MONTH_LABELS.map((month, index) => ({
-      month,
-      status: monthStatusMap.get(index) ?? 'unpaid',
-    }));
-  }, [paymentHistoryData]);
+  }, [deleteAccount]);
 
   const [avatarError, setAvatarError] = useState(false);
 
@@ -335,6 +191,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen testID="profile-screen" padded={false}>
+      <DottedGridPattern animated={true} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -361,15 +218,6 @@ export default function ProfileScreen() {
               <Text inherit style={styles.titleSpace}>{' '}</Text>
               <Text inherit style={styles.titleProfile}>{'Profile'}</Text>
             </Text>
-          </View>
-
-          {/* Payment History section (41:8765): column, gap=24, paddingH=40, clipsContent */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Your payment history
-            </Text>
-            {/* Chart wrapper (41:8768): NO background fill, gap=24 */}
-            <PaymentHistoryChart data={chartData} selectedMonth="MAR" />
           </View>
 
           {/* Secured Account section (41:8828): column, gap=24, paddingH=40 */}
@@ -401,7 +249,6 @@ export default function ProfileScreen() {
                   )}
                 </View>
                 {/* User details (41:8833): column, gap=4, flex=1 */}
-                {/* Note: Credit Card XX25 (41:8837) has fill.visible=false in Figma -- NOT shown */}
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{fullName}</Text>
                   <Text style={styles.userJoinDate}>{joinDate}</Text>
@@ -558,123 +405,6 @@ const styles = StyleSheet.create({
   // Menu stack (41:8830): column, gap=4
   menuStack: {
     gap: 4,
-  },
-  // Chart container - NO background (blueprint 41:8768 has no fills)
-  chartContainer: {
-    flexDirection: 'column',
-    gap: 24, // Blueprint: 41:8768 gap=24 between chart and scroll indicator
-  },
-  // Clip wrapper for chart - matches Figma clipsContent=true on 41:8768
-  chartClipWrapper: {
-    overflow: 'hidden',
-  },
-  chartScrollContent: {
-    paddingHorizontal: 0,
-  },
-  // Chart inner (41:8769): row, gap=16, paddingH=16, height=161, alignItems flex-end
-  chartInner: {
-    height: CHART_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  // Legend container - positioned at top of chart area
-  // Blueprint: pills at y=6 (column.y=36 + pill.y=-30 = 6) within chart bars frame
-  legendContainer: {
-    position: 'absolute',
-    top: 6,
-    left: CHART_PADDING_H,
-    flexDirection: 'row',
-    gap: 10,            // Blueprint: gap 10
-    zIndex: 1,
-  },
-  // Legend pill (41:8774 etc): bg #FFFFFF, borderRadius=40, padding 4/8, row, center
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.white,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 40,
-  },
-  // Legend text: 12px/16.92 Regular #000000, letterSpacing -0.24, center
-  legendText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 16.92,
-    letterSpacing: -0.24,
-    color: colors.black[900],
-    textAlign: 'center',
-  },
-  // First vertical divider (41:8770): dashed line, stroke #4D4D4D, 0.5 weight
-  chartDividerLine: {
-    position: 'absolute',
-    left: 16,
-    top: 0,
-    bottom: 0,
-    width: 0.5,
-    backgroundColor: FIGMA_COLORS.divider,
-    borderRadius: 8,
-  },
-  // Bar columns container
-  chartBarsContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: CHART_GAP,
-    paddingHorizontal: CHART_PADDING_H,
-    height: CHART_HEIGHT,
-  },
-  // Individual chart column (41:8771 etc): column, width=24, gap=9, alignItems center
-  chartColumn: {
-    width: CHART_COLUMN_WIDTH,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 9,
-  },
-  // Bar rectangle: width=16
-  chartBar: {
-    width: CHART_BAR_WIDTH,
-    borderRadius: 2,
-  },
-  // Month label: 12px/16.92 Regular #878787, letterSpacing -0.24, center
-  chartMonthLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 16.92,
-    letterSpacing: -0.24,
-    color: colors.neutral[600],
-    textAlign: 'center',
-  },
-  // Selected month: same font but color #FF9A6D
-  chartMonthLabelSelected: {
-    color: colors.brand[500],
-  },
-  // Dashed vertical dividers between columns
-  chartColumnDivider: {
-    position: 'absolute',
-    right: -CHART_GAP / 2 - 0.25,
-    top: 0,
-    bottom: 0,
-    width: 0.5,
-    backgroundColor: FIGMA_COLORS.divider,
-  },
-  // Scroll indicator (41:8825): centered
-  scrollIndicatorContainer: {
-    alignItems: 'center',
-  },
-  // Scroll indicator pill (41:8826): 24x2, bg #4D4D4D, radius=100
-  scrollIndicator: {
-    width: 24,
-    height: 2,
-    backgroundColor: colors.black[400],
-    borderRadius: 100,
-    overflow: 'hidden',
-  },
-  // Progress portion (41:8827): 7x2, bg #FF9A6D
-  scrollIndicatorProgress: {
-    width: 7,
-    height: 2,
-    backgroundColor: colors.brand[500],
   },
   // Card container for Payment Info / Support / App sections
   // Blueprint (41:8844, 41:8858, 41:8868): bg #202020, radius=12, gap=8, drop shadows

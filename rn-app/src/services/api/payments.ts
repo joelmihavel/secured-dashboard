@@ -17,6 +17,11 @@
 import { callEdgeFunction } from '../supabase';
 
 // ==============================================
+// DEV MOCK — set to true to bypass API and use mock data
+// ==============================================
+const DEV_USE_MOCK_PAYMENTS = __DEV__ && true;
+
+// ==============================================
 // TYPES — RN App UI Contract
 // ==============================================
 
@@ -56,11 +61,6 @@ export interface PayUParams {
   udf3: string;
 }
 
-export interface CashfreeParams {
-  order_id: string;
-  payment_session_id: string;
-}
-
 export interface CashbackDiscount {
   discount_paise: number;
   discount_rupees: number;
@@ -77,7 +77,6 @@ export interface InitiatePaymentData {
   total_paise: number;
   payment_method: PaymentMethod;
   payu?: PayUParams;
-  cashfree?: CashfreeParams;
   intent_url?: string;
   cashback_discount: CashbackDiscount;
   original_rent_paise: number;
@@ -201,7 +200,7 @@ interface RawSavedPaymentMethod {
   id: string;
   type: 'upi' | 'card' | 'netbanking';
   display_name: string;
-  is_primary: boolean;
+  is_default: boolean;
   is_verified: boolean;
   nickname: string | null;
   created_at: string;
@@ -445,7 +444,7 @@ function mapRawSavedPaymentMethod(raw: RawSavedPaymentMethod): SavedPaymentMetho
     id: raw.id,
     type: raw.type,
     display_name: raw.display_name,
-    is_default: raw.is_primary, // Edge function uses is_primary, UI uses is_default
+    is_default: raw.is_default,
     is_verified: raw.is_verified,
     nickname: raw.nickname,
     created_at: raw.created_at,
@@ -649,6 +648,16 @@ export async function getSavedPaymentMethods(): Promise<{
   primaryMethodId: string | null;
   error: string | null;
 }> {
+  // In dev mode, return mock payment methods for visual testing
+  if (DEV_USE_MOCK_PAYMENTS) {
+    const { MOCK_SAVED_PAYMENT_METHODS } = await import('./__mocks__/payments-mock');
+    return {
+      data: MOCK_SAVED_PAYMENT_METHODS,
+      primaryMethodId: MOCK_SAVED_PAYMENT_METHODS[0]?.id ?? null,
+      error: null,
+    };
+  }
+
   const { data, error } = await callEdgeFunction<RawGetPaymentMethodsResponse>(
     'get-saved-payment-methods',
     {},

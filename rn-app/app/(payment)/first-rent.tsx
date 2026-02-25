@@ -1,496 +1,503 @@
 /**
- * First Rent Payment Screen (Post Approval)
- *
- * Figma References:
- * - 1-31175 (Bottom sheet overlay for "Pay Rent")
- *
- * This screen displays the initial rent payment breakdown with savings,
- * landlord details, and payment options including 3rd-party apps.
- * Implemented with 100% pixel-perfect Figma parity using StyleSheets.
+ * First Rent Payment Screen (Payment Page)
+ * Figma Node: 684:6018 / 684:6128 / 684:5915
+ * 
+ * This screen displays the initial rent payment breakdown.
+ * Implemented with 100% pixel-perfect Figma parity.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   View,
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  Dimensions,
+  Text as RNText,
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Line } from 'react-native-svg';
 
-import { Screen, Text, Logo, DottedPattern } from '@/src/components';
+import { Screen, PrimaryButton } from '@/src/components';
+import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal';
 import { useDashboard } from '@/src/hooks';
-import { colors } from '@/src/theme';
+import { usePaymentStore } from '@/src/stores';
+import { PAYMENT_COLORS } from '@/src/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// ==============================================
+// FIGMA COLOR TOKENS (684:6018) — aliased from shared PAYMENT_COLORS
+// ==============================================
 
-// ============================================
-// CONSTANTS - EXACT FIGMA VALUES
-// ============================================
-
-const FIGMA_COLORS = {
-  screenBackground: colors.black[700],    // black.700
-  cardBackground: colors.white,      // white
-  handle: '#D9D9D9',              // neutral.200
-  primaryText: colors.black[900],         // black
-  secondaryText: colors.neutral[500],       // neutral.500
-  divider: colors.neutral[100],             // neutral.100 (for dotted/solid lines)
-  successText: colors.success.default,         // success.default
-  buttonBackground: colors.black[900],    // black
-  buttonBorder: colors.neutral[600],        // neutral.600
-  buttonText: colors.white,          // white
-  appLabel: colors.neutral[600],            // neutral.600
-  iconBg: colors.neutral[100],              // neutral.100
-  transparent: 'transparent',
+const C = {
+  bg: PAYMENT_COLORS.background,
+  card: PAYMENT_COLORS.cardBackground,
+  cardDivider: PAYMENT_COLORS.cardDivider,
+  label: PAYMENT_COLORS.labelText,
+  value: PAYMENT_COLORS.valueText,
+  valueTotal: PAYMENT_COLORS.highlightText,
+  muted: PAYMENT_COLORS.mutedText,
+  divider: PAYMENT_COLORS.divider,
+  white: PAYMENT_COLORS.white,
 } as const;
 
-// ============================================
-// SVGs
-// ============================================
+// ==============================================
+// ICONS
+// ==============================================
 
-const VerticalDashedLine = () => (
-  <Svg width={1} height={33} viewBox="0 0 1 33" fill="none">
-    <Path
-      d="M0.253846 0V33"
-      stroke="#1A1A1A"
-      strokeWidth={0.5}
-      strokeDasharray="8 8"
-    />
+const BackArrow = () => (
+  <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
+    <Path d="M20 8L12 16L20 24" stroke={C.white} strokeWidth={2.67} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M8.89 16L25.33 16" stroke={C.white} strokeWidth={2.67} strokeLinecap="round" />
   </Svg>
 );
 
-const HorizontalLine = () => (
-  <Svg width="100%" height={1} viewBox="0 0 393 1" fill="none">
-    <Path d="M0 0.25H393" stroke="#EEEEEE" strokeWidth={0.5} />
+const HashIcon = () => (
+  <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+    <Path d="M6 2L4 14M12 2L10 14M2 6H14M2 10H14" stroke={C.label} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
-const WalletIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M4.77419 4.77419V12C4.77419 12.5475 4.9917 13.0727 5.37888 13.4598C5.76605 13.847 6.29117 14.0645 6.83871 14.0645H17.1613C17.7088 14.0645 18.234 13.847 18.6211 13.4598C19.0083 13.0727 19.2258 12.5475 19.2258 12V4.77419" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M8.78947 8.21053V1.89474C8.78947 1.33639 9.01128 0.8009 9.40609 0.40609C9.8009 0.01128 10.3364 -0.210526 10.8947 -0.210526H13C13.5583 -0.210526 14.0938 0.01128 14.4886 0.40609C14.8835 0.8009 15.1053 1.33639 15.1053 1.89474V8.21053" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" transform="translate(0 2)"/>
-  </Svg>
+const Crosshatch = ({ x, y }: { x: number; y: number }) => (
+  <View style={[styles.crosshatch, { left: x, top: y }]}>
+    <Svg width={20.5} height={35} viewBox="0 0 20.5 35">
+      <Line x1={20.5} y1={0} x2={0} y2={20.5} stroke={C.divider} strokeWidth={0.3} />
+      <Line x1={20.5} y1={14.5} x2={0} y2={35} stroke={C.divider} strokeWidth={0.3} />
+    </Svg>
+  </View>
 );
 
-const DiscountIcon = () => (
-  <Svg width={16} height={20} viewBox="0 0 17 20" fill="none">
-    <Path d="M6.23758 20.0001H1.86316V10.6031H0V8.0109H1.86316C0.82626 3.99289 3.75334 1.58428 5.3465 0.882227C10.0125 -1.58041 14.8514 1.69229 16.6876 3.63647V20.0001H12.3132V5.82368C9.78572 1.67608 6.61562 2.63738 5.3465 3.63647C3.72634 6.42314 6.02156 7.71387 7.37169 8.0109H9.63991V10.6031H6.23758V20.0001Z" fill="black"/>
-  </Svg>
+// ==============================================
+// BREAKDOWN ROW
+// ==============================================
+
+const BreakdownRow = ({
+  label,
+  value,
+  isTotal = false,
+}: {
+  label: string;
+  value: string;
+  isTotal?: boolean;
+}) => (
+  <View style={styles.breakdownRow}>
+    <View style={styles.breakdownLabelGroup}>
+      <HashIcon />
+      <RNText style={styles.breakdownLabel}>{label}</RNText>
+    </View>
+    <RNText
+      style={[
+        styles.breakdownValue,
+        isTotal && styles.breakdownValueTotal,
+      ]}
+    >
+      {value}
+    </RNText>
+  </View>
 );
 
-// App Icons (Placeholders simulating the actual external app icons)
-const GPayIcon = () => (
-  <Image source={require('@/assets/images/adaptive-icon.png')} style={styles.appIconImage} />
-);
-const PaytmIcon = () => (
-  <Image source={require('@/assets/images/adaptive-icon.png')} style={styles.appIconImage} />
-);
-const PhonePeIcon = () => (
-  <Image source={require('@/assets/images/adaptive-icon.png')} style={styles.appIconImage} />
-);
-
-// ============================================
-// MAIN COMPONENT
-// ============================================
+// ==============================================
+// SCREEN
+// ==============================================
 
 export default function FirstRentPaymentScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tenancy, cashback } = useDashboard();
+  const { tenancy, upcomingPayment, cashback } = useDashboard();
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
-  // Real data from dashboard
-  const rentAmount = tenancy?.monthly_rent ?? 32175;
-  const cashbackSaved = cashback?.available_balance ?? 325;
-  const landlordName = tenancy?.landlord_name ?? '[Landlord Name]';
+  const storedAmount = usePaymentStore((state) => state.amount);
+  const setAmount = usePaymentStore((state) => state.setAmount);
 
-  const handlePay = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    // Navigate to the payment method selection flow
-    router.push('/(payment)/select-method' as never);
+  // --- Data computation ---
+  const baseRent = tenancy?.monthly_rent || 30000;
+  const maintenance = 2000;
+  const otherCharges = 500; // Default as per Figma 684:6018
+  const rentAmount = storedAmount || upcomingPayment?.amount || (baseRent + maintenance + otherCharges);
+  
+  const isSetupComplete =
+    tenancy?.verification_status?.bank_verified &&
+    tenancy?.verification_status?.utility_verified &&
+    tenancy?.verification_status?.landlord_approved;
+  const verificationComplete = isSetupComplete ?? false;
+
+  const totalRent = baseRent + maintenance + otherCharges;
+  const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
+  
+  const date = new Date();
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const rentMonthText = upcomingPayment?.rent_month 
+    ? upcomingPayment.rent_month 
+    : `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+
+  // Cashback display for "waiting for you"
+  const cashbackWaiting = Math.round(totalRent * 0.01) || 325; // 1% of total
+
+  // --- Handlers ---
+  const handleBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
   }, [router]);
 
-  return (
-    <Screen testID="first-rent-payment-screen" padded={false} style={{ backgroundColor: FIGMA_COLORS.screenBackground }}>
-      {/* Background Pattern - Absolute positioned to avoid scroll stretching */}
-      <View style={styles.patternContainer}>
-        <DottedPattern />
-      </View>
+  const handlePayNow = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    setAmount(totalRent);
+    setIsModalVisible(true);
+  }, [totalRent, setAmount]);
 
+  // Proceed handler inside PaymentMethodModal
+  const handleProceedToTransaction = useCallback((method: 'upi' | 'card' | 'netbanking') => {
+    setIsModalVisible(false);
+    // Proceed to confirm (Transaction Page)
+    setTimeout(() => {
+      router.push('/(payment)/confirm');
+    }, 300);
+  }, [router]);
+
+  // --- Formatting helpers ---
+  const fmt = (n: number) => n.toLocaleString('en-IN');
+
+  return (
+    <Screen testID="first-rent-payment-screen" style={styles.screen} padded={false}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          {
-            paddingTop: insets.top + 16,
-            paddingBottom: insets.bottom + 34,
-          },
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Header */}
-        <View style={styles.header}>
-          <Logo size={40} />
-        </View>
+        {/* ===== Back Button ===== */}
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backButton}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <BackArrow />
+        </TouchableOpacity>
 
-        {/* White Bottom Sheet Card */}
-        <View style={styles.card}>
-          {/* Drag Handle */}
-          <View style={styles.handle} />
+        {/* ===== Card Container ===== */}
+        <View style={styles.cardContainer}>
 
-          <View style={styles.cardInner}>
-            {/* Title */}
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>Pay Rent</Text>
-            </View>
-
-            {/* Rent Summary Block */}
-            <View style={styles.summaryBlock}>
-              <View style={styles.summaryRow}>
-                {/* Total Payable Rent */}
-                <View style={styles.summaryItem}>
-                  <View style={styles.iconCircle}>
-                    <WalletIcon />
-                  </View>
-                  <View style={styles.summaryTextGroup}>
-                    <Text style={styles.summaryLabel}>TOTAL PAYABLE RENT</Text>
-                    <Text style={styles.summaryAmount}>
-                      <Text inherit style={styles.currencySymbol}>₹  </Text>
-                      {rentAmount.toLocaleString('en-IN')}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Dashed Line */}
-                <View style={styles.verticalDivider}>
-                  <VerticalDashedLine />
-                </View>
-
-                {/* Savings */}
-                <View style={styles.summaryItem}>
-                  <View style={styles.iconCircle}>
-                    <DiscountIcon />
-                  </View>
-                  <View style={styles.summaryTextGroup}>
-                    <Text style={styles.successText}>
-                      saved ₹ {cashbackSaved} →
-                    </Text>
-                    <Text style={styles.summarySubLabel}>
-                      using flent cashback
-                    </Text>
-                  </View>
+          {/* --- Top Card (Figma 684:6022) --- */}
+          <View style={styles.topCard}>
+            <View style={styles.topCardContent}>
+              <View style={styles.topCardRow}>
+                {/* Avatar Ellipse 8 */}
+                <View style={styles.avatarPlaceholder} />
+                
+                <View style={styles.topCardTextGroup}>
+                  <RNText style={styles.topCardTitle}>
+                    Rent due in {daysUntilDue} days
+                  </RNText>
+                  <RNText style={styles.topCardMonth}>
+                    {rentMonthText}
+                  </RNText>
+                  <RNText style={styles.topCardAmount}>
+                    <RNText style={styles.currencySymbol}>₹  </RNText>
+                    {fmt(totalRent)} <RNText style={styles.arrowSymbol}>→</RNText>
+                  </RNText>
                 </View>
               </View>
             </View>
 
-            {/* Payment Details */}
-            <View style={styles.paymentDetails}>
-              {/* Paying To */}
-              <View style={styles.payingToRow}>
-                <Text style={styles.detailLabel}>Paying to</Text>
-                <Text style={styles.detailLabel}>{landlordName}</Text>
-              </View>
+            {/* Divider bar */}
+            <View style={styles.topCardDivider} />
 
-              {/* Bank Info */}
-              <View style={styles.bankInfoRow}>
-                <View style={styles.bankLogoPlaceholder} />
-                <View style={styles.bankTextGroup}>
-                  <Text style={styles.bankName}>ICICI</Text>
-                  <Text style={styles.bankNumber}>XXXX XXXX XXXX 2003</Text>
-                </View>
-              </View>
+            {/* Decorative crosshatches */}
+            <Crosshatch x={26.25} y={37} />
+            <Crosshatch x={277.25} y={117} />
+          </View>
 
-              {/* Pay Now Button */}
-              <TouchableOpacity
-                onPress={handlePay}
-                style={styles.payNowButton}
-                accessibilityRole="button"
-              >
-                <Text style={styles.payNowText}>Pay Now</Text>
-              </TouchableOpacity>
+          {/* --- Cutting line --- */}
+          <View style={styles.cuttingLineWrapper}>
+            <Svg width="100%" height={1} viewBox="0 0 369 1" fill="none">
+              <Path d="M0 0.5H369" stroke={C.divider} strokeDasharray="4 4" />
+            </Svg>
+          </View>
 
-              <Text style={styles.secureText}>All payments are 100% secure</Text>
+          {/* --- Bottom Card / Receipt (Figma 684:6037) --- */}
+          <View style={styles.bottomCard}>
+            {/* Breakdown section */}
+            <View style={styles.breakdownSection}>
+              <BreakdownRow label="Base rent" value={`₹ ${fmt(baseRent)}`} />
+              <View style={styles.divider} />
+              <BreakdownRow label="Maintenance" value={`₹${fmt(maintenance)}`} />
+              <View style={styles.divider} />
+              <BreakdownRow label="Other charges" value={`₹${fmt(otherCharges)}`} />
+              <View style={styles.divider} />
+              <BreakdownRow
+                label="Payable Rent"
+                value={`₹  ${fmt(totalRent)}`}
+                isTotal
+              />
+            </View>
+            
+            {/* Cashback Waiting Banner (Figma 684:6072) */}
+            <View style={styles.cashbackWaitingContainer}>
+              <RNText style={styles.cashbackWaitingText}>
+                🔒 ₹{fmt(cashbackWaiting)} cashback waiting for you
+              </RNText>
             </View>
 
-            {/* Divider */}
-            <View style={styles.horizontalDivider}>
-              <HorizontalLine />
-            </View>
-
-            {/* Other Apps Section */}
-            <View style={styles.otherAppsSection}>
-              <View style={styles.otherAppsHeader}>
-                <View style={styles.appsIconPlaceholder} />
-                <Text style={styles.otherAppsTitle}>PAY BY ANY APP INSTEAD</Text>
-              </View>
-
-              <View style={styles.appsRow}>
-                <View style={styles.appItem}>
-                  <GPayIcon />
-                  <Text style={styles.appName}>Google Pay</Text>
-                </View>
-                <View style={styles.appItem}>
-                  <PaytmIcon />
-                  <Text style={styles.appName}>PayTM</Text>
-                </View>
-                <View style={styles.appItem}>
-                  <PhonePeIcon />
-                  <Text style={styles.appName}>PhonePe</Text>
-                </View>
-              </View>
-            </View>
+            {/* Perforations */}
+            <View style={styles.leftPerforation} />
+            <View style={styles.rightPerforation} />
           </View>
         </View>
+
+        {/* ===== Spacer ===== */}
+        <View style={styles.spacer} />
+
+        {/* ===== CTA Section (Figma 684:6075) ===== */}
+        <View style={styles.ctaWrapper}>
+          <PrimaryButton
+            title={`Pay ₹${fmt(totalRent)} now`}
+            onPress={handlePayNow}
+            showDivider
+            testID="pay-now-button"
+          />
+
+          {/* Footer text — Figma 684:6076 */}
+          {!verificationComplete && (
+            <RNText style={styles.footerText}>
+              Complete setup to unlock cashback on payments.
+            </RNText>
+          )}
+        </View>
       </ScrollView>
+
+      {/* Payment Method Modal */}
+      <PaymentMethodModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        tenancyId={tenancy?.id ?? ''}
+        rentMonth={upcomingPayment?.rent_month ?? rentMonthText}
+        onProceed={handleProceedToTransaction}
+      />
     </Screen>
   );
 }
 
+// ==============================================
+// STYLES
+// ==============================================
+
 const styles = StyleSheet.create({
-  patternContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 405, // Matches the height defined in Figma
-    overflow: 'hidden',
+  screen: {
+    backgroundColor: C.bg,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'space-between',
   },
-  header: {
-    paddingHorizontal: 48, // Figma layout padding
-    alignItems: 'flex-start',
-    marginBottom: 40,
-  },
-  card: {
-    backgroundColor: FIGMA_COLORS.cardBackground,
-    borderTopLeftRadius: 22.79,
-    borderTopRightRadius: 22.79,
-    paddingTop: 15.19,
-    alignItems: 'center',
-    width: '100%',
-    flex: 1, // Let card fill the remaining space
-  },
-  handle: {
-    backgroundColor: FIGMA_COLORS.handle,
-    width: 28,
-    height: 4,
-    borderRadius: 200,
-    marginBottom: 16,
-  },
-  cardInner: {
-    width: '100%',
-    paddingBottom: 24,
-  },
-  titleContainer: {
-    width: '100%',
-    paddingHorizontal: 24,
-    marginBottom: 30,
-    alignItems: 'center',
-  },
-  title: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28,
-    lineHeight: 39.48,
-    letterSpacing: -0.56,
-    color: FIGMA_COLORS.primaryText,
-    textAlign: 'center',
-  },
-  summaryBlock: {
-    paddingHorizontal: 24,
-    marginBottom: 10,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    flex: 1,
-  },
-  iconCircle: {
+
+  // Back button
+  backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: FIGMA_COLORS.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 24,
+    marginLeft: 40,
   },
-  summaryTextGroup: {
-    gap: 4,
+
+  // Card container
+  cardContainer: {
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    gap: 0,
   },
-  summaryLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
+
+  // Top Card
+  topCard: {
+    backgroundColor: C.card,
+    borderRadius: 12,
+    width: 313,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 24,
+    gap: 32,
+    alignItems: 'center',
+    position: 'relative',
+    zIndex: 2,
+  },
+  topCardContent: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  topCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  avatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: C.cardDivider,
+  },
+  topCardTextGroup: {
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  topCardTitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    lineHeight: 21.6,
-    color: FIGMA_COLORS.secondaryText,
+    lineHeight: 17,
+    letterSpacing: -0.24,
+    color: C.label,
   },
-  summaryAmount: {
+  topCardMonth: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: -0.56,
+    color: C.value,
+  },
+  topCardAmount: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,
-    lineHeight: 16.92,
-    letterSpacing: -0.48,
-    color: FIGMA_COLORS.primaryText,
+    lineHeight: 23,
+    letterSpacing: -0.64,
+    color: C.value,
   },
   currencySymbol: {
     fontSize: 12,
   },
-  verticalDivider: {
-    width: 1,
-    height: 33,
-    justifyContent: 'center',
+  arrowSymbol: {
+    fontSize: 16,
+  },
+  topCardDivider: {
+    height: 5,
+    width: 268,
+    backgroundColor: C.cardDivider,
+  },
+  crosshatch: {
+    position: 'absolute',
+  },
+
+  // Cutting line
+  cuttingLineWrapper: {
+    width: 369,
+    height: 1,
+    marginVertical: 8,
+    zIndex: 1,
+    opacity: 0.6,
+  },
+
+  // Bottom Card / Receipt
+  bottomCard: {
+    backgroundColor: C.card,
+    width: 270,
+    paddingTop: 56,
+    paddingBottom: 32, 
+    gap: 24,
+    // Figma 3-layer drop shadow
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.1,
+    shadowRadius: 19,
+    elevation: 10,
+    position: 'relative',
     alignItems: 'center',
   },
-  successText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 16.92,
-    letterSpacing: -0.48,
-    color: FIGMA_COLORS.successText,
-  },
-  summarySubLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 21.6,
-    color: FIGMA_COLORS.secondaryText,
-  },
-  paymentDetails: {
+
+  // Breakdown section
+  breakdownSection: {
+    width: '100%',
     paddingHorizontal: 24,
     gap: 16,
-    marginBottom: 16,
   },
-  payingToRow: {
+
+  // Breakdown row
+  breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  detailLabel: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 21.6,
-    letterSpacing: -0.132,
-    color: FIGMA_COLORS.primaryText,
-  },
-  bankInfoRow: {
+  breakdownLabelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 8,
+    gap: 4,
   },
-  bankLogoPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: FIGMA_COLORS.iconBg,
-  },
-  bankTextGroup: {
-    gap: 2,
-  },
-  bankName: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 16,
-    lineHeight: 28.8,
-    letterSpacing: -0.176,
-    color: FIGMA_COLORS.primaryText,
-  },
-  bankNumber: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 21.6,
-    letterSpacing: -0.132,
-    color: FIGMA_COLORS.primaryText,
-  },
-  payNowButton: {
-    backgroundColor: FIGMA_COLORS.buttonBackground,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderTopWidth: 2,
-    borderColor: FIGMA_COLORS.buttonBorder,
-    borderRadius: 200,
-    paddingVertical: 8,
-    paddingHorizontal: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  payNowText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,
-    lineHeight: 25.2,
-    letterSpacing: -0.154,
-    color: FIGMA_COLORS.buttonText,
-  },
-  secureText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 21.6,
-    letterSpacing: -0.132,
-    color: FIGMA_COLORS.primaryText,
-    textAlign: 'center',
-  },
-  horizontalDivider: {
-    width: '100%',
-    height: 1,
-    marginBottom: 16,
-  },
-  otherAppsSection: {
-    paddingHorizontal: 24,
-    gap: 16,
-    alignItems: 'center',
-  },
-  otherAppsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  appsIconPlaceholder: {
-    width: 42.67,
-    height: 32,
-    backgroundColor: FIGMA_COLORS.iconBg,
-    borderRadius: 4,
-  },
-  otherAppsTitle: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 12,
-    lineHeight: 16.92,
-    color: FIGMA_COLORS.appLabel,
-    textTransform: 'uppercase',
-  },
-  appsRow: {
-    flexDirection: 'row',
-    gap: 32, // gap between app items
-  },
-  appItem: {
-    alignItems: 'center',
-    gap: 8,
-    width: 72,
-  },
-  appIconImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: FIGMA_COLORS.iconBg,
-  },
-  appName: {
+  breakdownLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    lineHeight: 16.92,
-    letterSpacing: -0.48,
-    color: FIGMA_COLORS.primaryText,
+    lineHeight: 20,
+    color: C.label,
+  },
+  breakdownValue: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: C.value,
+  },
+  breakdownValueTotal: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    color: C.valueTotal,
+  },
+
+  // Thin divider
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.divider,
+    width: '100%',
+  },
+
+  cashbackWaitingContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 8,
+  },
+  cashbackWaitingText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: C.valueTotal,
+  },
+
+  // Perforations
+  leftPerforation: {
+    position: 'absolute',
+    left: -6,
+    top: 256,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: C.bg,
+  },
+  rightPerforation: {
+    position: 'absolute',
+    right: -7,
+    top: 256,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: C.bg,
+  },
+
+  spacer: {
+    flex: 1,
+    minHeight: 40,
+  },
+
+  // CTA Section
+  ctaWrapper: {
+    paddingHorizontal: 40,
+    gap: 16,
+    alignItems: 'center',
+  },
+
+  // Footer text
+  footerText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: C.muted,
     textAlign: 'center',
   },
 });
-

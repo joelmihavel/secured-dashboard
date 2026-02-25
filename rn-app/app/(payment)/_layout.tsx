@@ -29,15 +29,9 @@ export default function PaymentLayout() {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="select-method" />
-      <Stack.Screen name="add-upi" />
-      <Stack.Screen name="add-card" />
-      <Stack.Screen name="add-netbanking" />
       <Stack.Screen name="first-rent" />
-      <Stack.Screen name="initiate" />
-      <Stack.Screen name="processing" />
-      <Stack.Screen name="success" />
-      <Stack.Screen name="failed" />
+      <Stack.Screen name="confirm" />
+      <Stack.Screen name="status" />
     </Stack>
   );
 }

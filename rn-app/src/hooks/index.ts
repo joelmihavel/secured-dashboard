@@ -49,6 +49,7 @@ export {
 export {
   useUpdateProfile,
   useUploadAvatar,
+  useDeleteAccount,
   useProfilePaymentMethods,
   useProfile,
   profileKeys,

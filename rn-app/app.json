@@ -112,6 +112,7 @@
         }
       ],
       "./plugins/withCashfree",
+      "expo-image-picker",
       "expo-build-properties"
     ],
     "updates": {

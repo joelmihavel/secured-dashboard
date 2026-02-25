@@ -70,6 +70,13 @@ const MOCK_DASHBOARD: DashboardData = {
     pending_balance: 50,
     total_earned: 1200,
     total_used: 950,
+    discount_rate: 0.01,
+    max_discount_paise: 50000,
+    max_discount: 500,
+    verification_complete: true,
+    total_savings_paise: 0,
+    total_savings: 0,
+    legacy_wallet_balance: 0,
   },
   recent_payments: [
     { id: 'pay_001', amount: 25000, status: 'success', rent_month: '2026-01-01', paid_at: '2026-01-05T10:30:00Z', cashback_earned: 200 },

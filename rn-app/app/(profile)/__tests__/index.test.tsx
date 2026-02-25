@@ -20,13 +20,18 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 jest.mock('@expo/vector-icons', () => {
   const { View } = require('react-native');
   return { Ionicons: (props: any) => <View {...props} /> };
 });
+
+jest.mock('expo-store-review', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(false),
+  requestReview: jest.fn(),
+}));
 
 jest.mock('@/src/hooks', () => ({
   useDashboard: () => ({
@@ -38,9 +43,9 @@ jest.mock('@/src/hooks', () => ({
     signOut: jest.fn(),
     isSigningOut: false,
   }),
-  usePaymentHistory: () => ({
-    data: { payments: [] },
-    isLoading: false,
+  useDeleteAccount: () => ({
+    mutate: jest.fn(),
+    isPending: false,
   }),
 }));
 

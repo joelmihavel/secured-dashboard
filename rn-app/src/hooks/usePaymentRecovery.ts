@@ -34,10 +34,10 @@ export function usePaymentRecovery() {
         return;
       }
 
-      // Recent payment in progress — resume polling on processing screen
+      // Recent payment in progress — resume polling on status screen
       router.replace({
-        pathname: '/(payment)/processing',
-        params: { paymentId: lastPaymentId },
+        pathname: '/(payment)/status',
+        params: { paymentId: lastPaymentId, initialStatus: 'pending' },
       } as never);
     };
 

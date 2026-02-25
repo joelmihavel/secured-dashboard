@@ -181,11 +181,11 @@ function sleep(ms: number): Promise<void> {
 export const NOTIFICATION_ROUTES: Record<string, string> = {
   waitlist_approved: '/(waitlist)/approved',
   agreement_reviewed: '/(waitlist)',
-  payment_success: '/(payment)/success',
-  payment_failed: '/(payment)/failed',
+  payment_success: '/(payment)/status',
+  payment_failed: '/(payment)/status',
   landlord_approved: '/(setup)/pending-steps',
   new_cashback: '/(main)',
-  rent_reminder: '/(payment)/select-method',
+  rent_reminder: '/(payment)/confirm',
 };
 
 // ==============================================

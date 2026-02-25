@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut, withRepeat, withTiming, useSharedValue, useAnimatedStyle, Easing } from 'react-native-reanimated';
 
 import { Screen, Text, PrimaryButton } from '@/src/components';
-import { DottedPattern } from '@/src/components/patterns';
+import { DottedGridPattern } from '@/src/components/patterns';
 import { useUploadStore } from '@/src/stores/upload';
 import {
   FlentLogoIcon,
@@ -326,7 +326,7 @@ export default function ReviewScreen() {
 
   return (
     <Screen testID="review-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
-      <DottedPattern showShape={true} backgroundShape="agreement" />
+      <DottedGridPattern fadeMask={false} />
 
       <ScrollView
         ref={scrollViewRef}

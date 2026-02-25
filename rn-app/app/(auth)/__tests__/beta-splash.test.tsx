@@ -46,7 +46,7 @@ jest.mock('react-native-safe-area-context', () => {
 
 // Mock DottedPattern
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 describe('BetaSplashScreen', () => {

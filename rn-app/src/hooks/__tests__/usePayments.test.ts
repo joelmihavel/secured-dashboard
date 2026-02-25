@@ -38,7 +38,7 @@ jest.mock('../../services/api/payments', () => ({
   addCardToken: (...args: unknown[]) => mockAddCardToken(...args),
   deletePaymentMethod: (...args: unknown[]) => mockDeletePaymentMethod(...args),
   generateReceipt: (...args: unknown[]) => mockGenerateReceipt(...args),
-  getCashbackHistory: (...args: unknown[]) => mockGetCashbackHistory(...args),
+  getSavingsHistory: (...args: unknown[]) => mockGetCashbackHistory(...args),
   getPaymentSchedules: (...args: unknown[]) => mockGetPaymentSchedules(...args),
   createPaymentSchedule: (...args: unknown[]) => mockCreatePaymentSchedule(...args),
   managePaymentSchedule: (...args: unknown[]) => mockManagePaymentSchedule(...args),
@@ -522,7 +522,7 @@ describe('useCashbackHistory', () => {
     jest.clearAllMocks();
   });
 
-  it('calls getCashbackHistory with correct params', async () => {
+  it('calls getSavingsHistory with correct params', async () => {
     mockGetCashbackHistory.mockResolvedValue({
       data: MOCK_CASHBACK,
       error: null,

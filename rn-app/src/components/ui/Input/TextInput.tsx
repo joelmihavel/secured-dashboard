@@ -105,7 +105,7 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
     const getBorderStyle = () => {
       // In edit mode (indicated by being pre-filled with data or specifically having a hint "Edit"), 
       // the input often has a bottom border.
-      if (variant === 'dark' && hintText === 'Edit') {
+      if (variant === 'dark' && hintText?.toLowerCase() === 'edit') {
         return {
           borderWidth: 0,
           borderBottomWidth: 0.5,

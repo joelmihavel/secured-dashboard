@@ -77,13 +77,12 @@ interface PaymentState {
   // Persisted recovery fields
   lastPaymentId: string | null;
   lastPaymentTimestamp: number | null;
-  // Gateway selection
-  activeGateway: 'payu' | 'cashfree';
-  lastPaymentGateway: string | null;
   // Core SDK fields (in-memory only, never persisted)
   payuSessionParams: PayUSessionParams | null;
-  useCoreSdk: boolean;
   selectedInstrument: { type: PaymentMethodType; bankCode?: string } | null;
+  // Verification flow state (in-memory only)
+  verificationSkipped: boolean;
+  pendingPaymentReturn: boolean;
 }
 
 interface PaymentActions {
@@ -102,12 +101,13 @@ interface PaymentActions {
   reset: () => void;
   setLastPayment: (id: string) => void;
   clearLastPayment: () => void;
-  setActiveGateway: (gateway: 'payu' | 'cashfree') => void;
   // Core SDK actions
   setPayuSessionParams: (params: PayUSessionParams) => void;
   clearPayuSessionParams: () => void;
-  setUseCoreSdk: (enabled: boolean) => void;
   setSelectedInstrument: (instrument: { type: PaymentMethodType; bankCode?: string } | null) => void;
+  // Verification flow actions
+  setVerificationSkipped: (skipped: boolean) => void;
+  setPendingPaymentReturn: (pending: boolean) => void;
 }
 
 type PaymentStore = PaymentState & PaymentActions;
@@ -126,12 +126,12 @@ const initialState: PaymentState = {
   error: null,
   lastPaymentId: null,
   lastPaymentTimestamp: null,
-  activeGateway: 'cashfree',
-  lastPaymentGateway: null,
   // Core SDK fields — never persisted (card data security)
   payuSessionParams: null,
-  useCoreSdk: false,
   selectedInstrument: null,
+  // Verification flow state
+  verificationSkipped: false,
+  pendingPaymentReturn: false,
 };
 
 // ==============================================
@@ -253,11 +253,6 @@ export const usePaymentStore = create<PaymentStore>()(
           state.lastPaymentTimestamp = null;
         }),
 
-      setActiveGateway: (gateway) =>
-        set((state) => {
-          state.activeGateway = gateway;
-        }),
-
       // Core SDK actions — memory only, never persisted
       setPayuSessionParams: (params) =>
         set((state) => {
@@ -269,14 +264,20 @@ export const usePaymentStore = create<PaymentStore>()(
           state.payuSessionParams = null;
         }),
 
-      setUseCoreSdk: (enabled) =>
-        set((state) => {
-          state.useCoreSdk = enabled;
-        }),
-
       setSelectedInstrument: (instrument) =>
         set((state) => {
           state.selectedInstrument = instrument;
+        }),
+
+      // Verification flow actions
+      setVerificationSkipped: (skipped) =>
+        set((state) => {
+          state.verificationSkipped = skipped;
+        }),
+
+      setPendingPaymentReturn: (pending) =>
+        set((state) => {
+          state.pendingPaymentReturn = pending;
         }),
     })),
     {
@@ -285,8 +286,6 @@ export const usePaymentStore = create<PaymentStore>()(
       partialize: (state) => ({
         lastPaymentId: state.lastPaymentId,
         lastPaymentTimestamp: state.lastPaymentTimestamp,
-        activeGateway: state.activeGateway,
-        lastPaymentGateway: state.lastPaymentGateway,
       }),
     }
   )
@@ -305,7 +304,7 @@ export const selectIsProcessing = (state: PaymentStore) =>
 export const selectTransactionId = (state: PaymentStore) => state.transactionId;
 export const selectLastPaymentId = (state: PaymentStore) => state.lastPaymentId;
 export const selectLastPaymentTimestamp = (state: PaymentStore) => state.lastPaymentTimestamp;
-export const selectActiveGateway = (state: PaymentStore) => state.activeGateway;
 export const selectPayuSessionParams = (state: PaymentStore) => state.payuSessionParams;
-export const selectUseCoreSdk = (state: PaymentStore) => state.useCoreSdk;
 export const selectSelectedInstrument = (state: PaymentStore) => state.selectedInstrument;
+export const selectVerificationSkipped = (state: PaymentStore) => state.verificationSkipped;
+export const selectPendingPaymentReturn = (state: PaymentStore) => state.pendingPaymentReturn;

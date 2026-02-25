@@ -19,11 +19,10 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@/src/components/ui';
+import { Text, PrimaryButton } from '@/src/components/ui';
 import { s, sf } from '@/src/theme/scale';
 
 export interface BottomFooterProps {
@@ -47,9 +46,8 @@ function BottomFooterComponent({
     return value.toLocaleString('en-IN');
   };
 
-  // Figma 243-2967 node 243:3155: paddingBottom 40
-  // On devices with home indicator, use max(insets.bottom, 40) to avoid overlap
-  const bottomPadding = Math.max(insets.bottom, s(40));
+  // Minimal bottom padding — safe area only
+  const bottomPadding = insets.bottom;
 
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
@@ -64,28 +62,17 @@ function BottomFooterComponent({
         </Text>
       </View>
 
-      {/* Right side - Button wrapper with handle bar above button */}
+      {/* Right side - PrimaryButton with handle bar divider */}
       <View style={styles.buttonColumn}>
-        <View style={styles.handleBar} />
-        <TouchableOpacity
+        <PrimaryButton
+          title={buttonLabel}
           onPress={onPress}
           disabled={disabled}
-          activeOpacity={0.9}
-          style={[styles.buttonOuter, disabled && styles.buttonOuterDisabled]}
-        >
-          <LinearGradient
-            colors={disabled
-              ? ['#202020', '#202020']
-              : ['#272727', '#212121', '#1a1a1a', '#0d0d0d']
-            }
-            locations={disabled ? [0, 1] : [0, 0.12, 0.85, 1]}
-            style={[styles.button, disabled && styles.buttonDisabled]}
-          >
-            <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
-              {buttonLabel}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          showDivider
+          fullWidth={false}
+          style={styles.footerButton}
+          testID="review-pay-button"
+        />
       </View>
     </View>
   );
@@ -101,7 +88,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#202020',
-    paddingTop: s(16),
+    paddingTop: s(8),
     paddingHorizontal: s(32),
     gap: s(24),
     borderTopWidth: 1, // Figma: individualStrokeWeights top=1
@@ -133,55 +120,13 @@ const styles = StyleSheet.create({
   amountValue: {
     fontSize: sf(16),
   },
-  // Figma 243:7386: VERTICAL, CENTER, gap=8
+  // Button column — houses PrimaryButton
   buttonColumn: {
     alignItems: 'center',
-    gap: s(8),
   },
-  // Figma I243:7386;137:37: 24x2, fill #4D4D4D, radius 200
-  handleBar: {
-    width: s(24),
-    height: 2,
-    backgroundColor: '#4D4D4D',
-    borderRadius: 200,
-  },
-  // Figma: DROP_SHADOW — applied to outer wrapper for proper RN rendering
-  buttonOuter: {
-    shadowColor: '#995C41',
-    shadowOffset: { width: 0, height: s(6) },
-    shadowOpacity: 0.24,
-    shadowRadius: s(10),
-    elevation: 4,
-  },
-  buttonOuterDisabled: {
-    shadowOpacity: 0,
-  },
-  // Figma I243:7386;100:1564: 164.5x52, stroke #FF9A6D w=0.1, radius=8
-  button: {
+  // PrimaryButton width constraint for footer context
+  footerButton: {
     width: s(164.5),
-    height: s(52),
-    paddingVertical: s(16),
-    paddingHorizontal: s(16),
-    borderRadius: s(8),
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 154, 109, 0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  buttonDisabled: {
-    borderColor: '#4D4D4D',
-  },
-  // Figma I243:7386;100:1565: fontSize 14, weight 500, lineHeight 20, color #FFFFFF
-  buttonText: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  buttonTextDisabled: {
-    color: '#878787',
   },
 });
 

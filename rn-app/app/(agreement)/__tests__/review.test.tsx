@@ -26,7 +26,7 @@ jest.mock('react-native-safe-area-context', () => {
 
 // DottedPattern (heavy SVG)
 jest.mock('@/src/components/patterns', () => ({
-  DottedPattern: () => null,
+  DottedGridPattern: () => null,
 }));
 
 // Agreement icons

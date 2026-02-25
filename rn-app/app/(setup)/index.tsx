@@ -52,7 +52,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
-import { DottedPattern } from '@/src/components/patterns';
+import { DottedGridPattern } from '@/src/components/patterns';
 import { colors } from '@/src/theme';
 import { s, sf } from '@/src/theme/scale';
 
@@ -375,13 +375,7 @@ export default function SetupIndexScreen() {
   return (
       <Screen testID="setup-index-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
         {/* Background Pattern - DottedPattern component with crossfading shapes */}
-        <DottedPattern showShape={true} backgroundShape="postapproval1" animatedOpacityStyle={{ opacity: bgShapeOpacity1 }} />
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <DottedPattern showShape={true} backgroundShape="postapproval2" animatedOpacityStyle={{ opacity: bgShapeOpacity2 }} />
-        </View>
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <DottedPattern showShape={true} backgroundShape="postapproval3" animatedOpacityStyle={{ opacity: bgShapeOpacity3 }} />
-        </View>
+        <DottedGridPattern fadeMask={false} />
 
         <View style={[styles.container, { paddingTop: Math.max(0, headerPaddingTop) }]}>
           {/* Header frame - Figma 41:10824: x=48, column, gap=34 */}

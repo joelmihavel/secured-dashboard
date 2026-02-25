@@ -1,19 +1,34 @@
+/**
+ * Splash / Get Started Screen
+ * Figma Node: 684:3081
+ *
+ * Figma Values (from get_design_context 2026-02-25):
+ * - Background: #131313 (colors.black[700])
+ * - Dotted pattern: 8% opacity dots (DottedGridPattern)
+ * - Background Shape (174:2668): 481x405px, opacity 48%, centered horizontally, top -100px
+ * - Vector 1 (1:28057): 333.751x400px, bottom-0, right-[-120.56px], -scale-y-100, opacity 1%
+ * - Content container: h-613px, centered vertically with +85.5px offset, pb-64, px-48
+ * - Logo: 33.375x40px
+ * - Logo→text gap: 40px
+ * - Heading: PlusJakartaSans-Regular, 48/64, letterSpacing -2
+ *   "Make\nyour rent\n" = #A9A9A9, "work for you→" = #FF9A6D
+ * - Body: PlusJakartaSans-Regular, 14/20, #A6A6A6
+ * - Heading→body gap: 16px
+ * - Button: "Get Started" (PrimaryButton component)
+ * - Login: "Already a user? Log in", 14/20, white, "Log in" underlined
+ * - Button→login gap: 24px
+ */
+
 import React, { useCallback } from 'react';
 import { View, StyleSheet, Pressable, Dimensions } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Screen, Logo, Text, PrimaryButton } from '@/src/components';
+import { Screen, Logo, Text, PrimaryButton, DottedGridPattern } from '@/src/components';
 import { colors } from '@/src/theme';
 
-const VECTOR_1_PATH = "M124.751 400L37.2631 400L37.2631 212.062L0 212.062L0 160.217L37.2631 160.217C16.5252 79.8576 75.0667 31.6855 106.93 17.6445C200.25 -31.6081 297.028 33.8457 333.751 72.7293L333.751 400L246.263 400L246.263 116.473C195.714 33.5216 132.312 52.7474 106.93 72.7293C74.5266 128.462 120.431 154.277 147.433 160.217L192.798 160.217L192.798 212.062L124.751 212.062L124.751 400Z";
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ratioX = SCREEN_WIDTH / 393; // 393 is Figma base width
-const sv = (val: number) => val * ratioX;
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -28,42 +43,26 @@ export default function SplashScreen() {
     router.push('/(auth)/sign-up');
   }, [router]);
 
-  // Figma container height is 613, Y offset is 205. Total 818.
-  // 852 - 818 = 34px (Figma's bottom home indicator safe area inset).
-  // If the device has safe area inset > 0, use it, otherwise fallback to 34 to match Figma.
+  // Figma frame height 852, content ends at y=818, bottom safe area = 34px
   const paddingBottom = Math.max(insets.bottom, 34);
 
   return (
     <Screen padded={false} testID="splash-screen" safeAreaTop={false} safeAreaBottom={false} style={styles.screen}>
-      {/* 1. Deterministic Backgrounds from Figma extraction 1-28055 */}
-      <Image
-        source={require('@/src/assets/figma-assets/1-28055_image-149.png')}
-        style={[styles.image149, { left: sv(-463), top: sv(-747), width: sv(1319), height: sv(2346) }]}
-        contentFit="fill"
-      />
-      <View style={[styles.vector1, { left: sv(179.81), top: sv(452), width: sv(333.75), height: sv(400) }]}>
-        <Svg width="100%" height="100%" viewBox="0 0 333.75 400">
-          <Path d={VECTOR_1_PATH} fill="#FFFFFF" opacity={1} />
-        </Svg>
-      </View>
-      <Image
-        source={require('@/src/assets/figma-assets/1-28055_background-shape.png')}
-        style={[styles.backgroundShape, { left: sv(-44), top: 0, width: sv(481), height: sv(405) }]}
-        contentFit="fill"
-      />
+      {/* Dotted grid background and splash shape */}
+      <DottedGridPattern fadeMask={false} />
 
-      {/* 2. Deterministic Layout from Figma extraction 1-28055 */}
+      {/* Content — Figma: h-613, centered vertically, pb-64, px-48 */}
       <View style={[styles.outerContainer, { paddingBottom }]}>
-        <View style={[styles.mainContent, { height: sv(613) }]}>
+        <View style={styles.mainContent}>
           <View style={styles.topSection}>
-            <Logo size={sv(40)} />
+            <Logo size={40} />
             <View style={styles.textContainer}>
               <Text style={styles.heading}>
                 Make{'\n'}your rent{'\n'}
                 <Text inherit style={styles.headingAccent}>work for you→</Text>
               </Text>
               <Text style={styles.subheading}>
-                Secured is India's first rent payment app built to reward reliable tenants.
+                Secured is India’s first rent payment app built to reward reliable tenants.
               </Text>
             </View>
           </View>
@@ -96,29 +95,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[700],
     flex: 1,
   },
-  // Deterministic absolute positions mapped dynamically via sv() inline
-  image149: {
-    position: 'absolute',
-    opacity: 0.08,
-    transform: [{ rotate: '90deg' }], 
-  },
-  vector1: {
-    position: 'absolute',
-    opacity: 0.01,
-  },
-  backgroundShape: {
-    position: 'absolute',
-    opacity: 1, 
-  },
-  
+  // Content layout: Figma h-613, flex-end aligned, pb-64
   outerContainer: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   mainContent: {
+    height: 613,
     flexDirection: 'column',
     justifyContent: 'space-between',
-    paddingBottom: 64, // pad: [0,0,64,0] from Figma
+    paddingBottom: 64,
   },
   topSection: {
     width: '100%',
@@ -131,21 +117,23 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 16,
   },
+  // Heading: Figma 48/64, letterSpacing -2, PlusJakartaSans-Regular
   heading: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 48,
     lineHeight: 64,
     letterSpacing: -2,
-    color: colors.neutral[500],
+    color: colors.neutral[500], // #A9A9A9
   },
   headingAccent: {
-    color: colors.brand[500],
+    color: colors.brand[500], // #FF9A6D
   },
+  // Body: Figma 14/20, #A6A6A6
   subheading: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: colors.black[200],
+    color: colors.black[200], // #A6A6A6
   },
   bottomSection: {
     width: '100%',
@@ -159,6 +147,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Login text: Figma 14/20, white
   loginText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,

@@ -29,7 +29,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 
-import { Screen, Logo, Text, DottedPattern } from '@/src/components';
+import { Screen, Logo, Text, DottedGridPattern } from '@/src/components';
 import { colors, duration, spacing, radius } from '@/src/theme';
 
 // Exact Figma color values mapped to theme tokens
@@ -91,7 +91,7 @@ export default function BetaSplashScreen() {
       testID="beta-splash-screen"
     >
       {/* Background Pattern - 8% opacity, no background shape on this screen */}
-      <DottedPattern showShape={false} />
+      <DottedGridPattern fadeMask={false} />
 
       {/* Content centered vertically per Figma constraints (CENTER/CENTER) */}
       {/* Logo center at y=426 in 852-height frame = exactly 50% */}

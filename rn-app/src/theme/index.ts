@@ -10,6 +10,7 @@ export * from './radius';
 export * from './shadows';
 export * from './scale';
 export * from './animations';
+export * from './paymentColors';
 
 // Re-export combined theme object
 import { colors, semanticColors, gradients, opacity } from './colors';
