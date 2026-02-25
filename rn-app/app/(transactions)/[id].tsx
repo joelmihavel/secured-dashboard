@@ -49,6 +49,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Share,
+  Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -62,28 +63,28 @@ import { Screen, Text, PrimaryButton } from '@/src/components';
 import { usePaymentHistory } from '@/src/hooks/usePayments';
 import { generateReceipt, ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml } from '@/src/utils/receiptHtml';
-import { colors } from '@/src/theme';
+import { PAYMENT_COLORS } from '@/src/theme';
 
 // ===========================================
-// FIGMA EXTRACTED DESIGN TOKENS (41-9563)
+// FIGMA EXTRACTED DESIGN TOKENS (41-9563) — aliased from shared PAYMENT_COLORS
 // ===========================================
 const FIGMA_COLORS = {
-  background: colors.black[700],          // black.700
-  cardBody: colors.black[500],            // black.500 - receipt card body
-  dividerBar: colors.black[600],          // black.600 - horizontal bar
-  textPrimary: colors.white,         // white
-  successfulText: colors.brand[500],      // brand.500 - "Succesful" span
-  hashSymbol: colors.brand[500],          // brand.500 - # icon
-  labelText: colors.neutral[600],           // neutral.600 - receipt row labels
-  valueText: colors.neutral[300],           // neutral.300 - receipt row values
-  cashbackNote: colors.neutral[200],        // neutral.200 - cashback note text
-  payableValue: colors.neutral[200],        // neutral.200 - payable rent value
-  tableDivider: colors.black[400],        // black.400 - table line separators
-  circleCutout: colors.black[700],        // same as background
-  paperclip: colors.black[400],           // black.400 - paperclip strokes
-  stampBorder: colors.success.dark,          // success.dark - PAID stamp circles
-  stampText: colors.success.approved,            // success.approved - PAID stamp text & stars
-  footerText: colors.neutral[500],          // neutral.500 - "Contact Support"
+  background: PAYMENT_COLORS.background,
+  cardBody: PAYMENT_COLORS.cardBackground,
+  dividerBar: PAYMENT_COLORS.cardDivider,
+  textPrimary: PAYMENT_COLORS.white,
+  successfulText: PAYMENT_COLORS.accent,
+  hashSymbol: PAYMENT_COLORS.accent,
+  labelText: PAYMENT_COLORS.labelText,
+  valueText: PAYMENT_COLORS.valueText,
+  cashbackNote: PAYMENT_COLORS.highlightText,
+  payableValue: PAYMENT_COLORS.highlightText,
+  tableDivider: PAYMENT_COLORS.divider,
+  circleCutout: PAYMENT_COLORS.background,
+  paperclip: PAYMENT_COLORS.paperclip,
+  stampBorder: PAYMENT_COLORS.successStampBorder,
+  stampText: PAYMENT_COLORS.successStamp,
+  footerText: PAYMENT_COLORS.mutedText,
 } as const;
 
 const FIGMA_SPACING = {
@@ -332,8 +333,8 @@ export default function TransactionDetailScreen() {
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(profile)/help' as never);
-  }, [router]);
+    Linking.openURL('mailto:secured@flent.in?subject=Help%20Request');
+  }, []);
 
   // Loading state
   if (isLoading || !transaction) {

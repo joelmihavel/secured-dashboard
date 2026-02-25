@@ -58,10 +58,10 @@ describe('resolveDeepLink', () => {
   });
 
   it('should resolve payment routes', () => {
-    expect(resolveDeepLink('/payment')).toBe('/(payment)/select-method');
-    expect(resolveDeepLink('/payment/success')).toBe('/(payment)/success');
-    expect(resolveDeepLink('/payment/failed')).toBe('/(payment)/failed');
-    expect(resolveDeepLink('/payment/receipt')).toBe('/(payment)/receipt');
+    expect(resolveDeepLink('/payment')).toBe('/(payment)/confirm');
+    expect(resolveDeepLink('/payment/success')).toBe('/(payment)/status');
+    expect(resolveDeepLink('/payment/failed')).toBe('/(payment)/status');
+    expect(resolveDeepLink('/payment/receipt')).toBe('/(payment)/status');
   });
 
   it('should resolve main/dashboard routes', () => {
@@ -73,7 +73,6 @@ describe('resolveDeepLink', () => {
     expect(resolveDeepLink('/profile')).toBe('/(profile)');
     expect(resolveDeepLink('/profile/edit')).toBe('/(profile)/edit-profile');
     expect(resolveDeepLink('/profile/payment-methods')).toBe('/(profile)/payment-methods');
-    expect(resolveDeepLink('/profile/notifications')).toBe('/(profile)/notification-settings');
   });
 
   it('should resolve transaction routes', () => {
@@ -82,7 +81,7 @@ describe('resolveDeepLink', () => {
 
   it('should pass through expo-router group paths', () => {
     expect(resolveDeepLink('/(main)')).toBe('/(main)');
-    expect(resolveDeepLink('/(payment)/success')).toBe('/(payment)/success');
+    expect(resolveDeepLink('/(payment)/status')).toBe('/(payment)/status');
   });
 
   it('should return null for unknown paths', () => {
@@ -95,7 +94,7 @@ describe('resolveDeepLink', () => {
   });
 
   it('should strip query params for route matching', () => {
-    expect(resolveDeepLink('/payment/success?id=123')).toBe('/(payment)/success');
+    expect(resolveDeepLink('/payment/success?id=123')).toBe('/(payment)/status');
   });
 
   it('should handle paths without leading slash', () => {
@@ -114,7 +113,7 @@ describe('handleDeepLinkUrl', () => {
     const result = handleDeepLinkUrl('flentsecured:///payment/success');
 
     expect(result).toBe(true);
-    expect(mockNavigate).toHaveBeenCalledWith('/(payment)/success');
+    expect(mockNavigate).toHaveBeenCalledWith('/(payment)/status');
   });
 
   it('should store query params in deep link params store', () => {
@@ -122,7 +121,7 @@ describe('handleDeepLinkUrl', () => {
 
     expect(result).toBe(true);
     // Navigate without params (Expo Router v4 crashes with params on route groups)
-    expect(mockNavigate).toHaveBeenCalledWith('/(payment)/success');
+    expect(mockNavigate).toHaveBeenCalledWith('/(payment)/status');
     // Params stored separately for target screen to consume
     const storedParams = consumeDeepLinkParams();
     expect(storedParams).toEqual({ txn: 'abc123' });

@@ -499,8 +499,8 @@ export default function HomeScreen() {
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(profile)/help' as never);
-  }, [router]);
+    Linking.openURL('mailto:secured@flent.in?subject=Help%20Request');
+  }, []);
 
   const handlePaymentMethodPress = useCallback((method: PaymentMethod) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

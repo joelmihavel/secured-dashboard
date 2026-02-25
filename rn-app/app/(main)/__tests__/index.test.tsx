@@ -58,6 +58,7 @@ jest.mock('@/src/components/home', () => {
     HomeEmptyState: (props: any) => <View testID="home-empty-state" />,
     StatusNotificationBanner: (props: any) => props.type ? <View testID="status-notification-banner"><Text>{props.customMessage || props.type}</Text></View> : null,
     CashbackSetupModal: (props: any) => null,
+    VerificationCheckSheet: (props: any) => null,
     RentAmountModal: (props: any) => null,
     EmptyPaymentsState: (props: any) => <View testID="empty-payments" />,
     CashbackEmptyState: (props: any) => <View testID="cashback-empty" />,
@@ -122,7 +123,10 @@ jest.mock('@/src/hooks/usePayments', () => ({
 }));
 
 jest.mock('@/src/stores/payment', () => ({
-  usePaymentStore: (selector: any) => selector({ setAmount: jest.fn() }),
+  usePaymentStore: Object.assign(
+    (selector: any) => selector({ setAmount: jest.fn(), pendingPaymentReturn: false, setPendingPaymentReturn: jest.fn() }),
+    { getState: () => ({ pendingPaymentReturn: false, setPendingPaymentReturn: jest.fn() }) },
+  ),
 }));
 
 // ── Tests ────────────────────────────────────────────────────────────────────

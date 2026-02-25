@@ -90,10 +90,11 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   '/setup/landlord': '/(setup)/invite-landlord',
 
   // Payment
-  '/payment': '/(payment)/select-method',
-  '/payment/success': '/(payment)/success',
-  '/payment/failed': '/(payment)/failed',
-  '/payment/receipt': '/(payment)/receipt',
+  '/payment': '/(payment)/confirm',
+  '/payment/success': '/(payment)/status',
+  '/payment/failed': '/(payment)/status',
+  '/payment/status': '/(payment)/status',
+  '/payment/receipt': '/(payment)/status',
 
   // Main
   '/home': '/(main)',
@@ -104,8 +105,6 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   '/profile/edit': '/(profile)/edit',
   '/profile/payment-methods': '/(profile)/payment-methods',
   '/profile/agreement': '/(profile)/agreement',
-  '/profile/notifications': '/(profile)/notifications',
-
   // Transactions
   '/transactions': '/(transactions)',
 };
@@ -114,7 +113,7 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
  * Resolve a deep link path to an internal route.
  *
  * @param path - The incoming deep link path (e.g., '/payment/success')
- * @returns The resolved internal route (e.g., '/(payment)/success')
+ * @returns The resolved internal route (e.g., '/(payment)/status')
  */
 export function resolveDeepLink(path: string): string | null {
   if (!path) return null;

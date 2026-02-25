@@ -24,7 +24,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, typography } from '@/src/theme';
-import { GatewayToggle } from './GatewayToggle';
 
 // Set to true to hide the FAB (e.g. for parity screenshots)
 export const HIDE_DEV_NAV = false;
@@ -58,13 +57,9 @@ const SECTIONS: Section[] = [
   {
     label: 'Payment',
     screens: [
-      { name: 'Select Method', path: '/(payment)/select-method' },
       { name: 'First Rent', path: '/(payment)/first-rent' },
-      { name: 'Initiate Payment', path: '/(payment)/initiate' },
-      { name: 'Add UPI', path: '/(payment)/add-upi' },
-      { name: 'Processing', path: '/(payment)/processing' },
-      { name: 'Success', path: '/(payment)/success' },
-      { name: 'Failed', path: '/(payment)/failed' },
+      { name: 'Confirm Payment', path: '/(payment)/confirm' },
+      { name: 'Payment Status', path: '/(payment)/status' },
     ],
   },
   {
@@ -73,9 +68,6 @@ const SECTIONS: Section[] = [
       { name: 'Profile Home', path: '/(profile)' },
       { name: 'Edit Profile', path: '/(profile)/edit' },
       { name: 'Payment Methods', path: '/(profile)/payment-methods' },
-      { name: 'Notifications', path: '/(profile)/notifications' },
-      { name: 'Help & Support', path: '/(profile)/help' },
-      { name: 'About', path: '/(profile)/about' },
       { name: 'Agreement', path: '/(profile)/agreement' },
     ],
   },
@@ -243,8 +235,6 @@ export function DevNavigator() {
             contentContainerStyle={styles.listContent}
           />
 
-          {/* Gateway Toggle */}
-          <GatewayToggle />
         </View>
       </Modal>
     </>
