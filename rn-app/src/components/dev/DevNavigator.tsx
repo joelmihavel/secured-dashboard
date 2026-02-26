@@ -57,7 +57,6 @@ const SECTIONS: Section[] = [
   {
     label: 'Payment',
     screens: [
-      { name: 'First Rent', path: '/(payment)/first-rent' },
       { name: 'Confirm Payment', path: '/(payment)/confirm' },
       { name: 'Payment Status', path: '/(payment)/status' },
     ],

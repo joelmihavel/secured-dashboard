@@ -2,7 +2,6 @@
  * Shared Payment Flow Color Tokens
  *
  * Consolidates the repeated color definitions across payment screens:
- * - first-rent.tsx (was `C`)
  * - confirm.tsx (was `C`)
  * - status.tsx (was `FIGMA_COLORS`)
  * - PaymentReceiptCard.tsx (was `CARD_COLORS`)

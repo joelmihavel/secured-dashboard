@@ -450,7 +450,7 @@ export default function HomeScreen() {
           if (pendingPaymentReturn) {
             clearReturn(false);
             // Auto-open rent amount modal after returning from setup
-            setTimeout(() => router.push('/(payment)/first-rent' as never), 500);
+            setTimeout(() => router.push('/(payment)/confirm' as never), 500);
           }
         }, []);
 
@@ -463,7 +463,7 @@ export default function HomeScreen() {
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
           setVerificationSkippedStore(true);
-          setTimeout(() => router.push('/(payment)/first-rent' as never), 300);
+          setTimeout(() => router.push('/(payment)/confirm' as never), 300);
         }, [setVerificationSkippedStore, router]);
 
         const handleFinishSetup = useCallback(() => {
@@ -486,15 +486,14 @@ export default function HomeScreen() {
             setShowVerificationSheet(true);
           } else {
             // Replaced RentAmountModal with PaymentMethodModal (unified overlay flow)
-            router.push('/(payment)/first-rent' as never);
+            router.push('/(payment)/confirm' as never);
           }
         }, [isSetupComplete, router]);
 
         const handleRentAmountConfirm = useCallback((amount: string) => {
           setShowRentAmountModal(false);
           setPaymentAmount(parseFloat(amount));
-          // Navigate to first-rent (Payment Page) where payment method selection happens in the modal overlay.
-          router.push('/(payment)/first-rent' as never);
+          router.push('/(payment)/confirm' as never);
         }, [router, setPaymentAmount]);
 
   const handleAddAgreement = useCallback(() => {
