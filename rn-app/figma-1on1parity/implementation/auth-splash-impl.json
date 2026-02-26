@@ -1,0 +1,126 @@
+{
+  "routeKey": "auth-splash",
+  "filePath": "app/(auth)/splash.tsx",
+  "components": [
+    "DottedGridPattern",
+    "Logo",
+    "PrimaryButton",
+    "Screen",
+    "Text"
+  ],
+  "colorLiterals": [
+    {
+      "value": "colors.black[700]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.neutral[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.brand[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.black[200]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.white",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#131313",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FF9A6D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#A6A6A6",
+      "source": "inline",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 48,
+      "letterSpacing": -2
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 14
+    }
+  ],
+  "scalingUsage": [
+    {
+      "function": "sv",
+      "rawValue": 613,
+      "context": "height"
+    },
+    {
+      "function": "sv",
+      "rawValue": 64,
+      "context": "paddingBottom"
+    },
+    {
+      "function": "s",
+      "rawValue": 48,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "sv",
+      "rawValue": 40,
+      "context": "gap"
+    },
+    {
+      "function": "sv",
+      "rawValue": 16,
+      "context": "gap"
+    },
+    {
+      "function": "sf",
+      "rawValue": 48,
+      "context": "fontSize"
+    },
+    {
+      "function": "sf",
+      "rawValue": 64,
+      "context": "lineHeight"
+    },
+    {
+      "function": "sf",
+      "rawValue": 14,
+      "context": "fontSize"
+    },
+    {
+      "function": "sf",
+      "rawValue": 20,
+      "context": "lineHeight"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "gap"
+    }
+  ],
+  "scrollContainer": "View",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

@@ -1,0 +1,169 @@
+{
+  "routeKey": "auth-otp",
+  "filePath": "app/(auth)/otp.tsx",
+  "components": [
+    "OTPInput",
+    "PrimaryButton",
+    "Screen",
+    "Text"
+  ],
+  "colorLiterals": [
+    {
+      "value": "transparent",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "#000000",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "FIGMA_COLORS.sheetBackground",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "FIGMA_COLORS.handle",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "FIGMA_COLORS.titleText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.subtitleText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.resendText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#000000",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4D4D4D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#1A1A1A",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FFFFFF",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#222222",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#444444",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#CBCBCB",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#E5484D",
+      "source": "inline",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "letterSpacing": -0.132
+    }
+  ],
+  "scalingUsage": [
+    {
+      "function": "s",
+      "rawValue": 48,
+      "context": "handleWidth"
+    },
+    {
+      "function": "s",
+      "rawValue": 48,
+      "context": "containerPadding"
+    },
+    {
+      "function": "s",
+      "rawValue": 297,
+      "context": "titleWidth"
+    },
+    {
+      "function": "s",
+      "rawValue": 297,
+      "context": "subtitleWidth"
+    },
+    {
+      "function": "s",
+      "rawValue": 297,
+      "context": "resendWidth"
+    },
+    {
+      "function": "sv",
+      "rawValue": 15,
+      "context": "wrapperGap"
+    },
+    {
+      "function": "sv",
+      "rawValue": 15.19,
+      "context": "sheetPaddingTop"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "sheetItemSpacing"
+    },
+    {
+      "function": "sv",
+      "rawValue": 16,
+      "context": "contentPaddingTop"
+    },
+    {
+      "function": "sv",
+      "rawValue": 30.38,
+      "context": "contentItemSpacing"
+    },
+    {
+      "function": "sv",
+      "rawValue": 10,
+      "context": "titleToSubtitle"
+    },
+    {
+      "function": "sv",
+      "rawValue": 16,
+      "context": "buttonToResend"
+    },
+    {
+      "function": "sf",
+      "rawValue": 21.6,
+      "context": "lineHeight"
+    }
+  ],
+  "scrollContainer": "View",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": true,
+  "opacityValues": []
+}

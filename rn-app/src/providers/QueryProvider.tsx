@@ -8,24 +8,19 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Create a client with mobile-optimized settings
+// In __DEV__: always-fresh cache, fail-fast retries for rapid iteration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Stale time - how long data is considered fresh
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      // Cache time - how long to keep unused data
-      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
-      // Retry failed queries
-      retry: 2,
+      staleTime: __DEV__ ? 0 : 1000 * 60 * 5,          // Always fresh in dev
+      gcTime: __DEV__ ? 0 : 1000 * 60 * 30,             // No cache in dev
+      retry: __DEV__ ? 0 : 2,                           // Fail-fast in dev
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      // Don't refetch on window focus (mobile doesn't have window focus events)
       refetchOnWindowFocus: false,
-      // Refetch when reconnecting
-      refetchOnReconnect: true,
+      refetchOnReconnect: !__DEV__,
     },
     mutations: {
-      // Retry failed mutations once
-      retry: 1,
+      retry: __DEV__ ? 0 : 1,
     },
   },
 });

@@ -1,0 +1,147 @@
+{
+  "routeKey": "profile-index",
+  "filePath": "app/(profile)/index.tsx",
+  "components": [
+    "DottedGridPattern",
+    "Screen",
+    "Text"
+  ],
+  "colorLiterals": [
+    {
+      "value": "colors.white",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.neutral[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.brand[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.neutral[600]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.black[500]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.black[900]",
+      "source": "theme",
+      "property": "shadowColor"
+    },
+    {
+      "value": "colors.black[400]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.brand[500]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.black[700]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.neutral[300]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#131313",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FFFFFF",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#202020",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#CBCBCB",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FF9A6D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4D4D4D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#878787",
+      "source": "stylesheet",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 48,
+      "lineHeight": 64,
+      "letterSpacing": -2
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold",
+      "fontSize": 18,
+      "lineHeight": 24,
+      "letterSpacing": -0.56
+    }
+  ],
+  "scalingUsage": [
+    {
+      "function": "s",
+      "rawValue": 40,
+      "context": "gap"
+    },
+    {
+      "function": "s",
+      "rawValue": 48,
+      "context": "paddingBottom"
+    },
+    {
+      "function": "s",
+      "rawValue": 24,
+      "context": "gap"
+    },
+    {
+      "function": "s",
+      "rawValue": 40,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "s",
+      "rawValue": 313,
+      "context": "maxWidth"
+    }
+  ],
+  "scrollContainer": "ScrollView",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": true,
+  "hasGradients": false,
+  "opacityValues": []
+}

@@ -1,0 +1,17 @@
+{
+  "routeKey": "index",
+  "filePath": "app/index.tsx",
+  "components": [
+    "DEV_DIRECT_SCREEN",
+    "DISABLE_SCREEN_PICKER",
+    "SkeletonLoader"
+  ],
+  "colorLiterals": [],
+  "typography": [],
+  "scalingUsage": [],
+  "scrollContainer": "none",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

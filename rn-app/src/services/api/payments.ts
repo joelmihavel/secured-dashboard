@@ -17,11 +17,6 @@
 import { callEdgeFunction } from '../supabase';
 
 // ==============================================
-// DEV MOCK — set to true to bypass API and use mock data
-// ==============================================
-const DEV_USE_MOCK_PAYMENTS = __DEV__ && true;
-
-// ==============================================
 // TYPES — RN App UI Contract
 // ==============================================
 
@@ -645,21 +640,11 @@ export async function generateReceipt(
  * - upi_vpa -> vpa
  * - card_last4 -> last_four
  */
-export async function getSavedPaymentMethods(): Promise<{
+async function getSavedPaymentMethodsReal(): Promise<{
   data: SavedPaymentMethod[] | null;
   primaryMethodId: string | null;
   error: string | null;
 }> {
-  // In dev mode, return mock payment methods for visual testing
-  if (DEV_USE_MOCK_PAYMENTS) {
-    const { MOCK_SAVED_PAYMENT_METHODS } = await import('./__mocks__/payments-mock');
-    return {
-      data: MOCK_SAVED_PAYMENT_METHODS,
-      primaryMethodId: MOCK_SAVED_PAYMENT_METHODS[0]?.id ?? null,
-      error: null,
-    };
-  }
-
   const { data, error } = await callEdgeFunction<RawGetPaymentMethodsResponse>(
     'get-saved-payment-methods',
     {},
@@ -683,6 +668,29 @@ export async function getSavedPaymentMethods(): Promise<{
     error: null,
   };
 }
+
+async function getSavedPaymentMethodsMock(): Promise<{
+  data: SavedPaymentMethod[] | null;
+  primaryMethodId: string | null;
+  error: string | null;
+}> {
+  const { MOCK_SAVED_PAYMENT_METHODS } = await import('./__mocks__/payments-mock');
+  return {
+    data: MOCK_SAVED_PAYMENT_METHODS,
+    primaryMethodId: MOCK_SAVED_PAYMENT_METHODS[0]?.id ?? null,
+    error: null,
+  };
+}
+
+// withMock() enforces same return type + __DEV__ compile-time gate
+const _getSavedPaymentMethods = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', getSavedPaymentMethodsReal, getSavedPaymentMethodsMock, { delayMs: 200 });
+    })()
+  : getSavedPaymentMethodsReal;
+
+export const getSavedPaymentMethods = _getSavedPaymentMethods;
 
 /**
  * Add UPI VPA.

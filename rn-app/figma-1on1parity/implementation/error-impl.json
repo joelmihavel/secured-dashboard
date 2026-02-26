@@ -1,0 +1,52 @@
+{
+  "routeKey": "error",
+  "filePath": "app/error.tsx",
+  "components": [
+    "PrimaryButton",
+    "Screen",
+    "Text"
+  ],
+  "colorLiterals": [
+    {
+      "value": "colors.white",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.neutral[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.black[500]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.neutral[600]",
+      "source": "theme",
+      "property": "color"
+    }
+  ],
+  "typography": [
+    {
+      "lineHeight": 22
+    },
+    {
+      "fontFamily": "monospace",
+      "fontSize": 12,
+      "letterSpacing": 0.5
+    },
+    {
+      "fontFamily": "monospace",
+      "fontSize": 11,
+      "lineHeight": 16
+    }
+  ],
+  "scalingUsage": [],
+  "scrollContainer": "View",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

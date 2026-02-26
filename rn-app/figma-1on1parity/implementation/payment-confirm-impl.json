@@ -1,0 +1,340 @@
+{
+  "routeKey": "payment-confirm",
+  "filePath": "app/(payment)/confirm.tsx",
+  "components": [
+    "PrimaryButton",
+    "Screen"
+  ],
+  "colorLiterals": [
+    {
+      "value": "rgba(0,0,0,0.4)",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "C.card",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "C.label",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "C.value",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "C.muted",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "C.cardDivider",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "C.accent",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "#000000",
+      "source": "stylesheet",
+      "property": "shadowColor"
+    },
+    {
+      "value": "C.valueTotal",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "C.cashback",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "C.divider",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "#1A1A1A",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "#DDDDDD",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "C.bg",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "C.timerHighlight",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "C.white",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "#000000",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#1A1A1A",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#DDDDDD",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#DDD",
+      "source": "stylesheet",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12,
+      "letterSpacing": -0.24
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Medium",
+      "fontSize": 14,
+      "letterSpacing": -0.56
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 11
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 14
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold"
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Medium"
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular"
+    }
+  ],
+  "scalingUsage": [
+    {
+      "function": "s",
+      "rawValue": 40,
+      "context": "width"
+    },
+    {
+      "function": "sv",
+      "rawValue": 40,
+      "context": "height"
+    },
+    {
+      "function": "sv",
+      "rawValue": 12,
+      "context": "marginBottom"
+    },
+    {
+      "function": "s",
+      "rawValue": 40,
+      "context": "marginLeft"
+    },
+    {
+      "function": "s",
+      "rawValue": 40,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "gap"
+    },
+    {
+      "function": "s",
+      "rawValue": 16,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "paddingVertical"
+    },
+    {
+      "function": "sv",
+      "rawValue": 32,
+      "context": "gap"
+    },
+    {
+      "function": "sv",
+      "rawValue": 8,
+      "context": "gap"
+    },
+    {
+      "function": "sf",
+      "rawValue": 12,
+      "context": "fontSize"
+    },
+    {
+      "function": "sf",
+      "rawValue": 17,
+      "context": "lineHeight"
+    },
+    {
+      "function": "sf",
+      "rawValue": 14,
+      "context": "fontSize"
+    },
+    {
+      "function": "sf",
+      "rawValue": 20,
+      "context": "lineHeight"
+    },
+    {
+      "function": "sf",
+      "rawValue": 11,
+      "context": "fontSize"
+    },
+    {
+      "function": "sf",
+      "rawValue": 16,
+      "context": "lineHeight"
+    },
+    {
+      "function": "s",
+      "rawValue": 8,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "s",
+      "rawValue": 12,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "sv",
+      "rawValue": 8,
+      "context": "paddingVertical"
+    },
+    {
+      "function": "s",
+      "rawValue": 268,
+      "context": "width"
+    },
+    {
+      "function": "s",
+      "rawValue": 270,
+      "context": "unknown"
+    },
+    {
+      "function": "s",
+      "rawValue": 369,
+      "context": "unknown"
+    },
+    {
+      "function": "s",
+      "rawValue": 369,
+      "context": "width"
+    },
+    {
+      "function": "sv",
+      "rawValue": 235,
+      "context": "height"
+    },
+    {
+      "function": "s",
+      "rawValue": 270,
+      "context": "width"
+    },
+    {
+      "function": "sv",
+      "rawValue": 56,
+      "context": "paddingTop"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "paddingBottom"
+    },
+    {
+      "function": "sv",
+      "rawValue": 18,
+      "context": "gap"
+    },
+    {
+      "function": "s",
+      "rawValue": 24,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "sv",
+      "rawValue": 16,
+      "context": "gap"
+    },
+    {
+      "function": "sv",
+      "rawValue": 4,
+      "context": "paddingVertical"
+    },
+    {
+      "function": "s",
+      "rawValue": -6,
+      "context": "left"
+    },
+    {
+      "function": "sv",
+      "rawValue": 256,
+      "context": "top"
+    },
+    {
+      "function": "s",
+      "rawValue": 14,
+      "context": "width"
+    },
+    {
+      "function": "s",
+      "rawValue": 14,
+      "context": "height"
+    },
+    {
+      "function": "s",
+      "rawValue": 7,
+      "context": "borderRadius"
+    },
+    {
+      "function": "s",
+      "rawValue": -7,
+      "context": "right"
+    },
+    {
+      "function": "sv",
+      "rawValue": 40,
+      "context": "minHeight"
+    }
+  ],
+  "scrollContainer": "ScrollView",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": true,
+  "hasGradients": false,
+  "opacityValues": []
+}

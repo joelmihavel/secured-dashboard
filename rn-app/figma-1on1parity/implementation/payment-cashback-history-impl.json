@@ -1,0 +1,130 @@
+{
+  "routeKey": "payment-cashback-history",
+  "filePath": "app/(payment)/cashback-history.tsx",
+  "components": [
+    "Screen",
+    "Text"
+  ],
+  "colorLiterals": [
+    {
+      "value": "COLORS.savingsGreen",
+      "source": "inline",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "COLORS.savingsGreen",
+      "source": "inline",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.white",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.card",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "COLORS.label",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.accent",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.label",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "COLORS.value",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "rgba(77, 77, 77, 0.3)",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "COLORS.emptyText",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "#878787",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#CBCBCB",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4CAF50",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "inline",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold",
+      "fontSize": 20,
+      "lineHeight": 28
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12,
+      "lineHeight": 18
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Bold",
+      "fontSize": 32,
+      "lineHeight": 40
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 11,
+      "lineHeight": 16
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Medium",
+      "fontSize": 14,
+      "lineHeight": 20
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 13,
+      "lineHeight": 18
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold",
+      "fontSize": 14,
+      "lineHeight": 20
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 14,
+      "lineHeight": 20
+    }
+  ],
+  "scalingUsage": [],
+  "scrollContainer": "FlatList",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": [
+    0.3
+  ]
+}

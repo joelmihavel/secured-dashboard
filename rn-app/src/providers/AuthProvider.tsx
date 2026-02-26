@@ -11,13 +11,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/src/services/supabase/client';
-import { useAuthStore } from '@/src/stores/auth';
-import { useUploadStore } from '@/src/stores/upload';
-import { useWaitlistStore } from '@/src/stores/waitlist';
-import { usePaymentStore } from '@/src/stores/payment';
-import { useSetupStore } from '@/src/stores/setup';
-import { useProfileStore } from '@/src/stores/profile';
-import { queryClient } from './QueryProvider';
+import { clearAllStores } from '@/src/stores/resetAll';
 import type { Session } from '@supabase/supabase-js';
 
 interface AuthContextValue {
@@ -34,16 +28,6 @@ const AuthContext = createContext<AuthContextValue>({
 
 export function useAuthContext() {
   return useContext(AuthContext);
-}
-
-function clearAllStores() {
-  useAuthStore.getState().reset();
-  useUploadStore.getState().reset();
-  useWaitlistStore.getState().reset();
-  usePaymentStore.getState().reset();
-  useSetupStore.getState().reset();
-  useProfileStore.getState().reset();
-  queryClient.clear();
 }
 
 interface AuthProviderProps {

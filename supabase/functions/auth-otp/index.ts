@@ -51,6 +51,18 @@ const OTP_EXPIRY_MS = 10 * 60 * 1000;
 // Idempotency window: 30 seconds
 const IDEMPOTENCY_WINDOW_MS = 30_000;
 
+// Demo phone numbers for testing (Apple Review + dev Quick Login)
+// Format: "+919999900001:123456,+919999900002:654321"
+const ALLOW_DEMO = Deno.env.get("ALLOW_DEMO_AUTH") === "true";
+const DEMO_PHONES_RAW = Deno.env.get("DEMO_PHONES");
+const DEMO_PHONES: Record<string, string> = {};
+if (DEMO_PHONES_RAW) {
+  DEMO_PHONES_RAW.split(",").forEach((pair) => {
+    const [phone, otp] = pair.split(":");
+    if (phone && otp) DEMO_PHONES[phone.trim()] = otp.trim();
+  });
+}
+
 // ==============================================
 // TYPES
 // ==============================================
@@ -299,6 +311,47 @@ async function handleSendOtp(
         expires_in: expiresIn,
         phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
         message: "OTP already sent. Please check your phone.",
+      },
+    });
+  }
+
+  // Demo phone bypass — skip real SMS provider, create a demo otp_request
+  if (ALLOW_DEMO && DEMO_PHONES[sanitizedPhone]) {
+    const { data: otpRequest, error: insertError } = await supabase
+      .from("otp_requests")
+      .insert({
+        phone: sanitizedPhone,
+        provider: "demo",
+        verification_id: `demo_${Date.now()}`,
+        status: "pending",
+        expires_at: new Date(Date.now() + OTP_EXPIRY_MS).toISOString(),
+        client_ip: clientIp || null,
+      })
+      .select()
+      .single();
+
+    if (insertError || !otpRequest) {
+      throw new AppError("Failed to create demo OTP request", "DEMO_OTP_INSERT_FAILED", 500);
+    }
+
+    await audit.logSuccess(
+      "AUTH_OTP_INITIATED",
+      "auth",
+      "authentication",
+      undefined,
+      {
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+        provider: "demo",
+      }
+    );
+
+    return jsonResponse({
+      success: true,
+      data: {
+        otp_request_id: otpRequest.id,
+        expires_in: 600,
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+        message: "Demo OTP sent.",
       },
     });
   }
@@ -596,6 +649,54 @@ async function verifyViaOtpRequest(
     throw new ValidationError("OTP has expired. Please request a new OTP.");
   }
 
+  // Demo provider — verify OTP against DEMO_PHONES map
+  if (otpRequest.provider === "demo") {
+    if (!ALLOW_DEMO || !DEMO_PHONES[sanitizedPhone]) {
+      throw new ValidationError("Demo authentication is not available.");
+    }
+    if (otp !== DEMO_PHONES[sanitizedPhone]) {
+      throw new ValidationError("Invalid OTP.", { otp: "Invalid" });
+    }
+
+    // OTP verified — create/find user and session (same as Twilio/Cashfree paths)
+    const { userId, isNewUser } = await createOrFindUser(
+      sanitizedPhone, phoneWithCountryCode, name, consentForMobile360, clientIp, supabase
+    );
+
+    // Generate session token
+    const tokenHash = await generateSessionToken(sanitizedPhone, supabase);
+
+    // Mark otp_request as verified
+    await supabase.from("otp_requests")
+      .update({ status: "verified", verified_at: new Date().toISOString() })
+      .eq("id", otpRequestId);
+
+    // Log success
+    await audit.logSuccess(
+      AuditActions.AUTH_SUCCESS,
+      "auth",
+      "authentication",
+      userId,
+      {
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+        provider: "demo",
+        is_new_user: isNewUser,
+      }
+    );
+
+    return jsonResponse({
+      success: true,
+      data: {
+        user_id: userId,
+        is_new_user: isNewUser,
+        identity_status: "not_applicable",
+        token_hash: tokenHash,
+        otp_request_id: otpRequestId,
+        message: "Demo phone verified successfully. You are now signed in.",
+      },
+    });
+  }
+
   if (otpRequest.provider === "twilio") {
     return await verifyTwilioPath(
       otpRequestId, otpRequest.verification_id, sanitizedPhone, phoneWithCountryCode,
@@ -843,6 +944,40 @@ async function handleResendOtp(
     .eq("id", otp_request_id);
 
   // Resend via the same provider
+  if (originalRequest.provider === "demo") {
+    // Demo resend — just create a new demo otp_request (no real SMS)
+    if (!ALLOW_DEMO || !DEMO_PHONES[sanitizedPhone]) {
+      throw new ValidationError("Demo authentication is not available.");
+    }
+
+    const { data: otpRequest, error: insertError } = await supabase
+      .from("otp_requests")
+      .insert({
+        phone: sanitizedPhone,
+        provider: "demo",
+        verification_id: `demo_${Date.now()}`,
+        status: "pending",
+        expires_at: new Date(Date.now() + OTP_EXPIRY_MS).toISOString(),
+        client_ip: clientIp || null,
+      })
+      .select()
+      .single();
+
+    if (insertError || !otpRequest) {
+      throw new AppError("Failed to create demo OTP request", "DEMO_OTP_INSERT_FAILED", 500);
+    }
+
+    return jsonResponse({
+      success: true,
+      data: {
+        otp_request_id: otpRequest.id,
+        expires_in: 600,
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+        message: "Demo OTP re-sent.",
+      },
+    });
+  }
+
   if (originalRequest.provider === "cashfree_m360") {
     try {
       return await sendViaCashfree(

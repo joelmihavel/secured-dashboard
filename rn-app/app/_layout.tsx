@@ -16,7 +16,10 @@ import { Text as RNText, TextInput } from 'react-native';
 import '../global.css';
 import { colors } from '@/src/theme';
 import { QueryProvider, AuthProvider } from '@/src/providers';
-import { DevNavigator } from '@/src/components/dev/DevNavigator';
+// Conditional require: tree-shaken in production (DevNavigator is dev-only)
+const DevNavigator = __DEV__
+  ? require('@/src/components/dev/DevNavigator').DevNavigator
+  : null;
 import { ErrorBoundary } from '@/src/components/ui';
 import { initSentry, wrapWithSentry } from '@/src/config/sentry';
 import { setupNotificationHandlers } from '@/src/services/notifications';
@@ -119,7 +122,7 @@ function RootLayoutInner() {
                 {/* Development only screens */}
                 {__DEV__ && <Stack.Screen name="(dev)" />}
               </Stack>
-              {__DEV__ && <DevNavigator />}
+              {DevNavigator && <DevNavigator />}
             </SafeAreaProvider>
           </GestureHandlerRootView>
         </AuthProvider>

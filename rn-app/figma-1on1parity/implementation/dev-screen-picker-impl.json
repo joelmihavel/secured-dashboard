@@ -1,0 +1,104 @@
+{
+  "routeKey": "dev-screen-picker",
+  "filePath": "app/(dev)/screen-picker.tsx",
+  "components": [],
+  "colorLiterals": [
+    {
+      "value": "colors.black[700]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.white",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.brand[500]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.black[700]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.black[300]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.black[500]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.black[200]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.black[600]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.brand[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.black[500]",
+      "source": "theme",
+      "property": "borderBottomColor"
+    },
+    {
+      "value": "colors.black[400]",
+      "source": "theme",
+      "property": "color"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Bold",
+      "fontSize": 10,
+      "letterSpacing": 1
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold",
+      "fontSize": 14
+    },
+    {
+      "fontSize": 11
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Bold",
+      "fontSize": 13
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold"
+    },
+    {
+      "fontSize": 10
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Light",
+      "fontSize": 22
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 11
+    }
+  ],
+  "scalingUsage": [],
+  "scrollContainer": "ScrollView",
+  "safeAreaStrategy": "SafeAreaView",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

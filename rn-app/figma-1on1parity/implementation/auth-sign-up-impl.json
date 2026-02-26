@@ -1,0 +1,160 @@
+{
+  "routeKey": "auth-sign-up",
+  "filePath": "app/(auth)/sign-up.tsx",
+  "components": [
+    "ConsentToggle",
+    "DottedGridPattern",
+    "Logo",
+    "PhoneInput",
+    "PrimaryButton",
+    "Screen",
+    "SkeletonLoader",
+    "Text",
+    "TextInput"
+  ],
+  "colorLiterals": [
+    {
+      "value": "FIGMA_COLORS.headingGray",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.headingAccent",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#131313",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FF9A6D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#878787",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4D4D4D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#444444",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#222222",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#202020",
+      "source": "inline",
+      "property": "standalone"
+    }
+  ],
+  "typography": [],
+  "scalingUsage": [
+    {
+      "function": "s",
+      "rawValue": 297,
+      "context": "contentWidth"
+    },
+    {
+      "function": "s",
+      "rawValue": 48,
+      "context": "containerPadding"
+    },
+    {
+      "function": "s",
+      "rawValue": 32,
+      "context": "logoWidth"
+    },
+    {
+      "function": "sv",
+      "rawValue": 38.4,
+      "context": "logoHeight"
+    },
+    {
+      "function": "s",
+      "rawValue": 297,
+      "context": "headingWidth"
+    },
+    {
+      "function": "sv",
+      "rawValue": 128,
+      "context": "headingHeight"
+    },
+    {
+      "function": "s",
+      "rawValue": 193,
+      "context": "labelWidth"
+    },
+    {
+      "function": "s",
+      "rawValue": 193,
+      "context": "inputWidth"
+    },
+    {
+      "function": "s",
+      "rawValue": 297,
+      "context": "inputFullWidth"
+    },
+    {
+      "function": "sv",
+      "rawValue": 64,
+      "context": "inputHeight"
+    },
+    {
+      "function": "sv",
+      "rawValue": 16,
+      "context": "inputPadding"
+    },
+    {
+      "function": "sv",
+      "rawValue": 16,
+      "context": "inputGap"
+    },
+    {
+      "function": "s",
+      "rawValue": 297,
+      "context": "buttonWidth"
+    },
+    {
+      "function": "sv",
+      "rawValue": 56,
+      "context": "buttonHeight"
+    },
+    {
+      "function": "s",
+      "rawValue": 234.5,
+      "context": "consentWidth"
+    },
+    {
+      "function": "sv",
+      "rawValue": 101,
+      "context": "contentTopOffset"
+    },
+    {
+      "function": "sv",
+      "rawValue": 300,
+      "context": "unknown"
+    }
+  ],
+  "scrollContainer": "KeyboardAvoidingView",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

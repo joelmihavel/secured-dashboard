@@ -1,42 +1,104 @@
 /**
- * DevNavigator — Floating Dev Navigation Overlay
+ * DevNavigator — Enhanced Floating Dev Navigation Overlay
  *
- * DEV mode only. Provides a draggable FAB + bottom sheet for quick
- * navigation to any screen in the app without leaving the current context.
+ * DEV mode only. Provides a draggable FAB + bottom sheet with:
+ * - Quick Login (test phone buttons with auto-OTP)
+ * - All-Mocks toggle with cache isolation
+ * - Per-service mock toggles (collapsible)
+ * - Font scale override (preset buttons)
+ * - Screen navigator with search + scenario long-press
  *
  * Rendered in _layout.tsx OUTSIDE the Stack as a sibling overlay.
  * Set HIDE_DEV_NAV = true to hide for parity screenshots.
  */
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Modal,
-  FlatList,
   TextInput,
+  Switch,
+  ScrollView,
   StyleSheet,
   Animated,
   PanResponder,
   Dimensions,
   Pressable,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, typography } from '@/src/theme';
+import {
+  devMockConfig,
+  setMockToggle,
+  setAllMocks,
+  TEST_PHONES,
+  type ServiceName,
+} from '@/src/__dev__/devConfig';
+import { useDevStore as _useDevStore } from '@/src/__dev__/devStore';
+import { SCENARIOS, type ScenarioKey } from '@/src/__dev__/scenarios';
+import { clearAllStores } from '@/src/stores/resetAll';
+import { queryClient } from '@/src/providers/QueryProvider';
+import { supabase, callEdgeFunction } from '@/src/services/supabase/client';
+import type { StoreApi, UseBoundStore } from 'zustand';
 
-// Set to true to hide the FAB (e.g. for parity screenshots)
+/**
+ * Type assertion for useDevStore — the globalThis ??= pattern in devStore.ts
+ * causes the export type to collapse to `unknown`. This re-types it as the
+ * Zustand UseBoundStore hook it actually is at runtime.
+ */
+interface DevState {
+  activeScenario: ScenarioKey | null;
+  fontScaleOverride: number | null;
+  setScenario: (key: ScenarioKey | null) => void;
+  setFontScale: (scale: number | null) => void;
+  reset: () => void;
+}
+
+const useDevStore = _useDevStore as unknown as UseBoundStore<StoreApi<DevState>>;
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+/** Set to true to hide the FAB (e.g. for parity screenshots) */
 export const HIDE_DEV_NAV = false;
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const FONT_SCALE_PRESETS = [1.0, 1.15, 1.3, 1.5, 2.0] as const;
+
+const SERVICE_NAMES: ServiceName[] = [
+  'dashboard',
+  'payments',
+  'waitlist',
+  'agreement',
+  'setup',
+  'profile',
+];
+
+// ---------------------------------------------------------------------------
+// Types & Data
+// ---------------------------------------------------------------------------
+
+interface ScreenScenario {
+  label: string;
+  key: ScenarioKey;
+}
 
 interface ScreenRoute {
   name: string;
   path: string;
   section: string;
+  scenarios?: ScreenScenario[];
 }
 
 interface Section {
   label: string;
-  screens: { name: string; path: string }[];
+  screens: { name: string; path: string; scenarios?: ScreenScenario[] }[];
 }
 
 const SECTIONS: Section[] = [
@@ -52,7 +114,18 @@ const SECTIONS: Section[] = [
   },
   {
     label: 'Home',
-    screens: [{ name: 'Home Dashboard', path: '/(main)' }],
+    screens: [
+      {
+        name: 'Home Dashboard',
+        path: '/(main)',
+        scenarios: [
+          { label: 'Payment Due', key: 'home:payment_due' },
+          { label: 'Payment Overdue', key: 'home:payment_overdue' },
+          { label: 'No Tenancy', key: 'home:no_tenancy' },
+          { label: 'Pending Verification', key: 'home:pending_verification' },
+        ],
+      },
+    ],
   },
   {
     label: 'Payment',
@@ -83,7 +156,15 @@ const SECTIONS: Section[] = [
   {
     label: 'Waitlist',
     screens: [
-      { name: 'Waitlist', path: '/(waitlist)' },
+      {
+        name: 'Waitlist',
+        path: '/(waitlist)',
+        scenarios: [
+          { label: 'Pending', key: 'waitlist:pending' },
+          { label: 'Approved', key: 'waitlist:approved' },
+          { label: 'Rejected', key: 'waitlist:rejected' },
+        ],
+      },
       { name: 'Approved', path: '/(waitlist)/approved' },
     ],
   },
@@ -97,23 +178,49 @@ const SECTIONS: Section[] = [
   },
 ];
 
-// Flatten sections into a searchable list
-const ALL_ROUTES: ScreenRoute[] = SECTIONS.flatMap(section =>
-  section.screens.map(screen => ({
+/** Flatten sections into a searchable list */
+const ALL_ROUTES: ScreenRoute[] = SECTIONS.flatMap((section) =>
+  section.screens.map((screen) => ({
     ...screen,
     section: section.label,
-  }))
+  })),
 );
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export function DevNavigator() {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
-  if (HIDE_DEV_NAV) return null;
+  // Sheet state
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Quick Login state
+  const [loginLoading, setLoginLoading] = useState<string | null>(null);
+
+  // Mock toggles state — force re-render on toggle
+  const [mockRevision, setMockRevision] = useState(0);
+  const [mocksExpanded, setMocksExpanded] = useState(false);
+
+  // Font scale
+  const fontScale = useDevStore((s) => s.fontScaleOverride);
+  const setFontScale = useDevStore((s) => s.setFontScale);
+
+  // Scenario picker
+  const [scenarioTarget, setScenarioTarget] = useState<{
+    path: string;
+    scenarios: ScreenScenario[];
+  } | null>(null);
+
+  // Active scenario display
+  const activeScenario = useDevStore((s) => s.activeScenario);
+
+  // -------------------------------------------------------------------------
+  // PanResponder (draggable FAB)
+  // -------------------------------------------------------------------------
 
   const panResponder = useRef(
     PanResponder.create({
@@ -125,48 +232,216 @@ export function DevNavigator() {
       onPanResponderRelease: () => {
         pan.extractOffset();
       },
-    })
+    }),
   ).current;
+
+  // -------------------------------------------------------------------------
+  // Filtered routes
+  // -------------------------------------------------------------------------
 
   const filteredRoutes = useMemo(() => {
     if (!searchQuery.trim()) return ALL_ROUTES;
     const q = searchQuery.toLowerCase();
     return ALL_ROUTES.filter(
-      r =>
+      (r) =>
         r.name.toLowerCase().includes(q) ||
         r.path.toLowerCase().includes(q) ||
-        r.section.toLowerCase().includes(q)
+        r.section.toLowerCase().includes(q),
     );
   }, [searchQuery]);
 
-  const navigateTo = (path: string) => {
-    setIsOpen(false);
-    setSearchQuery('');
-    router.push(path as never);
-  };
+  // -------------------------------------------------------------------------
+  // Navigation
+  // -------------------------------------------------------------------------
 
-  const renderItem = ({ item }: { item: ScreenRoute }) => (
-    <TouchableOpacity
-      style={styles.routeItem}
-      onPress={() => navigateTo(item.path)}
-      activeOpacity={0.6}
-    >
-      <View style={styles.routeInfo}>
-        <Text style={styles.routeName}>{item.name}</Text>
-        <Text style={styles.routePath}>{item.path}</Text>
-      </View>
-      <Text style={styles.routeSection}>{item.section}</Text>
-    </TouchableOpacity>
+  const navigateTo = useCallback(
+    (path: string) => {
+      setIsOpen(false);
+      setSearchQuery('');
+      setScenarioTarget(null);
+      router.push(path as never);
+    },
+    [router],
   );
+
+  // -------------------------------------------------------------------------
+  // Quick Login
+  // -------------------------------------------------------------------------
+
+  const handleQuickLogin = useCallback(
+    async (phone: string, otp: string) => {
+      if (loginLoading) return;
+      setLoginLoading(phone);
+
+      try {
+        // Step 1: Send OTP (edge function recognizes test number, skips SMS)
+        const { data: sendData, error: sendError } = await callEdgeFunction<{
+          data?: { otp_request_id?: string };
+        }>('auth-otp', {
+          action: 'send_otp',
+          phone_number: phone,
+        });
+        if (sendError) {
+          Alert.alert('Quick Login Error', sendError);
+          setLoginLoading(null);
+          return;
+        }
+
+        // Step 2: Auto-verify with known OTP
+        const { data: verifyData, error: verifyError } = await callEdgeFunction<{
+          data?: {
+            session?: {
+              access_token: string;
+              refresh_token: string;
+            };
+          };
+        }>('auth-otp', {
+          action: 'verify_otp',
+          phone_number: phone,
+          otp,
+          otp_request_id: sendData?.data?.otp_request_id,
+        });
+        if (verifyError) {
+          Alert.alert('Quick Login Error', verifyError);
+          setLoginLoading(null);
+          return;
+        }
+
+        // Step 3: Set session from verify response
+        if (verifyData?.data?.session) {
+          await supabase.auth.setSession({
+            access_token: verifyData.data.session.access_token,
+            refresh_token: verifyData.data.session.refresh_token,
+          });
+        }
+
+        setLoginLoading(null);
+        setIsOpen(false);
+        // AuthProvider will handle navigation based on session state
+      } catch (e) {
+        setLoginLoading(null);
+        Alert.alert(
+          'Quick Login Error',
+          e instanceof Error ? e.message : 'Unknown error',
+        );
+      }
+    },
+    [loginLoading],
+  );
+
+  // -------------------------------------------------------------------------
+  // Mock management
+  // -------------------------------------------------------------------------
+
+  const allMocksEnabled = useMemo(() => {
+    // Read mockRevision to trigger re-computation
+    void mockRevision;
+    return SERVICE_NAMES.every((s) => devMockConfig[s]);
+  }, [mockRevision]);
+
+  const handleSwitchAllMocks = useCallback(
+    async (enabled: boolean) => {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      clearAllStores();
+      setAllMocks(enabled);
+      setMockRevision((r) => r + 1);
+    },
+    [],
+  );
+
+  const handleToggleService = useCallback(
+    (service: ServiceName, enabled: boolean) => {
+      setMockToggle(service, enabled);
+      setMockRevision((r) => r + 1);
+    },
+    [],
+  );
+
+  // -------------------------------------------------------------------------
+  // Scenario activation
+  // -------------------------------------------------------------------------
+
+  const activateScenario = useCallback(
+    async (scenarioKey: ScenarioKey, path: string) => {
+      const scenario = SCENARIOS[scenarioKey];
+
+      // 1. Cancel in-flight queries
+      await queryClient.cancelQueries();
+      // 2. Nuclear cache clear
+      queryClient.clear();
+      // 3. Reset Zustand stores
+      clearAllStores();
+      // 4. Set active scenario
+      useDevStore.getState().setScenario(scenarioKey);
+      // 5. Seed React Query cache with scenario data
+      if ('dashboard' in scenario) {
+        queryClient.setQueryData(['dashboard'], {
+          data: scenario.dashboard,
+          error: null,
+        });
+      }
+      if ('waitlist' in scenario) {
+        queryClient.setQueryData(['waitlist-status'], {
+          data: scenario.waitlist,
+          error: null,
+        });
+      }
+      if ('paymentHistory' in scenario) {
+        queryClient.setQueryData(['payment-history'], {
+          data: (scenario as Record<string, unknown>).paymentHistory,
+          error: null,
+        });
+      }
+      // 6. Navigate
+      setScenarioTarget(null);
+      setIsOpen(false);
+      setSearchQuery('');
+      router.push(path as never);
+    },
+    [router],
+  );
+
+  // -------------------------------------------------------------------------
+  // Font scale
+  // -------------------------------------------------------------------------
+
+  const handleFontScale = useCallback(
+    (scale: number) => {
+      setFontScale(scale === 1.0 ? null : scale);
+    },
+    [setFontScale],
+  );
+
+  // -------------------------------------------------------------------------
+  // Bail early
+  // -------------------------------------------------------------------------
+
+  if (HIDE_DEV_NAV) return null;
+
+  // -------------------------------------------------------------------------
+  // Render helpers
+  // -------------------------------------------------------------------------
+
+  const renderSectionHeader = (title: string) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+  );
+
+  const renderDivider = () => <View style={styles.divider} />;
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
 
   return (
     <>
-      {/* Draggable FAB */}
+      {/* ============================================================== */}
+      {/* Draggable FAB                                                  */}
+      {/* ============================================================== */}
       <Animated.View
-        style={[
-          styles.fab,
-          { transform: pan.getTranslateTransform() },
-        ]}
+        style={[styles.fab, { transform: pan.getTranslateTransform() }]}
         {...panResponder.panHandlers}
       >
         <TouchableOpacity
@@ -178,14 +453,25 @@ export function DevNavigator() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Bottom Sheet Modal */}
+      {/* ============================================================== */}
+      {/* Bottom Sheet Modal                                             */}
+      {/* ============================================================== */}
       <Modal
         visible={isOpen}
         transparent
         animationType="slide"
-        onRequestClose={() => setIsOpen(false)}
+        onRequestClose={() => {
+          setScenarioTarget(null);
+          setIsOpen(false);
+        }}
       >
-        <Pressable style={styles.backdrop} onPress={() => setIsOpen(false)} />
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => {
+            setScenarioTarget(null);
+            setIsOpen(false);
+          }}
+        />
         <View style={styles.sheet}>
           {/* Handle */}
           <View style={styles.handleContainer}>
@@ -195,45 +481,265 @@ export function DevNavigator() {
           {/* Header */}
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>Dev Navigator</Text>
-            <Text style={styles.sheetCount}>{filteredRoutes.length} screens</Text>
+            <View style={styles.headerRight}>
+              {activeScenario && (
+                <View style={styles.activeScenarioBadge}>
+                  <Text style={styles.activeScenarioText}>
+                    {activeScenario}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => useDevStore.getState().setScenario(null)}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.clearScenarioText}>X</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              <Text style={styles.sheetCount}>
+                {filteredRoutes.length} screens
+              </Text>
+            </View>
           </View>
 
-          {/* Search */}
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search screens..."
-              placeholderTextColor={colors.black[300]}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoFocus
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                <Text style={styles.clearText}>X</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Route List */}
-          <FlatList
-            data={filteredRoutes}
-            keyExtractor={item => item.path}
-            renderItem={renderItem}
+          <ScrollView
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* ========================================================== */}
+            {/* Section: Quick Login                                       */}
+            {/* ========================================================== */}
+            {renderSectionHeader('Quick Login')}
+            <View style={styles.quickLoginContainer}>
+              {TEST_PHONES.map((tp) => (
+                <TouchableOpacity
+                  key={tp.phone}
+                  style={[
+                    styles.quickLoginButton,
+                    loginLoading === tp.phone && styles.quickLoginButtonActive,
+                  ]}
+                  onPress={() => handleQuickLogin(tp.phone, tp.otp)}
+                  disabled={loginLoading !== null}
+                  activeOpacity={0.7}
+                >
+                  {loginLoading === tp.phone ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.brand[500]}
+                    />
+                  ) : (
+                    <>
+                      <Text style={styles.quickLoginLabel}>{tp.label}</Text>
+                      <Text style={styles.quickLoginPhone}>{tp.phone}</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
 
+            {renderDivider()}
+
+            {/* ========================================================== */}
+            {/* Section: All Mocks Toggle                                  */}
+            {/* ========================================================== */}
+            <View style={styles.mockMasterRow}>
+              <View style={styles.mockMasterLabel}>
+                <Text style={styles.sectionTitle}>All Mocks</Text>
+                <Text style={styles.mockHint}>
+                  {allMocksEnabled ? 'ON' : 'OFF'} — clears cache on toggle
+                </Text>
+              </View>
+              <Switch
+                value={allMocksEnabled}
+                onValueChange={handleSwitchAllMocks}
+                trackColor={{
+                  false: colors.black[500],
+                  true: colors.brand[600],
+                }}
+                thumbColor={allMocksEnabled ? colors.brand[500] : colors.black[300]}
+              />
+            </View>
+
+            {renderDivider()}
+
+            {/* ========================================================== */}
+            {/* Section: Mock Services (collapsible)                       */}
+            {/* ========================================================== */}
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setMocksExpanded((v) => !v)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.sectionTitle}>Mock Services</Text>
+              <Text style={styles.chevron}>
+                {mocksExpanded ? '\u25B2' : '\u25BC'}
+              </Text>
+            </TouchableOpacity>
+            {mocksExpanded && (
+              <View style={styles.mockServicesContainer}>
+                {SERVICE_NAMES.map((service) => (
+                  <View key={service} style={styles.mockServiceRow}>
+                    <Text style={styles.mockServiceName}>{service}</Text>
+                    <Switch
+                      value={devMockConfig[service]}
+                      onValueChange={(val) => handleToggleService(service, val)}
+                      trackColor={{
+                        false: colors.black[500],
+                        true: colors.brand[600],
+                      }}
+                      thumbColor={
+                        devMockConfig[service]
+                          ? colors.brand[500]
+                          : colors.black[300]
+                      }
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {renderDivider()}
+
+            {/* ========================================================== */}
+            {/* Section: Font Scale Override                                */}
+            {/* ========================================================== */}
+            {renderSectionHeader('Font Scale')}
+            <View style={styles.fontScaleRow}>
+              {FONT_SCALE_PRESETS.map((scale) => {
+                const isActive =
+                  (fontScale === null && scale === 1.0) ||
+                  fontScale === scale;
+                return (
+                  <TouchableOpacity
+                    key={scale}
+                    style={[
+                      styles.fontScaleButton,
+                      isActive && styles.fontScaleButtonActive,
+                    ]}
+                    onPress={() => handleFontScale(scale)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.fontScaleLabel,
+                        isActive && styles.fontScaleLabelActive,
+                      ]}
+                    >
+                      {scale}x
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {renderDivider()}
+
+            {/* ========================================================== */}
+            {/* Section: Screen Navigator                                  */}
+            {/* ========================================================== */}
+            {renderSectionHeader('Screens')}
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search screens..."
+                placeholderTextColor={colors.black[300]}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.clearButton}
+                >
+                  <Text style={styles.clearText}>X</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Route list */}
+            {filteredRoutes.map((item) => (
+              <TouchableOpacity
+                key={item.path}
+                style={styles.routeItem}
+                onPress={() => navigateTo(item.path)}
+                onLongPress={() => {
+                  if (item.scenarios && item.scenarios.length > 0) {
+                    setScenarioTarget({
+                      path: item.path,
+                      scenarios: item.scenarios,
+                    });
+                  }
+                }}
+                activeOpacity={0.6}
+              >
+                <View style={styles.routeInfo}>
+                  <View style={styles.routeNameRow}>
+                    <Text style={styles.routeName}>{item.name}</Text>
+                    {item.scenarios && item.scenarios.length > 0 && (
+                      <View style={styles.scenarioDot} />
+                    )}
+                  </View>
+                  <Text style={styles.routePath}>{item.path}</Text>
+                </View>
+                <Text style={styles.routeSection}>{item.section}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
+
+        {/* ============================================================== */}
+        {/* Scenario Picker Overlay                                       */}
+        {/* ============================================================== */}
+        {scenarioTarget && (
+          <View style={styles.scenarioOverlay}>
+            <Pressable
+              style={styles.scenarioBackdrop}
+              onPress={() => setScenarioTarget(null)}
+            />
+            <View style={styles.scenarioPicker}>
+              <Text style={styles.scenarioPickerTitle}>Select Scenario</Text>
+              {scenarioTarget.scenarios.map((s) => (
+                <TouchableOpacity
+                  key={s.key}
+                  style={styles.scenarioOption}
+                  onPress={() =>
+                    activateScenario(s.key, scenarioTarget.path)
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.scenarioOptionLabel}>{s.label}</Text>
+                  <Text style={styles.scenarioOptionKey}>{s.key}</Text>
+                </TouchableOpacity>
+              ))}
+              {/* Default (no scenario) option */}
+              <TouchableOpacity
+                style={[styles.scenarioOption, styles.scenarioOptionDefault]}
+                onPress={() => {
+                  useDevStore.getState().setScenario(null);
+                  navigateTo(scenarioTarget.path);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.scenarioOptionLabel}>
+                  Default (no scenario)
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </Modal>
     </>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
+
 const styles = StyleSheet.create({
+  // FAB -----------------------------------------------------------------------
   fab: {
     position: 'absolute',
     bottom: 100,
@@ -258,6 +764,8 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 18,
   },
+
+  // Sheet ---------------------------------------------------------------------
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -267,7 +775,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.7,
+    height: SCREEN_HEIGHT * 0.8,
     backgroundColor: colors.black[600],
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -288,21 +796,159 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
   sheetTitle: {
-    ...typography.h3,
+    ...typography.bodyMdMedium,
     color: colors.white,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   sheetCount: {
     ...typography.bodySm,
     color: colors.black[300],
   },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+
+  // Active scenario badge
+  activeScenarioBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.brand[500] + '22',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 6,
+  },
+  activeScenarioText: {
+    ...typography.captionSm,
+    color: colors.brand[500],
+  },
+  clearScenarioText: {
+    color: colors.brand[500],
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 10,
+  },
+
+  // Section headers -----------------------------------------------------------
+  sectionHeader: {
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  sectionTitle: {
+    ...typography.bodySmSemiBold,
+    color: colors.black[200],
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.black[400],
+    marginVertical: 8,
+  },
+
+  // Quick Login ---------------------------------------------------------------
+  quickLoginContainer: {
+    gap: 8,
+  },
+  quickLoginButton: {
+    backgroundColor: colors.black[500],
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 48,
+  },
+  quickLoginButtonActive: {
+    borderColor: colors.brand[500],
+    borderWidth: 1,
+  },
+  quickLoginLabel: {
+    ...typography.bodyMd2Medium,
+    color: colors.white,
+  },
+  quickLoginPhone: {
+    ...typography.bodySm,
+    color: colors.black[300],
+  },
+
+  // Mock toggles --------------------------------------------------------------
+  mockMasterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  mockMasterLabel: {
+    flex: 1,
+    gap: 2,
+  },
+  mockHint: {
+    ...typography.captionSm,
+    color: colors.black[300],
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  chevron: {
+    color: colors.black[300],
+    fontSize: 10,
+  },
+  mockServicesContainer: {
+    gap: 2,
+    paddingLeft: 4,
+  },
+  mockServiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  mockServiceName: {
+    ...typography.bodyMd2,
+    color: colors.neutral[300],
+    textTransform: 'capitalize',
+  },
+
+  // Font Scale ----------------------------------------------------------------
+  fontScaleRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  fontScaleButton: {
+    flex: 1,
+    backgroundColor: colors.black[500],
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  fontScaleButtonActive: {
+    backgroundColor: colors.brand[500],
+  },
+  fontScaleLabel: {
+    ...typography.bodySmMedium,
+    color: colors.neutral[300],
+  },
+  fontScaleLabelActive: {
+    color: colors.black[700],
+  },
+
+  // Search --------------------------------------------------------------------
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 8,
     backgroundColor: colors.black[500],
     borderRadius: 12,
     paddingHorizontal: 14,
@@ -311,7 +957,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     color: colors.white,
-    ...typography.bodyMdMedium,
+    ...typography.bodyMd2,
   },
   clearButton: {
     padding: 4,
@@ -322,10 +968,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'PlusJakartaSans-SemiBold',
   },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
+
+  // Route list ----------------------------------------------------------------
   routeItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -338,19 +982,79 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  routeNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   routeName: {
-    ...typography.bodyMdMedium,
+    ...typography.bodyMd2Medium,
     color: colors.white,
-    marginBottom: 2,
+  },
+  scenarioDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.brand[500],
   },
   routePath: {
-    ...typography.bodySm,
+    ...typography.captionSm,
     color: colors.black[300],
-    fontSize: 12,
+    marginTop: 2,
   },
   routeSection: {
-    ...typography.bodySm,
+    ...typography.captionSm,
     color: colors.brand[500],
-    fontSize: 11,
+  },
+
+  // Scenario picker -----------------------------------------------------------
+  scenarioOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  scenarioBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  scenarioPicker: {
+    backgroundColor: colors.black[600],
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  scenarioPickerTitle: {
+    ...typography.bodyMdMedium,
+    color: colors.white,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  scenarioOption: {
+    backgroundColor: colors.black[500],
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  scenarioOptionDefault: {
+    borderWidth: 1,
+    borderColor: colors.black[400],
+    backgroundColor: 'transparent',
+  },
+  scenarioOptionLabel: {
+    ...typography.bodyMd2Medium,
+    color: colors.white,
+  },
+  scenarioOptionKey: {
+    ...typography.captionSm,
+    color: colors.black[300],
+    marginTop: 2,
   },
 });

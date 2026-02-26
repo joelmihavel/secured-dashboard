@@ -1,0 +1,196 @@
+{
+  "routeKey": "setup-add-utility",
+  "filePath": "app/(setup)/add-utility.tsx",
+  "components": [
+    "AlertBanner",
+    "PrimaryButton",
+    "ScreenTitle",
+    "Text",
+    "TextInput"
+  ],
+  "colorLiterals": [
+    {
+      "value": "FIGMA_COLORS.progressFill",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "FIGMA_COLORS.background",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "FIGMA_COLORS.description",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.progressTrack",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.neutral[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#0D0D0D",
+      "source": "stylesheet",
+      "property": "borderColor"
+    },
+    {
+      "value": "FIGMA_COLORS.inputBorderError",
+      "source": "theme",
+      "property": "borderColor"
+    },
+    {
+      "value": "FIGMA_COLORS.accent",
+      "source": "theme",
+      "property": "borderColor"
+    },
+    {
+      "value": "FIGMA_COLORS.inputText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.placeholder",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.error.radix",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "colors.neutral[600]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.skipText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.6)",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.black[600]",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "#333333",
+      "source": "stylesheet",
+      "property": "borderBottomColor"
+    },
+    {
+      "value": "colors.white",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#262626",
+      "source": "stylesheet",
+      "property": "borderBottomColor"
+    },
+    {
+      "value": "rgba(255, 154, 109, 0.08)",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.neutral[200]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FF9A6D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#878787",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#444444",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FFFFFF",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4D4D4D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#CC7B57",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#0D0D0D",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#DDDDDD",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#333333",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#262626",
+      "source": "stylesheet",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12,
+      "lineHeight": 20
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold",
+      "fontSize": 18,
+      "lineHeight": 24
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Medium",
+      "fontSize": 16,
+      "lineHeight": 22
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12,
+      "lineHeight": 16
+    }
+  ],
+  "scalingUsage": [],
+  "scrollContainer": "KeyboardAvoidingView",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

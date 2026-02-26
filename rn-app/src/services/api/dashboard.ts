@@ -11,11 +11,6 @@
 import { callEdgeFunction } from '../supabase';
 
 // ==============================================
-// DEV MOCK — set to true to bypass API and use mock data
-// ==============================================
-const DEV_USE_MOCK_DASHBOARD = __DEV__ && true;
-
-// ==============================================
 // TYPES — Edge Function Response (raw from backend)
 // ==============================================
 
@@ -317,16 +312,10 @@ export function deriveCashbackEntries(
  * Calls the dashboard-data edge function and returns the raw DashboardData shape.
  * Use mapRecentPayments() and deriveCashbackEntries() to convert to UI-ready types.
  */
-export async function fetchDashboard(): Promise<{
+async function fetchDashboardReal(): Promise<{
   data: DashboardData | null;
   error: string | null;
 }> {
-  // In dev mode, return mock data for visual testing
-  if (DEV_USE_MOCK_DASHBOARD) {
-    const { MOCK_DASHBOARD_DATA } = await import('./__mocks__/dashboard-mock');
-    return { data: MOCK_DASHBOARD_DATA, error: null };
-  }
-
   const { data, error } = await callEdgeFunction<DashboardResponse>(
     'dashboard-data',
     {},
@@ -343,6 +332,24 @@ export async function fetchDashboard(): Promise<{
 
   return { data: data.data, error: null };
 }
+
+async function fetchDashboardMock(): Promise<{
+  data: DashboardData | null;
+  error: string | null;
+}> {
+  const { MOCK_DASHBOARD_DATA } = await import('./__mocks__/dashboard-mock');
+  return { data: MOCK_DASHBOARD_DATA, error: null };
+}
+
+// withMock() enforces same return type + __DEV__ compile-time gate
+const _fetchDashboard = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('dashboard', fetchDashboardReal, fetchDashboardMock, { delayMs: 300 });
+    })()
+  : fetchDashboardReal;
+
+export const fetchDashboard = _fetchDashboard;
 
 // ==============================================
 // DASHBOARD STATE MACHINE

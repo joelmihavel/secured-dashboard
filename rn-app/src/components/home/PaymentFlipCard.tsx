@@ -214,9 +214,11 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
       <View style={styles.contentPadding}>
         {/* Top: Insider Sticker */}
         <View style={styles.topSection}>
-          <Text style={styles.insiderText}>
-            flent<Text style={styles.insiderAccent} inherit>_insider</Text>
-          </Text>
+          {data.isInsider && (
+            <Text style={styles.insiderText}>
+              flent<Text style={styles.insiderAccent} inherit>_insider</Text>
+            </Text>
+          )}
           <PaymentBadge
               variant={config.badgeVariant}
               count={config.badgeCount}
@@ -261,10 +263,8 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
             <View style={styles.cashbackRow}>
               <Text style={styles.cashbackLabel}>{config.label}</Text>
               <View style={styles.cashbackAmountContainer}>
-                <Text style={styles.currencySymbol}>₹  </Text>
-                <Text style={styles.cashbackAmount}>{Math.floor(data.cashbackEarned)}</Text>
-                <Text style={styles.cashbackDecimals}>
-                  {(data.cashbackEarned % 1).toFixed(2).substring(1)}
+                <Text style={styles.cashbackAmount}>
+                  ₹  {data.cashbackEarned === 0 ? '00.00' : data.cashbackEarned.toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -327,13 +327,6 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
       </View>
 
       <View style={[styles.contentPadding, styles.backContent]}>
-        {/* Top: Insider Sticker */}
-        <View style={styles.topSection}>
-          <Text style={styles.insiderText}>
-            flent<Text style={styles.insiderAccent} inherit>_insider</Text>
-          </Text>
-        </View>
-
         {/* Grid of 12 Stamps */}
         <View style={styles.stampsGrid}>
           {data.yearlyStamps.slice(0, 12).map((status, idx) => (
@@ -498,26 +491,12 @@ const styles = StyleSheet.create({
   },
   cashbackAmountContainer: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  currencySymbol: {
-    color: '#878787', // Figma 694:6585
-    fontSize: sf(14), // Figma: 14px
-    lineHeight: sf(20),
-    fontFamily: 'PlusJakartaSans-Regular',
-    marginRight: s(4),
+    alignItems: 'center',
   },
   cashbackAmount: {
     color: '#FF9A6D',
-    fontSize: sf(32), // Figma: 32px
-    lineHeight: sf(48), // Figma: 48px
-    letterSpacing: -1, // Figma: tracking -1px
-    fontFamily: 'PlusJakartaSans-Regular',
-  },
-  cashbackDecimals: {
-    color: '#878787', // Figma 694:6585
-    fontSize: sf(14), // Figma: 14px
-    lineHeight: sf(20),
+    fontSize: sf(28), // Figma: 28px
+    lineHeight: sf(40), // Figma: 40px
     fontFamily: 'PlusJakartaSans-Regular',
   },
   addPaymentContainer: {
@@ -615,7 +594,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: sv(140), // vertically centered manually
+    bottom: sv(32), // positioned towards bottom with padding
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,0 +1,54 @@
+{
+  "screenId": "762-303700",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Successful --no cashback",
+  "dimensions": {
+    "width": 393,
+    "height": 852
+  },
+  "background": {
+    "color": "#131313",
+    "hasDottedPattern": false
+  },
+  "counts": {
+    "nodes": 134,
+    "textNodes": 0,
+    "componentInstances": 4,
+    "interactiveNodes": 1,
+    "imageAssets": 0
+  },
+  "textContents": [],
+  "colorPalette": [
+    "#000000",
+    "#06C270",
+    "#131313",
+    "#202020",
+    "#4D4D4D",
+    "#878787",
+    "#A6A6A6",
+    "#A9A9A9",
+    "#CBCBCB",
+    "#DDDDDD",
+    "#EF9194",
+    "#FF9A6D",
+    "#FFFFFF"
+  ],
+  "spacingValues": [
+    4,
+    8,
+    10,
+    16,
+    23,
+    24,
+    40,
+    48
+  ],
+  "flags": {
+    "scrollable": true,
+    "hasSafeAreaNodes": true,
+    "hasGradients": true,
+    "hasShadows": true,
+    "hasAnimations": false,
+    "modalOverlays": false
+  },
+  "fingerprint": "b8118cd3ed7423887e333a06741585a9b0ef7300da5afb4586f3261c0e85588b"
+}

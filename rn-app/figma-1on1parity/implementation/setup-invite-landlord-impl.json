@@ -1,0 +1,94 @@
+{
+  "routeKey": "setup-invite-landlord",
+  "filePath": "app/(setup)/invite-landlord.tsx",
+  "components": [
+    "AlertBanner",
+    "DottedGridPattern",
+    "DottedGridPresets",
+    "PhoneInput",
+    "PrimaryButton",
+    "Screen",
+    "ScreenTitle",
+    "Text"
+  ],
+  "colorLiterals": [
+    {
+      "value": "FIGMA_COLORS.progressFill",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "colors.neutral[500]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.progressTrack",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "#202020",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "#FF9A6D",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.skipText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FF9A6D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4D4D4D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#CC7B57",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#202020",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FFFFFF",
+      "source": "inline",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12,
+      "lineHeight": 20
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Medium",
+      "fontSize": 14,
+      "lineHeight": 20
+    }
+  ],
+  "scalingUsage": [],
+  "scrollContainer": "KeyboardAvoidingView",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

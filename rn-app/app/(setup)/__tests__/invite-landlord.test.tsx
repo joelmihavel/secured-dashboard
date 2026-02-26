@@ -60,8 +60,9 @@ describe('InviteLandlordScreen', () => {
   });
 
   it('renders title "One last step" and "we promise"', () => {
-    const { getByText } = render(<InviteLandlordScreen />);
-    expect(getByText(/Confirm/)).toBeTruthy();
+    const { getAllByText, getByText } = render(<InviteLandlordScreen />);
+    const matches = getAllByText(/Confirm/);
+    expect(matches.length).toBeGreaterThan(0);
     expect(getByText(/your tenancy/)).toBeTruthy();
     
   });

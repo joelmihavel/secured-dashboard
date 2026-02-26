@@ -190,7 +190,7 @@ function getPendingInfoRows(isUpi: boolean, sub: PendingSubState): string[] {
 const FAILED_INFO_ROWS = [
   "Something didn't go through this time.",
   "Your money is safe and hasn't been deducted.",
-  'If money was debited, it will automatically be refunded within 3-5 business days',
+  "If money was debited, it will automatically be refunded within 3-5 business days."
 ];
 
 const REFUNDED_INFO_ROWS = [
@@ -304,7 +304,7 @@ const SuccessContent = memo(({
   transactionId,
   payableRent,
 }: SuccessContentProps) => {
-  const cashbackDisplay = `- \u20B9  ${cashbackApplied.toLocaleString('en-IN')}`;
+  const cashbackDisplay = cashbackApplied > 0 ? `- \u20B9  ${cashbackApplied.toLocaleString('en-IN')}` : `- \u20B9 0`;
 
   return (
     <View style={styles.receiptDetails}>
@@ -814,11 +814,11 @@ export default function PaymentStatusScreen() {
           ? { line1: 'Verifying', line2: 'Payment...' }
           : { line1: 'Payment', line2: 'Processing' };
       case 'success':
-        return { line1: 'Payment', line2: 'Succesful' };
+        return { line1: 'Payment', line2: 'Successful', line2Color: '#70BF73' };
       case 'failed':
-        return { line1: 'Payment', line2: 'Failed' };
+        return { line1: 'Payment', line2: 'Failed', line2Color: '#EF9194' };
       case 'refunded':
-        return { line1: 'Payment', line2: 'Refunded' };
+        return { line1: 'Payment', line2: 'Refunded', line2Color: '#70BF73' };
       case 'timed_out':
         return { line1: 'Payment', line2: 'Processing' };
     }
@@ -1005,7 +1005,7 @@ export default function PaymentStatusScreen() {
           stampColor={stampConfig.color}
           titleLine1={titleConfig.line1}
           titleLine2={titleConfig.line2}
-          titleLine2Color={FIGMA_COLORS.titleAccent}
+          titleLine2Color={titleConfig.line2Color || FIGMA_COLORS.titleAccent}
           topMargin={80}
         >
           {renderCardContent()}

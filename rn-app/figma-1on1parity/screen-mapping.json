@@ -1,0 +1,896 @@
+{
+  "meta": {
+    "figmaFileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+    "topLevelNodeId": "756:188615",
+    "totalScreens": 104,
+    "generatedAt": "2026-02-27T00:00:00Z",
+    "featureAreas": 14
+  },
+  "screens": [
+    {
+      "figmaNodeId": "1:28055",
+      "screenName": "Splash / get-started",
+      "route": "(auth)/splash",
+      "state": "initial",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:28071",
+      "screenName": "Splash / get-started --animation",
+      "route": "(auth)/beta-splash",
+      "state": "animation",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:28985",
+      "screenName": "Carousel 4",
+      "route": "(auth)/carousel",
+      "state": "page-1",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:29025",
+      "screenName": "Carousel 5",
+      "route": "(auth)/carousel",
+      "state": "page-2",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:29065",
+      "screenName": "Carousel 6",
+      "route": "(auth)/carousel",
+      "state": "page-3",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:29108",
+      "screenName": "Sign up --enter phone",
+      "route": "(auth)/sign-up",
+      "state": "empty",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:31073",
+      "screenName": "Sign up --filled",
+      "route": "(auth)/sign-up",
+      "state": "filled",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:31590",
+      "screenName": "Sign up --error 1",
+      "route": "(auth)/sign-up",
+      "state": "error-1",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:31671",
+      "screenName": "Sign up --error 2",
+      "route": "(auth)/sign-up",
+      "state": "error-2",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:31175",
+      "screenName": "OTP --enter",
+      "route": "(auth)/otp",
+      "state": "empty",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:31277",
+      "screenName": "OTP --filled",
+      "route": "(auth)/otp",
+      "state": "filled",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:31380",
+      "screenName": "OTP --error 2",
+      "route": "(auth)/otp",
+      "state": "error-1",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:31485",
+      "screenName": "OTP --error 1",
+      "route": "(auth)/otp",
+      "state": "error-2",
+      "category": "authentication",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:29914",
+      "screenName": "Agreement --upload",
+      "route": "(agreement)/upload",
+      "state": "idle",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:30001",
+      "screenName": "Agreement --uploading",
+      "route": "(agreement)/upload",
+      "state": "uploading",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:30090",
+      "screenName": "Agreement --upload (variant)",
+      "route": "(agreement)/upload",
+      "state": "uploaded",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:30448",
+      "screenName": "Agreement --verify",
+      "route": "(agreement)/review",
+      "state": "verify",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:30820",
+      "screenName": "Agreement --modify",
+      "route": "(agreement)/review",
+      "state": "modify",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:30178",
+      "screenName": "Agreement --expired",
+      "route": "(agreement)/upload",
+      "state": "expired",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:30268",
+      "screenName": "Agreement --file too large",
+      "route": "(agreement)/upload",
+      "state": "file-too-large",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "1:30358",
+      "screenName": "Agreement --manual review",
+      "route": "(agreement)/upload",
+      "state": "manual-review",
+      "category": "agreement",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:11206",
+      "screenName": "Waitlist Screen",
+      "route": "(waitlist)/index",
+      "state": "pending",
+      "category": "waitlist",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:11825",
+      "screenName": "Waitlist --24hrs+",
+      "route": "(waitlist)/index",
+      "state": "pending-long",
+      "category": "waitlist",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:11506",
+      "screenName": "Waitlist --referral entry",
+      "route": "(waitlist)/index",
+      "state": "referral-entry",
+      "category": "waitlist",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:11613",
+      "screenName": "Waitlist --referral invalid",
+      "route": "(waitlist)/index",
+      "state": "referral-invalid",
+      "category": "waitlist",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:11720",
+      "screenName": "Waitlist --referral success",
+      "route": "(waitlist)/index",
+      "state": "referral-success",
+      "category": "waitlist",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:11313",
+      "screenName": "Waitlist --Accepted",
+      "route": "(waitlist)/approved",
+      "state": "accepted",
+      "category": "waitlist",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:11410",
+      "screenName": "Waitlist --Rejected",
+      "route": "(waitlist)/index",
+      "state": "rejected",
+      "category": "waitlist",
+      "tier": 2
+    },
+    {
+      "figmaNodeId": "41:10712",
+      "screenName": "Post approval 1",
+      "route": "(setup)/index",
+      "state": "step-1",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:10859",
+      "screenName": "Post approval 2",
+      "route": "(setup)/index",
+      "state": "step-2",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:11006",
+      "screenName": "Post approval 3",
+      "route": "(setup)/index",
+      "state": "step-3",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "1:33737",
+      "screenName": "Add Bank Details",
+      "route": "(setup)/add-bank",
+      "state": "default",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "597:2833",
+      "screenName": "Add Bank --error",
+      "route": "(setup)/add-bank",
+      "state": "error",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "1:34343",
+      "screenName": "Add BESCOM Number",
+      "route": "(setup)/add-utility",
+      "state": "default",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "597:2922",
+      "screenName": "Add BESCOM --error",
+      "route": "(setup)/add-utility",
+      "state": "error",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "1:34150",
+      "screenName": "Invite Landlord",
+      "route": "(setup)/invite-landlord",
+      "state": "default",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "1:34236",
+      "screenName": "Summary",
+      "route": "(setup)/pending-steps",
+      "state": "summary",
+      "category": "setup",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:8760",
+      "screenName": "My Profile / Main",
+      "route": "(profile)/index",
+      "state": "default",
+      "category": "profile",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:8880",
+      "screenName": "My Profile / Secured Account",
+      "route": "(profile)/edit",
+      "state": "default",
+      "category": "profile",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:8450",
+      "screenName": "Payment --UPI",
+      "route": "(profile)/payment-methods",
+      "state": "upi",
+      "category": "profile",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:8612",
+      "screenName": "Payment --Credit Card",
+      "route": "(profile)/payment-methods",
+      "state": "credit-card",
+      "category": "profile",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:9307",
+      "screenName": "Payment --Bank Account",
+      "route": "(profile)/payment-methods",
+      "state": "bank-account",
+      "category": "profile",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:9811",
+      "screenName": "Agreement",
+      "route": "(profile)/agreement",
+      "state": "default",
+      "category": "profile",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "41:8695",
+      "screenName": "Transaction --with cashback",
+      "route": "(payment)/confirm",
+      "state": "with-cashback",
+      "category": "payment-transaction",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9681",
+      "screenName": "Transaction --without cashback",
+      "route": "(payment)/confirm",
+      "state": "without-cashback",
+      "category": "payment-transaction",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9746",
+      "screenName": "Transaction --late payment",
+      "route": "(payment)/confirm",
+      "state": "late-payment",
+      "category": "payment-transaction",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "243:7398",
+      "screenName": "Transaction --first visit",
+      "route": "(payment)/confirm",
+      "state": "first-visit",
+      "category": "payment-transaction",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "243:6731",
+      "screenName": "Transaction --before payment",
+      "route": "(payment)/confirm",
+      "state": "before-payment",
+      "category": "payment-transaction",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "246:8416",
+      "screenName": "Transaction --setup steps",
+      "route": "(payment)/confirm",
+      "state": "setup-steps",
+      "category": "payment-transaction",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:8901",
+      "screenName": "Payment Page --without setup",
+      "route": "(payment)/first-rent",
+      "state": "without-setup",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9004",
+      "screenName": "Payment Page --before 7th",
+      "route": "(payment)/first-rent",
+      "state": "before-7th",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9114",
+      "screenName": "Payment Page --after 7th",
+      "route": "(payment)/first-rent",
+      "state": "after-7th",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:8369",
+      "screenName": "Add UPI Payment",
+      "route": "(payment)/first-rent",
+      "state": "add-upi",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:8529",
+      "screenName": "Add Credit Payment",
+      "route": "(payment)/first-rent",
+      "state": "add-credit",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9224",
+      "screenName": "Add Net Banking",
+      "route": "(payment)/first-rent",
+      "state": "add-netbanking",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9388",
+      "screenName": "Payment Successful",
+      "route": "(payment)/status",
+      "state": "success",
+      "category": "payment-summary",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9563",
+      "screenName": "Payment Successful --no cashback",
+      "route": "(payment)/status",
+      "state": "success-no-cashback",
+      "category": "payment-summary",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9460",
+      "screenName": "Payment Processing",
+      "route": "(payment)/status",
+      "state": "processing",
+      "category": "payment-summary",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9511",
+      "screenName": "Payment Failed",
+      "route": "(payment)/status",
+      "state": "failed",
+      "category": "payment-summary",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "41:9635",
+      "screenName": "Payment Refunded",
+      "route": "(payment)/status",
+      "state": "refunded",
+      "category": "payment-summary",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "243:2967",
+      "screenName": "Home --active --complete setup",
+      "route": "(main)/index",
+      "state": "active-complete",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:7185",
+      "screenName": "Home --active --complete (v2)",
+      "route": "(main)/index",
+      "state": "active-complete-v2",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:3170",
+      "screenName": "Home --active --late payment",
+      "route": "(main)/index",
+      "state": "active-late",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:3378",
+      "screenName": "Home --active --missed payment",
+      "route": "(main)/index",
+      "state": "active-missed",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:3586",
+      "screenName": "Home --active --multiple missed",
+      "route": "(main)/index",
+      "state": "active-multi-missed",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:2762",
+      "screenName": "Home --active --bank/UPI only",
+      "route": "(main)/index",
+      "state": "active-bank-upi",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:6971",
+      "screenName": "Home --active --bank/UPI only (v2)",
+      "route": "(main)/index",
+      "state": "active-bank-upi-v2",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:3797",
+      "screenName": "Home --active --credit card",
+      "route": "(main)/index",
+      "state": "active-credit-card",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:4006",
+      "screenName": "Home --active --net banking",
+      "route": "(main)/index",
+      "state": "active-netbanking",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:7613",
+      "screenName": "Home --active --autopay",
+      "route": "(main)/index",
+      "state": "active-autopay",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:7823",
+      "screenName": "Home --active --autopay pending",
+      "route": "(main)/index",
+      "state": "active-autopay-pending",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:8033",
+      "screenName": "Home --active --split payment",
+      "route": "(main)/index",
+      "state": "active-split-payment",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:8243",
+      "screenName": "Home --active --partial payment",
+      "route": "(main)/index",
+      "state": "active-partial-payment",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:8453",
+      "screenName": "Home --active --advance payment",
+      "route": "(main)/index",
+      "state": "active-advance-payment",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:8663",
+      "screenName": "Home --active --payment scheduled",
+      "route": "(main)/index",
+      "state": "active-payment-scheduled",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:8873",
+      "screenName": "Home --active --payment overdue",
+      "route": "(main)/index",
+      "state": "active-payment-overdue",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:9083",
+      "screenName": "Home --active --payment failed",
+      "route": "(main)/index",
+      "state": "active-payment-failed",
+      "category": "home-active",
+      "tier": 3
+    },
+    {
+      "figmaNodeId": "243:4062",
+      "screenName": "Home --Empty State",
+      "route": "(main)/index",
+      "state": "empty-base",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:6490",
+      "screenName": "Home --Empty --setup payment",
+      "route": "(main)/index",
+      "state": "empty-setup-payment",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:2681",
+      "screenName": "Home --Empty / Setup --UPI",
+      "route": "(main)/index",
+      "state": "empty-setup-upi",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:5277",
+      "screenName": "Home --Empty --with upi / payments",
+      "route": "(main)/index",
+      "state": "empty-upi-payments",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:5870",
+      "screenName": "Home --Empty --with upi / cashbacks",
+      "route": "(main)/index",
+      "state": "empty-upi-cashbacks",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:5689",
+      "screenName": "Home --Empty --with upi / no payments",
+      "route": "(main)/index",
+      "state": "empty-upi-no-payments",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:6296",
+      "screenName": "Home --Empty --with upi / no cashbacks",
+      "route": "(main)/index",
+      "state": "empty-upi-no-cashbacks",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:5483",
+      "screenName": "Home --Empty --paid rent",
+      "route": "(main)/index",
+      "state": "empty-upi-paid",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:6083",
+      "screenName": "Home --Empty --cashbacks paid",
+      "route": "(main)/index",
+      "state": "empty-cashbacks-paid",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:6731",
+      "screenName": "Home --Empty / Transaction",
+      "route": "(main)/index",
+      "state": "empty-transaction",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:7463",
+      "screenName": "Home --Empty / Transaction --no cashback",
+      "route": "(main)/index",
+      "state": "empty-transaction-no-cashback",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4855",
+      "screenName": "Home --Empty --no payment method",
+      "route": "(main)/index",
+      "state": "empty-no-payment",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:5066",
+      "screenName": "Home --Empty --payment pending",
+      "route": "(main)/index",
+      "state": "empty-payment-pending",
+      "category": "home-empty",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4258",
+      "screenName": "Home --Invitation Sent",
+      "route": "(main)/index",
+      "state": "invitation-sent",
+      "category": "home-invitation",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4462",
+      "screenName": "Home --Resent <24hrs",
+      "route": "(main)/index",
+      "state": "invitation-resent-recent",
+      "category": "home-invitation",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4666",
+      "screenName": "Home --Resent >24hrs",
+      "route": "(main)/index",
+      "state": "invitation-resent-old",
+      "category": "home-invitation",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4870",
+      "screenName": "Home --Invitation Failed",
+      "route": "(main)/index",
+      "state": "invitation-failed",
+      "category": "home-invitation",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:5074",
+      "screenName": "Home --Declined",
+      "route": "(main)/index",
+      "state": "invitation-declined",
+      "category": "home-invitation",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4052",
+      "screenName": "Add More Card",
+      "route": "(payment)/first-rent",
+      "state": "component-add-more",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:3794",
+      "screenName": "Credit Card / selected",
+      "route": "(payment)/first-rent",
+      "state": "component-credit-selected",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:3838",
+      "screenName": "UPI Card / selected",
+      "route": "(payment)/first-rent",
+      "state": "component-upi-selected",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4008",
+      "screenName": "Netbanking Card / selected",
+      "route": "(payment)/first-rent",
+      "state": "component-netbanking-selected",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:3816",
+      "screenName": "Credit Card",
+      "route": "(payment)/first-rent",
+      "state": "component-credit",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:3923",
+      "screenName": "UPI Card",
+      "route": "(payment)/first-rent",
+      "state": "component-upi",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:4030",
+      "screenName": "Netbanking Card",
+      "route": "(payment)/first-rent",
+      "state": "component-netbanking",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:3750",
+      "screenName": "Payment Card Base",
+      "route": "(payment)/first-rent",
+      "state": "component-base",
+      "category": "payment-method-components",
+      "tier": 4
+    },
+    {
+      "figmaNodeId": "243:3772",
+      "screenName": "Payment Card Active",
+      "route": "(payment)/first-rent",
+      "state": "component-active",
+      "category": "payment-method-components",
+      "tier": 4
+    }
+  ],
+  "gaps": {
+    "figmaWithoutRoute": [
+      {
+        "figmaNodeId": "1:30178",
+        "screenName": "Agreement --expired",
+        "reason": "No expired state handling in app"
+      },
+      {
+        "figmaNodeId": "1:30358",
+        "screenName": "Agreement --manual review",
+        "reason": "No manual review state in app"
+      },
+      {
+        "figmaNodeId": "1:30820",
+        "screenName": "Agreement --modify",
+        "reason": "Review is read-only, no inline edit"
+      },
+      {
+        "figmaNodeId": "243:4462",
+        "screenName": "Home --Resent <24hrs",
+        "reason": "Routing hardcodes invitation_sent type"
+      },
+      {
+        "figmaNodeId": "243:4666",
+        "screenName": "Home --Resent >24hrs",
+        "reason": "Routing hardcodes invitation_sent type"
+      },
+      {
+        "figmaNodeId": "243:4870",
+        "screenName": "Home --Invitation Failed",
+        "reason": "Routing hardcodes invitation_sent type"
+      },
+      {
+        "figmaNodeId": "243:5074",
+        "screenName": "Home --Declined",
+        "reason": "Routing hardcodes invitation_sent type"
+      }
+    ],
+    "routeWithoutFigma": [
+      {
+        "route": "(payment)/cashback-history",
+        "reason": "Implemented but no Figma design exists"
+      },
+      {
+        "route": "app/error.tsx",
+        "reason": "Functional error screen, no Figma design"
+      },
+      {
+        "route": "(profile)/edit-payment-method",
+        "reason": "No dedicated Figma screen"
+      }
+    ]
+  }
+}

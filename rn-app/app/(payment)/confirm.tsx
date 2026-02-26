@@ -1,171 +1,97 @@
-/**
- * Confirm Payment Screen
- *
- * Shown AFTER payment method selection, BEFORE PayU SDK launch.
- * Replaces initiate.tsx with improved cashback logic based on verification state.
- *
- * Two visual states:
- *   - Verified: cashback deducted from payable amount
- *   - Unverified: cashback shown but locked (not deducted)
- */
-
-import React, { useCallback, useState, useEffect, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Text as RNText,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import Svg, { Path, Line } from 'react-native-svg';
+import { Text as RNText } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
+import { BlurView } from 'expo-blur';
 
 import { Screen, PrimaryButton } from '@/src/components';
-import { BlurView } from 'expo-blur';
 import { useDashboard } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { PAYMENT_COLORS } from '@/src/theme';
-import { s, sf, sv } from '@/src/theme/scale';
+import { paymentsApi } from '@/src/services/api/payments';
+import { colors } from '@/src/theme';
+const fmt = (n: number) => n.toLocaleString('en-IN');
 
-// ==============================================
-// FIGMA COLOR TOKENS — aliased from shared PAYMENT_COLORS
-// ==============================================
-
-const C = {
-  bg: PAYMENT_COLORS.background,
-  card: PAYMENT_COLORS.cardBackground,
-  cardDivider: PAYMENT_COLORS.cardDivider,
-  label: PAYMENT_COLORS.labelText,
-  value: PAYMENT_COLORS.valueText,
-  valueTotal: PAYMENT_COLORS.highlightText,
-  cashback: PAYMENT_COLORS.cashbackDeduct,
-  accent: PAYMENT_COLORS.accent,
-  muted: PAYMENT_COLORS.mutedText,
-  timerHighlight: PAYMENT_COLORS.brightText,
-  divider: PAYMENT_COLORS.divider,
-  white: PAYMENT_COLORS.white,
-} as const;
-
-// ==============================================
-// ICONS
-// ==============================================
+// ── Icons ────────────────────────────────────────────────────────────────────
 
 const BackArrow = () => (
-  <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
-    <Path d="M14.67 8L6.67 16L14.67 24" stroke={C.white} strokeWidth={2.67} strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M6.67 16H25.33" stroke={C.white} strokeWidth={2.67} strokeLinecap="round" />
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 12H5M5 12L12 19M5 12L12 5"
+      stroke="#EEEEEE"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
 const HashIcon = () => (
   <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
-    <Path d="M6 2L4 14M12 2L10 14M2 6H14M2 10H14" stroke={C.label} strokeLinecap="round" strokeLinejoin="round" />
+    <Path
+      d="M6 2L4 14M12 2L10 14M2 6H14M2 10H14"
+      stroke="#A9A9A9"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
 const Crosshatch = ({ x, y }: { x: number; y: number }) => (
-  <View style={[styles.crosshatch, { left: x, top: y }]}>
-    <Svg width={20.5} height={35} viewBox="0 0 20.5 35">
-      <Line x1={20.5} y1={0} x2={0} y2={20.5} stroke={C.divider} strokeWidth={0.3} />
-      <Line x1={20.5} y1={14.5} x2={0} y2={35} stroke={C.divider} strokeWidth={0.3} />
-    </Svg>
-  </View>
+  <Svg width={22} height={22} viewBox="0 0 22 22" fill="none" style={{ position: 'absolute', left: x, top: y }}>
+    <Path
+      d="M11 1L11 21M1 11H21"
+      stroke="#4D4D4D"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
 );
 
-/** Grid lines behind breakdown card — Figma 684:13133 (369x234.5) */
 const GridLines = () => (
-  <View style={styles.gridContainer} pointerEvents="none">
-    <Svg width={369} height={235} viewBox="0 0 369 235" fill="none">
-      <Line x1={36.8} y1={0} x2={36.8} y2={235} stroke={C.divider} strokeWidth={0.3} />
-      <Line x1={0} y1={36.8} x2={369} y2={36.8} stroke={C.divider} strokeWidth={0.3} />
-      <Line x1={339.5} y1={0} x2={339.5} y2={235} stroke={C.divider} strokeWidth={0.3} />
-      <Line x1={0} y1={197.8} x2={369} y2={197.8} stroke={C.divider} strokeWidth={0.3} />
-    </Svg>
+  <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', opacity: 0.1 }]} pointerEvents="none">
+    {[...Array(20)].map((_, i) => (
+      <View key={`h-${i}`} style={{ position: 'absolute', top: i * 20, left: 0, right: 0, height: 1, backgroundColor: '#FFFFFF' }} />
+    ))}
+    {[...Array(15)].map((_, i) => (
+      <View key={`v-${i}`} style={{ position: 'absolute', left: i * 20, top: 0, bottom: 0, width: 1, backgroundColor: '#FFFFFF' }} />
+    ))}
   </View>
 );
 
-// ==============================================
-// BREAKDOWN ROW
-// ==============================================
-
-const BreakdownRow = ({
-  label,
-  value,
-  isTotal = false,
-  isCashback = false,
-}: {
-  label: string;
-  value: string;
-  isTotal?: boolean;
-  isCashback?: boolean;
-}) => (
-  <View style={styles.breakdownRow}>
-    <View style={styles.breakdownLabelGroup}>
-      <HashIcon />
-      <RNText style={styles.breakdownLabel}>{label}</RNText>
-    </View>
-    <RNText
-      style={[
-        styles.breakdownValue,
-        isTotal && styles.breakdownValueTotal,
-        isCashback && styles.breakdownValueCashback,
-      ]}
-    >
-      {value}
-    </RNText>
-  </View>
-);
-
-// ==============================================
-// FORMATTING HELPER
-// ==============================================
-
-function fmt(n: number): string {
-  return n.toLocaleString('en-IN');
-}
-
-function ordinalSuffix(n: number): string {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
-}
-
-// ==============================================
-// SCREEN
-// ==============================================
+// ── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ConfirmPaymentScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { tenancy, upcomingPayment, cashback } = useDashboard();
+  const { tenancy, upcomingPayment, cashback, refreshDashboard } = useDashboard();
+  const { amount, selectedMethod } = usePaymentStore();
 
-  const storedAmount = usePaymentStore((state) => state.amount);
-  const verificationSkipped = usePaymentStore((state) => state.verificationSkipped);
-  const selectedMethod = usePaymentStore((state) => state.selectedMethod);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [countdown, setCountdown] = useState('');
 
-  const isCreditCard = selectedMethod?.type === 'card' && selectedMethod?.cardType === 'credit';
+  // --- Countdown Logic ---
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const h = 23 - now.getHours();
+      const m = 59 - now.getMinutes();
+      const s = 59 - now.getSeconds();
+      setCountdown(
+        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
+      );
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Concurrent payment guard
-  const isPaymentInFlight = useRef(false);
+  // --- Payment Data ---
+  const isVerified = tenancy?.verification_status?.status === 'approved';
+  // Figma 684:12294 shows 10.9% late fee if past cut-off. We simulate standard here.
+  const isLatePayment = false;
 
-  // --- Verification state ---
-  const isSetupComplete =
-    (tenancy?.verification_status?.bank_verified &&
-      tenancy?.verification_status?.utility_verified &&
-      tenancy?.verification_status?.landlord_approved) ?? false;
-
-  const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
-  const isLatePayment = daysUntilDue < 0;
-  const isPastCutoff = upcomingPayment?.past_cutoff ?? false;
-  const cutoffDay = upcomingPayment?.cutoff_day ?? 7;
-
-  // The user is "verified" if setup is complete, verification was NOT skipped,
-  // payment is not late, AND payment is before the cashback cutoff date
-  const isVerified = isSetupComplete && !verificationSkipped && !isLatePayment && !isPastCutoff;
-
-  // --- Breakdown values ---
   const baseRent = tenancy?.monthly_rent || 30000;
   const maintenance = 2500;
   const totalRent = baseRent + maintenance;
@@ -173,118 +99,106 @@ export default function ConfirmPaymentScreen() {
   const cashbackPct = cashback?.discount_rate ?? 0.01;
   const cashbackAmount = Math.round(totalRent * cashbackPct);
 
-  // Convenience fee per Figma 684:13115
   const hasConvenienceFee = true;
-  const feeAmount = 100;
+  const feeAmount = selectedMethod?.type === 'upi' ? 0 : 100;
 
-  // Cashback deduction only if verified
   const appliedCashback = isVerified ? cashbackAmount : 0;
   const payableAmount = totalRent + feeAmount - appliedCashback;
 
-  // Annual savings for verified banner
-  const annualSavings = cashbackAmount * 12;
+  const isCreditCard = selectedMethod?.type === 'card' && selectedMethod?.cardType === 'credit';
 
-  // --- Countdown timer (for unverified state) ---
-  const [countdown, setCountdown] = useState('');
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const date = new Date();
+  const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+  const rentMonthText = upcomingPayment?.rent_month 
+    ? upcomingPayment.rent_month.toUpperCase() 
+    : `${monthNames[date.getMonth()]} ${date.getFullYear()} RENT`;
 
-  useEffect(() => {
-    // Timer for both verified and unverified (shown in footer); skip for late payments
-    if (isLatePayment) return;
-
-    const updateCountdown = () => {
-      const hoursLeft = daysUntilDue * 24;
-      const now = new Date();
-      const h = Math.max(0, hoursLeft - now.getHours());
-      const m = 59 - now.getMinutes();
-      const s = 59 - now.getSeconds();
-      setCountdown(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
-      );
-    };
-    updateCountdown();
-    timerRef.current = setInterval(updateCountdown, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [daysUntilDue, isVerified, isLatePayment]);
-
-  // --- Dynamic texts based on verification state ---
-  let topTitle = `Rent due in ${daysUntilDue} days`;
-  let topSubtitle = '';
-  let topPill = '';
-  let footerText: React.ReactNode = null;
+  // --- Dynamic Strings ---
+  const topTitle = rentMonthText;
+  let topSubtitle = `Due ${upcomingPayment?.due_date ? new Date(upcomingPayment.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '5th of month'}`;
+  let topPill = `Earn ₹ ${fmt(cashbackAmount)} Cashback`;
 
   if (isLatePayment) {
-    topTitle = `Rent overdue by ${Math.abs(daysUntilDue)} days`;
-    topSubtitle = 'No cashback on this payment';
-    topPill = 'Pay on time next month to earn 1% cashback';
-    footerText = 'Pay before the due date next month to earn 1% cashback';
-  } else if (isPastCutoff && isSetupComplete && !verificationSkipped) {
-    topTitle = `Rent due in ${daysUntilDue} days`;
-    topSubtitle = 'Cashback cutoff date has passed';
-    topPill = `Pay by the ${cutoffDay}${ordinalSuffix(cutoffDay)} next month to earn 1% cashback`;
-    footerText = `Cashback is available only for payments made by the ${cutoffDay}${ordinalSuffix(cutoffDay)} of the month`;
-  } else if (isVerified) {
-    // Verified state: cashback applied and deducted
-    topSubtitle = 'You\u2019ll earn 1% cashback on this rent payment';
-    topPill = `Get \u20B9${fmt(cashbackAmount)} cashback after payment`;
-    footerText = (
-      <RNText style={styles.footerText}>
-        {'Pay in '}
-        <RNText style={styles.footerCountdown}>{countdown}</RNText>
-        {` to be eligible for \u20B9${fmt(cashbackAmount)} cashback on this payment`}
-      </RNText>
-    );
+    topSubtitle = 'Late Payment';
+    topPill = '0% Cashback Earned';
+  } else if (!isVerified) {
+    topSubtitle = `Ends in ${countdown}`;
+    topPill = `Potential ₹ ${fmt(cashbackAmount)} Cashback`;
   } else {
-    // Unverified state: cashback shown but locked
-    topSubtitle = 'You will earn 1% cashback on this rent payment';
-    topPill = `\u20B9${fmt(cashbackAmount)} available to unlock`;
-    footerText = (
-      <RNText style={styles.footerText}>
-        {'Finish verification in '}
-        <RNText style={styles.footerCountdown}>{countdown}</RNText>
-        {' to claim cashback on this payment'}
-      </RNText>
-    );
+    topSubtitle = `Ends in ${countdown}`;
   }
 
   // --- Handlers ---
-  const handleBack = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+  const handlePayNow = async () => {
+    if (!selectedMethod || !tenancy) return;
+    setIsProcessing(true);
 
-  const handlePayNow = useCallback(() => {
-    if (isPaymentInFlight.current) return;
-    isPaymentInFlight.current = true;
+    try {
+      const response = await paymentsApi.initiatePayment({
+        amount: payableAmount,
+        methodId: selectedMethod.id,
+        tenancyId: tenancy.id,
+      });
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    router.push('/(payment)/status');
+      if (response.data) {
+        usePaymentStore.getState().setTransactionId(response.data.transaction_id);
+        
+        const isUpiApp = selectedMethod.type === 'upi' && selectedMethod.upiType === 'app';
+        if (isUpiApp && response.data.upi_intent_url) {
+          // In a real app, open Intent URL.
+          // Linking.openURL(response.data.upi_intent_url);
+        }
+        
+        router.replace('/(payment)/status');
+      } else {
+        throw new Error(response.error || 'Failed to initiate payment');
+      }
+    } catch (err: any) {
+      usePaymentStore.getState().setError({
+        code: 'INIT_FAILED',
+        message: err.message,
+      });
+      router.replace('/(payment)/status');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-    // Reset guard after navigation completes (allow re-entry if user comes back)
-    setTimeout(() => {
-      isPaymentInFlight.current = false;
-    }, 1000);
-  }, [router]);
+  const BreakdownRow = ({
+    label,
+    value,
+    isTotal = false,
+    isCashback = false,
+  }: {
+    label: string;
+    value: string;
+    isTotal?: boolean;
+    isCashback?: boolean;
+  }) => (
+    <View style={styles.breakdownRow}>
+      <View style={styles.breakdownLabelGroup}>
+        <HashIcon />
+        <RNText style={styles.breakdownLabel}>{label}</RNText>
+      </View>
+      <RNText
+        style={[
+          styles.breakdownValue,
+          isTotal && { fontFamily: 'PlusJakartaSans-Bold', fontSize: 16, color: '#FFFFFF' },
+          isCashback && { color: '#70BF73' },
+        ]}
+      >
+        {value}
+      </RNText>
+    </View>
+  );
 
   return (
-    <Screen testID="confirm-screen" style={styles.screen} padded={false}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ===== Back Button ===== */}
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          testID="confirm-back-button"
-        >
+    <Screen testID="confirm-payment-screen" style={styles.screen} padded={false}>
+      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} experimentalBlurMethod="dimezisBlurView" />
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <BackArrow />
         </TouchableOpacity>
 
@@ -324,37 +238,37 @@ export default function ConfirmPaymentScreen() {
             <GridLines />
             {/* Section 1: Base rent + Maintenance */}
             <View style={styles.breakdownSection}>
-              <BreakdownRow label="Base rent" value={`\u20B9 ${fmt(baseRent)}`} />
+              <BreakdownRow label="Base rent" value={`₹ ${fmt(baseRent)}`} />
               <View style={styles.divider} />
-              <BreakdownRow label="Maintenance" value={`\u20B9${fmt(maintenance)}`} />
+              <BreakdownRow label="Maintenance" value={`₹${fmt(maintenance)}`} />
             </View>
 
             {/* Section 2: Total + Cashback + Payable */}
             <View style={styles.breakdownSection}>
               <View style={styles.divider} />
-              <BreakdownRow label="Total Rent" value={`\u20B9  ${fmt(totalRent)}`} />
+              <BreakdownRow label="Total Rent" value={`₹  ${fmt(totalRent)}`} />
 
               {hasConvenienceFee && (
-                <BreakdownRow label="Convenience Fee" value={`\u20B9${fmt(feeAmount)}`} />
+                <BreakdownRow label="Convenience Fee" value={`₹${fmt(feeAmount)}`} />
               )}
 
               {isVerified ? (
                 <BreakdownRow
                   label="Cashback"
-                  value={`- \u20B9  ${fmt(cashbackAmount)}`}
+                  value={`- ₹  ${fmt(cashbackAmount)}`}
                   isCashback
                 />
               ) : (
                 <BreakdownRow
                   label="Cashback"
-                  value={`\u20B9${fmt(cashbackAmount)}`}
+                  value={`₹${fmt(cashbackAmount)}`}
                 />
               )}
 
               <View style={styles.divider} />
               <BreakdownRow
                 label="Payable Amount"
-                value={`\u20B9  ${fmt(payableAmount)}`}
+                value={`₹  ${fmt(payableAmount)}`}
                 isTotal
               />
 
@@ -368,262 +282,222 @@ export default function ConfirmPaymentScreen() {
             </View>
 
             {/* Perforations at y:256 */}
-            <View style={styles.leftPerforation} />
-            <View style={styles.rightPerforation} />
+            <View style={styles.perforations}>
+              {[...Array(14)].map((_, i) => (
+                <View key={i} style={styles.perforationHole} />
+              ))}
+            </View>
+
+            {/* Side notches at y:256 */}
+            <View style={[styles.sideNotch, styles.sideNotchLeft]} />
+            <View style={[styles.sideNotch, styles.sideNotchRight]} />
+            </View>
           </View>
-          </View>
-        </View>
-
-        {/* ===== Spacer ===== */}
-        <View style={styles.spacer} />
-
-        {/* ===== CTA Section ===== */}
-        <View style={styles.ctaWrapper}>
-          <PrimaryButton
-            title={`Pay \u20B9${fmt(payableAmount)} now`}
-            onPress={handlePayNow}
-            showDivider
-            testID="pay-now-button"
-          />
-
-          {/* Footer text */}
-          {typeof footerText === 'string' ? (
-            <RNText style={styles.footerText}>{footerText}</RNText>
-          ) : (
-            footerText
-          )}
         </View>
       </ScrollView>
+
+      {/* ===== Floating Bottom Bar ===== */}
+      <View style={styles.bottomBar}>
+        <PrimaryButton
+          title="Pay now →"
+          onPress={handlePayNow}
+          loading={isProcessing}
+        />
+      </View>
     </Screen>
   );
 }
 
-// ==============================================
-// STYLES
-// ==============================================
+// ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   screen: {
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  scrollView: {
-    flex: 1,
-  },
   scrollContent: {
-    flexGrow: 1,
+    padding: 24,
+    paddingTop: 40,
+    paddingBottom: 100, // Make room for bottom bar
   },
-
-  // Back button — compact like Profile screen
-  backButton: {
-    width: s(40),
-    height: sv(40),
+  header: {
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: sv(12),
-    marginLeft: s(40),
+    marginBottom: 32,
+    position: 'relative',
   },
-
-  // Card container
+  headerTitle: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 16,
+    color: '#EEEEEE',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    padding: 8,
+  },
   cardContainer: {
-    paddingHorizontal: s(40),
     alignItems: 'center',
-    gap: sv(24),
   },
-
-  // Top Card
+  // -- Top Card --
   topCard: {
-    backgroundColor: C.card,
-    borderRadius: 12,
-    width: '100%',
-    paddingHorizontal: s(16),
-    paddingVertical: sv(24),
-    gap: sv(32),
-    alignItems: 'center',
+    width: 312,
+    height: 120,
+    backgroundColor: '#303030',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     overflow: 'hidden',
     position: 'relative',
-    zIndex: 2,
+    zIndex: 1,
   },
   topCardContent: {
-    alignItems: 'center',
-    gap: sv(8),
+    padding: 16,
+    flex: 1,
   },
   topCardTitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(17),
-    letterSpacing: -0.24,
-    color: C.label,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 20,
+    color: '#DDDDDD',
+    marginBottom: 4,
   },
   topCardSubtitle: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    letterSpacing: -0.56,
-    color: C.value,
-    textAlign: 'center',
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    color: '#A9A9A9',
   },
   cashbackNote: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(11),
-    lineHeight: sf(16),
-    color: C.muted,
-    textAlign: 'center',
-    paddingHorizontal: s(8),
+    fontSize: 10,
+    color: '#A9A9A9',
+    marginTop: 8,
   },
   cashbackPill: {
-    backgroundColor: C.cardDivider,
-    borderRadius: 200,
-    paddingHorizontal: s(12),
-    paddingVertical: sv(8),
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: '#70BF73',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   cashbackPillText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: C.accent,
-    textAlign: 'center',
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 10,
+    color: '#1A1A1A',
   },
   topCardDivider: {
-    height: 5,
-    width: s(268),
-    backgroundColor: C.cardDivider,
-  },
-  crosshatch: {
     position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 12,
+    backgroundColor: '#202020', // Matches bottom card
   },
-
-  // Grid + breakdown wrapper
+  // -- Bottom Card (Receipt) --
   breakdownWrapper: {
-    position: 'relative',
+    width: 270, // Matched to Figma 799-3380 
     alignItems: 'center',
+    position: 'relative',
+    marginTop: -8, // Pull up under the top card
+    zIndex: 2,
   },
-  gridContainer: {
-    position: 'absolute',
-    top: 0,
-    left: (s(270) - s(369)) / 2,
-    width: s(369),
-    height: sv(235),
-    zIndex: 0,
-  },
-
-  // Bottom Card / Receipt — Figma 684:13148 (270x423)
   bottomCard: {
-    backgroundColor: C.card,
-    width: s(270),
-    paddingTop: sv(56),
-    paddingBottom: sv(24),
-    gap: sv(18),
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 9 },
-    shadowOpacity: 0.1,
-    shadowRadius: 19,
-    elevation: 10,
+    width: 270,
+    backgroundColor: '#202020',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
     position: 'relative',
-    alignItems: 'center',
   },
-
   breakdownSection: {
-    width: '100%',
-    paddingHorizontal: s(24),
-    gap: sv(16),
+    gap: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#4D4D4D',
+    marginVertical: 4,
   },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 4,
   },
   breakdownLabelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   breakdownLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: C.label,
+    fontSize: 12,
+    color: '#DDDDDD',
   },
   breakdownValue: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: C.value,
-  },
-  breakdownValueTotal: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    color: C.valueTotal,
-  },
-  breakdownValueCashback: {
-    color: C.cashback,
-  },
-
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: C.divider,
-    width: '100%',
+    fontSize: 12,
+    color: '#EEEEEE',
   },
   bankFeesBanner: {
-    backgroundColor: '#1A1A1A',  // Figma 782:6326: #1A1A1A (black[600])
+    backgroundColor: '#1A1A1A',
     borderRadius: 12,
-    paddingHorizontal: s(12),
-    paddingVertical: sv(4),
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    alignSelf: 'center',
   },
   bankFeesText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: '#DDDDDD',  // Figma 782:6327: #DDD (neutral[200])
+    fontSize: 12,
+    color: '#DDDDDD',
     textAlign: 'center',
+    lineHeight: 20,
   },
-
-  leftPerforation: {
+  // -- Details (Perforations) --
+  perforations: {
     position: 'absolute',
-    left: s(-6),
-    top: sv(256),
-    width: s(14),
-    height: s(14),
-    borderRadius: s(7),
-    backgroundColor: C.bg,
+    top: 256,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    paddingHorizontal: 12,
+    zIndex: 3,
   },
-  rightPerforation: {
+  perforationHole: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#131313', // Match screen background
+  },
+  sideNotch: {
     position: 'absolute',
-    right: s(-7),
-    top: sv(256),
-    width: s(14),
-    height: s(14),
-    borderRadius: s(7),
-    backgroundColor: C.bg,
+    top: 256,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#131313', // Match screen background
+    zIndex: 3,
   },
-
-  spacer: {
-    flex: 1,
-    minHeight: sv(40),
+  sideNotchLeft: {
+    left: -7,
   },
-
-  ctaWrapper: {
-    paddingHorizontal: s(40),
-    gap: sv(16),
-    alignItems: 'center',
+  sideNotchRight: {
+    right: -7,
   },
-  footerText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: C.muted,
-    textAlign: 'center',
-  },
-  footerCountdown: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    color: C.timerHighlight,
-    textDecorationLine: 'underline',
-  },
-  footerHighlight: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    color: C.white,
+  // -- Bottom Bar --
+  bottomBar: {
+    padding: 24,
+    paddingBottom: 48,
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });

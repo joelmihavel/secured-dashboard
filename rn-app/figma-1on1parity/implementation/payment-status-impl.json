@@ -1,0 +1,229 @@
+{
+  "routeKey": "payment-status",
+  "filePath": "app/(payment)/status.tsx",
+  "components": [
+    "DashedDivider",
+    "OfflineBanner",
+    "PaymentReceiptCard",
+    "PrimaryButton",
+    "Screen",
+    "Text"
+  ],
+  "colorLiterals": [
+    {
+      "value": "string",
+      "source": "inline",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.pendingStamp",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.successStamp",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.failedStamp",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.refundedStamp",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.background",
+      "source": "theme",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "FIGMA_COLORS.infoText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.labelText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.valueText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.payableValue",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "PAYMENT_COLORS.cashbackDeduct",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "FIGMA_COLORS.tryAgainText",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "PAYMENT_COLORS.white",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "#EF9194",
+      "source": "stylesheet",
+      "property": "standalone"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "stylesheet",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold",
+      "fontSize": 14
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 14
+    },
+    {
+      "fontFamily": "PlusJakartaSans-SemiBold",
+      "fontSize": 20
+    }
+  ],
+  "scalingUsage": [
+    {
+      "function": "s",
+      "rawValue": 222,
+      "context": "unknown"
+    },
+    {
+      "function": "s",
+      "rawValue": 40,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "gap"
+    },
+    {
+      "function": "s",
+      "rawValue": 10,
+      "context": "marginLeft"
+    },
+    {
+      "function": "s",
+      "rawValue": 16,
+      "context": "gap"
+    },
+    {
+      "function": "s",
+      "rawValue": 8,
+      "context": "paddingHorizontal"
+    },
+    {
+      "function": "sf",
+      "rawValue": 12,
+      "context": "fontSize"
+    },
+    {
+      "function": "sf",
+      "rawValue": 20,
+      "context": "lineHeight"
+    },
+    {
+      "function": "sv",
+      "rawValue": 16,
+      "context": "gap"
+    },
+    {
+      "function": "sv",
+      "rawValue": 20,
+      "context": "height"
+    },
+    {
+      "function": "s",
+      "rawValue": 4,
+      "context": "gap"
+    },
+    {
+      "function": "s",
+      "rawValue": 16,
+      "context": "width"
+    },
+    {
+      "function": "s",
+      "rawValue": 16,
+      "context": "height"
+    },
+    {
+      "function": "sf",
+      "rawValue": 14,
+      "context": "fontSize"
+    },
+    {
+      "function": "sv",
+      "rawValue": 8,
+      "context": "marginTop"
+    },
+    {
+      "function": "s",
+      "rawValue": 313,
+      "context": "width"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "paddingBottom"
+    },
+    {
+      "function": "sv",
+      "rawValue": 40,
+      "context": "marginTop"
+    },
+    {
+      "function": "s",
+      "rawValue": 32,
+      "context": "width"
+    },
+    {
+      "function": "sv",
+      "rawValue": 32,
+      "context": "height"
+    },
+    {
+      "function": "sf",
+      "rawValue": 20,
+      "context": "fontSize"
+    },
+    {
+      "function": "sf",
+      "rawValue": 28,
+      "context": "lineHeight"
+    },
+    {
+      "function": "sv",
+      "rawValue": 24,
+      "context": "marginBottom"
+    }
+  ],
+  "scrollContainer": "View",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

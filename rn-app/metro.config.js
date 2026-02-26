@@ -9,6 +9,16 @@ const config = getDefaultConfig(__dirname);
 // so they're never actually called at runtime.
 const emptyModule = path.resolve(__dirname, 'shims/empty.js');
 
+// In production, exclude dev-only and mock directories from the bundle
+if (process.env.NODE_ENV === 'production') {
+  config.resolver.blockList = [
+    ...(config.resolver.blockList ? [config.resolver.blockList] : []),
+    /src\/__dev__\/.*/,
+    /src\/__mocks__\/.*/,
+    /src\/services\/api\/__mocks__\/.*/,
+  ];
+}
+
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
   stream: require.resolve('readable-stream'),

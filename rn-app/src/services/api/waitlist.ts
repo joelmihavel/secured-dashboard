@@ -386,7 +386,7 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
  * Calls the get-waitlist-status edge function (GET) and maps the V1-compat
  * response to the WaitlistStatusData shape expected by the RN UI.
  */
-export async function getWaitlistStatus(): Promise<{
+async function getWaitlistStatusReal(): Promise<{
   data: WaitlistStatusData | null;
   error: WaitlistError | null;
 }> {
@@ -415,6 +415,24 @@ export async function getWaitlistStatus(): Promise<{
   const mapped = mapRawToWaitlistStatusData(data);
   return { data: mapped, error: null };
 }
+
+async function getWaitlistStatusMock(): Promise<{
+  data: WaitlistStatusData | null;
+  error: WaitlistError | null;
+}> {
+  const { createMockWaitlistStatus } = await import('@/src/__mocks__/testDataFactory');
+  return { data: createMockWaitlistStatus('pending'), error: null };
+}
+
+// withMock() enforces same return type + __DEV__ compile-time gate
+const _getWaitlistStatus = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('waitlist', getWaitlistStatusReal, getWaitlistStatusMock, { delayMs: 200 });
+    })()
+  : getWaitlistStatusReal;
+
+export const getWaitlistStatus = _getWaitlistStatus;
 
 /**
  * Apply a referral code to get priority access

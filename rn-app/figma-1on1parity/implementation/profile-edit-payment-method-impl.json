@@ -1,0 +1,175 @@
+{
+  "routeKey": "profile-edit-payment-method",
+  "filePath": "app/(profile)/edit-payment-method.tsx",
+  "components": [
+    "DottedGridPattern",
+    "PrimaryButton",
+    "RadioButton",
+    "Screen",
+    "SecureCardInput",
+    "Text",
+    "TextInput"
+  ],
+  "colorLiterals": [
+    {
+      "value": "COLORS.headingGray",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.headingAccent",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.cardBg",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "COLORS.divider",
+      "source": "stylesheet",
+      "property": "borderBottomColor"
+    },
+    {
+      "value": "COLORS.labelText",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.valueText",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.popularBankBg",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "transparent",
+      "source": "stylesheet",
+      "property": "borderColor"
+    },
+    {
+      "value": "COLORS.selectedBorder",
+      "source": "stylesheet",
+      "property": "borderColor"
+    },
+    {
+      "value": "colors.neutral[300]",
+      "source": "theme",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.selectedBorder",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.divider",
+      "source": "stylesheet",
+      "property": "backgroundColor"
+    },
+    {
+      "value": "COLORS.footerText",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "COLORS.errorRed",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "#4CAF50",
+      "source": "stylesheet",
+      "property": "color"
+    },
+    {
+      "value": "#131313",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#A9A9A9",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FF9A6D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#878787",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#CBCBCB",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4D4D4D",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#202020",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#FF4444",
+      "source": "inline",
+      "property": "standalone"
+    },
+    {
+      "value": "#4CAF50",
+      "source": "stylesheet",
+      "property": "standalone"
+    }
+  ],
+  "typography": [
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 48,
+      "lineHeight": 64,
+      "letterSpacing": -2
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 12,
+      "lineHeight": 20
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 14,
+      "lineHeight": 20,
+      "letterSpacing": 0.5
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Medium",
+      "fontSize": 13,
+      "lineHeight": 20
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Regular",
+      "fontSize": 14,
+      "lineHeight": 20
+    },
+    {
+      "fontFamily": "PlusJakartaSans-Medium",
+      "fontSize": 14,
+      "lineHeight": 20
+    }
+  ],
+  "scalingUsage": [],
+  "scrollContainer": "KeyboardAvoidingView",
+  "safeAreaStrategy": "Screen component",
+  "hasShadows": false,
+  "hasGradients": false,
+  "opacityValues": []
+}

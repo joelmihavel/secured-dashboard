@@ -117,6 +117,8 @@ interface BlueprintLayout {
   counterAxisAlignContent?: string;
   counterAxisSpacing?: number;
   itemReverseZIndex?: boolean;
+  primaryAxisSizingMode?: string;
+  counterAxisSizingMode?: string;
 }
 
 interface BlueprintTypographySpan {
@@ -280,6 +282,9 @@ interface BlueprintNode {
   rnComponent?: string;
   rnProps?: Record<string, unknown>;
   childIds?: string[];
+  isSafeAreaNode?: boolean;
+  explicitVariableModes?: Record<string, string>;
+  annotations?: Array<Record<string, unknown>>;
 }
 
 interface BlueprintAsset {
@@ -372,7 +377,7 @@ interface CrossCheckManifest {
     colorPalette: string[];
     spacingValues: number[];
     componentIds: string[];
-    interactionSummary: Array<{ sourceNode: string; trigger: string; destination?: string }>;
+    interactionSummary: Array<{ sourceNode: string; trigger: string; destination?: string; actionType?: string; transitionDuration?: number }>;
   };
 }
 
@@ -422,7 +427,13 @@ function parseInput(input: string): { nodeId: string; fileKey: string | null; fi
 const SKIP_NAME_PATTERN = /StatusBar|HW Cutout|Safe ?Area|Home Indicator/i;
 
 function resolveFontFamily(fontWeight: number): string {
-  switch (fontWeight) {
+  // Round non-standard weights to nearest standard weight
+  const rounded = fontWeight <= 350 ? 400
+    : fontWeight <= 450 ? 400
+    : fontWeight <= 550 ? 500
+    : fontWeight <= 650 ? 600
+    : 700;
+  switch (rounded) {
     case 400: return 'PlusJakartaSans-Regular';
     case 500: return 'PlusJakartaSans-Medium';
     case 600: return 'PlusJakartaSans-SemiBold';
@@ -715,9 +726,6 @@ async function downloadImage(imageUrl: string, destPath: string): Promise<void> 
 // ---------------------------------------------------------------------------
 
 function shouldSkipNode(node: Record<string, unknown>, config: FigmaConfig, rootBboxY: number): boolean {
-  if (node.visible === false) return true;
-  const name = (node.name as string) || '';
-  if (SKIP_NAME_PATTERN.test(name)) return true;
   const bbox = node.absoluteBoundingBox as { y: number } | undefined;
   if (bbox && (bbox.y - rootBboxY) > config.baseDesignHeight * 8) return true;
   return false;
@@ -744,6 +752,9 @@ function processFills(rawFills: unknown[]): BlueprintFill[] {
           result.imageFilters = { exposure: f.exposure || undefined, contrast: f.contrast || undefined, saturation: f.saturation || undefined, temperature: f.temperature || undefined, tint: f.tint || undefined, highlights: f.highlights || undefined, shadows: f.shadows || undefined };
         }
       }
+      if (fill.scalingFactor !== undefined) (result as any).imageScalingFactor = fill.scalingFactor;
+      if (fill.rotation !== undefined) (result as any).imageRotation = fill.rotation;
+      if (fill.gifRef) (result as any).gifRef = fill.gifRef;
     }
     if (typeof fill.type === 'string' && fill.type.startsWith('GRADIENT_')) {
       if (Array.isArray(fill.gradientStops)) {
@@ -754,6 +765,13 @@ function processFills(rawFills: unknown[]): BlueprintFill[] {
       }
       if (Array.isArray(fill.gradientHandlePositions)) result.gradientHandlePositions = fill.gradientHandlePositions;
       result.opacity = fill.opacity ?? 1;
+    }
+    if (fill.type === 'PATTERN') {
+      result.opacity = fill.opacity ?? 1;
+      if (fill.sourceNodeId) (result as any).sourceNodeId = fill.sourceNodeId;
+      if (fill.tileType) (result as any).tileType = fill.tileType;
+      if (fill.scalingFactor) (result as any).scalingFactor = fill.scalingFactor;
+      if (fill.spacing) (result as any).spacing = fill.spacing;
     }
     if (fill.boundVariables && Object.keys(fill.boundVariables).length > 0) result.boundVariables = fill.boundVariables;
     return result;
@@ -781,12 +799,28 @@ function processStrokes(rawStrokes: unknown[], node: Record<string, unknown>): B
 
 function processEffects(rawEffects: unknown[]): BlueprintEffect[] {
   if (!Array.isArray(rawEffects)) return [];
-  return rawEffects.filter((e: any) => e.visible !== false).map((e: any) => ({
-    type: e.type || 'UNKNOWN', visible: true,
-    color: e.color ? figmaColorToHexAlpha(e.color) : undefined,
-    offset: e.offset ? { x: e.offset.x, y: e.offset.y } : undefined,
-    blur: e.radius || undefined, spread: e.spread || undefined,
-  }));
+  return rawEffects.filter((e: any) => e.visible !== false).map((e: any) => {
+    const result: BlueprintEffect = {
+      type: e.type || 'UNKNOWN', visible: true,
+      color: e.color ? figmaColorToHexAlpha(e.color) : undefined,
+      offset: e.offset ? { x: e.offset.x, y: e.offset.y } : undefined,
+      blur: e.radius || undefined, spread: e.spread || undefined,
+    };
+    // New effect types (May 2025 API)
+    if (e.type === 'TEXTURE' || e.type === 'NOISE' || e.type === 'PROGRESSIVE_BLUR') {
+      if (e.noiseSize !== undefined) (result as any).noiseSize = e.noiseSize;
+      if (e.clipToShape !== undefined) (result as any).clipToShape = e.clipToShape;
+      if (e.direction !== undefined) (result as any).direction = e.direction;
+      if (e.fadeLength !== undefined) (result as any).fadeLength = e.fadeLength;
+      if (e.noiseType !== undefined) (result as any).noiseType = e.noiseType;
+      if (e.noiseOpacity !== undefined) (result as any).noiseOpacity = e.noiseOpacity;
+    }
+    // Bound variables on effects
+    if (e.boundVariables && Object.keys(e.boundVariables).length > 0) {
+      (result as any).boundVariables = e.boundVariables;
+    }
+    return result;
+  });
 }
 
 function processBorderRadius(node: Record<string, unknown>): number | { tl: number; tr: number; br: number; bl: number } {
@@ -804,7 +838,7 @@ function processLayout(node: Record<string, unknown>): BlueprintLayout | undefin
   const layoutMode = node.layoutMode as string | undefined;
   const direction: 'row' | 'column' | 'none' = layoutMode === 'HORIZONTAL' ? 'row' : layoutMode === 'VERTICAL' ? 'column' : 'none';
   const primaryMap: Record<string, string> = { MIN: 'flex-start', CENTER: 'center', MAX: 'flex-end', SPACE_BETWEEN: 'space-between' };
-  const counterMap: Record<string, string> = { MIN: 'flex-start', CENTER: 'center', MAX: 'flex-end' };
+  const counterMap: Record<string, string> = { MIN: 'flex-start', CENTER: 'center', MAX: 'flex-end', BASELINE: 'baseline' };
   const primary = node.primaryAxisAlignItems as string | undefined;
   const counter = node.counterAxisAlignItems as string | undefined;
   const result: BlueprintLayout = {
@@ -824,6 +858,10 @@ function processLayout(node: Record<string, unknown>): BlueprintLayout | undefin
     if (counterSpacing !== undefined && counterSpacing !== 0) result.counterAxisSpacing = counterSpacing;
   }
   if (node.itemReverseZIndex === true) result.itemReverseZIndex = true;
+  const primarySizing = node.primaryAxisSizingMode as string | undefined;
+  if (primarySizing) result.primaryAxisSizingMode = primarySizing;
+  const counterSizing = node.counterAxisSizingMode as string | undefined;
+  if (counterSizing) result.counterAxisSizingMode = counterSizing;
   return result;
 }
 
@@ -1099,7 +1137,7 @@ function traverseNodeTree(
 
   const bp: BlueprintNode = {
     id: nodeId, parentId, name: (node.name as string) || '', type: (node.type as string) || 'UNKNOWN',
-    depth, visible: true,
+    depth, visible: node.visible !== false,
     geometry: { x: relX, y: relY, width, height, rotation },
     opacity: (node.opacity as number) ?? 1,
     fills, strokes: processStrokes(node.strokes as unknown[] || [], node),
@@ -1185,7 +1223,7 @@ function traverseNodeTree(
   if (bbox) bp.absoluteBoundingBox = bbox;
 
   // Scroll behavior
-  if (node.scrollBehavior && node.scrollBehavior !== 'SCROLLS') bp.scrollBehavior = node.scrollBehavior as string;
+  if (node.scrollBehavior) bp.scrollBehavior = node.scrollBehavior as string;
 
   // Preserve aspect ratio
   if (node.preserveRatio === true) bp.preserveRatio = true;
@@ -1220,12 +1258,22 @@ function traverseNodeTree(
   const boundVariables = node.boundVariables as Record<string, unknown> | undefined;
   if (boundVariables && Object.keys(boundVariables).length > 0) bp.boundVariables = boundVariables;
 
+  // Explicit variable modes
+  const explicitVariableModes = node.explicitVariableModes as Record<string, string> | undefined;
+  if (explicitVariableModes && Object.keys(explicitVariableModes).length > 0) {
+    bp.explicitVariableModes = explicitVariableModes;
+  }
+
   // Style references
   const styles = node.styles as Record<string, string> | undefined;
   if (styles && Object.keys(styles).length > 0) bp.styleReferences = styles;
 
   // Dev status
   if (node.devStatus) bp.devStatus = node.devStatus as { type: string; description?: string };
+
+  // Annotations
+  const annotations = node.annotations as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(annotations) && annotations.length > 0) bp.annotations = annotations;
 
   // Layout grids
   const layoutGrids = node.layoutGrids as Array<Record<string, unknown>> | undefined;
@@ -1244,7 +1292,7 @@ function traverseNodeTree(
   if (node.showShadowBehindNode === true) bp.showShadowBehindNode = true;
 
   // Overflow direction
-  if (node.overflowDirection && node.overflowDirection !== 'NONE') bp.overflowDirection = node.overflowDirection as string;
+  if (node.overflowDirection) bp.overflowDirection = node.overflowDirection as string;
 
   // Strokes in layout
   if (node.strokesIncludedInLayout === true) bp.strokesIncludedInLayout = true;
@@ -1336,6 +1384,10 @@ function traverseNodeTree(
   if (childIds.length > 0) bp.childIds = childIds;
 
   allNodes.push(bp);
+
+  // Tag safe area nodes
+  const nodeName = (node.name as string) || '';
+  if (SKIP_NAME_PATTERN.test(nodeName)) bp.isSafeAreaNode = true;
 
   // Recurse children
   const currentBbox = bbox ? { x: bbox.x, y: bbox.y } : parentBbox;
@@ -1517,11 +1569,12 @@ function buildCrossCheckManifest(
 
   // Collect all spacing values
   const allSpacing = new Set<number>();
+  const roundToHalf = (v: number) => Math.round(v * 2) / 2;
   for (const node of allNodes) {
     if (node.layout) {
       const l = node.layout;
-      if (l.gap > 0) allSpacing.add(l.gap);
-      [l.padding.top, l.padding.right, l.padding.bottom, l.padding.left].forEach((v) => { if (v > 0) allSpacing.add(v); });
+      if (l.gap > 0) allSpacing.add(roundToHalf(l.gap));
+      [l.padding.top, l.padding.right, l.padding.bottom, l.padding.left].forEach((v) => { if (v > 0) allSpacing.add(roundToHalf(v)); });
     }
   }
 
@@ -1531,7 +1584,7 @@ function buildCrossCheckManifest(
   // Text contents for validation
   const textContents = textNodes.slice(0, 50).map((n) => ({
     nodeId: n.id, name: n.name,
-    content: n.typography!.content.slice(0, 100),
+    content: n.typography!.content.replace(/\u2028/g, '\n').slice(0, 100),
     fontSize: n.typography!.fontSize,
     fontWeight: n.typography!.fontWeight,
     color: n.typography!.color,
@@ -1542,6 +1595,8 @@ function buildCrossCheckManifest(
     (n.interactions || []).map((i) => ({
       sourceNode: n.name, trigger: i.trigger.type,
       destination: i.actions[0]?.destinationId || undefined,
+      actionType: i.actions[0]?.type || undefined,
+      transitionDuration: i.actions[0]?.transition?.duration || undefined,
     }))
   );
 
