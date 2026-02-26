@@ -110,14 +110,16 @@ exports[`FileUploadZone renders correctly - custom placeholder 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -256,14 +258,16 @@ exports[`FileUploadZone renders correctly - default state 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -402,14 +406,16 @@ exports[`FileUploadZone renders correctly - disabled state 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -550,14 +556,16 @@ exports[`FileUploadZone renders correctly - with custom style 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -696,14 +704,16 @@ exports[`FileUploadZone renders with empty placeholder 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {

@@ -31,6 +31,7 @@ import { DottedGridPattern, ConsentToggle } from '@/src/components';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, typography } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
@@ -47,26 +48,26 @@ const FIGMA_COLORS = {
   consentText: colors.neutral[500],    // #A9A9A9
 } as const;
 
-// Exact Figma dimensions
+// Exact Figma dimensions — scaled for all screen sizes
 const FIGMA_DIMENSIONS = {
-  contentWidth: 297,                   // Figma: main content width
-  containerPadding: 48,                // (393 - 297) / 2 = 48
-  logoWidth: 32,                       // Figma: vector_1 width
-  logoHeight: 38.4,                    // Figma: vector_1 height
-  headingWidth: 297,                   // Figma: letsGetToKnowYou width
-  headingHeight: 128,                  // Figma: letsGetToKnowYou height
-  labelWidth: 193,                     // Figma: label width
-  inputWidth: 193,                     // Figma: input width (phone with prefix)
-  inputFullWidth: 297,                 // Figma: input full width (name)
-  inputHeight: 64,                     // Figma: input height
-  inputBorderRadius: 12,               // Figma: input borderRadius
-  inputPadding: 16,                    // Figma: input paddingTop/Bottom
-  inputGap: 16,                        // Figma: input gap
-  buttonWidth: 297,                    // Figma: button width
-  buttonHeight: 56,                    // Figma: button height
-  buttonRadius: 12,                    // Figma: button borderRadius
-  consentWidth: 234.5,                 // Figma: consent text width
-} as const;
+  contentWidth: s(297),                // Figma: main content width
+  containerPadding: s(48),             // (393 - 297) / 2 = 48
+  logoWidth: s(32),                    // Figma: vector_1 width
+  logoHeight: sv(38.4),               // Figma: vector_1 height
+  headingWidth: s(297),                // Figma: letsGetToKnowYou width
+  headingHeight: sv(128),             // Figma: letsGetToKnowYou height
+  labelWidth: s(193),                  // Figma: label width
+  inputWidth: s(193),                  // Figma: input width (phone with prefix)
+  inputFullWidth: s(297),              // Figma: input full width (name)
+  inputHeight: sv(64),                // Figma: input height
+  inputBorderRadius: 12,               // Figma: input borderRadius (keep unscaled)
+  inputPadding: sv(16),               // Figma: input paddingTop/Bottom
+  inputGap: sv(16),                   // Figma: input gap
+  buttonWidth: s(297),                 // Figma: button width
+  buttonHeight: sv(56),               // Figma: button height
+  buttonRadius: 12,                    // Figma: button borderRadius (keep unscaled)
+  consentWidth: s(234.5),              // Figma: consent text width
+};
 
 // Exact Figma spacing gaps from enhanced-extraction.json
 const FIGMA_GAPS = {
@@ -84,12 +85,12 @@ const FIGMA_GAPS = {
 // Additional paddingTop needed = 101 - 53 = 48px
 const FIGMA_LAYOUT = {
   // SafeAreaView top is disabled, so we use the full 101px offset
-  contentTopOffset: 101,                // Figma: 101px total from top of screen
-} as const;
+  contentTopOffset: sv(101),            // Figma: 101px total from top of screen
+};
 
 // Extra padding at bottom of scroll content so that when we scroll-to-end on keyboard show,
 // the focused input (e.g. name) stays well above the keyboard. Reusable for any form screen.
-const KEYBOARD_AVOID_EXTRA_PADDING = 300;
+const KEYBOARD_AVOID_EXTRA_PADDING = sv(300);
 
 export default function SignUpScreen({ background }: { background?: boolean } = {}) {
   const router = useRouter();

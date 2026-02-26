@@ -17,17 +17,17 @@ import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard } from '@/src/hooks';
 import { colors } from '@/src/theme';
-// Scale utilities removed — this screen uses raw Figma values to fit in one viewport
+import { s, sf, sv } from '@/src/theme/scale';
 
-// Figma exact values from 684:4968 blueprint — raw pixel values, no scaling
+// Figma exact values from 684:4968 blueprint — scaled for device
 const FIGMA = {
   // Background
   backgroundColor: colors.black[700],
 
-  // Card (node 684:5039) — raw Figma values, no scaling
+  // Card (node 684:5039) — scaled
   card: {
-    width: 270,
-    height: 321,
+    width: s(270),
+    height: sv(321),
     backgroundColor: colors.black[500],
   },
 
@@ -35,11 +35,11 @@ const FIGMA = {
   gridLineColor: colors.black[400],
   gridStrokeWidth: 0.3,
 
-  // Perforations — raw values
+  // Perforations — scaled
   perforationCount: 14,
-  perforationSize: 14,
-  perforationStartX: 4,
-  perforationSpacing: 20,
+  perforationSize: s(14),
+  perforationStartX: s(4),
+  perforationSpacing: s(20),
 } as const;
 
 function DecorativeVector({ x, y }: { x: number; y: number }) {
@@ -73,10 +73,10 @@ function GridBackground() {
 const gridStyles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 462,
-    left: 12,
-    right: 12,
-    height: 235,
+    top: sv(462),
+    left: s(12),
+    right: s(12),
+    height: sv(235),
   },
 });
 
@@ -226,10 +226,10 @@ const styles = StyleSheet.create({
   },
   backgroundShape: {
     position: 'absolute',
-    left: -44,
-    top: -100,
-    width: 481,
-    height: 405,
+    left: s(-44),
+    top: sv(-100),
+    width: s(481),
+    height: sv(405),
     opacity: 0.8,
   },
   scrollView: {
@@ -237,16 +237,16 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 62, // Figma: left 62px — raw value, no scaling
+    paddingHorizontal: s(62), // Figma: left 62px — scaled
   },
   titleContainer: {
-    width: 269, // Figma 684:5074: width 269px
-    marginBottom: 40,
+    width: s(269), // Figma 684:5074: width 269px — scaled
+    marginBottom: sv(40),
   },
   titleText: {
     fontFamily: 'PlusJakartaSans-Medium', // Figma: weight 500
-    fontSize: 40, // Figma: Scale/40 — raw, not scaled
-    lineHeight: 56, // Figma: Line Height/Heading/h2
+    fontSize: sf(40), // Figma: Scale/40 — scaled
+    lineHeight: sf(56), // Figma: Line Height/Heading/h2
     letterSpacing: -1, // Figma: Paragraph Spacing/Heading/h2
   },
   titleGray: {
@@ -257,15 +257,15 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     alignItems: 'center',
-    marginBottom: 24,
-    marginLeft: -1, // Adjusting to visually match x=61 if container is 62
+    marginBottom: sv(24),
+    marginLeft: s(-1), // Adjusting to visually match x=61 if container is 62
   },
   card: {
     width: FIGMA.card.width,
     height: FIGMA.card.height,
     backgroundColor: FIGMA.card.backgroundColor,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 24 },
+    shadowOffset: { width: 0, height: sv(24) },
     shadowOpacity: 0.15,
     shadowRadius: 30,
     elevation: 10,
@@ -279,40 +279,40 @@ const styles = StyleSheet.create({
   },
   logoRight: {
     position: 'absolute',
-    left: 218,
-    top: 36,
+    left: s(218),
+    top: sv(36),
   },
   welcomeSection: {
     position: 'absolute',
-    left: 26,
-    top: 68,
-    width: 145,
-    gap: 16,
+    left: s(26),
+    top: sv(68),
+    width: s(145),
+    gap: sv(16),
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: s(32),
+    height: s(32),
+    borderRadius: s(16),
     backgroundColor: '#E91E63',
     justifyContent: 'center',
     alignItems: 'center',
   },
   nameContainer: {
-    gap: 8,
+    gap: sv(8),
   },
   cashbackSection: {
     position: 'absolute',
-    left: 26,
-    top: 216,
-    width: 233,
-    gap: 4,
+    left: s(26),
+    top: sv(216),
+    width: s(233),
+    gap: sv(4),
   },
   cashbackHeaderRow: {
-    height: 20,
+    height: sv(20),
     justifyContent: 'center',
   },
   cashbackRateSection: {
-    gap: 12,
+    gap: sv(12),
   },
   cashbackBadgeContainer: {
     flexDirection: 'row',
@@ -321,33 +321,33 @@ const styles = StyleSheet.create({
   cashbackBadge: {
     backgroundColor: colors.brand[500],
     borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginRight: 8,
-    marginLeft: -4,
+    paddingHorizontal: s(6),
+    paddingVertical: sv(2),
+    marginRight: s(8),
+    marginLeft: s(-4),
   },
   amountRow: {
     // No extra margin
   },
   amountText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 16, // Figma 684:5072
-    lineHeight: 23,
+    fontSize: sf(16), // Figma 684:5072
+    lineHeight: sf(23),
     color: colors.white,
   },
   amountSymbol: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 12, // Figma: rupee symbol at 12px
+    fontSize: sf(12), // Figma: rupee symbol at 12px
     color: colors.white,
   },
   amountUnit: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14, // Figma: "/month" at 14px
+    fontSize: sf(14), // Figma: "/month" at 14px
     color: colors.white,
   },
   cardSidePerforations: {
     position: 'absolute',
-    top: 256,
+    top: sv(256),
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -360,17 +360,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[700],
   },
   perforationLeft: {
-    marginLeft: -7,
+    marginLeft: s(-7),
   },
   perforationRight: {
-    marginRight: -7,
+    marginRight: s(-7),
   },
   buttonContainer: {
-    paddingHorizontal: 40, // Figma 684:5073: left 40px
-    paddingTop: 12,
+    paddingHorizontal: s(40), // Figma 684:5073: left 40px — scaled
+    paddingTop: sv(12),
     alignItems: 'center',
   },
   buttonWrapper: {
-    width: 297, // Figma 684:5073: width 297px
+    width: s(297), // Figma 684:5073: width 297px — scaled
   },
 });

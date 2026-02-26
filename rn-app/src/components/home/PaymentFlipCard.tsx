@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Text as SvgText, TextPath, Defs, Path } from 'react-native-svg';
 import { Text } from '@/src/components';
 import { colors } from '@/src/theme';
+import { s, sf, sv, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
 import { PaymentBadge } from './PaymentBadge';
 import type { BadgeVariant } from './PaymentBadge';
 
@@ -32,9 +33,9 @@ const STICKER_PAID = require('../../../assets/images/card-back/sticker-paid.png'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Exact dimensions from Figma (Node 3203-17686 & 3143-15921)
-const CARD_WIDTH = 300;
-const CARD_HEIGHT = 440;
+// Exact dimensions from Figma (Node 3203-17686 & 3143-15921) — breakpoint-scaled
+const CARD_WIDTH = isSmallDevice ? 270 : isLargeDevice ? 320 : 300;
+const CARD_HEIGHT = sv(440);
 
 export type PaymentStampStatus = 'paid' | 'pending' | 'missed' | 'late' | 'future';
 export type PaymentStatusType = 'paid' | 'late' | 'missed' | 'upcoming';
@@ -102,11 +103,14 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
     }
   };
 
+  // Pre-compute scaled drop distance outside worklet (sv uses JS-thread APIs)
+  const FURNITURE_DROP = sv(50);
+
   const furnitureStyle = useAnimatedStyle(() => {
     const p = furnitureAnim.value;
     const clampedP = Math.min(p, 1);
     // Drop from slightly above center to the center
-    const translateY = interpolate(clampedP, [0, 1], [-50, 0], Extrapolation.CLAMP);
+    const translateY = interpolate(clampedP, [0, 1], [-FURNITURE_DROP, 0], Extrapolation.CLAMP);
     const scale = interpolate(clampedP, [0, 0.5, 1], [0.5, 1.05, 1], Extrapolation.CLAMP);
     const opacity = interpolate(clampedP, [0, 0.3], [0, 1], Extrapolation.CLAMP);
 
@@ -185,19 +189,19 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
       <Image source={FRONT_PATTERN} style={[StyleSheet.absoluteFillObject, { opacity: 0.48 }]} contentFit="cover" />
 
       {/* 4 Corner Cross Marks (Outline Icon Library + Vectors) */}
-      <View style={[styles.cornerCross, { left: 4, top: 9 }]}>
+      <View style={[styles.cornerCross, { left: s(4), top: sv(9) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
-      <View style={[styles.cornerCross, { left: 282, top: 9 }]}>
+      <View style={[styles.cornerCross, { left: s(282), top: sv(9) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
-      <View style={[styles.cornerCross, { left: 4, top: 424 }]}>
+      <View style={[styles.cornerCross, { left: s(4), top: sv(424) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
-      <View style={[styles.cornerCross, { left: 282, top: 424 }]}>
+      <View style={[styles.cornerCross, { left: s(282), top: sv(424) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
@@ -277,19 +281,19 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
       <View style={styles.textureOverlay} />
 
       {/* 4 Corner Cross Marks */}
-      <View style={[styles.cornerCross, { left: 4, top: 9 }]}>
+      <View style={[styles.cornerCross, { left: s(4), top: sv(9) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
-      <View style={[styles.cornerCross, { left: 282, top: 9 }]}>
+      <View style={[styles.cornerCross, { left: s(282), top: sv(9) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
-      <View style={[styles.cornerCross, { left: 4, top: 424 }]}>
+      <View style={[styles.cornerCross, { left: s(4), top: sv(424) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
-      <View style={[styles.cornerCross, { left: 282, top: 424 }]}>
+      <View style={[styles.cornerCross, { left: s(282), top: sv(424) }]}>
         <View style={styles.crossV} />
         <View style={styles.crossH} />
       </View>
@@ -369,7 +373,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   bgLeft: {
-    width: 94, // Figma 694:6562 — left strip #202020
+    width: s(94), // Figma 694:6562 — left strip #202020
     height: '100%',
     backgroundColor: colors.black[500], // #202020
   },
@@ -384,55 +388,55 @@ const styles = StyleSheet.create({
   },
   outlineBox: {
     position: 'absolute',
-    top: 15,
-    left: 11,
-    width: 278,
-    height: 415,
+    top: sv(15),
+    left: s(11),
+    width: s(278),
+    height: sv(415),
     borderRadius: 12,
     overflow: 'hidden',
   },
   cornerCross: {
     position: 'absolute',
-    width: 12,
-    height: 12,
+    width: s(12),
+    height: sv(12),
   },
   crossV: {
     position: 'absolute',
-    left: 5.5,
-    top: 2.5,
-    width: 1,
-    height: 7,
+    left: s(5.5),
+    top: sv(2.5),
+    width: 1, // keep 1px hairline
+    height: sv(7),
     backgroundColor: '#FF9A6D',
     borderRadius: 1,
   },
   crossH: {
     position: 'absolute',
-    left: 2.5,
-    top: 5.5,
-    width: 7,
-    height: 1,
+    left: s(2.5),
+    top: sv(5.5),
+    width: s(7),
+    height: 1, // keep 1px hairline
     backgroundColor: '#FF9A6D',
     borderRadius: 1,
   },
   contentPadding: {
     flex: 1,
-    paddingLeft: 28,
-    paddingRight: 28,
-    paddingTop: 32,
-    paddingBottom: 32,
+    paddingLeft: s(28),
+    paddingRight: s(28),
+    paddingTop: sv(32),
+    paddingBottom: sv(32),
   },
   topSection: {
     position: 'absolute',
-    left: 28,
-    top: 32,
+    left: s(28),
+    top: sv(32),
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: 16,
+    gap: sv(16),
   },
   insiderText: {
     color: '#BABABA',
-    fontSize: 12, // Figma: Font Size/Body/sm = 12px
-    lineHeight: 20, // Figma: Line Height/Body/sm = 20px
+    fontSize: sf(12), // Figma: Font Size/Body/sm = 12px
+    lineHeight: sf(20), // Figma: Line Height/Body/sm = 20px
     fontFamily: 'PlusJakartaSans-Medium',
     zIndex: 10, // Ensure it sits above anything else on the back card
   },
@@ -440,56 +444,56 @@ const styles = StyleSheet.create({
     color: '#FF9A6D',
   },
   badgeContainer: {
-    width: 94,
-    height: 94,
+    width: s(94),
+    height: s(94),
   },
   middleSection: {
     position: 'absolute',
-    left: 28,
-    top: 250,
+    left: s(28),
+    top: sv(250),
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: 4,
+    gap: sv(4),
   },
   monthText: {
     color: '#BABABA',
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: sf(16),
+    lineHeight: sf(24),
     fontFamily: 'PlusJakartaSans-Regular',
   },
   viewReceiptText: {
     color: '#FF9A6D',
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: sf(16),
+    lineHeight: sf(24),
     fontFamily: 'PlusJakartaSans-Regular',
     textDecorationLine: 'underline', // Figma 694:6573
   },
   upcomingPaymentText: {
     color: '#BABABA',
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: sf(16),
+    lineHeight: sf(24),
     fontFamily: 'PlusJakartaSans-Regular',
   },
   cashbackBox: {
     position: 'absolute',
-    left: 28,
-    top: 325,
-    width: 245,
-    borderTopWidth: 0.5,
-    borderBottomWidth: 0.5,
+    left: s(28),
+    top: sv(325),
+    width: s(245),
+    borderTopWidth: 0.5, // keep hairline
+    borderBottomWidth: 0.5, // keep hairline
     borderColor: '#4D4D4D',
-    padding: 16, // Figma 694:6582: p-16 all sides
+    padding: s(16), // Figma 694:6582: p-16 all sides
   },
   cashbackRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: 213,
+    width: s(213),
   },
   cashbackLabel: {
     color: '#BABABA',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     fontFamily: 'PlusJakartaSans-Regular',
   },
   cashbackAmountContainer: {
@@ -498,22 +502,22 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     color: '#878787', // Figma 694:6585
-    fontSize: 14, // Figma: 14px
-    lineHeight: 20,
+    fontSize: sf(14), // Figma: 14px
+    lineHeight: sf(20),
     fontFamily: 'PlusJakartaSans-Regular',
-    marginRight: 4,
+    marginRight: s(4),
   },
   cashbackAmount: {
     color: '#FF9A6D',
-    fontSize: 32, // Figma: 32px
-    lineHeight: 48, // Figma: 48px
+    fontSize: sf(32), // Figma: 32px
+    lineHeight: sf(48), // Figma: 48px
     letterSpacing: -1, // Figma: tracking -1px
     fontFamily: 'PlusJakartaSans-Regular',
   },
   cashbackDecimals: {
     color: '#878787', // Figma 694:6585
-    fontSize: 14, // Figma: 14px
-    lineHeight: 20,
+    fontSize: sf(14), // Figma: 14px
+    lineHeight: sf(20),
     fontFamily: 'PlusJakartaSans-Regular',
   },
   addPaymentContainer: {
@@ -523,13 +527,13 @@ const styles = StyleSheet.create({
   },
   addPaymentText: {
     color: '#FF9A6D',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     fontFamily: 'PlusJakartaSans-Regular',
     textAlign: 'center',
     textDecorationLine: 'underline', // Figma 705:6521
   },
-  
+
   // BACK CARD
   backSolidBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -537,40 +541,40 @@ const styles = StyleSheet.create({
   },
   flentLogo: {
     position: 'absolute',
-    left: 127,
-    top: 40,
-    width: 27,
-    height: 32,
+    left: s(127),
+    top: sv(40),
+    width: s(27),
+    height: sv(32),
   },
   backContent: {
     justifyContent: 'flex-start',
   },
   backHeader: {
-    marginBottom: 40,
+    marginBottom: sv(40),
   },
   backTitle: {
     color: '#BABABA',
-    fontSize: 16,
+    fontSize: sf(16),
     fontFamily: 'PlusJakartaSans-Regular',
   },
   backSubtitle: {
     color: '#FF9A6D',
-    fontSize: 16,
+    fontSize: sf(16),
     fontFamily: 'PlusJakartaSans-Regular',
   },
   stampsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: s(16),
     justifyContent: 'center',
-    marginTop: 88, // Push down to avoid overlapping the absolute topSection
+    marginTop: sv(88), // Push down to avoid overlapping the absolute topSection
   },
   stampSlot: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: s(60),
+    height: s(60),
+    borderRadius: s(30),
     backgroundColor: 'rgba(255,255,255,0.05)', // empty state
-    borderWidth: 1,
+    borderWidth: 1, // keep 1px hairline
     borderColor: 'rgba(255,255,255,0.1)',
   },
   stamp_paid: {
@@ -592,7 +596,7 @@ const styles = StyleSheet.create({
   stamp_future: {
     // defaults to empty slot style
   },
-  
+
   // FURNITURE & PATTERN
   patternBackground: {
     position: 'absolute',
@@ -611,20 +615,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 140, // vertically centered manually
+    top: sv(140), // vertically centered manually
     alignItems: 'center',
     justifyContent: 'center',
   },
   sofaYellow: {
-    width: 225.4,
-    height: 104.12,
+    width: s(225.4),
+    height: sv(104.12),
   },
   chairGreen: {
-    width: 180.68,
-    height: 148.83,
+    width: s(180.68),
+    height: sv(148.83),
   },
   chairRed: {
-    width: 182.82,
-    height: 160.0,
+    width: s(182.82),
+    height: sv(160.0),
   }
 });

@@ -78,9 +78,9 @@ export const sv = (value: number): number =>
   PixelRatio.roundToNearestPixel(value * heightScale);
 
 // Device size categories
-export const isSmallDevice = SCREEN_WIDTH < 375;
-export const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH <= 414;
-export const isLargeDevice = SCREEN_WIDTH > 414;
+export const isSmallDevice = SCREEN_WIDTH < 390;  // SE, 13 mini
+export const isMediumDevice = SCREEN_WIDTH >= 390 && SCREEN_WIDTH <= 402;
+export const isLargeDevice = SCREEN_WIDTH > 402;  // Plus, Pro Max
 export const deviceCategory = isSmallDevice ? 'small' : isLargeDevice ? 'large' : 'medium';
 
 // Screen dimensions

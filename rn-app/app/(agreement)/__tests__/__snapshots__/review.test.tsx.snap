@@ -84,14 +84,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                 testID="icon"
               />
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
@@ -104,6 +106,8 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       undefined,
@@ -118,6 +122,8 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                 
 
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       undefined,
@@ -160,14 +166,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -183,14 +191,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -234,14 +244,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -257,14 +269,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -308,14 +322,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -331,14 +347,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -382,14 +400,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -405,14 +425,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -458,14 +480,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -481,14 +505,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -534,14 +560,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -557,14 +585,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -610,14 +640,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -633,14 +665,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -686,14 +720,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                       testID="icon"
                     />
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -709,14 +745,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                     </Text>
                   </View>
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -1128,14 +1166,16 @@ exports[`ReviewScreen matches snapshot (verify mode) 1`] = `
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       {
                         "color": "#FFFFFF",
                         "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 16,
+                        "fontSize": 18.4,
                         "letterSpacing": 0,
-                        "lineHeight": 24,
+                        "lineHeight": 27.599999999999998,
                         "textAlign": "left",
                       },
                       {

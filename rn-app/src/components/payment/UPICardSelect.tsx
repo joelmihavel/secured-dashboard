@@ -33,6 +33,7 @@ import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 import { Text } from '@/src/components/ui/Typography';
 import { springConfig } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 
 // Exact Figma color values
 const CARD_COLORS = {
@@ -210,19 +211,19 @@ function UPICardSelectComponent({
 
 const styles = StyleSheet.create({
   container: {
-    width: 270,
-    height: 400,
+    width: s(270),
+    height: sv(400),
     borderRadius: 12,
     overflow: 'hidden',
   },
   cardBody: {
-    width: 270,
-    height: 336,
+    width: s(270),
+    height: sv(336),
     backgroundColor: CARD_COLORS.cardBody,
-    paddingTop: 24,
-    paddingRight: 16,
-    paddingBottom: 24,
-    paddingLeft: 32,
+    paddingTop: sv(24),
+    paddingRight: s(16),
+    paddingBottom: sv(24),
+    paddingLeft: s(32),
     justifyContent: 'space-between',
   },
   headerRow: {
@@ -231,82 +232,82 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 45,
-    height: 16,
+    width: s(45),
+    height: sv(16),
   },
   selectedBadge: {
     backgroundColor: CARD_COLORS.selectedBadgeBg,
     borderRadius: 200,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: s(12),
+    paddingVertical: sv(8),
   },
   selectedText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: CARD_COLORS.textAccent,
     textAlign: 'center',
   },
   detailsSection: {
-    gap: 8,
+    gap: sv(8),
   },
   bankAccountText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: sf(16),
+    lineHeight: sf(24),
     color: CARD_COLORS.textDefault,
   },
   upiIdText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: sf(16),
+    lineHeight: sf(24),
     color: CARD_COLORS.textDefault,
   },
   chipDecoration: {
     position: 'absolute',
-    right: 16,
-    top: 125,
+    right: s(16),
+    top: sv(125),
   },
   bottomChipDecoration: {
     position: 'absolute',
-    right: 16,
-    bottom: 85,
+    right: s(16),
+    bottom: sv(85),
   },
   chipSquareGroup: {
-    gap: 14.5,
+    gap: sv(14.5),
   },
   chipSquare: {
-    width: 20.5,
-    height: 20.5,
+    width: s(20.5),
+    height: s(20.5),
     borderWidth: 0.3,
     borderColor: CARD_COLORS.chipBorder,
   },
   cardFooter: {
-    width: 270,
-    height: 64,
+    width: s(270),
+    height: sv(64),
     backgroundColor: CARD_COLORS.cardFooter,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 16,
-    paddingRight: 32,
-    paddingBottom: 24,
-    paddingLeft: 32,
+    paddingTop: sv(16),
+    paddingRight: s(32),
+    paddingBottom: sv(24),
+    paddingLeft: s(32),
   },
   footerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: s(4),
   },
   footerLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: CARD_COLORS.footerText,
   },
   flentLogoPlaceholder: {
-    width: 20,
-    height: 24,
+    width: s(20),
+    height: sv(24),
   },
 });
 

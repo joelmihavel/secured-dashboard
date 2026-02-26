@@ -63,6 +63,8 @@ const MOCK_DASHBOARD: DashboardData = {
     days_until_due: 3,
     is_overdue: false,
     cashback_eligible: true,
+        past_cutoff: false,
+        cutoff_day: 7,
     rent_month: '2026-02-01',
   },
   cashback: {

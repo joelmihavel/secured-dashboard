@@ -38,6 +38,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Text } from '../Typography';
 import { spacing, duration } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 
 export interface OTPInputProps {
   value: string;
@@ -68,16 +69,16 @@ const OTP_COLORS = {
   errorText: '#E5484D',           // Figma: error.radix - used for error text
 } as const;
 
-// Exact Figma dimensions - verified from Figma extraction 1-31380
+// Exact Figma dimensions - verified from Figma extraction 1-31380 — scaled for device
 const OTP_DIMENSIONS = {
-  boxWidth: 39,       // Figma: width 39px per box
-  boxHeight: 64,      // Figma: height 64px
-  boxPaddingH: 12,    // Figma: px-[var(--scale\/12,12px)]
-  boxPaddingV: 8,     // Figma: py-[8px]
-  boxGap: 8,          // Gap between boxes in each group
-  separatorGap: 8,    // Figma: gap around "-" separator
-  borderRadius: 8,    // Figma: rounded-[8px]
-  errorGap: 16,       // Figma: Frame 2095586319 gap between OTP and error text
+  boxWidth: s(39),     // Figma: width 39px per box — scaled
+  boxHeight: sv(64),   // Figma: height 64px — scaled
+  boxPaddingH: s(12),  // Figma: px-[var(--scale\/12,12px)] — scaled
+  boxPaddingV: sv(8),  // Figma: py-[8px] — scaled
+  boxGap: s(8),        // Gap between boxes in each group — scaled
+  separatorGap: s(8),  // Figma: gap around "-" separator — scaled
+  borderRadius: 8,     // Figma: rounded-[8px] (keep as-is for visual consistency)
+  errorGap: sv(16),    // Figma: Frame 2095586319 gap between OTP and error text — scaled
 } as const;
 
 function OTPInputComponent({
@@ -158,7 +159,7 @@ function OTPInputComponent({
         </View>
 
         {/* Separator */}
-        <Text variant="bodyLg" style={styles.separator}>
+        <Text variant="bodyLg" allowFontScaling={false} style={styles.separator}>
           -
         </Text>
 
@@ -197,7 +198,7 @@ function OTPInputComponent({
 
       {/* Error message - Figma shows error text centered below OTP boxes */}
       {error && (
-        <Text style={styles.errorText}>
+        <Text allowFontScaling={false} style={styles.errorText}>
           {error}
         </Text>
       )}
@@ -255,14 +256,14 @@ function OTPBox({ digit, isActive, hasError, disabled }: OTPBoxProps) {
   return (
     <View style={[...getBoxStyle(), disabled && styles.boxDisabled]}>
       {digit ? (
-        <Text style={[styles.digitText, { color: getTextColor() }]}>
+        <Text allowFontScaling={false} style={[styles.digitText, { color: getTextColor() }]}>
           {digit}
         </Text>
       ) : isActive ? (
         <Animated.View style={[styles.cursor, cursorStyle]} />
       ) : (
         // Empty state shows "0" per Figma design
-        <Text style={[styles.digitText, { color: OTP_COLORS.textEmpty }]}>
+        <Text allowFontScaling={false} style={[styles.digitText, { color: OTP_COLORS.textEmpty }]}>
           0
         </Text>
       )}
@@ -293,15 +294,15 @@ const styles = StyleSheet.create({
     gap: OTP_DIMENSIONS.boxGap, // 8px between boxes in each group
   },
   separator: {
-    marginHorizontal: OTP_DIMENSIONS.separatorGap, // 8px on each side
+    marginHorizontal: OTP_DIMENSIONS.separatorGap, // 8px on each side — scaled
     color: OTP_COLORS.separator,
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 20,
-    lineHeight: 32,
+    fontSize: sf(20),
+    lineHeight: sf(32),
   },
   box: {
-    width: 39, // Figma: fixed 39px per box
-    height: OTP_DIMENSIONS.boxHeight, // 64px
+    width: OTP_DIMENSIONS.boxWidth, // Figma: fixed 39px per box — scaled
+    height: OTP_DIMENSIONS.boxHeight, // 64px — scaled
     paddingHorizontal: OTP_DIMENSIONS.boxPaddingH, // 12px per Figma
     paddingVertical: OTP_DIMENSIONS.boxPaddingV, // 8px per Figma
     borderRadius: OTP_DIMENSIONS.borderRadius, // 8px
@@ -326,21 +327,21 @@ const styles = StyleSheet.create({
   },
   digitText: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 20,
-    lineHeight: 32,
+    fontSize: sf(20),
+    lineHeight: sf(32),
     textAlign: 'center',
   },
   cursor: {
     width: 2,
-    height: 24,
+    height: sv(24),
     backgroundColor: '#FF9A6D', // Use filled text color for cursor
     borderRadius: 1,
   },
   errorText: {
-    marginTop: OTP_DIMENSIONS.errorGap, // Figma: 16px gap between OTP and error text
+    marginTop: OTP_DIMENSIONS.errorGap, // Figma: 16px gap between OTP and error text — scaled
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: OTP_COLORS.errorText, // Figma: #E5484D
     textAlign: 'center',
   },

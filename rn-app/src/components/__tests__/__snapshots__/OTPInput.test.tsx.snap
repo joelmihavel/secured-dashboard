@@ -53,7 +53,7 @@ exports[`OTPInput handles empty string value 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -67,10 +67,10 @@ exports[`OTPInput handles empty string value 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -78,28 +78,30 @@ exports[`OTPInput handles empty string value 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -122,10 +124,10 @@ exports[`OTPInput handles empty string value 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -133,28 +135,30 @@ exports[`OTPInput handles empty string value 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -177,10 +181,10 @@ exports[`OTPInput handles empty string value 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -188,28 +192,30 @@ exports[`OTPInput handles empty string value 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -224,22 +230,24 @@ exports[`OTPInput handles empty string value 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 20,
+            "fontSize": 23,
             "letterSpacing": 0,
-            "lineHeight": 32,
+            "lineHeight": 36.8,
             "textAlign": "left",
           },
           {
             "color": "#cbcbcb",
             "fontFamily": "PlusJakartaSans-Medium",
-            "fontSize": 20,
-            "lineHeight": 32,
-            "marginHorizontal": 8,
+            "fontSize": 23,
+            "lineHeight": 36.8,
+            "marginHorizontal": 15.5,
           },
         ]
       }
@@ -250,7 +258,7 @@ exports[`OTPInput handles empty string value 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -264,10 +272,10 @@ exports[`OTPInput handles empty string value 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -275,28 +283,30 @@ exports[`OTPInput handles empty string value 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -319,10 +329,10 @@ exports[`OTPInput handles empty string value 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -330,28 +340,30 @@ exports[`OTPInput handles empty string value 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -374,10 +386,10 @@ exports[`OTPInput handles empty string value 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -385,28 +397,30 @@ exports[`OTPInput handles empty string value 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -507,7 +521,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -521,10 +535,10 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -532,7 +546,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "opacity": 0.5,
@@ -541,21 +555,23 @@ exports[`OTPInput renders correctly - disabled 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -578,10 +594,10 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -589,7 +605,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "opacity": 0.5,
@@ -598,21 +614,23 @@ exports[`OTPInput renders correctly - disabled 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -635,10 +653,10 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -646,7 +664,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "opacity": 0.5,
@@ -655,21 +673,23 @@ exports[`OTPInput renders correctly - disabled 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -684,22 +704,24 @@ exports[`OTPInput renders correctly - disabled 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 20,
+            "fontSize": 23,
             "letterSpacing": 0,
-            "lineHeight": 32,
+            "lineHeight": 36.8,
             "textAlign": "left",
           },
           {
             "color": "#cbcbcb",
             "fontFamily": "PlusJakartaSans-Medium",
-            "fontSize": 20,
-            "lineHeight": 32,
-            "marginHorizontal": 8,
+            "fontSize": 23,
+            "lineHeight": 36.8,
+            "marginHorizontal": 15.5,
           },
         ]
       }
@@ -710,7 +732,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -724,10 +746,10 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -735,7 +757,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "opacity": 0.5,
@@ -744,21 +766,23 @@ exports[`OTPInput renders correctly - disabled 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -781,10 +805,10 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -792,7 +816,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "opacity": 0.5,
@@ -801,21 +825,23 @@ exports[`OTPInput renders correctly - disabled 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -838,10 +864,10 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -849,7 +875,7 @@ exports[`OTPInput renders correctly - disabled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "opacity": 0.5,
@@ -858,21 +884,23 @@ exports[`OTPInput renders correctly - disabled 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -973,7 +1001,7 @@ exports[`OTPInput renders correctly - empty state 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -987,10 +1015,10 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -998,28 +1026,30 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1042,10 +1072,10 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1053,28 +1083,30 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1097,10 +1129,10 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1108,28 +1140,30 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1144,22 +1178,24 @@ exports[`OTPInput renders correctly - empty state 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 20,
+            "fontSize": 23,
             "letterSpacing": 0,
-            "lineHeight": 32,
+            "lineHeight": 36.8,
             "textAlign": "left",
           },
           {
             "color": "#cbcbcb",
             "fontFamily": "PlusJakartaSans-Medium",
-            "fontSize": 20,
-            "lineHeight": 32,
-            "marginHorizontal": 8,
+            "fontSize": 23,
+            "lineHeight": 36.8,
+            "marginHorizontal": 15.5,
           },
         ]
       }
@@ -1170,7 +1206,7 @@ exports[`OTPInput renders correctly - empty state 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -1184,10 +1220,10 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1195,28 +1231,30 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1239,10 +1277,10 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1250,28 +1288,30 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1294,10 +1334,10 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1305,28 +1345,30 @@ exports[`OTPInput renders correctly - empty state 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1427,7 +1469,7 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -1441,10 +1483,10 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1452,28 +1494,30 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1496,10 +1540,10 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1507,28 +1551,30 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1551,10 +1597,10 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1562,28 +1608,30 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1598,22 +1646,24 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 20,
+            "fontSize": 23,
             "letterSpacing": 0,
-            "lineHeight": 32,
+            "lineHeight": 36.8,
             "textAlign": "left",
           },
           {
             "color": "#cbcbcb",
             "fontFamily": "PlusJakartaSans-Medium",
-            "fontSize": 20,
-            "lineHeight": 32,
-            "marginHorizontal": 8,
+            "fontSize": 23,
+            "lineHeight": 36.8,
+            "marginHorizontal": 15.5,
           },
         ]
       }
@@ -1624,7 +1674,7 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -1638,10 +1688,10 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1649,28 +1699,30 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1693,10 +1745,10 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1704,28 +1756,30 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1748,10 +1802,10 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1759,28 +1813,30 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1881,7 +1937,7 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -1895,10 +1951,10 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1906,28 +1962,30 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -1950,10 +2008,10 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -1961,28 +2019,30 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2005,10 +2065,10 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2016,28 +2076,30 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2052,22 +2114,24 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 20,
+            "fontSize": 23,
             "letterSpacing": 0,
-            "lineHeight": 32,
+            "lineHeight": 36.8,
             "textAlign": "left",
           },
           {
             "color": "#cbcbcb",
             "fontFamily": "PlusJakartaSans-Medium",
-            "fontSize": 20,
-            "lineHeight": 32,
-            "marginHorizontal": 8,
+            "fontSize": 23,
+            "lineHeight": 36.8,
+            "marginHorizontal": 15.5,
           },
         ]
       }
@@ -2078,7 +2142,7 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -2092,10 +2156,10 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2103,28 +2167,30 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2147,10 +2213,10 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2158,28 +2224,30 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2202,10 +2270,10 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2213,28 +2281,30 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             undefined,
           ]
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2335,7 +2405,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -2349,10 +2419,10 @@ exports[`OTPInput renders correctly - with error 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2360,7 +2430,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "backgroundColor": "#222222",
@@ -2371,21 +2441,23 @@ exports[`OTPInput renders correctly - with error 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2408,10 +2480,10 @@ exports[`OTPInput renders correctly - with error 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2419,7 +2491,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "backgroundColor": "#222222",
@@ -2430,21 +2502,23 @@ exports[`OTPInput renders correctly - with error 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2467,10 +2541,10 @@ exports[`OTPInput renders correctly - with error 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2478,7 +2552,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "backgroundColor": "#222222",
@@ -2489,21 +2563,23 @@ exports[`OTPInput renders correctly - with error 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2518,22 +2594,24 @@ exports[`OTPInput renders correctly - with error 1`] = `
       </View>
     </View>
     <Text
+      allowFontScaling={false}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 20,
+            "fontSize": 23,
             "letterSpacing": 0,
-            "lineHeight": 32,
+            "lineHeight": 36.8,
             "textAlign": "left",
           },
           {
             "color": "#cbcbcb",
             "fontFamily": "PlusJakartaSans-Medium",
-            "fontSize": 20,
-            "lineHeight": 32,
-            "marginHorizontal": 8,
+            "fontSize": 23,
+            "lineHeight": 36.8,
+            "marginHorizontal": 15.5,
           },
         ]
       }
@@ -2544,7 +2622,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
       style={
         {
           "flexDirection": "row",
-          "gap": 8,
+          "gap": 15.5,
         }
       }
     >
@@ -2558,10 +2636,10 @@ exports[`OTPInput renders correctly - with error 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2569,7 +2647,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "backgroundColor": "#222222",
@@ -2580,21 +2658,23 @@ exports[`OTPInput renders correctly - with error 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2617,10 +2697,10 @@ exports[`OTPInput renders correctly - with error 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2628,7 +2708,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "backgroundColor": "#222222",
@@ -2639,21 +2719,23 @@ exports[`OTPInput renders correctly - with error 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2676,10 +2758,10 @@ exports[`OTPInput renders correctly - with error 1`] = `
               "borderRadius": 8,
               "borderWidth": 1,
               "elevation": 1,
-              "height": 64,
+              "height": 100,
               "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
+              "paddingHorizontal": 23,
+              "paddingVertical": 12.5,
               "shadowColor": "rgb(10, 13, 18)",
               "shadowOffset": {
                 "height": 1,
@@ -2687,7 +2769,7 @@ exports[`OTPInput renders correctly - with error 1`] = `
               },
               "shadowOpacity": 0.05,
               "shadowRadius": 2,
-              "width": 39,
+              "width": 74.5,
             },
             {
               "backgroundColor": "#222222",
@@ -2698,21 +2780,23 @@ exports[`OTPInput renders correctly - with error 1`] = `
         }
       >
         <Text
+          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
           style={
             [
               {
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
+                "fontSize": 18.4,
                 "letterSpacing": 0,
-                "lineHeight": 24,
+                "lineHeight": 27.599999999999998,
                 "textAlign": "left",
               },
               [
                 {
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
                   "textAlign": "center",
                 },
                 {
@@ -2758,22 +2842,24 @@ exports[`OTPInput renders correctly - with error 1`] = `
     value="123456"
   />
   <Text
+    allowFontScaling={false}
+    maxFontSizeMultiplier={1.2}
     style={
       [
         {
           "color": "#FFFFFF",
           "fontFamily": "PlusJakartaSans-Regular",
-          "fontSize": 16,
+          "fontSize": 18.4,
           "letterSpacing": 0,
-          "lineHeight": 24,
+          "lineHeight": 27.599999999999998,
           "textAlign": "left",
         },
         {
           "color": "#E5484D",
           "fontFamily": "PlusJakartaSans-Regular",
-          "fontSize": 14,
-          "lineHeight": 20,
-          "marginTop": 16,
+          "fontSize": 16.099999999999998,
+          "lineHeight": 23,
+          "marginTop": 25,
           "textAlign": "center",
         },
       ]

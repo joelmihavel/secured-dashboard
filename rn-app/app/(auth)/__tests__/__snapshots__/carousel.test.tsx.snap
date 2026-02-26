@@ -55,12 +55,12 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
           style={
             [
               {
-                "left": 45,
+                "left": 86,
                 "position": "absolute",
-                "top": 245,
+                "top": 383.5,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -3073,12 +3073,12 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
           style={
             [
               {
-                "left": 45,
+                "left": 86,
                 "position": "absolute",
-                "top": 243,
+                "top": 380.5,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -5704,12 +5704,12 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
           style={
             [
               {
-                "left": 41,
+                "left": 78,
                 "position": "absolute",
-                "top": 239,
+                "top": 374,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -8589,8 +8589,8 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
         style={
           {
             "flex": 1,
-            "paddingBottom": 64,
-            "paddingTop": 80,
+            "paddingBottom": 100,
+            "paddingTop": 125.5,
           }
         }
       >
@@ -8599,9 +8599,9 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
           style={
             {
               "flex": 1,
-              "gap": 40,
+              "gap": 76.5,
               "justifyContent": "flex-end",
-              "paddingHorizontal": 48,
+              "paddingHorizontal": 91.5,
             }
           }
         >
@@ -8609,7 +8609,7 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
             pointerEvents="box-none"
             style={
               {
-                "gap": 40,
+                "gap": 76.5,
               }
             }
           >
@@ -8648,14 +8648,13 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
             <View
               style={
                 {
-                  "height": 184,
-                  "marginHorizontal": -48,
+                  "height": 288,
+                  "marginHorizontal": -91.5,
                 }
               }
             >
               <RCTScrollView
                 bounces={false}
-                collapsable={false}
                 data={
                   [
                     {
@@ -8722,7 +8721,7 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                 pagingEnabled={true}
                 removeClippedSubviews={false}
                 renderItem={[Function]}
-                scrollEventThrottle={16}
+                scrollEventThrottle={0.0001}
                 showsHorizontalScrollIndicator={false}
                 snapToAlignment="start"
                 snapToInterval={750}
@@ -8759,8 +8758,8 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                     <View
                       style={
                         {
-                          "gap": 16,
-                          "paddingHorizontal": 48,
+                          "gap": 30.5,
+                          "paddingHorizontal": 91.5,
                           "width": 750,
                         }
                       }
@@ -8795,14 +8794,16 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                         </Text>
                       </Text>
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.2}
                         style={
                           [
                             {
                               "color": "#FFFFFF",
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
+                              "fontSize": 18.4,
                               "letterSpacing": 0,
-                              "lineHeight": 24,
+                              "lineHeight": 27.599999999999998,
                               "textAlign": "left",
                             },
                             [
@@ -8837,8 +8838,8 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                     <View
                       style={
                         {
-                          "gap": 16,
-                          "paddingHorizontal": 48,
+                          "gap": 30.5,
+                          "paddingHorizontal": 91.5,
                           "width": 750,
                         }
                       }
@@ -8874,14 +8875,16 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                         </Text>
                       </Text>
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.2}
                         style={
                           [
                             {
                               "color": "#FFFFFF",
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
+                              "fontSize": 18.4,
                               "letterSpacing": 0,
-                              "lineHeight": 24,
+                              "lineHeight": 27.599999999999998,
                               "textAlign": "left",
                             },
                             [
@@ -8916,8 +8919,8 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                     <View
                       style={
                         {
-                          "gap": 16,
-                          "paddingHorizontal": 48,
+                          "gap": 30.5,
+                          "paddingHorizontal": 91.5,
                           "width": 750,
                         }
                       }
@@ -8952,14 +8955,16 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
                         </Text>
                       </Text>
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.2}
                         style={
                           [
                             {
                               "color": "#FFFFFF",
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
+                              "fontSize": 18.4,
                               "letterSpacing": 0,
-                              "lineHeight": 24,
+                              "lineHeight": 27.599999999999998,
                               "textAlign": "left",
                             },
                             [
@@ -9026,14 +9031,16 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
             }
           >
             <Text
+              allowFontScaling={true}
+              maxFontSizeMultiplier={1.2}
               style={
                 [
                   {
                     "color": "#FFFFFF",
                     "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
+                    "fontSize": 18.4,
                     "letterSpacing": 0,
-                    "lineHeight": 24,
+                    "lineHeight": 27.599999999999998,
                     "textAlign": "left",
                   },
                   {

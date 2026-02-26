@@ -57,8 +57,10 @@ import { BlurView } from 'expo-blur';
 
 import { Screen, Text, PrimaryButton, OTPInput } from '@/src/components';
 import { colors, springConfig, duration, radius, spacing, typography } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
@@ -70,32 +72,32 @@ const FIGMA_COLORS = {
   resendText: colors.neutral[500],    // #A9A9A9
 } as const;
 
-// Exact Figma dimensions (verified from blueprints)
+// Exact Figma dimensions (verified from blueprints) — scaled for device
 const FIGMA_DIMENSIONS = {
   sheetBorderRadius: 22.79,            // Figma: Frame 1686557301 borderRadius tl/tr
-  handleWidth: 48,                     // Figma: Rectangle 53 width
-  handleHeight: 4,                     // Figma: Rectangle 53 height
+  handleWidth: s(48),                  // Figma: Rectangle 53 width
+  handleHeight: 4,                     // Figma: Rectangle 53 height (hairline, no scale)
   handleRadius: 200,                   // Figma: Rectangle 53 borderRadius
-  containerPadding: 48,                // Figma: (393 - 297) / 2 = 48px horizontal padding
-  titleWidth: 297,                     // Figma: title width
-  subtitleWidth: 297,                  // Figma: subtitle width
-  resendWidth: 297,                    // Figma: resend text width
-  homeIndicatorHeight: 34,             // Home indicator space
+  containerPadding: s(48),             // Figma: (393 - 297) / 2 = 48px horizontal padding
+  titleWidth: s(297),                  // Figma: title width
+  subtitleWidth: s(297),               // Figma: subtitle width
+  resendWidth: s(297),                 // Figma: resend text width
 } as const;
 
-// Exact Figma spacing gaps (verified from blueprint frame layouts)
+// Exact Figma spacing gaps (verified from blueprint frame layouts) — scaled for device
 const FIGMA_GAPS = {
-  wrapperGap: 15,                      // Figma: Frame 2095586317 gap (handle to sheet content)
-  sheetPaddingTop: 15.19,              // Figma: Frame 1686557301 paddingTop (exact: 15.19174861907959)
-  sheetItemSpacing: 24,                // Figma: Frame 1686557301 itemSpacing
-  contentPaddingTop: 16,               // Figma: Frame 1686557230 paddingTop
-  contentItemSpacing: 30.38,           // Figma: Frame 1686557230 itemSpacing (exact: 30.38349723815918)
-  titleToSubtitle: 10,                 // Figma: Frame 1686557311 gap
-  buttonToResend: 16,                  // Figma: Frame 1686557317 gap
+  wrapperGap: sv(15),                  // Figma: Frame 2095586317 gap (handle to sheet content)
+  sheetPaddingTop: sv(15.19),          // Figma: Frame 1686557301 paddingTop (exact: 15.19174861907959)
+  sheetItemSpacing: sv(24),            // Figma: Frame 1686557301 itemSpacing
+  contentPaddingTop: sv(16),           // Figma: Frame 1686557230 paddingTop
+  contentItemSpacing: sv(30.38),       // Figma: Frame 1686557230 itemSpacing (exact: 30.38349723815918)
+  titleToSubtitle: sv(10),             // Figma: Frame 1686557311 gap
+  buttonToResend: sv(16),              // Figma: Frame 1686557317 gap
 } as const;
 
 export default function OTPScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     phoneNumber,
     status,
@@ -417,8 +419,8 @@ export default function OTPScreen() {
             </View>
           </View>
 
-          {/* Home Indicator space */}
-          <View style={styles.homeIndicatorSpace} />
+          {/* Home Indicator space — uses safe area bottom or fallback */}
+          <View style={{ height: insets.bottom || 34 }} />
         </View>
       </Animated.View>
     </KeyboardAvoidingView>
@@ -485,7 +487,7 @@ const styles = StyleSheet.create({
   // Figma: PlusJakartaSans-Medium 12/21.6 letterSpacing=-0.132 #A9A9A9
   subtitle: {
     ...typography.bodySmMedium,
-    lineHeight: 21.6, // Specific Figma override
+    lineHeight: sf(21.6), // Specific Figma override — scaled
     letterSpacing: -0.132, // Specific Figma override
     color: FIGMA_COLORS.subtitleText,
     width: FIGMA_DIMENSIONS.subtitleWidth,
@@ -518,8 +520,5 @@ const styles = StyleSheet.create({
   resendLink: {
     color: FIGMA_COLORS.resendText,
     textDecorationLine: 'underline',
-  },
-  homeIndicatorSpace: {
-    height: FIGMA_DIMENSIONS.homeIndicatorHeight,          // 34
   },
 });

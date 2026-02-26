@@ -27,13 +27,14 @@ import {
 import { Text } from '@/src/components/ui';
 import { PaymentMethodCard, PaymentMethod } from './PaymentMethodCard';
 import { PaymentSetupCard } from './PaymentSetupCard';
-// Theme imports removed - all values use exact Figma hex codes
+import { s, sf, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = 270; // Figma: 270px (243:5878)
-const CARD_GAP = 16; // Figma: itemSpacing 16 (243:5877)
-const CONTENT_PADDING_LEFT = 64; // Figma: paddingLeft 64 (243:5877 Frame 2095586448)
-const CONTENT_PADDING_RIGHT = 32; // Figma: paddingRight 32 (243:5877)
+// Breakpoint-driven card width for different device sizes
+const CARD_WIDTH = isSmallDevice ? 240 : isLargeDevice ? 290 : 270; // Figma: 270px (243:5878)
+const CARD_GAP = s(16); // Figma: itemSpacing 16 (243:5877)
+const CONTENT_PADDING_LEFT = s(64); // Figma: paddingLeft 64 (243:5877 Frame 2095586448)
+const CONTENT_PADDING_RIGHT = s(32); // Figma: paddingRight 32 (243:5877)
 
 export interface PaymentMethodCarouselProps {
   methods: PaymentMethod[];
@@ -130,15 +131,15 @@ function PaymentMethodCarouselComponent({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12, // Figma: gap between label and cards
+    gap: s(12), // Figma: gap between label and cards
   },
   labelContainer: {
-    paddingHorizontal: 64, // Figma: paddingHorizontal 64 (aligned with 243:5872)
+    paddingHorizontal: s(64), // Figma: paddingHorizontal 64 (aligned with 243:5872)
   },
   label: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
+    fontSize: sf(14), // Figma: fontSize 14
+    lineHeight: sf(20), // Figma: lineHeight 20
     color: '#A6A6A6', // Figma: #A6A6A6 (black[200])
   },
   scrollContent: {
@@ -156,12 +157,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8, // Figma: gap between dots
-    marginTop: 12, // Figma: spacing
+    gap: s(8), // Figma: gap between dots
+    marginTop: s(12), // Figma: spacing
   },
   dot: {
-    width: 8, // Figma: width 8
-    height: 8, // Figma: height 8
+    width: s(8), // Figma: width 8
+    height: s(8), // Figma: height 8
     borderRadius: 4, // Figma: fully rounded
   },
   dotActive: {

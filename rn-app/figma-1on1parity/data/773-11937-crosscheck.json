@@ -1,0 +1,253 @@
+{
+  "screenId": "773-11937",
+  "screenName": "Delete Credit Card",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-26T17:51:13.722Z",
+  "checks": {
+    "nodeCount": 125,
+    "textNodeCount": 21,
+    "componentInstanceCount": 8,
+    "interactiveNodeCount": 2,
+    "imageAssetCount": 6,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 2095586361",
+      "Frame 2095586363",
+      "Frame 2095586357",
+      "Rectangle 54",
+      "Frame 2095586317"
+    ],
+    "textContents": [
+      {
+        "nodeId": "773:11944",
+        "name": "Rent due in 28 days",
+        "content": "Rent due in 28 days",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "773:11945",
+        "name": "Complete setup to unlock 1% cashback",
+        "content": "Complete setup to unlock 1% cashback",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "773:11947",
+        "name": "₹350 available to unlock",
+        "content": "₹350 available to unlock",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "773:11963",
+        "name": "Base rent",
+        "content": "Base rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "773:11964",
+        "name": "₹ 30,000",
+        "content": "₹ 30,000",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "773:11970",
+        "name": "Maintenance",
+        "content": "Maintenance",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "773:11971",
+        "name": "₹2,500",
+        "content": "₹2,500",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "773:11978",
+        "name": "Total Rent",
+        "content": "Total Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "773:11979",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "773:11984",
+        "name": "Cashback 🔒",
+        "content": "Cashback 🔒 ",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "773:11985",
+        "name": "- ₹ 325",
+        "content": "- ₹  325",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#EF9194"
+      },
+      {
+        "nodeId": "773:11991",
+        "name": "Payable Rent",
+        "content": "Payable Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "773:11992",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I773:11996;100:1565",
+        "name": "Text",
+        "content": "Add Payment Method to Pay",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "773:11997",
+        "name": "Finish setup in 28:12:12 to be eligible for  ₹350 cashback on this payment",
+        "content": "Finish setup in 28:12:12 to be eligible for   ₹350 cashback on this payment",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I773:12001;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "773:12123",
+        "name": "current",
+        "content": "current",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "773:12128",
+        "name": "Visa · Credit",
+        "content": "Visa · Credit",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#D2D2D2"
+      },
+      {
+        "nodeId": "773:12129",
+        "name": "•••• 2341",
+        "content": "•••• 2341",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "color": "#D2D2D2"
+      },
+      {
+        "nodeId": "I773:12103;100:1565",
+        "name": "Text",
+        "content": "Proceed to Payment",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "773:12104",
+        "name": "Delete Card",
+        "content": "Delete Card",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#4D4D4D",
+      "#878787",
+      "#A6A6A6",
+      "#A9A9A9",
+      "#CBCBCB",
+      "#D2D2D2",
+      "#DDDDDD",
+      "#EF9194",
+      "#FF9A6D",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      12,
+      15,
+      15.19174861907959,
+      16,
+      24,
+      28,
+      30.38349723815918,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:23982",
+      "597:3220",
+      "1:7",
+      "1:6119",
+      "689:9072"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "689:9076"
+      }
+    ]
+  }
+}

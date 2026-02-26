@@ -110,14 +110,16 @@ exports[`UploadScreen matches snapshot (idle) 1`] = `
             >
               <View>
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       {
                         "color": "#FFFFFF",
                         "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 16,
+                        "fontSize": 18.4,
                         "letterSpacing": 0,
-                        "lineHeight": 24,
+                        "lineHeight": 27.599999999999998,
                         "textAlign": "left",
                       },
                       {
@@ -134,14 +136,16 @@ exports[`UploadScreen matches snapshot (idle) 1`] = `
                   One
                 </Text>
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       {
                         "color": "#FFFFFF",
                         "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 16,
+                        "fontSize": 18.4,
                         "letterSpacing": 0,
-                        "lineHeight": 24,
+                        "lineHeight": 27.599999999999998,
                         "textAlign": "left",
                       },
                       {
@@ -159,14 +163,16 @@ exports[`UploadScreen matches snapshot (idle) 1`] = `
                 </Text>
               </View>
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
@@ -414,14 +420,16 @@ exports[`UploadScreen matches snapshot (idle) 1`] = `
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {

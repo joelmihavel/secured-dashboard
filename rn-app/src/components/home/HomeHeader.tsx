@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 
 import { Text, Logo } from '@/src/components/ui';
 import { colors } from '@/src/theme';
+import { s } from '@/src/theme/scale';
 
 export interface HomeHeaderProps {
   userName: string;
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 32, // Figma 684:9047: paddingHorizontal 32
+    paddingHorizontal: s(32), // Figma 684:9047: paddingHorizontal 32
     paddingTop: 24, // Figma 684:9047: paddingVertical 24
     paddingBottom: 24, // Figma 684:9047: paddingVertical 24
   },

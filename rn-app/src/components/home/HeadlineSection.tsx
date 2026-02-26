@@ -15,8 +15,7 @@
 
 import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
-
-// No theme imports needed - all values use exact Figma hex codes and font families
+import { s, sf } from '@/src/theme/scale';
 
 export type HeadlineVariant = 'due' | 'overdue' | 'missed' | 'multiple_overdue';
 
@@ -87,14 +86,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // Figma: justifyContent CENTER
     alignItems: 'flex-start', // Text is STRETCH/FILL so left-aligned within full width
     gap: 10, // Figma: itemSpacing 10 between headline and "Paying with:"
-    paddingLeft: 64, // Figma: paddingLeft 64
-    paddingRight: 64, // Figma: paddingRight 64
+    paddingLeft: s(64), // Figma: paddingLeft 64
+    paddingRight: s(64), // Figma: paddingRight 64
   },
   headline: {
     // Figma 243-3378 node 243:3384: width 265, height 80
-    width: 265, // Figma: width 265px
-    fontSize: 28, // Figma: fontSize 28
-    lineHeight: 40, // Figma: lineHeight 40
+    // width removed — let container padding define text width naturally
+    fontSize: sf(28), // Figma: fontSize 28
+    lineHeight: sf(40), // Figma: lineHeight 40
     letterSpacing: -1, // Figma: letterSpacing -1
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     textAlign: 'left', // Figma: textAlignHorizontal LEFT

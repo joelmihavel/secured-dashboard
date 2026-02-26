@@ -8,6 +8,7 @@ import { View, StyleSheet, ViewStyle, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, spacing, layout } from '@/src/theme';
+import { s } from '@/src/theme/scale';
 
 export interface ScreenProps {
   children: ReactNode;
@@ -28,8 +29,7 @@ function ScreenComponent({
   safeAreaBottom = true,
   testID,
 }: ScreenProps) {
-  const horizontalPadding =
-    paddingVariant === 'compact' ? layout.screenHorizontalCompact : layout.screenHorizontal;
+  const horizontalPadding = s(paddingVariant === 'compact' ? layout.screenHorizontalCompact : layout.screenHorizontal);
 
   const edges = [
     safeAreaTop && 'top',

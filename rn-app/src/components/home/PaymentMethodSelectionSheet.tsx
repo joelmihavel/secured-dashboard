@@ -35,6 +35,7 @@ import {
   Dimensions,
   Modal,
   BackHandler,
+  ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,7 +43,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/ui';
 import { colors, radius, spacing } from '@/src/theme';
-import { scaled, scaledFont, scaledSpacing } from '@/src/theme/scale';
+import { s, sf, sv } from '@/src/theme/scale';
 import { PaymentMethodCard, PaymentMethod } from './PaymentMethodCard';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -272,25 +273,27 @@ function PaymentMethodSelectionSheetComponent({
           </View>
 
           {/* Payment Methods List */}
-          <View style={styles.methodsList}>
-            {methods.map((method, index) => renderPaymentMethod(method, index))}
+          <ScrollView bounces={false} style={{ maxHeight: sv(400) }}>
+            <View style={styles.methodsList}>
+              {methods.map((method, index) => renderPaymentMethod(method, index))}
 
-            {/* Add New Payment Method */}
-            {onAddNewMethod && (
-              <TouchableOpacity
-                style={styles.addNewButton}
-                onPress={onAddNewMethod}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Add new payment method"
-              >
-                <View style={styles.addNewIcon}>
-                  <Ionicons name="add" size={24} color={colors.brand[500]} />
-                </View>
-                <Text style={styles.addNewText}>Add new payment method</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+              {/* Add New Payment Method */}
+              {onAddNewMethod && (
+                <TouchableOpacity
+                  style={styles.addNewButton}
+                  onPress={onAddNewMethod}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add new payment method"
+                >
+                  <View style={styles.addNewIcon}>
+                    <Ionicons name="add" size={24} color={colors.brand[500]} />
+                  </View>
+                  <Text style={styles.addNewText}>Add new payment method</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -339,9 +342,9 @@ const styles = StyleSheet.create({
   // Title
   // Figma: Frame 1686557230 - paddingTop 16, gap to content ~30px
   titleContainer: {
-    paddingHorizontal: 48, // Figma: 243-6490 paddingHorizontal 48
-    paddingTop: 16, // Figma: 243-6490 Frame 1686557230 paddingTop 16
-    paddingBottom: 30, // Figma: 243-6490 itemSpacing ~30.38 between title and list
+    paddingHorizontal: s(48), // Figma: 243-6490 paddingHorizontal 48
+    paddingTop: s(16), // Figma: 243-6490 Frame 1686557230 paddingTop 16
+    paddingBottom: s(30), // Figma: 243-6490 itemSpacing ~30.38 between title and list
   },
   title: {
     fontSize: 20, // Figma: fontSize 20
@@ -359,8 +362,8 @@ const styles = StyleSheet.create({
   // Methods List
   // Figma: Frame 2095586364 - paddingHorizontal 48, gap 16
   methodsList: {
-    paddingHorizontal: 48, // Figma: 243-6490 paddingRight/Left 48
-    gap: 16, // Figma: 243-6490 itemSpacing 16 (spacing.lg)
+    paddingHorizontal: s(48), // Figma: 243-6490 paddingRight/Left 48
+    gap: s(16), // Figma: 243-6490 itemSpacing 16 (spacing.lg)
   },
 
   // Method Item

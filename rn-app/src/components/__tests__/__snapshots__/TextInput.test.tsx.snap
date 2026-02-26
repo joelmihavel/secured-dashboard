@@ -20,14 +20,16 @@ exports[`TextInput renders correctly - disabled 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           [
@@ -125,14 +127,16 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           [
@@ -227,14 +231,16 @@ exports[`TextInput renders correctly - light variant empty 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           [
@@ -329,14 +335,16 @@ exports[`TextInput renders correctly - light variant with value 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           [
@@ -432,14 +440,16 @@ exports[`TextInput renders correctly - with error 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           [
@@ -458,14 +468,16 @@ exports[`TextInput renders correctly - with error 1`] = `
       Email
     </Text>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           [
@@ -564,14 +576,16 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           [

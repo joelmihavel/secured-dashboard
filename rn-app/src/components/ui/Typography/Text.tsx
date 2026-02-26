@@ -10,6 +10,7 @@
 import React, { memo } from 'react';
 import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
 import { typography, TypographyVariant, colors, semanticColors } from '@/src/theme';
+import { sf } from '@/src/theme/scale';
 
 type TextColor =
   | 'primary'
@@ -54,6 +55,8 @@ function TextComponent({
   if (inherit) {
     return (
       <RNText
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
         style={[color ? { color: colorMap[color] } : undefined, style]}
         {...props}
       >
@@ -71,10 +74,12 @@ function TextComponent({
   // fontFamily already encodes the weight (e.g., PlusJakartaSans-Medium = 500).
   return (
     <RNText
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={[
         {
-          fontSize: typographyStyle.fontSize,
-          lineHeight: typographyStyle.lineHeight,
+          fontSize: sf(typographyStyle.fontSize),
+          lineHeight: typographyStyle.lineHeight ? sf(typographyStyle.lineHeight) : undefined,
           letterSpacing: typographyStyle.letterSpacing,
           fontFamily: typographyStyle.fontFamily,
           color: textColor,

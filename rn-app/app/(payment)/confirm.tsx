@@ -23,9 +23,11 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path, Line } from 'react-native-svg';
 
 import { Screen, PrimaryButton } from '@/src/components';
+import { BlurView } from 'expo-blur';
 import { useDashboard } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import { PAYMENT_COLORS } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 
 // ==============================================
 // FIGMA COLOR TOKENS — aliased from shared PAYMENT_COLORS
@@ -402,7 +404,7 @@ export default function ConfirmPaymentScreen() {
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: C.bg,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   scrollView: {
     flex: 1,
@@ -413,19 +415,19 @@ const styles = StyleSheet.create({
 
   // Back button — compact like Profile screen
   backButton: {
-    width: 40,
-    height: 40,
+    width: s(40),
+    height: sv(40),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    marginLeft: 40,
+    marginBottom: sv(12),
+    marginLeft: s(40),
   },
 
   // Card container
   cardContainer: {
-    paddingHorizontal: 40,
+    paddingHorizontal: s(40),
     alignItems: 'center',
-    gap: 24,
+    gap: sv(24),
   },
 
   // Top Card
@@ -433,9 +435,9 @@ const styles = StyleSheet.create({
     backgroundColor: C.card,
     borderRadius: 12,
     width: '100%',
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    gap: 32,
+    paddingHorizontal: s(16),
+    paddingVertical: sv(24),
+    gap: sv(32),
     alignItems: 'center',
     overflow: 'hidden',
     position: 'relative',
@@ -443,49 +445,49 @@ const styles = StyleSheet.create({
   },
   topCardContent: {
     alignItems: 'center',
-    gap: 8,
+    gap: sv(8),
   },
   topCardTitle: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: sf(12),
+    lineHeight: sf(17),
     letterSpacing: -0.24,
     color: C.label,
   },
   topCardSubtitle: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     letterSpacing: -0.56,
     color: C.value,
     textAlign: 'center',
   },
   cashbackNote: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: sf(11),
+    lineHeight: sf(16),
     color: C.muted,
     textAlign: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: s(8),
   },
   cashbackPill: {
     backgroundColor: C.cardDivider,
     borderRadius: 200,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: s(12),
+    paddingVertical: sv(8),
     justifyContent: 'center',
     alignItems: 'center',
   },
   cashbackPillText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: C.accent,
     textAlign: 'center',
   },
   topCardDivider: {
     height: 5,
-    width: 268,
+    width: s(268),
     backgroundColor: C.cardDivider,
   },
   crosshatch: {
@@ -500,19 +502,19 @@ const styles = StyleSheet.create({
   gridContainer: {
     position: 'absolute',
     top: 0,
-    left: (270 - 369) / 2,
-    width: 369,
-    height: 235,
+    left: (s(270) - s(369)) / 2,
+    width: s(369),
+    height: sv(235),
     zIndex: 0,
   },
 
   // Bottom Card / Receipt — Figma 684:13148 (270x423)
   bottomCard: {
     backgroundColor: C.card,
-    width: 270,
-    paddingTop: 56,
-    paddingBottom: 24,
-    gap: 18,
+    width: s(270),
+    paddingTop: sv(56),
+    paddingBottom: sv(24),
+    gap: sv(18),
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 9 },
     shadowOpacity: 0.1,
@@ -524,8 +526,8 @@ const styles = StyleSheet.create({
 
   breakdownSection: {
     width: '100%',
-    paddingHorizontal: 24,
-    gap: 16,
+    paddingHorizontal: s(24),
+    gap: sv(16),
   },
   breakdownRow: {
     flexDirection: 'row',
@@ -539,14 +541,14 @@ const styles = StyleSheet.create({
   },
   breakdownLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: C.label,
   },
   breakdownValue: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: C.value,
   },
   breakdownValueTotal: {
@@ -565,53 +567,53 @@ const styles = StyleSheet.create({
   bankFeesBanner: {
     backgroundColor: '#1A1A1A',  // Figma 782:6326: #1A1A1A (black[600])
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: s(12),
+    paddingVertical: sv(4),
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
   },
   bankFeesText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: '#DDDDDD',  // Figma 782:6327: #DDD (neutral[200])
     textAlign: 'center',
   },
 
   leftPerforation: {
     position: 'absolute',
-    left: -6,
-    top: 256,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    left: s(-6),
+    top: sv(256),
+    width: s(14),
+    height: s(14),
+    borderRadius: s(7),
     backgroundColor: C.bg,
   },
   rightPerforation: {
     position: 'absolute',
-    right: -7,
-    top: 256,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    right: s(-7),
+    top: sv(256),
+    width: s(14),
+    height: s(14),
+    borderRadius: s(7),
     backgroundColor: C.bg,
   },
 
   spacer: {
     flex: 1,
-    minHeight: 40,
+    minHeight: sv(40),
   },
 
   ctaWrapper: {
-    paddingHorizontal: 40,
-    gap: 16,
+    paddingHorizontal: s(40),
+    gap: sv(16),
     alignItems: 'center',
   },
   footerText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: C.muted,
     textAlign: 'center',
   },

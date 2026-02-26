@@ -9,7 +9,14 @@
 import type { PaymentFlowOutcome } from '@/src/hooks/usePaymentFlow';
 
 /** Which view is displayed inside the payment method modal */
-export type ModalView = 'selector' | 'add-upi' | 'add-card' | 'add-debit-card' | 'add-netbanking' | 'edit-method';
+export type ModalView =
+  | 'enter-amount'
+  | 'selector'
+  | 'add-upi'
+  | 'add-card'
+  | 'add-debit-card'
+  | 'add-netbanking'
+  | 'edit-method';
 
 /** Method type passed from selector to orchestrator */
 export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';

@@ -301,9 +301,9 @@ const styles = StyleSheet.create({
       width: FIGMA.shadow.offsetX,
       height: FIGMA.shadow.offsetY,
     },
-    shadowOpacity: sv(1),
+    shadowOpacity: 1,
     shadowRadius: FIGMA.shadow.blurRadius,
-    elevation: sv(1),
+    elevation: 1,
   },
 
   inputBoxDisabled: {

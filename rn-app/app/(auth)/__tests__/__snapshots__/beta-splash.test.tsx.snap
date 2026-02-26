@@ -117,14 +117,16 @@ exports[`BetaSplashScreen renders correctly 1`] = `
           }
         >
           <Text
+            allowFontScaling={true}
+            maxFontSizeMultiplier={1.2}
             style={
               [
                 {
                   "color": "#FFFFFF",
                   "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 12,
+                  "fontSize": 13.799999999999999,
                   "letterSpacing": 0,
-                  "lineHeight": 20,
+                  "lineHeight": 23,
                   "textAlign": "left",
                 },
                 {

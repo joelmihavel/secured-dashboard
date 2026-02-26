@@ -45,6 +45,7 @@ import { Screen, Text } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard, useAuth, useDeleteAccount, useSavedPaymentMethods } from '@/src/hooks';
 import { colors } from '@/src/theme';
+import { s } from '@/src/theme/scale';
 
 // Blueprint colors (verified against 41-8760-blueprint.json)
 const FIGMA_COLORS = {
@@ -370,14 +371,14 @@ const styles = StyleSheet.create({
   // Main content frame (41:8761): column, gap=40, paddingBottom=48
   mainContent: {
     flexDirection: 'column',
-    gap: 40,           // Blueprint: itemSpacing 40
-    paddingBottom: 48,  // Blueprint: padding.bottom 48
+    gap: s(40),           // Blueprint: itemSpacing 40
+    paddingBottom: s(48),  // Blueprint: padding.bottom 48
   },
   // Header frame (41:8762): column, gap=24, paddingH=40
   headerSection: {
     flexDirection: 'column',
-    gap: 24,                  // Blueprint: itemSpacing 24
-    paddingHorizontal: 40,    // Blueprint: padding left=40, right=40
+    gap: s(24),                  // Blueprint: itemSpacing 24
+    paddingHorizontal: s(40),    // Blueprint: padding left=40, right=40
   },
   // Back button (41:8763): 32x32
   backButton: {
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
     lineHeight: 64,
     letterSpacing: -2,
     color: colors.white,
-    maxWidth: 313,    // Blueprint: text node width=313, forces 2-line wrap
+    maxWidth: s(313),    // Blueprint: text node width=313, forces 2-line wrap
   },
   // "My " span (chars 0-3): #A9A9A9
   titleMy: {
@@ -410,8 +411,8 @@ const styles = StyleSheet.create({
   // Section container: column, gap=24, paddingH=40
   section: {
     flexDirection: 'column',
-    gap: 24,
-    paddingHorizontal: 40,
+    gap: s(24),
+    paddingHorizontal: s(40),
   },
   // Section title: 12px/16.92 SemiBold #878787, letterSpacing 0, uppercase
   sectionTitle: {

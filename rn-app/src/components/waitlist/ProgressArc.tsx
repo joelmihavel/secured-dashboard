@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
 
   hintContainer: {
     position: 'absolute',
-    zIndex: sv(10),
+    zIndex: 10,
   },
 
   hintText: {
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-    zIndex: sv(5),
+    zIndex: 5,
   },
 });
 

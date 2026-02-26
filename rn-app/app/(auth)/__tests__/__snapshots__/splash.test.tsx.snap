@@ -56,9 +56,9 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
           style={
             {
               "flexDirection": "column",
-              "height": 613,
+              "height": 960,
               "justifyContent": "space-between",
-              "paddingBottom": 64,
+              "paddingBottom": 100,
             }
           }
         >
@@ -66,8 +66,8 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
             style={
               {
                 "flexDirection": "column",
-                "gap": 40,
-                "paddingHorizontal": 48,
+                "gap": 62.5,
+                "paddingHorizontal": 91.5,
                 "width": "100%",
               }
             }
@@ -104,28 +104,30 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
               style={
                 {
                   "flexDirection": "column",
-                  "gap": 16,
+                  "gap": 25,
                   "width": "100%",
                 }
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
                       "color": "#A9A9A9",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 48,
+                      "fontSize": 55.199999999999996,
                       "letterSpacing": -2,
-                      "lineHeight": 64,
+                      "lineHeight": 73.6,
                     },
                   ]
                 }
@@ -137,6 +139,8 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                 
 
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       undefined,
@@ -150,21 +154,23 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                 </Text>
               </Text>
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
                       "color": "#A6A6A6",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
+                      "fontSize": 16.099999999999998,
+                      "lineHeight": 23,
                     },
                   ]
                 }
@@ -178,8 +184,8 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
               {
                 "alignItems": "center",
                 "flexDirection": "column",
-                "gap": 24,
-                "paddingHorizontal": 48,
+                "gap": 37.5,
+                "paddingHorizontal": 91.5,
                 "width": "100%",
               }
             }
@@ -584,27 +590,31 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 14,
-                      "lineHeight": 20,
+                      "fontSize": 16.099999999999998,
+                      "lineHeight": 23,
                     },
                   ]
                 }
               >
                 Already a user? 
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       undefined,

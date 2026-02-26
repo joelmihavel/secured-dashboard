@@ -11,6 +11,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { Text as RNText, TextInput } from 'react-native';
+
 import '../global.css';
 import { colors } from '@/src/theme';
 import { QueryProvider, AuthProvider } from '@/src/providers';
@@ -34,6 +36,12 @@ installGlobalErrorHandlers();
 
 // Keep splash screen visible while loading resources
 SplashScreen.preventAutoHideAsync();
+
+// Safety net for raw RNText usage — caps Dynamic Type scaling
+if (!(RNText as any).defaultProps?.maxFontSizeMultiplier) {
+  (RNText as any).defaultProps = { ...(RNText as any).defaultProps, maxFontSizeMultiplier: 1.3 };
+}
+(TextInput as any).defaultProps = { ...(TextInput as any).defaultProps, maxFontSizeMultiplier: 1.2 };
 
 function RootLayoutInner() {
   const [fontsLoaded, fontError] = useFonts({

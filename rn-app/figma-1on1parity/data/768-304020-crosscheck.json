@@ -1,0 +1,120 @@
+{
+  "screenId": "768-304020",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Refunded",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-26T18:47:48.392Z",
+  "checks": {
+    "nodeCount": 82,
+    "textNodeCount": 7,
+    "componentInstanceCount": 4,
+    "interactiveNodeCount": 1,
+    "imageAssetCount": 3,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 2095586361",
+      "Frame 2095586363",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "I768:304044;11:75",
+        "name": "Text here",
+        "content": "refunded",
+        "fontSize": 13.511569023132324,
+        "fontWeight": 800,
+        "color": "#C7C9D9"
+      },
+      {
+        "nodeId": "768:304045",
+        "name": "Payment Refunded",
+        "content": "Payment Refunded",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "768:304052",
+        "name": "Your payment was not completed and the amount has been returned to your account.",
+        "content": "Your payment was not completed and the amount has been returned to your account.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "768:304058",
+        "name": "Refunds usually reflect within 3–5 business days.",
+        "content": "Refunds usually reflect within 3–5 business days.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I768:304060;100:1565",
+        "name": "Text",
+        "content": "Try Again",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "768:304061",
+        "name": "Contact Support",
+        "content": "Contact Support",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I768:304065;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#202020",
+      "#4D4D4D",
+      "#A9A9A9",
+      "#C7C9D9",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      8,
+      10,
+      16,
+      24,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:23982",
+      "1:28034",
+      "597:3220",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      }
+    ]
+  }
+}

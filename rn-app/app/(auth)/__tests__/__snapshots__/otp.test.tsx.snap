@@ -92,7 +92,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
       [
         {
           "alignItems": "center",
-          "gap": 15,
+          "gap": 23.5,
         },
         {
           "transform": [
@@ -120,7 +120,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
               "backgroundColor": "#4D4D4D",
               "borderRadius": 200,
               "height": 4,
-              "width": 48,
+              "width": 91.5,
             }
           }
         />
@@ -133,7 +133,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
           "borderTopLeftRadius": 22.79,
           "borderTopRightRadius": 22.79,
           "overflow": "hidden",
-          "paddingTop": 15.19,
+          "paddingTop": 24,
           "width": "100%",
         }
       }
@@ -142,8 +142,8 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
         style={
           {
             "alignItems": "center",
-            "gap": 30.38,
-            "paddingTop": 16,
+            "gap": 47.5,
+            "paddingTop": 25,
           }
         }
       >
@@ -151,21 +151,23 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
           style={
             {
               "alignItems": "flex-start",
-              "gap": 10,
-              "paddingHorizontal": 48,
+              "gap": 15.5,
+              "paddingHorizontal": 91.5,
               "width": "100%",
             }
           }
         >
           <Text
+            allowFontScaling={true}
+            maxFontSizeMultiplier={1.2}
             style={
               [
                 {
                   "color": "#FFFFFF",
                   "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 16,
+                  "fontSize": 18.4,
                   "letterSpacing": 0,
-                  "lineHeight": 24,
+                  "lineHeight": 27.599999999999998,
                   "textAlign": "left",
                 },
                 {
@@ -176,7 +178,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                   "letterSpacing": -1,
                   "lineHeight": 40,
                   "textAlign": "left",
-                  "width": 297,
+                  "width": 567,
                 },
               ]
             }
@@ -184,14 +186,16 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
             Let's verify your number
           </Text>
           <Text
+            allowFontScaling={true}
+            maxFontSizeMultiplier={1.2}
             style={
               [
                 {
                   "color": "#FFFFFF",
                   "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 16,
+                  "fontSize": 18.4,
                   "letterSpacing": 0,
-                  "lineHeight": 24,
+                  "lineHeight": 27.599999999999998,
                   "textAlign": "left",
                 },
                 {
@@ -200,9 +204,9 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                   "fontSize": 12,
                   "fontWeight": "500",
                   "letterSpacing": -0.132,
-                  "lineHeight": 21.6,
+                  "lineHeight": 24.84,
                   "textAlign": "left",
-                  "width": 297,
+                  "width": 567,
                 },
               ]
             }
@@ -213,7 +217,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
         <View
           style={
             {
-              "paddingHorizontal": 48,
+              "paddingHorizontal": 91.5,
               "width": "100%",
             }
           }
@@ -270,7 +274,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                 style={
                   {
                     "flexDirection": "row",
-                    "gap": 8,
+                    "gap": 15.5,
                   }
                 }
               >
@@ -284,10 +288,10 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         "borderRadius": 8,
                         "borderWidth": 1,
                         "elevation": 1,
-                        "height": 64,
+                        "height": 100,
                         "justifyContent": "center",
-                        "paddingHorizontal": 12,
-                        "paddingVertical": 8,
+                        "paddingHorizontal": 23,
+                        "paddingVertical": 12.5,
                         "shadowColor": "rgb(10, 13, 18)",
                         "shadowOffset": {
                           "height": 1,
@@ -295,28 +299,30 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         },
                         "shadowOpacity": 0.05,
                         "shadowRadius": 2,
-                        "width": 39,
+                        "width": 74.5,
                       },
                       undefined,
                     ]
                   }
                 >
                   <Text
+                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         [
                           {
                             "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 20,
-                            "lineHeight": 32,
+                            "fontSize": 23,
+                            "lineHeight": 36.8,
                             "textAlign": "center",
                           },
                           {
@@ -339,10 +345,10 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         "borderRadius": 8,
                         "borderWidth": 1,
                         "elevation": 1,
-                        "height": 64,
+                        "height": 100,
                         "justifyContent": "center",
-                        "paddingHorizontal": 12,
-                        "paddingVertical": 8,
+                        "paddingHorizontal": 23,
+                        "paddingVertical": 12.5,
                         "shadowColor": "rgb(10, 13, 18)",
                         "shadowOffset": {
                           "height": 1,
@@ -350,28 +356,30 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         },
                         "shadowOpacity": 0.05,
                         "shadowRadius": 2,
-                        "width": 39,
+                        "width": 74.5,
                       },
                       undefined,
                     ]
                   }
                 >
                   <Text
+                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         [
                           {
                             "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 20,
-                            "lineHeight": 32,
+                            "fontSize": 23,
+                            "lineHeight": 36.8,
                             "textAlign": "center",
                           },
                           {
@@ -394,10 +402,10 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         "borderRadius": 8,
                         "borderWidth": 1,
                         "elevation": 1,
-                        "height": 64,
+                        "height": 100,
                         "justifyContent": "center",
-                        "paddingHorizontal": 12,
-                        "paddingVertical": 8,
+                        "paddingHorizontal": 23,
+                        "paddingVertical": 12.5,
                         "shadowColor": "rgb(10, 13, 18)",
                         "shadowOffset": {
                           "height": 1,
@@ -405,28 +413,30 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         },
                         "shadowOpacity": 0.05,
                         "shadowRadius": 2,
-                        "width": 39,
+                        "width": 74.5,
                       },
                       undefined,
                     ]
                   }
                 >
                   <Text
+                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         [
                           {
                             "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 20,
-                            "lineHeight": 32,
+                            "fontSize": 23,
+                            "lineHeight": 36.8,
                             "textAlign": "center",
                           },
                           {
@@ -441,22 +451,24 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                 </View>
               </View>
               <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 20,
+                      "fontSize": 23,
                       "letterSpacing": 0,
-                      "lineHeight": 32,
+                      "lineHeight": 36.8,
                       "textAlign": "left",
                     },
                     {
                       "color": "#cbcbcb",
                       "fontFamily": "PlusJakartaSans-Medium",
-                      "fontSize": 20,
-                      "lineHeight": 32,
-                      "marginHorizontal": 8,
+                      "fontSize": 23,
+                      "lineHeight": 36.8,
+                      "marginHorizontal": 15.5,
                     },
                   ]
                 }
@@ -467,7 +479,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                 style={
                   {
                     "flexDirection": "row",
-                    "gap": 8,
+                    "gap": 15.5,
                   }
                 }
               >
@@ -481,10 +493,10 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         "borderRadius": 8,
                         "borderWidth": 1,
                         "elevation": 1,
-                        "height": 64,
+                        "height": 100,
                         "justifyContent": "center",
-                        "paddingHorizontal": 12,
-                        "paddingVertical": 8,
+                        "paddingHorizontal": 23,
+                        "paddingVertical": 12.5,
                         "shadowColor": "rgb(10, 13, 18)",
                         "shadowOffset": {
                           "height": 1,
@@ -492,28 +504,30 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         },
                         "shadowOpacity": 0.05,
                         "shadowRadius": 2,
-                        "width": 39,
+                        "width": 74.5,
                       },
                       undefined,
                     ]
                   }
                 >
                   <Text
+                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         [
                           {
                             "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 20,
-                            "lineHeight": 32,
+                            "fontSize": 23,
+                            "lineHeight": 36.8,
                             "textAlign": "center",
                           },
                           {
@@ -536,10 +550,10 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         "borderRadius": 8,
                         "borderWidth": 1,
                         "elevation": 1,
-                        "height": 64,
+                        "height": 100,
                         "justifyContent": "center",
-                        "paddingHorizontal": 12,
-                        "paddingVertical": 8,
+                        "paddingHorizontal": 23,
+                        "paddingVertical": 12.5,
                         "shadowColor": "rgb(10, 13, 18)",
                         "shadowOffset": {
                           "height": 1,
@@ -547,28 +561,30 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         },
                         "shadowOpacity": 0.05,
                         "shadowRadius": 2,
-                        "width": 39,
+                        "width": 74.5,
                       },
                       undefined,
                     ]
                   }
                 >
                   <Text
+                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         [
                           {
                             "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 20,
-                            "lineHeight": 32,
+                            "fontSize": 23,
+                            "lineHeight": 36.8,
                             "textAlign": "center",
                           },
                           {
@@ -591,10 +607,10 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         "borderRadius": 8,
                         "borderWidth": 1,
                         "elevation": 1,
-                        "height": 64,
+                        "height": 100,
                         "justifyContent": "center",
-                        "paddingHorizontal": 12,
-                        "paddingVertical": 8,
+                        "paddingHorizontal": 23,
+                        "paddingVertical": 12.5,
                         "shadowColor": "rgb(10, 13, 18)",
                         "shadowOffset": {
                           "height": 1,
@@ -602,28 +618,30 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                         },
                         "shadowOpacity": 0.05,
                         "shadowRadius": 2,
-                        "width": 39,
+                        "width": 74.5,
                       },
                       undefined,
                     ]
                   }
                 >
                   <Text
+                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         [
                           {
                             "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 20,
-                            "lineHeight": 32,
+                            "fontSize": 23,
+                            "lineHeight": 36.8,
                             "textAlign": "center",
                           },
                           {
@@ -675,8 +693,8 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
           style={
             {
               "alignItems": "center",
-              "gap": 16,
-              "paddingHorizontal": 48,
+              "gap": 25,
+              "paddingHorizontal": 91.5,
               "width": "100%",
             }
           }
@@ -797,7 +815,7 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                   "letterSpacing": 0,
                   "lineHeight": 20,
                   "textAlign": "center",
-                  "width": 297,
+                  "width": 567,
                 }
               }
             >

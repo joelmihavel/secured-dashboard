@@ -52,8 +52,8 @@ exports[`ProfileScreen matches snapshot 1`] = `
             style={
               {
                 "flexDirection": "column",
-                "gap": 40,
-                "paddingBottom": 48,
+                "gap": 76.5,
+                "paddingBottom": 91.5,
               }
             }
           >
@@ -61,8 +61,8 @@ exports[`ProfileScreen matches snapshot 1`] = `
               style={
                 {
                   "flexDirection": "column",
-                  "gap": 24,
-                  "paddingHorizontal": 40,
+                  "gap": 46,
+                  "paddingHorizontal": 76.5,
                 }
               }
             >
@@ -112,14 +112,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                 />
               </View>
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
@@ -128,12 +130,14 @@ exports[`ProfileScreen matches snapshot 1`] = `
                       "fontSize": 48,
                       "letterSpacing": -2,
                       "lineHeight": 64,
-                      "maxWidth": 313,
+                      "maxWidth": 597.5,
                     },
                   ]
                 }
               >
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       undefined,
@@ -146,6 +150,8 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   My 
                 </Text>
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       undefined,
@@ -158,6 +164,8 @@ exports[`ProfileScreen matches snapshot 1`] = `
                    
                 </Text>
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       undefined,
@@ -175,20 +183,22 @@ exports[`ProfileScreen matches snapshot 1`] = `
               style={
                 {
                   "flexDirection": "column",
-                  "gap": 24,
-                  "paddingHorizontal": 40,
+                  "gap": 46,
+                  "paddingHorizontal": 76.5,
                 }
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
@@ -291,14 +301,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -314,14 +326,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                       Test User
                     </Text>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -389,14 +403,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="view-agreement-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -425,20 +441,22 @@ exports[`ProfileScreen matches snapshot 1`] = `
               style={
                 {
                   "flexDirection": "column",
-                  "gap": 24,
-                  "paddingHorizontal": 40,
+                  "gap": 46,
+                  "paddingHorizontal": 76.5,
                 }
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
@@ -516,14 +534,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="edit-upi-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -598,14 +618,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="edit-credit-card-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -680,14 +702,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="edit-bank-account-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -716,20 +740,22 @@ exports[`ProfileScreen matches snapshot 1`] = `
               style={
                 {
                   "flexDirection": "column",
-                  "gap": 24,
-                  "paddingHorizontal": 40,
+                  "gap": 46,
+                  "paddingHorizontal": 76.5,
                 }
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
@@ -807,14 +833,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="contact-support-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -889,14 +917,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="rate-app-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -925,20 +955,22 @@ exports[`ProfileScreen matches snapshot 1`] = `
               style={
                 {
                   "flexDirection": "column",
-                  "gap": 24,
-                  "paddingHorizontal": 40,
+                  "gap": 46,
+                  "paddingHorizontal": 76.5,
                 }
               }
             >
               <Text
+                allowFontScaling={true}
+                maxFontSizeMultiplier={1.2}
                 style={
                   [
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 16,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 24,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
                     {
@@ -1016,14 +1048,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="sign-out-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {
@@ -1098,14 +1132,16 @@ exports[`ProfileScreen matches snapshot 1`] = `
                   testID="delete-account-button"
                 >
                   <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
                     style={
                       [
                         {
                           "color": "#FFFFFF",
                           "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 16,
+                          "fontSize": 18.4,
                           "letterSpacing": 0,
-                          "lineHeight": 24,
+                          "lineHeight": 27.599999999999998,
                           "textAlign": "left",
                         },
                         {

@@ -79,4 +79,3 @@ export type {
   PaymentMethodSelectionSheetProps,
   PaymentMethodOption,
 } from './PaymentMethodSelectionSheet';
-export * from './RentAmountModal';

@@ -51,6 +51,7 @@ import { useWaitlist } from '@/src/hooks';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
 import { spacing, radius } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 import type { TimelineItemData } from '@/src/components/waitlist/ApplicationTimeline';
 
 // ============================================
@@ -80,30 +81,30 @@ const FIGMA = {
   },
 
   layout: {
-    // Content padding (node 41:11319)
-    containerPadding: spacing.xxl, // 40
+    // Content padding (node 41:11319) — scaled
+    containerPadding: s(40),
 
-    // Content width (node 41:11320)
-    contentWidth: 313,
+    // Content width (node 41:11320) — scaled
+    contentWidth: s(313),
 
-    // Gap between all sections in 41:11320
-    contentGap: spacing.xxl, // 40
+    // Gap between all sections in 41:11320 — scaled
+    contentGap: sv(40),
 
-    // Header gap (node 41:11321)
-    headerGap: spacing.xxxl, // 48
+    // Header gap (node 41:11321) — scaled
+    headerGap: sv(48),
 
-    // Text block gap (node 41:11324)
-    textGap: spacing.md, // 16
+    // Text block gap (node 41:11324) — scaled
+    textGap: sv(16),
   },
 
   card: {
     borderRadius: radius.md, // 12
-    paddingVertical: spacing.lg, // 24
-    paddingHorizontal: spacing.md, // 16
+    paddingVertical: sv(24),
+    paddingHorizontal: s(16),
   },
 
   divider: {
-    width: 24,
+    width: s(24),
     height: 2,
     borderRadius: 200,
   },
@@ -415,8 +416,8 @@ const styles = StyleSheet.create({
 
   // Logo container - Frame 1686557264 (node 41:11322)
   logoContainer: {
-    width: 32,
-    height: 38,
+    width: s(32),
+    height: sv(38),
   },
 
   // Text block - node 41:11324, gap 16

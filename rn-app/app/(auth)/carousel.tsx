@@ -21,15 +21,16 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text as RNText, Image, StyleSheet, Dimensions, ViewToken, TouchableOpacity } from 'react-native';
+import { View, Text as RNText, Image, StyleSheet, Dimensions, FlatList, ViewToken, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedScrollHandler, useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { Illustration1, Illustration2, Illustration3 } from '@/src/components/onboarding';
 
 import { Screen, Logo, Text, DottedGridPattern } from '@/src/components';
 import { CarouselDots } from '@/src/components';
 import { colors } from '@/src/theme';
+import { s, sv } from '@/src/theme/scale';
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -42,7 +43,7 @@ const FIGMA_COLORS = {
 } as const;
 
 /** Height of the swipeable text area (heading 128 + gap 16 + body 40) */
-const TEXT_AREA_HEIGHT = 184;
+const TEXT_AREA_HEIGHT = sv(184);
 
 interface HeadingSegment {
   text: string;
@@ -92,23 +93,17 @@ export default function CarouselScreen() {
 
   const initialPage = page ? Math.max(0, Math.min(parseInt(page, 10) - 1, slides.length - 1)) : 0;
   const [activeIndex, setActiveIndex] = useState(initialPage);
-    const flatListRef = useRef<Animated.FlatList<any>>(null);
-  const scrollX = useSharedValue(0);
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
-    },
-  });
+  const flatListRef = useRef<FlatList<Slide>>(null);
+  const activeSlide = useSharedValue(initialPage);
 
   const style1 = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollX.value, [-SCREEN_WIDTH, 0, SCREEN_WIDTH], [0, 1, 0], Extrapolation.CLAMP),
+    opacity: withTiming(activeSlide.value === 0 ? 1 : 0, { duration: 300 }),
   }));
   const style2 = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollX.value, [0, SCREEN_WIDTH, 2 * SCREEN_WIDTH], [0, 1, 0], Extrapolation.CLAMP),
+    opacity: withTiming(activeSlide.value === 1 ? 1 : 0, { duration: 300 }),
   }));
   const style3 = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollX.value, [SCREEN_WIDTH, 2 * SCREEN_WIDTH, 3 * SCREEN_WIDTH], [0, 1, 0], Extrapolation.CLAMP),
+    opacity: withTiming(activeSlide.value === 2 ? 1 : 0, { duration: 300 }),
   }));
 
 
@@ -130,6 +125,7 @@ export default function CarouselScreen() {
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index !== null) {
         setActiveIndex(viewableItems[0].index);
+        activeSlide.value = viewableItems[0].index;
       }
     },
     []
@@ -180,7 +176,7 @@ export default function CarouselScreen() {
 
             {/* Swipeable text area — extends full-width via negative margin */}
             <View style={styles.textSwiperWrapper}>
-              <Animated.FlatList
+              <FlatList
                 ref={flatListRef}
                 data={slides}
                 renderItem={renderSlideText}
@@ -188,15 +184,12 @@ export default function CarouselScreen() {
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                onScroll={scrollHandler}
-                scrollEventThrottle={16}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
                 bounces={false}
                 decelerationRate="fast"
                 snapToInterval={SCREEN_WIDTH}
                 snapToAlignment="start"
-
               />
             </View>
           </View>
@@ -228,54 +221,54 @@ const styles = StyleSheet.create({
   // Figma 759:302123 — card illustration: absolute (45, 245), 104x70, opacity 0.48
     illus1Container: {
     position: 'absolute',
-    left: 45,
-    top: 245,
+    left: s(45),
+    top: sv(245),
   },
   illus2Container: {
     position: 'absolute',
-    left: 45,
-    top: 243,
+    left: s(45),
+    top: sv(243),
   },
   illus3Container: {
     position: 'absolute',
-    left: 41,
-    top: 239,
+    left: s(41),
+    top: sv(239),
   },
   oldCardIllustration: {
     position: 'absolute',
-    left: 45,
-    top: 245,
-    width: 104,
-    height: 70,
+    left: s(45),
+    top: sv(245),
+    width: s(104),
+    height: sv(70),
     opacity: 0.48,
   },
   // Figma 756:210868 — outer container: pt-80, pb-64
   outerContainer: {
     flex: 1,
-    paddingTop: 80,
-    paddingBottom: 64,
+    paddingTop: sv(80),
+    paddingBottom: sv(64),
   },
   // Figma 756:210869 — inner container: flex-1, justify-end, px-48, gap-40
   innerContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: 48,
-    gap: 40,
+    paddingHorizontal: s(48),
+    gap: s(40),
   },
   // Figma 756:210877 — text container: groups logo + text, gap-40
   textContainer: {
-    gap: 40,
+    gap: s(40),
   },
   // Wrapper for the FlatList text area — fixed height, extends full-width
   textSwiperWrapper: {
     height: TEXT_AREA_HEIGHT,
-    marginHorizontal: -48,
+    marginHorizontal: -s(48),
   },
   // Each slide item: full screen width with horizontal padding
   slideItem: {
     width: SCREEN_WIDTH,
-    paddingHorizontal: 48,
-    gap: 16,
+    paddingHorizontal: s(48),
+    gap: s(16),
   },
   // Heading: Figma 48/64, letterSpacing -2
   heading: {

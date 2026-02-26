@@ -17,6 +17,7 @@
 
 import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
+import { s, sf, sv } from '@/src/theme/scale';
 
 export type WarningType = 'late' | 'missed' | 'multiple';
 
@@ -73,16 +74,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8, // Figma: paddingTop/Bottom 8
-    paddingHorizontal: 12, // Figma: paddingLeft/Right 12
+    paddingVertical: sv(8), // Figma: paddingTop/Bottom 8 — scaled
+    paddingHorizontal: s(12), // Figma: paddingLeft/Right 12 — scaled
     borderRadius: 12, // Figma: cornerRadius 12
   },
   text: {
     // Figma 243-3378 node 243:3382
     // Exact values: width 227, height 20, fontSize 12, fontWeight 400, lineHeight 20
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 12, // Figma: fontSize 12
-    lineHeight: 20, // Figma: lineHeightPx 20
+    fontSize: sf(12), // Figma: fontSize 12 — scaled
+    lineHeight: sf(20), // Figma: lineHeightPx 20 — scaled
     textAlign: 'center', // Figma: textAlignHorizontal CENTER
   },
 });

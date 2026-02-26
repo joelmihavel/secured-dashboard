@@ -19,14 +19,16 @@ exports[`ErrorBoundary renders default error UI snapshot 1`] = `
   }
 >
   <Text
+    allowFontScaling={true}
+    maxFontSizeMultiplier={1.2}
     style={
       [
         {
           "color": "#FFFFFF",
           "fontFamily": "PlusJakartaSans-Regular",
-          "fontSize": 28,
+          "fontSize": 32.199999999999996,
           "letterSpacing": -1,
-          "lineHeight": 40,
+          "lineHeight": 46,
           "textAlign": "center",
         },
         {
@@ -38,14 +40,16 @@ exports[`ErrorBoundary renders default error UI snapshot 1`] = `
     Something went wrong
   </Text>
   <Text
+    allowFontScaling={true}
+    maxFontSizeMultiplier={1.2}
     style={
       [
         {
           "color": "#FFFFFF",
           "fontFamily": "PlusJakartaSans-Regular",
-          "fontSize": 14,
+          "fontSize": 16.099999999999998,
           "letterSpacing": 0,
-          "lineHeight": 20,
+          "lineHeight": 23,
           "textAlign": "center",
         },
         {
@@ -58,14 +62,16 @@ exports[`ErrorBoundary renders default error UI snapshot 1`] = `
     Test error message
   </Text>
   <Text
+    allowFontScaling={true}
+    maxFontSizeMultiplier={1.2}
     style={
       [
         {
           "color": "#FFFFFF",
           "fontFamily": "PlusJakartaSans-Regular",
-          "fontSize": 12,
+          "fontSize": 13.799999999999999,
           "letterSpacing": 0,
-          "lineHeight": 16,
+          "lineHeight": 18.4,
           "textAlign": "left",
         },
         {
@@ -459,14 +465,16 @@ exports[`ErrorBoundary renders default error UI snapshot 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 14,
+            "fontSize": 16.099999999999998,
             "letterSpacing": 0,
-            "lineHeight": 20,
+            "lineHeight": 23,
             "textAlign": "left",
           },
           {

@@ -90,14 +90,16 @@ exports[`SetupIndexScreen matches snapshot 1`] = `
             </Svg>
           </View>
           <Text
+            allowFontScaling={true}
+            maxFontSizeMultiplier={1.2}
             style={
               [
                 {
                   "color": "#FFFFFF",
                   "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 16,
+                  "fontSize": 18.4,
                   "letterSpacing": 0,
-                  "lineHeight": 24,
+                  "lineHeight": 27.599999999999998,
                   "textAlign": "left",
                 },
                 {
@@ -622,14 +624,16 @@ to finish setup",
                           </Svg>
                         </View>
                         <Text
+                          allowFontScaling={true}
+                          maxFontSizeMultiplier={1.2}
                           style={
                             [
                               {
                                 "color": "#FFFFFF",
                                 "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 16,
+                                "fontSize": 18.4,
                                 "letterSpacing": 0,
-                                "lineHeight": 24,
+                                "lineHeight": 27.599999999999998,
                                 "textAlign": "left",
                               },
                               {
@@ -1075,14 +1079,16 @@ to enable payouts
                           </Svg>
                         </View>
                         <Text
+                          allowFontScaling={true}
+                          maxFontSizeMultiplier={1.2}
                           style={
                             [
                               {
                                 "color": "#FFFFFF",
                                 "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 16,
+                                "fontSize": 18.4,
                                 "letterSpacing": 0,
-                                "lineHeight": 24,
+                                "lineHeight": 27.599999999999998,
                                 "textAlign": "left",
                               },
                               {
@@ -1528,14 +1534,16 @@ to verify your tenancy
                           </Svg>
                         </View>
                         <Text
+                          allowFontScaling={true}
+                          maxFontSizeMultiplier={1.2}
                           style={
                             [
                               {
                                 "color": "#FFFFFF",
                                 "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 16,
+                                "fontSize": 18.4,
                                 "letterSpacing": 0,
-                                "lineHeight": 24,
+                                "lineHeight": 27.599999999999998,
                                 "textAlign": "left",
                               },
                               {

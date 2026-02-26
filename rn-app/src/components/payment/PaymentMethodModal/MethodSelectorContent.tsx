@@ -461,6 +461,19 @@ export function MethodSelectorContent({
 
       {/* Payment Method Rows */}
       <View style={styles.methodsContainer}>
+        {/* Banner from Figma 769:309407 */}
+        {!allSetUp && (
+          <View style={styles.completeSetupBanner}>
+            <View style={styles.bannerIconPlaceholder}>
+              <RNText style={{ fontSize: 16 }}>🔒</RNText>
+            </View>
+            <View style={styles.bannerTextCol}>
+              <RNText style={styles.bannerTitle}>Complete setup to unlock 1% cashback</RNText>
+              <RNText style={styles.bannerSub}>Finish setup in 28:12:12 to be eligible for ₹350 cashback on this payment</RNText>
+            </View>
+          </View>
+        )}
+
         {isLoadingMethods && (
           <View style={styles.loadingRow}>
             <ActivityIndicator size="small" color={FIGMA.headingAccent} />
@@ -486,28 +499,7 @@ export function MethodSelectorContent({
       </View>
 
       {/* CTA Button Section */}
-      <View style={styles.ctaSection}>
-        <PrimaryButton
-          title={ctaText}
-          onPress={handleProceed}
-          loading={isInitiating}
-          disabled={isInitiating}
-          showDivider
-          testID="modal-pay-now-button"
-        />
-
-        {/* Disclaimer or Countdown */}
-        {allSetUp ? (
-          <RNText style={styles.disclaimerText}>
-            You'll see the final amount before payment
-          </RNText>
-        ) : creditCardDisabled ? (
-          <RNText style={styles.disclaimerText}>
-            Finish setup in 28:12:12 to be eligible for  {'\n'}
-            ₹350 cashback on this payment
-          </RNText>
-        ) : null}
-      </View>
+      
     </View>
   );
 }
@@ -521,6 +513,7 @@ const styles = StyleSheet.create({
   sheetContent: {
     paddingTop: 16,
     gap: 32,
+    paddingBottom: 24,
   },
 
   // Heading -- Figma: 28px Regular, 40 line-height, -1 letter-spacing, paddingHorizontal 48
@@ -559,6 +552,39 @@ const styles = StyleSheet.create({
   },
 
   // Methods Container -- Figma: column, gap 16, paddingHorizontal 48
+  
+  completeSetupBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#202020',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    gap: 12,
+  },
+  bannerIconPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#303030',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerTextCol: {
+    flex: 1,
+    gap: 4,
+  },
+  bannerTitle: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 14,
+    color: '#EEEEEE',
+  },
+  bannerSub: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    color: '#A9A9A9',
+    lineHeight: 18,
+  },
+
   methodsContainer: {
     paddingHorizontal: 48,
     gap: 16,
@@ -662,8 +688,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: '#FF9A6D',
-    flex: 1,
+    color: '#70BF73',
   },
   learnMoreText: {
     fontFamily: 'PlusJakartaSans-Regular',

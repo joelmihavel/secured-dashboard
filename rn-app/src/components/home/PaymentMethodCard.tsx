@@ -21,6 +21,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Text, Logo } from '@/src/components/ui';
 import { colors } from '@/src/theme';
+import { s, sf, sv, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
+
+// Breakpoint-driven card width matching PaymentMethodCarousel
+const PMC_CARD_WIDTH = isSmallDevice ? 240 : isLargeDevice ? 290 : 270;
 
 export type HomePaymentMethodType = 'upi' | 'card' | 'netbanking';
 
@@ -155,23 +159,23 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
 
 const styles = StyleSheet.create({
   card: {
-    width: 270, // Figma: exact 270px
+    width: PMC_CARD_WIDTH, // Figma: 270px, breakpoint-scaled
     borderRadius: 12, // Figma: borderRadius 12
     overflow: 'hidden',
   },
   cardBody: {
     backgroundColor: '#202020', // Figma: #202020
-    paddingTop: 24, // Figma: paddingTop 24
-    paddingBottom: 24, // Figma: paddingBottom 24
-    paddingLeft: 32, // Figma: paddingLeft 32
-    paddingRight: 16, // Figma: paddingRight 16
+    paddingTop: sv(24), // Figma: paddingTop 24
+    paddingBottom: sv(24), // Figma: paddingBottom 24
+    paddingLeft: s(32), // Figma: paddingLeft 32
+    paddingRight: s(16), // Figma: paddingRight 16
     justifyContent: 'space-between',
   },
   cardBodyLarge: {
-    height: 336, // Figma: full height for Credit Card
+    height: sv(336), // Figma: full height for Credit Card
   },
   cardBodySmall: {
-    height: 336, // Figma: 400 total - 64 footer = 336 (same as all card types)
+    height: sv(336), // Figma: 400 total - 64 footer = 336 (same as all card types)
   },
   cardHeader: {
     flexDirection: 'row',
@@ -183,19 +187,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingHorizontal: s(6),
+    paddingVertical: sv(3),
     borderRadius: 4,
-    gap: 2,
+    gap: s(2),
   },
   upiLogoText: {
     fontFamily: 'PlusJakartaSans-Bold', // Figma: fontWeight 700
-    fontSize: 12, // Figma: exact
+    fontSize: sf(12), // Figma: exact
     color: '#27803B',
   },
   upiLogoIcon: {
-    width: 12,
-    height: 12,
+    width: s(12),
+    height: s(12),
     backgroundColor: '#E9661C', // Figma 243-5870: #E9661C for UPI P icon
     borderRadius: 2,
     alignItems: 'center',
@@ -203,41 +207,41 @@ const styles = StyleSheet.create({
   },
   upiIconText: {
     fontFamily: 'PlusJakartaSans-Bold', // Figma: fontWeight 700
-    fontSize: 8,
+    fontSize: sf(8),
     color: colors.white,
   },
   visaText: {
     fontFamily: 'PlusJakartaSans-Bold', // Figma: fontWeight 700
-    fontSize: 20, // Figma: exact
+    fontSize: sf(20), // Figma: exact
     color: colors.white,
     fontStyle: 'italic',
     letterSpacing: 1,
   },
   bankText: {
     fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: 16, // Figma: exact
+    fontSize: sf(16), // Figma: exact
     color: colors.white,
   },
   // Selected Badge
   selectedBadge: {
     backgroundColor: '#1A1A1A', // Figma: #1A1A1A
-    paddingHorizontal: 12, // Figma: exact
-    paddingVertical: 8, // Figma: exact
+    paddingHorizontal: s(12), // Figma: exact
+    paddingVertical: sv(8), // Figma: exact
     borderRadius: 200, // Figma: pill shape
   },
   selectedText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12, // Figma: exact
+    fontSize: sf(12), // Figma: exact
     color: '#FF9A6D', // Figma: brand[500]
     textAlign: 'center',
   },
   // Details
   detailsContainer: {
-    gap: 4, // Figma: gap 4
+    gap: sv(4), // Figma: gap 4
   },
   accountText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 16, // Figma: exact
+    fontSize: sf(16), // Figma: exact
   },
   accountBankName: {
     color: '#4D4D4D', // Figma 243-5870: #4D4D4D for bank name text on card
@@ -247,12 +251,12 @@ const styles = StyleSheet.create({
   },
   accentText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20, // Figma: accent is larger
+    fontSize: sf(20), // Figma: accent is larger
     color: '#FF9A6D', // Figma: brand[500]
   },
   upiIdText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 16, // Figma: exact
+    fontSize: sf(16), // Figma: exact
   },
   upiIdVisible: {
     color: '#4D4D4D', // Figma 243-5870: #4D4D4D for UPI ID visible text
@@ -262,11 +266,11 @@ const styles = StyleSheet.create({
   },
   // Card Details
   cardDetailsContainer: {
-    gap: 28, // Figma: gap 28
+    gap: sv(28), // Figma: gap 28
   },
   cardNumber: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 20, // Figma: exact
+    fontSize: sf(20), // Figma: exact
   },
   cardNumberDots: {
     color: '#CBCBCB', // Figma: neutral[300]
@@ -278,11 +282,11 @@ const styles = StyleSheet.create({
     color: '#FF9A6D', // Figma: brand[500]
   },
   cardInfoWrapper: {
-    gap: 8, // Figma: gap 8
+    gap: sv(8), // Figma: gap 8
   },
   cardInfoText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 16, // Figma: exact
+    fontSize: sf(16), // Figma: exact
   },
   cardLabel: {
     color: '#4D4D4D', // Figma 243-5870: #4D4D4D for EXPIRY/CVV labels
@@ -296,17 +300,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 32, // Figma: exact
-    height: 64, // Figma: exact
+    paddingHorizontal: s(32), // Figma: exact
+    height: sv(64), // Figma: exact
   },
   typeEditContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, // Figma: gap 4
+    gap: s(4), // Figma: gap 4
   },
   typeLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14, // Figma: exact
+    fontSize: sf(14), // Figma: exact
     color: '#CBCBCB', // Figma: neutral[300]
     textTransform: 'uppercase',
   },

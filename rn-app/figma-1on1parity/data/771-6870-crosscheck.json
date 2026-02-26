@@ -1,0 +1,214 @@
+{
+  "screenId": "771-6870",
+  "screenName": "Pay Rent / Transaction Page --with cashback / second visit",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-26T17:50:11.466Z",
+  "checks": {
+    "nodeCount": 90,
+    "textNodeCount": 18,
+    "componentInstanceCount": 3,
+    "interactiveNodeCount": 1,
+    "imageAssetCount": 1,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 2095586361",
+      "Frame 2095586363",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "771:6877",
+        "name": "Rent due in 28 days",
+        "content": "Rent due in 28 days",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "771:6878",
+        "name": "You’ll earn 1% cashback on this rent payment",
+        "content": "You’ll earn 1% cashback on this rent payment",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "771:6880",
+        "name": "Get ₹325 cashback after payment",
+        "content": "Get ₹325 cashback after payment",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#FF9A6D"
+      },
+      {
+        "nodeId": "771:6896",
+        "name": "Base rent",
+        "content": "Base rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "771:6897",
+        "name": "₹ 30,000",
+        "content": "₹ 30,000",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "771:6903",
+        "name": "Maintenance",
+        "content": "Maintenance",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "771:6904",
+        "name": "₹2,500",
+        "content": "₹2,500",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "771:6911",
+        "name": "Total Rent",
+        "content": "Total Rent",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "771:6912",
+        "name": "₹ 32,500",
+        "content": "₹  32,500",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "771:6917",
+        "name": "Convenience Fee",
+        "content": "Convenience Fee",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "771:6918",
+        "name": "₹100",
+        "content": "₹100",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#CBCBCB"
+      },
+      {
+        "nodeId": "771:6923",
+        "name": "Cashback",
+        "content": "Cashback",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "771:6924",
+        "name": "- ₹ 325",
+        "content": "- ₹  325",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "color": "#EF9194"
+      },
+      {
+        "nodeId": "771:6930",
+        "name": "Payable Amount",
+        "content": "Payable Amount",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#878787"
+      },
+      {
+        "nodeId": "771:6931",
+        "name": "₹ 32,600",
+        "content": "₹  32,600",
+        "fontSize": 14,
+        "fontWeight": 600,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "782:6327",
+        "name": "Additional bank fees upto 1% might apply",
+        "content": "Additional bank fees upto 1% might apply",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#DDDDDD"
+      },
+      {
+        "nodeId": "I771:6935;100:1565",
+        "name": "Text",
+        "content": "Pay ₹ 32,600 now",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I771:6940;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#1A1A1A",
+      "#202020",
+      "#4D4D4D",
+      "#878787",
+      "#A6A6A6",
+      "#CBCBCB",
+      "#DDDDDD",
+      "#EF9194",
+      "#FF9A6D",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      4,
+      8,
+      10,
+      12,
+      16,
+      24,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:23982",
+      "597:3220",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      }
+    ]
+  }
+}

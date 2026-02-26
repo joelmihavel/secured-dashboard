@@ -20,14 +20,16 @@ exports[`PhoneInput renders correctly - custom country code 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -162,14 +164,16 @@ exports[`PhoneInput renders correctly - custom placeholder 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -304,14 +308,16 @@ exports[`PhoneInput renders correctly - disabled 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -448,14 +454,16 @@ exports[`PhoneInput renders correctly - empty state 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -590,14 +598,16 @@ exports[`PhoneInput renders correctly - with error 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -612,14 +622,16 @@ exports[`PhoneInput renders correctly - with error 1`] = `
       Phone Number
     </Text>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -759,14 +771,16 @@ exports[`PhoneInput renders correctly - with hint text 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -781,14 +795,16 @@ exports[`PhoneInput renders correctly - with hint text 1`] = `
       Phone Number
     </Text>
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -924,14 +940,16 @@ exports[`PhoneInput renders correctly - with value 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -1068,14 +1086,16 @@ exports[`PhoneInput renders with empty label 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {

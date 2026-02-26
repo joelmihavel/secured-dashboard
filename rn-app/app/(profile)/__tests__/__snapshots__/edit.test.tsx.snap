@@ -130,14 +130,16 @@ exports[`EditProfileScreen matches snapshot 1`] = `
                   />
                 </View>
                 <Text
+                  allowFontScaling={true}
+                  maxFontSizeMultiplier={1.2}
                   style={
                     [
                       {
                         "color": "#FFFFFF",
                         "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 16,
+                        "fontSize": 18.4,
                         "letterSpacing": 0,
-                        "lineHeight": 24,
+                        "lineHeight": 27.599999999999998,
                         "textAlign": "left",
                       },
                       {
@@ -299,14 +301,16 @@ Profile
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {
@@ -351,14 +355,16 @@ Profile
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           [
@@ -421,14 +427,16 @@ Profile
                       }
                     >
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.2}
                         style={
                           [
                             {
                               "color": "#FFFFFF",
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
+                              "fontSize": 18.4,
                               "letterSpacing": 0,
-                              "lineHeight": 24,
+                              "lineHeight": 27.599999999999998,
                               "textAlign": "left",
                             },
                             [
@@ -525,14 +533,16 @@ Profile
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           [
@@ -595,14 +605,16 @@ Profile
                       }
                     >
                       <Text
+                        allowFontScaling={true}
+                        maxFontSizeMultiplier={1.2}
                         style={
                           [
                             {
                               "color": "#FFFFFF",
                               "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 16,
+                              "fontSize": 18.4,
                               "letterSpacing": 0,
-                              "lineHeight": 24,
+                              "lineHeight": 27.599999999999998,
                               "textAlign": "left",
                             },
                             [
@@ -701,14 +713,16 @@ Profile
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           [
@@ -727,14 +741,16 @@ Profile
                       City
                     </Text>
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           [
@@ -830,14 +846,16 @@ Profile
                     }
                   >
                     <Text
+                      allowFontScaling={true}
+                      maxFontSizeMultiplier={1.2}
                       style={
                         [
                           {
                             "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
+                            "fontSize": 18.4,
                             "letterSpacing": 0,
-                            "lineHeight": 24,
+                            "lineHeight": 27.599999999999998,
                             "textAlign": "left",
                           },
                           {

@@ -12,6 +12,9 @@ import Svg, { Defs, Pattern, Circle, Rect, LinearGradient, RadialGradient, Stop,
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+/** Spotlight size scaled proportionally to screen width (700 / 393 = ~1.78) */
+const SPOTLIGHT_SIZE = Math.round(SCREEN_WIDTH * 1.78);
+
 export interface DottedGridPatternProps {
   dotSize?: number;
   spacing?: number;
@@ -78,8 +81,8 @@ function DottedGridPatternComponent({
 
       {animated && (
         <>
-          <Spotlight size={700} durationX={5000} durationY={7000} startX={0.0} startY={-0.2} minY={-0.2} maxY={0.8} dotOpacity={0.6} />
-          <Spotlight size={700} durationX={5500} durationY={7500} startX={0.3} startY={0.7} minY={0.0} maxY={0.9} dotOpacity={0.6} />
+          <Spotlight size={SPOTLIGHT_SIZE} durationX={5000} durationY={7000} startX={0.0} startY={-0.2} minY={-0.2} maxY={0.8} dotOpacity={0.6} />
+          <Spotlight size={SPOTLIGHT_SIZE} durationX={5500} durationY={7500} startX={0.3} startY={0.7} minY={0.0} maxY={0.9} dotOpacity={0.6} />
         </>
       )}
     </View>

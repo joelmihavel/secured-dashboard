@@ -42,14 +42,16 @@ exports[`TextButton renders correctly - default (with underline) 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#A6A6A6",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 14,
+            "fontSize": 16.099999999999998,
             "letterSpacing": 0,
-            "lineHeight": 20,
+            "lineHeight": 23,
             "textAlign": "left",
           },
           {
@@ -106,14 +108,16 @@ exports[`TextButton renders correctly - disabled 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#797979",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 14,
+            "fontSize": 16.099999999999998,
             "letterSpacing": 0,
-            "lineHeight": 20,
+            "lineHeight": 23,
             "textAlign": "left",
           },
           {
@@ -175,14 +179,16 @@ exports[`TextButton renders correctly - with custom style 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#A6A6A6",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 14,
+            "fontSize": 16.099999999999998,
             "letterSpacing": 0,
-            "lineHeight": 20,
+            "lineHeight": 23,
             "textAlign": "left",
           },
           {
@@ -239,14 +245,16 @@ exports[`TextButton renders correctly - without underline 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#A6A6A6",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 14,
+            "fontSize": 16.099999999999998,
             "letterSpacing": 0,
-            "lineHeight": 20,
+            "lineHeight": 23,
             "textAlign": "left",
           },
           false,
@@ -301,14 +309,16 @@ exports[`TextButton renders with empty string title 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#A6A6A6",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 14,
+            "fontSize": 16.099999999999998,
             "letterSpacing": 0,
-            "lineHeight": 20,
+            "lineHeight": 23,
             "textAlign": "left",
           },
           {
@@ -363,14 +373,16 @@ exports[`TextButton renders with long text 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       style={
         [
           {
             "color": "#A6A6A6",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 14,
+            "fontSize": 16.099999999999998,
             "letterSpacing": 0,
-            "lineHeight": 20,
+            "lineHeight": 23,
             "textAlign": "left",
           },
           {

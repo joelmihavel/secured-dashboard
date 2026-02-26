@@ -20,15 +20,14 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Screen, Logo, Text, PrimaryButton, DottedGridPattern } from '@/src/components';
 import { colors } from '@/src/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { s, sf, sv } from '@/src/theme/scale';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -95,63 +94,63 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[700],
     flex: 1,
   },
-  // Content layout: Figma h-613, flex-end aligned, pb-64
+  // Content layout: Figma h-613, flex-end aligned, pb-64 — scaled for device
   outerContainer: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   mainContent: {
-    height: 613,
+    height: sv(613),
     flexDirection: 'column',
     justifyContent: 'space-between',
-    paddingBottom: 64,
+    paddingBottom: sv(64),
   },
   topSection: {
     width: '100%',
     flexDirection: 'column',
-    paddingHorizontal: 48,
-    gap: 40,
+    paddingHorizontal: s(48),
+    gap: sv(40),
   },
   textContainer: {
     width: '100%',
     flexDirection: 'column',
-    gap: 16,
+    gap: sv(16),
   },
-  // Heading: Figma 48/64, letterSpacing -2, PlusJakartaSans-Regular
+  // Heading: Figma 48/64, letterSpacing -2, PlusJakartaSans-Regular — scaled
   heading: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,
-    lineHeight: 64,
+    fontSize: sf(48),
+    lineHeight: sf(64),
     letterSpacing: -2,
     color: colors.neutral[500], // #A9A9A9
   },
   headingAccent: {
     color: colors.brand[500], // #FF9A6D
   },
-  // Body: Figma 14/20, #A6A6A6
+  // Body: Figma 14/20, #A6A6A6 — scaled
   subheading: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: colors.black[200], // #A6A6A6
   },
   bottomSection: {
     width: '100%',
     flexDirection: 'column',
     alignItems: 'center',
-    paddingHorizontal: 48,
-    gap: 24,
+    paddingHorizontal: s(48),
+    gap: sv(24),
   },
   loginContainer: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Login text: Figma 14/20, white
+  // Login text: Figma 14/20, white — scaled
   loginText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: colors.white,
   },
   loginLink: {

@@ -16,11 +16,8 @@
 
 import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
-import { Dimensions } from 'react-native';
 import { colors } from '@/src/theme/colors';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ratioX = SCREEN_WIDTH / 393;
-const sv = (val: number) => val * ratioX;
+import { s, sf } from '@/src/theme/scale';
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -30,43 +27,43 @@ const sv = (val: number) => val * ratioX;
 const FIGMA = {
   // Timeline card container (node 41:11220)
   card: {
-    width: 313,
+    width: s(313),
     borderRadius: 12,
-    paddingTop: 24,
-    paddingBottom: sv(24),
-    paddingLeft: 16,
-    paddingRight: 16,
-    gap: 24,
+    paddingTop: s(24),
+    paddingBottom: s(24),
+    paddingLeft: s(16),
+    paddingRight: s(16),
+    gap: s(24),
   },
 
   // Timeline row (node 41:11221)
   row: {
-    width: sv(281),
-    height: sv(44),
-    gap: sv(8),
+    width: s(281),
+    height: s(44),
+    gap: s(8),
   },
 
   // Indicator container (node 41:11222)
   indicatorContainer: {
-    width: sv(20),
-    height: sv(20),
+    width: s(20),
+    height: s(20),
   },
 
   // Indicator dot (node 41:11223)
   indicator: {
-    size: sv(12),
+    size: s(12),
   },
 
   // Connector line (node 41:11224)
   connector: {
-    height: 47,
+    height: s(47),
     width: 1,
   },
 
   // Text container (node 41:11225)
   textContainer: {
-    width: sv(253),
-    gap: sv(4),
+    width: s(253),
+    gap: s(4),
   },
 
   colors: {
@@ -86,13 +83,13 @@ const FIGMA = {
 
   typography: {
     label: {
-      fontSize: sv(12),
-      lineHeight: sv(20),
+      fontSize: sf(12),
+      lineHeight: sf(20),
       fontFamily: 'PlusJakartaSans-Regular',
     },
     value: {
-      fontSize: sv(14),
-      lineHeight: sv(20),
+      fontSize: sf(14),
+      lineHeight: sf(20),
       fontFamily: 'PlusJakartaSans-Regular',
     },
   },

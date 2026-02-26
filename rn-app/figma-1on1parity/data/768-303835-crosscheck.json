@@ -1,0 +1,120 @@
+{
+  "screenId": "768-303835",
+  "screenName": "Pay Rent / Payment Summary Page --Payment Processing",
+  "figmaUrl": "",
+  "generatedAt": "2026-02-26T17:47:45.459Z",
+  "checks": {
+    "nodeCount": 87,
+    "textNodeCount": 7,
+    "componentInstanceCount": 4,
+    "interactiveNodeCount": 1,
+    "imageAssetCount": 4,
+    "variableCount": 0,
+    "rootDimensions": {
+      "width": 393,
+      "height": 852
+    },
+    "backgroundColor": "#131313",
+    "hasDottedPattern": false,
+    "topLevelChildNames": [
+      "Frame 2095586343",
+      "Frame 2095586361",
+      "Frame 2095586363",
+      "Frame 2095586357"
+    ],
+    "textContents": [
+      {
+        "nodeId": "I768:303859;11:75",
+        "name": "Text here",
+        "content": "pending",
+        "fontSize": 13.511569023132324,
+        "fontWeight": 800,
+        "color": "#C7C9D9"
+      },
+      {
+        "nodeId": "768:303860",
+        "name": "Payment Processing",
+        "content": "Payment Processing",
+        "fontSize": 20,
+        "fontWeight": 400,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "768:303867",
+        "name": "We’ve received your payment request.",
+        "content": "We’ve received your payment request.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "768:303873",
+        "name": "This can take a few minutes depending on your bank.",
+        "content": "This can take a few minutes depending on your bank.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "768:303879",
+        "name": "You’ll see confirmation here once it’s complete.",
+        "content": "You’ll see confirmation here once it’s complete.",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "color": "#A9A9A9"
+      },
+      {
+        "nodeId": "I768:303881;100:1565",
+        "name": "Text",
+        "content": "Contact Support",
+        "fontSize": 14,
+        "fontWeight": 500,
+        "color": "#FFFFFF"
+      },
+      {
+        "nodeId": "I768:303885;125:209",
+        "name": "Time",
+        "content": "13:13",
+        "fontSize": 17,
+        "fontWeight": 590,
+        "color": "#FFFFFF"
+      }
+    ],
+    "colorPalette": [
+      "#000000",
+      "#131313",
+      "#202020",
+      "#4D4D4D",
+      "#A9A9A9",
+      "#C7C9D9",
+      "#FFFFFF"
+    ],
+    "spacingValues": [
+      8,
+      10,
+      16,
+      24,
+      32,
+      40,
+      48
+    ],
+    "componentIds": [
+      "1:23982",
+      "1:28034",
+      "597:3220",
+      "1:7"
+    ],
+    "interactionSummary": [
+      {
+        "sourceNode": "button",
+        "trigger": "ON_PRESS",
+        "destination": "597:3222"
+      },
+      {
+        "sourceNode": "button",
+        "trigger": "ON_HOVER",
+        "destination": "597:3221"
+      }
+    ]
+  }
+}

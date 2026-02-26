@@ -65,8 +65,7 @@ import {
   BottomFooter,
   HomeEmptyState,
   VerificationCheckSheet,
-  RentAmountModal,
-  EmptyPaymentsState,
+    EmptyPaymentsState,
   CashbackEmptyState,
   PaymentMethodSelectionSheet,
   SetupProgressCard,
@@ -441,8 +440,7 @@ export default function HomeScreen() {
     router.push('/(payment)/confirm' as never);
   }, [router]);
 
-        const [showRentAmountModal, setShowRentAmountModal] = useState(false);
-        const setPaymentAmount = usePaymentStore(state => state.setAmount);
+                const setPaymentAmount = usePaymentStore(state => state.setAmount);
         const setVerificationSkippedStore = usePaymentStore(state => state.setVerificationSkipped);
         const setPendingPaymentReturn = usePaymentStore(state => state.setPendingPaymentReturn);
 
@@ -452,7 +450,7 @@ export default function HomeScreen() {
           if (pendingPaymentReturn) {
             clearReturn(false);
             // Auto-open rent amount modal after returning from setup
-            setTimeout(() => setShowRentAmountModal(true), 500);
+            setTimeout(() => router.push('/(payment)/first-rent' as never), 500);
           }
         }, []);
 
@@ -465,9 +463,8 @@ export default function HomeScreen() {
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
           setVerificationSkippedStore(true);
-          // Show rent amount modal after skipping verification
-          setTimeout(() => setShowRentAmountModal(true), 300);
-        }, [setVerificationSkippedStore]);
+          setTimeout(() => router.push('/(payment)/first-rent' as never), 300);
+        }, [setVerificationSkippedStore, router]);
 
         const handleFinishSetup = useCallback(() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -488,9 +485,10 @@ export default function HomeScreen() {
           if (!isSetupComplete) {
             setShowVerificationSheet(true);
           } else {
-            setShowRentAmountModal(true);
+            // Replaced RentAmountModal with PaymentMethodModal (unified overlay flow)
+            router.push('/(payment)/first-rent' as never);
           }
-        }, [isSetupComplete]);
+        }, [isSetupComplete, router]);
 
         const handleRentAmountConfirm = useCallback((amount: string) => {
           setShowRentAmountModal(false);
@@ -684,15 +682,7 @@ export default function HomeScreen() {
         onAddNewMethod={handleSheetAddNewMethod}
       />
 
-      {/* Rent Amount Modal */}
-      <RentAmountModal
-        visible={showRentAmountModal}
-        initialAmount={tenancy?.monthly_rent ?? 0}
-        onClose={() => setShowRentAmountModal(false)}
-        onPay={handleRentAmountConfirm}
-      />
-
-      {/* Verification Check Sheet — shown before payment when setup incomplete */}
+            {/* Verification Check Sheet — shown before payment when setup incomplete */}
       <VerificationCheckSheet
         visible={showVerificationSheet}
         onClose={() => setShowVerificationSheet(false)}

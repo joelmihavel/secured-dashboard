@@ -106,15 +106,17 @@ exports[`DocumentUploadCard renders correctly - error state 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -136,14 +138,16 @@ exports[`DocumentUploadCard renders correctly - error state 1`] = `
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
         style={
           [
             {
               "color": "#FFFFFF",
               "fontFamily": "PlusJakartaSans-Regular",
-              "fontSize": 16,
+              "fontSize": 18.4,
               "letterSpacing": 0,
-              "lineHeight": 24,
+              "lineHeight": 27.599999999999998,
               "textAlign": "left",
             },
             [
@@ -280,15 +284,17 @@ exports[`DocumentUploadCard renders correctly - idle state 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -420,15 +426,17 @@ exports[`DocumentUploadCard renders correctly - processing state 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -483,14 +491,16 @@ exports[`DocumentUploadCard renders correctly - processing state 1`] = `
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
         style={
           [
             {
               "color": "#FFFFFF",
               "fontFamily": "PlusJakartaSans-Regular",
-              "fontSize": 16,
+              "fontSize": 18.4,
               "letterSpacing": 0,
-              "lineHeight": 24,
+              "lineHeight": 27.599999999999998,
               "textAlign": "left",
             },
             [
@@ -627,15 +637,17 @@ exports[`DocumentUploadCard renders correctly - success state 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -657,14 +669,16 @@ exports[`DocumentUploadCard renders correctly - success state 1`] = `
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
         style={
           [
             {
               "color": "#FFFFFF",
               "fontFamily": "PlusJakartaSans-Regular",
-              "fontSize": 16,
+              "fontSize": 18.4,
               "letterSpacing": 0,
-              "lineHeight": 24,
+              "lineHeight": 27.599999999999998,
               "textAlign": "left",
             },
             [
@@ -801,15 +815,17 @@ exports[`DocumentUploadCard renders correctly - uploading state 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -864,14 +880,16 @@ exports[`DocumentUploadCard renders correctly - uploading state 1`] = `
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
         style={
           [
             {
               "color": "#FFFFFF",
               "fontFamily": "PlusJakartaSans-Regular",
-              "fontSize": 16,
+              "fontSize": 18.4,
               "letterSpacing": 0,
-              "lineHeight": 24,
+              "lineHeight": 27.599999999999998,
               "textAlign": "left",
             },
             [
@@ -1010,15 +1028,17 @@ exports[`DocumentUploadCard renders correctly - with custom style 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -1150,15 +1170,17 @@ exports[`DocumentUploadCard shows remove button in idle state 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -1351,15 +1373,17 @@ exports[`DocumentUploadCard shows remove button in success state and calls onRem
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {
@@ -1381,14 +1405,16 @@ exports[`DocumentUploadCard shows remove button in success state and calls onRem
       }
     >
       <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
         style={
           [
             {
               "color": "#FFFFFF",
               "fontFamily": "PlusJakartaSans-Regular",
-              "fontSize": 16,
+              "fontSize": 18.4,
               "letterSpacing": 0,
-              "lineHeight": 24,
+              "lineHeight": 27.599999999999998,
               "textAlign": "left",
             },
             [
@@ -1586,15 +1612,17 @@ exports[`DocumentUploadCard truncates long filenames 1`] = `
     }
   >
     <Text
+      allowFontScaling={true}
+      maxFontSizeMultiplier={1.2}
       numberOfLines={1}
       style={
         [
           {
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 16,
+            "fontSize": 18.4,
             "letterSpacing": 0,
-            "lineHeight": 24,
+            "lineHeight": 27.599999999999998,
             "textAlign": "left",
           },
           {

@@ -15,7 +15,7 @@ export default function PaymentLayout() {
 
   if (!isReady) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.brand[500]} />
       </View>
     );
@@ -25,11 +25,12 @@ export default function PaymentLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.black[700] },
-        animation: 'slide_from_right',
+        presentation: 'transparentModal',
+        animation: 'fade',
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
-      <Stack.Screen name="first-rent" />
+      
       <Stack.Screen name="confirm" />
       <Stack.Screen name="status" />
     </Stack>

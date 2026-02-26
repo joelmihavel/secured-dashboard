@@ -18,15 +18,15 @@ import { PaymentFlipCard, PaymentMonthData } from './PaymentFlipCard';
 import { SetupProgressCard, SetupProgressCardProps } from './SetupProgressCard';
 import { LandlordStatusCard, LandlordStatusCardProps } from './LandlordStatusCard';
 import { PaymentSetupCard, PaymentSetupCardProps } from './PaymentSetupCard';
+import { s, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// 300px comes from PaymentFlipCard width. 
-// Other cards like SetupProgressCard can adapt to this width or have their own fixed width.
-const CARD_WIDTH = 300; 
-const CARD_GAP = 16;
-const CONTENT_PADDING_LEFT = 64; 
-const CONTENT_PADDING_RIGHT = 32;
+// Breakpoint-driven card width for different device sizes
+const CARD_WIDTH = isSmallDevice ? 270 : isLargeDevice ? 320 : 300;
+const CARD_GAP = s(16);
+const CONTENT_PADDING_LEFT = s(64);
+const CONTENT_PADDING_RIGHT = s(32);
 
 export type CarouselCardItem = 
   | { type: 'payment', id: string, data: PaymentMonthData }
@@ -153,8 +153,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
+    gap: s(8),
+    marginTop: s(12),
   },
   dot: {
     width: 8,

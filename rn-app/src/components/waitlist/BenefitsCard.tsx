@@ -17,7 +17,7 @@
 import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { sv } from '@/src/theme/scale';
+import { s, sv } from '@/src/theme/scale';
 
 // Benefit card icon exported from Figma
 const BENEFIT_ICON = require('@/assets/images/icons/benefit_card_icon.png');
@@ -32,7 +32,7 @@ const FIGMA = {
   // computedStyles: width 313, height 342, borderRadius 12
   // padding: 32/24/32/24, gap 24
   card: {
-    width: sv(313),
+    width: s(313),
     height: sv(342),
     borderRadius: sv(12), // radius.lg
     paddingTop: sv(32), // spacing[8]
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
 
   // Icon image container (between brackets)
   iconImageContainer: {
-    flex: sv(1),
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   // Benefit text - fontSize 12, lineHeight 20, color #A9A9A9
   // Nodes 41: sv(11265), 41: sv(11271), 41:11277
   benefitText: {
-    flex: sv(1),
+    flex: 1,
     fontFamily: FIGMA.benefitText.fontFamily,
     fontSize: FIGMA.benefitText.fontSize,
     lineHeight: FIGMA.benefitText.lineHeight,

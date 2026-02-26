@@ -53,10 +53,10 @@ function BottomFooterComponent({
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
       {/* Left side - Due info */}
       <View style={styles.leftContent}>
-        <Text style={styles.dueLabel}>
+        <Text style={styles.dueLabel} numberOfLines={1} ellipsizeMode="tail">
           {dueInDays < 0 ? `${Math.abs(dueInDays)} Days Overdue` : `Due in ${dueInDays} Days`}
         </Text>
-        <Text style={styles.amountText}>
+        <Text style={styles.amountText} numberOfLines={1} ellipsizeMode="tail">
           <Text inherit style={styles.rupeeSymbol}>{'₹ '}</Text>
           <Text inherit style={styles.amountValue}>{formatAmount(amount)}</Text>
         </Text>

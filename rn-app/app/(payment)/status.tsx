@@ -50,6 +50,7 @@ import type { ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml } from '@/src/utils/receiptHtml';
 import { usePaymentStore } from '@/src/stores';
 import { PAYMENT_COLORS } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 
 // ============================================
 // TYPES
@@ -102,7 +103,7 @@ const VERIFICATION_INTERVAL_MS = 3000;
 const VERIFICATION_TIMEOUT_MS_DEFAULT = 120000; // 120s
 const VERIFICATION_TIMEOUT_MS_UPI = 360000;     // 360s (6 min) for UPI collect
 const VALID_INITIAL_STATUSES = new Set(['pending', 'success', 'failed', 'refunded']);
-const FIGMA_CARD_INNER_WIDTH = 222;
+const FIGMA_CARD_INNER_WIDTH = s(222);
 
 // ============================================
 // FIGMA TOKENS — aliased from shared PAYMENT_COLORS
@@ -1050,71 +1051,71 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 40,
+    paddingHorizontal: s(40),
   },
 
   // -- Info section (pending/failed/refunded)
   infoSection: {
-    gap: 24,
-    marginLeft: 10,
+    gap: sv(24),
+    marginLeft: s(10),
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    paddingHorizontal: 8,
+    gap: s(16),
+    paddingHorizontal: s(8),
   },
   infoText: {
     flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: FIGMA_COLORS.infoText,
     textAlign: 'left',
   },
 
   // -- Receipt section (success)
   receiptDetails: {
-    gap: 16,
+    gap: sv(16),
     alignItems: 'center',
   },
   receiptRow: {
     width: FIGMA_CARD_INNER_WIDTH,
-    height: 20,
+    height: sv(20),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 4,
+    gap: s(4),
   },
   labelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: s(4),
   },
   hashIcon: {
-    width: 16,
-    height: 16,
+    width: s(16),
+    height: s(16),
     justifyContent: 'center',
     alignItems: 'center',
   },
   labelText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: FIGMA_COLORS.labelText,
     textAlign: 'left',
   },
   valueText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: FIGMA_COLORS.valueText,
     textAlign: 'right',
   },
   payableRentValueText: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: FIGMA_COLORS.payableValue,
     textAlign: 'right',
   },
@@ -1124,29 +1125,29 @@ const styles = StyleSheet.create({
   },
   cashbackValueText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: PAYMENT_COLORS.cashbackDeduct, // #EF9194
     textAlign: 'right' as const,
   },
   secondSection: {
-    marginTop: 8,
-    gap: 16,
+    marginTop: sv(8),
+    gap: sv(16),
   },
 
   // -- Button container
   buttonContainer: {
-    width: 313,
+    width: s(313),
     alignSelf: 'center',
-    gap: 16,
+    gap: sv(16),
     alignItems: 'center',
-    paddingBottom: 24,
-    marginTop: 40,
+    paddingBottom: sv(24),
+    marginTop: sv(40),
   },
   contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: FIGMA_COLORS.tryAgainText, // #A9A9A9
     textAlign: 'center' as const,
   },
@@ -1155,15 +1156,15 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     zIndex: 10,
-    width: 32,
-    height: 32,
+    width: s(32),
+    height: sv(32),
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
   tryAgainText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: FIGMA_COLORS.tryAgainText,
     textAlign: 'center',
   },
@@ -1178,22 +1179,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    gap: 16,
+    paddingHorizontal: s(40),
+    gap: sv(16),
   },
   errorFallbackTitle: {
     fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: sf(20),
+    lineHeight: sf(28),
     color: PAYMENT_COLORS.white,
     textAlign: 'center',
   },
   errorFallbackMessage: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: FIGMA_COLORS.infoText,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: sv(24),
   },
 });

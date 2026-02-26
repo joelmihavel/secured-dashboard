@@ -61,8 +61,9 @@ describe('InviteLandlordScreen', () => {
 
   it('renders title "One last step" and "we promise"', () => {
     const { getByText } = render(<InviteLandlordScreen />);
-    expect(getByText(/One last step/)).toBeTruthy();
-    expect(getByText(/we promise/)).toBeTruthy();
+    expect(getByText(/Confirm/)).toBeTruthy();
+    expect(getByText(/your tenancy/)).toBeTruthy();
+    
   });
 
   it('renders subtitle about inviting landlord to activate cashback', () => {
@@ -72,7 +73,7 @@ describe('InviteLandlordScreen', () => {
 
   it('renders phone input label', () => {
     const { getByText } = render(<InviteLandlordScreen />);
-    expect(getByText(/Invite your landlord to Secured to finish setup/)).toBeTruthy();
+    expect(getByText(/Confirm your tenancy by inviting your landlord/)).toBeTruthy();
   });
 
   it('renders "Save & Invite" button', () => {

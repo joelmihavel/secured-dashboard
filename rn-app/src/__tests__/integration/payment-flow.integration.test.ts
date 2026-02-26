@@ -102,6 +102,8 @@ const MOCK_INITIATE_RESPONSE: { success: boolean; data: InitiatePaymentData } = 
       discount_paise: 25000,
       discount_rupees: 250,
       verification_complete: true,
+      past_cutoff: false,
+      cutoff_day: 7,
       reason: null,
     },
     original_rent_paise: 2500000,

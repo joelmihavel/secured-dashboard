@@ -27,16 +27,19 @@ import {
   BackHandler,
   Dimensions,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 import { usePaymentStore } from '@/src/stores';
+import { useDashboard } from '@/src/hooks';
 import { initiatePayment } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { colors } from '@/src/theme';
 
 import type { ModalView, PaymentMethodType, PaymentMethodModalProps } from './types';
+import { EnterAmountContent } from './EnterAmountContent';
 import { MethodSelectorContent } from './MethodSelectorContent';
 import { AddUpiContent } from './AddUpiContent';
 import { AddCardContent } from './AddCardContent';
@@ -53,7 +56,8 @@ export function PaymentMethodModal({
   rentMonth,
   onProceed,
 }: PaymentMethodModalProps) {
-  const [modalView, setModalView] = useState<ModalView>('selector');
+  const [modalView, setModalView] = useState<ModalView>('enter-amount');
+  const { tenancy } = useDashboard();
   const [paymentId, setPaymentId] = useState('');
   const [isInitiating, setIsInitiating] = useState(false);
   const [cardType, setCardType] = useState<'credit' | 'debit'>('credit');
@@ -95,7 +99,7 @@ export function PaymentMethodModal({
   // --- Close handler: clears session params on EVERY close path ---
   const handleClose = useCallback(() => {
     clearPayuSessionParams();
-    setModalView('selector');
+    setModalView('enter-amount');
     setPaymentId('');
     setIsInitiating(false);
     onClose();
@@ -125,6 +129,12 @@ export function PaymentMethodModal({
   }, [visible, handleBack]);
 
   // --- Edit handler: switches view to edit specific method ---
+  
+  const handleAmountProceed = useCallback((amount: number) => {
+    usePaymentStore.getState().setAmount(amount);
+    setModalView('selector');
+  }, []);
+
   const handleEdit = useCallback((methodType: PaymentMethodType, savedMethodId: string) => {
     setEditMethodType(methodType);
     setEditSavedMethodId(savedMethodId);
@@ -241,7 +251,7 @@ export function PaymentMethodModal({
       <BlurView intensity={8} tint="dark" style={StyleSheet.absoluteFill} />
       <Pressable
         style={styles.backdrop}
-        onPress={modalView === 'selector' ? handleClose : undefined}
+        onPress={(modalView === 'selector' || modalView === 'enter-amount') ? handleClose : undefined}
         accessibilityRole="button"
         accessibilityLabel="Close payment method selector"
       />
@@ -263,36 +273,46 @@ export function PaymentMethodModal({
 
           {/* Sheet panel */}
           <View style={styles.sheetPanel}>
-            {/* Conditional rendering: unmounts components when switching views */}
+            <ScrollView bounces={false} keyboardShouldPersistTaps="handled">
+              {/* Conditional rendering: unmounts components when switching views */}
+              
+            {modalView === 'enter-amount' && (
+              <EnterAmountContent
+                initialAmount={tenancy?.monthly_rent ?? 0}
+                onProceed={handleAmountProceed}
+                onBack={handleClose}
+              />
+            )}
             {modalView === 'selector' && (
-              <MethodSelectorContent
-                onProceed={handleProceed}
-                onEdit={handleEdit}
-                isInitiating={isInitiating}
-              />
-            )}
-            {modalView === 'add-upi' && (
-              <AddUpiContent paymentId={paymentId} onBack={handleBack} />
-            )}
-            {modalView === 'add-card' && (
-              <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" />
-            )}
-            {modalView === 'add-debit-card' && (
-              <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" />
-            )}
-            {modalView === 'add-netbanking' && (
-              <AddNetbankingContent paymentId={paymentId} onBack={handleBack} />
-            )}
-            {modalView === 'edit-method' && editMethodType && (
-              <EditMethodContent
-                methodType={editMethodType}
-                savedMethodId={editSavedMethodId}
-                onBack={handleBack}
-                onProceed={handleProceed}
-                onDeleteSuccess={handleDeleteSuccess}
-                isInitiating={isInitiating}
-              />
-            )}
+                <MethodSelectorContent
+                  onProceed={handleProceed}
+                  onEdit={handleEdit}
+                  isInitiating={isInitiating}
+                />
+              )}
+              {modalView === 'add-upi' && (
+                <AddUpiContent paymentId={paymentId} onBack={handleBack} />
+              )}
+              {modalView === 'add-card' && (
+                <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" />
+              )}
+              {modalView === 'add-debit-card' && (
+                <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" />
+              )}
+              {modalView === 'add-netbanking' && (
+                <AddNetbankingContent paymentId={paymentId} onBack={handleBack} />
+              )}
+              {modalView === 'edit-method' && editMethodType && (
+                <EditMethodContent
+                  methodType={editMethodType}
+                  savedMethodId={editSavedMethodId}
+                  onBack={handleBack}
+                  onProceed={handleProceed}
+                  onDeleteSuccess={handleDeleteSuccess}
+                  isInitiating={isInitiating}
+                />
+              )}
+            </ScrollView>
           </View>
         </Animated.View>
       </KeyboardAvoidingView>

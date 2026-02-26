@@ -27,7 +27,7 @@ exports[`Screen renders correctly - compact padding variant 1`] = `
             "flex": 1,
           },
           {
-            "paddingHorizontal": 24,
+            "paddingHorizontal": 46,
           },
         ]
       }
@@ -67,7 +67,7 @@ exports[`Screen renders correctly - default (padded, safe area top+bottom) 1`] =
             "flex": 1,
           },
           {
-            "paddingHorizontal": 40,
+            "paddingHorizontal": 76.5,
           },
         ]
       }
@@ -107,7 +107,7 @@ exports[`Screen renders correctly - no safe areas 1`] = `
             "flex": 1,
           },
           {
-            "paddingHorizontal": 40,
+            "paddingHorizontal": 76.5,
           },
         ]
       }
@@ -188,7 +188,7 @@ exports[`Screen renders correctly - with custom style 1`] = `
             "flex": 1,
           },
           {
-            "paddingHorizontal": 40,
+            "paddingHorizontal": 76.5,
           },
         ]
       }
@@ -228,7 +228,7 @@ exports[`Screen renders correctly - without safe area bottom 1`] = `
             "flex": 1,
           },
           {
-            "paddingHorizontal": 40,
+            "paddingHorizontal": 76.5,
           },
         ]
       }
@@ -268,7 +268,7 @@ exports[`Screen renders correctly - without safe area top 1`] = `
             "flex": 1,
           },
           {
-            "paddingHorizontal": 40,
+            "paddingHorizontal": 76.5,
           },
         ]
       }
@@ -308,7 +308,7 @@ exports[`Screen renders with empty children 1`] = `
             "flex": 1,
           },
           {
-            "paddingHorizontal": 40,
+            "paddingHorizontal": 76.5,
           },
         ]
       }
@@ -346,7 +346,7 @@ exports[`Screen renders with nested Views 1`] = `
             "flex": 1,
           },
           {
-            "paddingHorizontal": 40,
+            "paddingHorizontal": 76.5,
           },
         ]
       }
