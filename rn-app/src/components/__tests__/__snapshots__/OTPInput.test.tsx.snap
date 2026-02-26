@@ -9,32 +9,6 @@ exports[`OTPInput handles empty string value 1`] = `
     }
   }
 >
-  <TextInput
-    accessibilityLabel="OTP verification code"
-    accessibilityState={
-      {
-        "disabled": false,
-      }
-    }
-    autoComplete="one-time-code"
-    caretHidden={true}
-    editable={true}
-    keyboardType="number-pad"
-    maxLength={6}
-    onBlur={[Function]}
-    onChangeText={[Function]}
-    onFocus={[Function]}
-    style={
-      {
-        "height": 1,
-        "opacity": 0,
-        "position": "absolute",
-        "width": 1,
-      }
-    }
-    textContentType="oneTimeCode"
-    value=""
-  />
   <View
     accessibilityLabel="OTP input, 0 of 6 digits entered"
     accessibilityRole="none"
@@ -117,7 +91,6 @@ exports[`OTPInput handles empty string value 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -173,7 +146,6 @@ exports[`OTPInput handles empty string value 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -229,7 +201,6 @@ exports[`OTPInput handles empty string value 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -259,7 +230,6 @@ exports[`OTPInput handles empty string value 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 32,
             "textAlign": "left",
@@ -318,7 +288,6 @@ exports[`OTPInput handles empty string value 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -374,7 +343,6 @@ exports[`OTPInput handles empty string value 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -430,7 +398,6 @@ exports[`OTPInput handles empty string value 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -454,6 +421,36 @@ exports[`OTPInput handles empty string value 1`] = `
       </View>
     </View>
   </View>
+  <TextInput
+    accessibilityLabel="OTP verification code"
+    accessibilityState={
+      {
+        "disabled": false,
+      }
+    }
+    autoComplete="one-time-code"
+    caretHidden={true}
+    editable={true}
+    keyboardType="number-pad"
+    maxLength={6}
+    onBlur={[Function]}
+    onChangeText={[Function]}
+    onFocus={[Function]}
+    style={
+      {
+        "backgroundColor": "transparent",
+        "bottom": 0,
+        "color": "transparent",
+        "left": 0,
+        "opacity": 0.02,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+    textContentType="oneTimeCode"
+    value=""
+  />
 </View>
 `;
 
@@ -466,6 +463,430 @@ exports[`OTPInput renders correctly - disabled 1`] = `
     }
   }
 >
+  <View
+    accessibilityLabel="OTP input, 3 of 6 digits entered"
+    accessibilityRole="none"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "justifyContent": "center",
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flexDirection": "row",
+          "gap": 8,
+        }
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#222222",
+              "borderColor": "#444444",
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "elevation": 1,
+              "height": 64,
+              "justifyContent": "center",
+              "paddingHorizontal": 12,
+              "paddingVertical": 8,
+              "shadowColor": "rgb(10, 13, 18)",
+              "shadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "shadowOpacity": 0.05,
+              "shadowRadius": 2,
+              "width": 39,
+            },
+            {
+              "opacity": 0.5,
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 16,
+                "letterSpacing": 0,
+                "lineHeight": 24,
+                "textAlign": "left",
+              },
+              [
+                {
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 20,
+                  "lineHeight": 32,
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#FFFFFF",
+                },
+              ],
+            ]
+          }
+        >
+          1
+        </Text>
+      </View>
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#222222",
+              "borderColor": "#444444",
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "elevation": 1,
+              "height": 64,
+              "justifyContent": "center",
+              "paddingHorizontal": 12,
+              "paddingVertical": 8,
+              "shadowColor": "rgb(10, 13, 18)",
+              "shadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "shadowOpacity": 0.05,
+              "shadowRadius": 2,
+              "width": 39,
+            },
+            {
+              "opacity": 0.5,
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 16,
+                "letterSpacing": 0,
+                "lineHeight": 24,
+                "textAlign": "left",
+              },
+              [
+                {
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 20,
+                  "lineHeight": 32,
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#FFFFFF",
+                },
+              ],
+            ]
+          }
+        >
+          2
+        </Text>
+      </View>
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#222222",
+              "borderColor": "#444444",
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "elevation": 1,
+              "height": 64,
+              "justifyContent": "center",
+              "paddingHorizontal": 12,
+              "paddingVertical": 8,
+              "shadowColor": "rgb(10, 13, 18)",
+              "shadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "shadowOpacity": 0.05,
+              "shadowRadius": 2,
+              "width": 39,
+            },
+            {
+              "opacity": 0.5,
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 16,
+                "letterSpacing": 0,
+                "lineHeight": 24,
+                "textAlign": "left",
+              },
+              [
+                {
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 20,
+                  "lineHeight": 32,
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#FFFFFF",
+                },
+              ],
+            ]
+          }
+        >
+          3
+        </Text>
+      </View>
+    </View>
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 20,
+            "letterSpacing": 0,
+            "lineHeight": 32,
+            "textAlign": "left",
+          },
+          {
+            "color": "#cbcbcb",
+            "fontFamily": "PlusJakartaSans-Medium",
+            "fontSize": 20,
+            "lineHeight": 32,
+            "marginHorizontal": 8,
+          },
+        ]
+      }
+    >
+      -
+    </Text>
+    <View
+      style={
+        {
+          "flexDirection": "row",
+          "gap": 8,
+        }
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#222222",
+              "borderColor": "#444444",
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "elevation": 1,
+              "height": 64,
+              "justifyContent": "center",
+              "paddingHorizontal": 12,
+              "paddingVertical": 8,
+              "shadowColor": "rgb(10, 13, 18)",
+              "shadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "shadowOpacity": 0.05,
+              "shadowRadius": 2,
+              "width": 39,
+            },
+            {
+              "opacity": 0.5,
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 16,
+                "letterSpacing": 0,
+                "lineHeight": 24,
+                "textAlign": "left",
+              },
+              [
+                {
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 20,
+                  "lineHeight": 32,
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#444444",
+                },
+              ],
+            ]
+          }
+        >
+          0
+        </Text>
+      </View>
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#222222",
+              "borderColor": "#444444",
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "elevation": 1,
+              "height": 64,
+              "justifyContent": "center",
+              "paddingHorizontal": 12,
+              "paddingVertical": 8,
+              "shadowColor": "rgb(10, 13, 18)",
+              "shadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "shadowOpacity": 0.05,
+              "shadowRadius": 2,
+              "width": 39,
+            },
+            {
+              "opacity": 0.5,
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 16,
+                "letterSpacing": 0,
+                "lineHeight": 24,
+                "textAlign": "left",
+              },
+              [
+                {
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 20,
+                  "lineHeight": 32,
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#444444",
+                },
+              ],
+            ]
+          }
+        >
+          0
+        </Text>
+      </View>
+      <View
+        style={
+          [
+            {
+              "alignItems": "center",
+              "backgroundColor": "#222222",
+              "borderColor": "#444444",
+              "borderRadius": 8,
+              "borderWidth": 1,
+              "elevation": 1,
+              "height": 64,
+              "justifyContent": "center",
+              "paddingHorizontal": 12,
+              "paddingVertical": 8,
+              "shadowColor": "rgb(10, 13, 18)",
+              "shadowOffset": {
+                "height": 1,
+                "width": 0,
+              },
+              "shadowOpacity": 0.05,
+              "shadowRadius": 2,
+              "width": 39,
+            },
+            {
+              "opacity": 0.5,
+            },
+          ]
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Regular",
+                "fontSize": 16,
+                "letterSpacing": 0,
+                "lineHeight": 24,
+                "textAlign": "left",
+              },
+              [
+                {
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 20,
+                  "lineHeight": 32,
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#444444",
+                },
+              ],
+            ]
+          }
+        >
+          0
+        </Text>
+      </View>
+    </View>
+  </View>
   <TextInput
     accessibilityLabel="OTP verification code"
     accessibilityState={
@@ -483,446 +904,19 @@ exports[`OTPInput renders correctly - disabled 1`] = `
     onFocus={[Function]}
     style={
       {
-        "height": 1,
-        "opacity": 0,
+        "backgroundColor": "transparent",
+        "bottom": 0,
+        "color": "transparent",
+        "left": 0,
+        "opacity": 0.02,
         "position": "absolute",
-        "width": 1,
+        "right": 0,
+        "top": 0,
       }
     }
     textContentType="oneTimeCode"
     value="123"
   />
-  <View
-    accessibilityLabel="OTP input, 3 of 6 digits entered"
-    accessibilityRole="none"
-    accessibilityState={
-      {
-        "busy": undefined,
-        "checked": undefined,
-        "disabled": undefined,
-        "expanded": undefined,
-        "selected": undefined,
-      }
-    }
-    accessibilityValue={
-      {
-        "max": undefined,
-        "min": undefined,
-        "now": undefined,
-        "text": undefined,
-      }
-    }
-    accessible={true}
-    collapsable={false}
-    focusable={true}
-    onBlur={[Function]}
-    onClick={[Function]}
-    onFocus={[Function]}
-    onResponderGrant={[Function]}
-    onResponderMove={[Function]}
-    onResponderRelease={[Function]}
-    onResponderTerminate={[Function]}
-    onResponderTerminationRequest={[Function]}
-    onStartShouldSetResponder={[Function]}
-    style={
-      {
-        "alignItems": "center",
-        "flexDirection": "row",
-        "justifyContent": "center",
-      }
-    }
-  >
-    <View
-      style={
-        {
-          "flexDirection": "row",
-          "gap": 8,
-        }
-      }
-    >
-      <View
-        style={
-          [
-            {
-              "alignItems": "center",
-              "backgroundColor": "#222222",
-              "borderColor": "#444444",
-              "borderRadius": 8,
-              "borderWidth": 1,
-              "elevation": 1,
-              "height": 64,
-              "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
-              "shadowColor": "rgb(10, 13, 18)",
-              "shadowOffset": {
-                "height": 1,
-                "width": 0,
-              },
-              "shadowOpacity": 0.05,
-              "shadowRadius": 2,
-              "width": 39,
-            },
-            {
-              "opacity": 0.5,
-            },
-          ]
-        }
-      >
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              [
-                {
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
-                  "textAlign": "center",
-                },
-                {
-                  "color": "#FFFFFF",
-                },
-              ],
-            ]
-          }
-        >
-          1
-        </Text>
-      </View>
-      <View
-        style={
-          [
-            {
-              "alignItems": "center",
-              "backgroundColor": "#222222",
-              "borderColor": "#444444",
-              "borderRadius": 8,
-              "borderWidth": 1,
-              "elevation": 1,
-              "height": 64,
-              "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
-              "shadowColor": "rgb(10, 13, 18)",
-              "shadowOffset": {
-                "height": 1,
-                "width": 0,
-              },
-              "shadowOpacity": 0.05,
-              "shadowRadius": 2,
-              "width": 39,
-            },
-            {
-              "opacity": 0.5,
-            },
-          ]
-        }
-      >
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              [
-                {
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
-                  "textAlign": "center",
-                },
-                {
-                  "color": "#FFFFFF",
-                },
-              ],
-            ]
-          }
-        >
-          2
-        </Text>
-      </View>
-      <View
-        style={
-          [
-            {
-              "alignItems": "center",
-              "backgroundColor": "#222222",
-              "borderColor": "#444444",
-              "borderRadius": 8,
-              "borderWidth": 1,
-              "elevation": 1,
-              "height": 64,
-              "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
-              "shadowColor": "rgb(10, 13, 18)",
-              "shadowOffset": {
-                "height": 1,
-                "width": 0,
-              },
-              "shadowOpacity": 0.05,
-              "shadowRadius": 2,
-              "width": 39,
-            },
-            {
-              "opacity": 0.5,
-            },
-          ]
-        }
-      >
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              [
-                {
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
-                  "textAlign": "center",
-                },
-                {
-                  "color": "#FFFFFF",
-                },
-              ],
-            ]
-          }
-        >
-          3
-        </Text>
-      </View>
-    </View>
-    <Text
-      style={
-        [
-          {
-            "color": "#FFFFFF",
-            "fontFamily": "PlusJakartaSans-Regular",
-            "fontSize": 20,
-            "fontWeight": "400",
-            "letterSpacing": 0,
-            "lineHeight": 32,
-            "textAlign": "left",
-          },
-          {
-            "color": "#cbcbcb",
-            "fontFamily": "PlusJakartaSans-Medium",
-            "fontSize": 20,
-            "lineHeight": 32,
-            "marginHorizontal": 8,
-          },
-        ]
-      }
-    >
-      -
-    </Text>
-    <View
-      style={
-        {
-          "flexDirection": "row",
-          "gap": 8,
-        }
-      }
-    >
-      <View
-        style={
-          [
-            {
-              "alignItems": "center",
-              "backgroundColor": "#222222",
-              "borderColor": "#444444",
-              "borderRadius": 8,
-              "borderWidth": 1,
-              "elevation": 1,
-              "height": 64,
-              "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
-              "shadowColor": "rgb(10, 13, 18)",
-              "shadowOffset": {
-                "height": 1,
-                "width": 0,
-              },
-              "shadowOpacity": 0.05,
-              "shadowRadius": 2,
-              "width": 39,
-            },
-            {
-              "opacity": 0.5,
-            },
-          ]
-        }
-      >
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              [
-                {
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
-                  "textAlign": "center",
-                },
-                {
-                  "color": "#444444",
-                },
-              ],
-            ]
-          }
-        >
-          0
-        </Text>
-      </View>
-      <View
-        style={
-          [
-            {
-              "alignItems": "center",
-              "backgroundColor": "#222222",
-              "borderColor": "#444444",
-              "borderRadius": 8,
-              "borderWidth": 1,
-              "elevation": 1,
-              "height": 64,
-              "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
-              "shadowColor": "rgb(10, 13, 18)",
-              "shadowOffset": {
-                "height": 1,
-                "width": 0,
-              },
-              "shadowOpacity": 0.05,
-              "shadowRadius": 2,
-              "width": 39,
-            },
-            {
-              "opacity": 0.5,
-            },
-          ]
-        }
-      >
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              [
-                {
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
-                  "textAlign": "center",
-                },
-                {
-                  "color": "#444444",
-                },
-              ],
-            ]
-          }
-        >
-          0
-        </Text>
-      </View>
-      <View
-        style={
-          [
-            {
-              "alignItems": "center",
-              "backgroundColor": "#222222",
-              "borderColor": "#444444",
-              "borderRadius": 8,
-              "borderWidth": 1,
-              "elevation": 1,
-              "height": 64,
-              "justifyContent": "center",
-              "paddingHorizontal": 12,
-              "paddingVertical": 8,
-              "shadowColor": "rgb(10, 13, 18)",
-              "shadowOffset": {
-                "height": 1,
-                "width": 0,
-              },
-              "shadowOpacity": 0.05,
-              "shadowRadius": 2,
-              "width": 39,
-            },
-            {
-              "opacity": 0.5,
-            },
-          ]
-        }
-      >
-        <Text
-          style={
-            [
-              {
-                "color": "#FFFFFF",
-                "fontFamily": "PlusJakartaSans-Regular",
-                "fontSize": 16,
-                "fontWeight": "400",
-                "letterSpacing": 0,
-                "lineHeight": 24,
-                "textAlign": "left",
-              },
-              [
-                {
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 20,
-                  "lineHeight": 32,
-                  "textAlign": "center",
-                },
-                {
-                  "color": "#444444",
-                },
-              ],
-            ]
-          }
-        >
-          0
-        </Text>
-      </View>
-    </View>
-  </View>
 </View>
 `;
 
@@ -935,32 +929,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
     }
   }
 >
-  <TextInput
-    accessibilityLabel="OTP verification code"
-    accessibilityState={
-      {
-        "disabled": false,
-      }
-    }
-    autoComplete="one-time-code"
-    caretHidden={true}
-    editable={true}
-    keyboardType="number-pad"
-    maxLength={6}
-    onBlur={[Function]}
-    onChangeText={[Function]}
-    onFocus={[Function]}
-    style={
-      {
-        "height": 1,
-        "opacity": 0,
-        "position": "absolute",
-        "width": 1,
-      }
-    }
-    textContentType="oneTimeCode"
-    value=""
-  />
   <View
     accessibilityLabel="OTP input, 0 of 6 digits entered"
     accessibilityRole="none"
@@ -1043,7 +1011,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1099,7 +1066,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1155,7 +1121,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1185,7 +1150,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 32,
             "textAlign": "left",
@@ -1244,7 +1208,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1300,7 +1263,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1356,7 +1318,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1380,18 +1341,6 @@ exports[`OTPInput renders correctly - empty state 1`] = `
       </View>
     </View>
   </View>
-</View>
-`;
-
-exports[`OTPInput renders correctly - fully filled 1`] = `
-<View
-  style={
-    {
-      "alignItems": "center",
-      "width": "100%",
-    }
-  }
->
   <TextInput
     accessibilityLabel="OTP verification code"
     accessibilityState={
@@ -1409,15 +1358,31 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
     onFocus={[Function]}
     style={
       {
-        "height": 1,
-        "opacity": 0,
+        "backgroundColor": "transparent",
+        "bottom": 0,
+        "color": "transparent",
+        "left": 0,
+        "opacity": 0.02,
         "position": "absolute",
-        "width": 1,
+        "right": 0,
+        "top": 0,
       }
     }
     textContentType="oneTimeCode"
-    value="123456"
+    value=""
   />
+</View>
+`;
+
+exports[`OTPInput renders correctly - fully filled 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "width": "100%",
+    }
+  }
+>
   <View
     accessibilityLabel="OTP input, 6 of 6 digits entered"
     accessibilityRole="none"
@@ -1500,7 +1465,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1556,7 +1520,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1612,7 +1575,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1642,7 +1604,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 32,
             "textAlign": "left",
@@ -1701,7 +1662,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1757,7 +1717,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1813,7 +1772,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -1837,18 +1795,6 @@ exports[`OTPInput renders correctly - fully filled 1`] = `
       </View>
     </View>
   </View>
-</View>
-`;
-
-exports[`OTPInput renders correctly - partially filled 1`] = `
-<View
-  style={
-    {
-      "alignItems": "center",
-      "width": "100%",
-    }
-  }
->
   <TextInput
     accessibilityLabel="OTP verification code"
     accessibilityState={
@@ -1866,15 +1812,31 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
     onFocus={[Function]}
     style={
       {
-        "height": 1,
-        "opacity": 0,
+        "backgroundColor": "transparent",
+        "bottom": 0,
+        "color": "transparent",
+        "left": 0,
+        "opacity": 0.02,
         "position": "absolute",
-        "width": 1,
+        "right": 0,
+        "top": 0,
       }
     }
     textContentType="oneTimeCode"
-    value="123"
+    value="123456"
   />
+</View>
+`;
+
+exports[`OTPInput renders correctly - partially filled 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "width": "100%",
+    }
+  }
+>
   <View
     accessibilityLabel="OTP input, 3 of 6 digits entered"
     accessibilityRole="none"
@@ -1957,7 +1919,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2013,7 +1974,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2069,7 +2029,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2099,7 +2058,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 32,
             "textAlign": "left",
@@ -2158,7 +2116,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2214,7 +2171,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2270,7 +2226,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2294,18 +2249,6 @@ exports[`OTPInput renders correctly - partially filled 1`] = `
       </View>
     </View>
   </View>
-</View>
-`;
-
-exports[`OTPInput renders correctly - with error 1`] = `
-<View
-  style={
-    {
-      "alignItems": "center",
-      "width": "100%",
-    }
-  }
->
   <TextInput
     accessibilityLabel="OTP verification code"
     accessibilityState={
@@ -2323,15 +2266,31 @@ exports[`OTPInput renders correctly - with error 1`] = `
     onFocus={[Function]}
     style={
       {
-        "height": 1,
-        "opacity": 0,
+        "backgroundColor": "transparent",
+        "bottom": 0,
+        "color": "transparent",
+        "left": 0,
+        "opacity": 0.02,
         "position": "absolute",
-        "width": 1,
+        "right": 0,
+        "top": 0,
       }
     }
     textContentType="oneTimeCode"
-    value="123456"
+    value="123"
   />
+</View>
+`;
+
+exports[`OTPInput renders correctly - with error 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "width": "100%",
+    }
+  }
+>
   <View
     accessibilityLabel="OTP input, 6 of 6 digits entered"
     accessibilityRole="none"
@@ -2418,7 +2377,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2478,7 +2436,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2538,7 +2495,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2568,7 +2524,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 32,
             "textAlign": "left",
@@ -2631,7 +2586,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2691,7 +2645,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2751,7 +2704,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
                 "color": "#FFFFFF",
                 "fontFamily": "PlusJakartaSans-Regular",
                 "fontSize": 16,
-                "fontWeight": "400",
                 "letterSpacing": 0,
                 "lineHeight": 24,
                 "textAlign": "left",
@@ -2775,6 +2727,36 @@ exports[`OTPInput renders correctly - with error 1`] = `
       </View>
     </View>
   </View>
+  <TextInput
+    accessibilityLabel="OTP verification code"
+    accessibilityState={
+      {
+        "disabled": false,
+      }
+    }
+    autoComplete="one-time-code"
+    caretHidden={true}
+    editable={true}
+    keyboardType="number-pad"
+    maxLength={6}
+    onBlur={[Function]}
+    onChangeText={[Function]}
+    onFocus={[Function]}
+    style={
+      {
+        "backgroundColor": "transparent",
+        "bottom": 0,
+        "color": "transparent",
+        "left": 0,
+        "opacity": 0.02,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+    textContentType="oneTimeCode"
+    value="123456"
+  />
   <Text
     style={
       [
@@ -2782,7 +2764,6 @@ exports[`OTPInput renders correctly - with error 1`] = `
           "color": "#FFFFFF",
           "fontFamily": "PlusJakartaSans-Regular",
           "fontSize": 16,
-          "fontWeight": "400",
           "letterSpacing": 0,
           "lineHeight": 24,
           "textAlign": "left",

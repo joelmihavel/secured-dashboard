@@ -33,6 +33,8 @@ env:
   TEST_PHONE: "9876543210"
   TEST_NAME: "Test User"
   TEST_OTP: "123456"
+  TEST_UPI_VPA: "test@upi"
+  TEST_PAYMENT_AMOUNT: "32500"
   CI: "true"
 
 # Execution order and failure handling
@@ -43,8 +45,8 @@ executionOrder:
 # Uncomment the platform you want to target
 # devices:
 #   - platform: iOS
-#     model: iPhone 15
-#     osVersion: "17"
+#     model: iPhone 16 Pro
+#     osVersion: "18"
 #   - platform: Android
 #     model: Pixel 7
 #     osVersion: "34"

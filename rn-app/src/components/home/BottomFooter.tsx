@@ -47,7 +47,7 @@ function BottomFooterComponent({
   };
 
   // Minimal bottom padding — safe area only
-  const bottomPadding = insets.bottom;
+  const bottomPadding = Math.max(s(40), insets.bottom); // Figma: bottom 40 padding
 
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#202020',
-    paddingTop: s(8),
+    paddingTop: s(16),
     paddingHorizontal: s(32),
     gap: s(24),
     borderTopWidth: 1, // Figma: individualStrokeWeights top=1

@@ -32,7 +32,6 @@ appId: com.flent.secured
 
 # Verify core home screen elements
 - assertVisible: "Home"
-    optional: true
 
 # -- Test empty state (setup payment) --
 - openLink: "flentsecured:///main/index?state=setup-payment"
@@ -57,7 +56,6 @@ appId: com.flent.secured
 
 # Late payment state should show warning
 - assertVisible: "late"
-    optional: true
 
 # -- Test missed payment state --
 - openLink: "flentsecured:///main/index?state=missed-payment"
@@ -68,4 +66,3 @@ appId: com.flent.secured
 
 # Missed payment state should show alert
 - assertVisible: "missed"
-    optional: true

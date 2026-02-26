@@ -7,8 +7,14 @@ import {
   selectPaymentError,
   selectIsProcessing,
   selectTransactionId,
+  selectLastPaymentId,
+  selectLastPaymentTimestamp,
+  selectPayuSessionParams,
+  selectSelectedInstrument,
+  selectVerificationSkipped,
+  selectPendingPaymentReturn,
 } from '../payment';
-import type { SelectedPaymentMethod } from '../payment';
+import type { SelectedPaymentMethod, PayUSessionParams } from '../payment';
 
 const mockUpiMethod: SelectedPaymentMethod = {
   id: 'upi_1',
@@ -491,6 +497,263 @@ describe('paymentStore', () => {
         usePaymentStore.getState().setProcessing('txn_sel');
       });
       expect(selectTransactionId(usePaymentStore.getState())).toBe('txn_sel');
+    });
+  });
+
+  // ===================================================
+  // PayU SESSION PARAMS (in-memory only)
+  // ===================================================
+
+  describe('PayU session params', () => {
+    const mockParams: PayUSessionParams = {
+      key: 'PLycrf',
+      txnid: 'txn-payu-001',
+      amount: '25000',
+      productinfo: 'Rent Feb 2026',
+      firstname: 'Rishabh',
+      email: 'rishabh@flent.in',
+      phone: '+919876543210',
+      surl: 'https://api.flent.in/payment/success',
+      furl: 'https://api.flent.in/payment/failure',
+      hash: 'a1b2c3d4e5f6',
+      user_credential: 'PLycrf:rishabh@flent.in',
+    };
+
+    it('setPayuSessionParams stores params', () => {
+      act(() => {
+        usePaymentStore.getState().setPayuSessionParams(mockParams);
+      });
+      expect(usePaymentStore.getState().payuSessionParams).toEqual(mockParams);
+    });
+
+    it('clearPayuSessionParams clears to null', () => {
+      act(() => {
+        usePaymentStore.getState().setPayuSessionParams(mockParams);
+        usePaymentStore.getState().clearPayuSessionParams();
+      });
+      expect(usePaymentStore.getState().payuSessionParams).toBeNull();
+    });
+
+    it('payuSessionParams is NOT included in persisted state (partialize)', () => {
+      // The store's partialize option returns only { lastPaymentId, lastPaymentTimestamp }.
+      // PayU session params must NOT appear in persisted keys.
+      act(() => {
+        usePaymentStore.getState().setPayuSessionParams(mockParams);
+      });
+
+      const state = usePaymentStore.getState();
+      // Access the store's persist API to check partialize output
+      const persistApi = (usePaymentStore as unknown as { persist: { getOptions: () => { partialize: (s: typeof state) => Record<string, unknown> } } }).persist;
+      const partialized = persistApi.getOptions().partialize(state);
+
+      expect(partialized).toHaveProperty('lastPaymentId');
+      expect(partialized).toHaveProperty('lastPaymentTimestamp');
+      expect(partialized).not.toHaveProperty('payuSessionParams');
+      expect(partialized).not.toHaveProperty('selectedInstrument');
+      expect(partialized).not.toHaveProperty('verificationSkipped');
+      expect(partialized).not.toHaveProperty('pendingPaymentReturn');
+    });
+  });
+
+  // ===================================================
+  // SELECTED INSTRUMENT
+  // ===================================================
+
+  describe('selectedInstrument', () => {
+    it('setSelectedInstrument stores { type, bankCode }', () => {
+      act(() => {
+        usePaymentStore.getState().setSelectedInstrument({ type: 'netbanking', bankCode: 'HDFC' });
+      });
+      expect(usePaymentStore.getState().selectedInstrument).toEqual({
+        type: 'netbanking',
+        bankCode: 'HDFC',
+      });
+    });
+
+    it('setSelectedInstrument with UPI type (no bankCode)', () => {
+      act(() => {
+        usePaymentStore.getState().setSelectedInstrument({ type: 'upi' });
+      });
+      expect(usePaymentStore.getState().selectedInstrument).toEqual({ type: 'upi' });
+    });
+
+    it('setSelectedInstrument(null) clears it', () => {
+      act(() => {
+        usePaymentStore.getState().setSelectedInstrument({ type: 'card' });
+        usePaymentStore.getState().setSelectedInstrument(null);
+      });
+      expect(usePaymentStore.getState().selectedInstrument).toBeNull();
+    });
+  });
+
+  // ===================================================
+  // VERIFICATION FLOW STATE
+  // ===================================================
+
+  describe('verification flow', () => {
+    it('setVerificationSkipped(true) stores true', () => {
+      act(() => {
+        usePaymentStore.getState().setVerificationSkipped(true);
+      });
+      expect(usePaymentStore.getState().verificationSkipped).toBe(true);
+    });
+
+    it('setVerificationSkipped(false) stores false', () => {
+      act(() => {
+        usePaymentStore.getState().setVerificationSkipped(true);
+        usePaymentStore.getState().setVerificationSkipped(false);
+      });
+      expect(usePaymentStore.getState().verificationSkipped).toBe(false);
+    });
+
+    it('setPendingPaymentReturn(true) stores true', () => {
+      act(() => {
+        usePaymentStore.getState().setPendingPaymentReturn(true);
+      });
+      expect(usePaymentStore.getState().pendingPaymentReturn).toBe(true);
+    });
+
+    it('setPendingPaymentReturn(false) stores false', () => {
+      act(() => {
+        usePaymentStore.getState().setPendingPaymentReturn(true);
+        usePaymentStore.getState().setPendingPaymentReturn(false);
+      });
+      expect(usePaymentStore.getState().pendingPaymentReturn).toBe(false);
+    });
+  });
+
+  // ===================================================
+  // PERSISTENCE (lastPayment)
+  // ===================================================
+
+  describe('lastPayment persistence fields', () => {
+    it('setLastPayment sets both id and timestamp', () => {
+      const beforeCall = Date.now();
+
+      act(() => {
+        usePaymentStore.getState().setLastPayment('pay-persist-001');
+      });
+
+      const state = usePaymentStore.getState();
+      expect(state.lastPaymentId).toBe('pay-persist-001');
+      expect(state.lastPaymentTimestamp).toBeGreaterThanOrEqual(beforeCall);
+      expect(state.lastPaymentTimestamp).toBeLessThanOrEqual(Date.now());
+    });
+
+    it('clearLastPayment clears both id and timestamp', () => {
+      act(() => {
+        usePaymentStore.getState().setLastPayment('pay-persist-002');
+        usePaymentStore.getState().clearLastPayment();
+      });
+
+      const state = usePaymentStore.getState();
+      expect(state.lastPaymentId).toBeNull();
+      expect(state.lastPaymentTimestamp).toBeNull();
+    });
+
+    it('partialize returns ONLY lastPaymentId and lastPaymentTimestamp', () => {
+      act(() => {
+        usePaymentStore.getState().selectMethod(mockCardMethod);
+        usePaymentStore.getState().setAmount(25000);
+        usePaymentStore.getState().setProcessing('txn_persist');
+        usePaymentStore.getState().setLastPayment('pay-persist-003');
+      });
+
+      const state = usePaymentStore.getState();
+      const persistApi = (usePaymentStore as unknown as { persist: { getOptions: () => { partialize: (s: typeof state) => Record<string, unknown> } } }).persist;
+      const partialized = persistApi.getOptions().partialize(state);
+
+      // Should include ONLY these two keys
+      expect(Object.keys(partialized).sort()).toEqual(
+        ['lastPaymentId', 'lastPaymentTimestamp'].sort()
+      );
+      expect(partialized.lastPaymentId).toBe('pay-persist-003');
+      expect(typeof partialized.lastPaymentTimestamp).toBe('number');
+    });
+  });
+
+  // ===================================================
+  // ADDITIONAL SELECTORS
+  // ===================================================
+
+  describe('additional selectors', () => {
+    it('selectLastPaymentId returns null initially', () => {
+      expect(selectLastPaymentId(usePaymentStore.getState())).toBeNull();
+    });
+
+    it('selectLastPaymentId returns id after setLastPayment', () => {
+      act(() => {
+        usePaymentStore.getState().setLastPayment('pay-sel-001');
+      });
+      expect(selectLastPaymentId(usePaymentStore.getState())).toBe('pay-sel-001');
+    });
+
+    it('selectLastPaymentTimestamp returns null initially', () => {
+      expect(selectLastPaymentTimestamp(usePaymentStore.getState())).toBeNull();
+    });
+
+    it('selectLastPaymentTimestamp returns timestamp after setLastPayment', () => {
+      act(() => {
+        usePaymentStore.getState().setLastPayment('pay-sel-002');
+      });
+      expect(typeof selectLastPaymentTimestamp(usePaymentStore.getState())).toBe('number');
+    });
+
+    it('selectPayuSessionParams returns null initially', () => {
+      expect(selectPayuSessionParams(usePaymentStore.getState())).toBeNull();
+    });
+
+    it('selectPayuSessionParams returns params after set', () => {
+      const params: PayUSessionParams = {
+        key: 'PLycrf',
+        txnid: 'txn-sel-001',
+        amount: '25000',
+        productinfo: 'Rent',
+        firstname: 'Test',
+        email: 'test@flent.in',
+        phone: '+919999999999',
+        surl: 'https://surl',
+        furl: 'https://furl',
+        hash: 'hash123',
+        user_credential: 'PLycrf:test@flent.in',
+      };
+      act(() => {
+        usePaymentStore.getState().setPayuSessionParams(params);
+      });
+      expect(selectPayuSessionParams(usePaymentStore.getState())).toEqual(params);
+    });
+
+    it('selectSelectedInstrument returns null initially', () => {
+      expect(selectSelectedInstrument(usePaymentStore.getState())).toBeNull();
+    });
+
+    it('selectSelectedInstrument returns instrument after set', () => {
+      act(() => {
+        usePaymentStore.getState().setSelectedInstrument({ type: 'card' });
+      });
+      expect(selectSelectedInstrument(usePaymentStore.getState())).toEqual({ type: 'card' });
+    });
+
+    it('selectVerificationSkipped returns false initially', () => {
+      expect(selectVerificationSkipped(usePaymentStore.getState())).toBe(false);
+    });
+
+    it('selectVerificationSkipped returns true after set', () => {
+      act(() => {
+        usePaymentStore.getState().setVerificationSkipped(true);
+      });
+      expect(selectVerificationSkipped(usePaymentStore.getState())).toBe(true);
+    });
+
+    it('selectPendingPaymentReturn returns false initially', () => {
+      expect(selectPendingPaymentReturn(usePaymentStore.getState())).toBe(false);
+    });
+
+    it('selectPendingPaymentReturn returns true after set', () => {
+      act(() => {
+        usePaymentStore.getState().setPendingPaymentReturn(true);
+      });
+      expect(selectPendingPaymentReturn(usePaymentStore.getState())).toBe(true);
     });
   });
 });

@@ -304,7 +304,7 @@ describe('Profile API Service', () => {
       expect(result.data?.totalCount).toBe(1);
     });
 
-    it('returns mock data in dev mode on error', async () => {
+    it('returns error when edge function fails', async () => {
       mockCallEdgeFunction.mockResolvedValue({
         data: null,
         error: 'Auth error',
@@ -312,8 +312,9 @@ describe('Profile API Service', () => {
 
       const result = await getSavedPaymentMethods();
 
-      // __DEV__ is true, so mock data returned
-      expect(result.data).toBeTruthy();
+      // Profile module does NOT have __DEV__ mock fallback -- returns mapped error
+      expect(result.data).toBeNull();
+      expect(result.error).not.toBeNull();
     });
   });
 });

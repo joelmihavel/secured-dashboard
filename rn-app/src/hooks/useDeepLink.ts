@@ -126,9 +126,14 @@ export function resolveDeepLink(path: string): string | null {
   const resolved = DEEP_LINK_ROUTES[pathWithoutQuery];
   if (resolved) return resolved;
 
-  // If the path starts with a route group marker, pass through WITHOUT query params
-  // (Expo Router v4 crashes when route group paths include query strings)
-  if (pathWithoutQuery.startsWith('/(')) return pathWithoutQuery;
+  // FIX: BUG-4 — whitelist allowed route groups instead of blindly passing through
+  // Prevents attacker-crafted deep links like flentsecured:///(dev)/screen-picker
+  const ALLOWED_ROUTE_GROUPS = ['/(auth)', '/(main)', '/(payment)', '/(profile)', '/(setup)', '/(waitlist)', '/(agreement)'];
+  if (pathWithoutQuery.startsWith('/(')) {
+    const matchesAllowed = ALLOWED_ROUTE_GROUPS.some(group => pathWithoutQuery.startsWith(group));
+    if (matchesAllowed) return pathWithoutQuery;
+    return null; // Block unknown route groups
+  }
 
   // Unknown path -- return null
   return null;

@@ -29,18 +29,18 @@ export const EXPECTED_TEXT = {
   inviteButton: 'Enter Invite Code',
 
   // Pending long state
-  pendingLongTitle: 'We\'re experiencing high demand',
-  pendingLongDescription: 'Your application is still being reviewed. We\'ll notify you as soon as there\'s an update. Estimated wait: Approximately 24-48 hrs.',
+  pendingLongTitle: 'setting\nthings up',
+  pendingLongDescription: 'Taking a bit longer than usual. Hang tight!',
 
   // Rejected state
   rejectedTitle: 'We can\'t approve you right now',
   rejectedSubtitle: 'We\'re opening access in batches. Stay tuned.',
   rejectedTimelineValue: 'Rejected',
   rejectionCardTitle: 'Why was I Rejected?',
-  rejectionReason1: 'Your profile does not meet our current criteria',
-  rejectionReason2: 'We are prioritizing certain user segments',
+  rejectionReason1: "You're renting outside Bangalore",
+  rejectionReason2: 'You did not use an invite code.',
   contactSupport: 'Contact support',
-  countdownPrefix: 'Next applications open in',
+  countdownPrefix: 'You can try again in next batch, applications open in',
 
   // Approved screen
   approvedPrefix: 'you\'re all set.',
@@ -62,7 +62,7 @@ export const EXPECTED_TEXT = {
 // --- Navigation targets ---
 export const EXPECTED_NAVIGATION = {
   onApproved: '/(waitlist)/approved',
-  onStepInside: '/(agreement)/upload',
+  onStepInside: '/(setup)',
 } as const;
 
 // --- testIDs found in screen code ---
@@ -161,7 +161,7 @@ export const WAITLIST_HOOK_LOADING = {
   referralError: null,
   isReferralExpanded: false,
   showConfetti: false,
-  countdownText: '00:00:00',
+  countdownText: '',
   joinWaitlist: jest.fn(),
   isJoiningWaitlist: false,
   applyReferral: jest.fn(),
@@ -174,6 +174,9 @@ export const WAITLIST_HOOK_LOADING = {
   reset: jest.fn(),
   myReferralCode: null,
   isLoadingMyCode: false,
+  inviteCodeClaimed: false,
+  claimInviteCode: jest.fn(),
+  isClaimingInviteCode: false,
 };
 
 export const WAITLIST_HOOK_PENDING = {
@@ -203,7 +206,7 @@ export const WAITLIST_HOOK_REJECTED = {
   viewState: 'rejected' as const,
   status: MOCK_WAITLIST_DATA.rejected,
   isLoading: false,
-  countdownText: '28:24:24',
+  countdownText: '1d: 4h',
 };
 
 export const WAITLIST_HOOK_ERROR = {
@@ -228,6 +231,7 @@ export const WAITLIST_HOOK_APPLYING_REFERRAL = {
   referralCode: ['F', 'L', 'N', 'T'],
   isReferralComplete: true,
   isApplyingReferral: true,
+  isClaimingInviteCode: true,
 };
 
 export const WAITLIST_HOOK_REFETCHING = {

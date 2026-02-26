@@ -45,6 +45,10 @@ jest.mock('../useIdentityVerification', () => ({
     mutate: jest.fn(),
     isPending: false,
   }),
+  useRecordConsent: () => ({
+    mutateAsync: jest.fn().mockResolvedValue(undefined),
+    isLoading: false,
+  }),
 }));
 
 // Mock utils (used by signOut in the service)

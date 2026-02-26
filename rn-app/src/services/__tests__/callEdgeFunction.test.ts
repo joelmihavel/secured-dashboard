@@ -15,11 +15,13 @@
 // ---------------------------------------------------------------------------
 
 const mockGetSession = jest.fn();
+const mockRefreshSession = jest.fn();
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
     auth: {
       getSession: (...args: unknown[]) => mockGetSession(...args),
+      refreshSession: (...args: unknown[]) => mockRefreshSession(...args),
     },
   }),
 }));
@@ -63,6 +65,11 @@ describe('callEdgeFunction', () => {
       data: {
         session: { access_token: 'test-jwt-token' },
       },
+    });
+    // Default: refreshSession also fails (tests that need it will override)
+    mockRefreshSession.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'No refresh token' },
     });
     // callEdgeFunction uses real setTimeout for AbortController timeouts.
     // The global setup.ts installs fake timers, but callEdgeFunction needs

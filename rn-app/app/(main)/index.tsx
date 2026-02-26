@@ -32,7 +32,7 @@
  *
  * Pixel-Perfect Parity Fixes Applied (Figma 684:8846):
  * - Root background: #131313 (colors.black[700]) via Screen component
- * - Spacing restored to exact Figma values: gap 24, paddingBottom 48, tabSection gap 48
+ * - Spacing: gap 12 (tightened from Figma 24 for visual density), paddingBottom 48, tabSection gap 48
  * - HomeHeader padding restored: paddingV 24, gap 16 (Figma 684:9047/9049)
  * - Removed double-padding on headlineContainer (HeadlineSection handles its own 64px padding)
  * - Removed double-padding on carouselSection (PaymentMethodCarousel handles its own 64/32px padding)
@@ -45,13 +45,13 @@
  */
 
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Screen, Text, Logo, PrimaryButton, ScrollDownIndicator } from '@/src/components';
+import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
 import {
   HomeHeader,
   HeadlineSection,
@@ -151,16 +151,7 @@ export default function HomeScreen() {
 
   // Scroll tracking for scroll-down indicator
   const scrollViewRef = useRef<ScrollView>(null);
-  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
-  const [viewHeight, setViewHeight] = useState(0);
-  const [contentHeight, setContentHeight] = useState(0);
-  const contentOverflows = contentHeight > viewHeight + 50;
-
-  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-    const atBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
-    setIsScrolledToBottom(prev => prev !== atBottom ? atBottom : prev);
-  }, []);
+  // Scroll handler removed — ScrollDownIndicator removed from home screen.
 
   // Get saved payment methods
   const { data: savedMethods } = useSavedPaymentMethods();
@@ -326,7 +317,8 @@ export default function HomeScreen() {
     }
 
     // If verification is completely pending and no payment methods, add setup card after flip card
-    if (paymentMethods.length === 0 && (!tenancy.verification_status?.bank_verified || !tenancy.verification_status?.utility_verified)) {
+    // Figma 243-4062/243-5870: Only show setup card when no UPI/Cards are added AND landlord is approved
+    if (paymentMethods.length === 0 && tenancy.verification_status?.landlord_approved && (!tenancy.verification_status?.bank_verified || !tenancy.verification_status?.utility_verified)) {
       items.push({
         type: 'payment_setup',
         id: 'setup-payment',
@@ -599,7 +591,7 @@ export default function HomeScreen() {
   return (
     // Figma: safeAreaTop=false because we handle paddingTop via insets.top manually
     // This prevents double safe-area padding (Screen + manual insets)
-    <Screen testID="home-screen" padded={false} safeAreaTop={false}>
+    <Screen testID="home-screen" padded={false} safeAreaTop={false} safeAreaBottom={false}>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
@@ -609,10 +601,6 @@ export default function HomeScreen() {
           showBottomFooter && styles.scrollContentWithFooter,
         ]}
         showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={handleScroll}
-        onContentSizeChange={(_w, h) => setContentHeight(h)}
-        onLayout={(e) => setViewHeight(e.nativeEvent.layout.height)}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
@@ -625,55 +613,45 @@ export default function HomeScreen() {
         {/* Figma: HomeHeader handles its own paddingHorizontal: 32 */}
         <HomeHeader userName={userName} unreadCount={unreadCount} />
 
-        {/* Warning Banner for overdue/missed states */}
-        {/* Figma 243-3170: WarningBanner handles its own paddingLeft: 64, paddingRight: 32 */}
-        {isOverdue && !isMissed && !isMultipleOverdue && (
-          <WarningBanner type="late" />
-        )}
-        {isMissed && (
-          <WarningBanner type="missed" />
-        )}
-        {isMultipleOverdue && (
-          <WarningBanner type="multiple" />
-        )}
-
-        {/* Dashboard Content */}
+        <View style={styles.mainContent}>
+          {/* Dashboard Content */}
           {renderDashboardContent(dashboardState, {
-          tenancy,
-          upcomingPayment,
-          cashback,
-          paymentMethods,
-          recentPayments,
-          cashbackEntries,
-          emptyStateVariant,
-          carouselItems,
-          daysUntilDue,
-          isOverdue,
-          isMissed,
-          isMultipleOverdue,
-          missedMonthName,
-          activeTab,
-          cashbackBalance,
-          allTimeCashback,
-          cashbackRate,
-          statusNotification,
-          onTabChange: setActiveTab,
-          onAddPayment: handleAddPayment,
-          onFinishSetup: handleFinishSetup,
-          onPayNow: handlePayNow,
-          onAddAgreement: handleAddAgreement,
-          onSendReminder: handleSendReminder,
-          onContactSupport: handleContactSupport,
-          onPaymentMethodPress: handlePaymentMethodPress,
-          onPaymentMethodEdit: handlePaymentMethodEdit,
-          onPaymentPress: handlePaymentPress,
-          onHowItWorks: handleHowItWorks,
-        })}
+            tenancy,
+            upcomingPayment,
+            cashback,
+            paymentMethods,
+            recentPayments,
+            cashbackEntries,
+            emptyStateVariant,
+            carouselItems,
+            daysUntilDue,
+            isOverdue,
+            isMissed,
+            isMultipleOverdue,
+            missedMonthName,
+            activeTab,
+            cashbackBalance,
+            allTimeCashback,
+            cashbackRate,
+            statusNotification,
+            onTabChange: setActiveTab,
+            onAddPayment: handleAddPayment,
+            onFinishSetup: handleFinishSetup,
+            onPayNow: handlePayNow,
+            onAddAgreement: handleAddAgreement,
+            onSendReminder: handleSendReminder,
+            onContactSupport: handleContactSupport,
+            onPaymentMethodPress: handlePaymentMethodPress,
+            onPaymentMethodEdit: handlePaymentMethodEdit,
+            onPaymentPress: handlePaymentPress,
+            onHowItWorks: handleHowItWorks,
+          })}
+        </View>
       </ScrollView>
 
       {/* Fixed Bottom Footer - Figma: absolutely positioned, height 118, bg #202020 */}
       {/* Figma nodes: frame_1686557229 across 243-2762, 243-2967, 243-3170, 243-3378 */}
-      {showBottomFooter && (
+      {showBottomFooter ? (
         <View style={styles.bottomFooterContainer}>
           <BottomFooter
             dueInDays={daysUntilDue}
@@ -683,14 +661,7 @@ export default function HomeScreen() {
             onPress={handlePayNow}
           />
         </View>
-      )}
-
-      {/* Scroll Down Indicator — visible when pending_verification has txns + content overflows */}
-      <ScrollDownIndicator
-        visible={dashboardState === 'pending_verification' && recentPayments.length > 0 && contentOverflows && !isScrolledToBottom}
-        onPress={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-        bottom={showBottomFooter ? 142 : 24}
-      />
+      ) : null}
 
       {/* Payment Method Selection Sheet Overlay */}
       <PaymentMethodSelectionSheet
@@ -807,13 +778,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
       if (recentPayments.length === 0) {
         return (
           <View style={styles.contentContainer}>
-            {statusNotification && (
-              <StatusNotificationBanner
-                type={statusNotification.type}
-                customMessage={statusNotification.message}
-                onPress={onFinishSetup}
-              />
-            )}
             <HomeEmptyState
               variant={emptyStateVariant}
               daysUntilDue={daysUntilDue}
@@ -833,6 +797,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               onPaymentMethodPress={onPaymentMethodPress}
               onPaymentMethodEdit={onPaymentMethodEdit}
             />
+            {statusNotification ? (
+                <StatusNotificationBanner
+                  type={statusNotification.type}
+                  customMessage={statusNotification.message}
+                  onPress={onFinishSetup}
+                />
+            ) : null}
           </View>
         );
       }
@@ -843,19 +814,19 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
 
       return (
         <View style={styles.contentContainer}>
-          {statusNotification && (
-            <StatusNotificationBanner
-              type={statusNotification.type}
-              customMessage={statusNotification.message}
-              onPress={onFinishSetup}
-            />
-          )}
           <HeadlineSection
             variant={pvHeadlineVariant}
             daysUntilDue={pvHeadlineVariant === 'due' ? pvDaysValue : undefined}
             daysOverdue={pvHeadlineVariant === 'overdue' ? pvDaysValue : undefined}
           />
           <RentStatusCarousel items={carouselItems} />
+          {statusNotification ? (
+              <StatusNotificationBanner
+                type={statusNotification.type}
+                customMessage={statusNotification.message}
+                onPress={onFinishSetup}
+              />
+          ) : null}
           <View style={styles.tabSection}>
             <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
             {activeTab === 'recent_payments' ? (
@@ -908,47 +879,53 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               paddingLeft: 64, paddingRight: 32, gap: 16 -- DO NOT add parent padding */}
           <RentStatusCarousel items={carouselItems} />
 
-          {statusNotification && (
-            <StatusNotificationBanner
-              type={statusNotification.type}
-              customMessage={statusNotification.message}
-            />
-          )}
+          {statusNotification ? (
+              <StatusNotificationBanner
+                type={statusNotification.type}
+                customMessage={statusNotification.message}
+              />
+          ) : null}
 
-          {/* Tab Section (Frame 1686557297): wraps Toggle + payment list content
-              Figma 243-2967: gap 48, paddingTop 8, paddingLeft 32, paddingRight 32
-              alignItems CENTER, clipsContent true */}
+          {/* Tab Section (Frame 1686557297): wraps Toggle + payment list content */}
           <View style={styles.tabSection}>
-            <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
+        <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
 
-            {/* Tab Content - gap 48 separates toggle from content */}
-            {activeTab === 'recent_payments' ? (
-              recentPayments.length > 0 ? (
-                <RecentPaymentsList
-                  payments={recentPayments}
-                  onPaymentPress={onPaymentPress}
-                />
-              ) : (
-                <EmptyPaymentsState />
-              )
-            ) : (
-              cashbackEntries.length > 0 ? (
-                <CashbacksList
-                  balance={cashbackBalance}
-                  allTimeTotal={allTimeCashback}
-                  cashbackRate={cashbackRate}
-                  entries={cashbackEntries}
-                />
-              ) : (
-                <CashbackEmptyState
-                  accruedAmount={cashbackBalance}
-                  allTimeTotal={allTimeCashback}
-                  cashbackRate={cashbackRate}
-                  showPlaceholder={true}
-                />
-              )
-            )}
-          </View>
+        {/* Tab Content - gap 48 separates toggle from content */}
+        {activeTab === 'recent_payments' ? (
+          recentPayments.length > 0 ? (
+            <RecentPaymentsList
+              payments={recentPayments}
+              onPaymentPress={onPaymentPress}
+            />
+          ) : (
+            <EmptyPaymentsState />
+          )
+        ) : (
+          cashbackEntries.length > 0 ? (
+            <CashbacksList
+              balance={cashbackBalance}
+              allTimeTotal={allTimeCashback}
+              cashbackRate={cashbackRate}
+              entries={cashbackEntries}
+            />
+          ) : (
+            <CashbackEmptyState
+              accruedAmount={cashbackBalance}
+              allTimeTotal={allTimeCashback}
+              cashbackRate={cashbackRate}
+              showPlaceholder={true}
+            />
+          )
+        )}
+      </View>
+
+          {/* Warning Banner — below tabs, only for overdue/missed active states */}
+          {(() => {
+            if (isMultipleOverdue) return <WarningBanner type="multiple" />;
+            if (isMissed) return <WarningBanner type="missed" />;
+            if (isOverdue) return <WarningBanner type="late" />;
+            return null;
+          })()}
         </View>
       );
 
@@ -982,7 +959,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             </Text>
           </View>
 
-          {cashback && (cashback.available_balance ?? 0) > 0 && (
+          {cashback && (cashback.available_balance ?? 0) > 0 ? (
             <View style={styles.cashbackCard}>
               <Text variant="bodySm" color="muted">
                 Available Cashback
@@ -991,7 +968,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
                 Rs.{(cashback.available_balance ?? 0).toLocaleString('en-IN')}
               </Text>
             </View>
-          )}
+          ) : null}
         </View>
       );
 
@@ -1021,7 +998,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 48, // Figma 684:8847: paddingBottom 48
-    gap: 24, // Figma 684:8847: itemSpacing 24
+    // NOTE: gap 24 removed from here. The 24px gap is ONLY between elements
+    // inside the main content area (WarningBanner, Headline, Carousel).
+    // The gap between HomeHeader and the main content area is 0 in Figma.
+  },
+  mainContent: {
+    // NO flex: 1 — inside ScrollView, children must hug content, not stretch.
+    // flex: 1 caused invisible flex-fill space distributed between children.
+    gap: 24, // Figma 769:308866: itemSpacing 24 between top-level sections
   },
   scrollContentWithFooter: {
     // Footer height (~118) + base padding = total bottom clearance
@@ -1068,8 +1052,8 @@ const styles = StyleSheet.create({
     minWidth: 160,
   },
   contentContainer: {
-    flex: 1,
-    gap: 24, // Figma 684:8847: itemSpacing 24 between sections
+    // NO flex: 1 — same reason as mainContent. Must hug content inside ScrollView.
+    gap: 24, // Figma 769:308866: itemSpacing 24 between sections
   },
   sectionDivider: {
     height: 1, // Figma 684:9207: thin divider
@@ -1087,7 +1071,6 @@ const styles = StyleSheet.create({
   // paddingTop: 8, paddingLeft: 32, paddingRight: 32, clipsContent: true
   tabSection: {
     gap: 48, // Figma 684:9002: gap 48 between toggle and content
-    paddingTop: 8, // Figma 684:9002: paddingTop 8
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER
     overflow: 'hidden', // Figma: clipsContent true
     // NOTE: paddingHorizontal 32 is handled by child components (RecentPaymentsList, CashbacksList, etc.)

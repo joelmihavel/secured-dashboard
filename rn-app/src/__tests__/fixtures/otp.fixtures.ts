@@ -40,7 +40,7 @@ export const EXPECTED_TEXT = {
 
 // --- Navigation targets ---
 export const EXPECTED_NAVIGATION = {
-  onAuthenticated: '/(waitlist)',
+  onAuthenticated: '/',
   onDismiss: 'back', // router.back()
 } as const;
 

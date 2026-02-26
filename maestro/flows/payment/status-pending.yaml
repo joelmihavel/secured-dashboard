@@ -1,0 +1,47 @@
+# =============================================================================
+# Payment: Status Screen -- Pending (Verifying) State
+# Route: /(payment)/status?initialStatus=pending
+# Figma: 41-9460 (Processing)
+# testID: status-screen (SINGLE testID for all states)
+# =============================================================================
+#
+# IMPORTANT: The status screen uses a SINGLE testID "status-screen" for ALL
+# states. Assertions MUST use visible TEXT content, not state-specific testIDs.
+#
+# Validates:
+#   - Status screen renders in pending/verifying state
+#   - Title shows "Verifying" text
+#   - "Payment..." subtitle is visible
+#   - Info rows with bank confirmation messages appear
+#   - "Contact Support" button is visible
+#   - Receipt card with "pending" stamp is displayed
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to status screen with pending state
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/status?initialStatus=pending"
+- waitForAnimationToEnd
+
+# Verify status screen rendered (single testID for all states)
+- assertVisible:
+    id: "status-screen"
+
+# Verify pending/verifying title text
+- assertVisible: "Verifying"
+
+# Verify subtitle
+- assertVisible: "Payment..."
+
+# Verify info row content for non-UPI verifying state
+- assertVisible: "Confirming your payment with the bank"
+
+# Verify "Please don't close the app" message
+- assertVisible: "close the app"
+
+# Verify Contact Support button
+- assertVisible:
+    id: "contact-support-button"
+- assertVisible: "Contact Support"

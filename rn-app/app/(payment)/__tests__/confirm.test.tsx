@@ -7,6 +7,7 @@ import ConfirmScreen from '../confirm';
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('react-native-safe-area-context', () => {
@@ -31,20 +32,6 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: (props: any) => <View {...props} />,
-    Svg: (props: any) => <View {...props} />,
-    Path: (props: any) => <View {...props} />,
-    Line: (props: any) => <View {...props} />,
-    Circle: (props: any) => <View {...props} />,
-    Rect: (props: any) => <View {...props} />,
-    G: (props: any) => <View {...props} />,
-  };
-});
-
 jest.mock('@/src/hooks', () => ({
   useDashboard: () => ({
     tenancy: {
@@ -60,6 +47,7 @@ jest.mock('@/src/hooks', () => ({
     cashback: { available_balance: 325 },
     isLoading: false,
   }),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 // ── Tests ────────────────────────────────────────────────────────────────────

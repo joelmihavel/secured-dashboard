@@ -18,11 +18,6 @@ jest.mock('@expo/vector-icons', () => {
   const MockIcon = (props: any) => <Text>{props.name}</Text>;
   return { Ionicons: MockIcon, MaterialIcons: MockIcon, MaterialCommunityIcons: MockIcon, FontAwesome: MockIcon, Feather: MockIcon, AntDesign: MockIcon };
 });
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return { __esModule: true, default: View, Svg: View, Path: View, Circle: View, Rect: View, G: View, Defs: View, ClipPath: View, Line: View, Text: View };
-});
-
 import CarouselScreen from '../carousel';
 
 // Mock expo-router

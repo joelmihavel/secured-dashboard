@@ -1,0 +1,71 @@
+# =============================================================================
+# Auth: Carousel Screen Functional Flow
+# Route: /(auth)/carousel
+# Figma: 684:3107 (Slide 1), 684:3128 (Slide 2), 684:3149 (Slide 3)
+# testID: carousel-screen
+# =============================================================================
+#
+# Validates:
+#   - Carousel screen renders with first slide
+#   - Slide 1: "Earn 1% back on your rent" heading visible
+#   - Swiping left reveals slide 2: "More than just cashback"
+#   - Swiping left reveals slide 3: "Your landlord benefits too"
+#   - Skip link is visible and navigates to sign-up
+#   - Carousel dot indicators are present (3 dots)
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to carousel screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///carousel"
+- waitForAnimationToEnd
+
+# Verify carousel screen rendered
+- assertVisible:
+    id: "carousel-screen"
+
+# -- Slide 1: Verify heading text --
+- assertVisible: "Earn 1% back"
+- assertVisible: "on your rent"
+
+# Verify slide 1 body text
+- assertVisible: "timely payment"
+
+# Verify Skip link is present
+- assertVisible: "Skip"
+
+# -- Swipe to Slide 2 --
+- swipe:
+    direction: LEFT
+    duration: 500
+- waitForAnimationToEnd
+
+# Verify slide 2 content
+- assertVisible: "More than"
+- assertVisible: "just cashback"
+
+# Verify slide 2 body text
+- assertVisible: "exclusive renting benefits"
+
+# -- Swipe to Slide 3 --
+- swipe:
+    direction: LEFT
+    duration: 500
+- waitForAnimationToEnd
+
+# Verify slide 3 content
+- assertVisible: "Your landlord"
+- assertVisible: "benefits too"
+
+# Verify slide 3 body text
+- assertVisible: "vacancy cover"
+
+# -- Tap Skip to navigate to sign-up --
+- tapOn: "Skip"
+- waitForAnimationToEnd
+
+# Verify navigation to sign-up screen
+- assertVisible:
+    id: "sign-up-screen"

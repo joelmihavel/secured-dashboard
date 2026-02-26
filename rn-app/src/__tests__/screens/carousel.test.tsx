@@ -62,29 +62,6 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// --- Mock react-native-svg (DottedGridPattern uses SVG) ---
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: View,
-    Svg: View,
-    Defs: View,
-    LinearGradient: View,
-    RadialGradient: View,
-    Stop: View,
-    Rect: View,
-    Circle: View,
-    Path: View,
-    G: View,
-    Pattern: View,
-    ClipPath: View,
-    Use: View,
-    Mask: View,
-    Image: View,
-  };
-});
-
 // Import component under test after all mocks are set up
 import CarouselScreen from '@/app/(auth)/carousel';
 

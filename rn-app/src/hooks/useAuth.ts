@@ -2,7 +2,8 @@
  * Auth Hooks
  *
  * React Query hooks for authentication operations.
- * Uses Supabase Auth's built-in phone OTP (signInWithOtp / verifyOtp).
+ * Supports both OTP routing (via auth-otp edge function) and
+ * legacy GoTrue SDK (signInWithOtp / verifyOtp).
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -75,8 +76,9 @@ export function useSendOtp() {
     onMutate: (variables) => {
       setPhoneNumber(variables.phone_number);
     },
-    onSuccess: () => {
-      setOtpSent();
+    onSuccess: (data) => {
+      // Pass otp_request_id from the new routing path
+      setOtpSent(data.otp_request_id);
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);
@@ -106,8 +108,8 @@ export function useVerifyOtp() {
       setVerifying();
     },
     onSuccess: (data) => {
-      // Session is already established by supabase.auth.verifyOtp()
-      setAuthenticated(data.user_id, data.is_new_user);
+      // Session is already established (by GoTrue SDK or token_hash exchange)
+      setAuthenticated(data.user_id, data.is_new_user, data.identity_status ?? null);
       queryClient.invalidateQueries({ queryKey: authKeys.session() });
     },
     onError: (error: unknown) => {
@@ -122,14 +124,14 @@ export function useVerifyOtp() {
 // ==============================================
 
 export function useResendOtp() {
-  const { phoneNumber, setOtpSent, setError, clearError } = useAuthStore();
+  const { phoneNumber, otpRequestId, setOtpSent, setError, clearError } = useAuthStore();
 
   return useMutation({
     mutationFn: async (channel: 'sms' | 'whatsapp' = 'whatsapp') => {
       if (!phoneNumber) {
         throw { code: 'NO_PHONE', message: 'No phone number to resend to' };
       }
-      const result = await resendOtp(phoneNumber, channel);
+      const result = await resendOtp(phoneNumber, channel, otpRequestId ?? undefined);
       if (result.error) {
         throw result.error;
       }
@@ -139,8 +141,9 @@ export function useResendOtp() {
     onMutate: () => {
       clearError();
     },
-    onSuccess: () => {
-      setOtpSent();
+    onSuccess: (data) => {
+      // Update otp_request_id if a new one was returned (resend creates new request)
+      setOtpSent(data.otp_request_id);
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);
@@ -177,6 +180,7 @@ export function useAuth() {
   }, [authStore.status]);
 
   // Non-blocking Mobile 360 flow after OTP verification:
+  // Only fires if identity was NOT already completed by the Cashfree OTP path.
   // Step 1: Record consent to backend (persists timestamp, IP, phone)
   // Step 2: Trigger Cashfree Mobile 360 fetch using persisted consent
   useEffect(() => {
@@ -184,6 +188,8 @@ export function useAuth() {
       authStore.status === 'authenticated' &&
       authStore.isNewUser &&
       authStore.consentForMobile360 &&
+      authStore.identityStatus !== 'completed' &&     // Skip if M360 already done (Cashfree path)
+      authStore.identityStatus !== 'not_available' &&  // Skip if no data exists
       !identityFiredRef.current
     ) {
       identityFiredRef.current = true;
@@ -211,13 +217,14 @@ export function useAuth() {
         }
       );
     }
-  }, [authStore.status, authStore.isNewUser, authStore.consentForMobile360]);
+  }, [authStore.status, authStore.isNewUser, authStore.consentForMobile360, authStore.identityStatus]);
 
   const sendCode = useCallback(
-    (phoneNumber: string, channel?: 'sms' | 'whatsapp') => {
+    (phoneNumber: string, channel?: 'sms' | 'whatsapp', name?: string) => {
       sendOtpMutation.mutate({
         phone_number: phoneNumber,
         channel: channel ?? 'whatsapp',
+        name,
       });
     },
     [sendOtpMutation]
@@ -229,9 +236,10 @@ export function useAuth() {
         phone_number: authStore.phoneNumber,
         otp,
         name,
+        otp_request_id: authStore.otpRequestId ?? undefined,
       });
     },
-    [verifyOtpMutation, authStore.phoneNumber]
+    [verifyOtpMutation, authStore.phoneNumber, authStore.otpRequestId]
   );
 
   const resendCode = useCallback(
@@ -262,6 +270,7 @@ export function useAuth() {
     userName: authStore.userName,
     userId: authStore.userId,
     isNewUser: authStore.isNewUser,
+    identityStatus: authStore.identityStatus,
     error: authStore.error,
 
     // Mutations

@@ -3,18 +3,22 @@
 exports[`SplashScreen renders correctly and matches snapshot 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+    ]
   }
   testID="splash-screen"
 >
   <View
     edges={
       [
-        "top",
-        "bottom",
         "left",
         "right",
       ]
@@ -32,25 +36,27 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
             "flex": 1,
           },
           false,
-          {
-            "backgroundColor": "#131313",
-          },
         ]
       }
     >
       <View
         style={
-          {
-            "flexGrow": 1,
-            "justifyContent": "flex-end",
-          }
+          [
+            {
+              "flex": 1,
+              "justifyContent": "flex-end",
+            },
+            {
+              "paddingBottom": 34,
+            },
+          ]
         }
       >
         <View
           style={
             {
-              "gap": 48,
-              "height": 960,
+              "flexDirection": "column",
+              "height": 613,
               "justifyContent": "space-between",
               "paddingBottom": 64,
             }
@@ -59,50 +65,45 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
           <View
             style={
               {
+                "flexDirection": "column",
+                "gap": 40,
                 "paddingHorizontal": 48,
                 "width": "100%",
               }
             }
           >
             <View
+              accessibilityLabel="Flent logo"
+              accessibilityRole="image"
               style={
-                {
-                  "marginBottom": 40,
-                }
+                [
+                  {
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                  },
+                  {
+                    "height": 40,
+                    "width": 33.375,
+                  },
+                ]
               }
             >
-              <View
-                accessibilityLabel="Flent logo"
-                accessibilityRole="image"
-                style={
-                  [
-                    {
-                      "alignItems": "center",
-                      "justifyContent": "center",
-                    },
-                    {
-                      "height": 40,
-                      "width": 33.375,
-                    },
-                  ]
-                }
+              <Svg
+                fill="none"
+                height={40}
+                viewBox="0 0 34 40"
+                width={33.375}
               >
-                <View
-                  fill="none"
-                  height={40}
-                  viewBox="0 0 34 40"
-                  width={33.375}
-                >
-                  <View
-                    d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-                    fill="#FFFFFF"
-                  />
-                </View>
-              </View>
+                <Path
+                  d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                  fill="#FFFFFF"
+                />
+              </Svg>
             </View>
             <View
               style={
                 {
+                  "flexDirection": "column",
                   "gap": 16,
                   "width": "100%",
                 }
@@ -115,7 +116,6 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 16,
-                      "fontWeight": "400",
                       "letterSpacing": 0,
                       "lineHeight": 24,
                       "textAlign": "left",
@@ -124,10 +124,8 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       "color": "#A9A9A9",
                       "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 48,
-                      "fontWeight": "400",
                       "letterSpacing": -2,
                       "lineHeight": 64,
-                      "width": "100%",
                     },
                   ]
                 }
@@ -141,22 +139,9 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                 <Text
                   style={
                     [
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 16,
-                        "fontWeight": "400",
-                        "letterSpacing": 0,
-                        "lineHeight": 24,
-                        "textAlign": "left",
-                      },
+                      undefined,
                       {
                         "color": "#FF9A6D",
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 48,
-                        "fontWeight": "400",
-                        "letterSpacing": -2,
-                        "lineHeight": 64,
                       },
                     ]
                   }
@@ -171,7 +156,6 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 16,
-                      "fontWeight": "400",
                       "letterSpacing": 0,
                       "lineHeight": 24,
                       "textAlign": "left",
@@ -180,17 +164,12 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       "color": "#A6A6A6",
                       "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 14,
-                      "fontWeight": "400",
-                      "letterSpacing": 0,
                       "lineHeight": 20,
-                      "width": "100%",
                     },
                   ]
                 }
               >
-                Secured is India
-                ’
-                s first rent payment app built to reward reliable tenants.
+                Secured is India’s first rent payment app built to reward reliable tenants.
               </Text>
             </View>
           </View>
@@ -198,8 +177,10 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
             style={
               {
                 "alignItems": "center",
+                "flexDirection": "column",
                 "gap": 24,
                 "paddingHorizontal": 48,
+                "width": "100%",
               }
             }
           >
@@ -259,12 +240,17 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
               >
                 <View
                   style={
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "borderRadius": 200,
-                      "height": 2,
-                      "width": 24,
-                    }
+                    [
+                      {
+                        "backgroundColor": "#4D4D4D",
+                        "borderRadius": 200,
+                        "height": 2,
+                        "width": 24,
+                      },
+                      {
+                        "backgroundColor": undefined,
+                      },
+                    ]
                   }
                 />
                 <View
@@ -274,11 +260,11 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                         "elevation": 8,
                         "shadowColor": "#995C41",
                         "shadowOffset": {
-                          "height": 6,
+                          "height": 4,
                           "width": 0,
                         },
                         "shadowOpacity": 0.24,
-                        "shadowRadius": 10,
+                        "shadowRadius": 5,
                         "width": "100%",
                       },
                       {
@@ -300,71 +286,115 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                     ]
                   }
                 >
-                  <LinearGradient
-                    colors={
-                      [
-                        "#202020",
-                        "#0d0d0d",
-                      ]
-                    }
-                    end={
-                      {
-                        "x": 0,
-                        "y": 1,
-                      }
-                    }
-                    locations={
-                      [
-                        0,
-                        0.9018,
-                      ]
-                    }
-                    start={
-                      {
-                        "x": 0,
-                        "y": 0,
-                      }
-                    }
+                  <View
                     style={
                       {
                         "alignItems": "center",
-                        "borderColor": "rgba(255, 154, 109, 0.25)",
+                        "borderCurve": "continuous",
                         "borderRadius": 8,
-                        "borderWidth": 0.5,
                         "justifyContent": "center",
                         "overflow": "hidden",
-                        "padding": 16,
+                        "paddingBottom": 21,
+                        "paddingLeft": 16,
+                        "paddingRight": 19,
+                        "paddingTop": 16,
                         "width": "100%",
                       }
                     }
                   >
-                    <Text
-                      style={
+                    <LinearGradient
+                      colors={
+                        [
+                          "#202020",
+                          "#0d0d0d",
+                        ]
+                      }
+                      end={
                         {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Medium",
-                          "fontSize": 16,
-                          "lineHeight": 24,
-                          "textAlign": "center",
+                          "x": 0,
+                          "y": 1,
                         }
                       }
-                    >
-                      Get Started
-                    </Text>
+                      locations={
+                        [
+                          0,
+                          0.9018,
+                        ]
+                      }
+                      start={
+                        {
+                          "x": 0,
+                          "y": 0,
+                        }
+                      }
+                      style={
+                        {
+                          "bottom": 0,
+                          "left": 0,
+                          "position": "absolute",
+                          "right": 0,
+                          "top": 0,
+                        }
+                      }
+                    />
                     <View
                       style={
                         [
                           {
-                            "borderBottomLeftRadius": 7,
-                            "borderBottomRightRadius": 7,
+                            "backgroundColor": "#111111",
+                            "borderRadius": 8,
                             "bottom": 0,
-                            "height": 8,
                             "left": 0,
                             "position": "absolute",
                             "right": 0,
+                            "top": 0,
                           },
                           {
                             "opacity": undefined,
+                          },
+                        ]
+                      }
+                    />
+                    <View
+                      pointerEvents="none"
+                      style={
+                        [
+                          {
+                            "borderColor": "rgba(255, 154, 109, 0.25)",
+                            "borderCurve": "continuous",
+                            "borderRadius": 8,
+                            "borderWidth": 1,
+                            "bottom": 0,
+                            "left": 0,
+                            "position": "absolute",
+                            "right": 0,
+                            "top": 0,
+                          },
+                          {
+                            "opacity": undefined,
+                          },
+                        ]
+                      }
+                    />
+                    <View
+                      pointerEvents="none"
+                      style={
+                        [
+                          {
+                            "borderBottomLeftRadius": 3,
+                            "borderBottomRightRadius": 3,
+                            "bottom": 5,
+                            "height": 6,
+                            "left": 0,
+                            "position": "absolute",
+                            "right": 3,
+                          },
+                          {
+                            "transform": [
+                              {
+                                "translateY": undefined,
+                              },
+                            ],
                           },
                         ]
                       }
@@ -406,36 +436,108 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       />
                     </View>
                     <View
+                      pointerEvents="none"
                       style={
-                        {
-                          "backgroundColor": "rgba(0, 0, 0, 0.6)",
-                          "bottom": 0,
-                          "height": 1,
-                          "left": 0,
-                          "position": "absolute",
-                          "right": 2,
-                        }
+                        [
+                          {
+                            "borderBottomWidth": 5,
+                            "borderColor": "#000000",
+                            "borderCurve": "continuous",
+                            "borderRadius": 8,
+                            "borderRightWidth": 3,
+                            "bottom": 0,
+                            "left": 0,
+                            "position": "absolute",
+                            "right": 0,
+                            "top": 0,
+                          },
+                          {
+                            "opacity": undefined,
+                          },
+                        ]
                       }
                     />
                     <View
+                      pointerEvents="none"
+                      style={
+                        [
+                          {
+                            "bottom": 0,
+                            "left": 0,
+                            "position": "absolute",
+                            "right": 0,
+                            "top": 0,
+                          },
+                          {
+                            "opacity": undefined,
+                          },
+                        ]
+                      }
+                    >
+                      <View
+                        style={
+                          {
+                            "borderColor": "rgba(0,0,0,0.6)",
+                            "borderCurve": "continuous",
+                            "borderLeftWidth": 1,
+                            "borderRadius": 8,
+                            "borderRightWidth": 1,
+                            "borderTopWidth": 2,
+                            "bottom": 0,
+                            "left": 0,
+                            "position": "absolute",
+                            "right": 0,
+                            "top": 0,
+                          }
+                        }
+                      />
+                      <LinearGradient
+                        colors={
+                          [
+                            "rgba(0,0,0,0.8)",
+                            "transparent",
+                          ]
+                        }
+                        end={
+                          {
+                            "x": 0,
+                            "y": 1,
+                          }
+                        }
+                        start={
+                          {
+                            "x": 0,
+                            "y": 0,
+                          }
+                        }
+                        style={
+                          {
+                            "borderTopLeftRadius": 8,
+                            "borderTopRightRadius": 8,
+                            "height": 16,
+                            "width": "100%",
+                          }
+                        }
+                      />
+                    </View>
+                    <Text
                       style={
                         {
-                          "backgroundColor": "rgba(0, 0, 0, 0.4)",
-                          "bottom": 0,
-                          "position": "absolute",
-                          "right": 0,
-                          "top": 4,
-                          "width": 1,
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Medium",
+                          "fontSize": 16,
+                          "lineHeight": 24,
+                          "textAlign": "center",
                         }
                       }
-                    />
-                  </LinearGradient>
+                    >
+                      Get Started
+                    </Text>
+                  </View>
                 </View>
               </View>
             </View>
             <View
-              accessibilityLabel="Already a user? Log in"
-              accessibilityRole="link"
               accessibilityState={
                 {
                   "busy": undefined,
@@ -477,6 +579,7 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                 {
                   "alignItems": "center",
                   "justifyContent": "center",
+                  "width": "100%",
                 }
               }
             >
@@ -487,7 +590,6 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 16,
-                      "fontWeight": "400",
                       "letterSpacing": 0,
                       "lineHeight": 24,
                       "textAlign": "left",
@@ -497,8 +599,6 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       "fontFamily": "PlusJakartaSans-Regular",
                       "fontSize": 14,
                       "lineHeight": 20,
-                      "textAlign": "center",
-                      "width": "100%",
                     },
                   ]
                 }
@@ -507,20 +607,8 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                 <Text
                   style={
                     [
+                      undefined,
                       {
-                        "color": "#FFFFFF",
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 16,
-                        "fontWeight": "400",
-                        "letterSpacing": 0,
-                        "lineHeight": 24,
-                        "textAlign": "left",
-                      },
-                      {
-                        "color": "#FFFFFF",
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 14,
-                        "lineHeight": 20,
                         "textDecorationLine": "underline",
                       },
                     ]

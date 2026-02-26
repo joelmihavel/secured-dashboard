@@ -29,7 +29,6 @@ appId: com.flent.secured
 
 # Verify step 1 content (bank details)
 - assertVisible: "bank"
-    optional: true
 
 # Verify Start Flenting button
 - assertVisible:

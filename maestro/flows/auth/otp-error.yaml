@@ -1,0 +1,66 @@
+# =============================================================================
+# Auth: OTP Error State Functional Flow
+# Route: /(auth)/otp (modal overlay on sign-up)
+# Figma: 1-31277 (error1 -- Wrong Code), 1-31380 (error2 -- Too Many Attempts)
+# testIDs: otp-input, proceed-button
+# =============================================================================
+#
+# Validates:
+#   - Navigate through sign-up to trigger OTP bottom sheet
+#   - Enter an incorrect OTP "000000"
+#   - Tap Proceed to submit wrong OTP
+#   - Error message "Wrong Code" is displayed (INVALID_OTP error)
+#   - Resend link remains visible after error
+#   - OTP input can be cleared and re-entered
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Navigate to sign-up, then trigger OTP sheet
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///sign-up"
+- waitForAnimationToEnd
+
+# Fill sign-up form
+- tapOn:
+    id: "phone-input"
+- inputText: ${TEST_PHONE}
+
+- tapOn:
+    id: "name-input"
+- inputText: ${TEST_NAME}
+- hideKeyboard
+
+# Accept consent and submit
+- tapOn:
+    id: "consent-toggle"
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# Verify OTP sheet appeared
+- assertVisible: "verify your number"
+
+# Enter wrong OTP code
+- tapOn:
+    id: "otp-input"
+- inputText: "000000"
+
+# Wait for auto-complete processing
+- waitForAnimationToEnd
+
+# Tap Proceed to submit wrong OTP
+- tapOn:
+    id: "proceed-button"
+
+# Wait for verification response
+- extendedWaitUntil:
+    visible: "Wrong Code"
+    timeout: 10000
+
+# Verify error message is visible
+- assertVisible: "Wrong Code"
+
+# Verify Resend link is still accessible
+- assertVisible: "Resend"

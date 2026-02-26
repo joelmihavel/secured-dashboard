@@ -3,18 +3,22 @@
 exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+    ]
   }
   testID="carousel-screen"
 >
   <View
     edges={
       [
-        "top",
-        "bottom",
         "left",
         "right",
       ]
@@ -32,784 +36,495 @@ exports[`CarouselScreen renders correctly and matches snapshot 1`] = `
             "flex": 1,
           },
           false,
-          undefined,
         ]
       }
     >
-      <RCTScrollView
-        bounces={false}
-        data={
-          [
-            {
-              "backgroundShape": "carousel1",
-              "description": "For every timely payment made via UPI, netbanking or credit cards.",
-              "descriptionColor": "#A6A6A6",
-              "headingContent": "Earn 1% back on your rent",
-              "headingSegments": [
-                {
-                  "color": "#FF9A6D",
-                  "text": "Earn 1% back ",
-                },
-                {
-                  "color": "#A9A9A9",
-                  "text": "on your rent",
-                },
-              ],
-              "id": "1",
-            },
-            {
-              "backgroundShape": "carousel2",
-              "description": "Keep paying via Secured to unlock exclusive renting benefits over time",
-              "descriptionColor": "#A9A9A9",
-              "headingContent": "More than  just cashback",
-              "headingSegments": [
-                {
-                  "color": "#A9A9A9",
-                  "text": "More than ",
-                },
-                {
-                  "color": "#FF9A6D",
-                  "text": " just cashback",
-                },
-              ],
-              "id": "2",
-            },
-            {
-              "backgroundShape": "carousel3",
-              "description": "3 months of rent payments unlock a free vacancy cover for your landlord",
-              "descriptionColor": "#A9A9A9",
-              "headingContent": "Your landlord benefits too",
-              "headingSegments": [
-                {
-                  "color": "#A9A9A9",
-                  "text": "Your",
-                },
-                {
-                  "color": "#A9A9A9",
-                  "text": " ",
-                },
-                {
-                  "color": "#A9A9A9",
-                  "text": "landlord",
-                },
-                {
-                  "color": "#FFFFFF",
-                  "text": " ",
-                },
-                {
-                  "color": "#FF9A6D",
-                  "text": "benefits too",
-                },
-              ],
-              "id": "3",
-            },
-          ]
+      <Image
+        source={
+          {
+            "testUri": "../../../assets/images/onboarding/card-illustration.png",
+          }
         }
-        decelerationRate="fast"
-        getItem={[Function]}
-        getItemCount={[Function]}
-        horizontal={true}
-        keyExtractor={[Function]}
-        onContentSizeChange={[Function]}
-        onLayout={[Function]}
-        onMomentumScrollBegin={[Function]}
-        onMomentumScrollEnd={[Function]}
-        onScroll={[Function]}
-        onScrollBeginDrag={[Function]}
-        onScrollEndDrag={[Function]}
-        onViewableItemsChanged={[Function]}
-        pagingEnabled={true}
-        removeClippedSubviews={false}
-        renderItem={[Function]}
-        scrollEventThrottle={0.0001}
-        showsHorizontalScrollIndicator={false}
-        snapToAlignment="start"
-        snapToInterval={750}
-        stickyHeaderIndices={[]}
+        style={
+          {
+            "height": 70,
+            "left": 45,
+            "opacity": 0.48,
+            "position": "absolute",
+            "top": 245,
+            "width": 104,
+          }
+        }
+      />
+      <View
+        pointerEvents="box-none"
         style={
           {
             "flex": 1,
+            "paddingBottom": 64,
+            "paddingTop": 80,
           }
-        }
-        viewabilityConfig={
-          {
-            "itemVisiblePercentThreshold": 50,
-          }
-        }
-        viewabilityConfigCallbackPairs={
-          [
-            {
-              "onViewableItemsChanged": [Function],
-              "viewabilityConfig": {
-                "itemVisiblePercentThreshold": 50,
-              },
-            },
-          ]
         }
       >
-        <View>
+        <View
+          pointerEvents="box-none"
+          style={
+            {
+              "flex": 1,
+              "gap": 40,
+              "justifyContent": "flex-end",
+              "paddingHorizontal": 48,
+            }
+          }
+        >
           <View
-            onFocusCapture={[Function]}
-            onLayout={[Function]}
+            pointerEvents="box-none"
             style={
-              [
-                {
-                  "flexDirection": "row",
-                },
-                null,
-              ]
+              {
+                "gap": 40,
+              }
             }
           >
             <View
-              style={
-                {
-                  "flex": 1,
-                  "width": 750,
-                }
-              }
+              pointerEvents="none"
             >
               <View
+                accessibilityLabel="Flent logo"
+                accessibilityRole="image"
                 style={
-                  {
-                    "flex": 1,
-                    "justifyContent": "center",
-                    "paddingBottom": 64,
-                    "paddingTop": 80,
-                  }
+                  [
+                    {
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                    },
+                    {
+                      "height": 40,
+                      "width": 33.375,
+                    },
+                  ]
                 }
               >
-                <View
-                  style={
-                    {
-                      "flex": 1,
-                      "gap": 40,
-                      "paddingHorizontal": 48,
-                    }
-                  }
+                <Svg
+                  fill="none"
+                  height={40}
+                  viewBox="0 0 34 40"
+                  width={33.375}
                 >
-                  <View
-                    accessibilityLabel="Flent logo"
-                    accessibilityRole="image"
-                    style={
-                      [
-                        {
-                          "alignItems": "center",
-                          "justifyContent": "center",
-                        },
-                        {
-                          "height": 32,
-                          "width": 26.700000000000003,
-                        },
-                      ]
-                    }
-                  >
-                    <View
-                      fill="none"
-                      height={32}
-                      viewBox="0 0 34 40"
-                      width={26.700000000000003}
-                    >
-                      <View
-                        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-                        fill="#FFFFFF"
-                      />
-                    </View>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "gap": 16,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 48,
-                          "letterSpacing": -2,
-                          "lineHeight": 64,
-                        }
-                      }
-                    >
-                      <Text
-                        style={
-                          {
-                            "color": "#FF9A6D",
-                          }
-                        }
-                      >
-                        Earn 1% back 
-                      </Text>
-                      <Text
-                        style={
-                          {
-                            "color": "#A9A9A9",
-                          }
-                        }
-                      >
-                        on your rent
-                      </Text>
-                    </Text>
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 14,
-                              "lineHeight": 20,
-                            },
-                            {
-                              "color": "#A6A6A6",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      For every timely payment made via UPI, netbanking or credit cards.
-                    </Text>
-                  </View>
-                  <View
-                    accessibilityState={
-                      {
-                        "busy": undefined,
-                        "checked": undefined,
-                        "disabled": undefined,
-                        "expanded": undefined,
-                        "selected": undefined,
-                      }
-                    }
-                    accessibilityValue={
-                      {
-                        "max": undefined,
-                        "min": undefined,
-                        "now": undefined,
-                        "text": undefined,
-                      }
-                    }
-                    accessible={true}
-                    collapsable={false}
-                    focusable={true}
-                    hitSlop={
-                      {
-                        "bottom": 12,
-                        "left": 12,
-                        "right": 12,
-                        "top": 12,
-                      }
-                    }
-                    onClick={[Function]}
-                    onResponderGrant={[Function]}
-                    onResponderMove={[Function]}
-                    onResponderRelease={[Function]}
-                    onResponderTerminate={[Function]}
-                    onResponderTerminationRequest={[Function]}
-                    onStartShouldSetResponder={[Function]}
-                    style={
-                      {
-                        "opacity": 1,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
-                    >
-                      <Text
-                        style={
-                          [
-                            undefined,
-                            {
-                              "textDecorationLine": "underline",
-                            },
-                          ]
-                        }
-                      >
-                        Skip
-                      </Text>
-                       →
-                    </Text>
-                  </View>
-                </View>
+                  <Path
+                    d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                    fill="#FFFFFF"
+                  />
+                </Svg>
               </View>
             </View>
-          </View>
-          <View
-            onFocusCapture={[Function]}
-            onLayout={[Function]}
-            style={
-              [
-                {
-                  "flexDirection": "row",
-                },
-                null,
-              ]
-            }
-          >
             <View
               style={
                 {
-                  "flex": 1,
-                  "width": 750,
+                  "height": 184,
+                  "marginHorizontal": -48,
                 }
               }
             >
-              <View
-                style={
+              <RCTScrollView
+                bounces={false}
+                data={
+                  [
+                    {
+                      "description": "For every timely payment made via UPI, netbanking or credit cards.",
+                      "descriptionColor": "#A6A6A6",
+                      "headingSegments": [
+                        {
+                          "color": "#FF9A6D",
+                          "text": "Earn 1% back ",
+                        },
+                        {
+                          "color": "#A9A9A9",
+                          "text": "on your rent",
+                        },
+                      ],
+                      "id": "1",
+                    },
+                    {
+                      "description": "Keep paying via Secured to unlock exclusive renting benefits over time",
+                      "descriptionColor": "#A9A9A9",
+                      "headingSegments": [
+                        {
+                          "color": "#A9A9A9",
+                          "text": "More than
+",
+                        },
+                        {
+                          "color": "#FF9A6D",
+                          "text": "just cashback",
+                        },
+                      ],
+                      "id": "2",
+                    },
+                    {
+                      "description": "3 months of rent payments unlock a free vacancy cover for your landlord",
+                      "descriptionColor": "#A9A9A9",
+                      "headingSegments": [
+                        {
+                          "color": "#A9A9A9",
+                          "text": "Your landlord ",
+                        },
+                        {
+                          "color": "#FF9A6D",
+                          "text": "benefits too",
+                        },
+                      ],
+                      "id": "3",
+                    },
+                  ]
+                }
+                decelerationRate="fast"
+                getItem={[Function]}
+                getItemCount={[Function]}
+                horizontal={true}
+                keyExtractor={[Function]}
+                onContentSizeChange={[Function]}
+                onLayout={[Function]}
+                onMomentumScrollBegin={[Function]}
+                onMomentumScrollEnd={[Function]}
+                onScroll={[Function]}
+                onScrollBeginDrag={[Function]}
+                onScrollEndDrag={[Function]}
+                onViewableItemsChanged={[Function]}
+                pagingEnabled={true}
+                removeClippedSubviews={false}
+                renderItem={[Function]}
+                scrollEventThrottle={0.0001}
+                showsHorizontalScrollIndicator={false}
+                snapToAlignment="start"
+                snapToInterval={750}
+                stickyHeaderIndices={[]}
+                viewabilityConfig={
                   {
-                    "flex": 1,
-                    "justifyContent": "center",
-                    "paddingBottom": 64,
-                    "paddingTop": 80,
+                    "itemVisiblePercentThreshold": 50,
                   }
                 }
-              >
-                <View
-                  style={
+                viewabilityConfigCallbackPairs={
+                  [
                     {
-                      "flex": 1,
-                      "gap": 40,
-                      "paddingHorizontal": 48,
-                    }
-                  }
-                >
+                      "onViewableItemsChanged": [Function],
+                      "viewabilityConfig": {
+                        "itemVisiblePercentThreshold": 50,
+                      },
+                    },
+                  ]
+                }
+              >
+                <View>
                   <View
-                    accessibilityLabel="Flent logo"
-                    accessibilityRole="image"
+                    onFocusCapture={[Function]}
+                    onLayout={[Function]}
                     style={
                       [
                         {
-                          "alignItems": "center",
-                          "justifyContent": "center",
+                          "flexDirection": "row",
                         },
-                        {
-                          "height": 32,
-                          "width": 26.700000000000003,
-                        },
+                        null,
                       ]
                     }
                   >
                     <View
-                      fill="none"
-                      height={32}
-                      viewBox="0 0 34 40"
-                      width={26.700000000000003}
-                    >
-                      <View
-                        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-                        fill="#FFFFFF"
-                      />
-                    </View>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "gap": 16,
-                      }
-                    }
-                  >
-                    <Text
                       style={
                         {
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 48,
-                          "letterSpacing": -2,
-                          "lineHeight": 64,
+                          "gap": 16,
+                          "paddingHorizontal": 48,
+                          "width": 750,
                         }
                       }
                     >
                       <Text
                         style={
                           {
-                            "color": "#A9A9A9",
-                          }
-                        }
-                      >
-                        More than 
-                      </Text>
-                      <Text
-                        style={
-                          {
-                            "color": "#FF9A6D",
-                          }
-                        }
-                      >
-                         just cashback
-                      </Text>
-                    </Text>
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          [
+                            "fontSize": 48,
+                            "letterSpacing": -2,
+                            "lineHeight": 64,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
                             {
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 14,
-                              "lineHeight": 20,
-                            },
+                              "color": "#FF9A6D",
+                            }
+                          }
+                        >
+                          Earn 1% back 
+                        </Text>
+                        <Text
+                          style={
                             {
                               "color": "#A9A9A9",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      Keep paying via Secured to unlock exclusive renting benefits over time
-                    </Text>
-                  </View>
-                  <View
-                    accessibilityState={
-                      {
-                        "busy": undefined,
-                        "checked": undefined,
-                        "disabled": undefined,
-                        "expanded": undefined,
-                        "selected": undefined,
-                      }
-                    }
-                    accessibilityValue={
-                      {
-                        "max": undefined,
-                        "min": undefined,
-                        "now": undefined,
-                        "text": undefined,
-                      }
-                    }
-                    accessible={true}
-                    collapsable={false}
-                    focusable={true}
-                    hitSlop={
-                      {
-                        "bottom": 12,
-                        "left": 12,
-                        "right": 12,
-                        "top": 12,
-                      }
-                    }
-                    onClick={[Function]}
-                    onResponderGrant={[Function]}
-                    onResponderMove={[Function]}
-                    onResponderRelease={[Function]}
-                    onResponderTerminate={[Function]}
-                    onResponderTerminationRequest={[Function]}
-                    onStartShouldSetResponder={[Function]}
-                    style={
-                      {
-                        "opacity": 1,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
-                    >
+                            }
+                          }
+                        >
+                          on your rent
+                        </Text>
+                      </Text>
                       <Text
                         style={
                           [
-                            undefined,
                             {
-                              "textDecorationLine": "underline",
+                              "color": "#FFFFFF",
+                              "fontFamily": "PlusJakartaSans-Regular",
+                              "fontSize": 16,
+                              "letterSpacing": 0,
+                              "lineHeight": 24,
+                              "textAlign": "left",
                             },
+                            [
+                              {
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                              },
+                              {
+                                "color": "#A6A6A6",
+                              },
+                            ],
                           ]
                         }
                       >
-                        Skip
+                        For every timely payment made via UPI, netbanking or credit cards.
                       </Text>
-                       →
-                    </Text>
+                    </View>
                   </View>
-                </View>
-              </View>
-            </View>
-          </View>
-          <View
-            onFocusCapture={[Function]}
-            onLayout={[Function]}
-            style={
-              [
-                {
-                  "flexDirection": "row",
-                },
-                null,
-              ]
-            }
-          >
-            <View
-              style={
-                {
-                  "flex": 1,
-                  "width": 750,
-                }
-              }
-            >
-              <View
-                style={
-                  {
-                    "flex": 1,
-                    "justifyContent": "center",
-                    "paddingBottom": 64,
-                    "paddingTop": 80,
-                  }
-                }
-              >
-                <View
-                  style={
-                    {
-                      "flex": 1,
-                      "gap": 40,
-                      "paddingHorizontal": 48,
-                    }
-                  }
-                >
                   <View
-                    accessibilityLabel="Flent logo"
-                    accessibilityRole="image"
+                    onFocusCapture={[Function]}
+                    onLayout={[Function]}
                     style={
                       [
                         {
-                          "alignItems": "center",
-                          "justifyContent": "center",
+                          "flexDirection": "row",
                         },
-                        {
-                          "height": 32,
-                          "width": 26.700000000000003,
-                        },
+                        null,
                       ]
                     }
                   >
                     <View
-                      fill="none"
-                      height={32}
-                      viewBox="0 0 34 40"
-                      width={26.700000000000003}
-                    >
-                      <View
-                        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-                        fill="#FFFFFF"
-                      />
-                    </View>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "gap": 16,
-                      }
-                    }
-                  >
-                    <Text
                       style={
                         {
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 48,
-                          "letterSpacing": -2,
-                          "lineHeight": 64,
+                          "gap": 16,
+                          "paddingHorizontal": 48,
+                          "width": 750,
                         }
                       }
                     >
                       <Text
                         style={
                           {
-                            "color": "#A9A9A9",
-                          }
-                        }
-                      >
-                        Your
-                      </Text>
-                      <Text
-                        style={
-                          {
-                            "color": "#A9A9A9",
-                          }
-                        }
-                      >
-                         
-                      </Text>
-                      <Text
-                        style={
-                          {
-                            "color": "#A9A9A9",
-                          }
-                        }
-                      >
-                        landlord
-                      </Text>
-                      <Text
-                        style={
-                          {
-                            "color": "#FFFFFF",
-                          }
-                        }
-                      >
-                         
-                      </Text>
-                      <Text
-                        style={
-                          {
-                            "color": "#FF9A6D",
-                          }
-                        }
-                      >
-                        benefits too
-                      </Text>
-                    </Text>
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
                             "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 14,
-                              "lineHeight": 20,
-                            },
+                            "fontSize": 48,
+                            "letterSpacing": -2,
+                            "lineHeight": 64,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
                             {
                               "color": "#A9A9A9",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      3 months of rent payments unlock a free vacancy cover for your landlord
-                    </Text>
-                  </View>
-                  <View
-                    accessibilityState={
-                      {
-                        "busy": undefined,
-                        "checked": undefined,
-                        "disabled": undefined,
-                        "expanded": undefined,
-                        "selected": undefined,
-                      }
-                    }
-                    accessibilityValue={
-                      {
-                        "max": undefined,
-                        "min": undefined,
-                        "now": undefined,
-                        "text": undefined,
-                      }
-                    }
-                    accessible={true}
-                    collapsable={false}
-                    focusable={true}
-                    hitSlop={
-                      {
-                        "bottom": 12,
-                        "left": 12,
-                        "right": 12,
-                        "top": 12,
-                      }
-                    }
-                    onClick={[Function]}
-                    onResponderGrant={[Function]}
-                    onResponderMove={[Function]}
-                    onResponderRelease={[Function]}
-                    onResponderTerminate={[Function]}
-                    onResponderTerminationRequest={[Function]}
-                    onStartShouldSetResponder={[Function]}
-                    style={
-                      {
-                        "opacity": 1,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 16,
-                            "letterSpacing": 0,
-                            "lineHeight": 24,
-                            "textAlign": "left",
-                          },
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 14,
-                            "lineHeight": 20,
-                          },
-                        ]
-                      }
-                    >
+                            }
+                          }
+                        >
+                          More than
+
+                        </Text>
+                        <Text
+                          style={
+                            {
+                              "color": "#FF9A6D",
+                            }
+                          }
+                        >
+                          just cashback
+                        </Text>
+                      </Text>
                       <Text
                         style={
                           [
-                            undefined,
                             {
-                              "textDecorationLine": "underline",
+                              "color": "#FFFFFF",
+                              "fontFamily": "PlusJakartaSans-Regular",
+                              "fontSize": 16,
+                              "letterSpacing": 0,
+                              "lineHeight": 24,
+                              "textAlign": "left",
                             },
+                            [
+                              {
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                              },
+                              {
+                                "color": "#A9A9A9",
+                              },
+                            ],
                           ]
                         }
                       >
-                        Skip
+                        Keep paying via Secured to unlock exclusive renting benefits over time
                       </Text>
-                       →
-                    </Text>
+                    </View>
+                  </View>
+                  <View
+                    onFocusCapture={[Function]}
+                    onLayout={[Function]}
+                    style={
+                      [
+                        {
+                          "flexDirection": "row",
+                        },
+                        null,
+                      ]
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "gap": 16,
+                          "paddingHorizontal": 48,
+                          "width": 750,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "fontFamily": "PlusJakartaSans-Regular",
+                            "fontSize": 48,
+                            "letterSpacing": -2,
+                            "lineHeight": 64,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            {
+                              "color": "#A9A9A9",
+                            }
+                          }
+                        >
+                          Your landlord 
+                        </Text>
+                        <Text
+                          style={
+                            {
+                              "color": "#FF9A6D",
+                            }
+                          }
+                        >
+                          benefits too
+                        </Text>
+                      </Text>
+                      <Text
+                        style={
+                          [
+                            {
+                              "color": "#FFFFFF",
+                              "fontFamily": "PlusJakartaSans-Regular",
+                              "fontSize": 16,
+                              "letterSpacing": 0,
+                              "lineHeight": 24,
+                              "textAlign": "left",
+                            },
+                            [
+                              {
+                                "fontFamily": "PlusJakartaSans-Regular",
+                                "fontSize": 14,
+                                "lineHeight": 20,
+                              },
+                              {
+                                "color": "#A9A9A9",
+                              },
+                            ],
+                          ]
+                        }
+                      >
+                        3 months of rent payments unlock a free vacancy cover for your landlord
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              </RCTScrollView>
             </View>
           </View>
+          <View
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            hitSlop={
+              {
+                "bottom": 12,
+                "left": 12,
+                "right": 12,
+                "top": 12,
+              }
+            }
+            onClick={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              {
+                "opacity": 1,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 16,
+                    "letterSpacing": 0,
+                    "lineHeight": 24,
+                    "textAlign": "left",
+                  },
+                  {
+                    "color": "#FFFFFF",
+                    "fontFamily": "PlusJakartaSans-Regular",
+                    "fontSize": 14,
+                    "lineHeight": 20,
+                    "textDecorationLine": "underline",
+                  },
+                ]
+              }
+            >
+              Skip
+            </Text>
+          </View>
+          <View
+            pointerEvents="none"
+          />
         </View>
-      </RCTScrollView>
+      </View>
     </View>
   </View>
 </View>

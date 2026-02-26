@@ -113,6 +113,8 @@ export interface TimelineItemData {
 export interface ApplicationTimelineProps {
   items: TimelineItemData[];
   testID?: string;
+  /** When 'value-first', renders value (14px) above label (12px). Default: 'label-first'. */
+  textOrder?: 'label-first' | 'value-first';
 }
 
 // ============================================
@@ -160,7 +162,7 @@ function getConnectorColor(status: TimelineStatus): string {
 // MAIN COMPONENT
 // ============================================
 
-function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProps) {
+function ApplicationTimelineComponent({ items, testID, textOrder = 'label-first' }: ApplicationTimelineProps) {
   return (
     <View style={styles.container} testID={testID}>
       {items.map((item, index) => {
@@ -193,10 +195,21 @@ function ApplicationTimelineComponent({ items, testID }: ApplicationTimelineProp
 
             {/* Right column: Text content */}
             <View style={[styles.textColumn, isLast && { paddingBottom: 0 }]}>
-              <RNText style={styles.labelText}>{item.label}</RNText>
-              <RNText style={[styles.valueText, { color: valueColor }]}>
-                {item.value}
-              </RNText>
+              {textOrder === 'value-first' ? (
+                <>
+                  <RNText style={[styles.valueText, { color: valueColor }]}>
+                    {item.value}
+                  </RNText>
+                  <RNText style={styles.labelText}>{item.label}</RNText>
+                </>
+              ) : (
+                <>
+                  <RNText style={styles.labelText}>{item.label}</RNText>
+                  <RNText style={[styles.valueText, { color: valueColor }]}>
+                    {item.value}
+                  </RNText>
+                </>
+              )}
             </View>
           </View>
         );
@@ -229,6 +242,9 @@ const styles = StyleSheet.create({
   indicatorColumn: {
     width: FIGMA.indicatorContainer.width,
     alignItems: 'center',
+    // Must stretch to fill row height so the connector line extends
+    // continuously from one dot to the next (row uses alignItems: flex-start).
+    alignSelf: 'stretch',
   },
 
   // Indicator container - exactly 20x20 with centered 12x12 dot

@@ -57,28 +57,6 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// --- Mock react-native-svg (DottedGridPattern uses SVG which does not render in JSDOM) ---
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: View,
-    Svg: View,
-    Defs: View,
-    LinearGradient: View,
-    Stop: View,
-    Rect: View,
-    Circle: View,
-    Path: View,
-    G: View,
-    Pattern: View,
-    ClipPath: View,
-    Use: View,
-    Mask: View,
-    Image: View,
-  };
-});
-
 // --- Import component under test AFTER mocks ---
 import SplashScreen from '@/app/(auth)/splash';
 

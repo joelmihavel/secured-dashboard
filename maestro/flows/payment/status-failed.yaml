@@ -1,0 +1,47 @@
+# =============================================================================
+# Payment: Status Screen -- Failed State
+# Route: /(payment)/status?initialStatus=failed
+# Figma: 41-9511 (Failed)
+# testID: status-screen (SINGLE testID for all states)
+# =============================================================================
+#
+# IMPORTANT: The status screen uses a SINGLE testID "status-screen" for ALL
+# states. Assertions MUST use visible TEXT content, not state-specific testIDs.
+#
+# Validates:
+#   - Status screen renders in failed state
+#   - Title shows "Payment" + "Failed" text
+#   - Info rows display failure messages
+#   - "Contact Support" button is visible
+#   - "Try Again" link is visible
+#   - Receipt card with "failed" stamp is displayed
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to status screen with failed state
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/status?initialStatus=failed"
+- waitForAnimationToEnd
+
+# Verify status screen rendered
+- assertVisible:
+    id: "status-screen"
+
+# Verify failed title text
+- assertVisible: "Payment"
+- assertVisible: "Failed"
+
+# Verify failure info messages
+- assertVisible: "didn't go through"
+- assertVisible: "money is safe"
+- assertVisible: "refunded within 3-5 business days"
+
+# Verify Contact Support button
+- assertVisible:
+    id: "contact-support-button"
+- assertVisible: "Contact Support"
+
+# Verify Try Again link
+- assertVisible: "Try Again"

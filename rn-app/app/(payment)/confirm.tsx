@@ -124,6 +124,12 @@ function fmt(n: number): string {
   return n.toLocaleString('en-IN');
 }
 
+function ordinalSuffix(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
 // ==============================================
 // SCREEN
 // ==============================================
@@ -161,9 +167,12 @@ export default function ConfirmPaymentScreen() {
 
   const daysUntilDue = upcomingPayment?.days_until_due ?? 10;
   const isLatePayment = daysUntilDue < 0;
+  const isPastCutoff = upcomingPayment?.past_cutoff ?? false;
+  const cutoffDay = upcomingPayment?.cutoff_day ?? 7;
 
-  // The user is "verified" if setup is complete, verification was NOT skipped, and payment is not late
-  const isVerified = isSetupComplete && !verificationSkipped && !isLatePayment;
+  // The user is "verified" if setup is complete, verification was NOT skipped,
+  // payment is not late, AND payment is before the cashback cutoff date
+  const isVerified = isSetupComplete && !verificationSkipped && !isLatePayment && !isPastCutoff;
 
   // --- Breakdown values ---
   const baseRent = tenancy?.monthly_rent || 30000;
@@ -220,6 +229,11 @@ export default function ConfirmPaymentScreen() {
     topSubtitle = 'No cashback on this payment';
     topPill = 'Pay on time next month to earn 1% cashback';
     footerText = 'Pay before the due date next month to earn 1% cashback';
+  } else if (isPastCutoff && isSetupComplete && !verificationSkipped) {
+    topTitle = `Rent due in ${daysUntilDue} days`;
+    topSubtitle = 'Cashback cutoff date has passed';
+    topPill = `Pay by the ${cutoffDay}${ordinalSuffix(cutoffDay)} next month to earn 1% cashback`;
+    footerText = `Cashback is available only for payments made by the ${cutoffDay}${ordinalSuffix(cutoffDay)} of the month`;
   } else if (isVerified) {
     // Verified state: cashback applied and deducted
     topSubtitle = 'You\u2019ll earn 1% cashback on this rent payment';

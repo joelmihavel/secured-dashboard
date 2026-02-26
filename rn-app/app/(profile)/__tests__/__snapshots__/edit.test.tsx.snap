@@ -900,69 +900,20 @@ Profile
                       >
                         +91
                       </Text>
-                      <RNSVGSvgView
-                        align="xMidYMid"
-                        bbHeight={16}
-                        bbWidth={16}
+                      <Svg
                         fill="none"
-                        focusable={false}
                         height={16}
-                        meetOrSlice={0}
-                        minX={0}
-                        minY={0}
-                        style={
-                          [
-                            {
-                              "backgroundColor": "transparent",
-                              "borderWidth": 0,
-                            },
-                            {
-                              "flex": 0,
-                              "height": 16,
-                              "width": 16,
-                            },
-                          ]
-                        }
-                        vbHeight={16}
-                        vbWidth={16}
+                        viewBox="0 0 16 16"
                         width={16}
                       >
-                        <RNSVGGroup
-                          fill={null}
-                          propList={
-                            [
-                              "fill",
-                            ]
-                          }
-                        >
-                          <RNSVGPath
-                            d="M4 6L8 10L12 6"
-                            fill={
-                              {
-                                "payload": 4278190080,
-                                "type": 0,
-                              }
-                            }
-                            propList={
-                              [
-                                "stroke",
-                                "strokeWidth",
-                                "strokeLinecap",
-                                "strokeLinejoin",
-                              ]
-                            }
-                            stroke={
-                              {
-                                "payload": 4292730333,
-                                "type": 0,
-                              }
-                            }
-                            strokeLinecap={1}
-                            strokeLinejoin={1}
-                            strokeWidth={1.6}
-                          />
-                        </RNSVGGroup>
-                      </RNSVGSvgView>
+                        <Path
+                          d="M4 6L8 10L12 6"
+                          stroke="#DDDDDD"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.6}
+                        />
+                      </Svg>
                     </View>
                     <TextInput
                       accessibilityLabel="Phone Number"

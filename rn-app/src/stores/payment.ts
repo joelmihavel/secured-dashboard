@@ -61,6 +61,7 @@ export interface PayUSessionParams {
   udf3?: string;
   udf4?: string;
   udf5?: string;
+  enforce_paymethod?: string;
 }
 
 interface PaymentState {

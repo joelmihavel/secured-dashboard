@@ -39,19 +39,6 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: (props: any) => <View {...props} />,
-    Svg: (props: any) => <View {...props} />,
-    Path: (props: any) => <View {...props} />,
-    Circle: (props: any) => <View {...props} />,
-    Rect: (props: any) => <View {...props} />,
-    G: (props: any) => <View {...props} />,
-  };
-});
-
 jest.mock('expo-print', () => ({
   printToFileAsync: jest.fn(),
 }));

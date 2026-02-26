@@ -63,57 +63,17 @@ exports[`AddBankScreen matches snapshot 1`] = `
               ]
             }
           >
-            <RNSVGSvgView
-              align="xMidYMid"
-              bbHeight={32}
-              bbWidth={26.700000000000003}
+            <Svg
               fill="none"
-              focusable={false}
               height={32}
-              meetOrSlice={0}
-              minX={0}
-              minY={0}
-              style={
-                [
-                  {
-                    "backgroundColor": "transparent",
-                    "borderWidth": 0,
-                  },
-                  {
-                    "flex": 0,
-                    "height": 32,
-                    "width": 26,
-                  },
-                ]
-              }
-              vbHeight={40}
-              vbWidth={34}
+              viewBox="0 0 34 40"
               width={26.700000000000003}
             >
-              <RNSVGGroup
-                fill={null}
-                propList={
-                  [
-                    "fill",
-                  ]
-                }
-              >
-                <RNSVGPath
-                  d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-                  fill={
-                    {
-                      "payload": 4294967295,
-                      "type": 0,
-                    }
-                  }
-                  propList={
-                    [
-                      "fill",
-                    ]
-                  }
-                />
-              </RNSVGGroup>
-            </RNSVGSvgView>
+              <Path
+                d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                fill="#FFFFFF"
+              />
+            </Svg>
           </View>
         </View>
         <View
@@ -288,8 +248,11 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderColor": "transparent",
-                    "borderWidth": 1,
+                    "borderBottomWidth": 0.5,
+                    "borderColor": "#0D0D0D",
+                    "borderRadius": 0,
+                    "borderWidth": 0,
+                    "paddingHorizontal": 0,
                   },
                 ]
               }
@@ -415,8 +378,11 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderColor": "transparent",
-                    "borderWidth": 1,
+                    "borderBottomWidth": 0.5,
+                    "borderColor": "#0D0D0D",
+                    "borderRadius": 0,
+                    "borderWidth": 0,
+                    "paddingHorizontal": 0,
                   },
                 ]
               }
@@ -542,8 +508,11 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderColor": "transparent",
-                    "borderWidth": 1,
+                    "borderBottomWidth": 0.5,
+                    "borderColor": "#0D0D0D",
+                    "borderRadius": 0,
+                    "borderWidth": 0,
+                    "paddingHorizontal": 0,
                   },
                 ]
               }
@@ -669,8 +638,11 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderColor": "transparent",
-                    "borderWidth": 1,
+                    "borderBottomWidth": 0.5,
+                    "borderColor": "#0D0D0D",
+                    "borderRadius": 0,
+                    "borderWidth": 0,
+                    "paddingHorizontal": 0,
                   },
                 ]
               }

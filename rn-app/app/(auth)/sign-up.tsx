@@ -190,7 +190,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
 
     setUserName(name.trim());
     setConsentForMobile360(consent);
-    sendCode(formattedPhone, 'whatsapp');
+    sendCode(formattedPhone, 'whatsapp', name.trim());
   }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
   const authStatus = useAuthStore((s) => s.status);

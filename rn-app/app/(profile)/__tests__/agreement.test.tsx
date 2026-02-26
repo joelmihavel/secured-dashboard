@@ -5,6 +5,7 @@ import ProfileAgreementScreen from '../agreement';
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('react-native-safe-area-context', () => {
@@ -42,6 +43,7 @@ jest.mock('@/src/hooks', () => ({
     },
     isLoading: false,
   }),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 jest.mock('@/src/services/supabase/client', () => ({

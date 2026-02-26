@@ -3,18 +3,21 @@
 exports[`BetaSplashScreen renders correctly 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#131313",
+      },
+    ]
   }
   testID="beta-splash-screen"
 >
   <View
     edges={
       [
-        "top",
-        "bottom",
         "left",
         "right",
       ]
@@ -32,9 +35,6 @@ exports[`BetaSplashScreen renders correctly 1`] = `
             "flex": 1,
           },
           false,
-          {
-            "backgroundColor": "#131313",
-          },
         ]
       }
     >
@@ -43,122 +43,100 @@ exports[`BetaSplashScreen renders correctly 1`] = `
           {
             "alignItems": "center",
             "flex": 1,
-            "justifyContent": "flex-end",
+            "justifyContent": "center",
           }
         }
       >
         <View
           style={
-            {
-              "flex": 1,
-            }
-          }
-        />
-        <View
-          style={
-            {
-              "alignItems": "center",
-              "paddingBottom": 15,
-            }
+            [
+              {
+                "marginBottom": 12,
+              },
+              {
+                "opacity": 0,
+                "transform": [
+                  {
+                    "scale": 0.8,
+                  },
+                ],
+              },
+            ]
           }
         >
           <View
-            style={
-              [
-                {
-                  "marginBottom": 16.25,
-                },
-                {
-                  "opacity": 0,
-                  "transform": [
-                    {
-                      "scale": 0.8,
-                    },
-                  ],
-                },
-              ]
-            }
-          >
-            <View
-              accessibilityLabel="Flent logo"
-              accessibilityRole="image"
-              style={
-                [
-                  {
-                    "alignItems": "center",
-                    "justifyContent": "center",
-                  },
-                  {
-                    "height": 40,
-                    "width": 33.375,
-                  },
-                ]
-              }
-            >
-              <View
-                fill="none"
-                height={40}
-                viewBox="0 0 34 40"
-                width={33.375}
-              >
-                <View
-                  d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-                  fill="#FFFFFF"
-                />
-              </View>
-            </View>
-          </View>
-          <View
+            accessibilityLabel="Flent logo"
+            accessibilityRole="image"
             style={
               [
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#FF9A6D",
-                  "borderRadius": 4,
-                  "flexDirection": "row",
                   "justifyContent": "center",
-                  "paddingHorizontal": 8,
-                  "paddingVertical": 4,
                 },
                 {
-                  "opacity": 0,
-                  "transform": [
-                    {
-                      "translateY": 10,
-                    },
-                  ],
+                  "height": 40,
+                  "width": 33.375,
                 },
               ]
             }
           >
-            <Text
-              style={
-                [
-                  {
-                    "color": "#FFFFFF",
-                    "fontFamily": "PlusJakartaSans-Regular",
-                    "fontSize": 16,
-                    "fontWeight": "400",
-                    "letterSpacing": 0,
-                    "lineHeight": 24,
-                    "textAlign": "left",
-                  },
-                  {
-                    "color": "#000000",
-                    "fontFamily": "PlusJakartaSans-Medium",
-                    "fontSize": 12,
-                    "fontWeight": "500",
-                    "letterSpacing": -0.2,
-                    "lineHeight": 20,
-                    "textAlign": "center",
-                    "textTransform": "uppercase",
-                  },
-                ]
-              }
+            <Svg
+              fill="none"
+              height={40}
+              viewBox="0 0 34 40"
+              width={33.375}
             >
-              BETA LAUNCH
-            </Text>
+              <Path
+                d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+                fill="#FFFFFF"
+              />
+            </Svg>
           </View>
+        </View>
+        <View
+          style={
+            [
+              {
+                "alignItems": "center",
+                "backgroundColor": "#FF9A6D",
+                "borderRadius": 4,
+                "flexDirection": "row",
+                "justifyContent": "center",
+                "paddingHorizontal": 8,
+                "paddingVertical": 4,
+              },
+              {
+                "opacity": 0,
+                "transform": [
+                  {
+                    "translateY": 10,
+                  },
+                ],
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "color": "#FFFFFF",
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 12,
+                  "letterSpacing": 0,
+                  "lineHeight": 20,
+                  "textAlign": "left",
+                },
+                {
+                  "color": "#000000",
+                  "letterSpacing": -0.2,
+                  "textAlign": "center",
+                },
+              ]
+            }
+          >
+            BETA LAUNCH
+          </Text>
         </View>
       </View>
     </View>

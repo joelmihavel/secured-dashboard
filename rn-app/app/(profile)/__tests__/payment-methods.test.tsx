@@ -37,6 +37,7 @@ jest.mock('@/src/hooks', () => ({
   }),
   useDeletePaymentMethod: () => ({ mutate: mockMutate, isPending: false }),
   useSetDefaultPaymentMethod: () => ({ mutate: jest.fn(), isPending: false }),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 jest.mock('@/src/services/supabase/client', () => ({

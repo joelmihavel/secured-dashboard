@@ -43,7 +43,6 @@ appId: com.flent.secured
 
 # Accepted state should show approval messaging
 - assertVisible: "approved"
-    optional: true
 
 # -- Test rejected state --
 - openLink: "flentsecured:///waitlist/index?state=rejected"
@@ -62,4 +61,3 @@ appId: com.flent.secured
 
 # Referral state should show referral input
 - assertVisible: "referral"
-    optional: true

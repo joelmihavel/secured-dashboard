@@ -20,22 +20,118 @@ jest.mock('@sentry/react-native', () => ({
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
   Reanimated.default.call = () => {};
+  Reanimated.Easing = {
+    bezier: () => (t: number) => t,
+    linear: (t: number) => t,
+    ease: (t: number) => t,
+    in: (t: number) => t,
+    out: (t: number) => t,
+    inOut: (t: number) => t,
+  };
   return Reanimated;
 });
 
 // Mock expo-haptics
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
   ImpactFeedbackStyle: {
     Light: 'light',
     Medium: 'medium',
     Heavy: 'heavy',
+  },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
   },
 }));
 
 // Mock expo-linear-gradient
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
+}));
+
+// Mock react-native-svg — provides named components with displayName set
+// to prevent crashes in react-native-css-interop's wrap-jsx.
+jest.mock('react-native-svg', () => {
+  const mockReact = require('react');
+  const make = (n: string) => {
+    const C = (props: Record<string, unknown>) =>
+      mockReact.createElement(n, props, props.children);
+    C.displayName = n;
+    return C;
+  };
+  return {
+    __esModule: true,
+    default: make('Svg'),
+    Svg: make('Svg'),
+    Circle: make('Circle'),
+    Rect: make('Rect'),
+    Path: make('Path'),
+    G: make('G'),
+    Defs: make('Defs'),
+    Pattern: make('Pattern'),
+    LinearGradient: make('LinearGradient'),
+    RadialGradient: make('RadialGradient'),
+    Stop: make('Stop'),
+    Mask: make('Mask'),
+    Line: make('Line'),
+    Text: make('SvgText'),
+    TSpan: make('TSpan'),
+    ClipPath: make('ClipPath'),
+    Use: make('Use'),
+    Image: make('SvgImage'),
+    Ellipse: make('Ellipse'),
+    Polygon: make('Polygon'),
+    Polyline: make('Polyline'),
+  };
+});
+
+// Mock useIdentityVerification — useAuth imports useRecordConsent and
+// useIdentityFetch from this module. Without the mock, any test that
+// touches the auth layer fails with "useRecordConsent is not a function".
+jest.mock('@/src/hooks/useIdentityVerification', () => ({
+  useRecordConsent: () => ({
+    mutateAsync: jest.fn().mockResolvedValue(undefined),
+    isLoading: false,
+  }),
+  useIdentityFetch: () => ({
+    mutateAsync: jest.fn().mockResolvedValue(undefined),
+    isLoading: false,
+  }),
+}));
+
+// Mock react-native-safe-area-context — NativeWind's css-interop calls
+// maybeHijackSafeAreaProvider on every JSX element and crashes with
+// "Cannot read properties of undefined (reading 'displayName')" when
+// safe-area-context components are not properly defined in the test env.
+jest.mock('react-native-safe-area-context', () => {
+  const { View } = require('react-native');
+  return {
+    SafeAreaView: View,
+    SafeAreaProvider: View,
+    SafeAreaInsetsContext: { Consumer: View },
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+  };
+});
+
+// Mock @react-native-community/netinfo — useNetworkStatus reads
+// isInternetReachable from the native module which is unavailable in Jest.
+jest.mock('@react-native-community/netinfo', () => ({
+  addEventListener: jest.fn(() => jest.fn()),
+  fetch: jest.fn().mockResolvedValue({
+    isConnected: true,
+    isInternetReachable: true,
+    type: 'wifi',
+    details: { isConnectionExpensive: false },
+  }),
+  useNetInfo: jest.fn().mockReturnValue({
+    isConnected: true,
+    isInternetReachable: true,
+    type: 'wifi',
+  }),
 }));
 
 // Silence console warnings in tests

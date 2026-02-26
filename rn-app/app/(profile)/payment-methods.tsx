@@ -147,8 +147,11 @@ function MethodCard({ method, onEdit, onDelete, onSetDefault, isDeleting, isSett
       case 'upi':
         return 'UPI';
       case 'card': {
-        const network = method.card_network ? method.card_network.charAt(0).toUpperCase() + method.card_network.slice(1) : 'Card';
-        return network;
+        const cardTypeLabel = method.card_type === 'debit' ? 'Debit' : 'Credit';
+        const network = method.card_network
+          ? method.card_network.charAt(0).toUpperCase() + method.card_network.slice(1)
+          : '';
+        return network ? `${cardTypeLabel} · ${network}` : `${cardTypeLabel} Card`;
       }
       case 'netbanking':
         return 'Net Banking';
@@ -281,7 +284,11 @@ export default function PaymentMethodsScreen() {
     (method: SavedPaymentMethod) => {
       router.push({
         pathname: '/(profile)/edit-payment-method',
-        params: { type: method.type, id: method.id },
+        params: {
+          type: method.type,
+          id: method.id,
+          ...(method.type === 'card' && method.card_type ? { card_type: method.card_type } : {}),
+        },
       } as never);
     },
     [router]

@@ -435,6 +435,9 @@ export default function PaymentStatusScreen() {
   // ============================================
 
   const pollStatus = useCallback(async () => {
+    // FIX: BUG-1 — check abort signal before polling to actually stop on unmount
+    if (abortControllerRef.current?.signal.aborted) return;
+
     if (!paymentId || isPollingRef.current) return;
 
     // Pause polling when offline
@@ -543,12 +546,15 @@ export default function PaymentStatusScreen() {
     if (state.status !== 'pending') return;
 
     if (!paymentId) {
-      // Demo mode -- auto-resolve after delay
-      const DEMO_DELAY_MS = 50000;
-      const timer = setTimeout(() => {
-        resolveStatus('success');
-      }, DEMO_DELAY_MS);
-      return () => clearTimeout(timer);
+      // FIX: BUG-3 — gate demo auto-success behind __DEV__ to prevent fake success in production
+      if (__DEV__) {
+        const DEMO_DELAY_MS = 50000;
+        const timer = setTimeout(() => {
+          resolveStatus('success');
+        }, DEMO_DELAY_MS);
+        return () => clearTimeout(timer);
+      }
+      return;
     }
 
     pollStatus();

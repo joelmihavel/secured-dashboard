@@ -33,6 +33,7 @@ import { BlurView } from 'expo-blur';
 import { usePaymentStore } from '@/src/stores';
 import { initiatePayment } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
+import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { colors } from '@/src/theme';
 
 import type { ModalView, PaymentMethodType, PaymentMethodModalProps } from './types';
@@ -54,8 +55,10 @@ export function PaymentMethodModal({
   const [modalView, setModalView] = useState<ModalView>('selector');
   const [paymentId, setPaymentId] = useState('');
   const [isInitiating, setIsInitiating] = useState(false);
+  const [cardType, setCardType] = useState<'credit' | 'debit'>('credit');
 
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const { isConnected } = useNetworkStatus();
 
   const {
     setPayuSessionParams,
@@ -121,13 +124,24 @@ export function PaymentMethodModal({
   // --- Proceed from method selector: initiate payment + navigate to add-method ---
   const handleProceed = useCallback(
     async (methodType: PaymentMethodType) => {
+      // Network connectivity check
+      if (!isConnected) {
+        Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
+        return;
+      }
+
       setIsInitiating(true);
       setConfirming();
+
+      // Determine card type for CC/DC routing
+      const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
+      setCardType(resolvedCardType);
 
       try {
         const { data, error } = await initiatePayment({
           tenancyId,
           paymentMethod: methodType,
+          cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
           rentMonth,
         });
 
@@ -163,6 +177,7 @@ export function PaymentMethodModal({
               udf3: p.udf3,
               udf4: p.udf4,
               udf5: p.udf5,
+              enforce_paymethod: p.enforce_paymethod,
             });
           }
 
@@ -171,6 +186,7 @@ export function PaymentMethodModal({
           const viewMap: Record<PaymentMethodType, ModalView> = {
             upi: 'add-upi',
             card: 'add-card',
+            debit_card: 'add-debit-card',
             netbanking: 'add-netbanking',
           };
           setModalView(viewMap[methodType]);
@@ -187,6 +203,7 @@ export function PaymentMethodModal({
     [
       tenancyId,
       rentMonth,
+      isConnected,
       setConfirming,
       setProcessing,
       setLastPayment,
@@ -236,7 +253,10 @@ export function PaymentMethodModal({
               <AddUpiContent paymentId={paymentId} onBack={handleBack} />
             )}
             {modalView === 'add-card' && (
-              <AddCardContent paymentId={paymentId} onBack={handleBack} />
+              <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" />
+            )}
+            {modalView === 'add-debit-card' && (
+              <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" />
             )}
             {modalView === 'add-netbanking' && (
               <AddNetbankingContent paymentId={paymentId} onBack={handleBack} />

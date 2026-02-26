@@ -52,7 +52,6 @@ appId: com.flent.secured
     id: "upload-screen"
 # Expired state should show error messaging
 - assertVisible: "expired"
-    optional: true
 
 # -- Test file too large state --
 - openLink: "flentsecured:///agreement/upload?state=too-large"
@@ -62,7 +61,6 @@ appId: com.flent.secured
     id: "upload-screen"
 # Too-large state should show size error
 - assertVisible: "large"
-    optional: true
 
 # -- Test manual review state --
 - openLink: "flentsecured:///agreement/upload?state=manual-review"

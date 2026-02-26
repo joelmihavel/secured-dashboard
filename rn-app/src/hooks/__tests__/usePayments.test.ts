@@ -59,7 +59,7 @@ import {
   useAddUpiVpa,
   useDeletePaymentMethod,
   useGenerateReceipt,
-  useCashbackHistory,
+  useSavingsHistory,
   usePaymentSchedules,
   usePayments,
   paymentKeys,
@@ -514,7 +514,7 @@ describe('useGenerateReceipt', () => {
   });
 });
 
-describe('useCashbackHistory', () => {
+describe('useSavingsHistory', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -522,28 +522,28 @@ describe('useCashbackHistory', () => {
     jest.clearAllMocks();
   });
 
-  it('calls getSavingsHistory with correct params', async () => {
+  it('calls getSavingsHistory service', async () => {
     mockGetCashbackHistory.mockResolvedValue({
       data: MOCK_CASHBACK,
       error: null,
     });
 
-    renderHook(() => useCashbackHistory(1, 20, { tenancy_id: 'ten-1' }), {
+    renderHook(() => useSavingsHistory(), {
       wrapper: createWrapper(queryClient),
     });
 
     await waitFor(() => {
-      expect(mockGetCashbackHistory).toHaveBeenCalledWith(1, 20, { tenancy_id: 'ten-1' });
+      expect(mockGetCashbackHistory).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('returns cashback entries after fetch', async () => {
+  it('returns savings data after fetch', async () => {
     mockGetCashbackHistory.mockResolvedValue({
       data: MOCK_CASHBACK,
       error: null,
     });
 
-    const { result } = renderHook(() => useCashbackHistory(), {
+    const { result } = renderHook(() => useSavingsHistory(), {
       wrapper: createWrapper(queryClient),
     });
 

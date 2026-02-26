@@ -15,6 +15,7 @@ exports[`PhoneInput renders correctly - custom country code 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -25,7 +26,6 @@ exports[`PhoneInput renders correctly - custom country code 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -48,11 +48,12 @@ exports[`PhoneInput renders correctly - custom country code 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -87,69 +88,20 @@ exports[`PhoneInput renders correctly - custom country code 1`] = `
       >
         +1
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4282664004,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#444444"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel="Phone Number"
@@ -205,6 +157,7 @@ exports[`PhoneInput renders correctly - custom placeholder 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -215,7 +168,6 @@ exports[`PhoneInput renders correctly - custom placeholder 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -238,11 +190,12 @@ exports[`PhoneInput renders correctly - custom placeholder 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -277,69 +230,20 @@ exports[`PhoneInput renders correctly - custom placeholder 1`] = `
       >
         +91
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4282664004,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#444444"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel="Mobile"
@@ -395,6 +299,7 @@ exports[`PhoneInput renders correctly - disabled 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -405,7 +310,6 @@ exports[`PhoneInput renders correctly - disabled 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -428,11 +332,12 @@ exports[`PhoneInput renders correctly - disabled 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -467,69 +372,20 @@ exports[`PhoneInput renders correctly - disabled 1`] = `
       >
         +91
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4282664004,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#444444"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel="Phone Number"
@@ -587,6 +443,7 @@ exports[`PhoneInput renders correctly - empty state 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -597,7 +454,6 @@ exports[`PhoneInput renders correctly - empty state 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -620,11 +476,12 @@ exports[`PhoneInput renders correctly - empty state 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -659,69 +516,20 @@ exports[`PhoneInput renders correctly - empty state 1`] = `
       >
         +91
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4282664004,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#444444"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel="Phone Number"
@@ -777,6 +585,7 @@ exports[`PhoneInput renders correctly - with error 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -787,7 +596,6 @@ exports[`PhoneInput renders correctly - with error 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -810,7 +618,6 @@ exports[`PhoneInput renders correctly - with error 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -834,11 +641,12 @@ exports[`PhoneInput renders correctly - with error 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -873,69 +681,20 @@ exports[`PhoneInput renders correctly - with error 1`] = `
       >
         +91
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4292730333,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#DDDDDD"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel="Phone Number"
@@ -995,6 +754,7 @@ exports[`PhoneInput renders correctly - with hint text 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -1005,7 +765,6 @@ exports[`PhoneInput renders correctly - with hint text 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -1028,7 +787,6 @@ exports[`PhoneInput renders correctly - with hint text 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -1052,11 +810,12 @@ exports[`PhoneInput renders correctly - with hint text 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -1091,69 +850,20 @@ exports[`PhoneInput renders correctly - with hint text 1`] = `
       >
         +91
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4282664004,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#444444"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel="Phone Number"
@@ -1209,6 +919,7 @@ exports[`PhoneInput renders correctly - with value 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -1219,7 +930,6 @@ exports[`PhoneInput renders correctly - with value 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -1242,11 +952,12 @@ exports[`PhoneInput renders correctly - with value 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -1281,69 +992,20 @@ exports[`PhoneInput renders correctly - with value 1`] = `
       >
         +91
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4292730333,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#DDDDDD"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel="Phone Number"
@@ -1401,6 +1063,7 @@ exports[`PhoneInput renders with empty label 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -1411,7 +1074,6 @@ exports[`PhoneInput renders with empty label 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -1432,11 +1094,12 @@ exports[`PhoneInput renders with empty label 1`] = `
         {
           "alignItems": "center",
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
           "flexDirection": "row",
           "gap": 16,
-          "paddingHorizontal": 16,
+          "paddingHorizontal": 12,
           "paddingVertical": 16,
         },
         {
@@ -1471,69 +1134,20 @@ exports[`PhoneInput renders with empty label 1`] = `
       >
         +91
       </Text>
-      <RNSVGSvgView
-        align="xMidYMid"
-        bbHeight={16}
-        bbWidth={16}
+      <Svg
         fill="none"
-        focusable={false}
         height={16}
-        meetOrSlice={0}
-        minX={0}
-        minY={0}
-        style={
-          [
-            {
-              "backgroundColor": "transparent",
-              "borderWidth": 0,
-            },
-            {
-              "flex": 0,
-              "height": 16,
-              "width": 16,
-            },
-          ]
-        }
-        vbHeight={16}
-        vbWidth={16}
+        viewBox="0 0 16 16"
         width={16}
       >
-        <RNSVGGroup
-          fill={null}
-          propList={
-            [
-              "fill",
-            ]
-          }
-        >
-          <RNSVGPath
-            d="M4 6L8 10L12 6"
-            fill={
-              {
-                "payload": 4278190080,
-                "type": 0,
-              }
-            }
-            propList={
-              [
-                "stroke",
-                "strokeWidth",
-                "strokeLinecap",
-                "strokeLinejoin",
-              ]
-            }
-            stroke={
-              {
-                "payload": 4282664004,
-                "type": 0,
-              }
-            }
-            strokeLinecap={1}
-            strokeLinejoin={1}
-            strokeWidth={1.6}
-          />
-        </RNSVGGroup>
-      </RNSVGSvgView>
+        <Path
+          d="M4 6L8 10L12 6"
+          stroke="#444444"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.6}
+        />
+      </Svg>
     </View>
     <TextInput
       accessibilityLabel=""

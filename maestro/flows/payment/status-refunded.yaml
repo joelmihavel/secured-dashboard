@@ -1,0 +1,47 @@
+# =============================================================================
+# Payment: Status Screen -- Refunded State
+# Route: /(payment)/status?initialStatus=refunded
+# Figma: 41-9635 (Refunded)
+# testID: status-screen (SINGLE testID for all states)
+# =============================================================================
+#
+# IMPORTANT: The status screen uses a SINGLE testID "status-screen" for ALL
+# states. Assertions MUST use visible TEXT content, not state-specific testIDs.
+#
+# Validates:
+#   - Status screen renders in refunded state
+#   - Title shows "Payment" + "Refunded" text
+#   - Info rows display refund messages
+#   - "Contact Support" button is visible
+#   - "Try Again" link is visible
+#   - Receipt card with "refunded" stamp is displayed
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to status screen with refunded state
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/status?initialStatus=refunded"
+- waitForAnimationToEnd
+
+# Verify status screen rendered
+- assertVisible:
+    id: "status-screen"
+
+# Verify refunded title text
+- assertVisible: "Payment"
+- assertVisible: "Refunded"
+
+# Verify refund info messages
+- assertVisible: "not completed"
+- assertVisible: "returned to your account"
+- assertVisible: "3\u20135 business days"
+
+# Verify Contact Support button
+- assertVisible:
+    id: "contact-support-button"
+- assertVisible: "Contact Support"
+
+# Verify Try Again link
+- assertVisible: "Try Again"

@@ -26,7 +26,7 @@
  *         - Sign Out, divider, Delete Account
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -43,7 +43,7 @@ import * as StoreReview from 'expo-store-review';
 
 import { Screen, Text } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
-import { useDashboard, useAuth, useDeleteAccount } from '@/src/hooks';
+import { useDashboard, useAuth, useDeleteAccount, useSavedPaymentMethods } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
 // Blueprint colors (verified against 41-8760-blueprint.json)
@@ -119,6 +119,29 @@ export default function ProfileScreen() {
   const { user } = useDashboard();
   const { signOut } = useAuth();
   const deleteAccount = useDeleteAccount();
+  const { data: savedMethods } = useSavedPaymentMethods();
+
+  // Build payment menu items dynamically from user's saved methods
+  const paymentMenuItems = useMemo(() => {
+    if (!savedMethods?.length) return [];
+
+    const items: { title: string; type: string; cardType?: string; testID: string }[] = [];
+
+    if (savedMethods.some((m) => m.type === 'upi')) {
+      items.push({ title: 'Edit UPI Method', type: 'upi', testID: 'edit-upi-button' });
+    }
+    if (savedMethods.some((m) => m.type === 'card' && m.card_type === 'credit')) {
+      items.push({ title: 'Edit Credit Card', type: 'card', cardType: 'credit', testID: 'edit-credit-card-button' });
+    }
+    if (savedMethods.some((m) => m.type === 'card' && m.card_type === 'debit')) {
+      items.push({ title: 'Edit Debit Card', type: 'card', cardType: 'debit', testID: 'edit-debit-card-button' });
+    }
+    if (savedMethods.some((m) => m.type === 'netbanking')) {
+      items.push({ title: 'Edit Bank Account', type: 'netbanking', testID: 'edit-bank-account-button' });
+    }
+
+    return items;
+  }, [savedMethods]);
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -135,9 +158,11 @@ export default function ProfileScreen() {
     router.push('/(profile)/edit' as never);
   }, [router]);
 
-  const handleEditPaymentMethod = useCallback((tab: 'upi' | 'credit' | 'bank') => {
+  const handleEditPaymentMethod = useCallback((type: string, cardType?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: '/(profile)/payment-methods' as never, params: { tab } });
+    const params: Record<string, string> = { type };
+    if (cardType) params.card_type = cardType;
+    router.push({ pathname: '/(profile)/edit-payment-method', params } as never);
   }, [router]);
 
   const handleContactSupport = useCallback(() => {
@@ -267,30 +292,26 @@ export default function ProfileScreen() {
 
           {/* Payment Information section (41:8842): column, gap=24, paddingH=40 */}
           {/* Card (41:8844): single card bg #202020, radius=12, gap=8, with dividers */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Payment Information
-            </Text>
-            <View style={styles.cardContainer}>
-              <CardMenuItem
-                title="Edit UPI Method"
-                onPress={() => handleEditPaymentMethod('upi')}
-                testID="edit-upi-button"
-              />
-              <CardDivider />
-              <CardMenuItem
-                title="Edit Credit Card"
-                onPress={() => handleEditPaymentMethod('credit')}
-                testID="edit-credit-card-button"
-              />
-              <CardDivider />
-              <CardMenuItem
-                title="Edit Bank Account"
-                onPress={() => handleEditPaymentMethod('bank')}
-                testID="edit-bank-account-button"
-              />
+          {/* Dynamic: only shows edit options for payment methods the user has saved */}
+          {paymentMenuItems.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                Payment Information
+              </Text>
+              <View style={styles.cardContainer}>
+                {paymentMenuItems.map((item, index) => (
+                  <React.Fragment key={item.testID}>
+                    {index > 0 && <CardDivider />}
+                    <CardMenuItem
+                      title={item.title}
+                      onPress={() => handleEditPaymentMethod(item.type, item.cardType)}
+                      testID={item.testID}
+                    />
+                  </React.Fragment>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Support section (41:8856): column, gap=24, paddingH=40 */}
           {/* Card (41:8858): single card bg #202020, radius=12, gap=8, with dividers */}

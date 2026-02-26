@@ -3,10 +3,13 @@
 exports[`Screen renders correctly - compact padding variant 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -26,7 +29,6 @@ exports[`Screen renders correctly - compact padding variant 1`] = `
           {
             "paddingHorizontal": 24,
           },
-          undefined,
         ]
       }
     >
@@ -41,10 +43,13 @@ exports[`Screen renders correctly - compact padding variant 1`] = `
 exports[`Screen renders correctly - default (padded, safe area top+bottom) 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -64,7 +69,6 @@ exports[`Screen renders correctly - default (padded, safe area top+bottom) 1`] =
           {
             "paddingHorizontal": 40,
           },
-          undefined,
         ]
       }
     >
@@ -79,10 +83,13 @@ exports[`Screen renders correctly - default (padded, safe area top+bottom) 1`] =
 exports[`Screen renders correctly - no safe areas 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -102,7 +109,6 @@ exports[`Screen renders correctly - no safe areas 1`] = `
           {
             "paddingHorizontal": 40,
           },
-          undefined,
         ]
       }
     >
@@ -117,10 +123,13 @@ exports[`Screen renders correctly - no safe areas 1`] = `
 exports[`Screen renders correctly - not padded 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -138,7 +147,6 @@ exports[`Screen renders correctly - not padded 1`] = `
             "flex": 1,
           },
           false,
-          undefined,
         ]
       }
     >
@@ -153,10 +161,16 @@ exports[`Screen renders correctly - not padded 1`] = `
 exports[`Screen renders correctly - with custom style 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      },
+    ]
   }
 >
   <View
@@ -175,10 +189,6 @@ exports[`Screen renders correctly - with custom style 1`] = `
           },
           {
             "paddingHorizontal": 40,
-          },
-          {
-            "alignItems": "center",
-            "justifyContent": "center",
           },
         ]
       }
@@ -194,10 +204,13 @@ exports[`Screen renders correctly - with custom style 1`] = `
 exports[`Screen renders correctly - without safe area bottom 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -217,7 +230,6 @@ exports[`Screen renders correctly - without safe area bottom 1`] = `
           {
             "paddingHorizontal": 40,
           },
-          undefined,
         ]
       }
     >
@@ -232,10 +244,13 @@ exports[`Screen renders correctly - without safe area bottom 1`] = `
 exports[`Screen renders correctly - without safe area top 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -255,7 +270,6 @@ exports[`Screen renders correctly - without safe area top 1`] = `
           {
             "paddingHorizontal": 40,
           },
-          undefined,
         ]
       }
     >
@@ -270,10 +284,13 @@ exports[`Screen renders correctly - without safe area top 1`] = `
 exports[`Screen renders with empty children 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -293,7 +310,6 @@ exports[`Screen renders with empty children 1`] = `
           {
             "paddingHorizontal": 40,
           },
-          undefined,
         ]
       }
     >
@@ -306,10 +322,13 @@ exports[`Screen renders with empty children 1`] = `
 exports[`Screen renders with nested Views 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
@@ -329,7 +348,6 @@ exports[`Screen renders with nested Views 1`] = `
           {
             "paddingHorizontal": 40,
           },
-          undefined,
         ]
       }
     >

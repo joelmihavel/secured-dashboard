@@ -45,6 +45,7 @@ export interface DashboardTenancy {
   property_city: string | null;
   monthly_rent: number; // In rupees
   rent_due_day: number;
+  cashback_cutoff_day: number; // Day of month by which rent must be paid for cashback (defaults to 7)
   lease_end_date: string | null;
   lease_start_date: string | null;
   agreement_cert_id: string | null;
@@ -59,6 +60,8 @@ export interface UpcomingPayment {
   days_until_due: number;
   is_overdue: boolean;
   cashback_eligible: boolean;
+  past_cutoff: boolean;
+  cutoff_day: number; // Day of month (1-28), defaults to 7
   rent_month: string; // ISO date string "YYYY-MM-DD" from edge function
 }
 

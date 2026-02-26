@@ -61,11 +61,11 @@ exports[`PrimaryButton renders correctly - default 1`] = `
             "elevation": 8,
             "shadowColor": "#995C41",
             "shadowOffset": {
-              "height": 6,
+              "height": 4,
               "width": 0,
             },
             "shadowOpacity": 0.24,
-            "shadowRadius": 10,
+            "shadowRadius": 5,
             "width": "100%",
           },
           {
@@ -87,71 +87,115 @@ exports[`PrimaryButton renders correctly - default 1`] = `
         ]
       }
     >
-      <LinearGradient
-        colors={
-          [
-            "#202020",
-            "#0d0d0d",
-          ]
-        }
-        end={
-          {
-            "x": 0,
-            "y": 1,
-          }
-        }
-        locations={
-          [
-            0,
-            0.9018,
-          ]
-        }
-        start={
-          {
-            "x": 0,
-            "y": 0,
-          }
-        }
+      <View
         style={
           {
             "alignItems": "center",
-            "borderColor": "rgba(255, 154, 109, 0.25)",
+            "borderCurve": "continuous",
             "borderRadius": 8,
-            "borderWidth": 0.5,
             "justifyContent": "center",
             "overflow": "hidden",
-            "padding": 16,
+            "paddingBottom": 21,
+            "paddingLeft": 16,
+            "paddingRight": 19,
+            "paddingTop": 16,
             "width": "100%",
           }
         }
       >
-        <Text
-          style={
+        <LinearGradient
+          colors={
+            [
+              "#202020",
+              "#0d0d0d",
+            ]
+          }
+          end={
             {
-              "color": "#FFFFFF",
-              "fontFamily": "PlusJakartaSans-Medium",
-              "fontSize": 16,
-              "lineHeight": 24,
-              "textAlign": "center",
+              "x": 0,
+              "y": 1,
             }
           }
-        >
-          Pay Now
-        </Text>
+          locations={
+            [
+              0,
+              0.9018,
+            ]
+          }
+          start={
+            {
+              "x": 0,
+              "y": 0,
+            }
+          }
+          style={
+            {
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        />
         <View
           style={
             [
               {
-                "borderBottomLeftRadius": 7,
-                "borderBottomRightRadius": 7,
+                "backgroundColor": "#111111",
+                "borderRadius": 8,
                 "bottom": 0,
-                "height": 8,
                 "left": 0,
                 "position": "absolute",
                 "right": 0,
+                "top": 0,
               },
               {
                 "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderColor": "rgba(255, 154, 109, 0.25)",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderWidth": 1,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderBottomLeftRadius": 3,
+                "borderBottomRightRadius": 3,
+                "bottom": 5,
+                "height": 6,
+                "left": 0,
+                "position": "absolute",
+                "right": 3,
+              },
+              {
+                "transform": [
+                  {
+                    "translateY": undefined,
+                  },
+                ],
               },
             ]
           }
@@ -193,30 +237,104 @@ exports[`PrimaryButton renders correctly - default 1`] = `
           />
         </View>
         <View
+          pointerEvents="none"
           style={
-            {
-              "backgroundColor": "rgba(0, 0, 0, 0.6)",
-              "bottom": 0,
-              "height": 1,
-              "left": 0,
-              "position": "absolute",
-              "right": 2,
-            }
+            [
+              {
+                "borderBottomWidth": 5,
+                "borderColor": "#000000",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderRightWidth": 3,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
           }
         />
         <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              {
+                "borderColor": "rgba(0,0,0,0.6)",
+                "borderCurve": "continuous",
+                "borderLeftWidth": 1,
+                "borderRadius": 8,
+                "borderRightWidth": 1,
+                "borderTopWidth": 2,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              }
+            }
+          />
+          <LinearGradient
+            colors={
+              [
+                "rgba(0,0,0,0.8)",
+                "transparent",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderTopLeftRadius": 8,
+                "borderTopRightRadius": 8,
+                "height": 16,
+                "width": "100%",
+              }
+            }
+          />
+        </View>
+        <Text
           style={
             {
-              "backgroundColor": "rgba(0, 0, 0, 0.4)",
-              "bottom": 0,
-              "position": "absolute",
-              "right": 0,
-              "top": 4,
-              "width": 1,
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "textAlign": "center",
             }
           }
-        />
-      </LinearGradient>
+        >
+          Pay Now
+        </Text>
+      </View>
     </View>
   </View>
 </View>
@@ -364,22 +482,276 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "backgroundColor": "#202020",
-          "borderColor": "#202020",
-          "borderRadius": 12,
-          "borderWidth": 1,
-          "justifyContent": "center",
-          "padding": 16,
-          "width": "100%",
-        }
+        [
+          {
+            "elevation": 8,
+            "shadowColor": "#995C41",
+            "shadowOffset": {
+              "height": 4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.24,
+            "shadowRadius": 5,
+            "width": "100%",
+          },
+          {
+            "shadowOffset": {
+              "height": undefined,
+              "width": 0,
+            },
+            "shadowOpacity": undefined,
+            "shadowRadius": undefined,
+            "transform": [
+              {
+                "translateY": undefined,
+              },
+              {
+                "scale": undefined,
+              },
+            ],
+          },
+        ]
       }
     >
-      <ActivityIndicator
-        color="#444444"
-        size="small"
-      />
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "borderCurve": "continuous",
+            "borderRadius": 8,
+            "justifyContent": "center",
+            "overflow": "hidden",
+            "paddingBottom": 21,
+            "paddingLeft": 16,
+            "paddingRight": 19,
+            "paddingTop": 16,
+            "width": "100%",
+          }
+        }
+      >
+        <LinearGradient
+          colors={
+            [
+              "#202020",
+              "#0d0d0d",
+            ]
+          }
+          end={
+            {
+              "x": 0,
+              "y": 1,
+            }
+          }
+          locations={
+            [
+              0,
+              0.9018,
+            ]
+          }
+          start={
+            {
+              "x": 0,
+              "y": 0,
+            }
+          }
+          style={
+            {
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "backgroundColor": "#111111",
+                "borderRadius": 8,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderColor": "rgba(255, 154, 109, 0.25)",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderWidth": 1,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderBottomLeftRadius": 3,
+                "borderBottomRightRadius": 3,
+                "bottom": 5,
+                "height": 6,
+                "left": 0,
+                "position": "absolute",
+                "right": 3,
+              },
+              {
+                "transform": [
+                  {
+                    "translateY": undefined,
+                  },
+                ],
+              },
+            ]
+          }
+        >
+          <LinearGradient
+            colors={
+              [
+                "transparent",
+                "rgba(255, 255, 255, 0.04)",
+                "rgba(255, 255, 255, 0.12)",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            locations={
+              [
+                0,
+                0.4,
+                1,
+              ]
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderBottomLeftRadius": 7,
+                "borderBottomRightRadius": 7,
+                "flex": 1,
+              }
+            }
+          />
+        </View>
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderBottomWidth": 5,
+                "borderColor": "#000000",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderRightWidth": 3,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              {
+                "borderColor": "rgba(0,0,0,0.6)",
+                "borderCurve": "continuous",
+                "borderLeftWidth": 1,
+                "borderRadius": 8,
+                "borderRightWidth": 1,
+                "borderTopWidth": 2,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              }
+            }
+          />
+          <LinearGradient
+            colors={
+              [
+                "rgba(0,0,0,0.8)",
+                "transparent",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderTopLeftRadius": 8,
+                "borderTopRightRadius": 8,
+                "height": 16,
+                "width": "100%",
+              }
+            }
+          />
+        </View>
+        <ActivityIndicator
+          color="#FFFFFF"
+          size="small"
+        />
+      </View>
     </View>
   </View>
 </View>
@@ -444,11 +816,11 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
             "elevation": 8,
             "shadowColor": "#995C41",
             "shadowOffset": {
-              "height": 6,
+              "height": 4,
               "width": 0,
             },
             "shadowOpacity": 0.24,
-            "shadowRadius": 10,
+            "shadowRadius": 5,
             "width": "100%",
           },
           {
@@ -470,71 +842,115 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
         ]
       }
     >
-      <LinearGradient
-        colors={
-          [
-            "#202020",
-            "#0d0d0d",
-          ]
-        }
-        end={
-          {
-            "x": 0,
-            "y": 1,
-          }
-        }
-        locations={
-          [
-            0,
-            0.9018,
-          ]
-        }
-        start={
-          {
-            "x": 0,
-            "y": 0,
-          }
-        }
+      <View
         style={
           {
             "alignItems": "center",
-            "borderColor": "rgba(255, 154, 109, 0.25)",
+            "borderCurve": "continuous",
             "borderRadius": 8,
-            "borderWidth": 0.5,
             "justifyContent": "center",
             "overflow": "hidden",
-            "padding": 16,
+            "paddingBottom": 21,
+            "paddingLeft": 16,
+            "paddingRight": 19,
+            "paddingTop": 16,
             "width": "100%",
           }
         }
       >
-        <Text
-          style={
+        <LinearGradient
+          colors={
+            [
+              "#202020",
+              "#0d0d0d",
+            ]
+          }
+          end={
             {
-              "color": "#FFFFFF",
-              "fontFamily": "PlusJakartaSans-Medium",
-              "fontSize": 16,
-              "lineHeight": 24,
-              "textAlign": "center",
+              "x": 0,
+              "y": 1,
             }
           }
-        >
-          Submit
-        </Text>
+          locations={
+            [
+              0,
+              0.9018,
+            ]
+          }
+          start={
+            {
+              "x": 0,
+              "y": 0,
+            }
+          }
+          style={
+            {
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        />
         <View
           style={
             [
               {
-                "borderBottomLeftRadius": 7,
-                "borderBottomRightRadius": 7,
+                "backgroundColor": "#111111",
+                "borderRadius": 8,
                 "bottom": 0,
-                "height": 8,
                 "left": 0,
                 "position": "absolute",
                 "right": 0,
+                "top": 0,
               },
               {
                 "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderColor": "rgba(255, 154, 109, 0.25)",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderWidth": 1,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderBottomLeftRadius": 3,
+                "borderBottomRightRadius": 3,
+                "bottom": 5,
+                "height": 6,
+                "left": 0,
+                "position": "absolute",
+                "right": 3,
+              },
+              {
+                "transform": [
+                  {
+                    "translateY": undefined,
+                  },
+                ],
               },
             ]
           }
@@ -576,30 +992,104 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
           />
         </View>
         <View
+          pointerEvents="none"
           style={
-            {
-              "backgroundColor": "rgba(0, 0, 0, 0.6)",
-              "bottom": 0,
-              "height": 1,
-              "left": 0,
-              "position": "absolute",
-              "right": 2,
-            }
+            [
+              {
+                "borderBottomWidth": 5,
+                "borderColor": "#000000",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderRightWidth": 3,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
           }
         />
         <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              {
+                "borderColor": "rgba(0,0,0,0.6)",
+                "borderCurve": "continuous",
+                "borderLeftWidth": 1,
+                "borderRadius": 8,
+                "borderRightWidth": 1,
+                "borderTopWidth": 2,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              }
+            }
+          />
+          <LinearGradient
+            colors={
+              [
+                "rgba(0,0,0,0.8)",
+                "transparent",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderTopLeftRadius": 8,
+                "borderTopRightRadius": 8,
+                "height": 16,
+                "width": "100%",
+              }
+            }
+          />
+        </View>
+        <Text
           style={
             {
-              "backgroundColor": "rgba(0, 0, 0, 0.4)",
-              "bottom": 0,
-              "position": "absolute",
-              "right": 0,
-              "top": 4,
-              "width": 1,
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "textAlign": "center",
             }
           }
-        />
-      </LinearGradient>
+        >
+          Submit
+        </Text>
+      </View>
     </View>
   </View>
 </View>
@@ -666,11 +1156,11 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
             "elevation": 8,
             "shadowColor": "#995C41",
             "shadowOffset": {
-              "height": 6,
+              "height": 4,
               "width": 0,
             },
             "shadowOpacity": 0.24,
-            "shadowRadius": 10,
+            "shadowRadius": 5,
             "width": "100%",
           },
           {
@@ -692,71 +1182,115 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
         ]
       }
     >
-      <LinearGradient
-        colors={
-          [
-            "#202020",
-            "#0d0d0d",
-          ]
-        }
-        end={
-          {
-            "x": 0,
-            "y": 1,
-          }
-        }
-        locations={
-          [
-            0,
-            0.9018,
-          ]
-        }
-        start={
-          {
-            "x": 0,
-            "y": 0,
-          }
-        }
+      <View
         style={
           {
             "alignItems": "center",
-            "borderColor": "rgba(255, 154, 109, 0.25)",
+            "borderCurve": "continuous",
             "borderRadius": 8,
-            "borderWidth": 0.5,
             "justifyContent": "center",
             "overflow": "hidden",
-            "padding": 16,
+            "paddingBottom": 21,
+            "paddingLeft": 16,
+            "paddingRight": 19,
+            "paddingTop": 16,
             "width": "100%",
           }
         }
       >
-        <Text
-          style={
+        <LinearGradient
+          colors={
+            [
+              "#202020",
+              "#0d0d0d",
+            ]
+          }
+          end={
             {
-              "color": "#FFFFFF",
-              "fontFamily": "PlusJakartaSans-Medium",
-              "fontSize": 16,
-              "lineHeight": 24,
-              "textAlign": "center",
+              "x": 0,
+              "y": 1,
             }
           }
-        >
-          Continue
-        </Text>
+          locations={
+            [
+              0,
+              0.9018,
+            ]
+          }
+          start={
+            {
+              "x": 0,
+              "y": 0,
+            }
+          }
+          style={
+            {
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+        />
         <View
           style={
             [
               {
-                "borderBottomLeftRadius": 7,
-                "borderBottomRightRadius": 7,
+                "backgroundColor": "#111111",
+                "borderRadius": 8,
                 "bottom": 0,
-                "height": 8,
                 "left": 0,
                 "position": "absolute",
                 "right": 0,
+                "top": 0,
               },
               {
                 "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderColor": "rgba(255, 154, 109, 0.25)",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderWidth": 1,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        />
+        <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "borderBottomLeftRadius": 3,
+                "borderBottomRightRadius": 3,
+                "bottom": 5,
+                "height": 6,
+                "left": 0,
+                "position": "absolute",
+                "right": 3,
+              },
+              {
+                "transform": [
+                  {
+                    "translateY": undefined,
+                  },
+                ],
               },
             ]
           }
@@ -798,30 +1332,104 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
           />
         </View>
         <View
+          pointerEvents="none"
           style={
-            {
-              "backgroundColor": "rgba(0, 0, 0, 0.6)",
-              "bottom": 0,
-              "height": 1,
-              "left": 0,
-              "position": "absolute",
-              "right": 2,
-            }
+            [
+              {
+                "borderBottomWidth": 5,
+                "borderColor": "#000000",
+                "borderCurve": "continuous",
+                "borderRadius": 8,
+                "borderRightWidth": 3,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
           }
         />
         <View
+          pointerEvents="none"
+          style={
+            [
+              {
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              },
+              {
+                "opacity": undefined,
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              {
+                "borderColor": "rgba(0,0,0,0.6)",
+                "borderCurve": "continuous",
+                "borderLeftWidth": 1,
+                "borderRadius": 8,
+                "borderRightWidth": 1,
+                "borderTopWidth": 2,
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              }
+            }
+          />
+          <LinearGradient
+            colors={
+              [
+                "rgba(0,0,0,0.8)",
+                "transparent",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "borderTopLeftRadius": 8,
+                "borderTopRightRadius": 8,
+                "height": 16,
+                "width": "100%",
+              }
+            }
+          />
+        </View>
+        <Text
           style={
             {
-              "backgroundColor": "rgba(0, 0, 0, 0.4)",
-              "bottom": 0,
-              "position": "absolute",
-              "right": 0,
-              "top": 4,
-              "width": 1,
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 16,
+              "lineHeight": 24,
+              "textAlign": "center",
             }
           }
-        />
-      </LinearGradient>
+        >
+          Continue
+        </Text>
+      </View>
     </View>
   </View>
 </View>

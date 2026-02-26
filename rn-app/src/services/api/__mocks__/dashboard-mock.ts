@@ -32,12 +32,13 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
     property_city: 'Bangalore',
     monthly_rent: 35000,
     rent_due_day: 5,
+    cashback_cutoff_day: 7,
     lease_start_date: '2025-06-01',
     lease_end_date: '2027-05-31',
     agreement_cert_id: 'KA-2025-STM-00456789',
     landlord_name: 'Suresh Kumar Sharma',
     verification_status: {
-      bank_verified: false,
+      bank_verified: true,
       utility_verified: false,
       landlord_approved: false,
       landlord_response: null,
@@ -51,6 +52,8 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
     days_until_due: Math.max(0, 5 - now.getDate()),
     is_overdue: now.getDate() > 5,
     cashback_eligible: false,
+    past_cutoff: now.getDate() > 7,
+    cutoff_day: 7,
     rent_month: thisMonth,
   },
 
@@ -68,7 +71,16 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
     total_used: 0,
   },
 
-  recent_payments: [],
+  recent_payments: [
+    {
+      id: 'mock-payment-001',
+      amount: 35000,
+      status: 'success' as const,
+      rent_month: thisMonth,
+      paid_at: now.toISOString(),
+      cashback_earned: 0,
+    },
+  ],
 
   notifications: [],
 

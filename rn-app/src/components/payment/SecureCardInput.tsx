@@ -35,7 +35,16 @@ import { colors } from '@/src/theme';
 // TYPES
 // ===================================================
 
-export type SecureCardNetwork = 'visa' | 'mastercard' | 'amex' | 'rupay' | 'unknown';
+export type SecureCardNetwork = 'visa' | 'mastercard' | 'amex' | 'rupay' | 'diners' | 'maestro' | 'jcb' | 'unknown';
+
+const SUPPORTED_NETWORKS: SecureCardNetwork[] = ['visa', 'mastercard', 'rupay'];
+
+const NETWORK_DISPLAY_NAMES: Partial<Record<SecureCardNetwork, string>> = {
+  amex: 'Amex',
+  diners: 'Diners Club',
+  maestro: 'Maestro',
+  jcb: 'JCB',
+};
 
 export interface CardData {
   cardNumber: string;   // raw digits, no spaces
@@ -67,6 +76,19 @@ function detectNetwork(digits: string): SecureCardNetwork {
   // Amex: starts with 34 or 37
   if (d.startsWith('34') || d.startsWith('37')) return 'amex';
 
+  // JCB: 3528-3589
+  if (d.length >= 4) {
+    const first4 = parseInt(d.substring(0, 4), 10);
+    if (first4 >= 3528 && first4 <= 3589) return 'jcb';
+  }
+
+  // Diners Club: 300-305, 36, 38
+  if (d.length >= 3) {
+    const first3 = parseInt(d.substring(0, 3), 10);
+    if (first3 >= 300 && first3 <= 305) return 'diners';
+  }
+  if (d.startsWith('36') || d.startsWith('38')) return 'diners';
+
   // Visa: starts with 4
   if (d.startsWith('4')) return 'visa';
 
@@ -78,6 +100,14 @@ function detectNetwork(digits: string): SecureCardNetwork {
       const first4 = parseInt(d.substring(0, 4), 10);
       if (first4 >= 2221 && first4 <= 2720) return 'mastercard';
     }
+  }
+
+  // Maestro: 5018, 5020, 5038, 6304, 6759, 6761-6763
+  if (d.length >= 4) {
+    const first4 = d.substring(0, 4);
+    if (['5018', '5020', '5038', '6304', '6759'].includes(first4)) return 'maestro';
+    const first4Num = parseInt(first4, 10);
+    if (first4Num >= 6761 && first4Num <= 6763) return 'maestro';
   }
 
   // RuPay: starts with 60, 65, 81, 82, 508
@@ -92,13 +122,8 @@ function detectNetwork(digits: string): SecureCardNetwork {
 // FORMATTING
 // ===================================================
 
-function formatCardNumber(raw: string, network: SecureCardNetwork): string {
+function formatCardNumber(raw: string): string {
   const digits = raw.replace(/\D/g, '');
-  if (network === 'amex') {
-    // Amex: 4-6-5 grouping
-    const parts = [digits.slice(0, 4), digits.slice(4, 10), digits.slice(10, 15)];
-    return parts.filter(Boolean).join(' ');
-  }
   // Standard: 4-4-4-4
   const parts = [digits.slice(0, 4), digits.slice(4, 8), digits.slice(8, 12), digits.slice(12, 16)];
   return parts.filter(Boolean).join(' ');
@@ -139,6 +164,8 @@ function validateExpiry(month: string, year: string): boolean {
   const currentMonth = now.getMonth() + 1;
   if (y < currentYear) return false;
   if (y === currentYear && m < currentMonth) return false;
+  // Reject cards expiring more than 20 years in the future (data entry error)
+  if (y > currentYear + 20) return false;
   return true;
 }
 
@@ -160,12 +187,6 @@ const MastercardIcon = () => (
   </Svg>
 );
 
-const AmexIcon = () => (
-  <View style={{ width: 32, height: 20, backgroundColor: '#006FCF', borderRadius: 3, justifyContent: 'center', alignItems: 'center' }}>
-    <Text style={{ color: '#FFFFFF', fontSize: 8, fontFamily: 'PlusJakartaSans-Bold' }}>AMEX</Text>
-  </View>
-);
-
 const RuPayIcon = () => (
   <View style={{ width: 32, height: 20, backgroundColor: '#1A2B6B', borderRadius: 3, justifyContent: 'center', alignItems: 'center' }}>
     <Text style={{ color: '#FFFFFF', fontSize: 7, fontFamily: 'PlusJakartaSans-Bold' }}>RuPay</Text>
@@ -176,7 +197,6 @@ function NetworkIcon({ network }: { network: SecureCardNetwork }) {
   switch (network) {
     case 'visa': return <VisaIcon />;
     case 'mastercard': return <MastercardIcon />;
-    case 'amex': return <AmexIcon />;
     case 'rupay': return <RuPayIcon />;
     default: return null;
   }
@@ -226,12 +246,20 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
       (cn: string, cv: string, ex: string, nm: string) => {
         const digits = cn.replace(/\D/g, '');
         const net = detectNetwork(digits);
-        const minLen = net === 'amex' ? 15 : 16;
-        const cvvLen = net === 'amex' ? 4 : 3;
+        // Block unsupported networks
+        if (net !== 'unknown' && !SUPPORTED_NETWORKS.includes(net)) {
+          onValidityChange?.(false);
+          return;
+        }
+        // Block unknown networks after 8+ digits
+        if (digits.length >= 8 && net === 'unknown') {
+          onValidityChange?.(false);
+          return;
+        }
         const exDigits = ex.replace(/\D/g, '');
         const isValid =
-          digits.length >= minLen &&
-          cv.length === cvvLen &&
+          digits.length >= 16 &&
+          cv.length === 3 &&
           exDigits.length === 4 &&
           nm.trim().length >= 2;
         onValidityChange?.(isValid);
@@ -244,21 +272,42 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         // Strip non-digits, handle paste with spaces/dashes (E11)
         const digits = text.replace(/\D/g, '');
         const net = detectNetwork(digits);
-        const maxLen = net === 'amex' ? 15 : 16;
-        const trimmed = digits.slice(0, maxLen);
+        const trimmed = digits.slice(0, 16);
 
         cardNumberRef.current = trimmed;
         setNetwork(net);
-        setDisplayCardNumber(formatCardNumber(trimmed, net));
+        setDisplayCardNumber(formatCardNumber(trimmed));
+
+        // Block unsupported networks inline
+        if (net !== 'unknown' && !SUPPORTED_NETWORKS.includes(net)) {
+          const displayName = NETWORK_DISPLAY_NAMES[net] ?? net;
+          setErrors((prev) => ({
+            ...prev,
+            cardNumber: `${displayName} cards are not supported. Please use Visa, Mastercard, or RuPay.`,
+          }));
+          onValidityChange?.(false);
+          return;
+        }
+
+        // Block unknown networks after 8+ digits
+        if (trimmed.length >= 8 && net === 'unknown') {
+          setErrors((prev) => ({
+            ...prev,
+            cardNumber: 'This card type is not supported',
+          }));
+          onValidityChange?.(false);
+          return;
+        }
+
         setErrors((prev) => ({ ...prev, cardNumber: '' }));
         checkValidity(trimmed, cvvRef.current, expiryRef.current, nameRef.current);
 
         // Auto-advance to expiry when full
-        if (trimmed.length === maxLen) {
+        if (trimmed.length === 16) {
           expiryInputRef.current?.focus();
         }
       },
-      [checkValidity],
+      [checkValidity, onValidityChange],
     );
 
     const handleExpiryChange = useCallback(
@@ -280,19 +329,18 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
     const handleCvvChange = useCallback(
       (text: string) => {
         const digits = text.replace(/\D/g, '');
-        const maxLen = network === 'amex' ? 4 : 3;
-        const trimmed = digits.slice(0, maxLen);
+        const trimmed = digits.slice(0, 3);
         cvvRef.current = trimmed;
         setDisplayCvv(trimmed);
         setErrors((prev) => ({ ...prev, cvv: '' }));
         checkValidity(cardNumberRef.current, trimmed, expiryRef.current, nameRef.current);
 
         // Auto-advance to name when full
-        if (trimmed.length === maxLen) {
+        if (trimmed.length === 3) {
           nameInputRef.current?.focus();
         }
       },
-      [network, checkValidity],
+      [checkValidity],
     );
 
     const handleNameChange = useCallback(
@@ -359,11 +407,18 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
       const errs: string[] = [];
       const digits = cardNumberRef.current;
       const net = detectNetwork(digits);
-      const minLen = net === 'amex' ? 15 : 16;
-      const cvvLen = net === 'amex' ? 4 : 3;
 
-      if (digits.length < minLen) errs.push('Card number is too short');
-      else if (!luhnCheck(digits)) errs.push('Invalid card number');
+      // Block unsupported networks
+      if (net !== 'unknown' && !SUPPORTED_NETWORKS.includes(net)) {
+        const displayName = NETWORK_DISPLAY_NAMES[net] ?? net;
+        errs.push(`${displayName} cards are not supported. Please use Visa, Mastercard, or RuPay.`);
+      } else if (digits.length >= 8 && net === 'unknown') {
+        errs.push('This card type is not supported');
+      } else if (digits.length < 16) {
+        errs.push('Card number is too short');
+      } else if (!luhnCheck(digits)) {
+        errs.push('Invalid card number');
+      }
 
       const exDigits = expiryRef.current;
       if (exDigits.length < 4) {
@@ -374,14 +429,16 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         if (!validateExpiry(month, yearFull)) errs.push('Card expired or invalid date');
       }
 
-      if (cvvRef.current.length < cvvLen) errs.push(`CVV must be ${cvvLen} digits`);
+      if (cvvRef.current.length < 3) errs.push('CVV must be 3 digits');
       if (nameRef.current.trim().length < 2) errs.push('Enter name on card');
 
       // Set field-level errors for display
       const newErrors: Record<string, string> = {};
-      if (errs.some((e) => e.includes('card number'))) newErrors.cardNumber = 'Invalid card number';
+      if (errs.some((e) => e.toLowerCase().includes('card number') || e.includes('not supported'))) {
+        newErrors.cardNumber = errs.find((e) => e.toLowerCase().includes('card') || e.includes('not supported')) ?? 'Invalid card number';
+      }
       if (errs.some((e) => e.includes('expir') || e.includes('date'))) newErrors.expiry = 'Invalid expiry';
-      if (errs.some((e) => e.includes('CVV'))) newErrors.cvv = `Enter ${cvvLen}-digit CVV`;
+      if (errs.some((e) => e.includes('CVV'))) newErrors.cvv = 'Enter 3-digit CVV';
       if (errs.some((e) => e.includes('name'))) newErrors.name = 'Enter name on card';
       setErrors(newErrors);
 
@@ -432,7 +489,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
               placeholder="1234 5678 9012 3456"
               placeholderTextColor={INPUT_COLORS.placeholder}
               keyboardType="number-pad"
-              maxLength={network === 'amex' ? 17 : 19}
+              maxLength={19}
               style={styles.input}
               testID="card-number-input"
               // S6: Security props
@@ -495,10 +552,10 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
                 onChangeText={handleCvvChange}
                 onFocus={() => setFocusedField('cvv')}
                 onBlur={() => setFocusedField(null)}
-                placeholder={network === 'amex' ? '1234' : '123'}
+                placeholder="123"
                 placeholderTextColor={INPUT_COLORS.placeholder}
                 keyboardType="number-pad"
-                maxLength={network === 'amex' ? 4 : 3}
+                maxLength={3}
                 style={styles.input}
                 testID="cvv-input"
                 // S3 + S6: CVV security

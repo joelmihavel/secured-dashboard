@@ -1,0 +1,120 @@
+# =============================================================================
+# Routing: Deep Link Navigation Stress Test
+# Verifies 12+ deep link paths navigate correctly without crashes
+# =============================================================================
+#
+# Deep link scheme: flentsecured://
+# Bundle ID: com.flent.secured
+#
+# Tests rapid-fire deep link navigation across all route groups to verify:
+#   - Deep links resolve to the correct screens
+#   - Back-to-back deep links don't crash the navigation stack
+#   - Query parameters are passed through correctly
+#   - Invalid paths are handled gracefully
+#
+# Note: Protected routes may redirect to auth when unauthenticated.
+# This test focuses on navigation stability, not auth enforcement.
+# =============================================================================
+
+appId: com.flent.secured
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+
+# -- Auth routes (unprotected) --
+
+# 1. Splash screen
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "splash-screen"
+    optional: true
+
+# 2. Carousel with page param
+- openLink: "flentsecured:///carousel?page=2"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "carousel-screen"
+    optional: true
+
+# 3. Sign-up screen
+- openLink: "flentsecured:///sign-up"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "sign-up-screen"
+    optional: true
+
+# -- Protected routes (may show auth guard loading) --
+
+# 4. Payment status with query params
+- openLink: "flentsecured:///payment/status?initialStatus=success"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "status-screen"
+    optional: true
+
+# 5. Payment status failed
+- openLink: "flentsecured:///payment/status?initialStatus=failed"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "status-screen"
+    optional: true
+
+# 6. Payment first-rent
+- openLink: "flentsecured:///payment/first-rent"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "first-rent-payment-screen"
+    optional: true
+
+# 7. Payment confirm
+- openLink: "flentsecured:///payment/confirm"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "confirm-screen"
+    optional: true
+
+# 8. Setup index with step param
+- openLink: "flentsecured:///setup/index?step=2"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "setup-index-screen"
+    optional: true
+
+# 9. Setup pending-steps
+- openLink: "flentsecured:///setup/pending-steps"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "pending-steps-screen"
+    optional: true
+
+# 10. Profile index
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "profile-screen"
+    optional: true
+
+# 11. Agreement upload
+- openLink: "flentsecured:///agreement/upload"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "upload-screen"
+    optional: true
+
+# 12. Waitlist index
+- openLink: "flentsecured:///waitlist/index"
+- waitForAnimationToEnd
+
+# -- Edge case: invalid deep link path --
+# 13. Non-existent route (should not crash)
+- openLink: "flentsecured:///nonexistent/route"
+- waitForAnimationToEnd
+
+# Final stability check: navigate back to a known route
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "splash-screen"
+    optional: true

@@ -5,12 +5,14 @@
  * Different from WarningBanner (which has asymmetric padding for headline context).
  *
  * Figma reference: 684:8436 pill pattern
- * Container: bg #1A1A1A, borderRadius 12, paddingVertical 8, paddingHorizontal 12
+ * Pill: bg #1A1A1A, borderRadius 12, paddingVertical 5, paddingHorizontal 12
  * Text: PlusJakartaSans-Regular, fontSize 12, lineHeight 20, textAlign center
+ *
+ * Spacing: Component centers itself; parent layout applies margins as needed.
  */
 
 import React, { memo, useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 // ==============================================
 // TYPES
@@ -64,23 +66,25 @@ export const StatusNotificationBanner = memo(function StatusNotificationBanner({
     }).start();
   }, [opacity]);
 
-  const content = (
-    <Animated.View style={[styles.container, { opacity }]} testID="status-notification-banner">
+  const pill = (
+    <Animated.View style={[styles.pill, { opacity }]} testID="status-notification-banner">
       <Text style={[styles.text, { color: config.textColor }]}>
         {displayText}
       </Text>
     </Animated.View>
   );
 
-  if (onPress) {
-    return (
-      <Pressable onPress={onPress} accessibilityRole="button">
-        {content}
-      </Pressable>
-    );
-  }
-
-  return content;
+  return (
+    <View style={styles.wrapper}>
+      {onPress ? (
+        <Pressable onPress={onPress} accessibilityRole="button">
+          {pill}
+        </Pressable>
+      ) : (
+        pill
+      )}
+    </View>
+  );
 });
 
 // ==============================================
@@ -88,12 +92,16 @@ export const StatusNotificationBanner = memo(function StatusNotificationBanner({
 // ==============================================
 
 const styles = StyleSheet.create({
-  container: {
+  // Outer wrapper: centers the pill horizontally.
+  // Vertical spacing is handled by the parent layout context.
+  wrapper: {
+    alignItems: 'center',
+  },
+  pill: {
     backgroundColor: '#1A1A1A',
     borderRadius: 12,
-    paddingVertical: 8,
+    paddingVertical: 5,  // Compact pill (30px total: 5 + 20 lineHeight + 5)
     paddingHorizontal: 12,
-    alignSelf: 'center',
   },
   text: {
     fontFamily: 'PlusJakartaSans-Regular',

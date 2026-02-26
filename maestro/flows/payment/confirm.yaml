@@ -1,0 +1,61 @@
+# =============================================================================
+# Payment: Confirm (Transaction) Screen Functional Flow
+# Route: /(payment)/confirm
+# Figma: 684:13115 (verified), 684:13148 (unverified)
+# testIDs: confirm-screen, pay-now-button, confirm-back-button
+# =============================================================================
+#
+# Validates:
+#   - Confirm payment screen renders with breakdown card
+#   - "Rent due in" title is visible in top card
+#   - Cashback pill is displayed (locked or unlocked)
+#   - Breakdown rows: Base rent, Maintenance, Total Rent, Convenience Fee
+#   - Cashback row visible (locked or deducted)
+#   - "Payable Amount" total row is visible
+#   - "Pay now" CTA button with amount is visible
+#   - Footer countdown text is present
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to confirm payment screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/confirm"
+- waitForAnimationToEnd
+
+# Verify screen rendered via testID
+- assertVisible:
+    id: "confirm-screen"
+
+# Verify top card title
+- assertVisible: "Rent due in"
+
+# Verify breakdown rows
+- assertVisible: "Base rent"
+- assertVisible: "Maintenance"
+
+# Scroll to see full breakdown
+- scrollUntilVisible:
+    element: "Total Rent"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Total Rent"
+- assertVisible: "Convenience Fee"
+
+# Verify cashback row exists (either locked or unlocked)
+- assertVisible: "Cashback"
+
+# Verify payable amount total
+- assertVisible: "Payable Amount"
+
+# Scroll to and verify Pay Now button
+- scrollUntilVisible:
+    element:
+      id: "pay-now-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "pay-now-button"

@@ -9,15 +9,16 @@
 import type { PaymentFlowOutcome } from '@/src/hooks/usePaymentFlow';
 
 /** Which view is displayed inside the payment method modal */
-export type ModalView = 'selector' | 'add-upi' | 'add-card' | 'add-netbanking';
+export type ModalView = 'selector' | 'add-upi' | 'add-card' | 'add-debit-card' | 'add-netbanking';
 
 /** Method type passed from selector to orchestrator */
-export type PaymentMethodType = 'upi' | 'card' | 'netbanking';
+export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';
 
 /** Props shared by all add-method content components */
 export interface AddMethodContentProps {
   paymentId: string;
   onBack: () => void;
+  cardType?: 'credit' | 'debit';
 }
 
 /** Props for the method selector content */

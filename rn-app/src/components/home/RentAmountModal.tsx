@@ -157,10 +157,9 @@ export function RentAmountModal({
         >
           <Animated.View
             style={[
-              styles.sheet,
+              styles.animatedContainer,
               {
                 transform: [{ translateY: slideAnim }],
-                paddingBottom: Math.max(insets.bottom, 24),
               },
             ]}
           >
@@ -168,48 +167,48 @@ export function RentAmountModal({
               <View style={styles.handle} />
             </View>
 
-            <View style={styles.content}>
-              {/* Header row */}
-              <View style={styles.headerRow}>
-                <Text style={styles.title}>{rentMonthText}</Text>
-                <Text style={styles.title}>DUE IN {Math.max(0, daysUntilDue)} DAYS</Text>
-              </View>
-
-              {/* Amount Input */}
-              <View style={styles.amountContainer}>
-                <Text style={styles.currencySymbol}>₹  </Text>
-                <TextInput
-                  ref={inputRef}
-                  style={styles.amountInput}
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="numeric"
-                  placeholder="0.00"
-                  placeholderTextColor="#4D4D4D"
-                  maxLength={9}
-                />
-              </View>
-
-              {/* Warning Messages */}
-              {isExceededRent ? (
-                <View style={styles.warningContainer}>
-                  <Text style={styles.warningText}>⚠️ Rent cannot exceed contract value.</Text>
+            <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+              <View style={styles.content}>
+                {/* Header row */}
+                <View style={styles.headerRow}>
+                  <Text style={styles.title}>{rentMonthText}</Text>
+                  <Text style={styles.title}>DUE IN {Math.max(0, daysUntilDue)} DAYS</Text>
                 </View>
-              ) : isReducedRent ? (
-                <View style={styles.warningContainer}>
-                  <Text style={styles.warningText}>⚠️ Cashback will apply on reduced rent</Text>
-                </View>
-              ) : (
-                <View style={styles.warningPlaceholder} />
-              )}
 
-              {/* Button */}
-              <View style={styles.buttonContainer}>
-                <PrimaryButton
-                  title="Proceed to Pay"
-                  onPress={handlePayPress}
-                  disabled={!amount || numAmount <= 0 || isExceededRent}
-                />
+                {/* Amount Input */}
+                <View style={styles.amountContainer}>
+                  <Text style={styles.currencySymbol}>₹  </Text>
+                  <TextInput
+                    ref={inputRef}
+                    style={styles.amountInput}
+                    value={amount}
+                    onChangeText={setAmount}
+                    keyboardType="numeric"
+                    placeholder="0.00"
+                    placeholderTextColor="#4D4D4D"
+                    maxLength={9}
+                  />
+                </View>
+
+                {/* Warning Messages */}
+                {isExceededRent ? (
+                  <View style={styles.warningContainer}>
+                    <Text style={styles.warningText}>⚠️ Rent cannot exceed contract value.</Text>
+                  </View>
+                ) : (
+                  <View style={styles.warningContainer}>
+                    <Text style={styles.warningText}>Cashback will be accumulated</Text>
+                  </View>
+                )}
+
+                {/* Button */}
+                <View style={styles.buttonContainer}>
+                  <PrimaryButton
+                    title="Select Payment Method →"
+                    onPress={handlePayPress}
+                    disabled={!amount || numAmount <= 0 || isExceededRent}
+                  />
+                </View>
               </View>
             </View>
           </Animated.View>
@@ -235,10 +234,12 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'flex-end',
   },
+  animatedContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
   sheet: {
     backgroundColor: FIGMA_COLORS.sheetBg,
-    borderTopLeftRadius: 23,
-    borderTopRightRadius: 23,
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
@@ -248,7 +249,7 @@ const styles = StyleSheet.create({
   },
   handleContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
+    marginBottom: 16,
   },
   handle: {
     width: 48,
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 48,
-    paddingTop: 4, // Header was shifted down due to the 15.19 padding, handleContainer gives 12+4=16
+    paddingTop: 16,
     paddingBottom: 24,
     alignItems: 'center',
   },
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 48,
+    marginBottom: 16,
   },
   title: {
     fontFamily: 'PlusJakartaSans-Medium',
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginBottom: 52, // spacing adjusted for fidelity
+    marginBottom: 16,
   },
   currencySymbol: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -293,31 +294,30 @@ const styles = StyleSheet.create({
     lineHeight: 40,
     color: FIGMA_COLORS.amountText,
     minWidth: 120,
-    textAlign: 'left', // Ensure it flows naturally after the currency symbol
+    textAlign: 'left',
     padding: 0,
     margin: 0,
   },
   warningContainer: {
     backgroundColor: FIGMA_COLORS.warningBg,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 24,
+    height: 36,
+    marginBottom: 32,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 10,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
   },
   warningPlaceholder: {
     height: 36,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   warningText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    lineHeight: 20,
     color: FIGMA_COLORS.warningText,
+    textAlign: 'center',
   },
   buttonContainer: {
     width: '100%',

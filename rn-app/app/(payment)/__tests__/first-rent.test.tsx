@@ -32,27 +32,45 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: (props: any) => <View {...props} />,
-    Svg: (props: any) => <View {...props} />,
-    Path: (props: any) => <View {...props} />,
-    Circle: (props: any) => <View {...props} />,
-    Rect: (props: any) => <View {...props} />,
-    G: (props: any) => <View {...props} />,
-  };
-});
-
 jest.mock('@/src/hooks', () => ({
   useDashboard: () => ({
-    tenancy: { id: 'ten-1', monthly_rent: 40000, landlord_name: 'Test Landlord' },
+    tenancy: {
+      id: 'ten-1',
+      monthly_rent: 40000,
+      landlord_name: 'Test Landlord',
+      verification_status: {
+        bank_verified: false,
+        utility_verified: false,
+        landlord_approved: false,
+      },
+    },
     cashback: { available_balance: 325 },
-    upcomingPayment: { amount: 40000 },
+    upcomingPayment: { amount: 42500, days_until_due: 10, rent_month: 'February 2026' },
     isLoading: false,
   }),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
+
+// Mock payment store
+jest.mock('@/src/stores', () => ({
+  usePaymentStore: (selector: (s: any) => any) => {
+    const state = {
+      amount: 0,
+      setAmount: jest.fn(),
+      status: 'idle',
+      selectedMethod: null,
+    };
+    return selector(state);
+  },
+}));
+
+// Mock PaymentMethodModal (heavy component with modal/animations)
+jest.mock('@/src/components/payment/PaymentMethodModal', () => {
+  const { View } = require('react-native');
+  return {
+    PaymentMethodModal: (props: any) => <View testID="payment-method-modal" />,
+  };
+});
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -62,30 +80,32 @@ describe('FirstRentPaymentScreen', () => {
     expect(getByTestId('first-rent-payment-screen')).toBeTruthy();
   });
 
-  it('renders "Pay Rent" heading', () => {
+  it('renders rent due heading with days count', () => {
     const { getByText } = render(<FirstRentPaymentScreen />);
-    expect(getByText('Pay Rent')).toBeTruthy();
+    expect(getByText(/Rent due in/)).toBeTruthy();
   });
 
-  it('renders "Total payable rent" label', () => {
+  it('renders rent month text', () => {
     const { getByText } = render(<FirstRentPaymentScreen />);
-    expect(getByText('Total payable rent')).toBeTruthy();
+    expect(getByText('February 2026')).toBeTruthy();
   });
 
-  it('renders "Pay Now" button text', () => {
+  it('renders breakdown rows (Base rent, Maintenance, Other charges, Payable Rent)', () => {
     const { getByText } = render(<FirstRentPaymentScreen />);
-    expect(getByText('Pay Now')).toBeTruthy();
+    expect(getByText('Base rent')).toBeTruthy();
+    expect(getByText('Maintenance')).toBeTruthy();
+    expect(getByText('Other charges')).toBeTruthy();
+    expect(getByText('Payable Rent')).toBeTruthy();
   });
 
-  it('renders landlord payment info', () => {
-    const { getByText } = render(<FirstRentPaymentScreen />);
-    expect(getByText('Paying to')).toBeTruthy();
-    expect(getByText('Test Landlord')).toBeTruthy();
+  it('renders pay now button with formatted amount', () => {
+    const { getByTestId } = render(<FirstRentPaymentScreen />);
+    expect(getByTestId('pay-now-button')).toBeTruthy();
   });
 
-  it('renders secure payment notice', () => {
+  it('renders setup incomplete footer text', () => {
     const { getByText } = render(<FirstRentPaymentScreen />);
-    expect(getByText('All payments are 100% secure')).toBeTruthy();
+    expect(getByText(/Complete setup to unlock cashback/)).toBeTruthy();
   });
 
   it('matches snapshot', () => {

@@ -9,6 +9,7 @@ import AddBankScreen from '../add-bank';
 const mockBack = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack, push: jest.fn(), replace: jest.fn() }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('react-native-safe-area-context', () => {
@@ -39,6 +40,11 @@ jest.mock('@/src/hooks', () => ({
   useDashboard: () => ({ tenancy: { id: 'tenancy-1' } }),
   validateAccountNumber: (v: string) => /^\d{9,18}$/.test(v),
   validateIfscCode: (v: string) => /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
+  useVerifyPan: () => ({
+    mutateAsync: jest.fn().mockResolvedValue({ success: true }),
+    isPending: false,
+  }),
 }));
 
 jest.mock('@/src/types/setup', () => ({}));

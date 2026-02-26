@@ -20,32 +20,407 @@ exports[`ErrorBoundary renders default error UI snapshot 1`] = `
 >
   <Text
     style={
-      {
-        "color": "#FFFFFF",
-        "fontFamily": "PlusJakartaSans-Regular",
-        "fontSize": 28,
-        "fontWeight": "400",
-        "lineHeight": 40,
-        "marginBottom": 12,
-      }
+      [
+        {
+          "color": "#FFFFFF",
+          "fontFamily": "PlusJakartaSans-Regular",
+          "fontSize": 28,
+          "letterSpacing": -1,
+          "lineHeight": 40,
+          "textAlign": "center",
+        },
+        {
+          "marginBottom": 12,
+        },
+      ]
     }
   >
     Something went wrong
   </Text>
   <Text
     style={
-      {
-        "color": "#A9A9A9",
-        "fontSize": 14,
-        "marginBottom": 24,
-        "textAlign": "center",
-      }
+      [
+        {
+          "color": "#FFFFFF",
+          "fontFamily": "PlusJakartaSans-Regular",
+          "fontSize": 14,
+          "letterSpacing": 0,
+          "lineHeight": 20,
+          "textAlign": "center",
+        },
+        {
+          "color": "#A9A9A9",
+          "marginBottom": 16,
+        },
+      ]
     }
   >
     Test error message
   </Text>
+  <Text
+    style={
+      [
+        {
+          "color": "#FFFFFF",
+          "fontFamily": "PlusJakartaSans-Regular",
+          "fontSize": 12,
+          "letterSpacing": 0,
+          "lineHeight": 16,
+          "textAlign": "left",
+        },
+        {
+          "color": "#878787",
+          "fontFamily": "monospace",
+          "marginBottom": 32,
+        },
+      ]
+    }
+  >
+    ERR-TEST0-SNAP
+  </Text>
   <View
-    accessibilityLabel="Try again"
+    accessibilityLabel="Try Again"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": false,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      [
+        {
+          "alignItems": "center",
+        },
+        {
+          "width": "100%",
+        },
+        {
+          "paddingHorizontal": 32,
+          "width": "auto",
+        },
+      ]
+    }
+    testID="error-boundary-reset"
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "gap": 8,
+          "width": "100%",
+        }
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "elevation": 8,
+              "shadowColor": "#995C41",
+              "shadowOffset": {
+                "height": 4,
+                "width": 0,
+              },
+              "shadowOpacity": 0.24,
+              "shadowRadius": 5,
+              "width": "100%",
+            },
+            {
+              "shadowOffset": {
+                "height": undefined,
+                "width": 0,
+              },
+              "shadowOpacity": undefined,
+              "shadowRadius": undefined,
+              "transform": [
+                {
+                  "translateY": undefined,
+                },
+                {
+                  "scale": undefined,
+                },
+              ],
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "borderCurve": "continuous",
+              "borderRadius": 8,
+              "justifyContent": "center",
+              "overflow": "hidden",
+              "paddingBottom": 21,
+              "paddingLeft": 16,
+              "paddingRight": 19,
+              "paddingTop": 16,
+              "width": "100%",
+            }
+          }
+        >
+          <LinearGradient
+            colors={
+              [
+                "#202020",
+                "#0d0d0d",
+              ]
+            }
+            end={
+              {
+                "x": 0,
+                "y": 1,
+              }
+            }
+            locations={
+              [
+                0,
+                0.9018,
+              ]
+            }
+            start={
+              {
+                "x": 0,
+                "y": 0,
+              }
+            }
+            style={
+              {
+                "bottom": 0,
+                "left": 0,
+                "position": "absolute",
+                "right": 0,
+                "top": 0,
+              }
+            }
+          />
+          <View
+            style={
+              [
+                {
+                  "backgroundColor": "#111111",
+                  "borderRadius": 8,
+                  "bottom": 0,
+                  "left": 0,
+                  "position": "absolute",
+                  "right": 0,
+                  "top": 0,
+                },
+                {
+                  "opacity": undefined,
+                },
+              ]
+            }
+          />
+          <View
+            pointerEvents="none"
+            style={
+              [
+                {
+                  "borderColor": "rgba(255, 154, 109, 0.25)",
+                  "borderCurve": "continuous",
+                  "borderRadius": 8,
+                  "borderWidth": 1,
+                  "bottom": 0,
+                  "left": 0,
+                  "position": "absolute",
+                  "right": 0,
+                  "top": 0,
+                },
+                {
+                  "opacity": undefined,
+                },
+              ]
+            }
+          />
+          <View
+            pointerEvents="none"
+            style={
+              [
+                {
+                  "borderBottomLeftRadius": 3,
+                  "borderBottomRightRadius": 3,
+                  "bottom": 5,
+                  "height": 6,
+                  "left": 0,
+                  "position": "absolute",
+                  "right": 3,
+                },
+                {
+                  "transform": [
+                    {
+                      "translateY": undefined,
+                    },
+                  ],
+                },
+              ]
+            }
+          >
+            <LinearGradient
+              colors={
+                [
+                  "transparent",
+                  "rgba(255, 255, 255, 0.04)",
+                  "rgba(255, 255, 255, 0.12)",
+                ]
+              }
+              end={
+                {
+                  "x": 0,
+                  "y": 1,
+                }
+              }
+              locations={
+                [
+                  0,
+                  0.4,
+                  1,
+                ]
+              }
+              start={
+                {
+                  "x": 0,
+                  "y": 0,
+                }
+              }
+              style={
+                {
+                  "borderBottomLeftRadius": 7,
+                  "borderBottomRightRadius": 7,
+                  "flex": 1,
+                }
+              }
+            />
+          </View>
+          <View
+            pointerEvents="none"
+            style={
+              [
+                {
+                  "borderBottomWidth": 5,
+                  "borderColor": "#000000",
+                  "borderCurve": "continuous",
+                  "borderRadius": 8,
+                  "borderRightWidth": 3,
+                  "bottom": 0,
+                  "left": 0,
+                  "position": "absolute",
+                  "right": 0,
+                  "top": 0,
+                },
+                {
+                  "opacity": undefined,
+                },
+              ]
+            }
+          />
+          <View
+            pointerEvents="none"
+            style={
+              [
+                {
+                  "bottom": 0,
+                  "left": 0,
+                  "position": "absolute",
+                  "right": 0,
+                  "top": 0,
+                },
+                {
+                  "opacity": undefined,
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "borderColor": "rgba(0,0,0,0.6)",
+                  "borderCurve": "continuous",
+                  "borderLeftWidth": 1,
+                  "borderRadius": 8,
+                  "borderRightWidth": 1,
+                  "borderTopWidth": 2,
+                  "bottom": 0,
+                  "left": 0,
+                  "position": "absolute",
+                  "right": 0,
+                  "top": 0,
+                }
+              }
+            />
+            <LinearGradient
+              colors={
+                [
+                  "rgba(0,0,0,0.8)",
+                  "transparent",
+                ]
+              }
+              end={
+                {
+                  "x": 0,
+                  "y": 1,
+                }
+              }
+              start={
+                {
+                  "x": 0,
+                  "y": 0,
+                }
+              }
+              style={
+                {
+                  "borderTopLeftRadius": 8,
+                  "borderTopRightRadius": 8,
+                  "height": 16,
+                  "width": "100%",
+                }
+              }
+            />
+          </View>
+          <Text
+            style={
+              {
+                "color": "#FFFFFF",
+                "fontFamily": "PlusJakartaSans-Medium",
+                "fontSize": 16,
+                "lineHeight": 24,
+                "textAlign": "center",
+              }
+            }
+          >
+            Try Again
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+  <View
+    accessibilityLabel="Contact support"
     accessibilityRole="button"
     accessibilityState={
       {
@@ -76,24 +451,32 @@ exports[`ErrorBoundary renders default error UI snapshot 1`] = `
     onStartShouldSetResponder={[Function]}
     style={
       {
-        "backgroundColor": "#FF9A6D",
-        "borderRadius": 8,
+        "marginTop": 16,
         "opacity": 1,
-        "paddingHorizontal": 24,
+        "paddingHorizontal": 32,
         "paddingVertical": 12,
       }
     }
   >
     <Text
       style={
-        {
-          "color": "#000000",
-          "fontSize": 16,
-          "fontWeight": "600",
-        }
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PlusJakartaSans-Regular",
+            "fontSize": 14,
+            "letterSpacing": 0,
+            "lineHeight": 20,
+            "textAlign": "left",
+          },
+          {
+            "color": "#A9A9A9",
+            "textDecorationLine": "underline",
+          },
+        ]
       }
     >
-      Try Again
+      Contact Support
     </Text>
   </View>
 </View>

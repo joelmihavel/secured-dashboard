@@ -305,13 +305,14 @@ describe('Storage Service', () => {
       expect(validateAgreementType('application/pdf')).toBe(true);
     });
 
-    it('allows JPEG images', () => {
-      expect(validateAgreementType('image/jpeg')).toBe(true);
-      expect(validateAgreementType('image/jpg')).toBe(true);
+    it('rejects JPEG images (only PDF allowed for agreements)', () => {
+      // The process-document edge function rejects non-PDF, so only PDF is valid
+      expect(validateAgreementType('image/jpeg')).toBe(false);
+      expect(validateAgreementType('image/jpg')).toBe(false);
     });
 
-    it('allows PNG images', () => {
-      expect(validateAgreementType('image/png')).toBe(true);
+    it('rejects PNG images (only PDF allowed for agreements)', () => {
+      expect(validateAgreementType('image/png')).toBe(false);
     });
 
     it('rejects other file types', () => {

@@ -7,9 +7,10 @@ import ReviewScreen from '../review';
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
+const mockBack = jest.fn();
 let mockSearchParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace, back: mockBack }),
   useLocalSearchParams: () => mockSearchParams,
 }));
 
@@ -29,6 +30,12 @@ jest.mock('@/src/components/patterns', () => ({
   DottedGridPattern: () => null,
 }));
 
+// @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const { View } = require('react-native');
+  return { Ionicons: (props: any) => <View {...props} /> };
+});
+
 // Agreement icons
 jest.mock('@/src/components/icons/AgreementIcons', () => {
   const { View } = require('react-native');
@@ -44,7 +51,7 @@ jest.mock('@/src/components/icons/AgreementIcons', () => {
 
 // useAgreement hook
 const mockConfirm = jest.fn();
-const mockUpdate = jest.fn();
+const mockResetUpload = jest.fn();
 let mockAgreementState = {
   extractedData: {
     extractionId: 'ext-123',
@@ -64,11 +71,27 @@ let mockAgreementState = {
   isLoadingExtraction: false,
   confirm: mockConfirm,
   isConfirming: false,
-  update: mockUpdate,
-  isUpdating: false,
+  resetUpload: mockResetUpload,
 };
 jest.mock('@/src/hooks', () => ({
   useAgreement: () => mockAgreementState,
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
+}));
+
+// Upload store
+jest.mock('@/src/stores/upload', () => ({
+  useUploadStore: Object.assign(
+    (selector: (s: any) => any) => {
+      const state = { extractionId: 'ext-123' };
+      return selector(state);
+    },
+    {
+      getState: () => ({
+        reset: jest.fn(),
+        extractionId: 'ext-123',
+      }),
+    }
+  ),
 }));
 
 // Agreement service (formatters)
@@ -84,8 +107,9 @@ describe('ReviewScreen', () => {
   beforeEach(() => {
     mockPush.mockClear();
     mockReplace.mockClear();
+    mockBack.mockClear();
     mockConfirm.mockClear();
-    mockUpdate.mockClear();
+    mockResetUpload.mockClear();
     mockSearchParams = {};
     mockAgreementState = {
       extractedData: {
@@ -106,8 +130,7 @@ describe('ReviewScreen', () => {
       isLoadingExtraction: false,
       confirm: mockConfirm,
       isConfirming: false,
-      update: mockUpdate,
-      isUpdating: false,
+      resetUpload: mockResetUpload,
     };
   });
 
@@ -140,24 +163,14 @@ describe('ReviewScreen', () => {
     expect(getByText('Proceed')).toBeTruthy();
   });
 
-  it('renders "Enter Manually" link in verify mode', () => {
+  it('renders "Re-upload Agreement" link in verify mode', () => {
     const { getByText } = render(<ReviewScreen />);
-    expect(getByText('Enter Manually')).toBeTruthy();
+    expect(getByText('Re-upload Agreement')).toBeTruthy();
   });
 
   it('matches snapshot (verify mode)', () => {
     const { toJSON } = render(<ReviewScreen />);
     expect(toJSON()).toMatchSnapshot();
-  });
-
-  // ── Edit Mode ───────────────────────────────────────────────────────────
-
-  it('switches to edit mode when "Enter Manually" is pressed', () => {
-    const { getByText } = render(<ReviewScreen />);
-    fireEvent.press(getByText('Enter Manually'));
-    expect(getByText("Let's")).toBeTruthy();
-    expect(getByText('fix the details')).toBeTruthy();
-    expect(getByText('Save Changes')).toBeTruthy();
   });
 
   // ── Loading State ───────────────────────────────────────────────────────
@@ -174,7 +187,7 @@ describe('ReviewScreen', () => {
 
   // ── Empty Data ──────────────────────────────────────────────────────────
 
-  it('renders verify mode with no data gracefully', () => {
+  it('renders error state with no data gracefully', () => {
     mockAgreementState = {
       ...mockAgreementState,
       extractedData: null as any,

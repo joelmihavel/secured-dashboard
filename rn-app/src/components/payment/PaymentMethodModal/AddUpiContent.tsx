@@ -70,15 +70,24 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
   const [isVerified, setIsVerified] = useState(false);
   const [isPayingUpi, setIsPayingUpi] = useState(false);
 
-  const validateUpiId = (id: string): boolean => {
+  const validateUpiId = (id: string): string | null => {
+    const trimmed = id.trim();
+    if (trimmed.length === 0) return 'Enter your UPI ID';
+    if (trimmed.includes(' ')) return 'UPI ID cannot contain spaces';
+    if (!trimmed.includes('@')) return 'UPI ID must contain @ (e.g., name@upi)';
+    if (trimmed.startsWith('@')) return 'Enter your name before the @';
+    if (trimmed.endsWith('@')) return 'Enter the UPI handle after @';
+    if (trimmed.length < 5) return 'UPI ID is too short';
     const upiRegex = /^[\w.-]+@[\w.-]+$/;
-    return upiRegex.test(id);
+    if (!upiRegex.test(trimmed)) return 'Only letters, numbers, dots and hyphens are allowed';
+    return null; // valid
   };
 
   // --- Verify UPI ID ---
   const handleVerify = useCallback(async () => {
-    if (!validateUpiId(upiId)) {
-      setError('Please enter a valid UPI ID (e.g., name@upi)');
+    const validationError = validateUpiId(upiId);
+    if (validationError) {
+      setError(validationError);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -94,12 +103,19 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
             }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } else {
-            setError('UPI ID could not be verified');
+            setError('This UPI ID does not exist. Please check and try again.');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           }
         },
         onError: (err) => {
-          setError(err instanceof Error ? err.message : 'Verification failed');
+          const message = err instanceof Error ? err.message : '';
+          if (message.toLowerCase().includes('network') || message.toLowerCase().includes('timeout')) {
+            setError('Could not verify UPI ID. Check your connection.');
+          } else if (message.toLowerCase().includes('not found') || message.toLowerCase().includes('invalid vpa')) {
+            setError('This UPI ID does not exist. Please check and try again.');
+          } else {
+            setError('Could not verify this UPI ID.');
+          }
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
       },
@@ -175,7 +191,7 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
           label="UPI ID"
           value={upiId}
           onChangeText={(text) => {
-            setUpiId(text.toLowerCase());
+            setUpiId(text.toLowerCase().trim());
             setError('');
             setIsVerified(false);
           }}

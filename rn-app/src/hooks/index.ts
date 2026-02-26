@@ -42,6 +42,9 @@ export {
   useCreateSchedule,
   useManageSchedule,
   useSavingsHistory,
+  useSaveBankPreference,
+  useVerifyCard,
+  useFeeRates,
   paymentKeys,
 } from './usePayments';
 

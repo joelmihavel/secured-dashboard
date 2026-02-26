@@ -81,6 +81,10 @@ describe('Setup API Service', () => {
         bankName: 'ICICI Bank',
         branch: 'Koramangala',
         message: 'Bank verified successfully',
+        // Additional fields from the mapping function
+        agreementNameMatched: null,
+        matchedLandlordName: null,
+        agreementMatchScore: null,
       });
 
       // Verify snake_case body
@@ -125,7 +129,9 @@ describe('Setup API Service', () => {
       expect(result.error?.code).toBe('VERIFICATION_FAILED');
     });
 
-    it('maps name mismatch error', async () => {
+    it('maps bank name mismatch error', async () => {
+      // The error contains both "bank" and "name" which matches BANK_NAME_MISMATCH
+      // before NAME_MISMATCH in the error mapping function
       mockCallEdgeFunction.mockResolvedValue({
         data: null,
         error: 'Name mismatch: bank name does not match',
@@ -138,7 +144,7 @@ describe('Setup API Service', () => {
         ifscCode: 'I',
       });
 
-      expect(result.error?.code).toBe('NAME_MISMATCH');
+      expect(result.error?.code).toBe('BANK_NAME_MISMATCH');
     });
 
     it('maps network error', async () => {

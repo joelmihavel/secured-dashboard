@@ -36,11 +36,23 @@ import { validateSchema, sanitizePhone, maskAadhaar, maskPan } from "../_shared/
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { extractFirstName } from "../_shared/name-utils.ts";
 import { computeRisk } from "../_shared/risk-utils.ts";
+import {
+  callCashfreeSendOtp as sharedCallCashfreeSendOtp,
+  callCashfreeVerifyOtp as sharedCallCashfreeVerifyOtp,
+  type Mobile360SendOtpResponse as SharedMobile360SendOtpResponse,
+  type Mobile360VerifyOtpResponse as SharedMobile360VerifyOtpResponse,
+  type SendOtpParams as SharedSendOtpParams,
+  type VerifyOtpParams as SharedVerifyOtpParams,
+} from "../_shared/cashfree-m360-otp.ts";
+import { processM360IdentityResult } from "../_shared/m360-identity-processor.ts";
 
 // ==============================================
 // CONFIGURATION
 // ==============================================
 
+// NOTE: Cashfree credentials are now read lazily inside the shared module.
+// These module-level vars are kept ONLY for callCashfreeMobile360WithConsent
+// (the consent-based flow that isn't yet refactored to shared).
 const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
 const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
 const CASHFREE_BASE_URL =
@@ -533,45 +545,8 @@ async function handleVerifyOtp(
     throw new AppError("Failed to save verification result", "DB_ERROR", 500);
   }
 
-  // Update user profile with M360-verified name
-  if (m360Result.status === "SUCCESS" && m360Result.data?.full_name) {
-    const extracted = extractFirstName(m360Result.data.full_name);
-
-    await supabase
-      .from("users")
-      .update({
-        first_name: extracted.first_name,
-        last_name: extracted.last_name,
-        full_name: m360Result.data.full_name,
-        name_source: "m360",
-      })
-      .eq("id", userId);
-
-    // Sync user_metadata.name so Zustand hydration reads the M360-verified name
-    await supabase.auth.admin.updateUserById(userId, {
-      user_metadata: { name: extracted.first_name },
-    });
-
-    // Recompute risk now that M360 data is available
-    try {
-      const { data: waitlistEntry } = await supabase
-        .from("waitlist_entries")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (waitlistEntry) {
-        const riskResult = await computeRisk(userId, supabase);
-        await supabase.from("waitlist_entries").update({
-          risk_level: riskResult.risk_level,
-          risk_factors: riskResult.risk_factors,
-          risk_computed_at: new Date().toISOString(),
-        }).eq("user_id", userId);
-      }
-    } catch (riskError) {
-      console.error("[verify-identity] Risk recomputation failed (non-fatal):", riskError);
-    }
-  }
+  // Update user profile with M360-verified name + m360_status via shared processor
+  await processM360IdentityResult(userId, m360Result.status, m360Result.data, supabase);
 
   // Log result
   if (m360Result.status === "SUCCESS") {
@@ -1167,45 +1142,8 @@ async function handleFetchWithConsent(
     throw new AppError("Failed to save verification result", "DB_ERROR", 500);
   }
 
-  // Update user profile with M360-verified name
-  if (m360Result.status === "SUCCESS" && m360Result.data?.full_name) {
-    const extracted = extractFirstName(m360Result.data.full_name);
-
-    await supabase
-      .from("users")
-      .update({
-        first_name: extracted.first_name,
-        last_name: extracted.last_name,
-        full_name: m360Result.data.full_name,
-        name_source: "m360",
-      })
-      .eq("id", userId);
-
-    // Sync user_metadata.name so Zustand hydration reads the M360-verified name
-    await supabase.auth.admin.updateUserById(userId, {
-      user_metadata: { name: extracted.first_name },
-    });
-
-    // Recompute risk now that M360 data is available
-    try {
-      const { data: waitlistEntry } = await supabase
-        .from("waitlist_entries")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (waitlistEntry) {
-        const riskResult = await computeRisk(userId, supabase);
-        await supabase.from("waitlist_entries").update({
-          risk_level: riskResult.risk_level,
-          risk_factors: riskResult.risk_factors,
-          risk_computed_at: new Date().toISOString(),
-        }).eq("user_id", userId);
-      }
-    } catch (riskError) {
-      console.error("[verify-identity] Risk recomputation failed (non-fatal):", riskError);
-    }
-  }
+  // Update user profile with M360-verified name + m360_status via shared processor
+  await processM360IdentityResult(userId, m360Result.status, m360Result.data, supabase);
 
   // Log result
   if (m360Result.status === "SUCCESS") {

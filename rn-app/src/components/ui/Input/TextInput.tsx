@@ -111,7 +111,6 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
           borderBottomWidth: 0.5,
           borderColor: isFocused ? INPUT_COLORS.borderFocus : '#0D0D0D', // Figma: #0d0d0d for inactive
           borderRadius: 0,
-          paddingHorizontal: 0, // Figma: Edit fields have 0 horizontal padding
         };
       }
       return {

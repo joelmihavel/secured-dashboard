@@ -20,6 +20,8 @@ export type AuthStatus =
   | 'authenticated' // User authenticated
   | 'error'; // Error state
 
+export type IdentityStatus = 'completed' | 'pending' | 'not_available' | null;
+
 interface AuthState {
   status: AuthStatus;
   phoneNumber: string;
@@ -29,6 +31,8 @@ interface AuthState {
   isNewUser: boolean;
   consentForMobile360: boolean;
   consentTimestamp: string | null;
+  otpRequestId: string | null;       // Opaque server ref for OTP routing
+  identityStatus: IdentityStatus;    // M360 identity verification result
   error: {
     code: string;
     message: string;
@@ -44,9 +48,12 @@ interface AuthActions {
   setConsentForMobile360: (value: boolean) => void;
 
   // OTP flow
-  setOtpSent: () => void;
+  setOtpSent: (otpRequestId?: string) => void;
   setVerifying: () => void;
-  setAuthenticated: (userId: string, isNewUser: boolean) => void;
+  setAuthenticated: (userId: string, isNewUser: boolean, identityStatus?: IdentityStatus) => void;
+
+  // Identity status (post-verify update)
+  setIdentityStatus: (status: IdentityStatus) => void;
 
   // Error handling
   setError: (code: string, message: string) => void;
@@ -71,6 +78,8 @@ const initialState: AuthState = {
   isNewUser: false,
   consentForMobile360: false,
   consentTimestamp: null,
+  otpRequestId: null,
+  identityStatus: null,
   error: null,
 };
 
@@ -100,11 +109,14 @@ export const useAuthStore = create<AuthStore>()(
         state.consentTimestamp = value ? new Date().toISOString() : null;
       }),
 
-    setOtpSent: () =>
+    setOtpSent: (otpRequestId) =>
       set((state) => {
         state.otpSent = true;
         state.status = 'otp_sent';
         state.error = null;
+        if (otpRequestId !== undefined) {
+          state.otpRequestId = otpRequestId;
+        }
       }),
 
     setVerifying: () =>
@@ -113,12 +125,20 @@ export const useAuthStore = create<AuthStore>()(
         state.error = null;
       }),
 
-    setAuthenticated: (userId, isNewUser) =>
+    setAuthenticated: (userId, isNewUser, identityStatus) =>
       set((state) => {
         state.userId = userId;
         state.isNewUser = isNewUser;
         state.status = 'authenticated';
         state.error = null;
+        if (identityStatus !== undefined) {
+          state.identityStatus = identityStatus;
+        }
+      }),
+
+    setIdentityStatus: (status) =>
+      set((state) => {
+        state.identityStatus = status;
       }),
 
     setError: (code, message) =>
@@ -147,3 +167,5 @@ export const selectAuthStatus = (state: AuthStore) => state.status;
 export const selectPhoneNumber = (state: AuthStore) => state.phoneNumber;
 export const selectIsAuthenticated = (state: AuthStore) => state.status === 'authenticated';
 export const selectAuthError = (state: AuthStore) => state.error;
+export const selectOtpRequestId = (state: AuthStore) => state.otpRequestId;
+export const selectIdentityStatus = (state: AuthStore) => state.identityStatus;

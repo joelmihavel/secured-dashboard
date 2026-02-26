@@ -5,6 +5,7 @@ import EditProfileScreen from '../edit';
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('react-native-safe-area-context', () => {
@@ -50,6 +51,7 @@ jest.mock('@/src/hooks', () => ({
   }),
   useUpdateProfile: () => ({ mutate: jest.fn(), isPending: false }),
   useUploadAvatar: () => ({ mutate: jest.fn(), isPending: false }),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 jest.mock('@/src/services/supabase/client', () => ({

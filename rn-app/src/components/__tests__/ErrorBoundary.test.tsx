@@ -3,6 +3,13 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 
+// Mock generateErrorId to produce a deterministic ID for snapshot stability
+jest.mock('../../services/errorReporting', () => ({
+  generateErrorId: () => 'ERR-TEST0-SNAP',
+  reportFatalError: jest.fn(),
+  buildSupportEmailUri: jest.fn(() => 'mailto:support@test.com'),
+}));
+
 // Component that throws an error
 function ThrowingComponent({ shouldThrow }: { shouldThrow: boolean }) {
   if (shouldThrow) {

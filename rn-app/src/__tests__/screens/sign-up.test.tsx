@@ -71,28 +71,6 @@ jest.mock('@/src/components/patterns/DottedGridPattern', () => {
   };
 });
 
-// --- Mock react-native-svg (used by PhoneInput chevron icon) ---
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: View,
-    Svg: View,
-    Path: View,
-    Defs: View,
-    LinearGradient: View,
-    Stop: View,
-    Rect: View,
-    Circle: View,
-    G: View,
-    Pattern: View,
-    ClipPath: View,
-    Use: View,
-    Mask: View,
-    Image: View,
-  };
-});
-
 // --- Mock useAuth hook ---
 let mockAuthReturn: any = { ...AUTH_HOOK_IDLE };
 
@@ -222,11 +200,12 @@ describe('SignUpScreen', () => {
   // Category 4: Navigation fires correctly
   // =========================================
   describe('navigation', () => {
-    it('navigates to OTP screen when status becomes otp_sent', () => {
-      // Start with idle
+    it('navigates to OTP screen when isSendingOtp transitions to otp_sent', () => {
+      // Phase 1: render with isSendingOtp true (sets wasSendingOtpRef)
+      mockAuthReturn = { ...AUTH_HOOK_SENDING };
       const { rerender } = render(<SignUpScreen />);
 
-      // Simulate hook returning otp_sent status
+      // Phase 2: isSendingOtp false + status otp_sent triggers navigation
       mockAuthReturn = { ...AUTH_HOOK_OTP_SENT };
       rerender(<SignUpScreen />);
 
@@ -253,7 +232,7 @@ describe('SignUpScreen', () => {
       // Press Get Started
       fireEvent.press(getByTestId(TEST_IDS.getStartedButton));
 
-      expect(mockSendCode).toHaveBeenCalledWith('+91' + MOCK_FORM_DATA.phone, 'whatsapp');
+      expect(mockSendCode).toHaveBeenCalledWith('+91' + MOCK_FORM_DATA.phone, 'whatsapp', MOCK_FORM_DATA.name);
     });
 
     it('stores name and consent before sending OTP', () => {
@@ -336,8 +315,8 @@ describe('SignUpScreen', () => {
       expect(mockClearError).toHaveBeenCalled();
     });
 
-    it('displays mock error when state param is "error"', () => {
-      mockSearchParams = { state: 'error' };
+    it('displays error from auth hook INVALID_PHONE', () => {
+      mockAuthReturn = { ...AUTH_HOOK_PHONE_ERROR };
       const { getByText } = render(<SignUpScreen />);
       expect(getByText('Enter valid number')).toBeTruthy();
     });
@@ -389,8 +368,8 @@ describe('SignUpScreen', () => {
       // In filled state, mock data populates the inputs
     });
 
-    it('renders error state when state param is "error"', () => {
-      mockSearchParams = { state: 'error' };
+    it('renders error state when auth hook has phone error', () => {
+      mockAuthReturn = { ...AUTH_HOOK_PHONE_ERROR };
       const { getByText } = render(<SignUpScreen />);
       expect(getByText('Enter valid number')).toBeTruthy();
     });

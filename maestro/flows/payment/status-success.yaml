@@ -1,0 +1,61 @@
+# =============================================================================
+# Payment: Status Screen -- Success State
+# Route: /(payment)/status?initialStatus=success
+# Figma: 41-9388 / 41-9563 (Success with/without cashback)
+# testID: status-screen (SINGLE testID for all states)
+# =============================================================================
+#
+# IMPORTANT: The status screen uses a SINGLE testID "status-screen" for ALL
+# states. Assertions MUST use visible TEXT content, not state-specific testIDs.
+#
+# Validates:
+#   - Status screen renders in success state
+#   - Title shows "Payment" + "Succesful" text (Figma spelling)
+#   - Receipt details visible: Amount paid, Date, Method, Transaction ID
+#   - Payable Rent total row is visible
+#   - Cashback pill text is displayed
+#   - "Download Receipt" button is visible
+#   - Settlement note text is visible
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to status screen with success state
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/status?initialStatus=success"
+- waitForAnimationToEnd
+
+# Verify status screen rendered
+- assertVisible:
+    id: "status-screen"
+
+# Verify success title text (Note: Figma uses "Succesful" with one 's')
+- assertVisible: "Payment"
+- assertVisible: "Succesful"
+
+# Verify receipt detail rows
+- assertVisible: "Amount paid"
+- assertVisible: "Date"
+- assertVisible: "Method"
+- assertVisible: "Transaction ID"
+
+# Verify payable rent total
+- assertVisible: "Payable Rent"
+
+# Verify cashback pill (either "saved" or "Complete setup" variant)
+- assertVisible: "Flent"
+
+# Scroll to verify Download Receipt button
+- scrollUntilVisible:
+    element:
+      id: "download-receipt-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "download-receipt-button"
+- assertVisible: "Download Receipt"
+
+# Verify settlement note
+- assertVisible: "Settlement to your landlord"

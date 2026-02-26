@@ -1,0 +1,75 @@
+# =============================================================================
+# Routing: Auth Guard Stress Test
+# Verifies that all protected routes redirect unauthenticated users to auth
+# =============================================================================
+#
+# All route groups except (auth) use useRequireAuth() in their _layout.tsx:
+#   - (main), (payment), (profile), (waitlist), (agreement), (setup)
+#
+# When unauthenticated, the auth guard shows a loading spinner and does NOT
+# render the target screen. This test verifies that protected screens are
+# NOT accessible without authentication.
+#
+# Validates:
+#   - Deep linking to 6 protected routes while unauthenticated
+#   - None of the protected screen testIDs become visible
+#   - App does not crash on unauthorized deep link attempts
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Launch fresh (unauthenticated)
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+
+# -- Test 1: Main dashboard (protected) --
+- openLink: "flentsecured:///main/index"
+- waitForAnimationToEnd
+
+# The home-screen testID should NOT be visible when unauthenticated
+- assertNotVisible:
+    id: "home-screen"
+
+# -- Test 2: Payment first-rent (protected) --
+- openLink: "flentsecured:///payment/first-rent"
+- waitForAnimationToEnd
+
+- assertNotVisible:
+    id: "first-rent-payment-screen"
+
+# -- Test 3: Profile index (protected) --
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+- assertNotVisible:
+    id: "profile-screen"
+
+# -- Test 4: Setup index (protected) --
+- openLink: "flentsecured:///setup/index"
+- waitForAnimationToEnd
+
+- assertNotVisible:
+    id: "setup-index-screen"
+
+# -- Test 5: Agreement upload (protected) --
+- openLink: "flentsecured:///agreement/upload"
+- waitForAnimationToEnd
+
+- assertNotVisible:
+    id: "upload-screen"
+
+# -- Test 6: Waitlist index (protected) --
+- openLink: "flentsecured:///waitlist/index"
+- waitForAnimationToEnd
+
+- assertNotVisible:
+    id: "waitlist-screen"
+
+# After all attempts, verify the app is still alive by checking
+# that we can navigate to an unprotected auth route
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "splash-screen"

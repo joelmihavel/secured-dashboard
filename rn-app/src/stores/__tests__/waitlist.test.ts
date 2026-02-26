@@ -587,43 +587,50 @@ describe('waitlistStore', () => {
     });
 
     describe('selectCountdownText', () => {
-      it('formats zero as 00:00:00', () => {
-        expect(selectCountdownText(useWaitlistStore.getState())).toBe('00:00:00');
+      it('returns empty string for zero countdown', () => {
+        expect(selectCountdownText(useWaitlistStore.getState())).toBe('');
       });
 
-      it('formats hours, minutes, seconds correctly', () => {
+      it('formats hours correctly', () => {
         act(() => {
           useWaitlistStore.getState().setCountdown(3661); // 1h 1m 1s
         });
-        expect(selectCountdownText(useWaitlistStore.getState())).toBe('01:01:01');
+        expect(selectCountdownText(useWaitlistStore.getState())).toBe('0d: 1h');
       });
 
-      it('formats large values correctly', () => {
+      it('formats large values with days and hours', () => {
         act(() => {
           useWaitlistStore.getState().setCountdown(86399); // 23h 59m 59s
         });
-        expect(selectCountdownText(useWaitlistStore.getState())).toBe('23:59:59');
+        expect(selectCountdownText(useWaitlistStore.getState())).toBe('0d: 23h');
       });
 
-      it('formats minutes and seconds only', () => {
+      it('formats sub-hour values as 0d: 0h', () => {
         act(() => {
           useWaitlistStore.getState().setCountdown(754); // 12m 34s
         });
-        expect(selectCountdownText(useWaitlistStore.getState())).toBe('00:12:34');
+        expect(selectCountdownText(useWaitlistStore.getState())).toBe('0d: 0h');
       });
 
-      it('formats seconds only', () => {
+      it('formats seconds-only values as 0d: 0h', () => {
         act(() => {
           useWaitlistStore.getState().setCountdown(45);
         });
-        expect(selectCountdownText(useWaitlistStore.getState())).toBe('00:00:45');
+        expect(selectCountdownText(useWaitlistStore.getState())).toBe('0d: 0h');
       });
 
       it('formats exactly one hour', () => {
         act(() => {
           useWaitlistStore.getState().setCountdown(3600);
         });
-        expect(selectCountdownText(useWaitlistStore.getState())).toBe('01:00:00');
+        expect(selectCountdownText(useWaitlistStore.getState())).toBe('0d: 1h');
+      });
+
+      it('formats multi-day countdown', () => {
+        act(() => {
+          useWaitlistStore.getState().setCountdown(102264); // ~1d 4h
+        });
+        expect(selectCountdownText(useWaitlistStore.getState())).toBe('1d: 4h');
       });
     });
   });

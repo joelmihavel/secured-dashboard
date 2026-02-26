@@ -60,7 +60,7 @@ const BackArrow = () => (
 // ADD CARD CONTENT
 // ==============================================
 
-export function AddCardContent({ paymentId, onBack }: AddMethodContentProps) {
+export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMethodContentProps) {
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const amount = sessionParams?.amount ?? '0';
 
@@ -91,10 +91,10 @@ export function AddCardContent({ paymentId, onBack }: AddMethodContentProps) {
     setIsSubmitting(true);
 
     const cardData = cardInputRef.current.getCardData();
-    const bankcode = cardData.network === 'amex' ? 'AMEX' : 'CC';
+    const bankcode = cardType === 'credit' ? 'CC' : 'DC';
 
     const outcome = await executePayment(
-      'CC',
+      bankcode,
       {
         bankcode,
         card_number: cardData.cardNumber,
@@ -140,7 +140,7 @@ export function AddCardContent({ paymentId, onBack }: AddMethodContentProps) {
       {/* Title */}
       <RNText style={styles.title}>
         {'Add your \n'}
-        <RNText style={styles.titleAccent}>Credit Card</RNText>
+        <RNText style={styles.titleAccent}>{cardType === 'credit' ? 'Credit Card' : 'Debit Card'}</RNText>
       </RNText>
 
       {/* Card Input */}

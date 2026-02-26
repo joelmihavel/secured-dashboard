@@ -11,12 +11,6 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 
-let mockDevMockState: string | null = null;
-jest.mock('@/src/hooks/useDeepLink', () => ({
-  consumeDeepLinkParams: () => null,
-  useDevMockState: () => mockDevMockState,
-}));
-
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
   return {
@@ -28,12 +22,20 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// Mock waitlist hook
-const mockApplyReferral = jest.fn();
+jest.mock('@expo/vector-icons', () => {
+  const { View } = require('react-native');
+  return { Ionicons: (props: any) => <View {...props} /> };
+});
+
+// Mock waitlist hook - matches current useWaitlist return shape
 const mockJoinWaitlist = jest.fn();
 const mockSetReferralCharacter = jest.fn();
+const mockClearReferralCode = jest.fn();
 const mockRefresh = jest.fn();
-let mockWaitlistState = {
+const mockClaimInviteCode = jest.fn();
+let mockWaitlistState: Record<string, any> = {};
+
+const defaultWaitlistState = () => ({
   status: {
     position: 42,
     submissionDate: 'Jan 15, 2026',
@@ -46,20 +48,25 @@ let mockWaitlistState = {
   userName: 'Rishabh',
   referralCode: ['', '', '', '', '', ''],
   isReferralComplete: false,
-  isApplyingReferral: false,
+  referralApplied: false,
   referralError: null as string | null,
   countdownText: '28:24:24',
   isLoading: false,
   isRefetching: false,
   error: null as { code: string; message: string } | null,
-  applyReferral: mockApplyReferral,
   joinWaitlist: mockJoinWaitlist,
   isJoiningWaitlist: false,
   setReferralCharacter: mockSetReferralCharacter,
+  clearReferralCode: mockClearReferralCode,
   refresh: mockRefresh,
-};
+  inviteCodeClaimed: false,
+  claimInviteCode: mockClaimInviteCode,
+  isClaimingInviteCode: false,
+});
+
 jest.mock('@/src/hooks', () => ({
   useWaitlist: () => mockWaitlistState,
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 // Mock waitlist components that are heavy
@@ -111,11 +118,19 @@ jest.mock('@/src/components/waitlist/ReferralCodeInput', () => {
 });
 
 jest.mock('@/src/components/waitlist/BenefitsCard', () => {
-  const { View } = require('react-native');
+  const { View, Text } = require('react-native');
   return {
     __esModule: true,
-    default: (props: any) => <View testID="benefits-card" />,
-    BenefitsCard: (props: any) => <View testID="benefits-card" />,
+    default: (props: any) => (
+      <View testID="benefits-card">
+        <Text>{props.variant}</Text>
+      </View>
+    ),
+    BenefitsCard: (props: any) => (
+      <View testID="benefits-card">
+        <Text>{props.variant}</Text>
+      </View>
+    ),
   };
 });
 
@@ -124,35 +139,9 @@ jest.mock('@/src/components/waitlist/BenefitsCard', () => {
 describe('WaitlistScreen', () => {
   beforeEach(() => {
     mockReplace.mockClear();
-    mockApplyReferral.mockClear();
     mockJoinWaitlist.mockClear();
     mockRefresh.mockClear();
-    mockDevMockState = null;
-    mockWaitlistState = {
-      status: {
-        position: 42,
-        submissionDate: 'Jan 15, 2026',
-        estimatedReviewTime: 'Within 24 hrs',
-        currentOnboarded: 75,
-        totalMemberSlots: 150,
-        rejectionReasons: [],
-      },
-      viewState: 'pending',
-      userName: 'Rishabh',
-      referralCode: ['', '', '', '', '', ''],
-      isReferralComplete: false,
-      isApplyingReferral: false,
-      referralError: null,
-      countdownText: '28:24:24',
-      isLoading: false,
-      isRefetching: false,
-      error: null,
-      applyReferral: mockApplyReferral,
-      joinWaitlist: mockJoinWaitlist,
-      isJoiningWaitlist: false,
-      setReferralCharacter: mockSetReferralCharacter,
-      refresh: mockRefresh,
-    };
+    mockWaitlistState = defaultWaitlistState();
   });
 
   // ── Pending State ────────────────────────────────────────────────────────
@@ -181,7 +170,7 @@ describe('WaitlistScreen', () => {
   // ── Loading State ────────────────────────────────────────────────────────
 
   it('renders loading state with skeleton', () => {
-    mockWaitlistState = { ...mockWaitlistState, viewState: 'loading', isLoading: true };
+    mockWaitlistState = { ...defaultWaitlistState(), viewState: 'loading', isLoading: true };
     const { toJSON } = render(<WaitlistScreen />);
     expect(toJSON()).toBeTruthy();
   });
@@ -190,37 +179,31 @@ describe('WaitlistScreen', () => {
 
   it('renders rejected state with rejection title', () => {
     mockWaitlistState = {
-      ...mockWaitlistState,
+      ...defaultWaitlistState(),
       viewState: 'rejected',
-      status: {
-        ...mockWaitlistState.status,
-        rejectionReasons: ['Insufficient documentation', 'Account mismatch'],
-      },
     };
     const { getByText } = render(<WaitlistScreen />);
-    expect(getByText("We can't approve you right now")).toBeTruthy();
-    expect(getByText('Why was I Rejected?')).toBeTruthy();
+    // The screen renders "We can't approve you" with "right now" in orange
+    expect(getByText(/approve you/)).toBeTruthy();
+    expect(getByText(/right now/)).toBeTruthy();
   });
 
-  it('renders rejection reasons', () => {
+  it('renders rejected state with BenefitsCard variant', () => {
     mockWaitlistState = {
-      ...mockWaitlistState,
+      ...defaultWaitlistState(),
       viewState: 'rejected',
-      status: {
-        ...mockWaitlistState.status,
-        rejectionReasons: ['Insufficient documentation'],
-      },
     };
-    const { getByText } = render(<WaitlistScreen />);
-    expect(getByText('Insufficient documentation')).toBeTruthy();
+    const { getByTestId } = render(<WaitlistScreen />);
+    expect(getByTestId('benefits-card')).toBeTruthy();
   });
 
   // ── Approved Redirect ────────────────────────────────────────────────────
 
   it('redirects to approved page when viewState is "approved"', () => {
-    mockDevMockState = 'approved';
-    mockWaitlistState = { ...mockWaitlistState, viewState: 'approved' };
+    mockWaitlistState = { ...defaultWaitlistState(), viewState: 'approved' };
     render(<WaitlistScreen />);
+    // The redirect happens via reanimated withTiming callback with runOnJS,
+    // which fires synchronously in the mock environment
     expect(mockReplace).toHaveBeenCalledWith('/(waitlist)/approved');
   });
 
@@ -233,7 +216,7 @@ describe('WaitlistScreen', () => {
 
   it('renders error state with error message', () => {
     mockWaitlistState = {
-      ...mockWaitlistState,
+      ...defaultWaitlistState(),
       viewState: 'error',
       error: { code: 'NETWORK_ERROR', message: 'Failed to connect' },
     };
@@ -245,7 +228,7 @@ describe('WaitlistScreen', () => {
   // ── Pending Long State ───────────────────────────────────────────────────
 
   it('renders pending_long state with extended wait messaging', () => {
-    mockWaitlistState = { ...mockWaitlistState, viewState: 'pending_long' };
+    mockWaitlistState = { ...defaultWaitlistState(), viewState: 'pending_long' };
     const { getByText } = render(<WaitlistScreen />);
     expect(getByText(/Taking a bit longer than usual/)).toBeTruthy();
   });

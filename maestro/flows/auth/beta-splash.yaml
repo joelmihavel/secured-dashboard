@@ -1,0 +1,42 @@
+# =============================================================================
+# Auth: Beta Splash Screen Functional Flow
+# Route: /(auth)/beta-splash
+# Figma: 1-28071 (Splash / get-started -- animation 2)
+# testID: beta-splash-screen
+# =============================================================================
+#
+# Validates:
+#   - Beta splash screen renders on app launch
+#   - Logo animation plays (fade + scale)
+#   - "BETA LAUNCH" badge appears after logo
+#   - Auto-navigates to splash screen after 2.5s timeout
+#   - After navigation, splash screen is visible
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Launch app fresh -- beta-splash is the default unauthenticated entry point
+- launchApp:
+    clearState: true
+
+# Wait for initial animations to begin
+- waitForAnimationToEnd
+
+# Verify beta splash screen is rendered
+- assertVisible:
+    id: "beta-splash-screen"
+
+# Verify "BETA LAUNCH" badge text
+- assertVisible: "BETA LAUNCH"
+
+# Wait for auto-navigation timeout (2.5s in source code)
+# Using 4s to account for animation + navigation transition
+- extendedWaitUntil:
+    visible:
+      id: "splash-screen"
+    timeout: 5000
+
+# Verify we have navigated to the splash (Get Started) screen
+- assertVisible:
+    id: "splash-screen"
+- assertVisible: "Get Started"

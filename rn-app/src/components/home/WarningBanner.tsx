@@ -63,23 +63,16 @@ function WarningBannerComponent({ type, customMessage }: WarningBannerProps) {
 const styles = StyleSheet.create({
   wrapper: {
     // Figma 243-3378 node 243:3380 (Frame 2095586467)
-    // Exact values: width 393, height 36, paddingRight 32, paddingLeft 64, gap 10
+    // Center the pill horizontally. Padding is on the pill itself.
     width: '100%',
-    height: 36, // Figma: height 36
-    paddingLeft: 64, // Figma: paddingLeft 64
-    paddingRight: 32, // Figma: paddingRight 32
-    flexDirection: 'column',
-    gap: 10, // Figma: itemSpacing 10
+    alignItems: 'center',
   },
   container: {
     // Figma 243-3378 node 243:3381 (Frame 2095586455)
-    // Exact values: width 297, height 36, borderRadius 12, gap 10, padding 8/12
-    width: 297, // Figma: width 297 (matches tab switcher width)
-    height: 36, // Figma: height 36
+    // Pill: hug content, no fixed width — text length varies by warning type.
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Figma: primaryAxisAlignItems MIN but text is centered
-    gap: 10, // Figma: itemSpacing 10
+    justifyContent: 'center',
     paddingVertical: 8, // Figma: paddingTop/Bottom 8
     paddingHorizontal: 12, // Figma: paddingLeft/Right 12
     borderRadius: 12, // Figma: cornerRadius 12

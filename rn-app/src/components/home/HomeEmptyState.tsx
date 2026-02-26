@@ -151,25 +151,30 @@ function HomeEmptyStateComponent({
       />
 
       {/* Rent Status Carousel (for UPI variants) */}
-      {showPaymentCarousel && (
+      {showPaymentCarousel ? (
         <View style={styles.section}>
           <RentStatusCarousel
             items={carouselItems}
           />
         </View>
-      )}
+      ) : null}
 
       {/* Payment Setup Card (for base variants) */}
-      {showPaymentSetupCard && !showPaymentCarousel && (
+      {showPaymentSetupCard && !showPaymentCarousel ? (
         <View style={[styles.section, styles.standalonePaymentCardWrapper]}>
           <PaymentSetupCard variant="standalone" onAddPayment={onAddPayment} />
         </View>
-      )}
+      ) : null}
+
+      {/* Divider above Finish Setup if needed */}
+      {showFinishSetup && showPaymentCarousel ? (
+        <View style={styles.fullWidthDivider} />
+      ) : null}
 
       {/* Tab Section: Toggle + content wrapped together
           Figma 243-5689: same structure as active state Frame 1686557297
           gap 48, paddingTop 8, alignItems center */}
-      {showTabSwitcher && (
+      {showTabSwitcher ? (
         <View style={styles.tabSection}>
           <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
           {activeTab === 'recent_payments' ? (
@@ -183,21 +188,21 @@ function HomeEmptyStateComponent({
                 showPlaceholder={!showSetupProgress}
               />
               {/* Setup Progress Card inside Cashbacks tab if setup incomplete */}
-              {showSetupProgress && (
+              {showSetupProgress ? (
                 <SetupProgressCard
                   bankDetailsComplete={bankDetailsComplete}
                   addressProofComplete={addressProofComplete}
                   landlordInvited={landlordInvited}
                   onFinishSetup={onFinishSetup}
                 />
-              )}
+              ) : null}
             </View>
           )}
         </View>
-      )}
+      ) : null}
 
       {/* Finish Setup Section (for landlord invitation variants) */}
-      {showFinishSetup && (
+      {showFinishSetup ? (
         <View style={styles.section}>
           <FinishSetupSection
             landlordStatus={landlordStatus!}
@@ -208,10 +213,10 @@ function HomeEmptyStateComponent({
             onContactSupport={onContactSupport}
           />
         </View>
-      )}
+      ) : null}
 
       {/* Setup Progress Card (for base empty state) */}
-      {showSetupProgress && !showFinishSetup && !showTabSwitcher && (
+      {showSetupProgress && !showFinishSetup && !showTabSwitcher ? (
         <View style={styles.section}>
           {/* Divider — Figma 684:9207 */}
           <View style={styles.sectionDivider} />
@@ -223,7 +228,7 @@ function HomeEmptyStateComponent({
             onCtaPress={onCtaPress}
           />
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -247,6 +252,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A2A2A',
     marginHorizontal: 32,
     marginBottom: 16,
+  },
+  fullWidthDivider: {
+    height: 1, // Figma 684:9607 Vector 21: thin divider
+    backgroundColor: '#4D4D4D', // Figma stroke color
+    width: '100%',
   },
   // Figma: Tab section wraps toggle + content together
   // Same structure as active state Frame 1686557297

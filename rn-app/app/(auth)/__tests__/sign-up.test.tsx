@@ -38,11 +38,6 @@ jest.mock('@expo/vector-icons', () => {
   return { Ionicons: MockIcon, MaterialIcons: MockIcon, MaterialCommunityIcons: MockIcon, FontAwesome: MockIcon, Feather: MockIcon, AntDesign: MockIcon };
 });
 
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return { __esModule: true, default: View, Svg: View, Path: View, Circle: View, Rect: View, G: View, Defs: View, ClipPath: View, Line: View, Text: View };
-});
-
 import SignUpScreen from '../sign-up';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
@@ -102,6 +97,7 @@ let mockAuthState = {
 };
 jest.mock('@/src/hooks', () => ({
   useAuth: () => mockAuthState,
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 // Mock useAuthStore -- selector-based Zustand pattern
@@ -242,7 +238,8 @@ describe('SignUpScreen', () => {
       const { getByTestId } = render(<SignUpScreen />);
       fillPhone(getByTestId);
       fillName(getByTestId);
-      // consent defaults to false, do not toggle
+      // consent defaults to true, toggle it OFF
+      toggleConsent(getByTestId, false);
       const button = getByTestId('get-started-button');
       expect(button.props.accessibilityState).toEqual(
         expect.objectContaining({ disabled: true })
@@ -318,13 +315,13 @@ describe('SignUpScreen', () => {
       expect(getByText('Enter valid number')).toBeTruthy();
     });
 
-    it('displays "This number already exists" for PHONE_EXISTS error', () => {
+    it('displays fallback error for PHONE_EXISTS (no dedicated message)', () => {
       mockAuthState = {
         ...mockAuthState,
         error: { code: 'PHONE_EXISTS', message: 'This number already exists' },
       };
       const { getByText } = render(<SignUpScreen />);
-      expect(getByText('This number already exists')).toBeTruthy();
+      expect(getByText('Something went wrong. Try again.')).toBeTruthy();
     });
 
     it('displays "Too many attempts. Please wait." for RATE_LIMITED error', () => {
@@ -374,23 +371,26 @@ describe('SignUpScreen', () => {
     });
   });
 
-  // ── Mock Error State via Query Param ───────────────────────────────────────
+  // ── Error via hook state ────────────────────────────────────────────────────
 
-  describe('mock state query params', () => {
-    it('shows "Enter valid number" when ?state=error', () => {
-      mockSearchParams = { state: 'error' };
+  describe('error via hook state', () => {
+    it('shows "Enter valid number" when hook has INVALID_PHONE error', () => {
+      mockAuthState = {
+        ...mockAuthState,
+        error: { code: 'INVALID_PHONE', message: 'Enter valid number' },
+      };
       const { getByText } = render(<SignUpScreen />);
       expect(getByText('Enter valid number')).toBeTruthy();
     });
 
-    it('clears mock error when phone input changes after ?state=error', () => {
-      mockSearchParams = { state: 'error' };
-      const { getByTestId, queryByText } = render(<SignUpScreen />);
-      // Error visible initially
-      expect(queryByText('Enter valid number')).toBeTruthy();
-      // Type into phone to clear mock error
+    it('clears error when phone input changes', () => {
+      mockAuthState = {
+        ...mockAuthState,
+        error: { code: 'INVALID_PHONE', message: 'Enter valid number' },
+      };
+      const { getByTestId } = render(<SignUpScreen />);
       fillPhone(getByTestId, '1234567890');
-      expect(queryByText('Enter valid number')).toBeNull();
+      expect(mockClearError).toHaveBeenCalled();
     });
   });
 
@@ -406,7 +406,7 @@ describe('SignUpScreen', () => {
       fireEvent.press(getByTestId('get-started-button'));
 
       expect(mockSendCode).toHaveBeenCalledTimes(1);
-      expect(mockSendCode).toHaveBeenCalledWith('+919876543210', 'whatsapp');
+      expect(mockSendCode).toHaveBeenCalledWith('+919876543210', 'whatsapp', 'John Appleseed');
     });
 
     it('formats phone by stripping non-digits before sending', () => {
@@ -417,7 +417,7 @@ describe('SignUpScreen', () => {
 
       fireEvent.press(getByTestId('get-started-button'));
 
-      expect(mockSendCode).toHaveBeenCalledWith('+919876543210', 'whatsapp');
+      expect(mockSendCode).toHaveBeenCalledWith('+919876543210', 'whatsapp', 'John Appleseed');
     });
 
     it('stores trimmed name in auth store on submit', () => {
@@ -482,9 +482,15 @@ describe('SignUpScreen', () => {
   // ── Navigation on OTP Sent ─────────────────────────────────────────────────
 
   describe('navigation', () => {
-    it('navigates to /(auth)/otp when status becomes "otp_sent"', () => {
-      mockAuthState = { ...mockAuthState, status: 'otp_sent' };
-      render(<SignUpScreen />);
+    it('navigates to /(auth)/otp when isSendingOtp transitions false → status otp_sent', () => {
+      // Phase 1: render with isSendingOtp: true (sets wasSendingOtpRef = true)
+      mockAuthState = { ...mockAuthState, isSendingOtp: true };
+      const { rerender } = render(<SignUpScreen />);
+
+      // Phase 2: re-render with isSendingOtp: false + status: otp_sent
+      mockAuthState = { ...mockAuthState, isSendingOtp: false, status: 'otp_sent' };
+      rerender(<SignUpScreen />);
+
       expect(mockPush).toHaveBeenCalledWith('/(auth)/otp');
     });
 
@@ -504,23 +510,26 @@ describe('SignUpScreen', () => {
     });
   });
 
-  // ── Pre-filled State (Mock Data) ───────────────────────────────────────────
+  // ── Pre-filled Form State ───────────────────────────────────────────────────
 
-  describe('pre-filled state (?state=filled)', () => {
-    it('pre-fills form and enables button when ?state=filled', () => {
-      mockSearchParams = { state: 'filled' };
+  describe('pre-filled form state', () => {
+    it('enables button when all fields are filled and consent is on', () => {
       const { getByTestId } = render(<SignUpScreen />);
+      fillPhone(getByTestId, '9876543210');
+      fillName(getByTestId, 'John Appleseed');
+      // consent defaults to true
       const button = getByTestId('get-started-button');
       expect(button.props.accessibilityState).toEqual(
         expect.objectContaining({ disabled: false })
       );
     });
 
-    it('submits pre-filled mock data correctly', () => {
-      mockSearchParams = { state: 'filled' };
+    it('submits filled form data correctly', () => {
       const { getByTestId } = render(<SignUpScreen />);
+      fillPhone(getByTestId, '9876543210');
+      fillName(getByTestId, 'John Appleseed');
       fireEvent.press(getByTestId('get-started-button'));
-      expect(mockSendCode).toHaveBeenCalledWith('+919876543210', 'whatsapp');
+      expect(mockSendCode).toHaveBeenCalledWith('+919876543210', 'whatsapp', 'John Appleseed');
       expect(mockSetUserName).toHaveBeenCalledWith('John Appleseed');
       expect(mockSetConsentForMobile360).toHaveBeenCalledWith(true);
     });

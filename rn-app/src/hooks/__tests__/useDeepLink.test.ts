@@ -45,8 +45,8 @@ describe('resolveDeepLink', () => {
   });
 
   it('should resolve agreement routes', () => {
-    expect(resolveDeepLink('/agreement/upload')).toBe('/(agreement)/upload-agreement');
-    expect(resolveDeepLink('/agreement/review')).toBe('/(agreement)/review-agreement');
+    expect(resolveDeepLink('/agreement/upload')).toBe('/(agreement)/upload');
+    expect(resolveDeepLink('/agreement/review')).toBe('/(agreement)/review');
     expect(resolveDeepLink('/agreement/success')).toBe('/(waitlist)');
   });
 
@@ -71,7 +71,7 @@ describe('resolveDeepLink', () => {
 
   it('should resolve profile routes', () => {
     expect(resolveDeepLink('/profile')).toBe('/(profile)');
-    expect(resolveDeepLink('/profile/edit')).toBe('/(profile)/edit-profile');
+    expect(resolveDeepLink('/profile/edit')).toBe('/(profile)/edit');
     expect(resolveDeepLink('/profile/payment-methods')).toBe('/(profile)/payment-methods');
   });
 

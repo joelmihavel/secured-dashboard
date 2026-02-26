@@ -47,6 +47,15 @@ jest.mock('@/src/hooks', () => ({
     mutate: jest.fn(),
     isPending: false,
   }),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
+  useSavedPaymentMethods: () => ({
+    data: [
+      { id: 'pm-1', type: 'upi', display_name: 'test@oksbi', is_default: true, is_verified: true, nickname: null, created_at: '2026-01-01', vpa: 'test@oksbi' },
+      { id: 'pm-2', type: 'card', display_name: 'Visa *1234', is_default: false, is_verified: true, nickname: null, created_at: '2026-01-01', card_type: 'credit', card_network: 'visa', last_four: '1234' },
+      { id: 'pm-3', type: 'netbanking', display_name: 'HDFC Bank', is_default: false, is_verified: true, nickname: null, created_at: '2026-01-01', bank_code: 'HDFC', bank_name: 'HDFC Bank' },
+    ],
+    isLoading: false,
+  }),
 }));
 
 jest.mock('@/src/services/supabase/client', () => ({

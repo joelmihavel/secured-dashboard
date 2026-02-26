@@ -202,6 +202,10 @@ export function launchCorePayment(
         udf4: sessionParams.udf4 ?? '',
         udf5: sessionParams.udf5 ?? '',
       },
+      // Server-enforced payment method restriction
+      ...(sessionParams.enforce_paymethod && {
+        enforce_paymethod: sessionParams.enforce_paymethod,
+      }),
       // Merge instrument-specific params
       ...instrumentParams,
     };

@@ -15,6 +15,7 @@
 #   maestro test maestro/flows/         # Run all screen flows
 #   maestro test maestro/journeys/      # Run all journey flows
 #   maestro test maestro/flows/auth/    # Run auth flows only
+#   maestro test maestro/flows/payment/ # Run payment flows only
 # =============================================================================
 
 appId: com.flent.secured
@@ -36,22 +37,42 @@ env:
   TEST_NAME: "Test User"
   # Mock OTP for verification
   TEST_OTP: "123456"
+  # Payment test data
+  TEST_UPI_VPA: "test@upi"
+  TEST_PAYMENT_AMOUNT: "32500"
 
 # Execution settings
 executionOrder:
   continueOnFailure: false
   flowsOrder:
+    # Auth flows (unprotected, run first)
+    - "flows/auth/beta-splash.yaml"
     - "flows/auth/splash.yaml"
+    - "flows/auth/carousel.yaml"
     - "flows/auth/sign-up.yaml"
     - "flows/auth/otp.yaml"
+    - "flows/auth/otp-error.yaml"
+    # Waitlist flow
     - "flows/waitlist/index.yaml"
+    # Agreement flows
     - "flows/agreement/upload.yaml"
     - "flows/agreement/review.yaml"
+    # Setup flows
     - "flows/setup/index.yaml"
     - "flows/setup/add-bank.yaml"
     - "flows/setup/invite-landlord.yaml"
-    - "flows/payment/select-method.yaml"
-    - "flows/payment/initiate.yaml"
+    - "flows/setup/pending-steps.yaml"
+    # Main dashboard
     - "flows/main/home.yaml"
+    # Payment flows
+    - "flows/payment/first-rent.yaml"
+    - "flows/payment/confirm.yaml"
+    - "flows/payment/status-pending.yaml"
+    - "flows/payment/status-success.yaml"
+    - "flows/payment/status-failed.yaml"
+    - "flows/payment/status-refunded.yaml"
+    # Profile flow
     - "flows/profile/index.yaml"
-    - "flows/transactions/index.yaml"
+    # Routing stress tests (run last)
+    - "flows/routing/auth-guard.yaml"
+    - "flows/routing/deep-links.yaml"

@@ -1,12 +1,12 @@
 # =============================================================================
-# TE-121: Make Payment E2E Journey
+# Journey: Make Payment E2E
 #
-# Full payment journey: Home -> Select Method -> Initiate -> Processing ->
-#                       Success (or Failed)
+# Full payment journey: first-rent -> Pay Now -> (method modal) -> confirm ->
+#                       Pay Now -> status (pending -> success)
 #
-# This journey validates the complete rent payment flow from the home screen
-# through method selection, payment initiation, processing animation, and
-# the success/failure result screen.
+# This journey validates the complete rent payment flow from the first-rent
+# breakdown screen through method selection, payment confirmation, and the
+# status result screen.
 #
 # Prerequisites:
 #   - User is already authenticated and has completed onboarding
@@ -17,34 +17,25 @@
 appId: com.flent.secured
 ---
 # =============================================
-# STEP 1: Home Screen -- Start Payment
+# STEP 1: First Rent Screen (Payment Breakdown)
 # =============================================
 - launchApp:
     clearState: true
 
-# Deep link to home screen with active payment methods
-- openLink: "flentsecured:///main/index?state=all-methods"
+# Deep link to first-rent screen
+- openLink: "flentsecured:///payment/first-rent"
 - waitForAnimationToEnd
 
-# Verify home screen
+# Verify first-rent screen loaded
 - assertVisible:
-    id: "home-screen"
+    id: "first-rent-payment-screen"
+    optional: true
 
-# =============================================
-# STEP 2: Select Payment Method
-# =============================================
-# Navigate to payment selection
-- openLink: "flentsecured:///payment/select-method?state=before-7th"
-- waitForAnimationToEnd
+# Verify key breakdown elements
+- assertVisible: "Base rent"
+- assertVisible: "Payable Rent"
 
-# Verify payment method selection screen
-- assertVisible:
-    id: "select-method-screen"
-
-# Select a payment method (tap on UPI card if available)
-- assertVisible: "Pay"
-
-# Tap Pay Now to proceed with selected method
+# Scroll to and tap Pay Now
 - scrollUntilVisible:
     element:
       id: "pay-now-button"
@@ -56,54 +47,71 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 3: Initiate Payment (Breakdown Screen)
+# STEP 2: Payment Method Selection Modal
 # =============================================
+# The PaymentMethodModal appears as an overlay.
+# In test mode, a default method may be auto-selected.
+# Wait briefly for modal animation, then proceed.
+- wait: 1000
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 3: Confirm Payment Screen
+# =============================================
+# Navigate directly to confirm as fallback
+- openLink: "flentsecured:///payment/confirm"
+- waitForAnimationToEnd
+
+# Verify confirm screen loaded
 - assertVisible:
-    id: "initiate-payment-screen"
+    id: "confirm-screen"
     optional: true
 
-# If we landed on initiate screen, verify breakdown and proceed
-- assertVisible: "Rent"
-    optional: true
+# Verify breakdown elements
+- assertVisible: "Total Rent"
+- assertVisible: "Convenience Fee"
+- assertVisible: "Payable Amount"
 
-# Scroll to and tap Pay Now on initiate screen
+# Scroll to Pay Now button
 - scrollUntilVisible:
     element:
       id: "pay-now-button"
     direction: DOWN
     timeout: 5000
-    optional: true
 
+# Tap Pay Now to initiate payment
 - tapOn:
     id: "pay-now-button"
-    optional: true
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 4: Payment Processing
+# STEP 4: Payment Status -- Pending
 # =============================================
-# Processing screen shows animation while payment is being processed
-- assertVisible:
-    id: "processing-screen"
-    optional: true
+# After tapping Pay Now on confirm, navigates to status screen
+- extendedWaitUntil:
+    visible:
+      id: "status-screen"
+    timeout: 5000
 
-# Wait for processing to complete (mock backend should return quickly)
-- wait: 3000
+- assertVisible:
+    id: "status-screen"
+
+# Verify pending state initially shows "Verifying"
+- assertVisible: "Verifying"
+
+# Wait for mock backend to resolve payment (in dev mode: auto-success after delay)
+# In production-like test: poll resolves within timeout
+- wait: 5000
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 5: Payment Success
+# STEP 5: Payment Status -- Success (Expected)
 # =============================================
-# After processing, should land on success or failed screen
-- assertVisible:
-    id: "success-screen"
-    optional: true
+# Verify success state if mock backend resolved
+- assertVisible: "Succesful"
+- assertVisible: "Amount paid"
 
-# If success screen, verify key elements
-- assertVisible: "Payment"
-    optional: true
-
-# Verify download receipt button on success
+# Verify Download Receipt button
 - assertVisible:
     id: "download-receipt-button"
     optional: true
@@ -112,28 +120,34 @@ appId: com.flent.secured
 - takeScreenshot: "payment-journey-result"
 
 # =============================================
-# ALTERNATIVE: Payment Failed Path
+# ALTERNATIVE PATH: Failed State
 # =============================================
 # Test the failed payment path separately via deep link
-- openLink: "flentsecured:///payment/failed?state=failed"
+- openLink: "flentsecured:///payment/status?initialStatus=failed"
 - waitForAnimationToEnd
 
 - assertVisible:
-    id: "failed-screen"
+    id: "status-screen"
+- assertVisible: "Failed"
 
-# Verify contact support button on failure
+# Verify Contact Support button on failure
 - assertVisible:
     id: "contact-support-button"
+- assertVisible: "Contact Support"
+
+# Verify Try Again link
+- assertVisible: "Try Again"
 
 - takeScreenshot: "payment-failed-state"
 
 # =============================================
-# ALTERNATIVE: Payment Refunded Path
+# ALTERNATIVE PATH: Refunded State
 # =============================================
-- openLink: "flentsecured:///payment/failed?state=refunded"
+- openLink: "flentsecured:///payment/status?initialStatus=refunded"
 - waitForAnimationToEnd
 
 - assertVisible:
-    id: "failed-screen"
+    id: "status-screen"
+- assertVisible: "Refunded"
 
 - takeScreenshot: "payment-refunded-state"

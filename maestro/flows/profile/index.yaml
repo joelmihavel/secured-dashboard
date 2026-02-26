@@ -37,7 +37,6 @@ appId: com.flent.secured
 
 # Verify profile header content
 - assertVisible: "Profile"
-    optional: true
 
 # Verify menu items
 - assertVisible:

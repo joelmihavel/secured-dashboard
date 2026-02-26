@@ -18,6 +18,7 @@ android/
 # Build outputs
 *.jsbundle
 *.log
+scripts/.build-logs/
 
 # macOS
 .DS_Store

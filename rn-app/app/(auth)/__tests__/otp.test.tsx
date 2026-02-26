@@ -38,11 +38,6 @@ jest.mock('@expo/vector-icons', () => {
   return { Ionicons: MockIcon, MaterialIcons: MockIcon, MaterialCommunityIcons: MockIcon, FontAwesome: MockIcon, Feather: MockIcon, AntDesign: MockIcon };
 });
 
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return { __esModule: true, default: View, Svg: View, Path: View, Circle: View, Rect: View, G: View, Defs: View, ClipPath: View, Line: View, Text: View };
-});
-
 import OTPScreen from '../otp';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
@@ -109,6 +104,7 @@ let mockAuthState = {
 };
 jest.mock('@/src/hooks', () => ({
   useAuth: () => mockAuthState,
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 // Mock useAuthStore
@@ -180,7 +176,7 @@ describe('OTPScreen', () => {
   it('navigates to waitlist when status is "authenticated"', () => {
     mockAuthState = { ...mockAuthState, status: 'authenticated' };
     render(<OTPScreen />);
-    expect(mockReplace).toHaveBeenCalledWith('/(waitlist)');
+    expect(mockReplace).toHaveBeenCalledWith('/');
   });
 
   it('does not navigate when status is "otp_sent"', () => {

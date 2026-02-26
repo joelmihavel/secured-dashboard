@@ -41,7 +41,6 @@ appId: com.flent.secured
 
 # Verify user info is displayed
 - assertVisible: "Profile"
-    optional: true
 
 # Verify all menu items are accessible
 - assertVisible:
@@ -60,15 +59,11 @@ appId: com.flent.secured
 
 # Verify editable fields are present
 - assertVisible: "Name"
-    optional: true
 - assertVisible: "Email"
-    optional: true
 - assertVisible: "Phone"
-    optional: true
 
 # Edit the user name
 - tapOn: "Name"
-    optional: true
 - clearText
 - inputText: "Updated User Name"
 - hideKeyboard
@@ -81,7 +76,6 @@ appId: com.flent.secured
     optional: true
 
 - tapOn: "Save"
-    optional: true
 
 - waitForAnimationToEnd
 

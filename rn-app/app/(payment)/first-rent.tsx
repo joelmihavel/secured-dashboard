@@ -147,7 +147,7 @@ export default function FirstRentPaymentScreen() {
   }, [totalRent, setAmount]);
 
   // Proceed handler inside PaymentMethodModal
-  const handleProceedToTransaction = useCallback((method: 'upi' | 'card' | 'netbanking') => {
+  const handleProceedToTransaction = useCallback((method: 'upi' | 'card' | 'debit_card' | 'netbanking') => {
     setIsModalVisible(false);
     // Proceed to confirm (Transaction Page)
     setTimeout(() => {
@@ -263,6 +263,11 @@ export default function FirstRentPaymentScreen() {
           {!verificationComplete && (
             <RNText style={styles.footerText}>
               Complete setup to unlock cashback on payments.
+            </RNText>
+          )}
+          {verificationComplete && (upcomingPayment?.past_cutoff ?? false) && (
+            <RNText style={styles.footerText}>
+              Cashback cutoff date has passed. Pay by the {upcomingPayment?.cutoff_day ?? 7}th next month to earn 1% cashback.
             </RNText>
           )}
         </View>

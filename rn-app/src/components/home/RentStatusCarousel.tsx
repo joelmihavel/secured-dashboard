@@ -58,6 +58,11 @@ function RentStatusCarouselComponent({
     return null;
   }
 
+  // Figma 684:9453 / 684:9458 - single card should be perfectly centered
+  // (SCREEN_WIDTH - CARD_WIDTH) / 2
+  const isSingleCard = items.length === 1;
+  const singleCardPadding = Math.max(0, (SCREEN_WIDTH - CARD_WIDTH) / 2);
+
   const renderCard = (item: CarouselCardItem) => {
     switch (item.type) {
       case 'payment':
@@ -93,10 +98,13 @@ function RentStatusCarouselComponent({
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
         snapToInterval={CARD_WIDTH + CARD_GAP}
-        snapToAlignment="start"
+        snapToAlignment={isSingleCard ? 'center' : 'start'}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isSingleCard && { paddingLeft: singleCardPadding, paddingRight: singleCardPadding }
+        ]}
       >
         {items.map((item, index) => (
           <View

@@ -8,5 +8,13 @@ module.exports = function (api) {
     plugins: [
       'react-native-reanimated/plugin',
     ],
+    env: {
+      test: {
+        plugins: [
+          // Transform dynamic import() to require() so Jest can mock modules
+          'babel-plugin-dynamic-import-node',
+        ],
+      },
+    },
   };
 };

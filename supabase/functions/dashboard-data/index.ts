@@ -51,6 +51,7 @@ interface DashboardData {
     property_city: string | null;
     monthly_rent: number;
     rent_due_day: number;
+    cashback_cutoff_day: number;
     lease_start_date: string | null;
     lease_end_date: string | null;
     landlord_name: string;
@@ -69,6 +70,8 @@ interface DashboardData {
     days_until_due: number;
     is_overdue: boolean;
     cashback_eligible: boolean;
+    past_cutoff: boolean;
+    cutoff_day: number;
     rent_month: string;
   } | null;
   cashback: {
@@ -241,7 +244,8 @@ serve(async (req: Request) => {
           id, status, property_address, property_city,
           monthly_rent_paise, rent_due_day, lease_start_date, lease_end_date,
           landlord_name, agreement_cert_id,
-          bank_verified, utility_verified, landlord_approved, landlord_response
+          bank_verified, utility_verified, landlord_approved, landlord_response,
+          cashback_cutoff_day
         `)
         .eq("user_id", userId)
         .in("status", ["active", "pending_verification"])
@@ -335,13 +339,22 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       if (!existingPayment) {
+        // Cashback cutoff check: payment must be before the cutoff day to be eligible
+        const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
+        const paymentMonth = dueDate.getMonth(); // 0-based
+        const paymentYear = dueDate.getFullYear();
+        const cutoffDate = new Date(Date.UTC(paymentYear, paymentMonth, cutoffDay, 18, 29, 59, 999));
+        const pastCutoff = new Date() > cutoffDate;
+
         upcomingPayment = {
           due_date: dueDate.toISOString().split("T")[0],
           amount: tenancy.monthly_rent_paise / 100,
           amount_paise: tenancy.monthly_rent_paise,
           days_until_due: daysUntilDue,
           is_overdue: daysUntilDue < 0,
-          cashback_eligible: true,
+          cashback_eligible: !pastCutoff,
+          past_cutoff: pastCutoff,
+          cutoff_day: cutoffDay,
           rent_month: rentMonthStr,
         };
       }
@@ -404,6 +417,7 @@ serve(async (req: Request) => {
             property_city: tenancy.property_city,
             monthly_rent: tenancy.monthly_rent_paise / 100,
             rent_due_day: tenancy.rent_due_day,
+            cashback_cutoff_day: tenancy.cashback_cutoff_day ?? 7,
             lease_start_date: tenancy.lease_start_date ?? null,
             lease_end_date: tenancy.lease_end_date,
             landlord_name: tenancy.landlord_name,

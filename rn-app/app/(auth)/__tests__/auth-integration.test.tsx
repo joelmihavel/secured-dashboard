@@ -79,24 +79,6 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
-// Mock react-native-svg (used by CashbackSetupModal and others)
-jest.mock('react-native-svg', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: View,
-    Svg: View,
-    Path: View,
-    Circle: View,
-    Rect: View,
-    G: View,
-    Defs: View,
-    ClipPath: View,
-    Line: View,
-    Text: View,
-  };
-});
-
 // ---------------------------------------------------------------------------
 // Supabase client mock (lowest layer)
 // ---------------------------------------------------------------------------
@@ -444,7 +426,7 @@ describe('Auth Integration — OTP screen to Supabase', () => {
     });
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/(waitlist)');
+      expect(mockReplace).toHaveBeenCalledWith('/');
     });
   });
 
@@ -472,7 +454,7 @@ describe('Auth Integration — OTP screen to Supabase', () => {
     });
 
     // Should NOT navigate to waitlist
-    expect(mockReplace).not.toHaveBeenCalledWith('/(waitlist)');
+    expect(mockReplace).not.toHaveBeenCalledWith('/');
   });
 
   it('resend button calls supabase.auth.signInWithOtp with stored phone', async () => {

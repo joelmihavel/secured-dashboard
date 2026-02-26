@@ -87,8 +87,9 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                   card_last4: String(payuResponse.card_no ?? '').slice(-4),
                   card_network: (String(payuResponse.bankcode ?? '').toLowerCase()) as 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro',
                   card_type: paymentMode === 'CC' ? 'credit' : 'debit',
-                  card_expiry_month: 0,
-                  card_expiry_year: 0,
+                  // FIX: BUG-2 — parse expiry from PayU response; omit if unavailable instead of sending 0
+                  ...(Number(payuResponse.card_expiry_month) ? { card_expiry_month: Number(payuResponse.card_expiry_month) } : {}),
+                  ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
                 });
               } else if (paymentMode === 'upi' && payuResponse.field7) {
                 await addUpiVpa(String(payuResponse.field7));

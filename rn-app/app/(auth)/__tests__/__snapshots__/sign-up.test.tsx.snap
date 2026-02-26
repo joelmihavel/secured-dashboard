@@ -3,17 +3,19 @@
 exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
 <View
   style={
-    {
-      "backgroundColor": "#131313",
-      "flex": 1,
-    }
+    [
+      {
+        "backgroundColor": "#131313",
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
   testID="sign-up-screen"
 >
   <View
     edges={
       [
-        "top",
         "bottom",
         "left",
         "right",
@@ -32,7 +34,6 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
             "flex": 1,
           },
           false,
-          undefined,
         ]
       }
     >
@@ -53,6 +54,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
           contentContainerStyle={
             {
               "flexGrow": 1,
+              "paddingBottom": 300,
             }
           }
           keyboardShouldPersistTaps="handled"
@@ -65,7 +67,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                   "alignItems": "center",
                   "flex": 1,
                   "paddingHorizontal": 48,
-                  "paddingTop": 48,
+                  "paddingTop": 101,
                 }
               }
             >
@@ -94,17 +96,17 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                     ]
                   }
                 >
-                  <View
+                  <Svg
                     fill="none"
                     height={38.4}
                     viewBox="0 0 34 40"
                     width={32.04}
                   >
-                    <View
+                    <Path
                       d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
                       fill="#FFFFFF"
                     />
-                  </View>
+                  </Svg>
                 </View>
                 <Text
                   style={
@@ -121,6 +123,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                         "color": "#A9A9A9",
                         "fontFamily": "PlusJakartaSans-Regular",
                         "fontSize": 48,
+                        "fontWeight": "400",
                         "letterSpacing": -2,
                         "lineHeight": 64,
                         "width": 297,
@@ -165,6 +168,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                           "flexDirection": "row",
                           "justifyContent": "space-between",
                           "marginBottom": 6,
+                          "paddingHorizontal": 12,
                         }
                       }
                     >
@@ -202,7 +206,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                             "borderWidth": 1,
                             "flexDirection": "row",
                             "gap": 16,
-                            "paddingHorizontal": 16,
+                            "paddingHorizontal": 12,
                             "paddingVertical": 16,
                           },
                           {
@@ -237,20 +241,20 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                         >
                           +91
                         </Text>
-                        <View
+                        <Svg
                           fill="none"
                           height={16}
                           viewBox="0 0 16 16"
                           width={16}
                         >
-                          <View
+                          <Path
                             d="M4 6L8 10L12 6"
                             stroke="#444444"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={1.6}
                           />
-                        </View>
+                        </Svg>
                       </View>
                       <TextInput
                         accessibilityLabel="Phone"
@@ -304,6 +308,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                           "flexDirection": "row",
                           "justifyContent": "space-between",
                           "marginBottom": 6,
+                          "paddingHorizontal": 12,
                         }
                       }
                     >
@@ -342,9 +347,12 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                             "borderCurve": "continuous",
                             "borderRadius": 12,
                             "borderWidth": 1,
+                            "paddingHorizontal": 12,
+                            "paddingVertical": 16,
                           },
                           {
                             "borderColor": "transparent",
+                            "borderWidth": 1,
                           },
                         ]
                       }
@@ -369,9 +377,11 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                             {
                               "fontFamily": "PlusJakartaSans-Regular",
                               "fontSize": 20,
-                              "lineHeight": 32,
-                              "paddingHorizontal": 0,
-                              "paddingVertical": 16,
+                              "height": 32,
+                              "includeFontPadding": false,
+                              "margin": 0,
+                              "padding": 0,
+                              "textAlignVertical": "center",
                             },
                             {
                               "color": "#444444",
@@ -450,6 +460,21 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                     >
                       <View
                         style={
+                          [
+                            {
+                              "backgroundColor": "#4D4D4D",
+                              "borderRadius": 200,
+                              "height": 2,
+                              "width": 24,
+                            },
+                            {
+                              "backgroundColor": undefined,
+                            },
+                          ]
+                        }
+                      />
+                      <View
+                        style={
                           {
                             "alignItems": "center",
                             "backgroundColor": "#202020",
@@ -492,7 +517,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                         }
                       }
                       testID="consent-toggle-switch"
-                      value={false}
+                      value={true}
                     />
                   </View>
                 </View>

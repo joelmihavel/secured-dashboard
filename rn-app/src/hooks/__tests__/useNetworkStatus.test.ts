@@ -40,8 +40,20 @@ describe('useNetworkStatus', () => {
     expect(result.current.isInternetReachable).toBe(true);
   });
 
-  it('should report disconnected when fetch fails', async () => {
-    mockFetch.mockRejectedValue(new Error('Network error'));
+  it('should report disconnected when NetInfo reports no connection', async () => {
+    // Override the NetInfo mock to simulate disconnected state
+    const NetInfo = require('@react-native-community/netinfo');
+    const mockListener = jest.fn();
+    NetInfo.addEventListener.mockImplementation((callback: (state: any) => void) => {
+      mockListener.mockImplementation(callback);
+      // Fire immediately with disconnected state
+      callback({
+        isConnected: false,
+        isInternetReachable: false,
+        type: 'none',
+      });
+      return jest.fn();
+    });
 
     const { result } = renderHook(() => useNetworkStatus());
 

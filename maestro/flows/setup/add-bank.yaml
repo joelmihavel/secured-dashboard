@@ -28,9 +28,7 @@ appId: com.flent.secured
 
 # Verify form fields are present
 - assertVisible: "Account"
-    optional: true
 - assertVisible: "IFSC"
-    optional: true
 
 # Test form input
 - scrollUntilVisible:
@@ -41,13 +39,11 @@ appId: com.flent.secured
 
 # Enter account number
 - tapOn: "Account"
-    optional: true
 - inputText: "1234567890"
 - hideKeyboard
 
 # Enter IFSC code
 - tapOn: "IFSC"
-    optional: true
 - inputText: "SBIN0001234"
 - hideKeyboard
 

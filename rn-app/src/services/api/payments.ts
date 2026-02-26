@@ -65,6 +65,8 @@ export interface CashbackDiscount {
   discount_paise: number;
   discount_rupees: number;
   verification_complete: boolean;
+  past_cutoff: boolean;
+  cutoff_day: number;
   reason: string | null;
 }
 
@@ -742,8 +744,8 @@ export interface AddCardTokenRequest {
   card_network: 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro';
   card_type: 'credit' | 'debit';
   card_issuer?: string;
-  card_expiry_month: number;
-  card_expiry_year: number;
+  card_expiry_month?: number;
+  card_expiry_year?: number;
   nickname?: string;
   set_primary?: boolean;
 }
@@ -1155,6 +1157,64 @@ export async function fetchPaymentStamps(
   );
   if (error) return { data: null, error };
   if (!data?.success) return { data: null, error: 'Failed to fetch payment stamps' };
+  return { data: data.data, error: null };
+}
+
+// ==============================================
+// SAVE BANK PREFERENCE
+// ==============================================
+
+/**
+ * Save or update netbanking bank preference.
+ *
+ * Calls POST /functions/v1/save-bank-preference
+ * Edge function upserts the user's netbanking method.
+ */
+export async function saveBankPreference(
+  bankCode: string,
+  bankName: string,
+): Promise<{ data: { payment_method_id: string } | null; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{
+    success: boolean;
+    data: { payment_method_id: string; bank_code: string; bank_name: string };
+  }>(
+    'save-bank-preference',
+    { bank_code: bankCode, bank_name: bankName, set_primary: true },
+    true
+  );
+
+  if (error) return { data: null, error };
+  if (!data?.success) return { data: null, error: 'Failed to save bank preference' };
+
+  return { data: { payment_method_id: data.data.payment_method_id }, error: null };
+}
+
+// ==============================================
+// VERIFY CARD (Rs.1 tokenization session)
+// ==============================================
+
+/**
+ * Initiate a Rs.1 PayU session for card verification/tokenization.
+ *
+ * Calls POST /functions/v1/verify-card
+ * Returns PayU session params to launch the Core SDK.
+ */
+export async function verifyCard(): Promise<{
+  data: { payment_id: string; txn_id: string; payu: PayUParams & Record<string, string> } | null;
+  error: string | null;
+}> {
+  const { data, error } = await callEdgeFunction<{
+    success: boolean;
+    data: { payment_id: string; txn_id: string; payu: PayUParams & Record<string, string> };
+  }>(
+    'verify-card',
+    {},
+    true
+  );
+
+  if (error) return { data: null, error };
+  if (!data?.success) return { data: null, error: 'Failed to initiate card verification' };
+
   return { data: data.data, error: null };
 }
 

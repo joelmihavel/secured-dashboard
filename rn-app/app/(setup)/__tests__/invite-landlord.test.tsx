@@ -10,6 +10,7 @@ const mockBack = jest.fn();
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack, push: mockPush, replace: jest.fn() }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('react-native-safe-area-context', () => {
@@ -28,9 +29,13 @@ jest.mock('@expo/vector-icons', () => {
   return { Ionicons: (props: any) => <View {...props} /> };
 });
 
-// Mock DottedPattern
+// Mock DottedPattern - both import paths used by the screen
 jest.mock('@/src/components/patterns', () => ({
   DottedGridPattern: () => null,
+}));
+jest.mock('@/src/components/patterns/DottedGridPattern', () => ({
+  DottedGridPattern: () => null,
+  DottedGridPresets: {},
 }));
 
 // Mock hooks
@@ -39,6 +44,7 @@ jest.mock('@/src/hooks', () => ({
   useSendLandlordInvite: () => ({ mutate: mockMutate, isPending: false }),
   useDashboard: () => ({ tenancy: { id: 'tenancy-1' } }),
   validateEmail: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+  useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 
 jest.mock('@/src/types/setup', () => ({}));
@@ -53,21 +59,30 @@ describe('InviteLandlordScreen', () => {
     (Haptics.impactAsync as jest.Mock).mockClear();
   });
 
-  it('renders title "Invite your / Landlord"', () => {
+  it('renders title "One last step" and "we promise"', () => {
     const { getByText } = render(<InviteLandlordScreen />);
-    expect(getByText(/Invite your/)).toBeTruthy();
-    expect(getByText('Landlord')).toBeTruthy();
+    expect(getByText(/One last step/)).toBeTruthy();
+    expect(getByText(/we promise/)).toBeTruthy();
   });
 
-  it('renders form labels', () => {
+  it('renders subtitle about inviting landlord to activate cashback', () => {
     const { getByText } = render(<InviteLandlordScreen />);
-    expect(getByText('Name')).toBeTruthy();
-    expect(getByText('Email')).toBeTruthy();
+    expect(getByText(/activate your cashback/)).toBeTruthy();
   });
 
-  it('renders "Get Started" button', () => {
+  it('renders phone input label', () => {
     const { getByText } = render(<InviteLandlordScreen />);
-    expect(getByText('Get Started')).toBeTruthy();
+    expect(getByText(/Invite your landlord to Secured to finish setup/)).toBeTruthy();
+  });
+
+  it('renders "Save & Invite" button', () => {
+    const { getByText } = render(<InviteLandlordScreen />);
+    expect(getByText('Save & Invite')).toBeTruthy();
+  });
+
+  it('renders "Skip" option', () => {
+    const { getByText } = render(<InviteLandlordScreen />);
+    expect(getByText('Skip')).toBeTruthy();
   });
 
   it('matches snapshot', () => {

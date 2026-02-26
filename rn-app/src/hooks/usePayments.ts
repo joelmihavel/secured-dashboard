@@ -21,6 +21,8 @@ import {
   getPaymentSchedules,
   getSavingsHistory,
   verifyUpiVpa,
+  saveBankPreference,
+  verifyCard,
   InitiatePaymentRequest,
   InitiatePaymentData,
   PaymentHistoryItem,
@@ -38,6 +40,7 @@ import {
   fetchPaymentStamps,
   PaymentStampsResponse,
 } from '../services/api/payments';
+import { fetchFeeConfig, getGatewayFeeRates, type GatewayFeeRates } from '../services/payment';
 import { dashboardKeys } from './useDashboard';
 
 // ==============================================
@@ -52,6 +55,7 @@ export const paymentKeys = {
   schedules: () => [...paymentKeys.all, 'schedules'] as const,
   cashback: () => [...paymentKeys.all, 'cashback'] as const,
   stamps: (tenancyId: string) => [...paymentKeys.all, 'stamps', tenancyId] as const,
+  feeRates: () => [...paymentKeys.all, 'fee-rates'] as const,
 };
 
 // ==============================================
@@ -108,6 +112,24 @@ export function usePaymentStamps(tenancyId: string | undefined) {
     },
     enabled: !!tenancyId,
     staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+}
+
+// ==============================================
+// FEE RATES QUERY
+// ==============================================
+
+/**
+ * Hook to fetch dynamic fee rates from the server.
+ * Falls back to hardcoded defaults while loading or on error.
+ * Caches for 1 hour.
+ */
+export function useFeeRates() {
+  return useQuery<GatewayFeeRates>({
+    queryKey: paymentKeys.feeRates(),
+    queryFn: fetchFeeConfig,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    placeholderData: getGatewayFeeRates(),
   });
 }
 
@@ -528,6 +550,48 @@ export function useSetDefaultPaymentMethod() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
+    },
+  });
+}
+
+// ==============================================
+// SAVE BANK PREFERENCE MUTATION
+// ==============================================
+
+/**
+ * Hook to save or update the user's netbanking bank preference.
+ */
+export function useSaveBankPreference() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    meta: { suppressGlobalError: true },
+    mutationFn: async ({ bankCode, bankName }: { bankCode: string; bankName: string }) => {
+      const { data, error } = await saveBankPreference(bankCode, bankName);
+      if (error) throw new Error(error);
+      return data!;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
+    },
+  });
+}
+
+// ==============================================
+// VERIFY CARD MUTATION (Rs.1 tokenization)
+// ==============================================
+
+/**
+ * Hook to initiate a Rs.1 card verification/tokenization session.
+ * Returns PayU session params for launching the Core SDK.
+ */
+export function useVerifyCard() {
+  return useMutation({
+    meta: { suppressGlobalError: true },
+    mutationFn: async () => {
+      const { data, error } = await verifyCard();
+      if (error) throw new Error(error);
+      return data!;
     },
   });
 }

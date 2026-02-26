@@ -17,57 +17,17 @@ exports[`Logo renders correctly - custom color 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={48}
-    bbWidth={40.05}
+  <Svg
     fill="none"
-    focusable={false}
     height={48}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      [
-        {
-          "backgroundColor": "transparent",
-          "borderWidth": 0,
-        },
-        {
-          "flex": 0,
-          "height": 48,
-          "width": 40,
-        },
-      ]
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={40.05}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4294941293,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#FF9A6D"
+    />
+  </Svg>
 </View>
 `;
 
@@ -88,57 +48,17 @@ exports[`Logo renders correctly - custom size and color 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={64}
-    bbWidth={53.400000000000006}
+  <Svg
     fill="none"
-    focusable={false}
     height={64}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      [
-        {
-          "backgroundColor": "transparent",
-          "borderWidth": 0,
-        },
-        {
-          "flex": 0,
-          "height": 64,
-          "width": 53,
-        },
-      ]
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={53.400000000000006}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4293216333,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#E5484D"
+    />
+  </Svg>
 </View>
 `;
 
@@ -159,57 +79,17 @@ exports[`Logo renders correctly - default size (48) 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={48}
-    bbWidth={40.05}
+  <Svg
     fill="none"
-    focusable={false}
     height={48}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      [
-        {
-          "backgroundColor": "transparent",
-          "borderWidth": 0,
-        },
-        {
-          "flex": 0,
-          "height": 48,
-          "width": 40,
-        },
-      ]
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={40.05}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4294967295,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#FFFFFF"
+    />
+  </Svg>
 </View>
 `;
 
@@ -230,57 +110,17 @@ exports[`Logo renders correctly - large size (96) 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={96}
-    bbWidth={80.1}
+  <Svg
     fill="none"
-    focusable={false}
     height={96}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      [
-        {
-          "backgroundColor": "transparent",
-          "borderWidth": 0,
-        },
-        {
-          "flex": 0,
-          "height": 96,
-          "width": 80,
-        },
-      ]
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={80.1}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4294967295,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#FFFFFF"
+    />
+  </Svg>
 </View>
 `;
 
@@ -301,57 +141,17 @@ exports[`Logo renders correctly - small size (24) 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={24}
-    bbWidth={20.025}
+  <Svg
     fill="none"
-    focusable={false}
     height={24}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      [
-        {
-          "backgroundColor": "transparent",
-          "borderWidth": 0,
-        },
-        {
-          "flex": 0,
-          "height": 24,
-          "width": 20,
-        },
-      ]
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={20.025}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4294967295,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#FFFFFF"
+    />
+  </Svg>
 </View>
 `;
 
@@ -372,57 +172,17 @@ exports[`Logo renders with hex color 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={48}
-    bbWidth={40.05}
+  <Svg
     fill="none"
-    focusable={false}
     height={48}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      [
-        {
-          "backgroundColor": "transparent",
-          "borderWidth": 0,
-        },
-        {
-          "flex": 0,
-          "height": 48,
-          "width": 40,
-        },
-      ]
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={40.05}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4278255360,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#00FF00"
+    />
+  </Svg>
 </View>
 `;
 
@@ -443,57 +203,17 @@ exports[`Logo renders with very large size 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={500}
-    bbWidth={417.1875}
+  <Svg
     fill="none"
-    focusable={false}
     height={500}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      [
-        {
-          "backgroundColor": "transparent",
-          "borderWidth": 0,
-        },
-        {
-          "flex": 0,
-          "height": 500,
-          "width": 417,
-        },
-      ]
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={417.1875}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4294967295,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#FFFFFF"
+    />
+  </Svg>
 </View>
 `;
 
@@ -514,49 +234,16 @@ exports[`Logo renders with zero size 1`] = `
     ]
   }
 >
-  <RNSVGSvgView
-    align="xMidYMid"
-    bbHeight={0}
-    bbWidth={0}
+  <Svg
     fill="none"
-    focusable={false}
     height={0}
-    meetOrSlice={0}
-    minX={0}
-    minY={0}
-    style={
-      {
-        "backgroundColor": "transparent",
-        "borderWidth": 0,
-      }
-    }
-    vbHeight={40}
-    vbWidth={34}
+    viewBox="0 0 34 40"
     width={0}
   >
-    <RNSVGGroup
-      fill={null}
-      propList={
-        [
-          "fill",
-        ]
-      }
-    >
-      <RNSVGPath
-        d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
-        fill={
-          {
-            "payload": 4294967295,
-            "type": 0,
-          }
-        }
-        propList={
-          [
-            "fill",
-          ]
-        }
-      />
-    </RNSVGGroup>
-  </RNSVGSvgView>
+    <Path
+      d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z"
+      fill="#FFFFFF"
+    />
+  </Svg>
 </View>
 `;

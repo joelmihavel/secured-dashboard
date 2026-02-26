@@ -1,0 +1,55 @@
+# =============================================================================
+# Setup: Pending Steps (Personalized Cashback Plan) Screen
+# Route: /(setup)/pending-steps
+# Figma: 684:4968
+# testIDs: pending-steps-screen, start-earning-button
+# =============================================================================
+#
+# Validates:
+#   - Pending steps screen renders with dark background
+#   - Title: "Here is your personalized cashback plan" is visible
+#   - Cashback card shows user name and welcome text
+#   - "Your Cashback Rate" label is visible
+#   - "1% back" badge is displayed
+#   - "on every on-time rent" text accompanies the badge
+#   - Monthly cashback amount is shown (currency symbol + amount)
+#   - "Start Earning" CTA button is visible
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to pending-steps screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///setup/pending-steps"
+- waitForAnimationToEnd
+
+# Verify screen rendered
+- assertVisible:
+    id: "pending-steps-screen"
+
+# Verify title text
+- assertVisible: "Here is your"
+- assertVisible: "personalized cashback plan"
+
+# Verify card content
+- assertVisible: "Welcome to Flent Secured"
+
+# Verify cashback rate section
+- assertVisible: "Your Cashback Rate"
+- assertVisible: "1% back"
+- assertVisible: "on every on-time rent"
+
+# Verify monthly amount row (shows "/month" suffix)
+- assertVisible: "/month"
+
+# Scroll to and verify the Start Earning button
+- scrollUntilVisible:
+    element:
+      id: "start-earning-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "start-earning-button"
+- assertVisible: "Start Earning"

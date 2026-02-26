@@ -35,15 +35,40 @@ const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
 const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://test.payu.in";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 
-// PG fee rates (approximate)
-const PG_FEE_RATES: Record<string, number> = {
-  upi: 0, // UPI is typically free or very low
-  upi_intent: 0,
-  upi_collect: 0,
-  card: 0.02, // 2%
-  netbanking: 0.015, // 1.5%
-  wallet: 0.02, // 2%
+// PG fee rates — read from env vars, fallback to defaults
+function getPgFeeRates(): Record<string, number> {
+  return {
+    upi: parseFloat(Deno.env.get("FEE_RATE_UPI") ?? "0"),
+    upi_intent: parseFloat(Deno.env.get("FEE_RATE_UPI") ?? "0"),
+    upi_collect: parseFloat(Deno.env.get("FEE_RATE_UPI") ?? "0"),
+    credit_card: parseFloat(Deno.env.get("FEE_RATE_CREDIT_CARD") ?? "0.02"),
+    debit_card: parseFloat(Deno.env.get("FEE_RATE_DEBIT_CARD") ?? "0.02"),
+    card: parseFloat(Deno.env.get("FEE_RATE_CREDIT_CARD") ?? "0.02"), // backward compat
+    netbanking: parseFloat(Deno.env.get("FEE_RATE_NETBANKING") ?? "0.015"),
+    wallet: parseFloat(Deno.env.get("FEE_RATE_WALLET") ?? "0.02"),
+  };
+}
+
+// PayU enforce_paymethod values per normalized payment method.
+// Controls which payment option PayU's Custom Browser allows —
+// even if someone tampers with the client, PayU will reject disallowed methods.
+const PAYU_ENFORCE_PAYMETHOD: Record<string, string> = {
+  upi: "UPI",
+  upi_intent: "UPI",
+  upi_collect: "UPI",
+  card: "creditcard|debitcard",
+  credit_card: "creditcard",
+  debit_card: "debitcard",
+  netbanking: "netbanking",
+  wallet: "cashcard",
 };
+
+/** Resolve enforce_paymethod based on card_type signal */
+function resolveEnforcePaymethod(paymentMethod: string, cardType?: string): string {
+  if (paymentMethod === "card" && cardType === "credit") return "creditcard";
+  if (paymentMethod === "card" && cardType === "debit") return "debitcard";
+  return PAYU_ENFORCE_PAYMETHOD[paymentMethod] ?? "";
+}
 
 // Normalize payment method values from iOS
 // iOS sends: net_banking, credit_card, debit_card
@@ -67,6 +92,7 @@ interface InitiatePaymentRequest {
   amount_paise?: number; // Optional - defaults to monthly rent
   // Accept both iOS and backend formats (normalized internally)
   payment_method: "upi" | "upi_intent" | "upi_collect" | "card" | "netbanking" | "wallet" | "net_banking" | "credit_card" | "debit_card";
+  card_type?: "credit" | "debit"; // Distinguishes CC vs DC for gate and enforce_paymethod
   upi_app?: string; // For upi_intent: gpay, phonepe, paytm, etc.
   upi_vpa?: string; // For upi_collect
   card_token?: string; // For card payments (tokenized)
@@ -87,6 +113,7 @@ const requestSchema = {
     // Accept both iOS and backend formats
     enum: ["upi", "upi_intent", "upi_collect", "card", "netbanking", "wallet", "net_banking", "credit_card", "debit_card"],
   },
+  card_type: { required: false, type: "string" as const, enum: ["credit", "debit"] },
   upi_app: { required: false, type: "string" as const },
   upi_vpa: { required: false, type: "string" as const },
   card_token: { required: false, type: "string" as const },
@@ -150,6 +177,7 @@ serve(async (req: Request) => {
     const {
       tenancy_id,
       payment_method: rawPaymentMethod,
+      card_type,
       upi_app,
       upi_vpa,
       card_token,
@@ -194,7 +222,8 @@ serve(async (req: Request) => {
       .from("tenancies")
       .select(`
         id, user_id, status, monthly_rent_paise, landlord_name,
-        bank_verified, utility_verified, landlord_approved
+        bank_verified, utility_verified, landlord_approved,
+        cashback_cutoff_day, rent_due_day
       `)
       .eq("id", tenancy_id)
       .single();
@@ -222,7 +251,10 @@ serve(async (req: Request) => {
     }
 
     // Credit card requires landlord approval + utility verification
-    if (['card', 'CC'].includes(payment_method)) {
+    // Debit card (card_type === 'debit') skips this gate
+    const isCreditCard = ['card', 'CC'].includes(payment_method)
+      && (card_type === 'credit' || card_type === undefined); // backward compat: unspecified = credit
+    if (isCreditCard) {
       if (!tenancy.landlord_approved) {
         throw new PaymentError(
           "Credit card payments require landlord verification. Your landlord must accept the tenancy first.",
@@ -262,8 +294,18 @@ serve(async (req: Request) => {
       && tenancy.utility_verified
       && tenancy.landlord_approved;
 
+    // Cutoff gate — cashback only if payment is made on or before the cutoff day
+    // cutoff_day comes from the rent agreement; defaults to 7 if not specified
+    const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
+    const [rentYear, rentMonthNum] = rent_month.split("-").map(Number);
+    // Cutoff date: end of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
+    const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
+    const now = new Date();
+    const isPastCutoff = now > cutoffDate;
+
     // Instant 1% discount (no wallet, no earn/redeem)
-    const cashbackDiscountPaise = verificationComplete
+    // Requires: all verifications complete AND payment before cutoff
+    const cashbackDiscountPaise = (verificationComplete && !isPastCutoff)
       ? Math.min(
           Math.floor(originalRentPaise * 0.01),        // 1% of entered amount
           Math.floor(tenancy.monthly_rent_paise * 0.01) // capped at 1% of agreement rent
@@ -273,7 +315,10 @@ serve(async (req: Request) => {
     const netRentPaise = originalRentPaise - cashbackDiscountPaise;
 
     // PG fee on net payable (what the gateway actually charges)
-    const feeRate = PG_FEE_RATES[payment_method] ?? 0.02;
+    const pgFeeRates = getPgFeeRates();
+    // Use card_type-specific rate if available, otherwise fall back to payment_method
+    const feeRateKey = (payment_method === "card" && card_type) ? `${card_type}_card` : payment_method;
+    const feeRate = pgFeeRates[feeRateKey] ?? pgFeeRates[payment_method] ?? 0.02;
     const pgFeePaise = Math.ceil(netRentPaise * feeRate);
 
     // Total amount the gateway charges the user
@@ -404,7 +449,9 @@ serve(async (req: Request) => {
         discount_paise: cashbackDiscountPaise,
         discount_rupees: cashbackDiscountPaise / 100,
         verification_complete: verificationComplete,
-        reason: !verificationComplete ? getVerificationBlockerReason(tenancy) : null,
+        past_cutoff: isPastCutoff,
+        cutoff_day: cutoffDay,
+        reason: getCashbackBlockerReason(tenancy, verificationComplete, isPastCutoff, cutoffDay),
       },
       verification_complete: verificationComplete,
 
@@ -427,6 +474,7 @@ serve(async (req: Request) => {
         user_credential: userCredential,
         vas_for_mobile_sdk_hash: vasHash,
         payment_related_details_for_mobile_sdk_hash: paymentRelatedHash,
+        enforce_paymethod: resolveEnforcePaymethod(payment_method, card_type),
       },
 
       // Method-specific data (PayU UPI intent only)
@@ -491,6 +539,28 @@ function calculateDueDate(rentMonth: string): string {
 
 /**
  * Returns a human-readable reason why cashback cannot be applied.
+ * Checks cutoff date first (more actionable for the user), then verification.
+ */
+function getCashbackBlockerReason(
+  tenancy: { bank_verified: boolean; utility_verified: boolean; landlord_approved: boolean },
+  verificationComplete: boolean,
+  isPastCutoff: boolean,
+  cutoffDay: number,
+): string | null {
+  // If both gates pass, no blocker
+  if (verificationComplete && !isPastCutoff) return null;
+
+  // Cutoff takes priority — user can't fix verification in time if already past cutoff
+  if (isPastCutoff) {
+    return `Cashback is available only for payments made by the ${ordinal(cutoffDay)} of the month. Pay on time next month to earn 1% cashback.`;
+  }
+
+  // Verification blockers
+  return getVerificationBlockerReason(tenancy);
+}
+
+/**
+ * Returns a human-readable reason for incomplete verification.
  */
 function getVerificationBlockerReason(tenancy: {
   bank_verified: boolean;
@@ -507,6 +577,13 @@ function getVerificationBlockerReason(tenancy: {
     return "Landlord approval required to unlock 1% rent discount";
   }
   return "Complete all verifications to unlock 1% rent discount";
+}
+
+/** Returns ordinal suffix for a day number (1st, 2nd, 3rd, 7th, etc.) */
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 function buildUpiIntentUrl(params: {

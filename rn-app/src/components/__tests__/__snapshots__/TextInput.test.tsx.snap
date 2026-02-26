@@ -15,6 +15,7 @@ exports[`TextInput renders correctly - disabled 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -25,7 +26,6 @@ exports[`TextInput renders correctly - disabled 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -37,7 +37,7 @@ exports[`TextInput renders correctly - disabled 1`] = `
               "lineHeight": 20,
             },
             {
-              "color": "#a9a9a9",
+              "color": "#A9A9A9",
             },
           ],
         ]
@@ -51,11 +51,15 @@ exports[`TextInput renders correctly - disabled 1`] = `
       [
         {
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
+          "paddingHorizontal": 12,
+          "paddingVertical": 16,
         },
         {
           "borderColor": "transparent",
+          "borderWidth": 1,
         },
       ]
     }
@@ -71,21 +75,23 @@ exports[`TextInput renders correctly - disabled 1`] = `
       onBlur={[Function]}
       onChangeText={[MockFunction]}
       onFocus={[Function]}
-      placeholderTextColor="#222222"
+      placeholderTextColor="#444444"
       style={
         [
           {
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "lineHeight": 32,
-            "paddingHorizontal": 0,
-            "paddingVertical": 16,
+            "height": 32,
+            "includeFontPadding": false,
+            "margin": 0,
+            "padding": 0,
+            "textAlignVertical": "center",
           },
           {
-            "color": "#222222",
+            "color": "#444444",
           },
           {
-            "color": "#dddddd",
+            "color": "#DDDDDD",
           },
           false,
           {
@@ -114,6 +120,7 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -124,7 +131,6 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -136,7 +142,7 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
               "lineHeight": 20,
             },
             {
-              "color": "#a9a9a9",
+              "color": "#A9A9A9",
             },
           ],
         ]
@@ -150,11 +156,15 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
       [
         {
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
+          "paddingHorizontal": 12,
+          "paddingVertical": 16,
         },
         {
           "borderColor": "transparent",
+          "borderWidth": 1,
         },
       ]
     }
@@ -171,18 +181,20 @@ exports[`TextInput renders correctly - empty dark variant 1`] = `
       onChangeText={[MockFunction]}
       onFocus={[Function]}
       placeholder="Enter your name"
-      placeholderTextColor="#222222"
+      placeholderTextColor="#444444"
       style={
         [
           {
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "lineHeight": 32,
-            "paddingHorizontal": 0,
-            "paddingVertical": 16,
+            "height": 32,
+            "includeFontPadding": false,
+            "margin": 0,
+            "padding": 0,
+            "textAlignVertical": "center",
           },
           {
-            "color": "#222222",
+            "color": "#444444",
           },
           false,
           false,
@@ -210,6 +222,7 @@ exports[`TextInput renders correctly - light variant empty 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -220,7 +233,6 @@ exports[`TextInput renders correctly - light variant empty 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -246,11 +258,15 @@ exports[`TextInput renders correctly - light variant empty 1`] = `
       [
         {
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
+          "paddingHorizontal": 12,
+          "paddingVertical": 16,
         },
         {
           "borderColor": "transparent",
+          "borderWidth": 1,
         },
       ]
     }
@@ -273,9 +289,11 @@ exports[`TextInput renders correctly - light variant empty 1`] = `
           {
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "lineHeight": 32,
-            "paddingHorizontal": 0,
-            "paddingVertical": 16,
+            "height": 32,
+            "includeFontPadding": false,
+            "margin": 0,
+            "padding": 0,
+            "textAlignVertical": "center",
           },
           {
             "color": "#797979",
@@ -306,6 +324,7 @@ exports[`TextInput renders correctly - light variant with value 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -316,7 +335,6 @@ exports[`TextInput renders correctly - light variant with value 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -342,11 +360,15 @@ exports[`TextInput renders correctly - light variant with value 1`] = `
       [
         {
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
+          "paddingHorizontal": 12,
+          "paddingVertical": 16,
         },
         {
           "borderColor": "transparent",
+          "borderWidth": 1,
         },
       ]
     }
@@ -368,9 +390,11 @@ exports[`TextInput renders correctly - light variant with value 1`] = `
           {
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "lineHeight": 32,
-            "paddingHorizontal": 0,
-            "paddingVertical": 16,
+            "height": 32,
+            "includeFontPadding": false,
+            "margin": 0,
+            "padding": 0,
+            "textAlignVertical": "center",
           },
           {
             "color": "#797979",
@@ -403,6 +427,7 @@ exports[`TextInput renders correctly - with error 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -413,7 +438,6 @@ exports[`TextInput renders correctly - with error 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -425,7 +449,7 @@ exports[`TextInput renders correctly - with error 1`] = `
               "lineHeight": 20,
             },
             {
-              "color": "#a9a9a9",
+              "color": "#A9A9A9",
             },
           ],
         ]
@@ -440,7 +464,6 @@ exports[`TextInput renders correctly - with error 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -467,11 +490,15 @@ exports[`TextInput renders correctly - with error 1`] = `
       [
         {
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
+          "paddingHorizontal": 12,
+          "paddingVertical": 16,
         },
         {
           "borderColor": "#E5484D",
+          "borderWidth": 1,
         },
       ]
     }
@@ -487,21 +514,23 @@ exports[`TextInput renders correctly - with error 1`] = `
       onBlur={[Function]}
       onChangeText={[MockFunction]}
       onFocus={[Function]}
-      placeholderTextColor="#222222"
+      placeholderTextColor="#444444"
       style={
         [
           {
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "lineHeight": 32,
-            "paddingHorizontal": 0,
-            "paddingVertical": 16,
+            "height": 32,
+            "includeFontPadding": false,
+            "margin": 0,
+            "padding": 0,
+            "textAlignVertical": "center",
           },
           {
-            "color": "#222222",
+            "color": "#444444",
           },
           {
-            "color": "#dddddd",
+            "color": "#DDDDDD",
           },
           {
             "color": "#E5484D",
@@ -530,6 +559,7 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
         "flexDirection": "row",
         "justifyContent": "space-between",
         "marginBottom": 6,
+        "paddingHorizontal": 12,
       }
     }
   >
@@ -540,7 +570,6 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
             "color": "#FFFFFF",
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 16,
-            "fontWeight": "400",
             "letterSpacing": 0,
             "lineHeight": 24,
             "textAlign": "left",
@@ -552,7 +581,7 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
               "lineHeight": 20,
             },
             {
-              "color": "#a9a9a9",
+              "color": "#A9A9A9",
             },
           ],
         ]
@@ -566,11 +595,15 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
       [
         {
           "borderColor": "transparent",
+          "borderCurve": "continuous",
           "borderRadius": 12,
           "borderWidth": 1,
+          "paddingHorizontal": 12,
+          "paddingVertical": 16,
         },
         {
           "borderColor": "transparent",
+          "borderWidth": 1,
         },
       ]
     }
@@ -586,21 +619,23 @@ exports[`TextInput renders correctly - with value dark variant 1`] = `
       onBlur={[Function]}
       onChangeText={[MockFunction]}
       onFocus={[Function]}
-      placeholderTextColor="#222222"
+      placeholderTextColor="#444444"
       style={
         [
           {
             "fontFamily": "PlusJakartaSans-Regular",
             "fontSize": 20,
-            "lineHeight": 32,
-            "paddingHorizontal": 0,
-            "paddingVertical": 16,
+            "height": 32,
+            "includeFontPadding": false,
+            "margin": 0,
+            "padding": 0,
+            "textAlignVertical": "center",
           },
           {
-            "color": "#222222",
+            "color": "#444444",
           },
           {
-            "color": "#dddddd",
+            "color": "#DDDDDD",
           },
           false,
           undefined,

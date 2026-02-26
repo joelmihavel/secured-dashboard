@@ -31,7 +31,7 @@ import * as Haptics from 'expo-haptics';
 
 import { PrimaryButton } from '@/src/components';
 import { DashedDivider } from '@/src/components/payment';
-import { useDashboard, useSavedPaymentMethods } from '@/src/hooks';
+import { useDashboard, useSavedPaymentMethods, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import { getGatewayFeeRates } from '@/src/services/payment';
 import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
@@ -65,7 +65,7 @@ const FIGMA = {
 
 interface PaymentMethod {
   id: string;
-  type: 'card' | 'upi' | 'netbanking';
+  type: 'card' | 'debit_card' | 'upi' | 'netbanking';
   title: string;
   maskedDetail: string | null;
   fee: string;
@@ -85,6 +85,15 @@ const CreditCardIcon = memo(({ color }: { color: string }) => (
     <Line x1={2} y1={10} x2={22} y2={10} stroke={color} strokeWidth={1.5} />
     <Line x1={6} y1={14} x2={10} y2={14} stroke={color} strokeWidth={1.5} strokeLinecap="round" />
     <Line x1={6} y1={17} x2={8} y2={17} stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+  </Svg>
+));
+
+const DebitCardIcon = memo(({ color }: { color: string }) => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Rect x={2} y={4} width={20} height={16} rx={2} stroke={color} strokeWidth={1.5} />
+    <Line x1={2} y1={10} x2={22} y2={10} stroke={color} strokeWidth={1.5} />
+    <Line x1={6} y1={14} x2={12} y2={14} stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    <Circle cx={18} cy={15.5} r={2.5} stroke={color} strokeWidth={1.2} />
   </Svg>
 ));
 
@@ -134,11 +143,13 @@ const NetBankingIcon = memo(({ color }: { color: string }) => (
   </Svg>
 ));
 
-const getIconForType = (type: 'card' | 'upi' | 'netbanking', isSelected: boolean) => {
+const getIconForType = (type: 'card' | 'debit_card' | 'upi' | 'netbanking', isSelected: boolean) => {
   const iconColor = isSelected ? FIGMA.iconStrokeSelected : FIGMA.iconStroke;
   switch (type) {
     case 'card':
       return <CreditCardIcon color={iconColor} />;
+    case 'debit_card':
+      return <DebitCardIcon color={iconColor} />;
     case 'upi':
       return <UPIIcon color={iconColor} />;
     case 'netbanking':
@@ -245,20 +256,33 @@ export function MethodSelectorContent({
   const { tenancy } = useDashboard();
   const storedAmount = usePaymentStore((state) => state.amount);
   const { data: savedMethods, isLoading: isLoadingMethods } = useSavedPaymentMethods();
+  const { data: dynamicRates } = useFeeRates();
 
-  // Determine initial selection based on card eligibility
-  const landlordApprovedInit = tenancy?.verification_status?.landlord_approved ?? false;
-  const utilityVerifiedInit = tenancy?.verification_status?.utility_verified ?? false;
+  // Credit card disabled logic (debit card skips this gate)
+  const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
+  const utilityVerified = tenancy?.verification_status?.utility_verified ?? false;
+  const creditCardDisabled = !landlordApproved || !utilityVerified;
+  const creditCardDisabledReason = !landlordApproved
+    ? 'Available after landlord accepts tenancy'
+    : !utilityVerified
+      ? 'Available after utility bill verification'
+      : undefined;
+
+  // Determine initial selection: debit card if credit card disabled, else credit card
   const [selectedMethod, setSelectedMethod] = useState<string>(
-    (!landlordApprovedInit || !utilityVerifiedInit) ? 'upi-1' : 'card-1',
+    creditCardDisabled ? 'debit-card-1' : 'card-1',
   );
 
   // Rent amount from dashboard or store
   const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
 
-  // Saved method lookups
-  const hasSavedCard = useMemo(
-    () => savedMethods?.some((m: SavedMethod) => m.type === 'card') ?? false,
+  // Saved method lookups — split credit vs debit cards
+  const hasSavedCreditCard = useMemo(
+    () => savedMethods?.some((m: SavedMethod) => m.type === 'card' && m.card_type === 'credit') ?? false,
+    [savedMethods],
+  );
+  const hasSavedDebitCard = useMemo(
+    () => savedMethods?.some((m: SavedMethod) => m.type === 'card' && m.card_type === 'debit') ?? false,
     [savedMethods],
   );
   const hasSavedUpi = useMemo(
@@ -271,9 +295,12 @@ export function MethodSelectorContent({
   );
 
   // Build masked detail from saved methods
-  const getMaskedDetail = (type: 'upi' | 'card' | 'netbanking'): string | null => {
+  const getMaskedDetail = (type: 'upi' | 'card' | 'netbanking', cardTypeFilter?: 'credit' | 'debit'): string | null => {
     if (!savedMethods?.length) return null;
-    const methods = savedMethods.filter((m: SavedMethod) => m.type === type);
+    let methods = savedMethods.filter((m: SavedMethod) => m.type === type);
+    if (type === 'card' && cardTypeFilter) {
+      methods = methods.filter((m: SavedMethod) => m.card_type === cardTypeFilter);
+    }
     if (methods.length === 0) return null;
     if (type === 'upi') {
       return methods.map((m: SavedMethod) => m.vpa ?? m.display_name).join(', ');
@@ -291,20 +318,11 @@ export function MethodSelectorContent({
     return null;
   };
 
-  // Card disabled logic
-  const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
-  const utilityVerified = tenancy?.verification_status?.utility_verified ?? false;
-  const cardDisabled = !landlordApproved || !utilityVerified;
-  const cardDisabledReason = !landlordApproved
-    ? 'Available after landlord accepts tenancy'
-    : !utilityVerified
-      ? 'Available after utility bill verification'
-      : undefined;
-
   // Payment methods with fee calculation
   const paymentMethods: PaymentMethod[] = useMemo(() => {
-    const rates = getGatewayFeeRates();
-    const cardFee = Math.round(rentAmount * rates.card);
+    const rates = dynamicRates ?? getGatewayFeeRates();
+    const creditCardFee = Math.round(rentAmount * rates.credit_card);
+    const debitCardFee = Math.round(rentAmount * rates.debit_card);
     const upiFee = Math.round(rentAmount * rates.upi);
     const netbankingFee = Math.round(rentAmount * rates.netbanking);
 
@@ -313,12 +331,21 @@ export function MethodSelectorContent({
         id: 'card-1',
         type: 'card' as const,
         title: 'Credit Card',
-        maskedDetail: hasSavedCard ? (getMaskedDetail('card') ?? '\u2022\u2022\u2022\u2022 2345') : null,
-        fee: `${cardFee.toLocaleString('en-IN')} fee`,
-        feeAmount: cardFee,
-        isSetUp: hasSavedCard,
-        isDisabled: cardDisabled,
-        disabledReason: cardDisabledReason,
+        maskedDetail: hasSavedCreditCard ? (getMaskedDetail('card', 'credit') ?? '\u2022\u2022\u2022\u2022 2345') : null,
+        fee: `${creditCardFee.toLocaleString('en-IN')} fee`,
+        feeAmount: creditCardFee,
+        isSetUp: hasSavedCreditCard,
+        isDisabled: creditCardDisabled,
+        disabledReason: creditCardDisabledReason,
+      },
+      {
+        id: 'debit-card-1',
+        type: 'debit_card' as const,
+        title: 'Debit Card',
+        maskedDetail: hasSavedDebitCard ? (getMaskedDetail('card', 'debit') ?? '\u2022\u2022\u2022\u2022 2345') : null,
+        fee: `${debitCardFee.toLocaleString('en-IN')} fee`,
+        feeAmount: debitCardFee,
+        isSetUp: hasSavedDebitCard,
       },
       {
         id: 'upi-1',
@@ -341,7 +368,7 @@ export function MethodSelectorContent({
         isSetUp: hasSavedNetbanking,
       },
     ];
-  }, [rentAmount, savedMethods, hasSavedCard, hasSavedUpi, hasSavedNetbanking, cardDisabled, cardDisabledReason]);
+  }, [rentAmount, savedMethods, dynamicRates, hasSavedCreditCard, hasSavedDebitCard, hasSavedUpi, hasSavedNetbanking, creditCardDisabled, creditCardDisabledReason]);
 
   const allSetUp = paymentMethods.every((m) => m.isSetUp);
 
