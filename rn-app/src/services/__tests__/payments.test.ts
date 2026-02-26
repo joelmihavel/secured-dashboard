@@ -313,23 +313,46 @@ describe('Payments API Service', () => {
   // getSavedPaymentMethods
   // =========================================================================
   describe('getSavedPaymentMethods', () => {
-    // NOTE: __DEV__ is true in Jest and DEV_USE_MOCK_PAYMENTS is (__DEV__ && true),
-    // so getSavedPaymentMethods() always returns mock data without calling the edge function.
+    // NOTE: DEV_USE_MOCK_PAYMENTS is disabled during Jest (process.env.JEST_WORKER_ID),
+    // so these tests verify the real edge function integration path.
 
-    it('returns mock data in dev mode (bypasses edge function)', async () => {
+    it('returns mapped payment methods from edge function', async () => {
+      mockCallEdgeFunction.mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            payment_methods: [
+              {
+                id: 'pm-1',
+                type: 'upi',
+                display_name: 'UPI - ICICI',
+                is_default: true,
+                is_verified: true,
+                nickname: null,
+                created_at: '2025-08-15T10:00:00Z',
+                upi_vpa: 'rishabh@icici',
+                upi_provider: 'ICICI',
+              },
+            ],
+            primary_method_id: 'pm-1',
+            grouped_methods: { upi: [], cards: [], netbanking: [] },
+            total_count: 1,
+          },
+        },
+        error: null,
+      });
+
       const result = await getSavedPaymentMethods();
 
-      // In __DEV__ mode, returns mock data from payments-mock module
       expect(result.data).toBeTruthy();
-      expect(result.data!.length).toBeGreaterThan(0);
+      expect(result.data!.length).toBe(1);
       expect(result.data![0].is_default).toBe(true);
       expect(result.data![0].vpa).toBe('rishabh@icici');
-      expect(result.primaryMethodId).toBe('pm-mock-upi-001');
-      // Edge function is NOT called in dev mode
-      expect(mockCallEdgeFunction).not.toHaveBeenCalled();
+      expect(result.primaryMethodId).toBe('pm-1');
+      expect(mockCallEdgeFunction).toHaveBeenCalledWith('get-saved-payment-methods', {}, true, 'GET');
     });
 
-    it('always returns data in dev mode regardless of edge function state', async () => {
+    it('returns error when edge function fails', async () => {
       mockCallEdgeFunction.mockResolvedValue({
         data: null,
         error: 'Auth error',
@@ -337,9 +360,8 @@ describe('Payments API Service', () => {
 
       const result = await getSavedPaymentMethods();
 
-      // __DEV__ is true, so mock data is returned
-      expect(result.data).toBeTruthy();
-      expect(result.data!.length).toBeGreaterThan(0);
+      expect(result.data).toBeNull();
+      expect(result.error).toBe('Auth error');
     });
   });
 

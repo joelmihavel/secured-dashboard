@@ -122,22 +122,36 @@ describe('Dashboard API Service', () => {
   // fetchDashboard
   // =========================================================================
   describe('fetchDashboard', () => {
-    // NOTE: __DEV__ is true in Jest environment and DEV_USE_MOCK_DASHBOARD is
-    // set to (__DEV__ && true) in dashboard.ts. This means fetchDashboard()
-    // always returns the mock data in tests and never calls the edge function.
+    // NOTE: DEV_USE_MOCK_DASHBOARD is disabled during Jest (process.env.JEST_WORKER_ID),
+    // so these tests verify the real edge function integration path.
 
-    it('returns mock dashboard data in dev mode', async () => {
+    it('returns dashboard data from edge function', async () => {
+      mockCallEdgeFunction.mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            user: { id: 'u1', first_name: 'Test', last_name: 'User', phone: '+919999999999' },
+            tenancy: null,
+            upcoming_payment: null,
+            cashback: { discount_rate: 0.01, max_discount_paise: 50000, max_discount: 500, verification_complete: false, total_savings_paise: 0, total_savings: 0, legacy_wallet_balance: 0 },
+            recent_payments: [],
+            notifications: [],
+            unread_notification_count: 0,
+            payment_stamps: null,
+          },
+        },
+        error: null,
+      });
+
       const result = await fetchDashboard();
 
-      // In __DEV__ mode, returns mock data from dashboard-mock module
       expect(result.data).toBeTruthy();
+      expect(result.data!.user.first_name).toBe('Test');
       expect(result.error).toBeNull();
-      // The edge function is NOT called in dev mode
-      expect(mockCallEdgeFunction).not.toHaveBeenCalled();
+      expect(mockCallEdgeFunction).toHaveBeenCalledWith('dashboard-data', {}, true);
     });
 
-    it('always returns data in dev mode regardless of edge function state', async () => {
-      // Even if edge function would fail, dev mode bypasses it
+    it('returns error when edge function fails', async () => {
       mockCallEdgeFunction.mockResolvedValue({
         data: null,
         error: 'Service unavailable',
@@ -145,9 +159,8 @@ describe('Dashboard API Service', () => {
 
       const result = await fetchDashboard();
 
-      // In __DEV__ mode returns mock data
-      expect(result.data).toBeTruthy();
-      expect(result.error).toBeNull();
+      expect(result.data).toBeNull();
+      expect(result.error).toBe('Service unavailable');
     });
   });
 

@@ -252,7 +252,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "borderColor": "#0D0D0D",
                     "borderRadius": 0,
                     "borderWidth": 0,
-                    "paddingHorizontal": 0,
                   },
                 ]
               }
@@ -382,7 +381,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "borderColor": "#0D0D0D",
                     "borderRadius": 0,
                     "borderWidth": 0,
-                    "paddingHorizontal": 0,
                   },
                 ]
               }
@@ -512,7 +510,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "borderColor": "#0D0D0D",
                     "borderRadius": 0,
                     "borderWidth": 0,
-                    "paddingHorizontal": 0,
                   },
                 ]
               }
@@ -642,7 +639,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "borderColor": "#0D0D0D",
                     "borderRadius": 0,
                     "borderWidth": 0,
-                    "paddingHorizontal": 0,
                   },
                 ]
               }

@@ -1,10 +1,26 @@
 /**
  * Mock Dashboard Data — DEV ONLY
  *
- * ZERO STATE: New user with tenancy but no verifications, no payments, no cashback.
- * Triggers: pending_verification + no transactions → HomeEmptyState
+ * Current: PARTIAL VERIFICATION — bank verified, utility/landlord not.
+ * This means: Credit Card is DISABLED (needs landlord + utility), Debit Card is ENABLED.
  *
  * Toggle DEV_USE_MOCK_DASHBOARD in dashboard.ts to enable/disable.
+ *
+ * === TESTING DIFFERENT STATES ===
+ *
+ * 1. UNVERIFIED (Credit Card disabled, Debit Card enabled):
+ *    verification_status: { bank_verified: true, utility_verified: false, landlord_approved: false }
+ *
+ * 2. FULLY VERIFIED (All methods enabled, cashback applied):
+ *    verification_status: { bank_verified: true, utility_verified: true, landlord_approved: true }
+ *    cashback.verification_complete: true
+ *    upcoming_payment.cashback_eligible: true
+ *
+ * 3. NO TENANCY (empty state):
+ *    tenancy: null, upcoming_payment: null
+ *
+ * 4. PAYMENT OVERDUE:
+ *    upcoming_payment.is_overdue: true, upcoming_payment.days_until_due: -3
  */
 
 import type { DashboardData } from '../dashboard';

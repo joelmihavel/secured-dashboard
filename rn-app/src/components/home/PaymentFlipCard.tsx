@@ -58,65 +58,6 @@ export interface PaymentMonthData {
   cardIndex?: number;
 }
 
-// Figma 705:6514 — Circular stamp with due date and curved "upcoming payment" text
-const STAMP_SIZE = 94; // Figma: 93.6px rounded up
-const STAMP_RING_OUTER = 93.6;
-const STAMP_RING_INNER = 54.112;
-
-function UpcomingStamp({ dueDay }: { dueDay: number }) {
-  const cx = STAMP_SIZE / 2;
-  const cy = STAMP_SIZE / 2;
-  // Circular path for curved text (radius slightly inside outer ring)
-  const textR = 32;
-  const textPath = `M ${cx},${cy - textR} A ${textR},${textR} 0 1,1 ${cx - 0.01},${cy - textR}`;
-
-  return (
-    <View style={stampStyles.container}>
-      <Svg width={STAMP_SIZE} height={STAMP_SIZE} viewBox={`0 0 ${STAMP_SIZE} ${STAMP_SIZE}`}>
-        {/* Outer ring — Figma Ellipse 21916 */}
-        <Circle
-          cx={cx} cy={cy} r={STAMP_RING_OUTER / 2 - 0.5}
-          stroke="#4D4D4D" strokeWidth={0.8} fill="none"
-        />
-        {/* Inner ring — Figma Ellipse 21915 */}
-        <Circle
-          cx={cx} cy={cy} r={STAMP_RING_INNER / 2 - 0.5}
-          stroke="#4D4D4D" strokeWidth={0.6} fill="none"
-        />
-        {/* Curved "upcoming payment" text */}
-        <Defs>
-          <Path id="stampTextPath" d={textPath} />
-        </Defs>
-        <SvgText fill="#878787" fontSize={7.5} fontFamily="PlusJakartaSans-Regular" letterSpacing={1.5}>
-          <TextPath href="#stampTextPath" startOffset="0%">
-            upcoming payment \ upcoming payment \
-          </TextPath>
-        </SvgText>
-      </Svg>
-      {/* Center date number — Figma 705:6516: fontSize 35.1, color #878787 */}
-      <RNText style={stampStyles.dateText}>{dueDay}</RNText>
-    </View>
-  );
-}
-
-const stampStyles = StyleSheet.create({
-  container: {
-    width: STAMP_SIZE,
-    height: STAMP_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateText: {
-    position: 'absolute',
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 35,
-    lineHeight: 47,
-    letterSpacing: -1.46,
-    color: '#878787',
-    textAlign: 'center',
-  },
-});
-
 interface PaymentFlipCardProps {
   data: PaymentMonthData;
 }
@@ -272,15 +213,11 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
           <Text style={styles.insiderText}>
             flent<Text style={styles.insiderAccent} inherit>_insider</Text>
           </Text>
-          {data.status === 'upcoming' && data.rentDueDay ? (
-            <UpcomingStamp dueDay={data.rentDueDay} />
-          ) : (
-            <PaymentBadge
+          <PaymentBadge
               variant={config.badgeVariant}
               count={config.badgeCount}
               size={94}
             />
-          )}
         </View>
 
         {/* Middle: Month & View Receipt */}

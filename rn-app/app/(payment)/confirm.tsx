@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path, Line } from 'react-native-svg';
 
-import { Screen, PrimaryButton, ScrollDownIndicator } from '@/src/components';
+import { Screen, PrimaryButton } from '@/src/components';
 import { useDashboard } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import { PAYMENT_COLORS } from '@/src/theme';
@@ -141,23 +141,12 @@ export default function ConfirmPaymentScreen() {
 
   const storedAmount = usePaymentStore((state) => state.amount);
   const verificationSkipped = usePaymentStore((state) => state.verificationSkipped);
+  const selectedMethod = usePaymentStore((state) => state.selectedMethod);
+
+  const isCreditCard = selectedMethod?.type === 'card' && selectedMethod?.cardType === 'credit';
 
   // Concurrent payment guard
   const isPaymentInFlight = useRef(false);
-
-  // Scroll indicator state
-  const scrollViewRef = useRef<ScrollView>(null);
-  const [isAtBottom, setIsAtBottom] = useState(false);
-
-  const handleScroll = useCallback((event: any) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const atBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 50;
-    setIsAtBottom(atBottom);
-  }, []);
-
-  const scrollToBottom = useCallback(() => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, []);
 
   // --- Verification state ---
   const isSetupComplete =
@@ -280,15 +269,12 @@ export default function ConfirmPaymentScreen() {
   return (
     <Screen testID="confirm-screen" style={styles.screen} padded={false}>
       <ScrollView
-        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
       >
         {/* ===== Back Button ===== */}
         <TouchableOpacity
@@ -358,7 +344,7 @@ export default function ConfirmPaymentScreen() {
                 />
               ) : (
                 <BreakdownRow
-                  label="Cashback \uD83D\uDD12"
+                  label="Cashback"
                   value={`\u20B9${fmt(cashbackAmount)}`}
                 />
               )}
@@ -369,6 +355,14 @@ export default function ConfirmPaymentScreen() {
                 value={`\u20B9  ${fmt(payableAmount)}`}
                 isTotal
               />
+
+              {isCreditCard && (
+                <View style={styles.bankFeesBanner}>
+                  <RNText style={styles.bankFeesText}>
+                    Additional bank fees upto 1% might apply
+                  </RNText>
+                </View>
+              )}
             </View>
 
             {/* Perforations at y:256 */}
@@ -398,8 +392,6 @@ export default function ConfirmPaymentScreen() {
           )}
         </View>
       </ScrollView>
-
-      <ScrollDownIndicator visible={!isAtBottom} onPress={scrollToBottom} />
     </Screen>
   );
 }
@@ -451,7 +443,7 @@ const styles = StyleSheet.create({
   },
   topCardContent: {
     alignItems: 'center',
-    gap: 16,
+    gap: 8,
   },
   topCardTitle: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -569,6 +561,22 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: C.divider,
     width: '100%',
+  },
+  bankFeesBanner: {
+    backgroundColor: '#1A1A1A',  // Figma 782:6326: #1A1A1A (black[600])
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  bankFeesText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#DDDDDD',  // Figma 782:6327: #DDD (neutral[200])
+    textAlign: 'center',
   },
 
   leftPerforation: {

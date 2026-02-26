@@ -1,18 +1,30 @@
 /**
- * Verification Check Sheet (formerly CashbackSetupModal)
- * Figma Reference: 684-11916 (Verification check bottom sheet)
+ * Verification Check Sheet (CashbackSetupModal)
+ * Figma Reference: 791:6679
  *
- * Bottom sheet shown when user presses "Review & Pay" without completing verification.
- * Shows pending verification steps (utility address, landlord approval).
- * - Primary Action: "Finish Setup" -> Go to /(setup)/pending-steps
- * - Secondary Action: "I will do it later" -> Skip to payment flow
+ * Bottom sheet shown when user presses "Pay Rent" without completing verification.
+ * Shows the same verification progress timeline as SetupProgressCard.
  *
- * @deprecated CashbackSetupModal — use VerificationCheckSheet instead
+ * - Primary Action: "Finish Setup" → navigate to /(setup)/pending-steps
+ * - Secondary Action: "I'll do it later" → skip to payment flow
+ * - Disappears when all verifications are complete (caller never opens it)
+ *
+ * Figma Pixel-Perfect Values:
+ * - Sheet: bg #1A1A1A, borderTopRadius 22.788
+ * - Handle: 24x2, #4D4D4D, radius 200
+ * - Title (791:6690): 28/40, Regular, letterSpacing -1, px-48
+ *   "Set up to " (white) + "earn cashback " (#FF9A6D) + "on this payment." (white)
+ * - Sub-header (791:10135): 14/20, Regular, #CBCBCB — "Waiting for Landlord's approval"
+ * - Timeline: same 3 steps as SetupProgressCard, px-48, gap-16
+ * - Actions (791:6713): px-48, gap-32
+ *   - "Finish Setup" button (PrimaryButton with showDivider)
+ *   - "I'll do it later": 12/20, white, underlined
  */
 
 import React, { useEffect, useRef } from 'react';
 import {
   View,
+  Text as RNText,
   StyleSheet,
   Modal,
   TouchableOpacity,
@@ -26,7 +38,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/src/components/ui/Typography/Text';
 import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
 import { colors } from '@/src/theme';
-import { scaledSpacing } from '@/src/theme/scale';
+
+// ── Public API ──────────────────────────────────────────────────────────────
 
 export interface VerificationCheckSheetProps {
   visible: boolean;
@@ -37,56 +50,33 @@ export interface VerificationCheckSheetProps {
   landlordApproved: boolean;
 }
 
-/** @deprecated Use VerificationCheckSheetProps */
-interface CashbackSetupModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onSetup: () => void;
-  onSkip: () => void;
-  bankDetailsComplete?: boolean;
-  addressProofComplete?: boolean;
-  landlordInvited?: boolean;
-}
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// Exact Figma colors from 243-6731
-const FIGMA_COLORS = {
-  sheetBg: '#1A1A1A',
-  handle: '#4D4D4D',
-  titleWhite: '#FFFFFF',
-  itemTitle: '#CBCBCB',
-  itemSubtitle: '#878787',
-  indicatorActive: '#FF9A6D',
-  indicatorInactive: '#1A1A1A',
-  lineActive: '#FFAE8A',
-  lineInactive: '#A6A6A6',
-};
-
-export function CashbackSetupModal({
+/**
+ * VerificationCheckSheet — shown before payment when setup is incomplete.
+ * Bank details are always treated as complete (prerequisite to reach home).
+ */
+export function VerificationCheckSheet({
   visible,
   onClose,
-  onSetup,
-  onSkip,
-  bankDetailsComplete = false,
-  addressProofComplete = false,
-  landlordInvited = false,
-}: CashbackSetupModalProps) {
+  onFinishSetup,
+  onSkipToPayment,
+  utilityVerified,
+  landlordApproved,
+}: VerificationCheckSheetProps) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Handle back button on Android
+  // Android back button
   useEffect(() => {
     if (!visible) return;
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
       onClose();
       return true;
     });
-    return () => backHandler.remove();
+    return () => handler.remove();
   }, [visible, onClose]);
 
-  // Animate sheet in/out
+  // Slide + fade animation
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -124,21 +114,24 @@ export function CashbackSetupModal({
 
   if (!visible) return null;
 
-  const setupItems = [
+  // Same progress logic as SetupProgressCard
+  const steps = [
     {
       title: "Add landlord's bank details",
       subtitle: 'enables secure payouts',
-      isComplete: bankDetailsComplete,
+      isComplete: true, // bank is always done (prerequisite)
     },
     {
       title: 'Upload address proof',
       subtitle: 'for verification',
-      isComplete: addressProofComplete,
+      isComplete: utilityVerified,
     },
     {
-      title: 'Invite your landlord',
-      subtitle: 'needed for cashback eligibility',
-      isComplete: landlordInvited,
+      title: 'Confirm your tenancy',
+      subtitle: landlordApproved
+        ? 'Landlord is invited'
+        : 'waiting for landlord approval',
+      isComplete: landlordApproved,
     },
   ];
 
@@ -150,20 +143,20 @@ export function CashbackSetupModal({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        {/* Blur Overlay - Figma: radius 8, opacity 0.6 */}
-        <Animated.View style={[styles.overlayContainer, { opacity: fadeAnim }]}>
+      <View style={styles.modalContainer}>
+        {/* Blur overlay */}
+        <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
           <BlurView style={StyleSheet.absoluteFill} intensity={8} tint="dark" />
           <TouchableOpacity
             style={styles.overlayTouchable}
             onPress={onClose}
             activeOpacity={1}
             accessibilityRole="button"
-            accessibilityLabel="Close cashback setup"
+            accessibilityLabel="Close setup sheet"
           />
         </Animated.View>
 
-        {/* Bottom Sheet */}
+        {/* Bottom sheet */}
         <Animated.View
           style={[
             styles.sheet,
@@ -173,68 +166,70 @@ export function CashbackSetupModal({
             },
           ]}
         >
-          {/* Handle */}
+          {/* Handle — Figma I791:6714;137:37: 24x2, #4D4D4D */}
           <View style={styles.handleContainer}>
             <View style={styles.handle} />
           </View>
 
-          <View style={styles.content}>
-            {/* Title */}
-            <Text style={styles.title}>
-              Set up to earn cashback{'\n'}on this payment.
+          {/* Title — Figma 791:6690 */}
+          <View style={styles.titleContainer}>
+            <RNText style={styles.title}>
+              <RNText style={styles.titleWhite}>{'Set up to '}</RNText>
+              <RNText style={styles.titleAccent}>{'earn cashback '}</RNText>
+              <RNText style={styles.titleWhite}>on this payment.</RNText>
+            </RNText>
+          </View>
+
+          {/* Progress section — Figma 791:6691 */}
+          <View style={styles.progressSection}>
+            {/* Sub-header — Figma 791:10135 */}
+            <Text style={styles.subHeader}>
+              Waiting for Landlord's approval
             </Text>
 
-            {/* Checklist */}
-            <View style={styles.checklist}>
-              {setupItems.map((item, index) => {
-                const isLast = index === setupItems.length - 1;
-                return (
-                  <View key={index} style={styles.itemRow}>
-                    <View style={styles.indicatorColumn}>
+            {/* Timeline — same visual as SetupProgressCard */}
+            {steps.map((step, index) => {
+              const isLast = index === steps.length - 1;
+              return (
+                <View key={index} style={styles.timelineRow}>
+                  <View style={styles.indicatorColumn}>
+                    <View style={styles.indicatorContainer}>
                       <View
                         style={[
-                          styles.indicator,
+                          styles.dot,
                           {
-                            backgroundColor: item.isComplete
-                              ? FIGMA_COLORS.indicatorActive
-                              : FIGMA_COLORS.indicatorInactive,
+                            backgroundColor: step.isComplete
+                              ? colors.brand[500]
+                              : colors.black[600],
                           },
                         ]}
                       />
-                      {!isLast && (
-                        <View
-                          style={[
-                            styles.connectingLine,
-                            {
-                              backgroundColor: item.isComplete
-                                ? FIGMA_COLORS.lineActive
-                                : FIGMA_COLORS.lineInactive,
-                            },
-                          ]}
-                        />
-                      )}
                     </View>
-
-                    <View style={styles.itemTextContainer}>
-                      <Text style={styles.itemTitle}>{item.title}</Text>
-                      <Text style={styles.itemSubtitle}>{item.subtitle}</Text>
-                    </View>
+                    {!isLast && <View style={styles.connectorLine} />}
                   </View>
-                );
-              })}
-            </View>
+                  <View style={[styles.textColumn, isLast && styles.textColumnLast]}>
+                    <Text style={styles.stepTitle}>{step.title}</Text>
+                    <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
 
-            {/* Actions */}
-            <View style={styles.actions}>
-              <PrimaryButton
-                title="Finish Setup"
-                onPress={onSetup}
-                showDivider
-              />
-              <TouchableOpacity onPress={onSkip} style={styles.skipButton}>
-                <Text style={styles.skipText}>I'll do it later</Text>
-              </TouchableOpacity>
-            </View>
+          {/* Actions — Figma 791:6713 */}
+          <View style={styles.actions}>
+            <PrimaryButton
+              title="Finish Setup"
+              onPress={onFinishSetup}
+              showDivider
+            />
+            <TouchableOpacity
+              onPress={onSkipToPayment}
+              style={styles.skipButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.skipText}>I'll do it later</Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </View>
@@ -242,12 +237,21 @@ export function CashbackSetupModal({
   );
 }
 
+// ── Deprecated export — kept for backwards compat ───────────────────────────
+
+/** @deprecated Use VerificationCheckSheet instead */
+export const CashbackSetupModal = VerificationCheckSheet;
+
+// ── Constants & Styles ──────────────────────────────────────────────────────
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
-  container: {
+  modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
   },
-  overlayContainer: {
+  overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     zIndex: 10,
@@ -255,111 +259,116 @@ const styles = StyleSheet.create({
   overlayTouchable: {
     flex: 1,
   },
+  // Sheet — Figma 791:6679: bg #1A1A1A, borderTopRadius ~23
   sheet: {
-    backgroundColor: FIGMA_COLORS.sheetBg,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: colors.black[600], // #1A1A1A
+    borderTopLeftRadius: 23,
+    borderTopRightRadius: 23,
     paddingTop: 15,
     zIndex: 20,
+    gap: 24,
   },
+  // Handle — Figma: 24x2, #4D4D4D, centered
   handleContainer: {
     alignItems: 'center',
-    paddingBottom: 30, // Matches spacing to content
   },
   handle: {
-    width: 48,
-    height: 4,
-    backgroundColor: FIGMA_COLORS.handle,
+    width: 24,
+    height: 2,
+    backgroundColor: colors.black[400], // #4D4D4D
     borderRadius: 200,
   },
-  content: {
+  // Title — Figma 791:6690: px-48, 28/40, letterSpacing -1
+  titleContainer: {
     paddingHorizontal: 48,
+    paddingTop: 16,
   },
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 28,
     lineHeight: 40,
     letterSpacing: -1,
-    color: FIGMA_COLORS.titleWhite,
-    marginBottom: 24,
   },
-  checklist: {
-    gap: 24,
-    marginBottom: 32,
+  titleWhite: {
+    color: colors.white,
   },
-  itemRow: {
-    flexDirection: 'row',
-    gap: 8,
+  titleAccent: {
+    color: colors.brand[500], // #FF9A6D
   },
-  indicatorColumn: {
-    alignItems: 'center',
-    width: 20,
+  // Progress section — Figma 791:6691: px-48, gap-16
+  progressSection: {
+    paddingHorizontal: 48,
+    gap: 16,
   },
-  indicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  connectingLine: {
-    width: 1,
-    height: 52,
-    marginTop: 4,
-  },
-  itemTextContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  itemTitle: {
+  // Sub-header — Figma 791:10135
+  subHeader: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
-    color: FIGMA_COLORS.itemTitle,
+    color: colors.neutral[300], // #CBCBCB
   },
-  itemSubtitle: {
+  // Timeline — matches SetupProgressCard exactly
+  timelineRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  indicatorColumn: {
+    width: 20,
+    alignItems: 'center',
+    alignSelf: 'stretch',
+  },
+  indicatorContainer: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  connectorLine: {
+    width: 1,
+    flex: 1,
+    backgroundColor: colors.black[400], // #4D4D4D
+  },
+  textColumn: {
+    flex: 1,
+    gap: 4,
+    justifyContent: 'center',
+    paddingBottom: 16, // Figma gap between timeline rows (within 16-gap section)
+  },
+  textColumnLast: {
+    paddingBottom: 0,
+  },
+  stepTitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.neutral[300], // #CBCBCB
+  },
+  stepSubtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.itemSubtitle,
+    color: colors.neutral[600], // #878787
   },
+  // Actions — Figma 791:6713: px-48, gap-32
   actions: {
-    width: '100%',
-    gap: 16,
+    paddingHorizontal: 48,
+    gap: 32,
     alignItems: 'center',
   },
   skipButton: {
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   skipText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.titleWhite,
+    color: colors.white,
+    textDecorationLine: 'underline',
   },
 });
-
-/**
- * VerificationCheckSheet — New API wrapping CashbackSetupModal
- * Shows only pending verification steps (utility, landlord).
- */
-export function VerificationCheckSheet({
-  visible,
-  onClose,
-  onFinishSetup,
-  onSkipToPayment,
-  utilityVerified,
-  landlordApproved,
-}: VerificationCheckSheetProps) {
-  return (
-    <CashbackSetupModal
-      visible={visible}
-      onClose={onClose}
-      onSetup={onFinishSetup}
-      onSkip={onSkipToPayment}
-      bankDetailsComplete={true}
-      addressProofComplete={utilityVerified}
-      landlordInvited={landlordApproved}
-    />
-  );
-}
-

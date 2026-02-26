@@ -345,11 +345,44 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
     color: #878787;
     font-weight: 600;
   }
+
+  /* ------------------------------------------------------------------ */
+  /* Logo row                                                            */
+  /* ------------------------------------------------------------------ */
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .logo-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #FF9A6D;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Cashback deduction value                                            */
+  /* ------------------------------------------------------------------ */
+  .cashback-value {
+    color: #EF9194 !important;
+    font-size: 14px !important;
+    font-weight: 400;
+  }
 </style>
 </head>
 <body>
 
 <div class="card">
+
+  <!-- Logo -->
+  <div class="logo-row">
+    <svg width="24" height="28" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="#FF9A6D"/>
+    </svg>
+    <span class="logo-text">Rent Receipt</span>
+  </div>
 
   <!-- Header -->
   <div class="header">
@@ -376,6 +409,12 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
   <div class="row">
     <span class="row-label"><span class="hash">#</span>Amount paid</span>
     <span class="row-value">\u20B9 ${esc(formatIndianAmount(payment.amount))}</span>
+  </div>
+
+  <!-- Cashback Applied -->
+  <div class="row">
+    <span class="row-label"><span class="hash">#</span>Cashback Applied</span>
+    <span class="row-value cashback-value">- \u20B9 ${esc(formatIndianAmount(payment.cashbackApplied))}</span>
   </div>
 
   <!-- Date -->

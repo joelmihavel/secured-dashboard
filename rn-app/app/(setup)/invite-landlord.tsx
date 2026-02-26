@@ -45,6 +45,7 @@ import * as Haptics from 'expo-haptics';
 import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { DottedGridPattern, DottedGridPresets } from '@/src/components/patterns/DottedGridPattern';
 import { useSendLandlordInvite, useDashboard } from '@/src/hooks';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import type { SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
@@ -73,6 +74,19 @@ export default function InviteLandlordScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [inviteSent, setInviteSent] = useState(false);
+
+  // Animated progress bar
+  const progress = useSharedValue(66.67);
+  React.useEffect(() => {
+    progress.value = withTiming(100, { duration: 500 });
+  }, []);
+  const animatedProgressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progress.value}%`,
+      height: '100%',
+      backgroundColor: FIGMA_COLORS.progressFill,
+    };
+  });
 
   const handleBack = useCallback(() => {
     router.back();
@@ -186,7 +200,7 @@ export default function InviteLandlordScreen() {
             {/* Title: "One last step we promise"
                 Figma spans: 0-13 "One last step" = #A9A9A9, 14-24 "we promise" = #FF9A6D
                 48/64, letterSpacing -2, PlusJakartaSans-Regular */}
-            <ScreenTitle gray="One last step" accent="we promise" />
+            <ScreenTitle gray="Confirm\n" accent="your tenancy" />
 
             {/* Subtitle: 12/20, #A9A9A9, PlusJakartaSans-Regular */}
             <Text style={styles.subtitleText}>
@@ -197,7 +211,7 @@ export default function InviteLandlordScreen() {
           {/* Progress bar -- Figma 1:34226: container 393x3 (clipped), track 393x12 #4D4D4D, fill 393x12 #CC7B57 */}
           <View style={styles.progressContainer}>
             <View style={styles.progressTrack}>
-              <View style={styles.progressFill} />
+              <Animated.View style={animatedProgressStyle} />
             </View>
           </View>
 
@@ -210,13 +224,18 @@ export default function InviteLandlordScreen() {
           {/* Phone Input -- Figma: label + phone input with +91 dropdown */}
           <View style={styles.inputSection}>
             <PhoneInput
-              label="Invite your landlord to Secured to finish setup."
+              label="Confirm your tenancy by inviting your landlord"
               value={phoneNumber}
               onChangeText={handlePhoneChange}
               placeholder="Enter Number"
               error={errors.phone}
               disabled={sendLandlordInvite.isPending}
             />
+            
+            <TouchableOpacity style={styles.inviteBanner}>
+              <Text style={styles.inviteBannerText}>How to invite your landlord?</Text>
+              <Text style={styles.inviteBannerLink}>Learn More</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Button section -- Figma 1:34233: column, gap 16 */}
@@ -292,6 +311,30 @@ const styles = StyleSheet.create({
   // Input section
   inputSection: {
     width: '100%',
+    gap: 24,
+  },
+  // Invite banner -- Figma 1:34229
+  inviteBanner: {
+    backgroundColor: '#202020',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inviteBannerText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#FF9A6D',
+  },
+  inviteBannerLink: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#FF9A6D',
+    textAlign: 'center',
   },
   // Button section -- Figma 1:34233: column, gap 16
   buttonSection: {

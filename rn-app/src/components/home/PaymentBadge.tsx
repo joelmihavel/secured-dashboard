@@ -69,7 +69,7 @@ const TEXT_R = 50;
 // Font size for circular text: Figma sm/Medium = 12px design.
 // Badge viewBox is 128 matching the ring area. At 94px render:
 // 9 vb-units → ~6.6px actual, readable for the circular band.
-const TEXT_FONT_SIZE = 9;
+const TEXT_FONT_SIZE = 12;
 
 // Figma-exact values per variant
 const BADGE_CONFIGS: Record<
@@ -86,32 +86,32 @@ const BADGE_CONFIGS: Record<
 > = {
   paid: {
     bg: '#FF9A6D', // colours/brand/500
-    ringStroke: 'rgba(0,0,0,0.12)',
-    textFill: 'rgba(0,0,0,0.55)',
+    ringStroke: 'transparent',
+    textFill: '#000000',
     label: 'you did it | ',
     centerType: 'logo',
     centerColor: '#000000',
   },
   upcoming: {
     bg: '#202020', // colours/black/500
-    ringStroke: 'rgba(135,135,135,0.25)',
-    textFill: 'rgba(135,135,135,0.4)',
+    ringStroke: '#797979',
+    textFill: '#878787',
     label: 'upcoming payment | ',
     centerType: 'logo',
     centerColor: '#878787', // colours/neutral/600
   },
   late: {
     bg: '#892B2E', // colour/icons/error/default-3
-    ringStroke: '#EF9194', // from Figma SVG: stroke="var(--stroke-0, #EF9194)"
-    textFill: 'rgba(239,145,148,0.45)',
+    ringStroke: '#EF9194',
+    textFill: '#EF9194',
     label: 'late payment | ',
     centerType: 'count',
     centerColor: '#EF9194', // colour/icons/error/default-2
   },
   missed: {
     bg: '#FFC04D', // colours/warning/400
-    ringStroke: '#332306', // colours/warning/900
-    textFill: 'rgba(51,35,6,0.4)',
+    ringStroke: '#332306',
+    textFill: '#332306',
     label: 'missed payment | ',
     centerType: 'count',
     centerColor: '#332306', // colours/warning/900
@@ -122,7 +122,7 @@ const BADGE_CONFIGS: Record<
 const TEXT_PATH_D = `M ${CX},${CY - TEXT_R} a ${TEXT_R},${TEXT_R} 0 1,1 0,${TEXT_R * 2} a ${TEXT_R},${TEXT_R} 0 1,1 0,${-TEXT_R * 2}`;
 
 // Scale the logo to fit ~32px wide within the badge center
-const LOGO_SCALE = 32 / LOGO_W; // ≈ 0.905
+const LOGO_SCALE = 1.0;
 
 function PaymentBadgeComponent({
   variant,
@@ -135,7 +135,7 @@ function PaymentBadgeComponent({
   // Repeat label enough times to fill the full circumference (~314 units).
   // At fontSize 9, avg char width ≈ 5 → each repeat ≈ 70-100 units.
   // 6 repeats guarantees full coverage; TextPath clips at path end.
-  const fullLabel = cfg.label.repeat(6);
+  const fullLabel = cfg.label.repeat(5);
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${VB} ${VB}`}>
@@ -156,16 +156,29 @@ function PaymentBadgeComponent({
         <TextPath href={`#${pathId}`}>{fullLabel}</TextPath>
       </SvgText>
 
-      {/* 3. Outer decorative ring — Figma Ellipse 21916 */}
-      <Circle
-        cx={CX}
-        cy={CY}
-        r={OUTER_R}
-        fill="none"
-        stroke={cfg.ringStroke}
-        strokeWidth={RING_STROKE_W}
-        opacity={cfg.centerType === 'count' ? 0.3 : 1}
-      />
+      {cfg.ringStroke !== 'transparent' && (
+        <>
+          {/* 3. Outer decorative ring — Figma Ellipse 21916 */}
+          <Circle
+            cx={CX}
+            cy={CY}
+            r={OUTER_R}
+            fill="none"
+            stroke={cfg.ringStroke}
+            strokeWidth={RING_STROKE_W}
+          />
+
+          {/* 4. Inner decorative ring — Figma Ellipse 21915 */}
+          <Circle
+            cx={CX}
+            cy={CY}
+            r={INNER_R}
+            fill="none"
+            stroke={cfg.ringStroke}
+            strokeWidth={RING_STROKE_W}
+          />
+        </>
+      )}
 
       {/* 4. Inner decorative ring — Figma Ellipse 21915 */}
       <Circle

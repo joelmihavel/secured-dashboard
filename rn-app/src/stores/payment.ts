@@ -35,6 +35,7 @@ export interface SelectedPaymentMethod {
   displayName: string;
   last4?: string;
   isPrimary?: boolean;
+  cardType?: 'credit' | 'debit';
 }
 
 /**

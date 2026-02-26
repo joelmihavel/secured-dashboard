@@ -159,7 +159,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                   ]
                 }
               >
-                One last step
+                Confirm\\n
                 
 
                 <Text
@@ -172,7 +172,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                     ]
                   }
                 >
-                  we promise
+                  your tenancy
                 </Text>
               </Text>
               <Text
@@ -222,7 +222,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                     {
                       "backgroundColor": "#CC7B57",
                       "height": "100%",
-                      "width": "100%",
+                      "width": "66.67%",
                     }
                   }
                 />
@@ -231,6 +231,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
             <View
               style={
                 {
+                  "gap": 24,
                   "width": "100%",
                 }
               }
@@ -273,7 +274,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                       ]
                     }
                   >
-                    Invite your landlord to Secured to finish setup.
+                    Confirm your tenancy by inviting your landlord
                   </Text>
                 </View>
                 <View
@@ -338,7 +339,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                     </Svg>
                   </View>
                   <TextInput
-                    accessibilityLabel="Invite your landlord to Secured to finish setup."
+                    accessibilityLabel="Confirm your tenancy by inviting your landlord"
                     accessibilityState={
                       {
                         "disabled": false,
@@ -373,6 +374,93 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                     value=""
                   />
                 </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={false}
+                onClick={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#202020",
+                    "borderRadius": 12,
+                    "flexDirection": "row",
+                    "justifyContent": "space-between",
+                    "opacity": 1,
+                    "paddingHorizontal": 12,
+                    "paddingVertical": 8,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#FF9A6D",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "lineHeight": 20,
+                      },
+                    ]
+                  }
+                >
+                  How to invite your landlord?
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "color": "#FFFFFF",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 16,
+                        "letterSpacing": 0,
+                        "lineHeight": 24,
+                        "textAlign": "left",
+                      },
+                      {
+                        "color": "#FF9A6D",
+                        "fontFamily": "PlusJakartaSans-Regular",
+                        "fontSize": 12,
+                        "lineHeight": 20,
+                        "textAlign": "center",
+                      },
+                    ]
+                  }
+                >
+                  Learn More
+                </Text>
               </View>
             </View>
             <View

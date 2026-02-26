@@ -45,8 +45,8 @@ import { PaymentReceiptCard } from '@/src/components/payment/PaymentReceiptCard'
 import { DashedDivider } from '@/src/components/payment';
 import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
-import { useGenerateReceipt } from '@/src/hooks';
-import { checkPaymentStatus } from '@/src/services/api/payments';
+import { checkPaymentStatus, generateReceipt } from '@/src/services/api/payments';
+import type { ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml } from '@/src/utils/receiptHtml';
 import { usePaymentStore } from '@/src/stores';
 import { PAYMENT_COLORS } from '@/src/theme';
@@ -63,6 +63,9 @@ interface StatusParams {
   transactionId?: string;
   initialStatus?: 'pending' | 'success' | 'failed' | 'refunded';
   error?: string;
+  source?: 'post_payment' | 'receipt_view';
+  landlordName?: string;
+  agreementId?: string;
 }
 
 type StatusState = 'pending' | 'success' | 'failed' | 'refunded' | 'timed_out';
@@ -120,11 +123,18 @@ const FIGMA_COLORS = {
   payableValue: PAYMENT_COLORS.highlightText,
   iconColor: PAYMENT_COLORS.labelText,
   dividerColor: PAYMENT_COLORS.divider,
-  cashbackBg: PAYMENT_COLORS.cashbackBg,
-  cashbackText: PAYMENT_COLORS.cashbackText,
   tryAgainText: PAYMENT_COLORS.mutedText,
-  settlementText: PAYMENT_COLORS.labelText,
 } as const;
+
+// ============================================
+// HELPERS
+// ============================================
+
+function formatDisplayDate(isoString: string): string {
+  const date = new Date(isoString);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
 
 // ============================================
 // INFO ROW MESSAGES
@@ -229,28 +239,25 @@ interface ReceiptRowProps {
   label: string;
   value: string;
   isPayableRent?: boolean;
+  isCashback?: boolean;
 }
 
-const ReceiptRow = memo(({ label, value, isPayableRent }: ReceiptRowProps) => (
+const ReceiptRow = memo(({ label, value, isPayableRent, isCashback }: ReceiptRowProps) => (
   <View style={styles.receiptRow}>
     <View style={styles.labelContainer}>
       <ReceiptIcon />
       <Text style={styles.labelText}>{label}</Text>
     </View>
-    <Text style={isPayableRent ? styles.payableRentValueText : styles.valueText}>
+    <Text style={
+      isPayableRent ? styles.payableRentValueText :
+      isCashback ? styles.cashbackValueText :
+      styles.valueText
+    }>
       {value}
     </Text>
   </View>
 ));
 ReceiptRow.displayName = 'ReceiptRow';
-
-/** Cashback / info pill (success state) */
-const CashbackPill = memo(({ text }: { text: string }) => (
-  <View style={styles.cashbackPill}>
-    <Text style={styles.cashbackText}>{text}</Text>
-  </View>
-));
-CashbackPill.displayName = 'CashbackPill';
 
 // ============================================
 // STATUS-SPECIFIC CONTENT RENDERERS
@@ -275,44 +282,50 @@ PendingContent.displayName = 'PendingContent';
 
 interface SuccessContentProps {
   amount: string;
+  cashbackApplied: number;
+  date: string;
   method: string;
-  transactionId: string;
-  cashback: string;
   landlordName: string;
-  utr: string;
+  panCard: string;
+  agreementId: string;
+  transactionId: string;
+  payableRent: string;
 }
 
 const SuccessContent = memo(({
   amount,
+  cashbackApplied,
+  date,
   method,
-  transactionId,
-  cashback,
   landlordName,
-  utr,
+  panCard,
+  agreementId,
+  transactionId,
+  payableRent,
 }: SuccessContentProps) => {
-  const hasCashback = Number(cashback) > 0;
-  const formattedAmount = Number(amount) ? Number(amount).toLocaleString('en-IN') : amount;
-  const now = new Date();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  const cashbackDisplay = `- \u20B9  ${cashbackApplied.toLocaleString('en-IN')}`;
+
   return (
     <View style={styles.receiptDetails}>
-      <ReceiptRow label="Amount paid" value={`\u20B9  ${formattedAmount}`} />
+      <ReceiptRow label="Amount paid" value={`\u20B9  ${amount}`} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Date" value={dateStr} />
+      <ReceiptRow label="Cashback Applied" value={cashbackDisplay} isCashback />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Method" value={method.toUpperCase()} />
+      <ReceiptRow label="Date" value={date} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Landlord" value={landlordName || 'N/A'} />
+      <ReceiptRow label="Method" value={method} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Transaction ID" value={utr || transactionId} />
-      {hasCashback ? (
-        <CashbackPill text={`You saved \u20B9${cashback} with Flent`} />
-      ) : (
-        <CashbackPill text="Complete setup to save 1% on rent" />
-      )}
+      <ReceiptRow label="Landlord" value={landlordName} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Payable Rent" value={`\u20B9  ${formattedAmount}`} isPayableRent />
+      <ReceiptRow label="PAN Card" value={panCard} />
+      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+      <ReceiptRow label="Agreement ID" value={agreementId} />
+      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+      <ReceiptRow label="Transaction ID" value={transactionId} />
+      <View style={styles.secondSection}>
+        <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+        <ReceiptRow label="Payable Rent" value={`\u20B9  ${payableRent}`} isPayableRent />
+      </View>
     </View>
   );
 });
@@ -359,8 +372,6 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
 export default function PaymentStatusScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { mutateAsync: generateReceiptAsync, isPending: isGeneratingReceipt } =
-    useGenerateReceipt();
   const { clearLastPayment } = usePaymentStore();
 
   // -- Route params
@@ -386,6 +397,10 @@ export default function PaymentStatusScreen() {
 
   // -- Error boundary state
   const [renderError, setRenderError] = useState(false);
+
+  // -- Receipt data (fetched on success for full receipt display)
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const isReceiptView = params.source === 'receipt_view';
 
   // -- Network awareness
   const { isConnected } = useNetworkStatus();
@@ -626,6 +641,29 @@ export default function PaymentStatusScreen() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================
+  // FETCH RECEIPT DATA (success state)
+  // ============================================
+
+  useEffect(() => {
+    if (state.status !== 'success' || !paymentId || receiptData) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { data } = await generateReceipt(paymentId);
+        if (!cancelled && data) {
+          setReceiptData(data);
+        }
+      } catch {
+        // Fall back to route params
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [state.status, paymentId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ============================================
   // BACK NAVIGATION GUARD
   // ============================================
 
@@ -680,9 +718,21 @@ export default function PaymentStatusScreen() {
   const handleDownloadReceipt = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    if (paymentId) {
+    // Use cached receipt data or fetch fresh
+    let receipt = receiptData;
+    if (!receipt && paymentId) {
       try {
-        const receipt = await generateReceiptAsync(paymentId);
+        const { data } = await generateReceipt(paymentId);
+        receipt = data;
+      } catch (err) {
+        if (__DEV__) {
+          console.warn('Receipt fetch failed:', err);
+        }
+      }
+    }
+
+    if (receipt) {
+      try {
         const html = buildReceiptHtml({
           receiptNumber: receipt.receiptNumber,
           payment: {
@@ -713,13 +763,13 @@ export default function PaymentStatusScreen() {
         const { uri } = await Print.printToFileAsync({ html, base64: false });
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
-          dialogTitle: `Receipt ${receipt.receiptNumber}`,
+          dialogTitle: 'Rent Receipt',
           UTI: 'com.adobe.pdf',
         });
         return;
       } catch (err) {
         if (__DEV__) {
-          console.warn('PDF receipt generation failed, falling back to text share:', err);
+          console.warn('PDF generation failed, falling back to text share:', err);
         }
       }
     }
@@ -727,15 +777,15 @@ export default function PaymentStatusScreen() {
     // Fallback to basic text share
     try {
       await Share.share({
-        message: `Payment Receipt\n\nAmount: \u20B9${amount}\nDate: ${new Date().toLocaleDateString()}\nTransaction ID: ${transactionId}\nMethod: ${method}`,
-        title: 'Payment Receipt',
+        message: `Rent Receipt\n\nAmount: \u20B9${amount}\nDate: ${new Date().toLocaleDateString()}\nTransaction ID: ${transactionId}\nMethod: ${method}`,
+        title: 'Rent Receipt',
       });
     } catch (err) {
       if (__DEV__) {
         console.log('Share error:', err);
       }
     }
-  }, [paymentId, amount, transactionId, method, generateReceiptAsync]);
+  }, [receiptData, paymentId, amount, transactionId, method]);
 
   // ============================================
   // DERIVED UI VALUES
@@ -777,6 +827,40 @@ export default function PaymentStatusScreen() {
   const titleConfig = getTitleConfig();
 
   // ============================================
+  // DISPLAY DATA (computed from receipt data or route params)
+  // ============================================
+
+  const displayData = React.useMemo(() => {
+    if (receiptData) {
+      const { payment: rp, landlord, agreement } = receiptData;
+      return {
+        amount: rp.amount.toLocaleString('en-IN'),
+        cashbackApplied: rp.cashbackApplied,
+        date: formatDisplayDate(rp.paidAt),
+        method: rp.paymentMethod ?? method.toUpperCase(),
+        landlordName: landlord.name,
+        panCard: landlord.panMasked ?? 'N/A',
+        agreementId: agreement.certId ? `#${agreement.certId}` : 'N/A',
+        transactionId: rp.utr ?? rp.transactionId ?? transactionId,
+        payableRent: rp.netAmountPaid.toLocaleString('en-IN'),
+      };
+    }
+
+    const formatted = Number(amount) ? Number(amount).toLocaleString('en-IN') : amount;
+    return {
+      amount: formatted,
+      cashbackApplied: Number(cashback) || 0,
+      date: formatDisplayDate(new Date().toISOString()),
+      method: method.toUpperCase(),
+      landlordName: params.landlordName || 'N/A',
+      panCard: 'N/A',
+      agreementId: params.agreementId ? `#${params.agreementId}` : 'N/A',
+      transactionId: transactionId,
+      payableRent: formatted,
+    };
+  }, [receiptData, amount, cashback, method, transactionId, params.landlordName, params.agreementId]);
+
+  // ============================================
   // RENDER CARD CONTENT
   // ============================================
 
@@ -787,12 +871,15 @@ export default function PaymentStatusScreen() {
       case 'success':
         return (
           <SuccessContent
-            amount={amount}
-            method={method}
-            transactionId={transactionId}
-            cashback={cashback}
-            landlordName=""
-            utr=""
+            amount={displayData.amount}
+            cashbackApplied={displayData.cashbackApplied}
+            date={displayData.date}
+            method={displayData.method}
+            landlordName={displayData.landlordName}
+            panCard={displayData.panCard}
+            agreementId={displayData.agreementId}
+            transactionId={displayData.transactionId}
+            payableRent={displayData.payableRent}
           />
         );
       case 'failed':
@@ -839,14 +926,16 @@ export default function PaymentStatusScreen() {
         return (
           <>
             <PrimaryButton
-              title={isGeneratingReceipt ? 'Generating...' : 'Download Receipt'}
+              title="Download Receipt"
               onPress={handleDownloadReceipt}
-              loading={isGeneratingReceipt}
               testID="download-receipt-button"
             />
-            <Text style={styles.settlementNote}>
-              Settlement to your landlord will take 1-2 business days.
-            </Text>
+            <TouchableOpacity
+              onPress={handleContactSupport}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.contactSupportText}>Contact Support</Text>
+            </TouchableOpacity>
           </>
         );
 
@@ -890,6 +979,26 @@ export default function PaymentStatusScreen() {
   try {
     content = (
       <View style={styles.container}>
+        {/* Back button for receipt view */}
+        {isReceiptView && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            testID="back-button"
+          >
+            <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
+              <Path
+                d="M20 8L12 16L20 24"
+                stroke={FIGMA_COLORS.titleWhite}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+        )}
+
         <PaymentReceiptCard
           stampText={stampConfig.text}
           stampColor={stampConfig.color}
@@ -1013,23 +1122,16 @@ const styles = StyleSheet.create({
     width: FIGMA_CARD_INNER_WIDTH,
     marginVertical: 0,
   },
-  cashbackPill: {
-    width: FIGMA_CARD_INNER_WIDTH,
-    alignSelf: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 40,
-    marginVertical: 12,
-    backgroundColor: FIGMA_COLORS.cashbackBg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cashbackText: {
+  cashbackValueText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 20,
-    color: FIGMA_COLORS.cashbackText,
-    textAlign: 'center',
+    color: PAYMENT_COLORS.cashbackDeduct, // #EF9194
+    textAlign: 'right' as const,
+  },
+  secondSection: {
+    marginTop: 8,
+    gap: 16,
   },
 
   // -- Button container
@@ -1041,12 +1143,22 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     marginTop: 40,
   },
-  settlementNote: {
+  contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
-    color: FIGMA_COLORS.settlementText,
-    textAlign: 'center',
+    color: FIGMA_COLORS.tryAgainText, // #A9A9A9
+    textAlign: 'center' as const,
+  },
+  backButton: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    zIndex: 10,
+    width: 32,
+    height: 32,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   tryAgainText: {
     fontFamily: 'PlusJakartaSans-Regular',

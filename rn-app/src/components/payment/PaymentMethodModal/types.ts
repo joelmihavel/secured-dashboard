@@ -9,7 +9,7 @@
 import type { PaymentFlowOutcome } from '@/src/hooks/usePaymentFlow';
 
 /** Which view is displayed inside the payment method modal */
-export type ModalView = 'selector' | 'add-upi' | 'add-card' | 'add-debit-card' | 'add-netbanking';
+export type ModalView = 'selector' | 'add-upi' | 'add-card' | 'add-debit-card' | 'add-netbanking' | 'edit-method';
 
 /** Method type passed from selector to orchestrator */
 export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';
@@ -24,6 +24,7 @@ export interface AddMethodContentProps {
 /** Props for the method selector content */
 export interface MethodSelectorContentProps {
   onProceed: (methodType: PaymentMethodType) => void;
+  onEdit: (methodType: PaymentMethodType, savedMethodId: string) => void;
   isInitiating: boolean;
 }
 
@@ -34,4 +35,14 @@ export interface PaymentMethodModalProps {
   tenancyId: string;
   rentMonth: string;
   onProceed?: (method: PaymentMethodType) => void;
+}
+
+/** Props for the edit method view */
+export interface EditMethodContentProps {
+  onBack: () => void;
+  methodType: PaymentMethodType;
+  savedMethodId: string;
+  onProceed: (methodType: PaymentMethodType) => void;
+  onDeleteSuccess: (methodType: PaymentMethodType) => void;
+  isInitiating: boolean;
 }

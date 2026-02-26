@@ -343,7 +343,18 @@ export default function HomeScreen() {
           cashbackEarned: payment.amount * (cashbackRate / 100), // Approximate for UI
           status: payment.status === 'failed' ? 'missed' : payment.status === 'pending' || payment.status === 'processing' ? 'upcoming' : 'paid',
           onViewReceipt: () => {
-            // Receipt logic
+            router.push({
+              pathname: '/(payment)/status',
+              params: {
+                paymentId: payment.id,
+                amount: String(payment.amount),
+                method: 'upi',
+                initialStatus: 'success',
+                source: 'receipt_view',
+                landlordName: tenancy?.landlord_name ?? '',
+                agreementId: tenancy?.agreement_cert_id ?? '',
+              },
+            } as never);
           },
           yearlyStamps: [],
           lateCount: paymentStamps?.summary?.late ?? 0,

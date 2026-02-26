@@ -41,6 +41,7 @@ import { MethodSelectorContent } from './MethodSelectorContent';
 import { AddUpiContent } from './AddUpiContent';
 import { AddCardContent } from './AddCardContent';
 import { AddNetbankingContent } from './AddNetbankingContent';
+import { EditMethodContent } from './EditMethodContent';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MAX_SHEET_HEIGHT = SCREEN_HEIGHT * 0.85;
@@ -56,6 +57,8 @@ export function PaymentMethodModal({
   const [paymentId, setPaymentId] = useState('');
   const [isInitiating, setIsInitiating] = useState(false);
   const [cardType, setCardType] = useState<'credit' | 'debit'>('credit');
+  const [editMethodType, setEditMethodType] = useState<PaymentMethodType | null>(null);
+  const [editSavedMethodId, setEditSavedMethodId] = useState<string>('');
 
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const { isConnected } = useNetworkStatus();
@@ -120,6 +123,24 @@ export function PaymentMethodModal({
 
     return () => subscription.remove();
   }, [visible, handleBack]);
+
+  // --- Edit handler: switches view to edit specific method ---
+  const handleEdit = useCallback((methodType: PaymentMethodType, savedMethodId: string) => {
+    setEditMethodType(methodType);
+    setEditSavedMethodId(savedMethodId);
+    setModalView('edit-method');
+  }, []);
+
+  // --- Delete success handler: automatically route to setup after deletion ---
+  const handleDeleteSuccess = useCallback((methodType: PaymentMethodType) => {
+    const viewMap: Record<PaymentMethodType, ModalView> = {
+      upi: 'add-upi',
+      card: 'add-card',
+      debit_card: 'add-debit-card',
+      netbanking: 'add-netbanking',
+    };
+    setModalView(viewMap[methodType]);
+  }, []);
 
   // --- Proceed from method selector: initiate payment + navigate to add-method ---
   const handleProceed = useCallback(
@@ -246,6 +267,7 @@ export function PaymentMethodModal({
             {modalView === 'selector' && (
               <MethodSelectorContent
                 onProceed={handleProceed}
+                onEdit={handleEdit}
                 isInitiating={isInitiating}
               />
             )}
@@ -260,6 +282,16 @@ export function PaymentMethodModal({
             )}
             {modalView === 'add-netbanking' && (
               <AddNetbankingContent paymentId={paymentId} onBack={handleBack} />
+            )}
+            {modalView === 'edit-method' && editMethodType && (
+              <EditMethodContent
+                methodType={editMethodType}
+                savedMethodId={editSavedMethodId}
+                onBack={handleBack}
+                onProceed={handleProceed}
+                onDeleteSuccess={handleDeleteSuccess}
+                isInitiating={isInitiating}
+              />
             )}
           </View>
         </Animated.View>

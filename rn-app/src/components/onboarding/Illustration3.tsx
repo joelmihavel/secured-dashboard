@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import Svg, { G, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedProps, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import { computeBorderData } from './snakeUtils';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -324,38 +325,35 @@ const PATHS = [
   "M74.9337 67.8883C76.0923 66.3232 78.1653 66.0353 78.9501 67.9904C79.0107 68.5512 79.0494 69.1298 79.1928 69.6722C78.979 70.6398 78.8756 70.7238 78.0798 71.3527C77.3598 71.3704 76.6578 71.3293 75.9406 71.2979C74.6179 70.0114 74.7889 69.6594 74.9337 67.8883Z",
   "M73.934 0.0134587C75.1257 0.110833 75.7491 0.143383 76.3091 1.32911C76.6718 2.10769 76.6898 3.00364 76.3587 3.79629C76.0567 4.52632 75.7546 4.71638 75.0623 5.01222C72.6736 5.06215 71.3801 3.57837 72.3617 1.07078C72.6075 0.443089 73.3092 0.204345 73.934 0.0134587Z"
 ];
-const TOTAL_DOTS = PATHS.length;
-const TRAIL_LENGTH = 5; // A small trail looks better
+// Pre-compute border ordering (runs once at module load)
+const BORDER = computeBorderData(PATHS);
+const TRAIL_LENGTH = 12;
 
-function Dot({ d, index, progress }: { d: string, index: number, progress: any }) {
+function Dot({ d, borderIdx, progress, borderCount }: {
+  d: string;
+  borderIdx: number;
+  progress: Animated.SharedValue<number>;
+  borderCount: number;
+}) {
   const animatedProps = useAnimatedProps(() => {
-    const currentPos = progress.value * TOTAL_DOTS;
-    
-    let isHighlighted = false;
-    let opacity = 0.48;
-    let fill = '#DDDDDD';
+    if (borderIdx < 0) {
+      return { fill: '#DDDDDD', opacity: 0.25 };
+    }
 
-    // Calculate circular distance
-    let dist = currentPos - index;
-    if (dist < 0) dist += TOTAL_DOTS;
-    
+    const headPos = (progress.value * borderCount) % borderCount;
+    let dist = headPos - borderIdx;
+    if (dist < 0) dist += borderCount;
+
     if (dist < TRAIL_LENGTH) {
-      isHighlighted = true;
-      // Fade out the trail
-      const intensity = 1 - (dist / TRAIL_LENGTH);
-      // We can just keep it solid orange for the trail, or just color 1 dot
-      // The user asked for "one a time", let's just make the very closest one solid orange
+      const t = dist / TRAIL_LENGTH;
+      const intensity = 1 - t * t;
+      return {
+        fill: '#FF9A6D',
+        opacity: 0.35 + intensity * 0.65,
+      };
     }
 
-    if (isHighlighted) {
-        fill = '#FF9A6D';
-        opacity = 1.0;
-    }
-    
-    return {
-      fill,
-      opacity,
-    };
+    return { fill: '#DDDDDD', opacity: 0.35 };
   });
 
   return <AnimatedPath d={d} animatedProps={animatedProps} />;
@@ -375,7 +373,13 @@ export default function Illustration3(props: any) {
   return (
     <Svg viewBox="0 0 152 184" {...props}>
       {PATHS.map((d, i) => (
-        <Dot key={i} d={d} index={i} progress={progress} />
+        <Dot
+          key={i}
+          d={d}
+          borderIdx={BORDER.borderPosition[i]}
+          progress={progress}
+          borderCount={BORDER.totalBorder}
+        />
       ))}
     </Svg>
   );

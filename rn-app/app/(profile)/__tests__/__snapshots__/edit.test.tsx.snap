@@ -465,7 +465,6 @@ Profile
                           "borderColor": "#0D0D0D",
                           "borderRadius": 0,
                           "borderWidth": 0,
-                          "paddingHorizontal": 0,
                         },
                       ]
                     }
@@ -640,7 +639,6 @@ Profile
                           "borderColor": "#0D0D0D",
                           "borderRadius": 0,
                           "borderWidth": 0,
-                          "paddingHorizontal": 0,
                         },
                       ]
                     }

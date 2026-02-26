@@ -81,15 +81,13 @@ jest.mock('@/src/hooks/useNetworkStatus', () => ({
   useNetworkStatus: () => ({ isConnected: true }),
 }));
 
-jest.mock('@/src/hooks', () => ({
-  useGenerateReceipt: () => ({
-    mutateAsync: jest.fn(),
-    isPending: false,
-  }),
-}));
+// Mock @/src/hooks barrel to prevent transitive import chain
+// (components -> home -> RentAmountModal -> useAuth -> QueryProvider -> QueryClient)
+jest.mock('@/src/hooks', () => ({}));
 
 jest.mock('@/src/services/api/payments', () => ({
   checkPaymentStatus: jest.fn().mockResolvedValue({ status: 'pending' }),
+  generateReceipt: jest.fn().mockResolvedValue({ data: null, error: 'mock' }),
 }));
 
 jest.mock('@/src/utils/receiptHtml', () => ({

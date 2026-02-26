@@ -48,6 +48,7 @@ import * as Haptics from 'expo-haptics';
 
 import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
 import { useVerifyUtility, useUtilityOperators, useDashboard, validateConsumerNumber } from '@/src/hooks';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import type { UtilityOperator, SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
@@ -80,6 +81,19 @@ export default function AddUtilityScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [showOperatorPicker, setShowOperatorPicker] = useState(false);
+
+  // Animated progress bar
+  const progress = useSharedValue(33.33);
+  React.useEffect(() => {
+    progress.value = withTiming(66.67, { duration: 500 });
+  }, []);
+  const animatedProgressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progress.value}%`,
+      height: '100%',
+      backgroundColor: FIGMA_COLORS.progressFill,
+    };
+  });
 
   // Set default operator to BESSCOM/BESCOM when operators are loaded
   React.useEffect(() => {
@@ -209,7 +223,7 @@ export default function AddUtilityScreen() {
 
           {/* Title - Figma: gray="Verify" accent="your address" */}
           <View style={styles.titleContainer}>
-            <ScreenTitle gray="Verify" accent="your address" />
+            <ScreenTitle gray="Verify\n" accent="utility bill" />
           </View>
 
           {/* Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9 */}
@@ -220,7 +234,7 @@ export default function AddUtilityScreen() {
           {/* Progress Bar - Figma: height 12, ~88% fill (step 3/3) */}
           <View style={styles.progressContainer}>
             <View style={styles.progressTrack}>
-              <View style={styles.progressFill} />
+              <Animated.View style={animatedProgressStyle} />
             </View>
           </View>
 
@@ -232,7 +246,7 @@ export default function AddUtilityScreen() {
             {/* Operator Selector */}
             <View>
               <View style={styles.labelRow}>
-                <Text style={styles.label}>Electricity Operator</Text>
+                <Text style={styles.label}>Select Operator</Text>
                 {errors.operator ? (
                   <Text style={styles.errorHint}>{errors.operator}</Text>
                 ) : (
