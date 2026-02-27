@@ -121,12 +121,16 @@ jest.mock('@/src/hooks/useDashboard', () => ({
 
 jest.mock('@/src/hooks/usePayments', () => ({
   useSavedPaymentMethods: () => ({ data: [] }),
+  usePaymentStamps: () => ({ data: null }),
 }));
 
 jest.mock('@/src/stores/payment', () => ({
   usePaymentStore: Object.assign(
-    (selector: any) => selector({ setAmount: jest.fn(), pendingPaymentReturn: false, setPendingPaymentReturn: jest.fn() }),
-    { getState: () => ({ pendingPaymentReturn: false, setPendingPaymentReturn: jest.fn() }) },
+    (selector: any) => selector({ setAmount: jest.fn(), pendingPaymentReturn: false, setPendingPaymentReturn: jest.fn(), setRentMonth: jest.fn(), setEnteredAmount: jest.fn(), rentMonth: null, enteredAmount: 0 }),
+    {
+      getState: () => ({ pendingPaymentReturn: false, setPendingPaymentReturn: jest.fn() }),
+      subscribe: () => () => {},
+    },
   ),
 }));
 

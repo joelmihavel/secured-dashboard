@@ -154,6 +154,37 @@ export function isValidIndianPhone(phone: string): boolean {
 }
 
 /**
+ * Country-aware phone validation.
+ * Validates phone number length based on country code.
+ */
+const COUNTRY_PHONE_LENGTH: Record<string, number> = {
+  "+91": 10,   // India
+  "+1": 10,    // US / Canada
+  "+44": 10,   // UK
+  "+971": 9,   // UAE
+  "+61": 9,    // Australia
+  "+65": 8,    // Singapore
+  "+60": 10,   // Malaysia
+  "+49": 11,   // Germany
+  "+33": 9,    // France
+  "+966": 9,   // Saudi Arabia
+  "+974": 8,   // Qatar
+  "+968": 8,   // Oman
+  "+977": 10,  // Nepal
+  "+94": 9,    // Sri Lanka
+};
+
+export function isValidPhone(phone: string, countryCode: string): boolean {
+  const cleaned = phone.replace(/\D/g, "");
+  const expectedLength = COUNTRY_PHONE_LENGTH[countryCode];
+  if (expectedLength) {
+    return cleaned.length === expectedLength;
+  }
+  // Fallback: accept 7-15 digit numbers (ITU E.164 range)
+  return cleaned.length >= 7 && cleaned.length <= 15;
+}
+
+/**
  * Validates an IFSC code.
  */
 export function isValidIfsc(ifsc: string): boolean {

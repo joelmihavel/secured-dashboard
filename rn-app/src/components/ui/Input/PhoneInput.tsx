@@ -31,6 +31,11 @@ import {
   TextInput as RNTextInput,
   Text as RNText,
   StyleSheet,
+  Pressable,
+  Modal,
+  FlatList,
+  TouchableOpacity,
+  SafeAreaView,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -58,12 +63,39 @@ const SPACING = {
   inputBorderRadius: 12, // Figma: I1:29184;48:712 borderRadius:12
 } as const;
 
+// Country data for picker
+export interface CountryData {
+  code: string;
+  flag: string;
+  name: string;
+  maxDigits: number;
+}
+
+export const COUNTRY_LIST: CountryData[] = [
+  { code: '+91', flag: '🇮🇳', name: 'India', maxDigits: 10 },
+  { code: '+1', flag: '🇺🇸', name: 'United States', maxDigits: 10 },
+  { code: '+44', flag: '🇬🇧', name: 'United Kingdom', maxDigits: 10 },
+  { code: '+971', flag: '🇦🇪', name: 'UAE', maxDigits: 9 },
+  { code: '+1', flag: '🇨🇦', name: 'Canada', maxDigits: 10 },
+  { code: '+61', flag: '🇦🇺', name: 'Australia', maxDigits: 9 },
+  { code: '+65', flag: '🇸🇬', name: 'Singapore', maxDigits: 8 },
+  { code: '+60', flag: '🇲🇾', name: 'Malaysia', maxDigits: 10 },
+  { code: '+49', flag: '🇩🇪', name: 'Germany', maxDigits: 11 },
+  { code: '+33', flag: '🇫🇷', name: 'France', maxDigits: 9 },
+  { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia', maxDigits: 9 },
+  { code: '+974', flag: '🇶🇦', name: 'Qatar', maxDigits: 8 },
+  { code: '+968', flag: '🇴🇲', name: 'Oman', maxDigits: 8 },
+  { code: '+977', flag: '🇳🇵', name: 'Nepal', maxDigits: 10 },
+  { code: '+94', flag: '🇱🇰', name: 'Sri Lanka', maxDigits: 9 },
+];
+
 export interface PhoneInputProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   onBlur?: () => void;
   countryCode?: string;
+  onCountryChange?: (country: CountryData) => void;
   error?: string;
   disabled?: boolean;
   placeholder?: string;
@@ -79,6 +111,7 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
       onChangeText,
       onBlur: onBlurProp,
       countryCode = '+91',
+      onCountryChange,
       error,
       disabled,
       placeholder = 'Enter Number',
@@ -88,6 +121,9 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
     ref
   ) => {
     const [isFocused, setIsFocused] = useState(false);
+    const [pickerVisible, setPickerVisible] = useState(false);
+
+    const selectedCountry = COUNTRY_LIST.find(c => c.code === countryCode && c.name !== 'Canada') ?? COUNTRY_LIST[0];
 
     const handleFocus = useCallback(() => {
       setIsFocused(true);
@@ -98,22 +134,30 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
       onBlurProp?.();
     }, [onBlurProp]);
 
-    // Format phone number with space (98765 43210)
-    const formatPhoneNumber = useCallback((text: string) => {
+    // Format phone number with space (98765 43210 for 10-digit, raw for others)
+    const formatPhoneNumber = useCallback((text: string, maxDigits: number) => {
       const cleaned = text.replace(/\D/g, '');
-      if (cleaned.length > 5) {
-        return `${cleaned.slice(0, 5)} ${cleaned.slice(5, 10)}`;
+      const clamped = cleaned.slice(0, maxDigits);
+      if (maxDigits === 10 && clamped.length > 5) {
+        return `${clamped.slice(0, 5)} ${clamped.slice(5)}`;
       }
-      return cleaned;
+      return clamped;
     }, []);
 
     const handleChange = useCallback(
       (text: string) => {
-        const formatted = formatPhoneNumber(text);
+        const formatted = formatPhoneNumber(text, selectedCountry.maxDigits);
         onChangeText(formatted);
       },
-      [onChangeText, formatPhoneNumber]
+      [onChangeText, formatPhoneNumber, selectedCountry.maxDigits]
     );
+
+    const handleCountrySelect = useCallback((country: CountryData) => {
+      setPickerVisible(false);
+      onCountryChange?.(country);
+      // Clear phone number when switching countries to avoid stale formatting
+      onChangeText('');
+    }, [onCountryChange, onChangeText]);
 
     const hasError = !!error;
     const hasValue = value.length > 0;
@@ -126,6 +170,11 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
 
     // Country code color: #444444 when empty, #dddddd when filled
     const countryCodeColor = hasValue ? COLORS.countryCodeFilled : COLORS.countryCodeEmpty;
+
+    // Max length includes space for formatted display
+    const maxInputLength = selectedCountry.maxDigits >= 10
+      ? selectedCountry.maxDigits + 1 // space in 5+5 format
+      : selectedCountry.maxDigits;
 
     return (
       <View style={styles.container}>
@@ -144,7 +193,12 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
         {/* Input Container - Figma: I1:29184;48:712 - NO fill, NO stroke in empty state */}
         <View style={[styles.inputContainer, { borderColor: getBorderColor() }]}>
           {/* Dropdown - Figma: I1:29184;48:713 - row, center, space-between, gap:4, w:48, h:32 */}
-          <View style={styles.dropdownContainer}>
+          <Pressable
+            style={styles.dropdownContainer}
+            onPress={() => !disabled && setPickerVisible(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <RNText style={styles.flagText}>{selectedCountry.flag}</RNText>
             <RNText style={[styles.countryCode, { color: countryCodeColor }]}>{countryCode}</RNText>
             <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
               <Path
@@ -155,7 +209,7 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
                 strokeLinejoin="round"
               />
             </Svg>
-          </View>
+          </Pressable>
 
           {/* Input Field - Figma: Plus Jakarta Sans Regular 20px, line-height 32px */}
           <RNTextInput
@@ -168,7 +222,7 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
             placeholderTextColor={COLORS.placeholder}
             editable={!disabled}
             keyboardType="phone-pad"
-            maxLength={11}
+            maxLength={maxInputLength}
             accessibilityLabel={label}
             accessibilityState={{ disabled: !!disabled }}
             style={[
@@ -180,6 +234,42 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
             testID={testID}
           />
         </View>
+
+        {/* Country Picker Modal */}
+        <Modal
+          visible={pickerVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setPickerVisible(false)}
+        >
+          <SafeAreaView style={modalStyles.container}>
+            <View style={modalStyles.header}>
+              <Text style={modalStyles.title}>Select Country</Text>
+              <TouchableOpacity onPress={() => setPickerVisible(false)}>
+                <Text style={modalStyles.closeButton}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={COUNTRY_LIST}
+              keyExtractor={(item) => `${item.code}-${item.name}`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    modalStyles.row,
+                    item.code === countryCode && item.name === selectedCountry.name && modalStyles.rowSelected,
+                  ]}
+                  onPress={() => handleCountrySelect(item)}
+                >
+                  <RNText style={modalStyles.flag}>{item.flag}</RNText>
+                  <View style={modalStyles.rowContent}>
+                    <Text style={modalStyles.countryName}>{item.name}</Text>
+                    <Text style={modalStyles.countryCode}>{item.code}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          </SafeAreaView>
+        </Modal>
       </View>
     );
   }
@@ -240,6 +330,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4, // Figma: itemSpacing 4 between "+91" and chevron
   },
+  flagText: {
+    fontSize: 18,
+    marginRight: 2,
+  },
   // Country code text - Figma: I1:29184;48:714 - PlusJakartaSans-Regular 20px, lineHeight 32px
   countryCode: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -268,6 +362,63 @@ const styles = StyleSheet.create({
   },
   inputDisabled: {
     opacity: 0.5,
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#131313',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
+  },
+  title: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 18,
+    color: '#DDDDDD',
+  },
+  closeButton: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 16,
+    color: '#FF9A6D',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#2A2A2A',
+  },
+  rowSelected: {
+    backgroundColor: '#1A1A1A',
+  },
+  flag: {
+    fontSize: 24,
+  },
+  rowContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  countryName: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 16,
+    color: '#DDDDDD',
+  },
+  countryCode: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 16,
+    color: '#878787',
   },
 });
 

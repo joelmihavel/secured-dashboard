@@ -46,7 +46,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
 import { useVerifyUtility, useUtilityOperators, useDashboard, validateConsumerNumber } from '@/src/hooks';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import type { UtilityOperator, SetupError } from '@/src/types/setup';
@@ -217,9 +217,11 @@ export default function AddUtilityScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Back button */}
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.white} />
-          </TouchableOpacity>
+          <BackButton
+            onPress={handleBack}
+            style={styles.backButton}
+            color={FIGMA_COLORS.white}
+          />
 
           {/* Title - Figma: gray="Verify" accent="your address" */}
           <View style={styles.titleContainer}>
@@ -247,17 +249,15 @@ export default function AddUtilityScreen() {
             <View>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Select Operator</Text>
-                {errors.operator ? (
+                {errors.operator && (
                   <Text style={styles.errorHint}>{errors.operator}</Text>
-                ) : (
-                  <Text style={styles.hintText}>edit</Text>
                 )}
               </View>
               <TouchableOpacity
                 style={[
-                  styles.inputContainer,
-                  showOperatorPicker && styles.inputFocused,
-                  errors.operator && styles.inputError
+                  styles.operatorSelector,
+                  showOperatorPicker && styles.operatorSelectorFocused,
+                  errors.operator && styles.operatorSelectorError
                 ]}
                 onPress={() => setShowOperatorPicker(true)}
                 disabled={verifyUtility.isPending}
@@ -286,7 +286,6 @@ export default function AddUtilityScreen() {
               onChangeText={handleConsumerNumberChange}
               placeholder="e.g. 1234567890"
               error={errors.consumerNumber}
-              hintText="edit"
               disabled={verifyUtility.isPending}
               keyboardType="number-pad"
             />
@@ -422,23 +421,22 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     textAlign: 'left',
   },
-  // Input container - aligned with TextInput "edit" variant
-  inputContainer: {
-    borderWidth: 0,
-    borderBottomWidth: 0.5,
-    borderColor: '#0D0D0D',
-    borderRadius: 0,
+  // Operator selector - full border style matching TextInput default
+  operatorSelector: {
+    borderWidth: 1,
+    borderColor: 'transparent',
+    borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 0,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  // Input error state
-  inputError: {
+  // Operator selector error state
+  operatorSelectorError: {
     borderColor: FIGMA_COLORS.inputBorderError,
   },
-  // Input focused state
-  inputFocused: {
+  // Operator selector focused state
+  operatorSelectorFocused: {
     borderColor: FIGMA_COLORS.accent,
   },
   // Input text - Figma: 20px/32px PlusJakartaSans-Regular #DDDDDD
@@ -459,14 +457,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: colors.error.radix,
-    textAlign: 'right' as const,
-  },
-  // Hint text - Figma: 14px/20px PlusJakartaSans-Regular #878787
-  hintText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.neutral[600],
     textAlign: 'right' as const,
   },
   // Button section - Figma: gap 16

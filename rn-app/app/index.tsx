@@ -20,6 +20,7 @@ import { getWaitlistStatus } from '@/src/services/api/waitlist';
 import { DISABLE_SCREEN_PICKER, DEV_DIRECT_SCREEN } from './(dev)/screen-picker';
 import { SkeletonLoader } from '@/src/components';
 import { useAuthContext } from '@/src/providers';
+import { useUploadStore } from '@/src/stores/upload';
 
 // Global screenshot params for buildbot pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
@@ -42,6 +43,18 @@ export default function Index() {
 
   const resolveAuthenticatedJourney = useCallback(async (retryCount = 0) => {
     try {
+      // BUG 2: Wait for upload store hydration (max 500ms) before reading state.
+      // SecureStore is fast (~10-50ms), but we need the store ready before
+      // deciding whether to route to review vs upload.
+      if (!useUploadStore.getState()._hasHydrated) {
+        await new Promise<void>((resolve) => {
+          const unsub = useUploadStore.subscribe((s) => {
+            if (s._hasHydrated) { unsub(); resolve(); }
+          });
+          setTimeout(() => { unsub(); resolve(); }, 500);
+        });
+      }
+
       const { data, error } = await getWaitlistStatus();
 
       if (error || !data) {
@@ -55,9 +68,21 @@ export default function Index() {
       }
 
       switch (data.userStatus) {
-        case 'signed_up':
-          setTarget('/(agreement)/upload');
+        case 'signed_up': {
+          // BUG 2 FIX: If the upload store has a completed extraction with a valid
+          // extractionId, route directly to review — prevents jarring flash through
+          // the upload screen when the app is killed and reopened during review.
+          const uploadState = useUploadStore.getState();
+          if (
+            uploadState.uploadPhase === 'completed' &&
+            uploadState.extractionId
+          ) {
+            setTarget('/(agreement)/review');
+          } else {
+            setTarget('/(agreement)/upload');
+          }
           break;
+        }
         case 'agreement_confirmed':
         case 'waitlisted':
         case 'not_eligible':

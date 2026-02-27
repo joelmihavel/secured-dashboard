@@ -142,6 +142,9 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     notifications: query.data?.notifications ?? [],
     unreadCount: query.data?.unread_notification_count ?? 0,
 
+    // Landlord bank account (for edit bank details)
+    landlordBank: query.data?.landlord_bank ?? null,
+
     // Payment stamps
     paymentStamps: query.data?.payment_stamps ?? null,
 

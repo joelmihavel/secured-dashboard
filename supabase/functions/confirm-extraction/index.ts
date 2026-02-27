@@ -238,6 +238,16 @@ serve(async (req) => {
       );
     }
 
+    // BUG 3 FIX: Re-fetch the updated record so tenancy creation uses
+    // user-corrected data instead of the stale pre-update snapshot.
+    const { data: updatedInfo } = await adminClient
+      .from("extracted_rental_info")
+      .select("*")
+      .eq("id", extractionId)
+      .single();
+
+    const infoForTenancy = updatedInfo ?? extractedInfo;
+
     // ==============================================
     // LOCK USER ROLE (V1 compatibility)
     // ==============================================
@@ -328,29 +338,29 @@ serve(async (req) => {
     let tenancyId: string | undefined;
 
     if (confirmedRole === "tenant") {
+      // BUG 3 FIX: Use infoForTenancy (post-correction) instead of extractedInfo (pre-correction)
       const { data: tenancy, error: tenancyError } = await adminClient
         .from("tenancies")
         .insert({
           user_id: user.id,
           extracted_rental_info_id: extractionId,
           status: "pending",
-          // Copy key fields from extraction
-          property_address: extractedInfo.property_address,
-          property_city: extractedInfo.property_city,
-          property_state: extractedInfo.property_state,
-          property_pincode: extractedInfo.property_pincode,
-          monthly_rent_paise: extractedInfo.monthly_rent_paise,
-          security_deposit_paise: extractedInfo.security_deposit_paise,
-          rent_due_day: extractedInfo.rent_due_day || 1,
-          // Cashback cutoff defaults to the agreement's rent_due_day if available;
-          // otherwise NULL (app defaults to 7th of month)
-          cashback_cutoff_day: extractedInfo.rent_due_day || null,
-          lease_start_date: extractedInfo.lease_start_date,
-          lease_end_date: extractedInfo.lease_end_date,
+          // Copy key fields from updated extraction (includes user corrections)
+          property_address: infoForTenancy.property_address,
+          property_city: infoForTenancy.property_city,
+          property_state: infoForTenancy.property_state,
+          property_pincode: infoForTenancy.property_pincode,
+          monthly_rent_paise: infoForTenancy.monthly_rent_paise,
+          maintenance_paise: infoForTenancy.maintenance_paise ?? 0,
+          security_deposit_paise: infoForTenancy.security_deposit_paise,
+          rent_due_day: infoForTenancy.rent_due_day || 1,
+          cashback_cutoff_day: infoForTenancy.rent_due_day || null,
+          lease_start_date: infoForTenancy.lease_start_date,
+          lease_end_date: infoForTenancy.lease_end_date,
           // Landlord info
-          landlord_name: extractedInfo.landlord_name,
-          landlord_phone: extractedInfo.landlord_phone,
-          landlord_email: extractedInfo.landlord_email,
+          landlord_name: infoForTenancy.landlord_name,
+          landlord_phone: infoForTenancy.landlord_phone,
+          landlord_email: infoForTenancy.landlord_email,
         })
         .select("id")
         .single();

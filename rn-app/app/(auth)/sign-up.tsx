@@ -226,7 +226,7 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
               {/* Title - Figma 1:29183: "Let's get to " in #A9A9A9, "know you" in #FF9A6D */}
               <Text style={styles.headingGray}>
                 Let's get to{'\n'}
-                <Text inherit style={styles.headingAccent}>know you</Text>
+                <Text inherit style={styles.headingAccent}>know  you</Text>
               </Text>
 
               {/* Form - Figma Frame 90:2928 with gap: 16 */}

@@ -42,7 +42,8 @@ import { useDevStore as _useDevStore } from '@/src/__dev__/devStore';
 import { SCENARIOS, type ScenarioKey } from '@/src/__dev__/scenarios';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { queryClient } from '@/src/providers/QueryProvider';
-import { supabase, callEdgeFunction } from '@/src/services/supabase/client';
+import { sendOtp, verifyOtp } from '@/src/services/api/auth';
+import { jumpToScreen, getSeedConfig } from '@/src/__dev__/jumpToScreen';
 import type { StoreApi, UseBoundStore } from 'zustand';
 
 /**
@@ -53,8 +54,10 @@ import type { StoreApi, UseBoundStore } from 'zustand';
 interface DevState {
   activeScenario: ScenarioKey | null;
   fontScaleOverride: number | null;
+  devAuthBypass: boolean;
   setScenario: (key: ScenarioKey | null) => void;
   setFontScale: (scale: number | null) => void;
+  setDevAuthBypass: (enabled: boolean) => void;
   reset: () => void;
 }
 
@@ -92,13 +95,14 @@ interface ScreenScenario {
 interface ScreenRoute {
   name: string;
   path: string;
+  params?: Record<string, string>;
   section: string;
   scenarios?: ScreenScenario[];
 }
 
 interface Section {
   label: string;
-  screens: { name: string; path: string; scenarios?: ScreenScenario[] }[];
+  screens: { name: string; path: string; params?: Record<string, string>; scenarios?: ScreenScenario[] }[];
 }
 
 const SECTIONS: Section[] = [
@@ -125,13 +129,28 @@ const SECTIONS: Section[] = [
           { label: 'Pending Verification', key: 'home:pending_verification' },
         ],
       },
+      {
+        name: 'Setup to Earn Cashback',
+        path: '/(main)',
+        params: { showSheet: 'cashback-setup' },
+      },
     ],
   },
   {
     label: 'Payment',
     screens: [
       { name: 'Confirm Payment', path: '/(payment)/confirm' },
-      { name: 'Payment Status', path: '/(payment)/status' },
+      { name: 'Choose Method', path: '/(payment)/confirm', params: { modalView: 'selector' } },
+      { name: 'Add UPI', path: '/(payment)/confirm', params: { modalView: 'add-upi' } },
+      { name: 'Add Credit Card', path: '/(payment)/confirm', params: { modalView: 'add-card' } },
+      { name: 'Add Debit Card', path: '/(payment)/confirm', params: { modalView: 'add-debit-card' } },
+      { name: 'Add Netbanking', path: '/(payment)/confirm', params: { modalView: 'add-netbanking' } },
+      { name: 'Edit Method', path: '/(payment)/confirm', params: { modalView: 'edit-method' } },
+      { name: 'Enter Rent', path: '/(payment)/enter-rent' },
+      { name: 'Payment Success', path: '/(payment)/status', params: { initialStatus: 'success' } },
+      { name: 'Payment Pending', path: '/(payment)/status', params: { initialStatus: 'pending' } },
+      { name: 'Payment Failed', path: '/(payment)/status', params: { initialStatus: 'failed' } },
+      { name: 'Payment Refunded', path: '/(payment)/status', params: { initialStatus: 'refunded' } },
     ],
   },
   {
@@ -201,6 +220,9 @@ export function DevNavigator() {
   // Quick Login state
   const [loginLoading, setLoginLoading] = useState<string | null>(null);
 
+  // Jump-to-Screen state
+  const [jumpingPath, setJumpingPath] = useState<string | null>(null);
+
   // Mock toggles state — force re-render on toggle
   const [mockRevision, setMockRevision] = useState(0);
   const [mocksExpanded, setMocksExpanded] = useState(false);
@@ -251,20 +273,6 @@ export function DevNavigator() {
   }, [searchQuery]);
 
   // -------------------------------------------------------------------------
-  // Navigation
-  // -------------------------------------------------------------------------
-
-  const navigateTo = useCallback(
-    (path: string) => {
-      setIsOpen(false);
-      setSearchQuery('');
-      setScenarioTarget(null);
-      router.push(path as never);
-    },
-    [router],
-  );
-
-  // -------------------------------------------------------------------------
   // Quick Login
   // -------------------------------------------------------------------------
 
@@ -275,49 +283,31 @@ export function DevNavigator() {
 
       try {
         // Step 1: Send OTP (edge function recognizes test number, skips SMS)
-        const { data: sendData, error: sendError } = await callEdgeFunction<{
-          data?: { otp_request_id?: string };
-        }>('auth-otp', {
-          action: 'send_otp',
+        const { data: sendData, error: sendError } = await sendOtp({
           phone_number: phone,
         });
         if (sendError) {
-          Alert.alert('Quick Login Error', sendError);
+          Alert.alert('Quick Login Error', sendError.message);
           setLoginLoading(null);
           return;
         }
 
-        // Step 2: Auto-verify with known OTP
-        const { data: verifyData, error: verifyError } = await callEdgeFunction<{
-          data?: {
-            session?: {
-              access_token: string;
-              refresh_token: string;
-            };
-          };
-        }>('auth-otp', {
-          action: 'verify_otp',
+        // Step 2: Auto-verify with known OTP (exchanges token_hash for session)
+        const { error: verifyError } = await verifyOtp({
           phone_number: phone,
           otp,
-          otp_request_id: sendData?.data?.otp_request_id,
+          otp_request_id: sendData?.otp_request_id,
         });
         if (verifyError) {
-          Alert.alert('Quick Login Error', verifyError);
+          Alert.alert('Quick Login Error', verifyError.message);
           setLoginLoading(null);
           return;
         }
 
-        // Step 3: Set session from verify response
-        if (verifyData?.data?.session) {
-          await supabase.auth.setSession({
-            access_token: verifyData.data.session.access_token,
-            refresh_token: verifyData.data.session.refresh_token,
-          });
-        }
-
+        // Session is set automatically by verifyOtp (via supabase.auth.verifyOtp)
+        // AuthProvider will handle navigation based on session state
         setLoginLoading(null);
         setIsOpen(false);
-        // AuthProvider will handle navigation based on session state
       } catch (e) {
         setLoginLoading(null);
         Alert.alert(
@@ -398,6 +388,78 @@ export function DevNavigator() {
       setIsOpen(false);
       setSearchQuery('');
       router.push(path as never);
+    },
+    [router],
+  );
+
+  // -------------------------------------------------------------------------
+  // Jump-to-Screen
+  // -------------------------------------------------------------------------
+
+  const handleJump = useCallback(
+    async (path: string) => {
+      if (jumpingPath) return;
+      setJumpingPath(path);
+
+      try {
+        const config = getSeedConfig(path);
+
+        // Show runtime note warning if present
+        if (config?.runtimeNote) {
+          Alert.alert('Note', config.runtimeNote);
+        }
+
+        // Try the full jump flow (seeds backend + auth)
+        const result = await jumpToScreen(path);
+
+        if (!result.success) {
+          // Jump failed — fall back to dev auth bypass + navigate anyway
+          console.warn(`[DevNavigator] Jump failed, using dev bypass: ${result.error}`);
+          useDevStore.getState().setDevAuthBypass(true);
+        }
+
+        // Navigate regardless — dev bypass ensures layout renders
+        setJumpingPath(null);
+        setIsOpen(false);
+        setSearchQuery('');
+        setScenarioTarget(null);
+        router.push(path as never);
+      } catch (e) {
+        // Even on error, navigate with bypass
+        console.warn(`[DevNavigator] Jump error, using dev bypass`);
+        useDevStore.getState().setDevAuthBypass(true);
+        setJumpingPath(null);
+        setIsOpen(false);
+        router.push(path as never);
+      }
+    },
+    [jumpingPath, router],
+  );
+
+  // -------------------------------------------------------------------------
+  // Navigation — enables dev auth bypass and navigates directly.
+  // Mock data handles the data side; no real backend auth needed.
+  // -------------------------------------------------------------------------
+
+  const navigateTo = useCallback(
+    (path: string, params?: Record<string, string>) => {
+      const config = getSeedConfig(path);
+
+      // For protected screens, enable dev auth bypass so layouts render
+      // without a real Supabase session. Enable mocks so data is available.
+      if (config && !config.noSeedNeeded) {
+        setAllMocks(true);
+        useDevStore.getState().setDevAuthBypass(true);
+      }
+
+      setIsOpen(false);
+      setSearchQuery('');
+      setScenarioTarget(null);
+      if (params) {
+        router.push({ pathname: path as any, params });
+      } else {
+        router.push(path as never);
+      }
     },
     [router],
   );
@@ -659,33 +721,74 @@ export function DevNavigator() {
             </View>
 
             {/* Route list */}
-            {filteredRoutes.map((item) => (
-              <TouchableOpacity
-                key={item.path}
-                style={styles.routeItem}
-                onPress={() => navigateTo(item.path)}
-                onLongPress={() => {
-                  if (item.scenarios && item.scenarios.length > 0) {
-                    setScenarioTarget({
-                      path: item.path,
-                      scenarios: item.scenarios,
-                    });
-                  }
-                }}
-                activeOpacity={0.6}
-              >
-                <View style={styles.routeInfo}>
-                  <View style={styles.routeNameRow}>
-                    <Text style={styles.routeName}>{item.name}</Text>
-                    {item.scenarios && item.scenarios.length > 0 && (
-                      <View style={styles.scenarioDot} />
+            {filteredRoutes.map((item, index) => {
+              const seedConfig = getSeedConfig(item.path);
+              const hasRuntimeNote = !!seedConfig?.runtimeNote;
+              const isJumping = jumpingPath === item.path;
+
+              return (
+                <View key={`${item.path}-${item.name}-${index}`} style={styles.routeItem}>
+                  <TouchableOpacity
+                    style={styles.routeTouchable}
+                    onPress={() => navigateTo(item.path, item.params)}
+                    onLongPress={() => {
+                      if (item.scenarios && item.scenarios.length > 0) {
+                        setScenarioTarget({
+                          path: item.path,
+                          scenarios: item.scenarios,
+                        });
+                      }
+                    }}
+                    activeOpacity={0.6}
+                  >
+                    <View style={styles.routeInfo}>
+                      <View style={styles.routeNameRow}>
+                        <Text style={styles.routeName}>{item.name}</Text>
+                        {item.scenarios && item.scenarios.length > 0 && (
+                          <View style={styles.scenarioDot} />
+                        )}
+                      </View>
+                      <Text style={styles.routePath}>{item.path}</Text>
+                    </View>
+                    <Text style={styles.routeSection}>{item.section}</Text>
+                  </TouchableOpacity>
+
+                  {/* Jump button */}
+                  <View style={styles.jumpContainer}>
+                    {hasRuntimeNote && (
+                      <View style={styles.warningDot} />
+                    )}
+                    {isJumping ? (
+                      <View style={styles.jumpButton}>
+                        <ActivityIndicator
+                          size="small"
+                          color={colors.brand[500]}
+                        />
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.jumpButton}
+                        onPress={() => handleJump(item.path)}
+                        disabled={jumpingPath !== null}
+                        activeOpacity={0.6}
+                        hitSlop={4}
+                      >
+                        <Text
+                          style={[
+                            styles.jumpIcon,
+                            jumpingPath !== null &&
+                              !isJumping &&
+                              styles.jumpIconDisabled,
+                          ]}
+                        >
+                          {'\u26A1'}
+                        </Text>
+                      </TouchableOpacity>
                     )}
                   </View>
-                  <Text style={styles.routePath}>{item.path}</Text>
                 </View>
-                <Text style={styles.routeSection}>{item.section}</Text>
-              </TouchableOpacity>
-            ))}
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -972,11 +1075,16 @@ const styles = StyleSheet.create({
   // Route list ----------------------------------------------------------------
   routeItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.black[500],
+  },
+  routeTouchable: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   routeInfo: {
     flex: 1,
@@ -1005,6 +1113,34 @@ const styles = StyleSheet.create({
   routeSection: {
     ...typography.captionSm,
     color: colors.brand[500],
+  },
+
+  // Jump button ---------------------------------------------------------------
+  jumpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+    gap: 4,
+  },
+  jumpButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: colors.black[500],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  jumpIcon: {
+    fontSize: 14,
+  },
+  jumpIconDisabled: {
+    opacity: 0.3,
+  },
+  warningDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#F5A623',
   },
 
   // Scenario picker -----------------------------------------------------------

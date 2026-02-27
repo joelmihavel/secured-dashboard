@@ -1,7 +1,6 @@
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
-
 const config = getDefaultConfig(__dirname);
 
 // Empty module shim for Node.js built-ins that don't exist in React Native.
@@ -9,15 +8,10 @@ const config = getDefaultConfig(__dirname);
 // so they're never actually called at runtime.
 const emptyModule = path.resolve(__dirname, 'shims/empty.js');
 
-// In production, exclude dev-only and mock directories from the bundle
-if (process.env.NODE_ENV === 'production') {
-  config.resolver.blockList = [
-    ...(config.resolver.blockList ? [config.resolver.blockList] : []),
-    /src\/__dev__\/.*/,
-    /src\/__mocks__\/.*/,
-    /src\/services\/api\/__mocks__\/.*/,
-  ];
-}
+// Note: __dev__ and __mocks__ are NOT in blockList because service files
+// have dynamic imports to mocks (guarded by __DEV__). Metro needs to resolve
+// these paths even in production builds. The __DEV__ guard ensures the mock
+// code is stripped from production bundles at compile time.
 
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,

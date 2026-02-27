@@ -42,31 +42,16 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable, BackHandler, Text as RNText, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, StyleSheet, BackHandler, Text as RNText, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  runOnJS,
-  Easing,
-} from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { BlurView } from 'expo-blur';
-
-import { Screen, Text, PrimaryButton, OTPInput } from '@/src/components';
-import { colors, springConfig, duration, radius, spacing, typography } from '@/src/theme';
+import { Screen, Text, PrimaryButton, OTPInput, BottomSheet } from '@/src/components';
+import { colors, typography } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
-  overlay: 'rgba(0,0,0,0.4)',          // Figma: Rectangle 54 opacity=0.4
-  sheetBackground: colors.black[600], // #1A1A1A - Frame 1686557301
-  handle: '#4D4D4D',                   // Figma: Rectangle 53 - dark gray handle
   titleText: colors.white,            // #FFFFFF
   subtitleText: colors.neutral[500],  // #A9A9A9
   resendText: colors.neutral[500],    // #A9A9A9
@@ -74,10 +59,6 @@ const FIGMA_COLORS = {
 
 // Exact Figma dimensions (verified from blueprints) — scaled for device
 const FIGMA_DIMENSIONS = {
-  sheetBorderRadius: 22.79,            // Figma: Frame 1686557301 borderRadius tl/tr
-  handleWidth: s(48),                  // Figma: Rectangle 53 width
-  handleHeight: 4,                     // Figma: Rectangle 53 height (hairline, no scale)
-  handleRadius: 200,                   // Figma: Rectangle 53 borderRadius
   containerPadding: s(48),             // Figma: (393 - 297) / 2 = 48px horizontal padding
   titleWidth: s(297),                  // Figma: title width
   subtitleWidth: s(297),               // Figma: subtitle width
@@ -86,9 +67,6 @@ const FIGMA_DIMENSIONS = {
 
 // Exact Figma spacing gaps (verified from blueprint frame layouts) — scaled for device
 const FIGMA_GAPS = {
-  wrapperGap: sv(15),                  // Figma: Frame 2095586317 gap (handle to sheet content)
-  sheetPaddingTop: sv(15.19),          // Figma: Frame 1686557301 paddingTop (exact: 15.19174861907959)
-  sheetItemSpacing: sv(24),            // Figma: Frame 1686557301 itemSpacing
   contentPaddingTop: sv(16),           // Figma: Frame 1686557230 paddingTop
   contentItemSpacing: sv(30.38),       // Figma: Frame 1686557230 itemSpacing (exact: 30.38349723815918)
   titleToSubtitle: sv(10),             // Figma: Frame 1686557311 gap
@@ -97,7 +75,6 @@ const FIGMA_GAPS = {
 
 export default function OTPScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const {
     phoneNumber,
     status,
@@ -122,6 +99,7 @@ export default function OTPScreen() {
   // Prevents double-press during the async gap between verifyOtp completing
   // and router.replace() firing (getWaitlistStatus API call takes 1-2s).
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   const [otp, setOtp] = React.useState('');
   const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
@@ -130,10 +108,6 @@ export default function OTPScreen() {
   const OTP_VALIDITY_SECONDS = 300;
   const [otpExpirySeconds, setOtpExpirySeconds] = React.useState(OTP_VALIDITY_SECONDS);
   const [isOtpExpired, setIsOtpExpired] = React.useState(false);
-
-  // Animation values
-  const translateY = useSharedValue(500); // Start offscreen
-  const overlayOpacity = useSharedValue(0);
 
   const isOtpComplete = otp.length === 6;
   const errorMessage = getErrorMessage();
@@ -210,22 +184,12 @@ export default function OTPScreen() {
     if (error) clearError();
   }, [error, clearError]);
 
-  const figmaTransition = { duration: 300, easing: Easing.out(Easing.quad) };
-
   const handleClose = useCallback(() => {
-    overlayOpacity.value = withTiming(0, { duration: 300 });
-    translateY.value = withTiming(500, figmaTransition, (finished) => {
-      if (finished) {
-        runOnJS(router.back)();
-      }
-    });
-  }, [router, overlayOpacity, translateY]);
-
-  // Animate in on mount
-  useEffect(() => {
-    overlayOpacity.value = withTiming(0.4, { duration: 300 });
-    translateY.value = withTiming(0, figmaTransition);
-  }, [overlayOpacity, translateY]);
+    setIsVisible(false);
+    setTimeout(() => {
+      router.back();
+    }, 300);
+  }, [router]);
 
   // Handle back button - include handleClose in dependencies to prevent stale closure
   useEffect(() => {
@@ -247,15 +211,11 @@ export default function OTPScreen() {
     setIsNavigating(true);
     Keyboard.dismiss();
 
-    // Fade overlay fully opaque to mask the cross-group transition,
-    // then navigate to root index which resolves the user's journey
-    // (agreement/upload for new users, waitlist for waitlisted, etc.).
-    overlayOpacity.value = withTiming(1, { duration: 150 }, (finished) => {
-      if (finished) {
-        runOnJS(router.replace)('/');
-      }
-    });
-  }, [status, router, isNavigating, overlayOpacity]);
+    setIsVisible(false);
+    setTimeout(() => {
+      router.replace('/');
+    }, 300);
+  }, [status, router, isNavigating]);
 
   const handleProceed = useCallback((otpValue?: string | any) => {
     // Ref-based guard: prevents double-fire even before React Query isPending updates.
@@ -288,181 +248,96 @@ export default function OTPScreen() {
     resendCode();
   }, [resendCode, error, clearError]);
 
-  // Pan gesture for dismiss
-  const panGesture = Gesture.Pan()
-    .onUpdate((event) => {
-      if (event.translationY > 0) {
-        translateY.value = event.translationY;
-      }
-    })
-    .onEnd((event) => {
-      if (event.translationY > 100) {
-        runOnJS(handleClose)();
-      } else {
-        translateY.value = withTiming(0, figmaTransition);
-      }
-    });
-
-  const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const overlayAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: overlayOpacity.value, // Start at 0.4, stays there until dismissed
-    };
-  });
-
   // Figma: Button is ACTIVE (gradient) in error states -- only disabled when OTP incomplete,
   // during cooldown/expiry, or when navigating after successful verification.
   const isButtonDisabled = !isOtpComplete || cooldownRemaining > 0 || isOtpExpired || isNavigating;
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      {/* Blurred overlay - tap to dismiss */}
-      {/* Figma: Rectangle 55 = blur 8px + 60% black, Rectangle 54 = 40% black overlay */}
-      <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-        <Animated.View style={[styles.overlay, overlayAnimatedStyle]} />
-      </Pressable>
+    <View style={styles.container}>
+      <BottomSheet visible={isVisible} onClose={handleClose} paddingHorizontal={0}>
+        <View style={styles.contentContainer}>
+          {/* Header - Figma: Frame 1686557311 gap=10, paddingHorizontal=48 */}
+          <View style={styles.headerBlock}>
+            {/* Title - Figma: PlusJakartaSans-Regular 28/40 -1 #FFFFFF */}
+            <Text style={styles.title}>
+              Let's verify your number
+            </Text>
 
-      {/* Bottom Sheet - Figma: Frame 2095586317 column, gap=15, alignItems=center */}
-      {/* GestureDetector moved INSIDE Animated.View to only wrap the handle area.
-          Previously it wrapped the entire sheet, which caused RNGH's native gesture
-          handler to intercept all touches before they could reach the OTP TextInput. */}
-      <Animated.View style={[styles.sheetWrapper, sheetAnimatedStyle]}>
-        {/* Handle - wrapped in GestureDetector for swipe-to-dismiss */}
-        <GestureDetector gesture={panGesture}>
-          <View style={styles.handleContainer}>
-            <View style={styles.handle} />
-          </View>
-        </GestureDetector>
-
-        {/* Sheet Content - Figma: Frame 1686557301 bg=#1A1A1A, radius=22.79 */}
-        <View style={styles.sheetContent}>
-          {/* Content - Figma: Frame 1686557230 paddingTop=16, gap=30.38 */}
-          <View style={styles.contentContainer}>
-            {/* Header - Figma: Frame 1686557311 gap=10, paddingHorizontal=48 */}
-            <View style={styles.headerBlock}>
-              {/* Title - Figma: PlusJakartaSans-Regular 28/40 -1 #FFFFFF */}
-              <Text style={styles.title}>
-                Let's verify your number
-              </Text>
-
-              {/* Subtitle - Figma: PlusJakartaSans-Medium 12/21.6 -0.132 #A9A9A9 */}
-              <Text style={styles.subtitle}>
-                We've sent a 6-digit code to your phone. It'll auto-verify once entered
-              </Text>
-            </View>
-
-            {/* OTP Input - Figma: OTP instance paddingHorizontal=48 */}
-            {/* Label#67:0 = false in all 4 states -- no "Secure code" label */}
-            <View style={styles.otpBlock}>
-              <OTPInput
-                value={otp}
-                onChangeText={handleOtpChange}
-                onComplete={handleProceed}
-                error={errorMessage}
-                testID="otp-input"
-              />
-            </View>
-
-            {/* Footer - Figma: Frame 1686557317 gap=16, paddingHorizontal=48 */}
-            <View style={styles.footerBlock}>
-              {/* Proceed Button - Figma: active gradient in error states too */}
-              <PrimaryButton
-                title={
-                  isOtpExpired
-                    ? 'Code Expired'
-                    : cooldownRemaining > 0
-                      ? `Wait ${cooldownRemaining}s`
-                      : 'Proceed'
-                }
-                onPress={handleProceed}
-                disabled={isButtonDisabled}
-                loading={isVerifyingOtp || isNavigating}
-                showDivider={true}
-                testID="proceed-button"
-              />
-
-              {/* Resend Link - Figma: PlusJakartaSans-Regular 12/20 #A9A9A9 centered */}
-              <View style={styles.resendContainer}>
-                {isOtpExpired ? (
-                  <RNText style={styles.resendText}>
-                    Code expired.{' '}
-                    <RNText
-                      style={styles.resendLink}
-                      onPress={handleResend}
-                      disabled={isResendingOtp}
-                    >
-                      {isResendingOtp ? 'Sending...' : 'Send a new code'}
-                    </RNText>
-                  </RNText>
-                ) : (
-                  <RNText style={styles.resendText}>
-                    {otpExpirySeconds > 0 && otpExpirySeconds <= 60
-                      ? `Code expires in ${otpExpirySeconds}s. `
-                      : "Didn't receive the code? "}
-                    <RNText
-                      style={styles.resendLink}
-                      onPress={handleResend}
-                      disabled={isResendingOtp}
-                    >
-                      {isResendingOtp ? 'Sending...' : 'Resend'}
-                    </RNText>
-                  </RNText>
-                )}
-              </View>
-            </View>
+            {/* Subtitle - Figma: PlusJakartaSans-Medium 12/21.6 -0.132 #A9A9A9 */}
+            <Text style={styles.subtitle}>
+              We've sent a 6-digit code to your phone. It'll auto-verify once entered
+            </Text>
           </View>
 
-          {/* Home Indicator space — uses safe area bottom or fallback */}
-          <View style={{ height: insets.bottom || 34 }} />
+          {/* OTP Input - Figma: OTP instance paddingHorizontal=48 */}
+          {/* Label#67:0 = false in all 4 states -- no "Secure code" label */}
+          <View style={styles.otpBlock}>
+            <OTPInput
+              value={otp}
+              onChangeText={handleOtpChange}
+              onComplete={handleProceed}
+              error={errorMessage}
+              testID="otp-input"
+            />
+          </View>
+
+          {/* Footer - Figma: Frame 1686557317 gap=16, paddingHorizontal=48 */}
+          <View style={styles.footerBlock}>
+            {/* Proceed Button - Figma: active gradient in error states too */}
+            <PrimaryButton
+              title={
+                isOtpExpired
+                  ? 'Code Expired'
+                  : cooldownRemaining > 0
+                    ? `Wait ${cooldownRemaining}s`
+                    : 'Proceed'
+              }
+              onPress={handleProceed}
+              disabled={isButtonDisabled}
+              loading={isVerifyingOtp || isNavigating}
+              showDivider={true}
+              testID="proceed-button"
+            />
+
+            {/* Resend Link - Figma: PlusJakartaSans-Regular 12/20 #A9A9A9 centered */}
+            <View style={styles.resendContainer}>
+              {isOtpExpired ? (
+                <RNText style={styles.resendText}>
+                  Code expired.{' '}
+                  <RNText
+                    style={styles.resendLink}
+                    onPress={handleResend}
+                    disabled={isResendingOtp}
+                  >
+                    {isResendingOtp ? 'Sending...' : 'Send a new code'}
+                  </RNText>
+                </RNText>
+              ) : (
+                <RNText style={styles.resendText}>
+                  {otpExpirySeconds > 0 && otpExpirySeconds <= 60
+                    ? `Code expires in ${otpExpirySeconds}s. `
+                    : "Didn't receive the code? "}
+                  <RNText
+                    style={styles.resendLink}
+                    onPress={handleResend}
+                    disabled={isResendingOtp}
+                  >
+                    {isResendingOtp ? 'Sending...' : 'Resend'}
+                  </RNText>
+                </RNText>
+              )}
+            </View>
+          </View>
         </View>
-      </Animated.View>
-    </KeyboardAvoidingView>
+      </BottomSheet>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
     backgroundColor: 'transparent', // Transparent to show sign-up screen behind
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000', // Base black - opacity controlled by animation (0.4 per Figma Rectangle 54)
-  },
-  // Figma: Frame 2095586317 - transparent wrapper, column layout, gap=15, alignItems=center
-  sheetWrapper: {
-    gap: FIGMA_GAPS.wrapperGap,        // Figma: 15px gap between handle and sheet content
-    alignItems: 'center',              // Figma: counterAxisAlignItems: CENTER
-  },
-  // Figma: Frame 1686557301 - sheet content with dark background
-  sheetContent: {
-    backgroundColor: FIGMA_COLORS.sheetBackground,     // #1A1A1A
-    borderTopLeftRadius: FIGMA_DIMENSIONS.sheetBorderRadius,   // 22.79
-    borderTopRightRadius: FIGMA_DIMENSIONS.sheetBorderRadius,  // 22.79
-    overflow: 'hidden',
-    paddingTop: FIGMA_GAPS.sheetPaddingTop,             // 15.19
-    width: '100%',                                       // Figma: sizingH=FILL
-  },
-  // Figma: Handle floats above sheet, no top padding (y=0 in Frame 2095586317)
-  // Extra vertical padding provides a larger touch target for the swipe-to-dismiss gesture
-  handleContainer: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    width: '100%',
-  },
-  handle: {
-    width: FIGMA_DIMENSIONS.handleWidth,     // 48
-    height: FIGMA_DIMENSIONS.handleHeight,   // 4
-    backgroundColor: FIGMA_COLORS.handle,    // #4D4D4D
-    borderRadius: FIGMA_DIMENSIONS.handleRadius, // 200
   },
   // Figma: Frame 1686557230 - content area with paddingTop=16, gap=30.38
   contentContainer: {

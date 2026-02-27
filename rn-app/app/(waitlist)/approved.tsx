@@ -220,6 +220,11 @@ export default function WaitlistApprovedScreen() {
     opacity: transitionOpacity.value,
   }));
 
+  // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs)
+  const navigateToSetup = useCallback(() => {
+    router.replace('/(setup)' as never);
+  }, [router]);
+
   // Handle "Step Inside" button
   const handleStepInside = useCallback(() => {
     if (isNavigating) return;
@@ -227,10 +232,10 @@ export default function WaitlistApprovedScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
       if (finished) {
-        runOnJS(router.replace)('/(setup)' as never);
+        runOnJS(navigateToSetup)();
       }
     });
-  }, [router, isNavigating, transitionOpacity]);
+  }, [navigateToSetup, isNavigating, transitionOpacity]);
 
   return (
     <View style={styles.screen}>

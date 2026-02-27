@@ -402,7 +402,7 @@
     {
       "figmaNodeId": "41:8901",
       "screenName": "Payment Page --without setup",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "without-setup",
       "category": "payment-selection",
       "tier": 1
@@ -410,7 +410,7 @@
     {
       "figmaNodeId": "41:9004",
       "screenName": "Payment Page --before 7th",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "before-7th",
       "category": "payment-selection",
       "tier": 1
@@ -418,7 +418,7 @@
     {
       "figmaNodeId": "41:9114",
       "screenName": "Payment Page --after 7th",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "after-7th",
       "category": "payment-selection",
       "tier": 1
@@ -426,7 +426,7 @@
     {
       "figmaNodeId": "41:8369",
       "screenName": "Add UPI Payment",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "add-upi",
       "category": "payment-selection",
       "tier": 1
@@ -434,7 +434,7 @@
     {
       "figmaNodeId": "41:8529",
       "screenName": "Add Credit Payment",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "add-credit",
       "category": "payment-selection",
       "tier": 1
@@ -442,7 +442,7 @@
     {
       "figmaNodeId": "41:9224",
       "screenName": "Add Net Banking",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "add-netbanking",
       "category": "payment-selection",
       "tier": 1
@@ -770,7 +770,7 @@
     {
       "figmaNodeId": "243:4052",
       "screenName": "Add More Card",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-add-more",
       "category": "payment-method-components",
       "tier": 4
@@ -778,7 +778,7 @@
     {
       "figmaNodeId": "243:3794",
       "screenName": "Credit Card / selected",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-credit-selected",
       "category": "payment-method-components",
       "tier": 4
@@ -786,7 +786,7 @@
     {
       "figmaNodeId": "243:3838",
       "screenName": "UPI Card / selected",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-upi-selected",
       "category": "payment-method-components",
       "tier": 4
@@ -794,7 +794,7 @@
     {
       "figmaNodeId": "243:4008",
       "screenName": "Netbanking Card / selected",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-netbanking-selected",
       "category": "payment-method-components",
       "tier": 4
@@ -802,7 +802,7 @@
     {
       "figmaNodeId": "243:3816",
       "screenName": "Credit Card",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-credit",
       "category": "payment-method-components",
       "tier": 4
@@ -810,7 +810,7 @@
     {
       "figmaNodeId": "243:3923",
       "screenName": "UPI Card",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-upi",
       "category": "payment-method-components",
       "tier": 4
@@ -818,7 +818,7 @@
     {
       "figmaNodeId": "243:4030",
       "screenName": "Netbanking Card",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-netbanking",
       "category": "payment-method-components",
       "tier": 4
@@ -826,7 +826,7 @@
     {
       "figmaNodeId": "243:3750",
       "screenName": "Payment Card Base",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-base",
       "category": "payment-method-components",
       "tier": 4
@@ -834,7 +834,7 @@
     {
       "figmaNodeId": "243:3772",
       "screenName": "Payment Card Active",
-      "route": "(payment)/first-rent",
+      "route": "(payment)/confirm",
       "state": "component-active",
       "category": "payment-method-components",
       "tier": 4

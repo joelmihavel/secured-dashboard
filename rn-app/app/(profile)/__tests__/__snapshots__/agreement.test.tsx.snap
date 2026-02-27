@@ -107,12 +107,36 @@ exports[`ProfileAgreementScreen matches snapshot 1`] = `
                   "width": 32,
                 }
               }
+              testID="back-button"
             >
-              <View
-                color="#FFFFFF"
-                name="arrow-back"
-                size={24}
-              />
+              <Svg
+                fill="none"
+                height={61}
+                viewBox="0 0 64 64"
+                width={61}
+              >
+                <Path
+                  d="M50.667 32H13.3337"
+                  stroke="#FFFFFF"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.66667}
+                />
+                <Path
+                  d="M29.333 48L13.333 32"
+                  stroke="#FFFFFF"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.66667}
+                />
+                <Path
+                  d="M29.333 16L13.333 32"
+                  stroke="#FFFFFF"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.66667}
+                />
+              </Svg>
             </View>
             <Text
               allowFontScaling={true}

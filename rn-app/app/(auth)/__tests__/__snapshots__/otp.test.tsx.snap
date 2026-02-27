@@ -2,138 +2,93 @@
 
 exports[`OTPScreen renders correctly and matches snapshot 1`] = `
 <View
-  onLayout={[Function]}
   style={
-    [
-      {
-        "backgroundColor": "transparent",
-        "flex": 1,
-        "justifyContent": "flex-end",
-      },
-      {
-        "paddingBottom": 0,
-      },
-    ]
+    {
+      "backgroundColor": "transparent",
+      "flex": 1,
+    }
   }
 >
   <View
-    accessibilityState={
-      {
-        "busy": undefined,
-        "checked": undefined,
-        "disabled": undefined,
-        "expanded": undefined,
-        "selected": undefined,
-      }
-    }
-    accessibilityValue={
-      {
-        "max": undefined,
-        "min": undefined,
-        "now": undefined,
-        "text": undefined,
-      }
-    }
-    accessible={true}
-    collapsable={false}
-    focusable={true}
-    onBlur={[Function]}
-    onClick={[Function]}
-    onFocus={[Function]}
-    onResponderGrant={[Function]}
-    onResponderMove={[Function]}
-    onResponderRelease={[Function]}
-    onResponderTerminate={[Function]}
-    onResponderTerminationRequest={[Function]}
-    onStartShouldSetResponder={[Function]}
     style={
       {
-        "bottom": 0,
-        "left": 0,
-        "position": "absolute",
-        "right": 0,
-        "top": 0,
+        "alignItems": "center",
+        "gap": 47.5,
+        "paddingTop": 25,
       }
     }
   >
     <View
-      intensity={20}
       style={
         {
-          "bottom": 0,
-          "left": 0,
-          "position": "absolute",
-          "right": 0,
-          "top": 0,
+          "alignItems": "flex-start",
+          "gap": 15.5,
+          "paddingHorizontal": 91.5,
+          "width": "100%",
         }
       }
-      tint="dark"
-    />
-    <View
-      style={
-        [
-          {
-            "backgroundColor": "#000000",
-            "bottom": 0,
-            "left": 0,
-            "position": "absolute",
-            "right": 0,
-            "top": 0,
-          },
-          {
-            "opacity": 0,
-          },
-        ]
-      }
-    />
-  </View>
-  <View
-    style={
-      [
-        {
-          "alignItems": "center",
-          "gap": 23.5,
-        },
-        {
-          "transform": [
-            {
-              "translateY": 500,
-            },
-          ],
-        },
-      ]
-    }
-  >
-    <View>
-      <View
+    >
+      <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
         style={
-          {
-            "alignItems": "center",
-            "paddingVertical": 8,
-            "width": "100%",
-          }
+          [
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 18.4,
+              "letterSpacing": 0,
+              "lineHeight": 27.599999999999998,
+              "textAlign": "left",
+            },
+            {
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 28,
+              "fontWeight": "400",
+              "letterSpacing": -1,
+              "lineHeight": 40,
+              "textAlign": "left",
+              "width": 567,
+            },
+          ]
         }
       >
-        <View
-          style={
+        Let's verify your number
+      </Text>
+      <Text
+        allowFontScaling={true}
+        maxFontSizeMultiplier={1.2}
+        style={
+          [
             {
-              "backgroundColor": "#4D4D4D",
-              "borderRadius": 200,
-              "height": 4,
-              "width": 91.5,
-            }
-          }
-        />
-      </View>
+              "color": "#FFFFFF",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 18.4,
+              "letterSpacing": 0,
+              "lineHeight": 27.599999999999998,
+              "textAlign": "left",
+            },
+            {
+              "color": "#A9A9A9",
+              "fontFamily": "PlusJakartaSans-Medium",
+              "fontSize": 12,
+              "fontWeight": "500",
+              "letterSpacing": -0.132,
+              "lineHeight": 24.84,
+              "textAlign": "left",
+              "width": 567,
+            },
+          ]
+        }
+      >
+        We've sent a 6-digit code to your phone. It'll auto-verify once entered
+      </Text>
     </View>
     <View
       style={
         {
-          "backgroundColor": "#1A1A1A",
-          "borderTopLeftRadius": 22.79,
-          "borderTopRightRadius": 22.79,
-          "overflow": "hidden",
-          "paddingTop": 24,
+          "paddingHorizontal": 91.5,
           "width": "100%",
         }
       }
@@ -142,314 +97,85 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
         style={
           {
             "alignItems": "center",
-            "gap": 47.5,
-            "paddingTop": 25,
+            "width": "100%",
           }
         }
       >
         <View
-          style={
+          accessibilityLabel="OTP input, 0 of 6 digits entered"
+          accessibilityRole="none"
+          accessibilityState={
             {
-              "alignItems": "flex-start",
-              "gap": 15.5,
-              "paddingHorizontal": 91.5,
-              "width": "100%",
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
             }
           }
-        >
-          <Text
-            allowFontScaling={true}
-            maxFontSizeMultiplier={1.2}
-            style={
-              [
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 18.4,
-                  "letterSpacing": 0,
-                  "lineHeight": 27.599999999999998,
-                  "textAlign": "left",
-                },
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 28,
-                  "fontWeight": "400",
-                  "letterSpacing": -1,
-                  "lineHeight": 40,
-                  "textAlign": "left",
-                  "width": 567,
-                },
-              ]
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
             }
-          >
-            Let's verify your number
-          </Text>
-          <Text
-            allowFontScaling={true}
-            maxFontSizeMultiplier={1.2}
-            style={
-              [
-                {
-                  "color": "#FFFFFF",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 18.4,
-                  "letterSpacing": 0,
-                  "lineHeight": 27.599999999999998,
-                  "textAlign": "left",
-                },
-                {
-                  "color": "#A9A9A9",
-                  "fontFamily": "PlusJakartaSans-Medium",
-                  "fontSize": 12,
-                  "fontWeight": "500",
-                  "letterSpacing": -0.132,
-                  "lineHeight": 24.84,
-                  "textAlign": "left",
-                  "width": 567,
-                },
-              ]
-            }
-          >
-            We've sent a 6-digit code to your phone. It'll auto-verify once entered
-          </Text>
-        </View>
-        <View
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
           style={
             {
-              "paddingHorizontal": 91.5,
-              "width": "100%",
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
             }
           }
         >
           <View
             style={
               {
-                "alignItems": "center",
-                "width": "100%",
+                "flexDirection": "row",
+                "gap": 15.5,
               }
             }
           >
             <View
-              accessibilityLabel="OTP input, 0 of 6 digits entered"
-              accessibilityRole="none"
-              accessibilityState={
-                {
-                  "busy": undefined,
-                  "checked": undefined,
-                  "disabled": undefined,
-                  "expanded": undefined,
-                  "selected": undefined,
-                }
-              }
-              accessibilityValue={
-                {
-                  "max": undefined,
-                  "min": undefined,
-                  "now": undefined,
-                  "text": undefined,
-                }
-              }
-              accessible={true}
-              collapsable={false}
-              focusable={true}
-              onBlur={[Function]}
-              onClick={[Function]}
-              onFocus={[Function]}
-              onResponderGrant={[Function]}
-              onResponderMove={[Function]}
-              onResponderRelease={[Function]}
-              onResponderTerminate={[Function]}
-              onResponderTerminationRequest={[Function]}
-              onStartShouldSetResponder={[Function]}
               style={
-                {
-                  "alignItems": "center",
-                  "flexDirection": "row",
-                  "justifyContent": "center",
-                }
+                [
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#222222",
+                    "borderColor": "#444444",
+                    "borderRadius": 8,
+                    "borderWidth": 1,
+                    "elevation": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 23,
+                    "paddingVertical": 12.5,
+                    "shadowColor": "rgb(10, 13, 18)",
+                    "shadowOffset": {
+                      "height": 1,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.05,
+                    "shadowRadius": 2,
+                    "width": 74.5,
+                  },
+                  undefined,
+                ]
               }
             >
-              <View
-                style={
-                  {
-                    "flexDirection": "row",
-                    "gap": 15.5,
-                  }
-                }
-              >
-                <View
-                  style={
-                    [
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "#222222",
-                        "borderColor": "#444444",
-                        "borderRadius": 8,
-                        "borderWidth": 1,
-                        "elevation": 1,
-                        "height": 100,
-                        "justifyContent": "center",
-                        "paddingHorizontal": 23,
-                        "paddingVertical": 12.5,
-                        "shadowColor": "rgb(10, 13, 18)",
-                        "shadowOffset": {
-                          "height": 1,
-                          "width": 0,
-                        },
-                        "shadowOpacity": 0.05,
-                        "shadowRadius": 2,
-                        "width": 74.5,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  <Text
-                    allowFontScaling={false}
-                    maxFontSizeMultiplier={1.2}
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 18.4,
-                          "letterSpacing": 0,
-                          "lineHeight": 27.599999999999998,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 23,
-                            "lineHeight": 36.8,
-                            "textAlign": "center",
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    0
-                  </Text>
-                </View>
-                <View
-                  style={
-                    [
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "#222222",
-                        "borderColor": "#444444",
-                        "borderRadius": 8,
-                        "borderWidth": 1,
-                        "elevation": 1,
-                        "height": 100,
-                        "justifyContent": "center",
-                        "paddingHorizontal": 23,
-                        "paddingVertical": 12.5,
-                        "shadowColor": "rgb(10, 13, 18)",
-                        "shadowOffset": {
-                          "height": 1,
-                          "width": 0,
-                        },
-                        "shadowOpacity": 0.05,
-                        "shadowRadius": 2,
-                        "width": 74.5,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  <Text
-                    allowFontScaling={false}
-                    maxFontSizeMultiplier={1.2}
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 18.4,
-                          "letterSpacing": 0,
-                          "lineHeight": 27.599999999999998,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 23,
-                            "lineHeight": 36.8,
-                            "textAlign": "center",
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    0
-                  </Text>
-                </View>
-                <View
-                  style={
-                    [
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "#222222",
-                        "borderColor": "#444444",
-                        "borderRadius": 8,
-                        "borderWidth": 1,
-                        "elevation": 1,
-                        "height": 100,
-                        "justifyContent": "center",
-                        "paddingHorizontal": 23,
-                        "paddingVertical": 12.5,
-                        "shadowColor": "rgb(10, 13, 18)",
-                        "shadowOffset": {
-                          "height": 1,
-                          "width": 0,
-                        },
-                        "shadowOpacity": 0.05,
-                        "shadowRadius": 2,
-                        "width": 74.5,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  <Text
-                    allowFontScaling={false}
-                    maxFontSizeMultiplier={1.2}
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 18.4,
-                          "letterSpacing": 0,
-                          "lineHeight": 27.599999999999998,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 23,
-                            "lineHeight": 36.8,
-                            "textAlign": "center",
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    0
-                  </Text>
-                </View>
-              </View>
               <Text
                 allowFontScaling={false}
                 maxFontSizeMultiplier={1.2}
@@ -458,380 +184,487 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
                     {
                       "color": "#FFFFFF",
                       "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 23,
+                      "fontSize": 18.4,
                       "letterSpacing": 0,
-                      "lineHeight": 36.8,
+                      "lineHeight": 27.599999999999998,
                       "textAlign": "left",
                     },
-                    {
-                      "color": "#cbcbcb",
-                      "fontFamily": "PlusJakartaSans-Medium",
-                      "fontSize": 23,
-                      "lineHeight": 36.8,
-                      "marginHorizontal": 15.5,
-                    },
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 23,
+                        "lineHeight": 36.8,
+                        "textAlign": "center",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ],
                   ]
                 }
               >
-                -
+                0
               </Text>
-              <View
-                style={
+            </View>
+            <View
+              style={
+                [
                   {
-                    "flexDirection": "row",
-                    "gap": 15.5,
-                  }
+                    "alignItems": "center",
+                    "backgroundColor": "#222222",
+                    "borderColor": "#444444",
+                    "borderRadius": 8,
+                    "borderWidth": 1,
+                    "elevation": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 23,
+                    "paddingVertical": 12.5,
+                    "shadowColor": "rgb(10, 13, 18)",
+                    "shadowOffset": {
+                      "height": 1,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.05,
+                    "shadowRadius": 2,
+                    "width": 74.5,
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.2}
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 18.4,
+                      "letterSpacing": 0,
+                      "lineHeight": 27.599999999999998,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 23,
+                        "lineHeight": 36.8,
+                        "textAlign": "center",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ],
+                  ]
                 }
               >
-                <View
-                  style={
-                    [
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "#222222",
-                        "borderColor": "#444444",
-                        "borderRadius": 8,
-                        "borderWidth": 1,
-                        "elevation": 1,
-                        "height": 100,
-                        "justifyContent": "center",
-                        "paddingHorizontal": 23,
-                        "paddingVertical": 12.5,
-                        "shadowColor": "rgb(10, 13, 18)",
-                        "shadowOffset": {
-                          "height": 1,
-                          "width": 0,
-                        },
-                        "shadowOpacity": 0.05,
-                        "shadowRadius": 2,
-                        "width": 74.5,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  <Text
-                    allowFontScaling={false}
-                    maxFontSizeMultiplier={1.2}
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 18.4,
-                          "letterSpacing": 0,
-                          "lineHeight": 27.599999999999998,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 23,
-                            "lineHeight": 36.8,
-                            "textAlign": "center",
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    0
-                  </Text>
-                </View>
-                <View
-                  style={
-                    [
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "#222222",
-                        "borderColor": "#444444",
-                        "borderRadius": 8,
-                        "borderWidth": 1,
-                        "elevation": 1,
-                        "height": 100,
-                        "justifyContent": "center",
-                        "paddingHorizontal": 23,
-                        "paddingVertical": 12.5,
-                        "shadowColor": "rgb(10, 13, 18)",
-                        "shadowOffset": {
-                          "height": 1,
-                          "width": 0,
-                        },
-                        "shadowOpacity": 0.05,
-                        "shadowRadius": 2,
-                        "width": 74.5,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  <Text
-                    allowFontScaling={false}
-                    maxFontSizeMultiplier={1.2}
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 18.4,
-                          "letterSpacing": 0,
-                          "lineHeight": 27.599999999999998,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 23,
-                            "lineHeight": 36.8,
-                            "textAlign": "center",
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    0
-                  </Text>
-                </View>
-                <View
-                  style={
-                    [
-                      {
-                        "alignItems": "center",
-                        "backgroundColor": "#222222",
-                        "borderColor": "#444444",
-                        "borderRadius": 8,
-                        "borderWidth": 1,
-                        "elevation": 1,
-                        "height": 100,
-                        "justifyContent": "center",
-                        "paddingHorizontal": 23,
-                        "paddingVertical": 12.5,
-                        "shadowColor": "rgb(10, 13, 18)",
-                        "shadowOffset": {
-                          "height": 1,
-                          "width": 0,
-                        },
-                        "shadowOpacity": 0.05,
-                        "shadowRadius": 2,
-                        "width": 74.5,
-                      },
-                      undefined,
-                    ]
-                  }
-                >
-                  <Text
-                    allowFontScaling={false}
-                    maxFontSizeMultiplier={1.2}
-                    style={
-                      [
-                        {
-                          "color": "#FFFFFF",
-                          "fontFamily": "PlusJakartaSans-Regular",
-                          "fontSize": 18.4,
-                          "letterSpacing": 0,
-                          "lineHeight": 27.599999999999998,
-                          "textAlign": "left",
-                        },
-                        [
-                          {
-                            "fontFamily": "PlusJakartaSans-Medium",
-                            "fontSize": 23,
-                            "lineHeight": 36.8,
-                            "textAlign": "center",
-                          },
-                          {
-                            "color": "#444444",
-                          },
-                        ],
-                      ]
-                    }
-                  >
-                    0
-                  </Text>
-                </View>
-              </View>
+                0
+              </Text>
             </View>
-            <TextInput
-              accessibilityLabel="OTP verification code"
-              accessibilityState={
-                {
-                  "disabled": false,
-                }
-              }
-              autoComplete="one-time-code"
-              caretHidden={true}
-              editable={true}
-              keyboardType="number-pad"
-              maxLength={6}
-              onBlur={[Function]}
-              onChangeText={[Function]}
-              onFocus={[Function]}
+            <View
               style={
-                {
-                  "backgroundColor": "transparent",
-                  "bottom": 0,
-                  "color": "transparent",
-                  "left": 0,
-                  "opacity": 0.02,
-                  "position": "absolute",
-                  "right": 0,
-                  "top": 0,
-                }
+                [
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#222222",
+                    "borderColor": "#444444",
+                    "borderRadius": 8,
+                    "borderWidth": 1,
+                    "elevation": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 23,
+                    "paddingVertical": 12.5,
+                    "shadowColor": "rgb(10, 13, 18)",
+                    "shadowOffset": {
+                      "height": 1,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.05,
+                    "shadowRadius": 2,
+                    "width": 74.5,
+                  },
+                  undefined,
+                ]
               }
-              testID="otp-input"
-              textContentType="oneTimeCode"
-              value=""
-            />
+            >
+              <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.2}
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 18.4,
+                      "letterSpacing": 0,
+                      "lineHeight": 27.599999999999998,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 23,
+                        "lineHeight": 36.8,
+                        "textAlign": "center",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ],
+                  ]
+                }
+              >
+                0
+              </Text>
+            </View>
+          </View>
+          <Text
+            allowFontScaling={false}
+            maxFontSizeMultiplier={1.2}
+            style={
+              [
+                {
+                  "color": "#FFFFFF",
+                  "fontFamily": "PlusJakartaSans-Regular",
+                  "fontSize": 23,
+                  "letterSpacing": 0,
+                  "lineHeight": 36.8,
+                  "textAlign": "left",
+                },
+                {
+                  "color": "#cbcbcb",
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 23,
+                  "lineHeight": 36.8,
+                  "marginHorizontal": 15.5,
+                },
+              ]
+            }
+          >
+            -
+          </Text>
+          <View
+            style={
+              {
+                "flexDirection": "row",
+                "gap": 15.5,
+              }
+            }
+          >
+            <View
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#222222",
+                    "borderColor": "#444444",
+                    "borderRadius": 8,
+                    "borderWidth": 1,
+                    "elevation": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 23,
+                    "paddingVertical": 12.5,
+                    "shadowColor": "rgb(10, 13, 18)",
+                    "shadowOffset": {
+                      "height": 1,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.05,
+                    "shadowRadius": 2,
+                    "width": 74.5,
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.2}
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 18.4,
+                      "letterSpacing": 0,
+                      "lineHeight": 27.599999999999998,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 23,
+                        "lineHeight": 36.8,
+                        "textAlign": "center",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ],
+                  ]
+                }
+              >
+                0
+              </Text>
+            </View>
+            <View
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#222222",
+                    "borderColor": "#444444",
+                    "borderRadius": 8,
+                    "borderWidth": 1,
+                    "elevation": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 23,
+                    "paddingVertical": 12.5,
+                    "shadowColor": "rgb(10, 13, 18)",
+                    "shadowOffset": {
+                      "height": 1,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.05,
+                    "shadowRadius": 2,
+                    "width": 74.5,
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.2}
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 18.4,
+                      "letterSpacing": 0,
+                      "lineHeight": 27.599999999999998,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 23,
+                        "lineHeight": 36.8,
+                        "textAlign": "center",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ],
+                  ]
+                }
+              >
+                0
+              </Text>
+            </View>
+            <View
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#222222",
+                    "borderColor": "#444444",
+                    "borderRadius": 8,
+                    "borderWidth": 1,
+                    "elevation": 1,
+                    "height": 100,
+                    "justifyContent": "center",
+                    "paddingHorizontal": 23,
+                    "paddingVertical": 12.5,
+                    "shadowColor": "rgb(10, 13, 18)",
+                    "shadowOffset": {
+                      "height": 1,
+                      "width": 0,
+                    },
+                    "shadowOpacity": 0.05,
+                    "shadowRadius": 2,
+                    "width": 74.5,
+                  },
+                  undefined,
+                ]
+              }
+            >
+              <Text
+                allowFontScaling={false}
+                maxFontSizeMultiplier={1.2}
+                style={
+                  [
+                    {
+                      "color": "#FFFFFF",
+                      "fontFamily": "PlusJakartaSans-Regular",
+                      "fontSize": 18.4,
+                      "letterSpacing": 0,
+                      "lineHeight": 27.599999999999998,
+                      "textAlign": "left",
+                    },
+                    [
+                      {
+                        "fontFamily": "PlusJakartaSans-Medium",
+                        "fontSize": 23,
+                        "lineHeight": 36.8,
+                        "textAlign": "center",
+                      },
+                      {
+                        "color": "#444444",
+                      },
+                    ],
+                  ]
+                }
+              >
+                0
+              </Text>
+            </View>
           </View>
         </View>
+        <TextInput
+          accessibilityLabel="OTP verification code"
+          accessibilityState={
+            {
+              "disabled": false,
+            }
+          }
+          autoComplete="one-time-code"
+          caretHidden={true}
+          editable={true}
+          keyboardType="number-pad"
+          maxLength={6}
+          onBlur={[Function]}
+          onChangeText={[Function]}
+          onFocus={[Function]}
+          style={
+            {
+              "backgroundColor": "transparent",
+              "bottom": 0,
+              "color": "transparent",
+              "left": 0,
+              "opacity": 0.02,
+              "position": "absolute",
+              "right": 0,
+              "top": 0,
+            }
+          }
+          testID="otp-input"
+          textContentType="oneTimeCode"
+          value=""
+        />
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "gap": 25,
+          "paddingHorizontal": 91.5,
+          "width": "100%",
+        }
+      }
+    >
+      <View
+        accessibilityLabel="Proceed"
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": true,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+            },
+            {
+              "width": "100%",
+            },
+            undefined,
+          ]
+        }
+        testID="proceed-button"
+      >
         <View
           style={
             {
               "alignItems": "center",
-              "gap": 25,
-              "paddingHorizontal": 91.5,
+              "gap": 8,
               "width": "100%",
             }
           }
         >
           <View
-            accessibilityLabel="Proceed"
-            accessibilityRole="button"
-            accessibilityState={
-              {
-                "busy": undefined,
-                "checked": undefined,
-                "disabled": true,
-                "expanded": undefined,
-                "selected": undefined,
-              }
-            }
-            accessibilityValue={
-              {
-                "max": undefined,
-                "min": undefined,
-                "now": undefined,
-                "text": undefined,
-              }
-            }
-            accessible={true}
-            collapsable={false}
-            focusable={true}
-            onBlur={[Function]}
-            onClick={[Function]}
-            onFocus={[Function]}
-            onResponderGrant={[Function]}
-            onResponderMove={[Function]}
-            onResponderRelease={[Function]}
-            onResponderTerminate={[Function]}
-            onResponderTerminationRequest={[Function]}
-            onStartShouldSetResponder={[Function]}
             style={
               [
                 {
-                  "alignItems": "center",
+                  "backgroundColor": "#4D4D4D",
+                  "borderRadius": 200,
+                  "height": 2,
+                  "width": 24,
                 },
                 {
-                  "width": "100%",
+                  "backgroundColor": undefined,
                 },
-                undefined,
               ]
             }
-            testID="proceed-button"
-          >
-            <View
-              style={
-                {
-                  "alignItems": "center",
-                  "gap": 8,
-                  "width": "100%",
-                }
-              }
-            >
-              <View
-                style={
-                  [
-                    {
-                      "backgroundColor": "#4D4D4D",
-                      "borderRadius": 200,
-                      "height": 2,
-                      "width": 24,
-                    },
-                    {
-                      "backgroundColor": undefined,
-                    },
-                  ]
-                }
-              />
-              <View
-                style={
-                  {
-                    "alignItems": "center",
-                    "backgroundColor": "#202020",
-                    "borderColor": "#202020",
-                    "borderRadius": 12,
-                    "borderWidth": 1,
-                    "justifyContent": "center",
-                    "padding": 16,
-                    "width": "100%",
-                  }
-                }
-              >
-                <Text
-                  style={
-                    {
-                      "color": "#444444",
-                      "fontFamily": "PlusJakartaSans-Medium",
-                      "fontSize": 16,
-                      "lineHeight": 24,
-                      "textAlign": "center",
-                    }
-                  }
-                >
-                  Proceed
-                </Text>
-              </View>
-            </View>
-          </View>
+          />
           <View
             style={
               {
                 "alignItems": "center",
+                "backgroundColor": "#202020",
+                "borderColor": "#202020",
+                "borderRadius": 12,
+                "borderWidth": 1,
+                "justifyContent": "center",
+                "padding": 16,
+                "width": "100%",
               }
             }
           >
             <Text
               style={
                 {
-                  "color": "#A9A9A9",
-                  "fontFamily": "PlusJakartaSans-Regular",
-                  "fontSize": 12,
-                  "fontWeight": "400",
-                  "letterSpacing": 0,
-                  "lineHeight": 20,
+                  "color": "#444444",
+                  "fontFamily": "PlusJakartaSans-Medium",
+                  "fontSize": 16,
+                  "lineHeight": 24,
                   "textAlign": "center",
-                  "width": 567,
                 }
               }
             >
-              Didn't receive the code? 
-              <Text
-                disabled={false}
-                onPress={[Function]}
-                style={
-                  {
-                    "color": "#A9A9A9",
-                    "textDecorationLine": "underline",
-                  }
-                }
-              >
-                Resend
-              </Text>
+              Proceed
             </Text>
           </View>
         </View>
@@ -839,10 +672,39 @@ exports[`OTPScreen renders correctly and matches snapshot 1`] = `
       <View
         style={
           {
-            "height": 34,
+            "alignItems": "center",
           }
         }
-      />
+      >
+        <Text
+          style={
+            {
+              "color": "#A9A9A9",
+              "fontFamily": "PlusJakartaSans-Regular",
+              "fontSize": 12,
+              "fontWeight": "400",
+              "letterSpacing": 0,
+              "lineHeight": 20,
+              "textAlign": "center",
+              "width": 567,
+            }
+          }
+        >
+          Didn't receive the code? 
+          <Text
+            disabled={false}
+            onPress={[Function]}
+            style={
+              {
+                "color": "#A9A9A9",
+                "textDecorationLine": "underline",
+              }
+            }
+          >
+            Resend
+          </Text>
+        </Text>
+      </View>
     </View>
   </View>
 </View>

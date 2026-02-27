@@ -26,7 +26,7 @@ import {
 
 import { Text } from '@/src/components/ui';
 import { PaymentMethodCard, PaymentMethod } from './PaymentMethodCard';
-import { PaymentSetupCard } from './PaymentSetupCard';
+
 import { s, sf, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -103,12 +103,7 @@ function PaymentMethodCarouselComponent({
           </View>
         ))}
 
-        {/* Setup/Add More Card - Figma 243:2762 shows this as last card in carousel */}
-        {showSetupCard && (
-          <View style={styles.cardWrapper}>
-            <PaymentSetupCard onAddPayment={onAddPayment} />
-          </View>
-        )}
+        {/* Setup/Add More Card removed — zero-state flip card handles this now */}
       </ScrollView>
 
       {/* Pagination dots */}

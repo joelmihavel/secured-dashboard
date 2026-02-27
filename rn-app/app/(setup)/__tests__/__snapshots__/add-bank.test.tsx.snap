@@ -214,35 +214,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
               >
                 Account Holder Name
               </Text>
-              <Text
-                allowFontScaling={true}
-                maxFontSizeMultiplier={1.2}
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 18.4,
-                      "letterSpacing": 0,
-                      "lineHeight": 27.599999999999998,
-                      "textAlign": "left",
-                    },
-                    [
-                      {
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 14,
-                        "lineHeight": 20,
-                        "textAlign": "right",
-                      },
-                      {
-                        "color": "#878787",
-                      },
-                    ],
-                  ]
-                }
-              >
-                edit
-              </Text>
             </View>
             <View
               style={
@@ -256,10 +227,8 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderBottomWidth": 0.5,
-                    "borderColor": "#0D0D0D",
-                    "borderRadius": 0,
-                    "borderWidth": 0,
+                    "borderColor": "transparent",
+                    "borderWidth": 1,
                   },
                 ]
               }
@@ -347,35 +316,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
               >
                 Account holder number
               </Text>
-              <Text
-                allowFontScaling={true}
-                maxFontSizeMultiplier={1.2}
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 18.4,
-                      "letterSpacing": 0,
-                      "lineHeight": 27.599999999999998,
-                      "textAlign": "left",
-                    },
-                    [
-                      {
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 14,
-                        "lineHeight": 20,
-                        "textAlign": "right",
-                      },
-                      {
-                        "color": "#878787",
-                      },
-                    ],
-                  ]
-                }
-              >
-                edit
-              </Text>
             </View>
             <View
               style={
@@ -389,10 +329,8 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderBottomWidth": 0.5,
-                    "borderColor": "#0D0D0D",
-                    "borderRadius": 0,
-                    "borderWidth": 0,
+                    "borderColor": "transparent",
+                    "borderWidth": 1,
                   },
                 ]
               }
@@ -480,35 +418,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
               >
                 IFSC Code
               </Text>
-              <Text
-                allowFontScaling={true}
-                maxFontSizeMultiplier={1.2}
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 18.4,
-                      "letterSpacing": 0,
-                      "lineHeight": 27.599999999999998,
-                      "textAlign": "left",
-                    },
-                    [
-                      {
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 14,
-                        "lineHeight": 20,
-                        "textAlign": "right",
-                      },
-                      {
-                        "color": "#878787",
-                      },
-                    ],
-                  ]
-                }
-              >
-                edit
-              </Text>
             </View>
             <View
               style={
@@ -522,10 +431,8 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderBottomWidth": 0.5,
-                    "borderColor": "#0D0D0D",
-                    "borderRadius": 0,
-                    "borderWidth": 0,
+                    "borderColor": "transparent",
+                    "borderWidth": 1,
                   },
                 ]
               }
@@ -613,35 +520,6 @@ exports[`AddBankScreen matches snapshot 1`] = `
               >
                 PAN CARD
               </Text>
-              <Text
-                allowFontScaling={true}
-                maxFontSizeMultiplier={1.2}
-                style={
-                  [
-                    {
-                      "color": "#FFFFFF",
-                      "fontFamily": "PlusJakartaSans-Regular",
-                      "fontSize": 18.4,
-                      "letterSpacing": 0,
-                      "lineHeight": 27.599999999999998,
-                      "textAlign": "left",
-                    },
-                    [
-                      {
-                        "fontFamily": "PlusJakartaSans-Regular",
-                        "fontSize": 14,
-                        "lineHeight": 20,
-                        "textAlign": "right",
-                      },
-                      {
-                        "color": "#878787",
-                      },
-                    ],
-                  ]
-                }
-              >
-                edit
-              </Text>
             </View>
             <View
               style={
@@ -655,10 +533,8 @@ exports[`AddBankScreen matches snapshot 1`] = `
                     "paddingVertical": 16,
                   },
                   {
-                    "borderBottomWidth": 0.5,
-                    "borderColor": "#0D0D0D",
-                    "borderRadius": 0,
-                    "borderWidth": 0,
+                    "borderColor": "transparent",
+                    "borderWidth": 1,
                   },
                 ]
               }
@@ -704,6 +580,7 @@ exports[`AddBankScreen matches snapshot 1`] = `
         <View
           style={
             {
+              "alignItems": "center",
               "gap": 16,
               "marginTop": 16,
             }
@@ -806,6 +683,7 @@ exports[`AddBankScreen matches snapshot 1`] = `
                   "textAlign": "left",
                 },
                 {
+                  "alignSelf": "flex-start",
                   "color": "#A9A9A9",
                   "fontFamily": "PlusJakartaSans-Regular",
                   "fontSize": 12,

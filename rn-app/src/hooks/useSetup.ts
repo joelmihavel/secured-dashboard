@@ -264,11 +264,21 @@ export function validateIfscCode(ifsc: string): boolean {
 }
 
 /**
- * Validates phone number: 10 digits or 12 digits starting with 91.
+ * Validates phone number based on country code.
+ * Falls back to 10 digits or 12 digits starting with 91 for India.
  */
-export function validatePhoneNumber(phone: string): boolean {
+const COUNTRY_DIGIT_LENGTH: Record<string, number> = {
+  '+91': 10, '+1': 10, '+44': 10, '+971': 9, '+61': 9,
+  '+65': 8, '+60': 10, '+49': 11, '+33': 9, '+966': 9,
+  '+974': 8, '+968': 8, '+977': 10, '+94': 9,
+};
+
+export function validatePhoneNumber(phone: string, countryCode = '+91'): boolean {
   const cleaned = phone.replace(/\D/g, '');
-  return cleaned.length === 10 || (cleaned.length === 12 && cleaned.startsWith('91'));
+  const expected = COUNTRY_DIGIT_LENGTH[countryCode];
+  if (expected) return cleaned.length === expected;
+  // Fallback: 7-15 digits
+  return cleaned.length >= 7 && cleaned.length <= 15;
 }
 
 /**

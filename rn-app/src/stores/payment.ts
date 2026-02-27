@@ -18,7 +18,7 @@ import * as SecureStore from 'expo-secure-store';
 // TYPES
 // ==============================================
 
-export type PaymentMethodType = 'upi' | 'card' | 'netbanking';
+export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';
 
 export type PaymentStatus =
   | 'idle'
@@ -85,6 +85,9 @@ interface PaymentState {
   // Verification flow state (in-memory only)
   verificationSkipped: boolean;
   pendingPaymentReturn: boolean;
+  // Enter rent screen state (in-memory only)
+  rentMonth: string | null;
+  enteredAmount: number;
 }
 
 interface PaymentActions {
@@ -110,6 +113,9 @@ interface PaymentActions {
   // Verification flow actions
   setVerificationSkipped: (skipped: boolean) => void;
   setPendingPaymentReturn: (pending: boolean) => void;
+  // Enter rent screen actions
+  setRentMonth: (month: string) => void;
+  setEnteredAmount: (amount: number) => void;
 }
 
 type PaymentStore = PaymentState & PaymentActions;
@@ -134,6 +140,9 @@ const initialState: PaymentState = {
   // Verification flow state
   verificationSkipped: false,
   pendingPaymentReturn: false,
+  // Enter rent screen state
+  rentMonth: null,
+  enteredAmount: 0,
 };
 
 // ==============================================
@@ -281,6 +290,17 @@ export const usePaymentStore = create<PaymentStore>()(
         set((state) => {
           state.pendingPaymentReturn = pending;
         }),
+
+      // Enter rent screen actions
+      setRentMonth: (month) =>
+        set((state) => {
+          state.rentMonth = month;
+        }),
+
+      setEnteredAmount: (amount) =>
+        set((state) => {
+          state.enteredAmount = amount;
+        }),
     })),
     {
       name: 'payment-recovery',
@@ -310,3 +330,5 @@ export const selectPayuSessionParams = (state: PaymentStore) => state.payuSessio
 export const selectSelectedInstrument = (state: PaymentStore) => state.selectedInstrument;
 export const selectVerificationSkipped = (state: PaymentStore) => state.verificationSkipped;
 export const selectPendingPaymentReturn = (state: PaymentStore) => state.pendingPaymentReturn;
+export const selectRentMonth = (state: PaymentStore) => state.rentMonth;
+export const selectEnteredAmount = (state: PaymentStore) => state.enteredAmount;

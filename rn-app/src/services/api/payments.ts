@@ -1133,13 +1133,19 @@ const DB_INTERNAL_PATTERNS = [
 export interface PaymentStampEntry {
   month: string;
   month_display: string;
-  status: 'on_time' | 'late' | 'missed' | 'pending';
+  status: 'on_time' | 'late' | 'missed' | 'pending' | 'refunded';
   payment_id: string | null;
   paid_at: string | null;
   due_date: string;
   days_late: number | null;
   amount_paise: number | null;
+  /** Cashback earned in rupees for this month's payment. 0 for late/missed. */
+  // TODO: Backend — add cashback_earned to get-payment-stamps SELECT query
+  cashback_earned: number;
 }
+
+// TODO: Backend — verify get-payment-stamps and dashboard-data use consistent IST handling
+// (AT TIME ZONE 'Asia/Kolkata') for stamp status cutoffs and payment timestamps
 
 export interface PaymentStampSummary {
   total_months: number;
@@ -1224,6 +1230,41 @@ export async function verifyCard(): Promise<{
   if (!data?.success) return { data: null, error: 'Failed to initiate card verification' };
 
   return { data: data.data, error: null };
+}
+
+// ==============================================
+// NETBANKING BANK LIST
+// ==============================================
+
+export interface NetbankingBank {
+  bank_code: string;
+  bank_name: string;
+  short_name: string | null;
+  is_popular: boolean;
+}
+
+/**
+ * Fetch active netbanking banks from Supabase.
+ * No auth required — public reference data.
+ */
+export async function fetchBankList(): Promise<{
+  data: NetbankingBank[] | null;
+  error: string | null;
+}> {
+  const { data, error } = await callEdgeFunction<{
+    success: boolean;
+    data: { banks: NetbankingBank[]; total_count: number };
+  }>('get-netbanking-banks', {}, false, 'GET');
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  if (!data?.success) {
+    return { data: null, error: 'Failed to fetch bank list' };
+  }
+
+  return { data: data.data.banks, error: null };
 }
 
 export function sanitizeErrorForUI(errorMessage: string): string {

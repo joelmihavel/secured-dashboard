@@ -275,17 +275,17 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                       },
                       {
                         "shadowOffset": {
-                          "height": undefined,
+                          "height": 4,
                           "width": 0,
                         },
-                        "shadowOpacity": undefined,
-                        "shadowRadius": undefined,
+                        "shadowOpacity": 0.24,
+                        "shadowRadius": 5,
                         "transform": [
                           {
-                            "translateY": undefined,
+                            "translateY": 0,
                           },
                           {
-                            "scale": undefined,
+                            "scale": 1,
                           },
                         ],
                       },
@@ -356,7 +356,7 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                             "top": 0,
                           },
                           {
-                            "opacity": undefined,
+                            "opacity": 0,
                           },
                         ]
                       }
@@ -377,7 +377,7 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                             "top": 0,
                           },
                           {
-                            "opacity": undefined,
+                            "opacity": 1,
                           },
                         ]
                       }
@@ -398,7 +398,7 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                           {
                             "transform": [
                               {
-                                "translateY": undefined,
+                                "translateY": 0,
                               },
                             ],
                           },
@@ -458,7 +458,7 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                             "top": 0,
                           },
                           {
-                            "opacity": undefined,
+                            "opacity": 1,
                           },
                         ]
                       }
@@ -475,7 +475,7 @@ exports[`SplashScreen renders correctly and matches snapshot 1`] = `
                             "top": 0,
                           },
                           {
-                            "opacity": undefined,
+                            "opacity": 0,
                           },
                         ]
                       }

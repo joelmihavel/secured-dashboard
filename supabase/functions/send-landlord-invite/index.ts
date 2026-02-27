@@ -15,7 +15,7 @@ import {
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
-import { validateSchema } from "../_shared/validation.ts";
+import { validateSchema, isValidPhone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sendEmail } from "../_shared/notifications.ts";
 import { generateSecureRandom } from "../_shared/crypto.ts";
@@ -35,6 +35,8 @@ interface SendInviteRequest {
   tenancy_id: string;
   landlord_name?: string;
   landlord_email?: string;
+  landlord_phone?: string;
+  country_code?: string;
   resend?: boolean;
 }
 
@@ -46,6 +48,8 @@ const requestSchema = {
   tenancy_id: { required: true, type: "string" as const },
   landlord_name: { required: false, type: "string" as const },
   landlord_email: { required: false, type: "string" as const },
+  landlord_phone: { required: false, type: "string" as const },
+  country_code: { required: false, type: "string" as const },
   resend: { required: false, type: "boolean" as const },
 };
 
@@ -212,7 +216,7 @@ serve(async (req: Request) => {
 
     // Parse and validate request
     const body = await req.json();
-    const { tenancy_id, landlord_name, landlord_email, resend } = validateSchema<SendInviteRequest>(
+    const { tenancy_id, landlord_name, landlord_email, landlord_phone, country_code, resend } = validateSchema<SendInviteRequest>(
       body,
       requestSchema,
       true
@@ -244,10 +248,16 @@ serve(async (req: Request) => {
     // Get landlord details (from request or existing tenancy)
     const finalLandlordName = landlord_name ?? tenancy.landlord_name;
     const finalLandlordEmail = landlord_email ?? tenancy.landlord_email;
+    const finalLandlordPhone = landlord_phone ?? tenancy.landlord_phone;
+    const finalCountryCode = country_code ?? tenancy.country_code ?? "+91";
 
-    if (!finalLandlordEmail || !isValidEmail(finalLandlordEmail)) {
-      throw new ValidationError("Valid landlord email address is required", {
-        landlord_email: "Invalid or missing email address",
+    // Validate: require either phone or email
+    const hasValidEmail = finalLandlordEmail && isValidEmail(finalLandlordEmail);
+    const hasValidPhone = finalLandlordPhone && isValidPhone(finalLandlordPhone, finalCountryCode);
+
+    if (!hasValidEmail && !hasValidPhone) {
+      throw new ValidationError("Valid landlord phone number or email address is required", {
+        landlord_phone: "Invalid or missing phone number",
       });
     }
 
@@ -266,17 +276,22 @@ serve(async (req: Request) => {
       approvalToken = generateSecureRandom(32);
       tokenExpiresAt = new Date(now.getTime() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
 
-      // Update tenancy with new token and landlord info
+      // Update tenancy with new token, landlord info, and phone
+      const updatePayload: Record<string, unknown> = {
+        landlord_name: finalLandlordName,
+        landlord_approval_token: approvalToken,
+        landlord_token_expires_at: tokenExpiresAt,
+        landlord_invite_sent_at: now.toISOString(),
+        landlord_invite_count: (tenancy.landlord_invite_count ?? 0) + 1,
+        landlord_status: "invite_pending",
+      };
+      if (finalLandlordEmail) updatePayload.landlord_email = finalLandlordEmail;
+      if (finalLandlordPhone) updatePayload.landlord_phone = finalLandlordPhone;
+      if (finalCountryCode) updatePayload.country_code = finalCountryCode;
+
       const { error: updateError } = await supabase
         .from("tenancies")
-        .update({
-          landlord_name: finalLandlordName,
-          landlord_email: finalLandlordEmail,
-          landlord_approval_token: approvalToken,
-          landlord_token_expires_at: tokenExpiresAt,
-          landlord_invite_sent_at: now.toISOString(),
-          landlord_invite_count: (tenancy.landlord_invite_count ?? 0) + 1,
-        })
+        .update(updatePayload)
         .eq("id", tenancy_id);
 
       if (updateError) {
@@ -299,26 +314,39 @@ serve(async (req: Request) => {
       ? `${tenant.first_name}${tenant.last_name ? ` ${tenant.last_name}` : ""}`
       : "Your tenant";
 
-    // Format rent amount
-    const monthlyRent = (tenancy.monthly_rent_paise / 100).toLocaleString("en-IN");
+    // Send email if we have a valid email address
+    let emailSent = false;
+    let emailMessageId: string | undefined;
+    if (hasValidEmail) {
+      // Format rent amount
+      const monthlyRent = (tenancy.monthly_rent_paise / 100).toLocaleString("en-IN");
 
-    // Generate email content
-    const emailContent = generateLandlordInviteEmail({
-      landlordName: finalLandlordName,
-      tenantName,
-      propertyAddress: tenancy.property_address,
-      monthlyRent,
-      approvalUrl,
-      expiresIn: "72 hours",
-    });
+      // Generate email content
+      const emailContent = generateLandlordInviteEmail({
+        landlordName: finalLandlordName,
+        tenantName,
+        propertyAddress: tenancy.property_address,
+        monthlyRent,
+        approvalUrl,
+        expiresIn: "72 hours",
+      });
 
-    // Send email via Resend
-    const emailResult = await sendEmail({
-      to: finalLandlordEmail,
-      subject: `${tenantName} has added you as their landlord - Action Required`,
-      html: emailContent.html,
-      text: emailContent.text,
-    });
+      // Send email via Resend
+      const emailResult = await sendEmail({
+        to: finalLandlordEmail!,
+        subject: `${tenantName} has added you as their landlord - Action Required`,
+        html: emailContent.html,
+        text: emailContent.text,
+      });
+
+      emailSent = emailResult.success;
+      emailMessageId = emailResult.messageId;
+
+      if (!emailResult.success) {
+        console.warn("Email send failed:", emailResult.error);
+        // Don't throw — phone-based invite is still valid
+      }
+    }
 
     // Log audit
     await audit.logSuccess(
@@ -327,33 +355,27 @@ serve(async (req: Request) => {
       "tenancies",
       tenancy_id,
       {
-        landlord_email_masked: maskEmail(finalLandlordEmail),
-        email_sent: emailResult.success,
-        email_message_id: emailResult.messageId,
+        landlord_email_masked: hasValidEmail ? maskEmail(finalLandlordEmail!) : undefined,
+        landlord_phone: hasValidPhone ? `${finalCountryCode}${finalLandlordPhone!.slice(-4)}` : undefined,
+        email_sent: emailSent,
+        email_message_id: emailMessageId,
         is_resend: resend ?? false,
         expires_at: tokenExpiresAt,
+        sent_via: hasValidEmail ? "email" : "phone",
       }
     );
-
-    if (!emailResult.success) {
-      throw new AppError(
-        `Failed to send invitation email: ${emailResult.error}`,
-        "EMAIL_FAILED",
-        502
-      );
-    }
 
     return jsonResponse({
       success: true,
       data: {
-        // Include fields iOS expects
-        invite_id: tenancy_id, // Use tenancy_id as invite identifier
+        invite_id: tenancy_id,
         status: "sent",
-        sent_via: "email",
+        sent_via: hasValidEmail ? "email" : "phone",
         expires_at: tokenExpiresAt,
-        message: "Landlord invitation email sent successfully",
-        invite_link: approvalUrl, // Include full approval URL for reference
-        landlord_email_masked: maskEmail(finalLandlordEmail),
+        message: "Landlord invitation sent successfully",
+        invite_link: approvalUrl,
+        landlord_email_masked: hasValidEmail ? maskEmail(finalLandlordEmail!) : undefined,
+        landlord_status: "invite_pending",
       },
     });
   } catch (error) {

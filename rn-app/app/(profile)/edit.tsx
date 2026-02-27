@@ -31,7 +31,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Alert,
   ActionSheetIOS,
 } from 'react-native';
@@ -41,9 +40,9 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Screen, Text, TextInput, PhoneInput, PrimaryButton } from '@/src/components';
+import { Screen, Text, TextInput, PhoneInput, PrimaryButton, Avatar, BackButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
-import { useDashboard, useUpdateProfile, useUploadAvatar } from '@/src/hooks';
+import { useDashboard, useUpdateProfile, useUploadAvatar, usePixelateAvatar } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
 // Figma blueprint colors (41-8880)
@@ -60,12 +59,13 @@ export default function EditProfileScreen() {
   const { user } = useDashboard();
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
+  const pixelateAvatar = usePixelateAvatar();
 
   const fullName = user ? `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : '';
   const [name, setName] = useState(fullName || 'John Smith');
   const [email, setEmail] = useState(user?.email ?? 'john@email.com');
   const [city, setCity] = useState('Bangalore');
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatar_url ?? null);
 
   // Extract phone parts
   const phone = user?.phone ?? '+91 98765 43210';
@@ -101,13 +101,24 @@ export default function EditProfileScreen() {
     }
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
-      setAvatarUri(asset.uri);
-      uploadAvatar.mutate({
-        fileUri: asset.uri,
-        contentType: asset.mimeType ?? 'image/jpeg',
-      });
+      setAvatarUri(asset.uri); // Show local preview immediately
+      pixelateAvatar.mutate(
+        { fileUri: asset.uri, contentType: asset.mimeType ?? 'image/jpeg' },
+        {
+          onSuccess: (data) => {
+            setAvatarUri(data.avatarUrl);
+          },
+          onError: () => {
+            // Fallback: use the old presigned URL upload if pixelation fails
+            uploadAvatar.mutate({
+              fileUri: asset.uri,
+              contentType: asset.mimeType ?? 'image/jpeg',
+            });
+          },
+        },
+      );
     }
-  }, [uploadAvatar]);
+  }, [pixelateAvatar, uploadAvatar]);
 
   const handleEditPicture = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -169,14 +180,11 @@ export default function EditProfileScreen() {
             {/* Header (41:8882): column, gap=24, paddingH=40 */}
             <View style={styles.headerSection}>
               {/* Back button (41:8883): 32x32 */}
-              <TouchableOpacity
+              <BackButton
                 onPress={handleBack}
                 style={styles.backButton}
-                accessibilityRole="button"
-                accessibilityLabel="Go back"
-              >
-                <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.editButtonText} />
-              </TouchableOpacity>
+                color={FIGMA_COLORS.editButtonText}
+              />
 
               {/* Title (41:8884): "My \nProfile" width=313, height=128 */}
               <Text style={styles.titleBase}>
@@ -186,18 +194,7 @@ export default function EditProfileScreen() {
 
             {/* Avatar section (41:8885): row, gap=10, paddingH=40 */}
             <View style={styles.avatarSection}>
-              <View style={styles.avatarWrapper}>
-                {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <View style={styles.avatarFace}>
-                      <View style={styles.avatarHair} />
-                      <View style={styles.avatarHead} />
-                    </View>
-                  </View>
-                )}
-              </View>
+              <Avatar uri={avatarUri} name={fullName} size="lg" />
 
               {/* Edit Picture button (41:8887): 107x36, bg #CC7B57, pad=4, radius=12 */}
               <TouchableOpacity
@@ -213,7 +210,9 @@ export default function EditProfileScreen() {
                   end={{ x: 1, y: 0.5 }}
                   style={styles.editPictureInner}
                 >
-                  <Text style={styles.editPictureText}>Edit Picture</Text>
+                  <Text style={styles.editPictureText}>
+                    {pixelateAvatar.isPending ? 'Pixelating...' : 'Edit Picture'}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -224,16 +223,12 @@ export default function EditProfileScreen() {
                 label="User name"
                 value={name}
                 onChangeText={setName}
-                hintText="edit"
-                onHintPress={() => {/* Focus input */}}
               />
 
               <TextInput
                 label="Email"
                 value={email}
                 onChangeText={setEmail}
-                hintText="edit"
-                onHintPress={() => {/* Focus input */}}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -243,7 +238,6 @@ export default function EditProfileScreen() {
                 value={city}
                 onChangeText={setCity}
                 disabled
-                hintText="This is a hint text to help user."
               />
 
               <PhoneInput
@@ -328,47 +322,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 40,
-  },
-  avatarWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 80,
-    height: 80,
-  },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    backgroundColor: colors.brand[300],  // colors.brand[300]
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  avatarFace: {
-    width: 60,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarHair: {
-    position: 'absolute',
-    top: 0,
-    width: 50,
-    height: 35,
-    backgroundColor: colors.neutral[800],  // colors.neutral[800]
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-  },
-  avatarHead: {
-    width: 40,
-    height: 40,
-    backgroundColor: colors.brand[400],  // colors.brand[400]
-    borderRadius: 20,
-    marginTop: 15,
   },
   // Edit Picture outer button (41:8887): 107x36, bg #CC7B57, pad=4, radius=12
   editPictureButton: {

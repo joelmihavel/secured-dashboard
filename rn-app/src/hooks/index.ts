@@ -45,6 +45,7 @@ export {
   useSaveBankPreference,
   useVerifyCard,
   useFeeRates,
+  useBankList,
   paymentKeys,
 } from './usePayments';
 
@@ -52,6 +53,7 @@ export {
 export {
   useUpdateProfile,
   useUploadAvatar,
+  usePixelateAvatar,
   useDeleteAccount,
   useProfilePaymentMethods,
   useProfile,

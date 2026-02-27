@@ -214,6 +214,7 @@ export interface Database {
           full_name: string | null;
           first_name: string | null;
           last_name: string | null;
+          avatar_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -223,12 +224,14 @@ export interface Database {
           full_name?: string | null;
           first_name?: string | null;
           last_name?: string | null;
+          avatar_url?: string | null;
         };
         Update: {
           phone?: string | null;
           full_name?: string | null;
           first_name?: string | null;
           last_name?: string | null;
+          avatar_url?: string | null;
         };
       };
       tenancies: {

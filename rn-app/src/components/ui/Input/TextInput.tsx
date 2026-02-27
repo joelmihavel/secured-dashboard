@@ -42,9 +42,11 @@ const INPUT_COLORS_DARK = {
   hintText: '#878787',             // Figma: hint text color (neutral/600)
   textFilled: '#DDDDDD',           // Figma: neutral/200
   textError: '#E5484D',            // Figma: error text color
+  textSuccess: '#30A46C',          // Success/verified text color (green)
   border: '#4D4D4D',              // Figma: stroke (visible:false in empty state, used on focus)
   borderFocus: '#FF9A6D',         // Figma: brand accent on focus
   borderError: '#E5484D',
+  borderSuccess: '#30A46C',       // Success/verified border color (green)
 } as const;
 
 // Light theme variant (for white backgrounds)
@@ -55,9 +57,11 @@ const INPUT_COLORS_LIGHT = {
   hintText: '#878787',
   textFilled: '#131313',
   textError: '#e5484d',
+  textSuccess: '#30A46C',
   border: '#cbcbcb',
   borderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
   borderError: '#E5484D',
+  borderSuccess: '#30A46C',
 } as const;
 
 // Exact Figma spacing values
@@ -71,6 +75,7 @@ export interface TextInputProps extends Omit<RNTextInputProps, 'style'> {
   value: string;
   onChangeText: (text: string) => void;
   error?: string;
+  success?: string;
   disabled?: boolean;
   variant?: 'dark' | 'light';
   hintText?: string;
@@ -79,7 +84,7 @@ export interface TextInputProps extends Omit<RNTextInputProps, 'style'> {
 }
 
 const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
-  ({ label, value, onChangeText, error, disabled, placeholder, variant = 'dark', hintText, onHintPress, testID, ...props }, ref) => {
+  ({ label, value, onChangeText, error, success, disabled, placeholder, variant = 'dark', hintText, onHintPress, testID, ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
     const INPUT_COLORS = variant === 'light' ? INPUT_COLORS_LIGHT : INPUT_COLORS_DARK;
 
@@ -92,12 +97,14 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
     }, []);
 
     const hasError = !!error;
+    const hasSuccess = !hasError && !!success;
     const hasValue = value.length > 0;
 
     // Determine border color based on state
     // Figma REST API: border visible:false in empty state (1:29108)
   const getBorderColor = () => {
       if (hasError) return INPUT_COLORS.borderError;
+      if (hasSuccess) return INPUT_COLORS.borderSuccess;
       if (isFocused) return INPUT_COLORS.borderFocus;
       return 'transparent';
     };
@@ -109,7 +116,7 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
         return {
           borderWidth: 0,
           borderBottomWidth: 0.5,
-          borderColor: isFocused ? INPUT_COLORS.borderFocus : '#0D0D0D', // Figma: #0d0d0d for inactive
+          borderColor: hasError ? INPUT_COLORS.borderError : (isFocused ? INPUT_COLORS.borderFocus : '#0D0D0D'), // Figma: #0d0d0d for inactive
           borderRadius: 0,
         };
       }
@@ -138,6 +145,10 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
             {error ? (
               <Text style={[styles.errorText, dynamicStyles.inputError]}>
                 {error}
+              </Text>
+            ) : success ? (
+              <Text style={[styles.successText, { color: INPUT_COLORS.textSuccess }]}>
+                {success}
               </Text>
             ) : hintText ? (
               onHintPress ? (
@@ -218,6 +229,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'right' as const,  // Figma: textAlignHorizontal: RIGHT
     // Color applied dynamically via dynamicStyles.inputError (#E5484D)
+  },
+  successText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'right' as const,
+    // Color applied inline (#30A46C)
   },
   hintText: {
     fontFamily: 'PlusJakartaSans-Regular',

@@ -42,6 +42,14 @@ export interface PaymentMethodModalProps {
   tenancyId: string;
   rentMonth: string;
   onProceed?: (method: PaymentMethodType) => void;
+  /** Which view to show initially. Defaults to 'enter-amount'. */
+  initialView?: ModalView;
+  /** Pre-seeded payment ID for opening directly at add-method views. */
+  initialPaymentId?: string;
+  /** Method type to pre-populate when opening at edit-method view (from profile). */
+  initialMethodType?: string;
+  /** Saved method ID to pre-populate when opening at edit-method view (from profile). */
+  initialSavedMethodId?: string;
 }
 
 /** Props for the edit method view */

@@ -15,9 +15,10 @@
  */
 
 import React, { memo, ReactNode } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Line } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
+import { BgLine } from '@/src/components/ui/BgLine';
 
 import { Text } from '../ui/Typography';
 import { PAYMENT_COLORS } from '@/src/theme';
@@ -30,6 +31,7 @@ import { s, sf, sv } from '@/src/theme/scale';
 export interface PaymentReceiptCardProps {
   stampText: string | null;
   stampColor: string | null;
+  stampImage?: any;
   titleLine1: string;
   titleLine2: string;
   titleLine2Color?: string;
@@ -38,6 +40,10 @@ export interface PaymentReceiptCardProps {
   showPaperclip?: boolean;
   /** Override default top margin (default: 183 - safeAreaTop). Use smaller values to move card up. */
   topMargin?: number;
+  /** Override title left margin (default: s(-5) = 19px from card edge) */
+  titleMarginLeft?: number;
+  /** Override content area top padding (default: sv(80)) */
+  contentPaddingTop?: number;
 }
 
 // ============================================
@@ -93,38 +99,38 @@ const Star = memo(({ color }: { color: string }) => (
 ));
 Star.displayName = 'Star';
 
-const GridLines = memo(() => (
-  <View style={styles.gridContainer} pointerEvents="none">
-    <Svg width={369} height={235} viewBox="0 0 369 235" fill="none">
-      <Line x1={36.8} y1={0} x2={36.8} y2={235} stroke={CARD_COLORS.dividerColor} strokeWidth={0.3} />
-      <Line x1={0} y1={36.8} x2={369} y2={36.8} stroke={CARD_COLORS.dividerColor} strokeWidth={0.3} />
-      <Line x1={339.5} y1={0} x2={339.5} y2={235} stroke={CARD_COLORS.dividerColor} strokeWidth={0.3} />
-      <Line x1={0} y1={197.8} x2={369} y2={197.8} stroke={CARD_COLORS.dividerColor} strokeWidth={0.3} />
-    </Svg>
-  </View>
-));
-GridLines.displayName = 'GridLines';
+/** Decorative bg_line — Figma 768:303932 (Vector 45) */
 
-/** Stamp with SVG stars — no Ionicons dependency */
-const ReceiptStamp = memo(({ text, color }: { text: string; color: string }) => (
-  <View style={styles.stampContainer}>
-    <View style={[styles.stampOuter, { borderColor: color }]}>
-      <View style={[styles.stampInner, { borderColor: `${color}80` }]}>
-        <View style={styles.starsRow}>
-          <Star color={color} />
-          <Star color={color} />
-          <Star color={color} />
-        </View>
-        <Text style={[styles.stampText, { color }]}>{text}</Text>
-        <View style={styles.starsRow}>
-          <Star color={color} />
-          <Star color={color} />
-          <Star color={color} />
+/** Stamp with SVG stars — fallback for text-only, or direct image */
+const ReceiptStamp = memo(({ text, color, image }: { text: string; color: string; image?: any }) => {
+  if (image) {
+    return (
+      <View style={styles.stampContainer}>
+        <Image source={image} style={styles.stampPng} resizeMode="contain" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.stampContainer}>
+      <View style={[styles.stampOuter, { borderColor: color }]}>
+        <View style={[styles.stampInner, { borderColor: `${color}80` }]}>
+          <View style={styles.starsRow}>
+            <Star color={color} />
+            <Star color={color} />
+            <Star color={color} />
+          </View>
+          <Text style={[styles.stampText, { color }]}>{text}</Text>
+          <View style={styles.starsRow}>
+            <Star color={color} />
+            <Star color={color} />
+            <Star color={color} />
+          </View>
         </View>
       </View>
     </View>
-  </View>
-));
+  );
+});
 ReceiptStamp.displayName = 'ReceiptStamp';
 
 // ============================================
@@ -134,6 +140,7 @@ ReceiptStamp.displayName = 'ReceiptStamp';
 function PaymentReceiptCardComponent({
   stampText,
   stampColor,
+  stampImage,
   titleLine1,
   titleLine2,
   titleLine2Color = CARD_COLORS.titleAccent,
@@ -141,13 +148,15 @@ function PaymentReceiptCardComponent({
   showGridLines = true,
   showPaperclip = true,
   topMargin,
+  titleMarginLeft,
+  contentPaddingTop,
 }: PaymentReceiptCardProps) {
   const insets = useSafeAreaInsets();
   const cardMarginTop = topMargin ?? Math.max(0, 183 - insets.top);
 
   return (
     <View style={[styles.receiptContainer, { marginTop: cardMarginTop }]}>
-      {showGridLines && <GridLines />}
+      {showGridLines && <BgLine style={styles.gridContainer} />}
 
       <View style={styles.cardShadowWrapper}>
         <View style={styles.cardBackground} />
@@ -158,7 +167,7 @@ function PaymentReceiptCardComponent({
           </View>
         )}
 
-        <View style={styles.receiptCardContent}>
+        <View style={[styles.receiptCardContent, contentPaddingTop != null && { paddingTop: contentPaddingTop }]}>
           <PerforatedEdge />
 
           {/* Side notches */}
@@ -166,14 +175,14 @@ function PaymentReceiptCardComponent({
           <View style={[styles.notch, styles.notchRight]} />
 
           {/* Stamp */}
-          {stampText && stampColor && (
+          {((stampText && stampColor) || stampImage) && (
             <View style={styles.stampPosition}>
-              <ReceiptStamp text={stampText} color={stampColor} />
+              <ReceiptStamp text={stampText || ''} color={stampColor || ''} image={stampImage} />
             </View>
           )}
 
           {/* Title */}
-          <View style={styles.titleSection}>
+          <View style={[styles.titleSection, titleMarginLeft != null && { marginLeft: titleMarginLeft }]}>
             <Text style={styles.titleWhite}>
               {titleLine1}
               {'\n'}
@@ -205,7 +214,7 @@ const styles = StyleSheet.create({
   gridContainer: {
     position: 'absolute',
     top: 0,
-    left: s(-49),
+    alignSelf: 'center',
     width: s(369),
     height: sv(235),
     zIndex: -1,
@@ -268,11 +277,15 @@ const styles = StyleSheet.create({
   },
   stampPosition: {
     position: 'absolute',
-    top: sv(16),
-    right: s(16),
+    top: sv(25),
+    right: s(12),
   },
   stampContainer: {
     transform: [{ rotate: '-15deg' }],
+  },
+  stampPng: {
+    width: s(85),
+    height: sv(80),
   },
   stampOuter: {
     width: s(80),
@@ -309,7 +322,7 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     marginBottom: sv(24),
-    marginLeft: s(10),
+    marginLeft: s(-5),
   },
   titleWhite: {
     fontFamily: 'PlusJakartaSans-Regular',

@@ -3,14 +3,13 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Text as RNText,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { PrimaryButton } from '@/src/components';
+import { PrimaryButton, Text, BackButton } from '@/src/components';
 import { PaymentCard } from '@/src/components/payment/PaymentCard';
 import { useSavedPaymentMethods, useDeletePaymentMethod } from '@/src/hooks';
 import { colors } from '@/src/theme';
@@ -20,21 +19,23 @@ import type { SavedPaymentMethod } from '@/src/services/api/payments';
 
 const FIGMA_COLORS = {
   white: colors.white,
-  deleteText: colors.neutral[500],
+  muted: '#A9A9A9',
+  accent: colors.brand[500],
+  background: '#1A1A1A',
+  cardBg: '#202020',
   cardBorder: '#4D4D4D',
 };
 
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={FIGMA_COLORS.white}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
+/** Get the replace CTA text */
+function getReplaceCta(methodType: string): string {
+  switch (methodType) {
+    case 'upi': return 'Replace UPI ID';
+    case 'card': return 'Replace Card';
+    case 'debit_card': return 'Replace Card';
+    case 'netbanking': return 'Replace Netbanking';
+    default: return 'Replace Method';
+  }
+}
 
 export function EditMethodContent({
   onBack,
@@ -52,28 +53,28 @@ export function EditMethodContent({
     return savedMethods?.find((m: SavedPaymentMethod) => m.id === savedMethodId);
   }, [savedMethods, savedMethodId]);
 
-  const handleDelete = useCallback(async () => {
+  const handleReplace = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsDeleting(true);
     try {
       await deletePaymentMethod(savedMethodId);
       onDeleteSuccess(methodType);
     } catch (err) {
-      Alert.alert('Error', 'Failed to delete payment method.');
+      Alert.alert('Error', 'Failed to remove payment method.');
       setIsDeleting(false);
     }
   }, [deletePaymentMethod, savedMethodId, methodType, onDeleteSuccess]);
 
-  const confirmDelete = useCallback(() => {
+  const confirmReplace = useCallback(() => {
     Alert.alert(
-      'Delete Method',
-      'Are you sure you want to delete this payment method?',
+      'Replace Payment Method',
+      `This will remove your current ${methodType === 'upi' ? 'UPI ID' : (methodType === 'card' || methodType === 'debit_card') ? 'card' : 'bank account'} and let you add a new one.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: handleDelete },
+        { text: 'Replace', style: 'destructive', onPress: handleReplace },
       ]
     );
-  }, [handleDelete]);
+  }, [handleReplace, methodType]);
 
   const getPaymentCardProps = () => {
     if (!methodData) return { type: methodType as any };
@@ -85,7 +86,7 @@ export function EditMethodContent({
         bankName: methodData.card_issuer,
       } as const;
     }
-    
+
     if (methodData.type === 'upi') {
       return {
         type: 'upi',
@@ -105,27 +106,31 @@ export function EditMethodContent({
     <View style={styles.container}>
       {/* Header Row */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onBack();
-          }}
+        <BackButton
+          onPress={onBack}
           style={styles.backButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityRole="button"
-          accessibilityLabel="Go back to method selection"
-        >
-          <BackArrow />
-        </TouchableOpacity>
+          color={FIGMA_COLORS.white}
+        />
+        <Text style={styles.title}>Edit Method</Text>
       </View>
 
-      {/* Card Visual Container */}
-      <View style={styles.cardContainer}>
-        {methodData && (
-          <View pointerEvents="none" style={styles.cardVisualWrapper}>
-            <PaymentCard {...cardProps} selected={false} />
-          </View>
-        )}
+      {/* Card UI — Figma 773:11937 */}
+      <View style={styles.cardSection}>
+        <View style={styles.cardContainer}>
+          {methodData ? (
+            <View pointerEvents="none" style={styles.cardVisualWrapper}>
+              <PaymentCard 
+                {...cardProps} 
+                variant="profile" 
+                selected={true}
+              />
+            </View>
+          ) : (
+            <View style={styles.emptyCardPlaceholder}>
+              <Text style={styles.emptyCardText}>No method data</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Footer Actions */}
@@ -141,17 +146,17 @@ export function EditMethodContent({
           showDivider
         />
 
-        <TouchableOpacity 
-          onPress={confirmDelete}
+        <TouchableOpacity
+          onPress={confirmReplace}
           disabled={isInitiating || isDeleting}
-          style={styles.deleteButton}
+          style={styles.replaceButton}
         >
           {isDeleting ? (
-            <ActivityIndicator size="small" color="#A9A9A9" />
+            <ActivityIndicator size="small" color={FIGMA_COLORS.muted} />
           ) : (
-            <RNText style={styles.deleteText}>
-              Delete {methodType === 'upi' ? 'UPI' : 'Card'}
-            </RNText>
+            <Text style={styles.replaceText}>
+              {getReplaceCta(methodType)}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -161,42 +166,67 @@ export function EditMethodContent({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 48,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingHorizontal: 40,
+    paddingTop: 16,
+    paddingBottom: 48,
     gap: 32,
+    backgroundColor: '#1A1A1A',
   },
   header: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
+    height: 32,
+  },
+  title: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 18,
+    color: colors.white,
+    marginLeft: 12,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginLeft: -12, // Offset the padding of the back arrow for alignment
+    marginLeft: 0,
+  },
+  cardSection: {
+    alignItems: 'center',
+    // Gap 32 is handled by parent container
   },
   cardContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
     width: '100%',
   },
   cardVisualWrapper: {
     width: 270,
     height: 400,
   },
+  emptyCardPlaceholder: {
+    width: 270,
+    height: 400,
+    backgroundColor: '#202020',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyCardText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    color: '#A9A9A9',
+  },
   footer: {
     gap: 24,
     alignItems: 'center',
+    width: '100%',
   },
-  deleteButton: {
+  replaceButton: {
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    width: '100%',
   },
-  deleteText: {
+  replaceText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,

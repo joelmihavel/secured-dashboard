@@ -42,6 +42,7 @@ interface DashboardData {
     user_status: string;
     kyc_status: string | null;
     cashback_balance_paise: number;
+    avatar_url: string | null;
     created_at: string;
   };
   tenancy: {
@@ -50,6 +51,7 @@ interface DashboardData {
     property_address: string;
     property_city: string | null;
     monthly_rent: number;
+    maintenance: number;
     rent_due_day: number;
     cashback_cutoff_day: number;
     lease_start_date: string | null;
@@ -102,6 +104,16 @@ interface DashboardData {
     created_at: string;
     read: boolean;
   }>;
+  landlord_bank: {
+    id: string;
+    account_holder_name: string;
+    account_number_masked: string;
+    ifsc_code: string;
+    bank_name: string | null;
+    verified: boolean;
+    pan_number_masked: string | null;
+    pan_verified: boolean;
+  } | null;
   unread_notification_count: number;
   payment_stamps: {
     summary: {
@@ -229,11 +241,12 @@ serve(async (req: Request) => {
       paymentsResult,
       notificationsResult,
       unreadCountResult,
+      landlordBankResult,
     ] = await Promise.all([
       // 1. User profile
       supabase
         .from("users")
-        .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, created_at")
+        .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, avatar_url, created_at")
         .eq("id", userId)
         .single(),
 
@@ -242,7 +255,7 @@ serve(async (req: Request) => {
         .from("tenancies")
         .select(`
           id, status, property_address, property_city,
-          monthly_rent_paise, rent_due_day, lease_start_date, lease_end_date,
+          monthly_rent_paise, maintenance_paise, rent_due_day, lease_start_date, lease_end_date,
           landlord_name, agreement_cert_id,
           bank_verified, utility_verified, landlord_approved, landlord_response,
           cashback_cutoff_day
@@ -283,6 +296,15 @@ serve(async (req: Request) => {
 
       // 7. Unread notification count
       supabase.rpc("get_unread_notification_count", { p_user_id: userId }),
+
+      // 8. Landlord bank account (for edit bank details)
+      supabase
+        .from("bank_accounts")
+        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified")
+        .eq("user_id", userId)
+        .eq("party_type", "landlord")
+        .eq("is_primary", true)
+        .maybeSingle(),
     ]);
 
     const userProfile = userProfileResult.data;
@@ -292,6 +314,7 @@ serve(async (req: Request) => {
     const payments = paymentsResult.data ?? [];
     const notifications = notificationsResult.data ?? [];
     const unreadCount = unreadCountResult.data ?? 0;
+    const landlordBank = landlordBankResult.data ?? null;
 
     // ============================================
     // PHASE 1.5: Fetch stamp payments (depends on tenancy)
@@ -407,6 +430,7 @@ serve(async (req: Request) => {
         user_status: userProfile?.user_status ?? "active",
         kyc_status: userProfile?.kyc_status ?? null,
         cashback_balance_paise: userProfile?.cashback_balance_paise ?? 0,
+        avatar_url: userProfile?.avatar_url ?? null,
         created_at: userProfile?.created_at ?? new Date().toISOString(),
       },
       tenancy: tenancy
@@ -416,6 +440,7 @@ serve(async (req: Request) => {
             property_address: tenancy.property_address,
             property_city: tenancy.property_city,
             monthly_rent: tenancy.monthly_rent_paise / 100,
+            maintenance: (tenancy.maintenance_paise ?? 0) / 100,
             rent_due_day: tenancy.rent_due_day,
             cashback_cutoff_day: tenancy.cashback_cutoff_day ?? 7,
             lease_start_date: tenancy.lease_start_date ?? null,
@@ -441,6 +466,7 @@ serve(async (req: Request) => {
         legacy_wallet_balance: legacyBalance,
       },
       recent_payments: recentPayments,
+      landlord_bank: landlordBank,
       notifications: formattedNotifications,
       unread_notification_count: unreadCount,
       payment_stamps: tenancy?.lease_start_date

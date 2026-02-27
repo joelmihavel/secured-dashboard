@@ -150,7 +150,6 @@ exports[`SetupIndexScreen matches snapshot 1`] = `
         >
           <RCTScrollView
             bounces={false}
-            collapsable={false}
             contentContainerStyle={
               {
                 "paddingLeft": 116.5,

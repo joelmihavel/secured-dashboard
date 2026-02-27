@@ -37,16 +37,18 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle } from '@/src/components';
+import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
 import { DottedGridPattern, DottedGridPresets } from '@/src/components/patterns/DottedGridPattern';
 import { useSendLandlordInvite, useDashboard } from '@/src/hooks';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import type { SetupError } from '@/src/types/setup';
+import type { CountryData } from '@/src/components/ui/Input/PhoneInput';
 import { colors } from '@/src/theme';
 
 // Figma exact values from 1-34150 blueprint
@@ -71,6 +73,8 @@ export default function InviteLandlordScreen() {
   const { tenancy } = useDashboard();
 
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [maxDigits, setMaxDigits] = useState(10);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [inviteSent, setInviteSent] = useState(false);
@@ -98,15 +102,20 @@ export default function InviteLandlordScreen() {
     setApiError(null);
   }, []);
 
+  const handleCountryChange = useCallback((country: CountryData) => {
+    setCountryCode(country.code);
+    setMaxDigits(country.maxDigits);
+  }, []);
+
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
     const cleaned = phoneNumber.replace(/\D/g, '');
     if (!cleaned) newErrors.phone = 'Required';
-    else if (cleaned.length < 10) newErrors.phone = 'Enter 10 digit number';
+    else if (cleaned.length < maxDigits) newErrors.phone = `Enter ${maxDigits} digit number`;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [phoneNumber]);
+  }, [phoneNumber, maxDigits]);
 
   const handleSubmit = useCallback(() => {
     if (!validateForm()) {
@@ -127,7 +136,8 @@ export default function InviteLandlordScreen() {
       {
         tenancyId: tenancy.id,
         landlordName: 'Landlord',
-        landlordEmail: `${cleaned}@phone.invite`,
+        landlordPhone: cleaned,
+        countryCode: countryCode,
       },
       {
         onSuccess: (data) => {
@@ -155,7 +165,7 @@ export default function InviteLandlordScreen() {
         },
       }
     );
-  }, [validateForm, sendLandlordInvite, phoneNumber, tenancy?.id, router]);
+  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, tenancy?.id, router]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -166,8 +176,12 @@ export default function InviteLandlordScreen() {
     }
   }, [router, reentry]);
 
+  const handleLearnMore = useCallback(() => {
+    Linking.openURL('https://flent.in/secured/how-to-invite-landlord');
+  }, []);
+
   const cleaned = phoneNumber.replace(/\D/g, '');
-  const isFormValid = cleaned.length >= 10;
+  const isFormValid = cleaned.length >= maxDigits;
 
   return (
     <Screen padded={false} testID="invite-landlord-screen">
@@ -186,21 +200,17 @@ export default function InviteLandlordScreen() {
         >
           {/* Back button -- Figma: back arrow at top of content area */}
           <View style={styles.backButtonContainer}>
-            <TouchableOpacity
+            <BackButton
               onPress={handleBack}
               style={styles.backButton}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.title} />
-            </TouchableOpacity>
+              color={FIGMA_COLORS.title}
+            />
           </View>
 
           {/* Title section -- Figma 1:34229: column, gap 16 */}
           <View style={styles.titleSection}>
-            {/* Title: "One last step we promise"
-                Figma spans: 0-13 "One last step" = #A9A9A9, 14-24 "we promise" = #FF9A6D
-                48/64, letterSpacing -2, PlusJakartaSans-Regular */}
-            <ScreenTitle gray="Confirm\n" accent="your tenancy" />
+            {/* Title: "Confirm your tenancy" */}
+            <ScreenTitle gray="Confirm " accent="your tenancy" />
 
             {/* Subtitle: 12/20, #A9A9A9, PlusJakartaSans-Regular */}
             <Text style={styles.subtitleText}>
@@ -221,18 +231,20 @@ export default function InviteLandlordScreen() {
           {/* Invite Sent Success Banner */}
           {inviteSent && <AlertBanner type="success" message="Invite sent successfully" />}
 
-          {/* Phone Input -- Figma: label + phone input with +91 dropdown */}
+          {/* Phone Input -- Figma: label + phone input with country dropdown */}
           <View style={styles.inputSection}>
             <PhoneInput
               label="Confirm your tenancy by inviting your landlord"
               value={phoneNumber}
               onChangeText={handlePhoneChange}
+              countryCode={countryCode}
+              onCountryChange={handleCountryChange}
               placeholder="Enter Number"
               error={errors.phone}
               disabled={sendLandlordInvite.isPending}
             />
-            
-            <TouchableOpacity style={styles.inviteBanner}>
+
+            <TouchableOpacity style={styles.inviteBanner} onPress={handleLearnMore}>
               <Text style={styles.inviteBannerText}>How to invite your landlord?</Text>
               <Text style={styles.inviteBannerLink}>Learn More</Text>
             </TouchableOpacity>
@@ -335,6 +347,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#FF9A6D',
     textAlign: 'center',
+    textDecorationLine: 'underline',
   },
   // Button section -- Figma 1:34233: column, gap 16
   buttonSection: {

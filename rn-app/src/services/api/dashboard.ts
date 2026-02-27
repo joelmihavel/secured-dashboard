@@ -24,6 +24,7 @@ export interface DashboardUser {
   user_status?: string;
   kyc_status?: string | null;
   cashback_balance_paise?: number;
+  avatar_url?: string | null;
 }
 
 export interface TenancyVerificationStatus {
@@ -39,6 +40,7 @@ export interface DashboardTenancy {
   property_address: string;
   property_city: string | null;
   monthly_rent: number; // In rupees
+  maintenance: number; // In rupees, 0 if none
   rent_due_day: number;
   cashback_cutoff_day: number; // Day of month by which rent must be paid for cashback (defaults to 7)
   lease_end_date: string | null;
@@ -98,6 +100,17 @@ export interface Notification {
   read: boolean;
 }
 
+export interface LandlordBankAccount {
+  id: string;
+  account_holder_name: string;
+  account_number_masked: string;
+  ifsc_code: string;
+  bank_name: string | null;
+  verified: boolean;
+  pan_number_masked: string | null;
+  pan_verified: boolean;
+}
+
 export interface DashboardPaymentStamps {
   summary: {
     on_time: number;
@@ -114,7 +127,10 @@ export interface DashboardData {
   tenancy: DashboardTenancy | null;
   upcoming_payment: UpcomingPayment | null;
   cashback: CashbackBalance;
+  // TODO: Backend — dashboard-data edge function should filter out ₹1 card verification charges
+  // from recent_payments with: .not("metadata->>purpose", "eq", "card_verification")
   recent_payments: RawRecentPayment[];
+  landlord_bank: LandlordBankAccount | null;
   notifications: Notification[];
   unread_notification_count: number;
   payment_stamps: DashboardPaymentStamps | null;
@@ -145,6 +161,7 @@ export interface MappedCashbackEntry {
   status: 'paid' | 'delayed' | 'missed' | 'pending';
   statusLabel: string; // e.g., "Paid - On Time"
   amount: number | null; // In rupees, null for N/A
+  paymentId: string; // Source payment ID for direct lookup
 }
 
 // ==============================================
@@ -298,6 +315,7 @@ export function deriveCashbackEntries(
       status,
       statusLabel,
       amount,
+      paymentId: p.id,
     };
   });
 }

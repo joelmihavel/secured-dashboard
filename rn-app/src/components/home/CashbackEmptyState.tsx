@@ -23,7 +23,6 @@ export interface CashbackEmptyStateProps {
   accruedAmount?: number;
   allTimeTotal?: number;
   cashbackRate?: number;
-  showPlaceholder?: boolean;
 }
 
 const Divider = () => (
@@ -38,7 +37,6 @@ function CashbackEmptyStateComponent({
   accruedAmount = 0,
   allTimeTotal = 0,
   cashbackRate = 0.8,
-  showPlaceholder = true,
 }: CashbackEmptyStateProps) {
   const formatInteger = (amount: number) => {
     return Math.floor(amount).toLocaleString('en-IN');
@@ -50,12 +48,13 @@ function CashbackEmptyStateComponent({
         {/* Cashback Accrued Label */}
         <Text style={styles.sectionLabel}>CASHBACK ACCRUED</Text>
 
-        {/* Accrued Amount */}
-        <Text style={styles.accruedContainer}>
-          <Text inherit style={styles.currencySymbol}>₹  </Text>
-          <Text inherit style={styles.accruedValue}>{formatInteger(accruedAmount)}</Text>
-          <Text inherit style={styles.currencySymbol}>.00</Text>
-        </Text>
+        {/* Accrued Amount — Figma 769:309170: row layout with baseline alignment */}
+        <View style={styles.accruedRow}>
+          <Text style={styles.currencySymbol}>₹</Text>
+          <Text style={styles.accruedSpacer}>{'  '}</Text>
+          <Text style={styles.accruedValue}>{formatInteger(accruedAmount)}</Text>
+          <Text style={styles.currencySymbol}>.00</Text>
+        </View>
       </View>
 
       <Divider />
@@ -81,23 +80,7 @@ function CashbackEmptyStateComponent({
         </Text>
       </View>
 
-      {showPlaceholder && (
-        <>
-          {/* Empty state illustration */}
-          <View style={styles.emptyIllustration}>
-            <View style={styles.avatarOuter}>
-              <View style={styles.avatarInner} />
-            </View>
-          </View>
-
-          {/* Empty state text */}
-          <Text style={styles.placeholderTitle}>No Cashback Yet</Text>
-          <Text style={styles.placeholderText}>
-            Start spending to earn cashback on your{'\n'}
-            everyday purchases.
-          </Text>
-        </>
-      )}
+      {/* "No Cashback Yet" section removed per Figma 757:298272 — not present in design */}
     </View>
   );
 }
@@ -119,7 +102,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#A9A9A9', // Figma: #A9A9A9 (neutral[500])
   },
-  accruedContainer: {
+  accruedRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
@@ -128,6 +111,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: '#444444', // Figma: #444444 (neutral[800])
+  },
+  accruedSpacer: {
+    fontSize: 28,
+    lineHeight: 40,
   },
   accruedValue: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -162,39 +149,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#FF9A6D', // Figma: #FF9A6D (brand[500])
-  },
-  emptyIllustration: {
-    alignItems: 'center',
-    marginTop: 32, // Figma: 32px gap before illustration
-    marginBottom: 16, // Figma: 16px gap after illustration
-  },
-  avatarOuter: {
-    width: 64, // Figma: width 64
-    height: 64, // Figma: height 64
-    borderRadius: 32, // Figma: fully rounded
-    backgroundColor: '#1A1A1A', // Figma: #1A1A1A (black[600])
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInner: {
-    width: 48, // Figma: width 48
-    height: 48, // Figma: height 48
-    borderRadius: 24, // Figma: fully rounded
-    backgroundColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
-  },
-  placeholderTitle: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#FFFFFF', // Figma: #FFFFFF (white)
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
-  },
-  placeholderText: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 12, // Figma: fontSize 12
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#878787', // Figma: #878787 (neutral[600])
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
   },
 });
 

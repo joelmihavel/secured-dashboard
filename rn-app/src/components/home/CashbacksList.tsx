@@ -19,7 +19,7 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 
 import { Text } from '@/src/components/ui';
 
@@ -31,6 +31,7 @@ export interface CashbackEntry {
   status: CashbackStatus;
   statusLabel?: string; // e.g., "On Time", "Delayed", "No Payment"
   amount: number | null; // null for NA
+  paymentId?: string; // Source payment ID for navigation to receipt
 }
 
 export interface CashbacksListProps {
@@ -38,6 +39,7 @@ export interface CashbacksListProps {
   allTimeTotal: number;
   cashbackRate: number; // e.g., 0.8 for 0.8%
   entries: CashbackEntry[];
+  onEntryPress?: (entry: CashbackEntry) => void;
 }
 
 // Figma exact colors for status indicators
@@ -53,6 +55,7 @@ function CashbacksListComponent({
   allTimeTotal,
   cashbackRate,
   entries,
+  onEntryPress,
 }: CashbacksListProps) {
   const formatAmount = (amount: number) => {
     const formatted = amount.toLocaleString('en-IN');
@@ -105,8 +108,13 @@ function CashbacksListComponent({
           const config = statusConfig[entry.status];
           const statusLabel = entry.statusLabel || config.defaultLabel;
 
+          const RowWrapper = onEntryPress ? Pressable : View;
+          const rowProps = onEntryPress
+            ? { onPress: () => onEntryPress(entry), style: styles.historyRow }
+            : { style: styles.historyRow };
+
           return (
-            <View key={entry.id} style={styles.historyRow}>
+            <RowWrapper key={entry.id} {...rowProps}>
               {/* Left: Title + Status */}
               <View style={styles.historyContent}>
                 <Text style={styles.historyTitle}>{entry.title}</Text>
@@ -127,7 +135,7 @@ function CashbacksListComponent({
                   <Text style={styles.historyNA}>NA</Text>
                 )}
               </View>
-            </View>
+            </RowWrapper>
           );
         })}
       </View>

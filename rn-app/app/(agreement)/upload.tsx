@@ -498,7 +498,9 @@ function FoldCorner({ fill, stroke }: { fill: string; stroke: string }) {
 // ============================================
 
 function ProgressBar({ progress }: { progress: number }) {
-  const animatedWidth = useSharedValue(0);
+  // BUG 1 FIX: Init with current progress so remounts after backgrounding
+  // don't animate from 0% — the bar stays at its current position.
+  const animatedWidth = useSharedValue(progress);
 
   useEffect(() => {
     animatedWidth.value = withTiming(progress, {
@@ -781,10 +783,10 @@ export default function UploadScreen() {
         break;
       }
       case 'processing': {
-        // Resume: show scanning state at 75%
+        // Resume: show scanning state at 75% (but never go backwards)
         if (uploadState !== 'uploading') {
           setUploadState('uploading');
-          setUploadProgress(75);
+          setUploadProgress((prev) => Math.max(prev, 75));
           setDocument({
             uri: 'resumed://processing',
             name: useUploadStore.getState().fileName ?? 'Processing your document...',
@@ -890,10 +892,12 @@ export default function UploadScreen() {
       );
 
       // Upload + process-document edge function completed.
-      // Set phase to server_processing — the useExtractionStatus hook
-      // will detect the completed status and drive navigation via the
-      // useEffect above. Do NOT navigate here (prevents double-nav race).
-      useUploadStore.getState().setPhase('server_processing');
+      // BUG 6 FIX: The mutation already sets phase to 'completed' inside useAgreement.
+      // Only set server_processing if we haven't already reached a terminal phase.
+      const currentPhase = useUploadStore.getState().uploadPhase;
+      if (currentPhase !== 'completed' && currentPhase !== 'failed') {
+        useUploadStore.getState().setPhase('server_processing');
+      }
       setUploadProgress(100);
 
       // If the backend specifically flags the document as invalid or expired,

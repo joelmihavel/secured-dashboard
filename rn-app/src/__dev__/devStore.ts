@@ -13,8 +13,11 @@ import type { ScenarioKey } from './scenarios';
 interface DevState {
   activeScenario: ScenarioKey | null;
   fontScaleOverride: number | null; // null = system default
+  /** Bypass auth guards so DevNavigator can reach protected screens without a real session */
+  devAuthBypass: boolean;
   setScenario: (key: ScenarioKey | null) => void;
   setFontScale: (scale: number | null) => void;
+  setDevAuthBypass: (enabled: boolean) => void;
   reset: () => void;
 }
 
@@ -23,7 +26,9 @@ const STORE_KEY = '__dev_store__';
 export const useDevStore = (globalThis as Record<string, unknown>)[STORE_KEY] ??= create<DevState>()((set) => ({
   activeScenario: null,
   fontScaleOverride: null,
+  devAuthBypass: false,
   setScenario: (key) => set({ activeScenario: key }),
   setFontScale: (scale) => set({ fontScaleOverride: scale }),
-  reset: () => set({ activeScenario: null, fontScaleOverride: null }),
+  setDevAuthBypass: (enabled) => set({ devAuthBypass: enabled }),
+  reset: () => set({ activeScenario: null, fontScaleOverride: null, devAuthBypass: false }),
 }));

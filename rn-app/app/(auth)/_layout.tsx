@@ -17,8 +17,8 @@ export default function AuthLayout() {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="splash" />
-      <Stack.Screen name="beta-splash" />
+      <Stack.Screen name="splash" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="beta-splash" options={{ gestureEnabled: false }} />
       <Stack.Screen name="carousel" />
       <Stack.Screen name="sign-up" />
       <Stack.Screen

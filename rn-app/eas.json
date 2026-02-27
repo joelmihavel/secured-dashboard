@@ -1,29 +1,46 @@
 {
   "cli": {
-    "version": ">= 5.0.0"
+    "version": ">= 14.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
-      "env": { "APP_ENV": "development" },
+      "env": {
+        "APP_ENV": "development",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
       "ios": {
         "simulator": true
+      }
+    },
+    "development:device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "env": { "APP_ENV": "preview" },
-      "ios": {
-        "simulator": true
+      "autoIncrement": true,
+      "env": {
+        "APP_ENV": "preview",
+        "EXPO_PUBLIC_CASHFREE_ENV": "SANDBOX",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "env": { "APP_ENV": "production" }
+      "env": {
+        "APP_ENV": "production"
+      }
     }
   },
   "submit": {

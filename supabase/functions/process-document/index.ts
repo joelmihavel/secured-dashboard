@@ -344,9 +344,14 @@ Deno.serve(async (req) => {
 
     let extractedData: ExtractedData;
 
+    // ENH 2: 120s timeout around Document AI + Gemini calls.
+    // On abort, mark extraction as failed — reduces user wait from 7 min
+    // (client staleness) to 2 min.
+    const PROCESSING_TIMEOUT_MS = 120_000;
+
     if (gcpCredentials && gcpProcessorId) {
       // Production: Use GCP Document AI + Vertex AI Gemini
-      extractedData = await processWithDocumentAI(
+      const processingPromise = processWithDocumentAI(
         base64Content,
         "application/pdf",
         gcpCredentials,
@@ -357,6 +362,12 @@ Deno.serve(async (req) => {
         vertexAiProjectId,
         geminiApiKey
       );
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Processing timed out after 120 seconds")), PROCESSING_TIMEOUT_MS);
+      });
+
+      extractedData = await Promise.race([processingPromise, timeoutPromise]);
     } else if (!gcpCredentials) {
       return new Response(
         JSON.stringify({ error: "Document processing not configured", code: "SERVICE_UNAVAILABLE" }),
@@ -380,6 +391,16 @@ Deno.serve(async (req) => {
       extractedData.property_city,
       supportedCities?.map(c => c.city_name) || []
     );
+
+    // Derive lease_end_date from lease_start_date + duration when missing
+    if (!extractedData.lease_end_date && extractedData.lease_start_date && extractedData.contract_length_months) {
+      const start = new Date(extractedData.lease_start_date);
+      if (!isNaN(start.getTime())) {
+        start.setMonth(start.getMonth() + extractedData.contract_length_months);
+        extractedData.lease_end_date = start.toISOString().split('T')[0];
+        console.log(`[process-document] Derived lease_end_date=${extractedData.lease_end_date} from start=${extractedData.lease_start_date} + ${extractedData.contract_length_months} months`);
+      }
+    }
 
     // Evaluate extraction result using minimum required fields validation
     const evaluationResult = evaluateExtraction(
@@ -1445,6 +1466,7 @@ function evaluateExtraction(
 function categorizeError(message: string): string {
   if (message.includes('PDF') || message.includes('file type')) return 'INVALID_FILE_TYPE';
   if (message.includes('download')) return 'FILE_NOT_FOUND';
+  if (message.includes('timed out')) return 'PROCESSING_TIMEOUT';
   if (message.includes('Document AI')) return 'OCR_FAILED';
   if (message.includes('Gemini')) return 'VERIFICATION_FAILED';
   if (message.includes('store') || message.includes('database')) return 'DATABASE_ERROR';

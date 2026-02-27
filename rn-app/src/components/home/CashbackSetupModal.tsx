@@ -184,12 +184,16 @@ export function VerificationCheckSheet({
           <View style={styles.progressSection}>
             {/* Sub-header — Figma 791:10135 */}
             <Text style={styles.subHeader}>
-              Waiting for Landlord's approval
+              {!utilityVerified 
+                ? 'Address proof pending' 
+                : 'Waiting for Landlord\'s approval'}
             </Text>
 
             {/* Timeline — same visual as SetupProgressCard */}
             {steps.map((step, index) => {
               const isLast = index === steps.length - 1;
+              const nextStep = !isLast ? steps[index + 1] : null;
+              const isConnectorActive = step.isComplete && nextStep?.isComplete;
               return (
                 <View key={index} style={styles.timelineRow}>
                   <View style={styles.indicatorColumn}>
@@ -205,7 +209,18 @@ export function VerificationCheckSheet({
                         ]}
                       />
                     </View>
-                    {!isLast && <View style={styles.connectorLine} />}
+                    {!isLast && (
+                      <View
+                        style={[
+                          styles.connectorLine,
+                          {
+                            backgroundColor: isConnectorActive
+                              ? 'rgba(255, 154, 109, 0.5)'
+                              : colors.black[400],
+                          },
+                        ]}
+                      />
+                    )}
                   </View>
                   <View style={[styles.textColumn, isLast && styles.textColumnLast]}>
                     <Text style={styles.stepTitle}>{step.title}</Text>

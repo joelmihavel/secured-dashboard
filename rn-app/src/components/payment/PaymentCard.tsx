@@ -12,6 +12,7 @@
 
 import React, { memo } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle, Image, ImageSourcePropType } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,19 +26,25 @@ import { colors, springConfig } from '@/src/theme';
 // Exact Figma color values
 const CARD_COLORS = {
   background: '#202020',
+  backgroundDark: '#131313',
   footer: '#1A1A1A',
   border: '#4D4D4D',
+  borderProfile: '#663E2C',
   borderSelected: '#FF9A6D',
   textPrimary: '#CBCBCB',
   textSecondary: '#4D4D4D',
   textAccent: '#FF9A6D',
+  textDetails: '#D2D2D2',
   selectedBadge: '#1A1A1A',
+  profileBadge: '#202020',
 } as const;
 
 export type PaymentCardType = 'credit' | 'debit' | 'upi' | 'netbanking';
+export type PaymentCardVariant = 'default' | 'profile';
 
 export interface PaymentCardProps {
   type: PaymentCardType;
+  variant?: PaymentCardVariant;
   lastFourDigits?: string;
   expiryDate?: string;
   cvv?: string;
@@ -53,6 +60,7 @@ export interface PaymentCardProps {
 
 function PaymentCardComponent({
   type,
+  variant = 'default',
   lastFourDigits,
   expiryDate,
   cvv = '•••',
@@ -65,6 +73,7 @@ function PaymentCardComponent({
   style,
   testID,
 }: PaymentCardProps) {
+
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -100,7 +109,60 @@ function PaymentCardComponent({
     }
   };
 
+  const renderProfileContent = () => {
+    return (
+      <View style={styles.profileContainer}>
+        {/* Background Split */}
+        <View style={styles.profileBgLeft} />
+        <View style={styles.profileBgRight} />
+
+        {/* Decorative Vertical Lines */}
+        <LinearGradient
+          colors={['#131313', '#995C41', '#131313']}
+          locations={[0.1, 0.52, 0.75]}
+          style={[styles.profileLine, { left: 220 }]}
+        />
+        <LinearGradient
+          colors={['#131313', '#995C41', '#131313']}
+          locations={[0.1, 0.52, 0.75]}
+          style={[styles.profileLine, { left: 225 }]}
+        />
+
+        {/* Current/Selected Badge */}
+        {selected && (
+          <View style={styles.profileBadge}>
+            <Text style={styles.profileBadgeText}>current</Text>
+          </View>
+        )}
+
+        {/* Logo/Network (placeholder for now or use prop) */}
+        <View style={styles.profileNetworkContainer}>
+          {logo ? (
+            <Image source={logo} style={styles.logo} resizeMode="contain" />
+          ) : (
+            <View style={styles.networkPlaceholder} />
+          )}
+        </View>
+
+        {/* Divider Line */}
+        <View style={styles.profileDivider} />
+
+        {/* Card Details at bottom */}
+        <View style={styles.profileDetails}>
+          <Text style={styles.profileDetailsTitle}>
+            {type === 'upi' ? 'UPI' : `${bankName || 'Visa'} · ${type === 'debit' ? 'Debit' : 'Credit'}`}
+          </Text>
+          <Text style={styles.profileDetailsValue}>
+            {type === 'upi' ? upiId : `•••• ${lastFourDigits || '****'}`}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   const renderCardContent = () => {
+    if (variant === 'profile') return renderProfileContent();
+
     if (type === 'upi') {
       return (
         <View style={styles.cardContent}>
@@ -172,22 +234,27 @@ function PaymentCardComponent({
       <Animated.View
         style={[
           styles.container,
+          variant === 'profile' && styles.containerProfile,
           selected && styles.containerSelected,
           animatedStyle,
           style,
         ]}
       >
         {/* Card Body */}
-        <View style={styles.cardBody}>{renderCardContent()}</View>
-
-        {/* Card Footer */}
-        <View style={styles.cardFooter}>
-          <Text style={styles.typeLabel}>{getTypeLabel()}</Text>
-          <View style={styles.footerDots}>
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-          </View>
+        <View style={[styles.cardBody, variant === 'profile' && styles.cardBodyProfile]}>
+          {renderCardContent()}
         </View>
+
+        {/* Card Footer - Only for default variant */}
+        {variant === 'default' && (
+          <View style={styles.cardFooter}>
+            <Text style={styles.typeLabel}>{getTypeLabel()}</Text>
+            <View style={styles.footerDots}>
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+            </View>
+          </View>
+        )}
       </Animated.View>
     </Pressable>
   );
@@ -334,6 +401,96 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     borderWidth: 1,
     borderColor: CARD_COLORS.textPrimary,
+  },
+  containerProfile: {
+    borderWidth: 2,
+    borderColor: CARD_COLORS.borderProfile,
+  },
+  cardBodyProfile: {
+    padding: 0,
+    backgroundColor: 'transparent', // Split handled in profileContainer
+  },
+  profileContainer: {
+    flex: 1,
+    backgroundColor: '#1A1A1A',
+    overflow: 'hidden',
+  },
+  profileBgLeft: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 94,
+    backgroundColor: '#202020',
+  },
+  profileBgRight: {
+    position: 'absolute',
+    left: 94,
+    top: 0,
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#131313',
+  },
+  profileLine: {
+    position: 'absolute',
+    width: 2,
+    height: 140,
+    top: 17,
+  },
+  profileBadge: {
+    position: 'absolute',
+    top: 36,
+    right: 16,
+    backgroundColor: '#202020',
+    borderRadius: 200,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  profileBadgeText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    color: '#FF9A6D',
+  },
+  profileNetworkContainer: {
+    position: 'absolute',
+    left: 0,
+    top: 46,
+    width: 94,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  networkPlaceholder: {
+    width: 32,
+    height: 12,
+    backgroundColor: '#333333',
+    borderRadius: 2,
+  },
+  profileDivider: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 108,
+    height: 1,
+    backgroundColor: '#131313',
+  },
+  profileDetails: {
+    position: 'absolute',
+    left: 32,
+    bottom: 48,
+    gap: 8,
+  },
+  profileDetailsTitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    color: CARD_COLORS.textDetails,
+    lineHeight: 20,
+  },
+  profileDetailsValue: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 16,
+    color: CARD_COLORS.textDetails,
+    lineHeight: 24,
   },
 });
 

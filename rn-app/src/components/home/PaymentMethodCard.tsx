@@ -19,7 +19,7 @@ import React, { memo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Text, Logo } from '@/src/components/ui';
+import { Text, Logo, Pill } from '@/src/components/ui';
 import { colors } from '@/src/theme';
 import { s, sf, sv, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
 
@@ -135,9 +135,7 @@ function PaymentMethodCardComponent({ method, onPress, onEdit }: PaymentMethodCa
         <View style={styles.cardHeader}>
           {renderBrandLogo()}
           {isSelected && (
-            <View style={styles.selectedBadge}>
-              <Text style={styles.selectedText}>SELECTED</Text>
-            </View>
+            <Pill text="SELECTED" variant="tagSelected" />
           )}
         </View>
 
@@ -221,19 +219,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: sf(16), // Figma: exact
     color: colors.white,
-  },
-  // Selected Badge
-  selectedBadge: {
-    backgroundColor: '#1A1A1A', // Figma: #1A1A1A
-    paddingHorizontal: s(12), // Figma: exact
-    paddingVertical: sv(8), // Figma: exact
-    borderRadius: 200, // Figma: pill shape
-  },
-  selectedText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12), // Figma: exact
-    color: '#FF9A6D', // Figma: brand[500]
-    textAlign: 'center',
   },
   // Details
   detailsContainer: {

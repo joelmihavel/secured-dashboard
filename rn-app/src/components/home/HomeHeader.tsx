@@ -13,10 +13,10 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Text, Logo } from '@/src/components/ui';
+import { Text, Logo, Avatar } from '@/src/components/ui';
 import { colors } from '@/src/theme';
 import { s } from '@/src/theme/scale';
 
@@ -60,15 +60,7 @@ function HomeHeaderComponent({
         testID="home-avatar"
         activeOpacity={0.8}
       >
-        {avatarUrl ? (
-          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>
-              {userName.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <Avatar uri={avatarUrl} name={userName} size="sm" />
       </TouchableOpacity>
     </View>
   );
@@ -96,24 +88,6 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'relative',
-  },
-  avatar: {
-    width: 32, // Figma: 32px
-    height: 32, // Figma: 32px
-    borderRadius: 16, // Figma: fully rounded
-  },
-  avatarPlaceholder: {
-    width: 32, // Figma: 32px
-    height: 32, // Figma: 32px
-    borderRadius: 16, // Figma: fully rounded
-    backgroundColor: colors.brand[500], // Brand orange #FF9A6D
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontFamily: 'PlusJakartaSans-SemiBold', // Figma: fontWeight 600
-    fontSize: 14, // Figma: fontSize 14
-    color: colors.white,
   },
 });
 

@@ -39,7 +39,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, BackButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard } from '@/src/hooks';
 import { colors } from '@/src/theme';
@@ -208,15 +208,11 @@ export default function ProfileAgreementScreen() {
         {/* Inner frame (41:9883): 297px wide, gap=48 */}
         <View style={styles.contentWrapper}>
           {/* Back arrow (41:9884): 32x32 */}
-          <TouchableOpacity
+          <BackButton
             onPress={handleBack}
             style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.white} />
-          </TouchableOpacity>
+            color={FIGMA_COLORS.white}
+          />
 
           {/* Title (41:9885): "View your agreement" 297x128 */}
           <Text style={styles.titleBase}>

@@ -20,7 +20,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Text, PrimaryButton, TextInput } from '@/src/components';
+import { Text, PrimaryButton, TextInput, BackButton } from '@/src/components';
 import { Text as RNText } from 'react-native';
 import { useVerifyUpi } from '@/src/hooks';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
@@ -38,22 +38,6 @@ const FIGMA_COLORS = {
   footerText: colors.neutral[500],
   errorText: colors.error.default,
 };
-
-// ==============================================
-// BACK ARROW (24x24 chevron, white stroke 2px)
-// ==============================================
-
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={FIGMA_COLORS.white}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 // ==============================================
 // ADD UPI CONTENT
@@ -146,7 +130,8 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
 
   const isFormValid = accountName.length > 0 && upiId.includes('@');
   const isLoading = verifyUpi.isPending || isPayingUpi;
-  const formattedAmount = parseFloat(sessionParams?.amount ?? '0').toLocaleString('en-IN');
+  const amount = sessionParams?.amount ?? '0';
+  const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
   return (
     <ScrollView
@@ -156,18 +141,11 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
       showsVerticalScrollIndicator={false}
     >
       {/* Back Button */}
-      <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onBack();
-        }}
+      <BackButton
+        onPress={onBack}
         style={styles.backButton}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityRole="button"
-        accessibilityLabel="Go back to method selection"
-      >
-        <BackArrow />
-      </TouchableOpacity>
+        color={FIGMA_COLORS.white}
+      />
 
       {/* Title */}
       <RNText style={styles.title}>
@@ -197,16 +175,12 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
           }}
           placeholder="e.g. john@oksbi"
           hintText="edit"
+          error={error || undefined}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
           testID="modal-upi-id-input"
         />
-
-        {/* Error Message */}
-        {error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
       </View>
 
       {/* Button + Footer Section */}
@@ -221,7 +195,7 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
           />
         ) : isVerified ? (
           <PrimaryButton
-            title={`Pay \u20B9${formattedAmount}`}
+            title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Proceed'}
             onPress={handlePayUpi}
             disabled={!isFormValid || isPayingUpi}
             loading={isPayingUpi}
@@ -255,7 +229,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 48,
-    gap: 40,
     paddingTop: 16,
     paddingBottom: 24,
   },
@@ -264,6 +237,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    marginBottom: 24,
   },
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -272,22 +246,17 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.white,
     textAlign: 'left',
+    marginBottom: 32,
   },
   titleAccent: {
     color: colors.brand[500],
   },
   formSection: {
     gap: 16,
+    marginBottom: 24,
   },
   buttonFooterSection: {
     gap: 16,
-  },
-  errorText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA_COLORS.errorText,
-    textAlign: 'left',
   },
   footerText: {
     fontFamily: 'PlusJakartaSans-Regular',

@@ -1,8 +1,8 @@
 /**
  * Mock Dashboard Data — DEV ONLY
  *
- * Current: PARTIAL VERIFICATION — bank verified, utility/landlord not.
- * This means: Credit Card is DISABLED (needs landlord + utility), Debit Card is ENABLED.
+ * Current: LANDLORD UNVERIFIED — matches seeded user 9999999999
+ * Rs 44,000 rent, Rema Sky View Apartments, landlord approval pending.
  *
  * Toggle DEV_USE_MOCK_DASHBOARD in dashboard.ts to enable/disable.
  *
@@ -26,77 +26,94 @@
 import type { DashboardData } from '../dashboard';
 
 const now = new Date();
-const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+// Next month's due date for upcoming payment
+const nextDueMonth = now.getDate() > 5 ? now.getMonth() + 1 : now.getMonth();
+const nextDueYear = nextDueMonth > 11 ? now.getFullYear() + 1 : now.getFullYear();
+const nextDueMonthNorm = nextDueMonth > 11 ? 0 : nextDueMonth;
+const dueDate = new Date(nextDueYear, nextDueMonthNorm, 5);
+const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+const rentMonthStr = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-01`;
 
 export const MOCK_DASHBOARD_DATA: DashboardData = {
   user: {
-    id: 'mock-user-001',
-    first_name: 'Rishabh',
-    last_name: 'Agnihotri',
-    phone: '+919876543210',
-    email: 'rishabh@flent.in',
+    id: 'f448f136-d05f-44d3-9245-e291b70af706',
+    first_name: 'Beta',
+    last_name: 'Test',
+    phone: '+919999999999',
+    email: null,
     role: 'tenant',
     user_status: 'active',
-    kyc_status: 'verified',
+    kyc_status: null,
     cashback_balance_paise: 0,
   },
 
   tenancy: {
-    id: 'mock-tenancy-001',
+    id: '213bef95-d248-4d55-874f-2005c5b7089e',
     status: 'active',
-    property_address: 'Flat 402, Tower B, Prestige Lakeside Habitat, Whitefield',
+    property_address: 'Flat No.B-15, 1st Floor, Rema Sky View Apartments, Murugeshpalya',
     property_city: 'Bangalore',
-    monthly_rent: 35000,
+    monthly_rent: 44000,
+    maintenance: 0,
     rent_due_day: 5,
     cashback_cutoff_day: 7,
-    lease_start_date: '2025-06-01',
-    lease_end_date: '2027-05-31',
-    agreement_cert_id: 'KA-2025-STM-00456789',
-    landlord_name: 'Suresh Kumar Sharma',
+    lease_start_date: '2025-12-01',
+    lease_end_date: '2026-11-01',
+    agreement_cert_id: 'KA-2025-BLR-00789012',
+    landlord_name: 'Ramesh Kumar',
     verification_status: {
       bank_verified: true,
-      utility_verified: false,
+      utility_verified: true,
       landlord_approved: false,
-      landlord_response: null,
+      landlord_response: 'pending',
     },
   },
 
   upcoming_payment: {
-    due_date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-05`,
-    amount: 35000,
-    amount_paise: 3500000,
-    days_until_due: Math.max(0, 5 - now.getDate()),
-    is_overdue: now.getDate() > 5,
+    due_date: `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-05`,
+    amount: 44000,
+    amount_paise: 4400000,
+    days_until_due: daysUntilDue,
+    is_overdue: daysUntilDue < 0,
     cashback_eligible: false,
-    past_cutoff: now.getDate() > 7,
+    past_cutoff: false,
     cutoff_day: 7,
-    rent_month: thisMonth,
+    rent_month: rentMonthStr,
   },
 
   cashback: {
     discount_rate: 0.01,
-    max_discount_paise: 50000,
-    max_discount: 500,
+    max_discount_paise: 44000,
+    max_discount: 440,
     verification_complete: false,
-    total_savings_paise: 0,
-    total_savings: 0,
+    total_savings_paise: 88000,
+    total_savings: 880,
     legacy_wallet_balance: 0,
     available_balance: 0,
     pending_balance: 0,
-    total_earned: 0,
+    total_earned: 880,
     total_used: 0,
   },
 
   recent_payments: [
     {
-      id: 'mock-payment-001',
-      amount: 35000,
+      id: '0dec5f6e-d246-4fee-8da4-1a3b75532b05',
+      amount: 44000,
       status: 'success' as const,
-      rent_month: thisMonth,
-      paid_at: now.toISOString(),
-      cashback_earned: 0,
+      rent_month: '2026-01-01',
+      paid_at: '2026-01-03T14:15:00Z',
+      cashback_earned: 440,
+    },
+    {
+      id: '39676df1-59ec-4fa8-b80d-7244dae0384e',
+      amount: 44000,
+      status: 'success' as const,
+      rent_month: '2025-12-01',
+      paid_at: '2025-12-04T10:30:00Z',
+      cashback_earned: 440,
     },
   ],
+
+  landlord_bank: null,
 
   notifications: [],
 
@@ -104,11 +121,11 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 
   payment_stamps: {
     summary: {
-      on_time: 0,
+      on_time: 2,
       late: 0,
-      missed: 0,
+      missed: 1,
       pending: 0,
-      total_months: 0,
+      total_months: 3,
     },
     current_month_status: 'pending',
   },

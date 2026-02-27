@@ -26,27 +26,18 @@
  * - Modal with transparent background for proper layering
  */
 
-import React, { memo, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { memo, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Animated,
-  Dimensions,
-  Modal,
-  BackHandler,
   ScrollView,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@/src/components/ui';
-import { colors, radius, spacing } from '@/src/theme';
-import { s, sf, sv } from '@/src/theme/scale';
-import { PaymentMethodCard, PaymentMethod } from './PaymentMethodCard';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { Text, BottomSheet } from '@/src/components/ui';
+import { colors } from '@/src/theme';
+import { s, sv } from '@/src/theme/scale';
 
 // Use HomePaymentMethodType to avoid conflict with payment module's PaymentMethodType
 import { HomePaymentMethodType } from './PaymentMethodCard';
@@ -82,53 +73,6 @@ function PaymentMethodSelectionSheetComponent({
   onSelectMethod,
   onAddNewMethod,
 }: PaymentMethodSelectionSheetProps) {
-  const insets = useSafeAreaInsets();
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Handle back button on Android
-  useEffect(() => {
-    if (!visible) return;
-
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      onClose();
-      return true;
-    });
-
-    return () => backHandler.remove();
-  }, [visible, onClose]);
-
-  // Animate sheet in/out
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: SCREEN_HEIGHT,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible, slideAnim, fadeAnim]);
-
   const handleMethodPress = useCallback(
     (method: PaymentMethodOption) => {
       onSelectMethod(method);
@@ -222,123 +166,48 @@ function PaymentMethodSelectionSheetComponent({
     );
   };
 
-  if (!visible) return null;
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <View style={styles.container}>
-        {/* Blur Overlay with correct z-index - Figma: blur radius 8 */}
-        <Animated.View style={[styles.overlayContainer, { opacity: fadeAnim }]}>
-          <BlurView
-            style={StyleSheet.absoluteFill}
-            intensity={8} // Figma: blur radius 8
-            tint="dark"
-          />
-          <TouchableOpacity
-            style={styles.overlayTouchable}
-            onPress={onClose}
-            activeOpacity={1}
-            accessibilityRole="button"
-            accessibilityLabel="Close payment method selection"
-          />
-        </Animated.View>
+    <BottomSheet visible={visible} onClose={onClose} paddingHorizontal={0}>
+      <View style={styles.sheetPanel}>
+        {/* Title with multi-styled text */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>
+            <Text inherit style={styles.titleGray}>Choose a </Text>
+            <Text inherit style={styles.titleAccent}>Payment Method</Text>
+          </Text>
+        </View>
 
-        {/* Bottom Sheet - highest z-index */}
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              transform: [{ translateY: slideAnim }],
-              paddingBottom: Math.max(insets.bottom, 24),
-            },
-          ]}
-        >
-          {/* Handle/Drag indicator */}
-          <View style={styles.handleContainer}>
-            <View style={styles.handle} />
+        {/* Payment Methods List */}
+        <ScrollView bounces={false} style={{ maxHeight: sv(400) }}>
+          <View style={styles.methodsList}>
+            {methods.map((method, index) => renderPaymentMethod(method, index))}
+
+            {/* Add New Payment Method */}
+            {onAddNewMethod && (
+              <TouchableOpacity
+                style={styles.addNewButton}
+                onPress={onAddNewMethod}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Add new payment method"
+              >
+                <View style={styles.addNewIcon}>
+                  <Ionicons name="add" size={24} color={colors.brand[500]} />
+                </View>
+                <Text style={styles.addNewText}>Add new payment method</Text>
+              </TouchableOpacity>
+            )}
           </View>
-
-          {/* Title with multi-styled text */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>
-              <Text inherit style={styles.titleGray}>Choose a </Text>
-              <Text inherit style={styles.titleAccent}>Payment Method</Text>
-            </Text>
-          </View>
-
-          {/* Payment Methods List */}
-          <ScrollView bounces={false} style={{ maxHeight: sv(400) }}>
-            <View style={styles.methodsList}>
-              {methods.map((method, index) => renderPaymentMethod(method, index))}
-
-              {/* Add New Payment Method */}
-              {onAddNewMethod && (
-                <TouchableOpacity
-                  style={styles.addNewButton}
-                  onPress={onAddNewMethod}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Add new payment method"
-                >
-                  <View style={styles.addNewIcon}>
-                    <Ionicons name="add" size={24} color={colors.brand[500]} />
-                  </View>
-                  <Text style={styles.addNewText}>Add new payment method</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </ScrollView>
-        </Animated.View>
+        </ScrollView>
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  sheetPanel: {
+    width: '100%',
   },
-
-  // Overlay with blur - z-index 10
-  // Figma: Rectangle 54 - backgroundColor #000000 opacity 0.6
-  overlayContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Figma: 243-6490 Rectangle 54 opacity 0.6
-    zIndex: 10,
-  },
-  overlayTouchable: {
-    flex: 1,
-  },
-
-  // Sheet container - z-index 20
-  // Figma: Frame 1686557301 - paddingTop ~15px, backgroundColor #1A1A1A
-  sheet: {
-    backgroundColor: '#1A1A1A', // Figma: black[600]
-    borderTopLeftRadius: 24, // Figma: borderTopRadius 24
-    borderTopRightRadius: 24, // Figma: borderTopRadius 24
-    paddingTop: 15, // Figma: 243-6490 paddingTop 15.19174861907959
-    zIndex: 20,
-  },
-
-  // Handle/Drag indicator
-  handleContainer: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  handle: {
-    width: 24, // Figma: width 24
-    height: 2, // Figma: height 2
-    backgroundColor: '#4D4D4D', // Figma: black[400]
-    borderRadius: 200, // Figma: borderRadius 200
-  },
-
   // Title
   // Figma: Frame 1686557230 - paddingTop 16, gap to content ~30px
   titleContainer: {

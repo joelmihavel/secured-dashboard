@@ -1,0 +1,12 @@
+figma-1on1parity/
+figma_nodes.txt
+find_nodes.js
+scripts/
+**/__tests__/
+**/__snapshots__/
+*.test.ts
+*.test.tsx
+*.orig
+*.rej
+fix-*.js
+.DS_Store

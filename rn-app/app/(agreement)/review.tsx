@@ -33,7 +33,7 @@ import {
   TenantIcon,
   LandlordIcon,
 } from '@/src/components/icons/AgreementIcons';
-import { useAgreement } from '@/src/hooks';
+import { useAgreement, useNetworkStatus } from '@/src/hooks';
 import {
   formatPaiseToRupees,
   formatDateDisplay,
@@ -223,6 +223,8 @@ export default function ReviewScreen() {
   const persistedExtractionId = useUploadStore((s) => s.extractionId);
   const extractionId = paramExtractionId ?? persistedExtractionId;
 
+  const { isConnected } = useNetworkStatus();
+
   const {
     extractedData,
     isLoadingExtraction,
@@ -255,6 +257,15 @@ export default function ReviewScreen() {
   const handleProceed = useCallback(async () => {
     if (!extractedData) return;
 
+    // ENH 1: Offline guard — show alert instead of letting the mutation fail
+    if (!isConnected) {
+      Alert.alert(
+        'No Internet',
+        'Please check your connection and try again.'
+      );
+      return;
+    }
+
     try {
       await confirm({ confirmedRole: 'tenant' });
       // Upload flow complete — clear persisted upload state
@@ -266,7 +277,7 @@ export default function ReviewScreen() {
         'Something went wrong. Please try again.';
       Alert.alert('Confirmation Failed', msg);
     }
-  }, [extractedData, confirm, router]);
+  }, [extractedData, confirm, router, isConnected]);
 
   // Scroll state to show/hide the "scroll down" indicator
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);

@@ -17,8 +17,9 @@ import {
 import { PaymentFlipCard, PaymentMonthData } from './PaymentFlipCard';
 import { SetupProgressCard, SetupProgressCardProps } from './SetupProgressCard';
 import { LandlordStatusCard, LandlordStatusCardProps } from './LandlordStatusCard';
-import { PaymentSetupCard, PaymentSetupCardProps } from './PaymentSetupCard';
-import { s, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
+
+import { BgLine } from '@/src/components/ui/BgLine';
+import { s, sv, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -32,7 +33,7 @@ export type CarouselCardItem =
   | { type: 'payment', id: string, data: PaymentMonthData }
   | { type: 'setup_progress', id: string, data: SetupProgressCardProps }
   | { type: 'landlord_status', id: string, data: LandlordStatusCardProps }
-  | { type: 'payment_setup', id: string, data: PaymentSetupCardProps };
+;
 
 export interface RentStatusCarouselProps {
   items: CarouselCardItem[];
@@ -79,12 +80,6 @@ function RentStatusCarouselComponent({
             <LandlordStatusCard {...item.data} />
           </View>
         );
-      case 'payment_setup':
-        return (
-          <View style={styles.fixedCardWidth}>
-            <PaymentSetupCard {...item.data} variant="standalone" />
-          </View>
-        );
       default:
         return null;
     }
@@ -92,6 +87,8 @@ function RentStatusCarouselComponent({
 
   return (
     <View style={styles.container}>
+      {/* bg_line — Figma 768:303932 behind flip card */}
+      <BgLine style={styles.bgLine} />
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -137,6 +134,12 @@ function RentStatusCarouselComponent({
 const styles = StyleSheet.create({
   container: {
     // Container handles its own margins. The parent gives a 24px gap.
+  },
+  bgLine: {
+    position: 'absolute',
+    top: sv(200),
+    left: s(12),
+    zIndex: -1,
   },
   scrollContent: {
     paddingLeft: CONTENT_PADDING_LEFT,

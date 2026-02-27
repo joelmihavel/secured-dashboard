@@ -77,6 +77,8 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
               }
             >
               <View
+                accessibilityLabel="Go back"
+                accessibilityRole="button"
                 accessibilityState={
                   {
                     "busy": undefined,
@@ -114,15 +116,43 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                 onStartShouldSetResponder={[Function]}
                 style={
                   {
+                    "alignItems": "center",
+                    "height": 61,
+                    "justifyContent": "center",
                     "opacity": 1,
+                    "width": 61,
                   }
                 }
+                testID="back-button"
               >
-                <View
-                  color="#FFFFFF"
-                  name="arrow-back"
-                  size={24}
-                />
+                <Svg
+                  fill="none"
+                  height={61}
+                  viewBox="0 0 64 64"
+                  width={61}
+                >
+                  <Path
+                    d="M50.667 32H13.3337"
+                    stroke="#FFFFFF"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.66667}
+                  />
+                  <Path
+                    d="M29.333 48L13.333 32"
+                    stroke="#FFFFFF"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.66667}
+                  />
+                  <Path
+                    d="M29.333 16L13.333 32"
+                    stroke="#FFFFFF"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.66667}
+                  />
+                </Svg>
               </View>
             </View>
             <View
@@ -161,7 +191,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                   ]
                 }
               >
-                Confirm\\n
+                Confirm 
                 
 
                 <Text
@@ -306,6 +336,43 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                   }
                 >
                   <View
+                    accessibilityState={
+                      {
+                        "busy": undefined,
+                        "checked": undefined,
+                        "disabled": undefined,
+                        "expanded": undefined,
+                        "selected": undefined,
+                      }
+                    }
+                    accessibilityValue={
+                      {
+                        "max": undefined,
+                        "min": undefined,
+                        "now": undefined,
+                        "text": undefined,
+                      }
+                    }
+                    accessible={true}
+                    collapsable={false}
+                    focusable={true}
+                    hitSlop={
+                      {
+                        "bottom": 8,
+                        "left": 8,
+                        "right": 8,
+                        "top": 8,
+                      }
+                    }
+                    onBlur={[Function]}
+                    onClick={[Function]}
+                    onFocus={[Function]}
+                    onResponderGrant={[Function]}
+                    onResponderMove={[Function]}
+                    onResponderRelease={[Function]}
+                    onResponderTerminate={[Function]}
+                    onResponderTerminationRequest={[Function]}
+                    onStartShouldSetResponder={[Function]}
                     style={
                       {
                         "alignItems": "center",
@@ -314,6 +381,16 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                       }
                     }
                   >
+                    <Text
+                      style={
+                        {
+                          "fontSize": 18,
+                          "marginRight": 2,
+                        }
+                      }
+                    >
+                      🇮🇳
+                    </Text>
                     <Text
                       style={
                         [
@@ -403,7 +480,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                 }
                 accessible={true}
                 collapsable={false}
-                focusable={false}
+                focusable={true}
                 onClick={[Function]}
                 onResponderGrant={[Function]}
                 onResponderMove={[Function]}
@@ -467,6 +544,7 @@ exports[`InviteLandlordScreen matches snapshot 1`] = `
                         "fontSize": 12,
                         "lineHeight": 20,
                         "textAlign": "center",
+                        "textDecorationLine": "underline",
                       },
                     ]
                   }

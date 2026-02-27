@@ -117,6 +117,77 @@ function getCashfreeConfig() {
   return { appId, secretKey, baseUrl };
 }
 
+/**
+ * Generates Cashfree x-cf-signature header using RSA public key encryption.
+ * Encrypts "{clientId}.{unixTimestamp}" with the public key (RSA-OAEP + SHA-256).
+ * Returns { signature, timestamp } for use in request headers.
+ */
+export async function generateCfSignature(
+  clientId: string
+): Promise<{ signature: string; timestamp: string }> {
+  const publicKeyPem = Deno.env.get("CASHFREE_PUBLIC_KEY");
+  if (!publicKeyPem) {
+    throw new ExternalServiceError("Cashfree", "Public key not configured (CASHFREE_PUBLIC_KEY)");
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const payload = `${clientId}.${timestamp}`;
+
+  // Parse PEM → DER
+  const pemBody = publicKeyPem
+    .replace(/-----BEGIN PUBLIC KEY-----/, "")
+    .replace(/-----END PUBLIC KEY-----/, "")
+    .replace(/\s+/g, "");
+  const binaryDer = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+
+  // Import RSA public key (Cashfree uses OAEPWithSHA-1AndMGF1Padding)
+  const cryptoKey = await crypto.subtle.importKey(
+    "spki",
+    binaryDer.buffer,
+    { name: "RSA-OAEP", hash: "SHA-1" },
+    false,
+    ["encrypt"]
+  );
+
+  // Encrypt payload
+  const encoded = new TextEncoder().encode(payload);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "RSA-OAEP" },
+    cryptoKey,
+    encoded
+  );
+
+  // Base64 encode
+  const signature = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+
+  return { signature, timestamp };
+}
+
+/**
+ * Builds the standard Cashfree API headers including x-cf-signature.
+ */
+async function getCashfreeHeaders(
+  appId: string,
+  secretKey: string
+): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-client-id": appId,
+    "x-client-secret": secretKey,
+    "x-api-version": "2024-12-01",
+  };
+
+  try {
+    const { signature } = await generateCfSignature(appId);
+    headers["x-cf-signature"] = signature;
+  } catch (err) {
+    // If public key isn't configured, proceed without signature (backwards compat)
+    console.warn("[cashfree-m360-otp] x-cf-signature not added:", err instanceof Error ? err.message : String(err));
+  }
+
+  return headers;
+}
+
 // ==============================================
 // SEND OTP
 // ==============================================
@@ -139,14 +210,10 @@ export async function callCashfreeSendOtp(
   }
 
   try {
+    const headers = await getCashfreeHeaders(appId, secretKey);
     const response = await fetch(`${baseUrl}/mobile360/otp/send`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-client-id": appId,
-        "x-client-secret": secretKey,
-        "x-api-version": "2024-12-01",
-      },
+      headers,
       body: JSON.stringify({
         verification_id: params.verification_id,
         mobile_number: params.mobile_number,
@@ -213,14 +280,10 @@ export async function callCashfreeVerifyOtp(
   const { appId, secretKey, baseUrl } = getCashfreeConfig();
 
   try {
+    const headers = await getCashfreeHeaders(appId, secretKey);
     const response = await fetch(`${baseUrl}/mobile360/otp/verify`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-client-id": appId,
-        "x-client-secret": secretKey,
-        "x-api-version": "2024-12-01",
-      },
+      headers,
       body: JSON.stringify({
         verification_id: params.verification_id,
         otp: params.otp,

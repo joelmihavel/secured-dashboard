@@ -22,6 +22,7 @@ export interface BankVerificationRequest {
   accountNumber: string;
   ifscCode: string;
   partyType?: 'landlord' | 'tenant';
+  existingBankAccountId?: string;
 }
 
 /** Mapped RN response from verify-bank edge function */
@@ -95,6 +96,8 @@ export interface LandlordInviteRequest {
   tenancyId: string;
   landlordName?: string;
   landlordEmail?: string;
+  landlordPhone?: string;
+  countryCode?: string;
   resend?: boolean;
 }
 
@@ -109,6 +112,7 @@ export interface LandlordInviteResponse {
   message: string;
   inviteLink?: string;
   landlordEmailMasked?: string;
+  landlordStatus?: LandlordInviteStatus;
 }
 
 // ==============================================
@@ -151,10 +155,15 @@ export interface SetupStep {
   route: string;
 }
 
+export type LandlordInviteStatus = 'none' | 'invite_pending' | 'invited' | 'verified' | 'declined';
+
 export type LandlordStatus =
   | { type: 'none' }
+  | { type: 'invite_pending' }
   | { type: 'pending'; canResend: boolean; daysSinceSent: number }
+  | { type: 'invited' }
   | { type: 'declined' }
+  | { type: 'verified' }
   | { type: 'approved' };
 
 export interface SetupProgress {

@@ -155,7 +155,7 @@ function PrimaryButtonComponent({
           <Animated.View style={[styles.shadowHost, buttonAnimatedStyle]}>
             {/* Main button face container */}
             <View style={styles.buttonFace}>
-              
+
               {/* Unpressed Gradient Background */}
               <LinearGradient
                 colors={['#202020', '#0d0d0d']}
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     // Compensation for 3D depth: push content up and left to center on the raised face
     paddingTop: 16,
     paddingLeft: 16,
-    paddingBottom: 16 + 5, 
+    paddingBottom: 16 + 5,
     paddingRight: 16 + 3,
     justifyContent: 'center',
     alignItems: 'center',

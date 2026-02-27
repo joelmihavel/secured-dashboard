@@ -51,6 +51,7 @@ jest.mock('@/src/hooks', () => ({
   }),
   useUpdateProfile: () => ({ mutate: jest.fn(), isPending: false }),
   useUploadAvatar: () => ({ mutate: jest.fn(), isPending: false }),
+  usePixelateAvatar: () => ({ mutate: jest.fn(), isPending: false }),
   useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
 }));
 

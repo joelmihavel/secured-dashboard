@@ -24,7 +24,7 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 
 import { Text } from '@/src/components/ui';
 import { colors } from '@/src/theme';
@@ -34,7 +34,11 @@ export interface SetupProgressCardProps {
   bankDetailsComplete?: boolean;
   addressProofComplete?: boolean;
   landlordInvited?: boolean;
+  /** Tap on the card body navigates to first pending setup step */
+  onPress?: () => void;
   onCtaPress?: () => void;
+  /** @deprecated Use onPress instead */
+  onFinishSetup?: () => void;
   ctaLabel?: string;
 }
 
@@ -42,9 +46,12 @@ function SetupProgressCardComponent({
   bankDetailsComplete = true,
   addressProofComplete = false,
   landlordInvited = false,
+  onPress,
   onCtaPress,
+  onFinishSetup,
   ctaLabel,
 }: SetupProgressCardProps) {
+  const handleCardPress = onPress ?? onFinishSetup;
   // Disappear when all verifications are complete
   if (bankDetailsComplete && addressProofComplete && landlordInvited) {
     return null;
@@ -70,17 +77,25 @@ function SetupProgressCardComponent({
     },
   ];
 
+  const Wrapper = handleCardPress ? Pressable : View;
+  const wrapperProps = handleCardPress
+    ? { onPress: handleCardPress, style: styles.container, testID: 'setup-progress-card' }
+    : { style: styles.container };
+
   return (
-    <View style={styles.container}>
-      {/* Title — Figma 769:309137 */}
+    <Wrapper {...wrapperProps}>
+      {/* Title — Figma 769:309137 / 791:6654 */}
       <Text style={styles.titleText}>
-        Cashback will be accumulated until verification
+        {`Setup incomplete (${(bankDetailsComplete ? 1 : 0) + (addressProofComplete ? 1 : 0) + (landlordInvited ? 1 : 0)}/3)`}
       </Text>
 
       {/* Progress timeline — inline, no shared component dependency */}
       <View>
         {steps.map((step, index) => {
           const isLast = index === steps.length - 1;
+          // Connector is active when current step AND next step are both complete
+          const nextStep = !isLast ? steps[index + 1] : null;
+          const isConnectorActive = step.isComplete && nextStep?.isComplete;
           return (
             <View key={index} style={styles.timelineRow}>
               {/* Left: dot + connector line */}
@@ -93,7 +108,14 @@ function SetupProgressCardComponent({
                     ]}
                   />
                 </View>
-                {!isLast && <View style={styles.connectorLine} />}
+                {!isLast && (
+                  <View
+                    style={[
+                      styles.connectorLine,
+                      { backgroundColor: isConnectorActive ? CONNECTOR_ACTIVE : CONNECTOR_INACTIVE },
+                    ]}
+                  />
+                )}
               </View>
 
               {/* Right: title + subtitle */}
@@ -120,13 +142,15 @@ function SetupProgressCardComponent({
           <Text style={styles.infoBarLink}>Learn More</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </Wrapper>
   );
 }
 
-// Dot colors — Figma indicators
+// Dot & connector colors — Figma indicators
 const DOT_ACTIVE = colors.brand[500]; // #FF9A6D
 const DOT_INACTIVE = colors.black[600]; // #1A1A1A
+const CONNECTOR_ACTIVE = 'rgba(255, 154, 109, 0.5)'; // brand[500] at 50%
+const CONNECTOR_INACTIVE = colors.black[400]; // #4D4D4D
 
 const styles = StyleSheet.create({
   container: {
@@ -171,7 +195,6 @@ const styles = StyleSheet.create({
   connectorLine: {
     width: 1,
     flex: 1,
-    backgroundColor: colors.black[400], // #4D4D4D — subtle on #202020
   },
   // Text column — gap 4 between title and subtitle, paddingBottom spaces rows
   textColumn: {

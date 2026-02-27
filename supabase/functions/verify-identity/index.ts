@@ -39,6 +39,7 @@ import { computeRisk } from "../_shared/risk-utils.ts";
 import {
   callCashfreeSendOtp as sharedCallCashfreeSendOtp,
   callCashfreeVerifyOtp as sharedCallCashfreeVerifyOtp,
+  generateCfSignature,
   type Mobile360SendOtpResponse as SharedMobile360SendOtpResponse,
   type Mobile360VerifyOtpResponse as SharedMobile360VerifyOtpResponse,
   type SendOtpParams as SharedSendOtpParams,
@@ -1229,14 +1230,23 @@ async function callCashfreeMobile360WithConsent(
 
   try {
     // Step 1: Send OTP via Cashfree Mobile 360
+    // Build headers with x-cf-signature for public key auth
+    const cfHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-client-id": CASHFREE_APP_ID,
+      "x-client-secret": CASHFREE_SECRET_KEY,
+      "x-api-version": "2024-12-01",
+    };
+    try {
+      const { signature } = await generateCfSignature(CASHFREE_APP_ID);
+      cfHeaders["x-cf-signature"] = signature;
+    } catch (sigErr) {
+      console.warn("[verify-identity] x-cf-signature not added:", sigErr instanceof Error ? sigErr.message : String(sigErr));
+    }
+
     const sendResponse = await fetch(`${CASHFREE_BASE_URL}/mobile360/otp/send`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-client-id": CASHFREE_APP_ID,
-        "x-client-secret": CASHFREE_SECRET_KEY,
-        "x-api-version": "2024-12-01",
-      },
+      headers: cfHeaders,
       body: JSON.stringify({
         verification_id: verificationId,
         mobile_number: mobileNumber,

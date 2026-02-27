@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, BackButton } from '@/src/components';
 import { useCashback } from '@/src/hooks';
 import { useSavingsHistory } from '@/src/hooks/usePayments';
 import type { SavingsEntry } from '@/src/services/api/payments';
@@ -41,18 +41,6 @@ const COLORS = {
 // ==============================================
 // ICONS
 // ==============================================
-
-const BackArrowIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M19 12H5M5 12L12 19M5 12L12 5"
-      stroke={COLORS.white}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 // ==============================================
 // HELPERS
@@ -174,16 +162,12 @@ export default function SavingsHistoryScreen() {
     <Screen testID="savings-history-screen" padded={false}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
+        <BackButton
           onPress={handleBack}
           style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <BackArrowIcon />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Savings</Text>
+          color={COLORS.white}
+        />
+        <Text style={styles.headerTitle}>Lifetime Savings</Text>
       </View>
 
       <FlatList

@@ -34,7 +34,7 @@ export default function SplashScreen() {
   const insets = useSafeAreaInsets();
 
   const handleGetStarted = useCallback(() => {
-    router.push('/(auth)/carousel');
+    router.replace('/(auth)/carousel');
   }, [router]);
 
   const handleLogin = useCallback(() => {

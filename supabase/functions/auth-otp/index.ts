@@ -663,6 +663,10 @@ async function verifyViaOtpRequest(
       sanitizedPhone, phoneWithCountryCode, name, consentForMobile360, clientIp, supabase
     );
 
+    // Ensure synthetic email is set on auth user (required for generateLink magiclink)
+    const syntheticEmail = `${sanitizedPhone}@phone.flentsecured.com`;
+    await supabase.auth.admin.updateUserById(userId, { email: syntheticEmail });
+
     // Generate session token
     const tokenHash = await generateSessionToken(sanitizedPhone, supabase);
 
@@ -1121,30 +1125,56 @@ async function createOrFindUser(
     },
   });
 
-  if (authError?.message?.includes("already been registered")) {
-    // User exists — find their profile
+  if (authError?.message?.includes("already") && authError?.message?.includes("registered")) {
+    // User exists in auth — find their profile in public.users
     const { data: existingUser } = await supabase
       .from("users")
       .select("id, name_source")
-      .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
+      .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone},phone.eq.91${sanitizedPhone}`)
       .single();
 
-    if (!existingUser) {
-      throw new AppError("User account exists but profile not found", "USER_NOT_FOUND", 404);
+    if (existingUser) {
+      // Update phone + name for returning users
+      const updatePayload: Record<string, unknown> = { phone: phoneWithCountryCode };
+      if (name && existingUser.name_source !== "m360") {
+        const extracted = extractFirstName(name);
+        updatePayload.full_name = name;
+        updatePayload.first_name = extracted.first_name;
+        updatePayload.last_name = extracted.last_name;
+        updatePayload.name_source = "user_input";
+      }
+      await supabase.from("users").update(updatePayload).eq("id", existingUser.id);
+      return { userId: existingUser.id, isNewUser: false };
     }
 
-    // Update phone + name for returning users
-    const updatePayload: Record<string, unknown> = { phone: phoneWithCountryCode };
-    if (name && existingUser.name_source !== "m360") {
-      const extracted = extractFirstName(name);
-      updatePayload.full_name = name;
-      updatePayload.first_name = extracted.first_name;
-      updatePayload.last_name = extracted.last_name;
-      updatePayload.name_source = "user_input";
-    }
-    await supabase.from("users").update(updatePayload).eq("id", existingUser.id);
+    // Auth user exists but no profile row — look up auth user and create profile
+    console.log("[auth-otp] Auth user exists but no profile found, creating profile...");
+    const { data: authUsers } = await supabase.auth.admin.listUsers();
+    const authUser = authUsers?.users?.find(
+      (u) => u.phone === phoneWithCountryCode || u.phone === sanitizedPhone || u.phone === `91${sanitizedPhone}`
+    );
 
-    return { userId: existingUser.id, isNewUser: false };
+    if (!authUser) {
+      throw new AppError("User account exists but could not be located", "USER_NOT_FOUND", 404);
+    }
+
+    // Create the missing profile row
+    const extracted = name ? extractFirstName(name) : { first_name: null, last_name: null };
+    const { error: insertError } = await supabase.from("users").upsert({
+      id: authUser.id,
+      phone: phoneWithCountryCode,
+      full_name: name || null,
+      first_name: extracted.first_name,
+      last_name: extracted.last_name,
+      name_source: name ? "user_input" : null,
+    }, { onConflict: "id" });
+
+    if (insertError) {
+      console.error("[auth-otp] Failed to create profile:", insertError);
+      throw new AppError("Failed to create user profile", "PROFILE_ERROR", 500);
+    }
+
+    return { userId: authUser.id, isNewUser: true };
   }
 
   if (authError) {

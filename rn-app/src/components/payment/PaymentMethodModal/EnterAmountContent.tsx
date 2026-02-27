@@ -93,7 +93,7 @@ export function EnterAmountContent({
 
       {/* Cashaback pill placeholder for spacing match */}
       <View style={styles.cashbackContainer}>
-        <Text style={styles.cashbackText}>Cashback Potential: ₹ 325.00</Text>
+        <Text style={styles.cashbackText}>Cashback Potential: ₹ {Math.round(numAmount * 0.01).toLocaleString('en-IN')}</Text>
       </View>
 
       <View style={styles.footerRow}>

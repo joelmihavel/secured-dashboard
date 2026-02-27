@@ -191,6 +191,32 @@ serve(async (req) => {
     }
 
     // ==============================================
+    // BUG 7 FIX: MARK ORPHANED COMPLETED EXTRACTIONS
+    // ==============================================
+    // On re-upload, mark existing completed+unverified extractions as failed
+    // so they don't block the new upload or confuse mount discovery.
+
+    const { data: orphanedExtractions } = await adminClient
+      .from("extracted_rental_info")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("extraction_status", "completed")
+      .eq("user_verified", false);
+
+    if (orphanedExtractions && orphanedExtractions.length > 0) {
+      const orphanIds = orphanedExtractions.map((e: { id: string }) => e.id);
+      console.log(`[upload-document] Marking ${orphanIds.length} orphaned completed extraction(s) as failed:`, orphanIds);
+      await adminClient
+        .from("extracted_rental_info")
+        .update({
+          extraction_status: "failed",
+          extraction_error: "Superseded by re-upload",
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", orphanIds);
+    }
+
+    // ==============================================
     // GENERATE STORAGE PATH
     // ==============================================
 

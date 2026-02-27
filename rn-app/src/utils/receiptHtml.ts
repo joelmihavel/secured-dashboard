@@ -352,7 +352,7 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
   .logo-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     margin-bottom: 20px;
   }
 
@@ -378,8 +378,12 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
 
   <!-- Logo -->
   <div class="logo-row">
-    <svg width="24" height="28" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="#FF9A6D"/>
+    <svg width="32" height="32" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Arch background -->
+      <rect x="0" y="20" width="80" height="60" rx="0" fill="#FF9A6D"/>
+      <rect x="0" y="0" width="80" height="50" rx="25" fill="#FF9A6D"/>
+      <!-- "fl" lettermark in dark -->
+      <path d="M30.93 64H26.38V51.73H24.45V48.35H26.38C25.3 43.11 28.34 40.17 29.99 39.36C34.83 36.16 39.84 40.42 41.75 42.95V64H37.21V45.54C34.59 40.14 31.3 41.39 29.99 42.69C28.31 46.32 30.69 47.99 32.09 48.35H34.44V51.73H30.93V64Z" fill="#131313"/>
     </svg>
     <span class="logo-text">Rent Receipt</span>
   </div>

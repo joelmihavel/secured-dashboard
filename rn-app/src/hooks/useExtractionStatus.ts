@@ -139,14 +139,19 @@ function useExtractionRealtime(extractionId: string | null) {
   }, [extractionId, queryClient]);
 }
 
+/** Minimum time between AppState-triggered refetches (prevents rapid bg/fg cycling spam) */
+const APP_STATE_DEBOUNCE_MS = 3_000;
+
 /**
  * AppState foreground recovery.
- * When app returns from background, immediately invalidate the query
+ * When app returns from background, invalidate the query
  * so React Query refetches current status.
+ * BUG 1 FIX: 3-second debounce prevents rapid bg/fg cycling from spamming refetches.
  */
 function useExtractionAppStateRecovery(extractionId: string | null) {
   const queryClient = useQueryClient();
   const appStateRef = useRef(AppState.currentState);
+  const lastRecoveryRef = useRef(0);
 
   useEffect(() => {
     if (!extractionId) return;
@@ -155,6 +160,9 @@ function useExtractionAppStateRecovery(extractionId: string | null) {
       const wasBg = appStateRef.current.match(/inactive|background/);
       appStateRef.current = next;
       if (wasBg && next === 'active') {
+        const now = Date.now();
+        if (now - lastRecoveryRef.current < APP_STATE_DEBOUNCE_MS) return;
+        lastRecoveryRef.current = now;
         queryClient.invalidateQueries({
           queryKey: extractionStatusKey(extractionId),
         });
@@ -319,8 +327,12 @@ export function useExtractionStatus(
   }, [queryClient]);
 
   const status = query.data?.extractionStatus;
+  // BUG 4 FIX: A completed-but-unverified extraction is still "active" —
+  // prevent users from starting a new upload while one awaits review.
   const hasActiveExtraction =
-    status === 'pending' || status === 'processing';
+    status === 'pending' ||
+    status === 'processing' ||
+    (status === 'completed' && !query.data?.userVerified);
 
   return {
     data: query.data ?? null,

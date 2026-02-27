@@ -148,7 +148,7 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                       ]
                     }
                   >
-                    know you
+                    know  you
                   </Text>
                 </Text>
                 <View
@@ -222,6 +222,43 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                       }
                     >
                       <View
+                        accessibilityState={
+                          {
+                            "busy": undefined,
+                            "checked": undefined,
+                            "disabled": undefined,
+                            "expanded": undefined,
+                            "selected": undefined,
+                          }
+                        }
+                        accessibilityValue={
+                          {
+                            "max": undefined,
+                            "min": undefined,
+                            "now": undefined,
+                            "text": undefined,
+                          }
+                        }
+                        accessible={true}
+                        collapsable={false}
+                        focusable={true}
+                        hitSlop={
+                          {
+                            "bottom": 8,
+                            "left": 8,
+                            "right": 8,
+                            "top": 8,
+                          }
+                        }
+                        onBlur={[Function]}
+                        onClick={[Function]}
+                        onFocus={[Function]}
+                        onResponderGrant={[Function]}
+                        onResponderMove={[Function]}
+                        onResponderRelease={[Function]}
+                        onResponderTerminate={[Function]}
+                        onResponderTerminationRequest={[Function]}
+                        onStartShouldSetResponder={[Function]}
                         style={
                           {
                             "alignItems": "center",
@@ -230,6 +267,16 @@ exports[`SignUpScreen rendering renders correctly and matches snapshot 1`] = `
                           }
                         }
                       >
+                        <Text
+                          style={
+                            {
+                              "fontSize": 18,
+                              "marginRight": 2,
+                            }
+                          }
+                        >
+                          🇮🇳
+                        </Text>
                         <Text
                           style={
                             [

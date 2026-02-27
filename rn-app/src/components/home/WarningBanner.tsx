@@ -16,8 +16,9 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, Text as RNText } from 'react-native';
-import { s, sf, sv } from '@/src/theme/scale';
+import { View, StyleSheet } from 'react-native';
+
+import { Pill } from '@/src/components/ui/Pill';
 
 export type WarningType = 'late' | 'missed' | 'multiple';
 
@@ -52,39 +53,20 @@ function WarningBannerComponent({ type, customMessage }: WarningBannerProps) {
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.container, { backgroundColor: config.backgroundColor }]}>
-        <RNText style={[styles.text, { color: config.textColor }]}>
-          {displayText}
-        </RNText>
-      </View>
+      <Pill
+        text={displayText}
+        variant="muted"
+        textColor={config.textColor}
+        backgroundColor={config.backgroundColor}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    // Figma 243-3378 node 243:3380 (Frame 2095586467)
-    // Center the pill horizontally. Padding is on the pill itself.
     width: '100%',
     alignItems: 'center',
-  },
-  container: {
-    // Figma 243-3378 node 243:3381 (Frame 2095586455)
-    // Pill: hug content, no fixed width — text length varies by warning type.
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: sv(8), // Figma: paddingTop/Bottom 8 — scaled
-    paddingHorizontal: s(12), // Figma: paddingLeft/Right 12 — scaled
-    borderRadius: 12, // Figma: cornerRadius 12
-  },
-  text: {
-    // Figma 243-3378 node 243:3382
-    // Exact values: width 227, height 20, fontSize 12, fontWeight 400, lineHeight 20
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: sf(12), // Figma: fontSize 12 — scaled
-    lineHeight: sf(20), // Figma: lineHeightPx 20 — scaled
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
   },
 });
 

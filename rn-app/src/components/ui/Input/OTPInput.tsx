@@ -48,6 +48,8 @@ export interface OTPInputProps {
   disabled?: boolean;
   autoFocus?: boolean;
   testID?: string;
+  /** Pass BottomSheetTextInput from @gorhom/bottom-sheet when rendered inside a bottom sheet */
+  TextInputComponent?: React.ElementType;
 }
 
 const OTP_LENGTH = 6;
@@ -89,8 +91,10 @@ function OTPInputComponent({
   disabled,
   autoFocus = true,
   testID,
+  TextInputComponent,
 }: OTPInputProps) {
-  const inputRef = useRef<RNTextInput>(null);
+  const inputRef = useRef<any>(null);
+  const InputComponent = TextInputComponent || RNTextInput;
   const [isFocused, setIsFocused] = useState(false);
 
   // Convert value to array of digits
@@ -177,8 +181,10 @@ function OTPInputComponent({
         </View>
       </Pressable>
 
-      {/* Transparent input overlaid on boxes — taps land directly on TextInput */}
-      <RNTextInput
+      {/* Transparent input overlaid on boxes — taps land directly on TextInput.
+          Use BottomSheetTextInput (via TextInputComponent prop) when inside @gorhom/bottom-sheet
+          to avoid gesture handler touch interception. */}
+      <InputComponent
         ref={inputRef}
         value={value}
         onChangeText={handleChange}

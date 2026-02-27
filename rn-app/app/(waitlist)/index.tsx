@@ -274,17 +274,26 @@ export default function WaitlistScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const transitionOpacity = useSharedValue(0);
 
+  // Stable navigation callbacks for runOnJS (Reanimated v4 requires standalone functions, not method refs)
+  const navigateToApproved = React.useCallback(() => {
+    router.replace('/(waitlist)/approved');
+  }, [router]);
+
+  const navigateToAgreement = React.useCallback(() => {
+    router.replace('/(agreement)/upload' as never);
+  }, [router]);
+
   // Redirect to approved screen when approved
   useEffect(() => {
     if (viewState === 'approved' && !isNavigating) {
       setIsNavigating(true);
       transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
         if (finished) {
-          runOnJS(router.replace)('/(waitlist)/approved');
+          runOnJS(navigateToApproved)();
         }
       });
     }
-  }, [viewState, router, isNavigating, transitionOpacity]);
+  }, [viewState, navigateToApproved, isNavigating, transitionOpacity]);
 
   // Auto-join waitlist on first visit if no entry exists
   useEffect(() => {
@@ -299,11 +308,11 @@ export default function WaitlistScreen() {
       setIsNavigating(true);
       transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
         if (finished) {
-          runOnJS(router.replace)('/(agreement)/upload' as never);
+          runOnJS(navigateToAgreement)();
         }
       });
     }
-  }, [error?.code, router, isNavigating, transitionOpacity]);
+  }, [error?.code, navigateToAgreement, isNavigating, transitionOpacity]);
 
 
   const displayName = userName || 'there';

@@ -73,37 +73,11 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
 
         switch (outcome.status) {
           case 'success': {
-            // Payment succeeded at SDK level — navigate to processing for server verification
+            // Payment succeeded at SDK level — navigate to status IMMEDIATELY
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setLastPayment(paymentId);
 
-            // Best-effort: save payment method from PayU response
-            // Server-side webhook also saves, so this is a fallback for faster UX
-            const payuResponse = outcome.payuResponse ?? {};
-            try {
-              if ((paymentMode === 'CC' || paymentMode === 'DC') && payuResponse.store_card_token) {
-                await addCardToken({
-                  card_token: String(payuResponse.store_card_token),
-                  card_last4: String(payuResponse.card_no ?? '').slice(-4),
-                  card_network: (String(payuResponse.bankcode ?? '').toLowerCase()) as 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro',
-                  card_type: paymentMode === 'CC' ? 'credit' : 'debit',
-                  // FIX: BUG-2 — parse expiry from PayU response; omit if unavailable instead of sending 0
-                  ...(Number(payuResponse.card_expiry_month) ? { card_expiry_month: Number(payuResponse.card_expiry_month) } : {}),
-                  ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
-                });
-              } else if (paymentMode === 'upi' && payuResponse.field7) {
-                await addUpiVpa(String(payuResponse.field7));
-              }
-              // Netbanking: no client-side save needed — webhook handles it
-            } catch (saveErr) {
-              // Non-blocking: webhook will handle server-side save
-              console.warn('Client-side payment method save failed (webhook will retry):', saveErr);
-            }
-
-            // Invalidate React Query cache so home screen reflects saved method
-            queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-
+            // Navigate first — don't block on method save or cache invalidation
             router.replace({
               pathname: '/(payment)/status',
               params: {
@@ -113,6 +87,31 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                 initialStatus: 'pending',
               },
             } as never);
+
+            // Fire-and-forget: save payment method + invalidate cache in background
+            // Server-side webhook also saves, so this is a fallback for faster UX
+            const payuResponse = outcome.payuResponse ?? {};
+            (async () => {
+              try {
+                if ((paymentMode === 'CC' || paymentMode === 'DC') && payuResponse.store_card_token) {
+                  await addCardToken({
+                    card_token: String(payuResponse.store_card_token),
+                    card_last4: String(payuResponse.card_no ?? '').slice(-4),
+                    card_network: (String(payuResponse.bankcode ?? '').toLowerCase()) as 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro',
+                    card_type: paymentMode === 'CC' ? 'credit' : 'debit',
+                    ...(Number(payuResponse.card_expiry_month) ? { card_expiry_month: Number(payuResponse.card_expiry_month) } : {}),
+                    ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
+                  });
+                } else if (paymentMode === 'upi' && payuResponse.field7) {
+                  await addUpiVpa(String(payuResponse.field7));
+                }
+              } catch (saveErr) {
+                console.warn('Client-side payment method save failed (webhook will retry):', saveErr);
+              }
+              queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
+              queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            })();
+
             return { status: 'navigating' };
           }
 

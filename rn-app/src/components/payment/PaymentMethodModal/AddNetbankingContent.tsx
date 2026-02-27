@@ -18,12 +18,14 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Text, PrimaryButton, TextInput } from '@/src/components';
+import { Text, PrimaryButton, TextInput, BackButton } from '@/src/components';
 import { Text as RNText } from 'react-native';
 import { RadioButton } from '@/src/components/payment/RadioButton';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
+import { useBankList } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { BANK_LIST, POPULAR_BANKS, searchBanks, type BankInfo } from '@/src/constants/bankList';
+import { BANK_LIST, type BankInfo } from '@/src/constants/bankList';
+import type { NetbankingBank } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
 
 import type { AddMethodContentProps } from './types';
@@ -40,22 +42,6 @@ const FIGMA_COLORS = {
   selectedBorder: colors.brand[500],
   divider: colors.black[400],
 };
-
-// ==============================================
-// BACK ARROW (24x24 chevron, white stroke 2px)
-// ==============================================
-
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={FIGMA_COLORS.white}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 // ==============================================
 // POPULAR BANK CHIP
@@ -120,8 +106,14 @@ function BankRow({
 // ADD NETBANKING CONTENT
 // ==============================================
 
+/** Map API NetbankingBank to local BankInfo shape */
+function toBankInfo(b: NetbankingBank): BankInfo {
+  return { code: b.bank_code, name: b.bank_name, shortName: b.short_name ?? undefined, isPopular: b.is_popular };
+}
+
 export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProps) {
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
+  const amount = sessionParams?.amount ?? '0';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBankCode, setSelectedBankCode] = useState<string | null>(null);
@@ -129,7 +121,24 @@ export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProp
 
   const { executePayment } = usePaymentFlow();
 
-  const filteredBanks = useMemo(() => searchBanks(searchQuery), [searchQuery]);
+  // Dynamic bank list from Supabase, fallback to static BANK_LIST
+  const { data: apiBanks } = useBankList();
+  const banks: BankInfo[] = useMemo(
+    () => (apiBanks && apiBanks.length > 0) ? apiBanks.map(toBankInfo) : BANK_LIST,
+    [apiBanks],
+  );
+  const popularBanks = useMemo(() => banks.filter(b => b.isPopular), [banks]);
+
+  const filteredBanks = useMemo(() => {
+    if (!searchQuery.trim()) return banks;
+    const lower = searchQuery.toLowerCase().trim();
+    return banks.filter(
+      (b) =>
+        b.name.toLowerCase().includes(lower) ||
+        b.code.toLowerCase().includes(lower) ||
+        (b.shortName && b.shortName.toLowerCase().includes(lower)),
+    );
+  }, [searchQuery, banks]);
   const isSearchActive = searchQuery.trim().length > 0;
 
   const handleSelectBank = useCallback(
@@ -180,11 +189,11 @@ export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProp
     () => (
       <View style={styles.listHeader}>
         {/* Popular Banks (hidden during search) */}
-        {!isSearchActive && (
+        {!isSearchActive && popularBanks.length > 0 && (
           <>
             <Text style={styles.sectionLabel}>Popular Banks</Text>
             <View style={styles.popularBanksRow}>
-              {POPULAR_BANKS.map((bank) => (
+              {popularBanks.map((bank) => (
                 <PopularBankChip
                   key={bank.code}
                   bank={bank}
@@ -218,18 +227,11 @@ export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProp
       {/* Header area (scrolls with content conceptually, but pinned above FlatList) */}
       <View style={styles.headerSection}>
         {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onBack();
-          }}
+        <BackButton
+          onPress={onBack}
           style={styles.backButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityRole="button"
-          accessibilityLabel="Go back to method selection"
-        >
-          <BackArrow />
-        </TouchableOpacity>
+          color={FIGMA_COLORS.white}
+        />
 
         {/* Title */}
         <RNText style={styles.title}>
@@ -269,7 +271,7 @@ export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProp
       {/* Proceed Button */}
       <View style={styles.buttonSection}>
         <PrimaryButton
-          title="Save bank account"
+          title={parseFloat(amount) > 0 ? `Pay \u20B9${parseFloat(amount).toLocaleString('en-IN')}` : 'Add bank account'}
           onPress={handleProceed}
           disabled={!selectedBankCode || isSubmitting}
           loading={isSubmitting}
@@ -295,7 +297,6 @@ const styles = StyleSheet.create({
     maxHeight: 600,
   },
   headerSection: {
-    gap: 24,
     marginBottom: 16,
   },
   backButton: {
@@ -303,6 +304,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    marginBottom: 24,
   },
   searchContainer: {
     marginTop: 8,
@@ -314,6 +316,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.white,
     textAlign: 'left',
+    marginBottom: 32,
   },
   titleAccent: {
     color: colors.brand[500],

@@ -367,6 +367,85 @@ export async function uploadAvatarFile(
 }
 
 /**
+ * Pixelate a user photo into orange-tinted pixel art.
+ *
+ * Sends the image to the pixelate-avatar edge function which:
+ * 1. Validates the image
+ * 2. Downscales to 32×32
+ * 3. Applies orange tint (#FF9A6D at 40% blend)
+ * 4. Upscales to 64×64 + 256×256 with nearest-neighbor
+ * 5. Updates avatar_url in the user profile
+ *
+ * @param fileUri - Local file URI from ImagePicker
+ * @param contentType - MIME type (image/jpeg, image/png)
+ * @returns Avatar URLs (256px main + 64px thumbnail)
+ */
+export async function pixelateAvatar(
+  fileUri: string,
+  contentType: string
+): Promise<{
+  data: { avatarUrl: string; thumbnailUrl: string } | null;
+  error: ProfileError | null;
+}> {
+  try {
+    // Build FormData
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+
+    const formData = new FormData();
+    formData.append('image', blob, `avatar.${contentType === 'image/png' ? 'png' : 'jpg'}`);
+
+    // Call edge function directly with FormData
+    const { data: session } = await (await import('../supabase')).supabase.auth.getSession();
+    const token = session?.session?.access_token;
+
+    if (!token) {
+      return { data: null, error: { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' } };
+    }
+
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+    const uploadResponse = await fetch(
+      `${supabaseUrl}/functions/v1/pixelate-avatar`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: anonKey ?? '',
+        },
+        body: formData,
+      }
+    );
+
+    const result = await uploadResponse.json();
+
+    if (!uploadResponse.ok || !result.success) {
+      return {
+        data: null,
+        error: mapProfileError(result.message || 'Pixelation failed'),
+      };
+    }
+
+    return {
+      data: {
+        avatarUrl: result.data.avatarUrl,
+        thumbnailUrl: result.data.thumbnailUrl,
+      },
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        code: 'UPLOAD_FAILED',
+        message: err instanceof Error ? err.message : 'Failed to pixelate avatar',
+      },
+    };
+  }
+}
+
+/**
  * Get saved payment methods for the authenticated user.
  *
  * Maps edge function response (snake_case, is_primary/is_default) to RN app

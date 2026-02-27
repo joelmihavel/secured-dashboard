@@ -59,12 +59,12 @@ describe('InviteLandlordScreen', () => {
     (Haptics.impactAsync as jest.Mock).mockClear();
   });
 
-  it('renders title "One last step" and "we promise"', () => {
-    const { getAllByText, getByText } = render(<InviteLandlordScreen />);
-    const matches = getAllByText(/Confirm/);
-    expect(matches.length).toBeGreaterThan(0);
-    expect(getByText(/your tenancy/)).toBeTruthy();
-    
+  it('renders title "Confirm" and "your tenancy"', () => {
+    const { getAllByText } = render(<InviteLandlordScreen />);
+    const confirmMatches = getAllByText(/Confirm/);
+    expect(confirmMatches.length).toBeGreaterThan(0);
+    const tenancyMatches = getAllByText(/your tenancy/);
+    expect(tenancyMatches.length).toBeGreaterThan(0);
   });
 
   it('renders subtitle about inviting landlord to activate cashback', () => {

@@ -107,6 +107,14 @@ exports[`EditProfileScreen matches snapshot 1`] = `
                   accessible={true}
                   collapsable={false}
                   focusable={true}
+                  hitSlop={
+                    {
+                      "bottom": 12,
+                      "left": 12,
+                      "right": 12,
+                      "top": 12,
+                    }
+                  }
                   onClick={[Function]}
                   onResponderGrant={[Function]}
                   onResponderMove={[Function]}
@@ -116,18 +124,43 @@ exports[`EditProfileScreen matches snapshot 1`] = `
                   onStartShouldSetResponder={[Function]}
                   style={
                     {
+                      "alignItems": "center",
                       "height": 32,
                       "justifyContent": "center",
                       "opacity": 1,
                       "width": 32,
                     }
                   }
+                  testID="back-button"
                 >
-                  <View
-                    color="#FFFFFF"
-                    name="arrow-back"
-                    size={24}
-                  />
+                  <Svg
+                    fill="none"
+                    height={61}
+                    viewBox="0 0 64 64"
+                    width={61}
+                  >
+                    <Path
+                      d="M50.667 32H13.3337"
+                      stroke="#FFFFFF"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.66667}
+                    />
+                    <Path
+                      d="M29.333 48L13.333 32"
+                      stroke="#FFFFFF"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.66667}
+                    />
+                    <Path
+                      d="M29.333 16L13.333 32"
+                      stroke="#FFFFFF"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.66667}
+                    />
+                  </Svg>
                 </View>
                 <Text
                   allowFontScaling={true}
@@ -169,63 +202,49 @@ Profile
               >
                 <View
                   style={
-                    {
-                      "borderRadius": 40,
-                      "height": 80,
-                      "overflow": "hidden",
-                      "width": 80,
-                    }
-                  }
-                >
-                  <View
-                    style={
+                    [
                       {
                         "alignItems": "center",
-                        "backgroundColor": "#FFCC8A",
+                        "backgroundColor": "#FF9A6D",
+                        "justifyContent": "center",
+                      },
+                      {
                         "borderRadius": 40,
                         "height": 80,
-                        "justifyContent": "center",
-                        "overflow": "hidden",
                         "width": 80,
-                      }
+                      },
+                    ]
+                  }
+                >
+                  <Text
+                    allowFontScaling={true}
+                    maxFontSizeMultiplier={1.2}
+                    style={
+                      [
+                        {
+                          "color": "#FFFFFF",
+                          "fontFamily": "PlusJakartaSans-Regular",
+                          "fontSize": 18.4,
+                          "letterSpacing": 0,
+                          "lineHeight": 27.599999999999998,
+                          "textAlign": "left",
+                        },
+                        [
+                          {
+                            "color": "#FFFFFF",
+                            "fontFamily": "PlusJakartaSans-SemiBold",
+                            "textAlign": "center",
+                          },
+                          {
+                            "fontSize": 28,
+                            "lineHeight": 32,
+                          },
+                        ],
+                      ]
                     }
                   >
-                    <View
-                      style={
-                        {
-                          "alignItems": "center",
-                          "height": 60,
-                          "justifyContent": "center",
-                          "width": 60,
-                        }
-                      }
-                    >
-                      <View
-                        style={
-                          {
-                            "backgroundColor": "#444444",
-                            "borderTopLeftRadius": 25,
-                            "borderTopRightRadius": 25,
-                            "height": 35,
-                            "position": "absolute",
-                            "top": 0,
-                            "width": 50,
-                          }
-                        }
-                      />
-                      <View
-                        style={
-                          {
-                            "backgroundColor": "#FFAE8A",
-                            "borderRadius": 20,
-                            "height": 40,
-                            "marginTop": 15,
-                            "width": 40,
-                          }
-                        }
-                      />
-                    </View>
-                  </View>
+                    T
+                  </Text>
                 </View>
                 <View
                   accessibilityLabel="Edit picture"
@@ -382,80 +401,6 @@ Profile
                     >
                       User name
                     </Text>
-                    <View
-                      accessibilityLabel="edit for User name"
-                      accessibilityRole="button"
-                      accessibilityState={
-                        {
-                          "busy": undefined,
-                          "checked": undefined,
-                          "disabled": undefined,
-                          "expanded": undefined,
-                          "selected": undefined,
-                        }
-                      }
-                      accessibilityValue={
-                        {
-                          "max": undefined,
-                          "min": undefined,
-                          "now": undefined,
-                          "text": undefined,
-                        }
-                      }
-                      accessible={true}
-                      collapsable={false}
-                      focusable={true}
-                      hitSlop={
-                        {
-                          "bottom": 8,
-                          "left": 8,
-                          "right": 8,
-                          "top": 8,
-                        }
-                      }
-                      onClick={[Function]}
-                      onResponderGrant={[Function]}
-                      onResponderMove={[Function]}
-                      onResponderRelease={[Function]}
-                      onResponderTerminate={[Function]}
-                      onResponderTerminationRequest={[Function]}
-                      onStartShouldSetResponder={[Function]}
-                      style={
-                        {
-                          "opacity": 1,
-                        }
-                      }
-                    >
-                      <Text
-                        allowFontScaling={true}
-                        maxFontSizeMultiplier={1.2}
-                        style={
-                          [
-                            {
-                              "color": "#FFFFFF",
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 18.4,
-                              "letterSpacing": 0,
-                              "lineHeight": 27.599999999999998,
-                              "textAlign": "left",
-                            },
-                            [
-                              {
-                                "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 14,
-                                "lineHeight": 20,
-                                "textAlign": "right",
-                              },
-                              {
-                                "color": "#878787",
-                              },
-                            ],
-                          ]
-                        }
-                      >
-                        edit
-                      </Text>
-                    </View>
                   </View>
                   <View
                     style={
@@ -469,10 +414,8 @@ Profile
                           "paddingVertical": 16,
                         },
                         {
-                          "borderBottomWidth": 0.5,
-                          "borderColor": "#0D0D0D",
-                          "borderRadius": 0,
-                          "borderWidth": 0,
+                          "borderColor": "transparent",
+                          "borderWidth": 1,
                         },
                       ]
                     }
@@ -560,80 +503,6 @@ Profile
                     >
                       Email
                     </Text>
-                    <View
-                      accessibilityLabel="edit for Email"
-                      accessibilityRole="button"
-                      accessibilityState={
-                        {
-                          "busy": undefined,
-                          "checked": undefined,
-                          "disabled": undefined,
-                          "expanded": undefined,
-                          "selected": undefined,
-                        }
-                      }
-                      accessibilityValue={
-                        {
-                          "max": undefined,
-                          "min": undefined,
-                          "now": undefined,
-                          "text": undefined,
-                        }
-                      }
-                      accessible={true}
-                      collapsable={false}
-                      focusable={true}
-                      hitSlop={
-                        {
-                          "bottom": 8,
-                          "left": 8,
-                          "right": 8,
-                          "top": 8,
-                        }
-                      }
-                      onClick={[Function]}
-                      onResponderGrant={[Function]}
-                      onResponderMove={[Function]}
-                      onResponderRelease={[Function]}
-                      onResponderTerminate={[Function]}
-                      onResponderTerminationRequest={[Function]}
-                      onStartShouldSetResponder={[Function]}
-                      style={
-                        {
-                          "opacity": 1,
-                        }
-                      }
-                    >
-                      <Text
-                        allowFontScaling={true}
-                        maxFontSizeMultiplier={1.2}
-                        style={
-                          [
-                            {
-                              "color": "#FFFFFF",
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 18.4,
-                              "letterSpacing": 0,
-                              "lineHeight": 27.599999999999998,
-                              "textAlign": "left",
-                            },
-                            [
-                              {
-                                "fontFamily": "PlusJakartaSans-Regular",
-                                "fontSize": 14,
-                                "lineHeight": 20,
-                                "textAlign": "right",
-                              },
-                              {
-                                "color": "#878787",
-                              },
-                            ],
-                          ]
-                        }
-                      >
-                        edit
-                      </Text>
-                    </View>
                   </View>
                   <View
                     style={
@@ -647,10 +516,8 @@ Profile
                           "paddingVertical": 16,
                         },
                         {
-                          "borderBottomWidth": 0.5,
-                          "borderColor": "#0D0D0D",
-                          "borderRadius": 0,
-                          "borderWidth": 0,
+                          "borderColor": "transparent",
+                          "borderWidth": 1,
                         },
                       ]
                     }
@@ -739,35 +606,6 @@ Profile
                       }
                     >
                       City
-                    </Text>
-                    <Text
-                      allowFontScaling={true}
-                      maxFontSizeMultiplier={1.2}
-                      style={
-                        [
-                          {
-                            "color": "#FFFFFF",
-                            "fontFamily": "PlusJakartaSans-Regular",
-                            "fontSize": 18.4,
-                            "letterSpacing": 0,
-                            "lineHeight": 27.599999999999998,
-                            "textAlign": "left",
-                          },
-                          [
-                            {
-                              "fontFamily": "PlusJakartaSans-Regular",
-                              "fontSize": 14,
-                              "lineHeight": 20,
-                              "textAlign": "right",
-                            },
-                            {
-                              "color": "#878787",
-                            },
-                          ],
-                        ]
-                      }
-                    >
-                      This is a hint text to help user.
                     </Text>
                   </View>
                   <View
@@ -891,6 +729,43 @@ Profile
                     }
                   >
                     <View
+                      accessibilityState={
+                        {
+                          "busy": undefined,
+                          "checked": undefined,
+                          "disabled": undefined,
+                          "expanded": undefined,
+                          "selected": undefined,
+                        }
+                      }
+                      accessibilityValue={
+                        {
+                          "max": undefined,
+                          "min": undefined,
+                          "now": undefined,
+                          "text": undefined,
+                        }
+                      }
+                      accessible={true}
+                      collapsable={false}
+                      focusable={true}
+                      hitSlop={
+                        {
+                          "bottom": 8,
+                          "left": 8,
+                          "right": 8,
+                          "top": 8,
+                        }
+                      }
+                      onBlur={[Function]}
+                      onClick={[Function]}
+                      onFocus={[Function]}
+                      onResponderGrant={[Function]}
+                      onResponderMove={[Function]}
+                      onResponderRelease={[Function]}
+                      onResponderTerminate={[Function]}
+                      onResponderTerminationRequest={[Function]}
+                      onStartShouldSetResponder={[Function]}
                       style={
                         {
                           "alignItems": "center",
@@ -899,6 +774,16 @@ Profile
                         }
                       }
                     >
+                      <Text
+                        style={
+                          {
+                            "fontSize": 18,
+                            "marginRight": 2,
+                          }
+                        }
+                      >
+                        🇮🇳
+                      </Text>
                       <Text
                         style={
                           [
@@ -1050,17 +935,17 @@ Profile
                           },
                           {
                             "shadowOffset": {
-                              "height": undefined,
+                              "height": 4,
                               "width": 0,
                             },
-                            "shadowOpacity": undefined,
-                            "shadowRadius": undefined,
+                            "shadowOpacity": 0.24,
+                            "shadowRadius": 5,
                             "transform": [
                               {
-                                "translateY": undefined,
+                                "translateY": 0,
                               },
                               {
-                                "scale": undefined,
+                                "scale": 1,
                               },
                             ],
                           },
@@ -1131,7 +1016,7 @@ Profile
                                 "top": 0,
                               },
                               {
-                                "opacity": undefined,
+                                "opacity": 0,
                               },
                             ]
                           }
@@ -1152,7 +1037,7 @@ Profile
                                 "top": 0,
                               },
                               {
-                                "opacity": undefined,
+                                "opacity": 1,
                               },
                             ]
                           }
@@ -1173,7 +1058,7 @@ Profile
                               {
                                 "transform": [
                                   {
-                                    "translateY": undefined,
+                                    "translateY": 0,
                                   },
                                 ],
                               },
@@ -1233,7 +1118,7 @@ Profile
                                 "top": 0,
                               },
                               {
-                                "opacity": undefined,
+                                "opacity": 1,
                               },
                             ]
                           }
@@ -1250,7 +1135,7 @@ Profile
                                 "top": 0,
                               },
                               {
-                                "opacity": undefined,
+                                "opacity": 0,
                               },
                             ]
                           }

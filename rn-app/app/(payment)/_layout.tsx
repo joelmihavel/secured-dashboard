@@ -3,17 +3,24 @@
  * Protected — requires authentication
  */
 
-import React from 'react';
-import { Stack } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Stack, useRouter } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 
 import { colors } from '@/src/theme';
 import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 export default function PaymentLayout() {
-  const { isReady } = useRequireAuth();
+  const { isReady, isAuthenticated } = useRequireAuth();
+  const router = useRouter();
 
-  if (!isReady) {
+  useEffect(() => {
+    if (isReady && !isAuthenticated) {
+      router.replace('/(auth)/sign-up');
+    }
+  }, [isReady, isAuthenticated, router]);
+
+  if (!isReady || !isAuthenticated) {
     return (
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.brand[500]} />
@@ -31,6 +38,7 @@ export default function PaymentLayout() {
       }}
     >
       
+      <Stack.Screen name="enter-rent" />
       <Stack.Screen name="confirm" />
       <Stack.Screen name="status" />
     </Stack>

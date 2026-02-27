@@ -23,7 +23,6 @@ import React, { memo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 import { HeadlineSection } from './HeadlineSection';
-import { PaymentSetupCard } from './PaymentSetupCard';
 import { SetupProgressCard } from './SetupProgressCard';
 import { RentStatusCarousel, CarouselCardItem } from './RentStatusCarousel';
 import { FinishSetupSection } from './FinishSetupSection';
@@ -130,15 +129,6 @@ function HomeEmptyStateComponent({
   const showFinishSetup = landlordStatus !== null;
   const showSetupProgress =
     variant === 'empty_base' || (showFinishSetup && !hasUPI);
-  const showPaymentSetupCard =
-    !showPaymentCarousel && (
-      variant === 'empty_base' ||
-      variant === 'invitation_sent' ||
-      variant === 'invitation_resent_recent' ||
-      variant === 'invitation_resent_old' ||
-      variant === 'invitation_failed' ||
-      variant === 'invitation_declined'
-    );
 
   return (
     <View style={styles.container}>
@@ -156,13 +146,6 @@ function HomeEmptyStateComponent({
           <RentStatusCarousel
             items={carouselItems}
           />
-        </View>
-      ) : null}
-
-      {/* Payment Setup Card (for base variants) */}
-      {showPaymentSetupCard && !showPaymentCarousel ? (
-        <View style={[styles.section, styles.standalonePaymentCardWrapper]}>
-          <PaymentSetupCard variant="standalone" onAddPayment={onAddPayment} />
         </View>
       ) : null}
 
@@ -185,7 +168,6 @@ function HomeEmptyStateComponent({
                 accruedAmount={cashbackAccrued}
                 allTimeTotal={cashbackAllTime}
                 cashbackRate={cashbackRate}
-                showPlaceholder={!showSetupProgress}
               />
               {/* Setup Progress Card inside Cashbacks tab if setup incomplete */}
               {showSetupProgress ? (
@@ -193,7 +175,8 @@ function HomeEmptyStateComponent({
                   bankDetailsComplete={bankDetailsComplete}
                   addressProofComplete={addressProofComplete}
                   landlordInvited={landlordInvited}
-                  onFinishSetup={onFinishSetup}
+                  onPress={onFinishSetup}
+                  onCtaPress={onFinishSetup}
                 />
               ) : null}
             </View>
@@ -224,6 +207,7 @@ function HomeEmptyStateComponent({
             bankDetailsComplete={bankDetailsComplete}
             addressProofComplete={addressProofComplete}
             landlordInvited={landlordInvited}
+            onPress={onFinishSetup}
             onFinishSetup={onFinishSetup}
             onCtaPress={onCtaPress}
           />
@@ -265,7 +249,7 @@ const styles = StyleSheet.create({
     gap: 48, // Figma: itemSpacing 48 between toggle and content
     paddingTop: 8, // Figma: paddingTop 8
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER
-    overflow: 'hidden', // Figma: clipsContent true
+    // NOTE: overflow hidden removed — was clipping cashback accrued amount
   },
   cashbackTabContent: {
     width: '100%',

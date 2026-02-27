@@ -23,9 +23,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, typography } from '@/src/theme';
 
-// Set to true to bypass screen picker and go straight to the app
-// (useful during parity testing when auto-heal navigates via deep links)
-export const DISABLE_SCREEN_PICKER = false;
+// Set to true to bypass screen picker and use the normal journey flow.
+// The floating DevNavigator FAB (with Jump buttons) is always available.
+export const DISABLE_SCREEN_PICKER = true;
 
 // Set to a route path to jump directly to that screen on launch (e.g. '/(auth)/splash')
 // The app will boot straight to this screen, bypassing the screen picker.
@@ -35,6 +35,7 @@ export const DEV_DIRECT_SCREEN: string | null = null;
 interface ScreenRoute {
   name: string;
   path: string;
+  params?: Record<string, string>;
   figmaNode?: string;
   description?: string;
 }
@@ -62,6 +63,7 @@ const SECTIONS: Section[] = [
     icon: 'H',
     screens: [
       { name: 'Home Dashboard', path: '/(main)', figmaNode: '243:2762' },
+      { name: 'Setup to Earn Cashback', path: '/(main)', params: { showSheet: 'cashback-setup' }, description: 'Verification check sheet modal' },
     ],
   },
   {
@@ -69,7 +71,16 @@ const SECTIONS: Section[] = [
     icon: 'P',
     screens: [
       { name: 'Confirm Payment', path: '/(payment)/confirm' },
-      { name: 'Payment Status', path: '/(payment)/status' },
+      { name: 'Choose Method', path: '/(payment)/confirm', params: { modalView: 'selector' }, description: 'Payment method selection modal' },
+      { name: 'Add UPI', path: '/(payment)/confirm', params: { modalView: 'add-upi' }, description: 'Add UPI payment method' },
+      { name: 'Add Credit Card', path: '/(payment)/confirm', params: { modalView: 'add-card' }, description: 'Add credit card payment method' },
+      { name: 'Add Debit Card', path: '/(payment)/confirm', params: { modalView: 'add-debit-card' }, description: 'Add debit card payment method' },
+      { name: 'Add Netbanking', path: '/(payment)/confirm', params: { modalView: 'add-netbanking' }, description: 'Add net banking payment method' },
+      { name: 'Edit Method', path: '/(payment)/confirm', params: { modalView: 'edit-method' }, description: 'Edit selected payment method' },
+      { name: 'Payment Success', path: '/(payment)/status', params: { initialStatus: 'success' }, description: 'Receipt card with paid stamp' },
+      { name: 'Payment Pending', path: '/(payment)/status', params: { initialStatus: 'pending' }, description: 'Processing state with polling' },
+      { name: 'Payment Failed', path: '/(payment)/status', params: { initialStatus: 'failed' }, description: 'Failed state with retry' },
+      { name: 'Payment Refunded', path: '/(payment)/status', params: { initialStatus: 'refunded' }, description: 'Refunded state' },
     ],
   },
   {
@@ -142,7 +153,11 @@ export default function ScreenPickerScreen() {
   };
 
   const navigateToScreen = (screen: ScreenRoute) => {
-    router.push(screen.path as any);
+    if (screen.params) {
+      router.push({ pathname: screen.path as any, params: screen.params });
+    } else {
+      router.push(screen.path as any);
+    }
   };
 
   const filteredSections = useMemo(() => {

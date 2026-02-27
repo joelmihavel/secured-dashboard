@@ -23,6 +23,7 @@ import {
   verifyUpiVpa,
   saveBankPreference,
   verifyCard,
+  fetchBankList,
   InitiatePaymentRequest,
   InitiatePaymentData,
   PaymentHistoryItem,
@@ -39,6 +40,7 @@ import {
   SavingsHistoryData,
   fetchPaymentStamps,
   PaymentStampsResponse,
+  NetbankingBank,
 } from '../services/api/payments';
 import { fetchFeeConfig, getGatewayFeeRates, type GatewayFeeRates } from '../services/payment';
 import { dashboardKeys } from './useDashboard';
@@ -56,6 +58,7 @@ export const paymentKeys = {
   cashback: () => [...paymentKeys.all, 'cashback'] as const,
   stamps: (tenancyId: string) => [...paymentKeys.all, 'stamps', tenancyId] as const,
   feeRates: () => [...paymentKeys.all, 'fee-rates'] as const,
+  bankList: () => [...paymentKeys.all, 'bank-list'] as const,
 };
 
 // ==============================================
@@ -130,6 +133,29 @@ export function useFeeRates() {
     queryFn: fetchFeeConfig,
     staleTime: 1000 * 60 * 60, // 1 hour
     placeholderData: getGatewayFeeRates(),
+  });
+}
+
+// ==============================================
+// NETBANKING BANK LIST QUERY
+// ==============================================
+
+/**
+ * Hook to fetch netbanking banks from Supabase.
+ * Falls back to static BANK_LIST while loading or on error.
+ * Caches for 1 hour.
+ */
+export function useBankList() {
+  return useQuery<NetbankingBank[]>({
+    queryKey: paymentKeys.bankList(),
+    queryFn: async () => {
+      const { data, error } = await fetchBankList();
+      if (error || !data) {
+        throw new Error(error ?? 'Failed to fetch bank list');
+      }
+      return data;
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 }
 

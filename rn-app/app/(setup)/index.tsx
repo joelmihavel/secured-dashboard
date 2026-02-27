@@ -34,7 +34,6 @@ import {
   Dimensions,
   FlatList,
   ViewToken,
-  Animated as RNAnimated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,14 +41,8 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Line } from 'react-native-svg';
 
 import Animated, {
-  useSharedValue,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  interpolate,
-  Extrapolation,
   FadeIn,
   FadeInDown,
-  type SharedValue,
 } from 'react-native-reanimated';
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
@@ -332,8 +325,6 @@ export default function SetupIndexScreen() {
     router.push('/(setup)/add-bank');
   }, [router]);
 
-  const scrollX = useRef(new RNAnimated.Value(initialStep * FIGMA.snapInterval)).current;
-
   const renderItem = useCallback(
     ({ item }: { item: SetupStep }) => (
       <CarouselSlide item={item} />
@@ -354,23 +345,6 @@ export default function SetupIndexScreen() {
   const cardToPaginationGap = FIGMA.paginationY - (FIGMA.cardY + FIGMA.cardHeight);
   // Pagination bottom to button = 739 - (673+8) = 58
   const paginationToButtonGap = FIGMA.buttonY - (FIGMA.paginationY + FIGMA.dotSize);
-
-  // Crossfading background shapes based on scroll position
-  const bgShapeOpacity1 = scrollX.interpolate({
-    inputRange: [0, FIGMA.snapInterval],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-  const bgShapeOpacity2 = scrollX.interpolate({
-    inputRange: [0, FIGMA.snapInterval, FIGMA.snapInterval * 2],
-    outputRange: [0, 1, 0],
-    extrapolate: 'clamp',
-  });
-  const bgShapeOpacity3 = scrollX.interpolate({
-    inputRange: [FIGMA.snapInterval, FIGMA.snapInterval * 2],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
 
   return (
       <Screen testID="setup-index-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
@@ -398,17 +372,13 @@ export default function SetupIndexScreen() {
             entering={FadeInDown.delay(200).duration(400)}
             style={[styles.carouselContainer, { marginTop: titleToCardGap }]}
           >
-            <RNAnimated.FlatList
-              ref={flatListRef as any}
+            <FlatList
+              ref={flatListRef}
               data={SETUP_STEPS}
               renderItem={renderItem}
               keyExtractor={(item: SetupStep) => item.id}
               horizontal
               showsHorizontalScrollIndicator={false}
-              onScroll={RNAnimated.event(
-                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                { useNativeDriver: true }
-              )}
               scrollEventThrottle={16}
               snapToInterval={FIGMA.snapInterval}
               decelerationRate="fast"

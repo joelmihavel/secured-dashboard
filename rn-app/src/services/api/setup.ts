@@ -24,6 +24,7 @@ import type {
   UtilityOperator,
   LandlordInviteRequest,
   LandlordInviteResponse,
+  LandlordInviteStatus,
   SetupProgress,
   SetupStep,
   SetupError,
@@ -127,6 +128,7 @@ interface RawSendInviteResponse {
     message: string;
     invite_link?: string;
     landlord_email_masked?: string;
+    landlord_status?: string;
   };
 }
 
@@ -214,6 +216,7 @@ function mapInviteResponse(raw: RawSendInviteResponse): LandlordInviteResponse {
     message: d.message,
     inviteLink: d.invite_link,
     landlordEmailMasked: d.landlord_email_masked,
+    landlordStatus: (d.landlord_status as LandlordInviteResponse['landlordStatus']) ?? undefined,
   };
 }
 
@@ -278,6 +281,7 @@ export async function verifyBank(
     account_number: request.accountNumber,
     ifsc_code: request.ifscCode,
     party_type: request.partyType ?? 'landlord',
+    ...(request.existingBankAccountId && { existing_bank_account_id: request.existingBankAccountId }),
   };
 
   const { data, error, errorBody } = await callEdgeFunction<RawVerifyBankResponse>(
@@ -487,6 +491,8 @@ export async function sendLandlordInvite(
   };
   if (request.landlordName) body.landlord_name = request.landlordName;
   if (request.landlordEmail) body.landlord_email = request.landlordEmail;
+  if (request.landlordPhone) body.landlord_phone = request.landlordPhone;
+  if (request.countryCode) body.country_code = request.countryCode;
   if (request.resend) body.resend = true;
 
   const { data, error } = await callEdgeFunction<RawSendInviteResponse>(

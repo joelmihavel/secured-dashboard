@@ -22,3 +22,15 @@ export * from './AlertBanner';
 
 // Scroll Indicators
 export * from './ScrollDownIndicator';
+
+// Avatar
+export * from './Avatar';
+
+// BottomSheet
+export * from './BottomSheet';
+
+// Pill / Tag
+export * from './Pill';
+
+// Decorative
+export * from './BgLine';

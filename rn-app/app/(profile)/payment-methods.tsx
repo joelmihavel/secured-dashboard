@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, BackButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
 import {
   useSavedPaymentMethods,
@@ -47,18 +47,6 @@ const COLORS = {
 // ==============================================
 // ICONS
 // ==============================================
-
-const BackArrowIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M19 12H5M5 12L12 19M5 12L12 5"
-      stroke={COLORS.white}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 const UpiIcon = () => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
@@ -315,15 +303,11 @@ export default function PaymentMethodsScreen() {
       <DottedGridPattern animated={false} />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
+        <BackButton
           onPress={handleBack}
           style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <BackArrowIcon />
-        </TouchableOpacity>
+          color={COLORS.white}
+        />
         <Text style={styles.headerTitle}>Payment Methods</Text>
       </View>
 

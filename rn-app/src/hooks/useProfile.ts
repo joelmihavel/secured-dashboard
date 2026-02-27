@@ -14,6 +14,7 @@ import {
   updateProfile,
   requestAvatarUpload,
   uploadAvatarFile,
+  pixelateAvatar,
   getSavedPaymentMethods,
   requestAccountDeletion,
   type UpdateProfileRequest,
@@ -145,6 +146,43 @@ export function useUploadAvatar() {
     },
     onSuccess: () => {
       // Invalidate dashboard to reflect new avatar everywhere
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+    },
+  });
+}
+
+// ==============================================
+// PIXELATE AVATAR MUTATION
+// ==============================================
+
+export interface PixelateAvatarParams {
+  /** Local file URI from ImagePicker */
+  fileUri: string;
+  /** MIME type: 'image/jpeg', 'image/png' */
+  contentType: string;
+}
+
+/**
+ * Hook to pixelate a user photo into orange-tinted pixel art.
+ *
+ * Sends image to pixelate-avatar edge function which:
+ * 1. Downscales to 32×32
+ * 2. Applies #FF9A6D orange tint
+ * 3. Upscales to 64px + 256px with nearest-neighbor
+ * 4. Saves to storage + updates avatar_url
+ */
+export function usePixelateAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ fileUri, contentType }: PixelateAvatarParams) => {
+      const { data, error } = await pixelateAvatar(fileUri, contentType);
+      if (error || !data) {
+        throw new Error(error?.message ?? 'Failed to pixelate avatar');
+      }
+      return data;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });

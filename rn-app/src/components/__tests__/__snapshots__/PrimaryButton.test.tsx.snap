@@ -70,17 +70,17 @@ exports[`PrimaryButton renders correctly - default 1`] = `
           },
           {
             "shadowOffset": {
-              "height": undefined,
+              "height": 4,
               "width": 0,
             },
-            "shadowOpacity": undefined,
-            "shadowRadius": undefined,
+            "shadowOpacity": 0.24,
+            "shadowRadius": 5,
             "transform": [
               {
-                "translateY": undefined,
+                "translateY": 0,
               },
               {
-                "scale": undefined,
+                "scale": 1,
               },
             ],
           },
@@ -151,7 +151,7 @@ exports[`PrimaryButton renders correctly - default 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -172,7 +172,7 @@ exports[`PrimaryButton renders correctly - default 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -193,7 +193,7 @@ exports[`PrimaryButton renders correctly - default 1`] = `
               {
                 "transform": [
                   {
-                    "translateY": undefined,
+                    "translateY": 0,
                   },
                 ],
               },
@@ -253,7 +253,7 @@ exports[`PrimaryButton renders correctly - default 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -270,7 +270,7 @@ exports[`PrimaryButton renders correctly - default 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -496,17 +496,17 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
           },
           {
             "shadowOffset": {
-              "height": undefined,
+              "height": 4,
               "width": 0,
             },
-            "shadowOpacity": undefined,
-            "shadowRadius": undefined,
+            "shadowOpacity": 0.24,
+            "shadowRadius": 5,
             "transform": [
               {
-                "translateY": undefined,
+                "translateY": 0,
               },
               {
-                "scale": undefined,
+                "scale": 1,
               },
             ],
           },
@@ -577,7 +577,7 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -598,7 +598,7 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -619,7 +619,7 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
               {
                 "transform": [
                   {
-                    "translateY": undefined,
+                    "translateY": 0,
                   },
                 ],
               },
@@ -679,7 +679,7 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -696,7 +696,7 @@ exports[`PrimaryButton renders correctly - loading 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -825,17 +825,17 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
           },
           {
             "shadowOffset": {
-              "height": undefined,
+              "height": 4,
               "width": 0,
             },
-            "shadowOpacity": undefined,
-            "shadowRadius": undefined,
+            "shadowOpacity": 0.24,
+            "shadowRadius": 5,
             "transform": [
               {
-                "translateY": undefined,
+                "translateY": 0,
               },
               {
-                "scale": undefined,
+                "scale": 1,
               },
             ],
           },
@@ -906,7 +906,7 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -927,7 +927,7 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -948,7 +948,7 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
               {
                 "transform": [
                   {
-                    "translateY": undefined,
+                    "translateY": 0,
                   },
                 ],
               },
@@ -1008,7 +1008,7 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -1025,7 +1025,7 @@ exports[`PrimaryButton renders correctly - not full width 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -1165,17 +1165,17 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
           },
           {
             "shadowOffset": {
-              "height": undefined,
+              "height": 4,
               "width": 0,
             },
-            "shadowOpacity": undefined,
-            "shadowRadius": undefined,
+            "shadowOpacity": 0.24,
+            "shadowRadius": 5,
             "transform": [
               {
-                "translateY": undefined,
+                "translateY": 0,
               },
               {
-                "scale": undefined,
+                "scale": 1,
               },
             ],
           },
@@ -1246,7 +1246,7 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }
@@ -1267,7 +1267,7 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -1288,7 +1288,7 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
               {
                 "transform": [
                   {
-                    "translateY": undefined,
+                    "translateY": 0,
                   },
                 ],
               },
@@ -1348,7 +1348,7 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 1,
               },
             ]
           }
@@ -1365,7 +1365,7 @@ exports[`PrimaryButton renders correctly - without divider 1`] = `
                 "top": 0,
               },
               {
-                "opacity": undefined,
+                "opacity": 0,
               },
             ]
           }

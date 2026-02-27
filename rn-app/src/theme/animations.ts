@@ -3,7 +3,7 @@
  * Timing and easing curves for consistent animations
  */
 
-import { Easing } from 'react-native-reanimated';
+import { Easing } from 'react-native';
 
 // Duration constants (in milliseconds)
 export const duration = {

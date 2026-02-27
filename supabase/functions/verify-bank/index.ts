@@ -38,6 +38,7 @@ import {
   calculateNameMatchScore,
 } from "../_shared/name-match-service.ts";
 import { createBeneficiary } from "../_shared/cashfree-payouts.ts";
+import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -61,6 +62,7 @@ interface VerifyBankRequest {
   account_number: string;
   ifsc_code: string;
   party_type?: "landlord" | "tenant";
+  existing_bank_account_id?: string;
 }
 
 interface CashfreePennyDropResponse {
@@ -95,6 +97,13 @@ const requestSchema = {
     required: false,
     type: "string" as const,
     enum: ["landlord", "tenant"],
+  },
+  existing_bank_account_id: {
+    required: false,
+    type: "string" as const,
+    custom: (v: unknown) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v as string) ||
+      "Must be a valid UUID",
   },
 };
 
@@ -135,6 +144,7 @@ serve(async (req: Request) => {
       account_number,
       ifsc_code,
       party_type = "landlord",
+      existing_bank_account_id,
     } = validatedBody;
 
     // Sanitize inputs
@@ -145,7 +155,8 @@ serve(async (req: Request) => {
       "verify-bank",
       tenancy_id,
       account_number,
-      sanitizedIfsc
+      sanitizedIfsc,
+      ...(existing_bank_account_id ? [existing_bank_account_id] : [])
     );
 
     // Check idempotency - prevent duplicate verifications
@@ -203,6 +214,17 @@ serve(async (req: Request) => {
     // Resolve landlord names from agreement (shared service)
     const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
     const allLandlordNames = resolved.names;
+
+    // Safety reset: when editing an existing bank account, set bank_verified = false
+    // BEFORE the penny drop call. This prevents a stale verified state if the penny
+    // drop fails, times out, or the app crashes mid-flow. The flag gets set back to
+    // true only on verification success (existing logic below).
+    if (existing_bank_account_id && party_type === "landlord") {
+      await supabase
+        .from("tenancies")
+        .update({ bank_verified: false })
+        .eq("id", tenancy_id);
+    }
 
     // Call Cashfree Penny Drop API
     const pennyDropResult = await callCashfreePennyDrop({
@@ -275,7 +297,7 @@ serve(async (req: Request) => {
         verified_account_holder_name: pennyDropResult.name_at_bank,
         verified_at:
           pennyDropResult.status === "SUCCESS" ? new Date().toISOString() : null,
-        is_default: true, // First account added is primary
+        is_primary: true, // First account added is primary
         agreement_name_matched: agreementNameMatched,
         agreement_name_match_score: agreementMatchScore,
         agreement_name_match_details: agreementMatchDetails,
@@ -286,6 +308,42 @@ serve(async (req: Request) => {
     if (insertError) {
       console.error("Failed to insert bank account:", insertError);
       throw new AppError("Failed to save bank account", "DB_ERROR", 500);
+    }
+
+    // PAN carryover: copy verified PAN data from old bank account to new one
+    // DB trigger `ensure_single_primary_bank_account` automatically demotes old row's is_primary
+    if (existing_bank_account_id && bankAccount) {
+      try {
+        const { data: oldBank } = await supabase
+          .from("bank_accounts")
+          .select("pan_number_encrypted, pan_number_masked, pan_verified, pan_type, pan_registered_name, pan_status, pan_name_match_score, pan_name_matched, pan_verification_details, pan_verified_at")
+          .eq("id", existing_bank_account_id)
+          .eq("user_id", userId)
+          .single();
+
+        if (oldBank?.pan_verified) {
+          await supabase
+            .from("bank_accounts")
+            .update({
+              pan_number_encrypted: oldBank.pan_number_encrypted,
+              pan_number_masked: oldBank.pan_number_masked,
+              pan_verified: oldBank.pan_verified,
+              pan_type: oldBank.pan_type,
+              pan_registered_name: oldBank.pan_registered_name,
+              pan_status: oldBank.pan_status,
+              pan_name_match_score: oldBank.pan_name_match_score,
+              pan_name_matched: oldBank.pan_name_matched,
+              pan_verification_details: oldBank.pan_verification_details,
+              pan_verified_at: oldBank.pan_verified_at,
+            })
+            .eq("id", bankAccount.id);
+
+          console.log(`[verify-bank] Copied PAN data from ${existing_bank_account_id} to ${bankAccount.id}`);
+        }
+      } catch (panCopyError) {
+        // Non-fatal — PAN can be re-verified separately
+        console.warn("[verify-bank] Failed to copy PAN data (non-fatal):", panCopyError);
+      }
     }
 
     // Create Cashfree Payout beneficiary for verified bank accounts
@@ -444,13 +502,22 @@ async function callCashfreePennyDrop(params: {
   const referenceId = `FLENT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
   try {
+    // Build headers with x-cf-signature for public key auth
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-client-id": CASHFREE_APP_ID,
+      "x-client-secret": CASHFREE_SECRET_KEY,
+    };
+    try {
+      const { signature } = await generateCfSignature(CASHFREE_APP_ID);
+      headers["x-cf-signature"] = signature;
+    } catch (sigErr) {
+      console.warn("[verify-bank] x-cf-signature not added:", sigErr instanceof Error ? sigErr.message : String(sigErr));
+    }
+
     const response = await fetch(`${CASHFREE_BASE_URL}/bank-account/sync`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-client-id": CASHFREE_APP_ID,
-        "x-client-secret": CASHFREE_SECRET_KEY,
-      },
+      headers,
       body: JSON.stringify({
         bank_account: params.account_number,
         ifsc: params.ifsc_code,

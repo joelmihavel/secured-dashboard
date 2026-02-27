@@ -19,6 +19,8 @@ jest.mock('@sentry/react-native', () => ({
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
+  const React = require('react');
+  const RN = require('react-native');
   Reanimated.default.call = () => {};
   Reanimated.Easing = {
     bezier: () => (t: number) => t,
@@ -28,6 +30,30 @@ jest.mock('react-native-reanimated', () => {
     out: (t: number) => t,
     inOut: (t: number) => t,
   };
+  // Scroll handler: returns a no-op for tests
+  Reanimated.useAnimatedScrollHandler = () => jest.fn();
+  // runOnJS: just returns the function as-is (no worklet bridge in tests)
+  Reanimated.runOnJS = (fn: (...args: unknown[]) => unknown) => fn;
+  // interpolate: linear interpolation between input/output ranges
+  Reanimated.interpolate = (
+    value: number,
+    inputRange: number[],
+    outputRange: number[],
+  ) => {
+    if (value <= inputRange[0]) return outputRange[0];
+    if (value >= inputRange[inputRange.length - 1])
+      return outputRange[outputRange.length - 1];
+    for (let i = 0; i < inputRange.length - 1; i++) {
+      if (value >= inputRange[i] && value <= inputRange[i + 1]) {
+        const t = (value - inputRange[i]) / (inputRange[i + 1] - inputRange[i]);
+        return outputRange[i] + t * (outputRange[i + 1] - outputRange[i]);
+      }
+    }
+    return outputRange[outputRange.length - 1];
+  };
+  Reanimated.Extrapolation = { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' };
+  // Animated.FlatList for tests
+  Reanimated.default.FlatList = RN.FlatList;
   return Reanimated;
 });
 

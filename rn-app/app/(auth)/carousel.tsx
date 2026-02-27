@@ -152,7 +152,7 @@ export default function CarouselScreen() {
     <Screen padded={false} testID="carousel-screen" safeAreaTop={false} safeAreaBottom={false} style={styles.screen}>
       <DottedGridPattern fadeMask={false} />
 
-      
+
       {/* Illustrations */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <Animated.View style={[styles.illus1Container, style1]}>

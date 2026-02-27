@@ -53,6 +53,8 @@ type UploadStore = UploadState & UploadActions;
 // ==============================================
 
 const STALENESS_MS = 10 * 60 * 1000; // 10 minutes (2x backend's 5-min reset)
+/** BUG 5 FIX: Completed-but-unconfirmed extractions go stale after 24 hours */
+const COMPLETED_STALENESS_MS = 24 * 60 * 60 * 1000;
 const STORAGE_KEY = 'flent-upload-state';
 
 // ==============================================
@@ -153,10 +155,13 @@ export const useUploadStore = create<UploadStore>()(
 
       isStale: () => {
         const { uploadPhase, lastUpdatedAt } = get();
-        // completed phase is never stale — requires explicit navigation
-        // idle has nothing to go stale
-        if (uploadPhase === 'idle' || uploadPhase === 'completed') return false;
+        if (uploadPhase === 'idle') return false;
         if (lastUpdatedAt === 0) return false;
+        // BUG 5 FIX: Completed phase goes stale after 24 hours —
+        // abandoned completed extractions won't persist forever.
+        if (uploadPhase === 'completed') {
+          return Date.now() - lastUpdatedAt > COMPLETED_STALENESS_MS;
+        }
         return Date.now() - lastUpdatedAt > STALENESS_MS;
       },
 

@@ -44,9 +44,6 @@ export { BottomFooter } from './BottomFooter';
 export type { BottomFooterProps } from './BottomFooter';
 
 // Setup components
-export { PaymentSetupCard } from './PaymentSetupCard';
-export type { PaymentSetupCardProps, PaymentSetupVariant } from './PaymentSetupCard';
-
 export { SetupProgressCard } from './SetupProgressCard';
 
 export { SetupChecklist } from './SetupChecklist';

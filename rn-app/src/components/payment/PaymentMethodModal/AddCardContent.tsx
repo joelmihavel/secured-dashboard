@@ -22,7 +22,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Text, PrimaryButton } from '@/src/components';
+import { Text, PrimaryButton, BackButton } from '@/src/components';
 import { Text as RNText } from 'react-native';
 import { SecureCardInput, type SecureCardInputRef } from '@/src/components/payment/SecureCardInput';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
@@ -39,22 +39,6 @@ const FIGMA_COLORS = {
   white: colors.white,
   footerText: colors.neutral[500],
 };
-
-// ==============================================
-// BACK ARROW (24x24 chevron, white stroke 2px)
-// ==============================================
-
-const BackArrow = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={FIGMA_COLORS.white}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 // ==============================================
 // ADD CARD CONTENT
@@ -124,18 +108,11 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMe
       showsVerticalScrollIndicator={false}
     >
       {/* Back Button */}
-      <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onBack();
-        }}
+      <BackButton
+        onPress={onBack}
         style={styles.backButton}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityRole="button"
-        accessibilityLabel="Go back to method selection"
-      >
-        <BackArrow />
-      </TouchableOpacity>
+        color={FIGMA_COLORS.white}
+      />
 
       {/* Title */}
       <RNText style={styles.title}>
@@ -154,7 +131,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMe
       {/* Pay Button + Footer */}
       <View style={styles.buttonFooterSection}>
         <PrimaryButton
-          title="Save Card"
+          title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Save Card Details'}
           onPress={handlePay}
           disabled={!isCardValid || isSubmitting}
           loading={isSubmitting}
@@ -162,7 +139,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMe
         />
 
         <Text style={styles.footerText}>
-          You may get a verification message to verify your Card and unlock benefits.
+          You may receive a verification message to confirm your bank account and unlock benefits.
         </Text>
       </View>
     </ScrollView>
@@ -179,7 +156,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 48,
-    gap: 40,
     paddingTop: 16,
     paddingBottom: 24,
   },
@@ -188,6 +164,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    marginBottom: 24,
   },
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -196,12 +173,14 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.white,
     textAlign: 'left',
+    marginBottom: 32,
   },
   titleAccent: {
     color: colors.brand[500],
   },
   formSection: {
     gap: 16,
+    marginBottom: 24,
   },
   buttonFooterSection: {
     gap: 16,

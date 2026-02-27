@@ -10,6 +10,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { Text as RNText, TextInput } from 'react-native';
 
@@ -100,30 +101,33 @@ function RootLayoutInner() {
       <QueryProvider>
         <AuthProvider>
           <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
-            <SafeAreaProvider>
-              <StatusBar style="light" backgroundColor={colors.black[700]} />
-              <OfflineBanner />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: colors.black[700] },
-                  animation: 'fade', // Smooth cross-fade transition to avoid flashes
-                }}
-              >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="error" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} /> {/* Auth still slides in */}
-                <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
-                <Stack.Screen name="(profile)" />
-                {/* Development only screens */}
-                {__DEV__ && <Stack.Screen name="(dev)" />}
-              </Stack>
-              {DevNavigator && <DevNavigator />}
-            </SafeAreaProvider>
+            <BottomSheetModalProvider>
+              <SafeAreaProvider>
+                <StatusBar style="light" backgroundColor={colors.black[700]} />
+                <OfflineBanner />
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.black[700] },
+                    animation: 'fade', // Smooth cross-fade transition to avoid flashes
+                    gestureEnabled: false, // Disable iOS back-swipe between top-level groups
+                  }}
+                >
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="error" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} />
+                  <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="(profile)" />
+                  {/* Development only screens */}
+                  {__DEV__ && <Stack.Screen name="(dev)" />}
+                </Stack>
+                {DevNavigator && <DevNavigator />}
+              </SafeAreaProvider>
+            </BottomSheetModalProvider>
           </GestureHandlerRootView>
         </AuthProvider>
       </QueryProvider>

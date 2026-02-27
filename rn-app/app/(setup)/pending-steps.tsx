@@ -10,10 +10,11 @@ import React, { useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Image, Text as RNText } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Line, G, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
+import { BgLine } from '@/src/components/ui/BgLine';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard } from '@/src/hooks';
 import { colors } from '@/src/theme';
@@ -30,10 +31,6 @@ const FIGMA = {
     height: sv(321),
     backgroundColor: colors.black[500],
   },
-
-  // Grid / Decorative lines (Vector 45)
-  gridLineColor: colors.black[400],
-  gridStrokeWidth: 0.3,
 
   // Perforations — scaled
   perforationCount: 14,
@@ -52,33 +49,7 @@ function DecorativeVector({ x, y }: { x: number; y: number }) {
   );
 }
 
-// Decorative grid lines from Figma Vector 45 at y:462
-function GridBackground() {
-  return (
-    <View style={gridStyles.container} pointerEvents="none">
-      <Svg width="100%" height="235" style={StyleSheet.absoluteFill}>
-        <G stroke={FIGMA.gridLineColor} strokeWidth={FIGMA.gridStrokeWidth} opacity={1}>
-          {/* Vertical line at x ~37 (from vector path) */}
-          <Line x1="37" y1="0" x2="37" y2="235" />
-          {/* Vertical line at x ~339 */}
-          <Line x1="339" y1="0" x2="339" y2="235" />
-          {/* Horizontal line at y ~198 */}
-          <Line x1="0" y1="198" x2="369" y2="198" />
-        </G>
-      </Svg>
-    </View>
-  );
-}
-
-const gridStyles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: sv(462),
-    left: s(12),
-    right: s(12),
-    height: sv(235),
-  },
-});
+// Decorative bg_line — Figma 768:303932 (Vector 45)
 
 export default function PendingStepsScreen() {
   const router = useRouter();
@@ -110,8 +81,8 @@ export default function PendingStepsScreen() {
         resizeMode="contain" 
       />
 
-      {/* Grid decorative lines */}
-      <GridBackground />
+      {/* Grid decorative lines — Figma 768:303932 */}
+      <BgLine style={{ position: 'absolute', top: sv(462), left: s(12) }} />
 
       <ScrollView
         style={styles.scrollView}

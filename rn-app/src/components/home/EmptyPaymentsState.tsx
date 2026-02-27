@@ -1,20 +1,19 @@
 /**
  * EmptyPaymentsState Component
- * Shows empty state with avatar and placeholder text for Recent Payments tab
- * Figma Reference: 243-5689
+ * Shows empty state for Recent Payments tab when no payments exist
+ * Figma Reference: 769-308865 (node 769:309108)
  *
- * Figma Pixel-Perfect Values:
- * - Container: paddingVertical 48, paddingHorizontal 32, gap 16, alignItems center
- * - Avatar outer: width 64, height 64, borderRadius 32, backgroundColor #1A1A1A
- * - Avatar inner: width 48, height 48, borderRadius 24, backgroundColor #FF9A6D
- * - Title: fontSize 14, fontWeight 500, lineHeight 20, color #FFFFFF, textAlign center
- * - Description: fontSize 12, fontWeight 400, lineHeight 20, color #878787, textAlign center
+ * Figma Pixel-Perfect Values (from 769:309108):
+ * - Container: centered, gap 16 between avatar and text group
+ * - Avatar (769:309110): width 32, height 32, circular, orange fill
+ * - Title (769:309112): fontSize 14, fontWeight 500, lineHeight 1.41 (~19.74), letterSpacing -0.56, color white
+ * - Description (769:309113): fontSize 12, fontWeight 400, lineHeight 1.41 (~16.92), letterSpacing -0.24, color #878787, width 235, center
  */
 
 import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
-
 import { Text } from '@/src/components/ui';
+import { Avatar } from '@/src/components/ui/Avatar';
 
 export interface EmptyPaymentsStateProps {
   title?: string;
@@ -23,21 +22,20 @@ export interface EmptyPaymentsStateProps {
 
 function EmptyPaymentsStateComponent({
   title = 'No Payments Yet',
-  description = 'Your recent payment history will appear here\nonce you make your first rent payment.',
+  description = 'Pay your rent before the due date; receipts will appear here.',
 }: EmptyPaymentsStateProps) {
   return (
     <View style={styles.container}>
-      {/* Avatar placeholder - Figma: circular icon with inner colored circle */}
-      <View style={styles.avatarContainer}>
-        <View style={styles.avatarOuter}>
-          <View style={styles.avatarInner} />
-        </View>
-      </View>
+      {/* Figma 769:309109: column, gap 16, center */}
+      <View style={styles.innerContainer}>
+        {/* Avatar — Figma 769:309110: 32x32 circular orange */}
+        <Avatar name="P" size="sm" />
 
-      {/* Text content - Figma: centered text group */}
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+        {/* Text group — Figma 769:309111: column, gap 8, center */}
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+        </View>
       </View>
     </View>
   );
@@ -46,45 +44,33 @@ function EmptyPaymentsStateComponent({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    alignSelf: 'stretch', // Ensure full width in centered parent
-    paddingVertical: 48, // Figma: 48px vertical padding
-    paddingHorizontal: 32, // Figma: 32px horizontal padding
-    gap: 16, // Figma: 16px gap between avatar and text
-  },
-  avatarContainer: {
-    // Figma: marginBottom handled by container gap
-  },
-  avatarOuter: {
-    width: 64, // Figma: width 64
-    height: 64, // Figma: height 64
-    borderRadius: 32, // Figma: fully rounded
-    backgroundColor: '#1A1A1A', // Figma: #1A1A1A (black[600])
     justifyContent: 'center',
-    alignItems: 'center',
+    alignSelf: 'stretch',
   },
-  avatarInner: {
-    width: 48, // Figma: width 48
-    height: 48, // Figma: height 48
-    borderRadius: 24, // Figma: fully rounded
-    backgroundColor: '#FF9A6D', // Figma: #FF9A6D (brand[500])
+  innerContainer: {
+    alignItems: 'center',
+    gap: 16, // Figma 769:309109: gap 16
   },
   textContainer: {
     alignItems: 'center',
-    gap: 8, // Figma: 8px gap between title and description
+    gap: 8, // Figma 769:309111: gap 8
   },
   title: {
     fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#FFFFFF', // Figma: #FFFFFF (white)
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
+    lineHeight: 19.74, // Figma: 1.41 * 14
+    letterSpacing: -0.56, // Figma: letterSpacing -0.56
+    color: '#FFFFFF', // Figma: white
+    textAlign: 'center',
   },
   description: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
     fontSize: 12, // Figma: fontSize 12
-    lineHeight: 20, // Figma: lineHeight 20
+    lineHeight: 16.92, // Figma: 1.41 * 12
+    letterSpacing: -0.24, // Figma: letterSpacing -0.24
     color: '#878787', // Figma: #878787 (neutral[600])
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
+    textAlign: 'center',
+    width: 235, // Figma 769:309113: width 235
   },
 });
 

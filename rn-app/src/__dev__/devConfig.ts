@@ -22,7 +22,6 @@ export const devMockConfig: Record<ServiceName, boolean> = {
 export const TEST_PHONES = [
   { phone: '+919999900001', otp: '123456', label: 'Active User' },
   { phone: '+919999900002', otp: '654321', label: 'Waitlisted User' },
-  { phone: '+919999900003', otp: '111111', label: 'New Signup' },
 ] as const;
 
 export function setMockToggle(service: ServiceName, enabled: boolean) {

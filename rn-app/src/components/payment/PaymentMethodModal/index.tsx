@@ -16,27 +16,19 @@
  * - sessionParams from Zustand (single source of truth).
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
-  Pressable,
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  BackHandler,
-  Dimensions,
   Alert,
-  ScrollView,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 
 import { usePaymentStore } from '@/src/stores';
 import { useDashboard } from '@/src/hooks';
 import { initiatePayment } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
-import { colors } from '@/src/theme';
+import { BottomSheet } from '@/src/components/ui';
 
 import type { ModalView, PaymentMethodType, PaymentMethodModalProps } from './types';
 import { EnterAmountContent } from './EnterAmountContent';
@@ -46,25 +38,41 @@ import { AddCardContent } from './AddCardContent';
 import { AddNetbankingContent } from './AddNetbankingContent';
 import { EditMethodContent } from './EditMethodContent';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const MAX_SHEET_HEIGHT = SCREEN_HEIGHT * 0.85;
-
 export function PaymentMethodModal({
   visible,
   onClose,
   tenancyId,
   rentMonth,
   onProceed,
+  initialView = 'enter-amount',
+  initialPaymentId,
+  initialMethodType,
+  initialSavedMethodId,
 }: PaymentMethodModalProps) {
-  const [modalView, setModalView] = useState<ModalView>('enter-amount');
+  const [modalView, setModalView] = useState<ModalView>(initialView);
   const { tenancy } = useDashboard();
-  const [paymentId, setPaymentId] = useState('');
+  const [paymentId, setPaymentId] = useState(initialPaymentId ?? '');
   const [isInitiating, setIsInitiating] = useState(false);
   const [cardType, setCardType] = useState<'credit' | 'debit'>('credit');
-  const [editMethodType, setEditMethodType] = useState<PaymentMethodType | null>(null);
-  const [editSavedMethodId, setEditSavedMethodId] = useState<string>('');
+  const [editMethodType, setEditMethodType] = useState<PaymentMethodType | null>(
+    initialMethodType as PaymentMethodType ?? null
+  );
+  const [editSavedMethodId, setEditSavedMethodId] = useState<string>(initialSavedMethodId ?? '');
 
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  // Sync paymentId when parent provides a new one (e.g. confirm screen)
+  useEffect(() => {
+    if (initialPaymentId) setPaymentId(initialPaymentId);
+  }, [initialPaymentId]);
+
+  // Sync modalView and edit state when visibility changes
+  useEffect(() => {
+    if (visible) {
+      setModalView(initialView);
+      if (initialMethodType) setEditMethodType(initialMethodType as PaymentMethodType);
+      if (initialSavedMethodId) setEditSavedMethodId(initialSavedMethodId);
+    }
+  }, [visible, initialView, initialMethodType, initialSavedMethodId]);
+
   const { isConnected } = useNetworkStatus();
 
   const {
@@ -75,35 +83,14 @@ export function PaymentMethodModal({
     setConfirming,
   } = usePaymentStore();
 
-  // --- Slide animation ---
-  useEffect(() => {
-    if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 20,
-        stiffness: 200,
-        mass: 0.8,
-      }).start();
-    } else {
-      Animated.spring(slideAnim, {
-        toValue: SCREEN_HEIGHT,
-        useNativeDriver: true,
-        damping: 20,
-        stiffness: 200,
-        mass: 0.8,
-      }).start();
-    }
-  }, [visible, slideAnim]);
-
   // --- Close handler: clears session params on EVERY close path ---
   const handleClose = useCallback(() => {
     clearPayuSessionParams();
-    setModalView('enter-amount');
+    setModalView(initialView);
     setPaymentId('');
     setIsInitiating(false);
     onClose();
-  }, [clearPayuSessionParams, onClose]);
+  }, [clearPayuSessionParams, onClose, initialView]);
 
   // --- Back handler: from add-method -> selector; from selector -> close ---
   const handleBack = useCallback(() => {
@@ -116,20 +103,6 @@ export function PaymentMethodModal({
     }
   }, [modalView, clearPayuSessionParams, handleClose]);
 
-  // --- Android hardware back button ---
-  useEffect(() => {
-    if (!visible) return;
-
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      handleBack();
-      return true;
-    });
-
-    return () => subscription.remove();
-  }, [visible, handleBack]);
-
-  // --- Edit handler: switches view to edit specific method ---
-  
   const handleAmountProceed = useCallback((amount: number) => {
     usePaymentStore.getState().setAmount(amount);
     setModalView('selector');
@@ -180,13 +153,12 @@ export function PaymentMethodModal({
           throw new Error(error ?? 'Failed to initiate payment');
         }
 
-        setProcessing(data.paymentId);
-        setLastPayment(data.paymentId);
-
         if (onProceed) {
+          setProcessing(data.paymentId);
+          setLastPayment(data.paymentId);
           onProceed(methodType);
         } else {
-          // Store PayU session params in Zustand
+          // Store PayU session params + processing state in Zustand
           if (data.payuParams) {
             const p = data.payuParams as Record<string, string>;
             setPayuSessionParams({
@@ -211,6 +183,8 @@ export function PaymentMethodModal({
               enforce_paymethod: p.enforce_paymethod,
             });
           }
+          setProcessing(data.paymentId);
+          setLastPayment(data.paymentId);
 
           // Set paymentId and switch to the add-method view
           setPaymentId(data.paymentId);
@@ -242,110 +216,52 @@ export function PaymentMethodModal({
     ],
   );
 
-  // --- Do not render when not visible (conditional rendering) ---
-  if (!visible) return null;
-
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* Blur + dark overlay backdrop */}
-      <BlurView intensity={8} tint="dark" style={StyleSheet.absoluteFill} />
-      <Pressable
-        style={styles.backdrop}
-        onPress={(modalView === 'selector' || modalView === 'enter-amount') ? handleClose : undefined}
-        accessibilityRole="button"
-        accessibilityLabel="Close payment method selector"
-      />
-
-      {/* KeyboardAvoidingView wraps the sheet for card/UPI forms */}
-      <KeyboardAvoidingView
-        style={styles.kavContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        pointerEvents="box-none"
-      >
-        <Animated.View
-          style={[
-            styles.sheetContainer,
-            { transform: [{ translateY: slideAnim }] },
-          ]}
-        >
-          {/* Drag handle */}
-          <View style={styles.dragHandle} />
-
-          {/* Sheet panel */}
-          <View style={styles.sheetPanel}>
-            <ScrollView bounces={false} keyboardShouldPersistTaps="handled">
-              {/* Conditional rendering: unmounts components when switching views */}
-              
-            {modalView === 'enter-amount' && (
-              <EnterAmountContent
-                initialAmount={tenancy?.monthly_rent ?? 0}
-                onProceed={handleAmountProceed}
-                onBack={handleClose}
-              />
-            )}
-            {modalView === 'selector' && (
-                <MethodSelectorContent
-                  onProceed={handleProceed}
-                  onEdit={handleEdit}
-                  isInitiating={isInitiating}
-                />
-              )}
-              {modalView === 'add-upi' && (
-                <AddUpiContent paymentId={paymentId} onBack={handleBack} />
-              )}
-              {modalView === 'add-card' && (
-                <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" />
-              )}
-              {modalView === 'add-debit-card' && (
-                <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" />
-              )}
-              {modalView === 'add-netbanking' && (
-                <AddNetbankingContent paymentId={paymentId} onBack={handleBack} />
-              )}
-              {modalView === 'edit-method' && editMethodType && (
-                <EditMethodContent
-                  methodType={editMethodType}
-                  savedMethodId={editSavedMethodId}
-                  onBack={handleBack}
-                  onProceed={handleProceed}
-                  onDeleteSuccess={handleDeleteSuccess}
-                  isInitiating={isInitiating}
-                />
-              )}
-            </ScrollView>
-          </View>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </View>
+    <BottomSheet visible={visible} onClose={handleClose} paddingHorizontal={0}>
+      <View style={styles.sheetPanel}>
+        {modalView === 'enter-amount' && (
+          <EnterAmountContent
+            initialAmount={tenancy?.monthly_rent ?? 0}
+            onProceed={handleAmountProceed}
+            onBack={handleClose}
+          />
+        )}
+        {modalView === 'selector' && (
+          <MethodSelectorContent
+            onProceed={handleProceed}
+            onEdit={handleEdit}
+            isInitiating={isInitiating}
+          />
+        )}
+        {modalView === 'add-upi' && (
+          <AddUpiContent paymentId={paymentId} onBack={handleBack} />
+        )}
+        {modalView === 'add-card' && (
+          <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" />
+        )}
+        {modalView === 'add-debit-card' && (
+          <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" />
+        )}
+        {modalView === 'add-netbanking' && (
+          <AddNetbankingContent paymentId={paymentId} onBack={handleBack} />
+        )}
+        {modalView === 'edit-method' && editMethodType && (
+          <EditMethodContent
+            methodType={editMethodType}
+            savedMethodId={editSavedMethodId}
+            onBack={handleBack}
+            onProceed={handleProceed}
+            onDeleteSuccess={handleDeleteSuccess}
+            isInitiating={isInitiating}
+          />
+        )}
+      </View>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  kavContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    alignItems: 'center',
-    gap: 15,
-    maxHeight: MAX_SHEET_HEIGHT,
-  },
-  dragHandle: {
-    width: 48,
-    height: 4,
-    backgroundColor: colors.black[400], // #4D4D4D
-    borderRadius: 200,
-  },
   sheetPanel: {
     width: '100%',
-    backgroundColor: colors.black[600], // #1A1A1A
-    borderTopLeftRadius: 23,
-    borderTopRightRadius: 23,
-    paddingTop: 15,
-    maxHeight: MAX_SHEET_HEIGHT - 19, // account for drag handle + gap
   },
 });

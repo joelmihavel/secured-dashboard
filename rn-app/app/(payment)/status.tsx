@@ -22,6 +22,7 @@
 import React, { useEffect, useCallback, useRef, useReducer, useState, memo } from 'react';
 import {
   View,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   Linking,
@@ -40,7 +41,7 @@ import * as Sharing from 'expo-sharing';
 import Svg, { Path } from 'react-native-svg';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { Screen, Text, PrimaryButton } from '@/src/components';
+import { Screen, Text, PrimaryButton, BackButton } from '@/src/components';
 import { PaymentReceiptCard } from '@/src/components/payment/PaymentReceiptCard';
 import { DashedDivider } from '@/src/components/payment';
 import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
@@ -141,76 +142,86 @@ function formatDisplayDate(isoString: string): string {
 // INFO ROW MESSAGES
 // ============================================
 
-function getPendingInfoRows(isUpi: boolean, sub: PendingSubState): string[] {
+function getPendingInfoData(isUpi: boolean, sub: PendingSubState) {
+  const images = [
+    require('@/assets/images/status/processing_1.png'),
+    require('@/assets/images/status/processing_2.png'),
+    require('@/assets/images/status/processing_3.png'),
+  ];
+
+  let texts: string[] = [];
   if (isUpi) {
     switch (sub) {
       case 'verifying':
-        return [
+        texts = [
           'Open your UPI app to approve the payment.',
           'You have 6 minutes to complete the approval.',
           "Please don't close the app.",
         ];
+        break;
       case 'processing':
-        return [
+        texts = [
           'Waiting for approval on your UPI app.',
           'This can take a few minutes. Please check your UPI app.',
           "You'll see confirmation here once approved.",
         ];
+        break;
       case 'timed_out':
-        return [
+        texts = [
           'UPI payment request has expired.',
           'The approval window has closed. Please try again.',
           'You can retry with the same or a different payment method.',
         ];
+        break;
+    }
+  } else {
+    switch (sub) {
+      case 'verifying':
+        texts = [
+          'Confirming your payment with the bank...',
+          'This usually takes a few seconds.',
+          "Please don't close the app.",
+        ];
+        break;
+      case 'processing':
+        texts = [
+          "We've received your payment request.",
+          'This can take a few minutes depending on your bank.',
+          "You'll see confirmation here once it's complete.",
+        ];
+        break;
+      case 'timed_out':
+        texts = [
+          'Your payment is still being processed by your bank.',
+          'This is taking longer than expected. Please check back later.',
+          "You'll receive a notification once the payment is confirmed.",
+        ];
+        break;
     }
   }
 
-  switch (sub) {
-    case 'verifying':
-      return [
-        'Confirming your payment with the bank...',
-        'This usually takes a few seconds.',
-        "Please don't close the app.",
-      ];
-    case 'processing':
-      return [
-        "We've received your payment request.",
-        'This can take a few minutes depending on your bank.',
-        "You'll see confirmation here once it's complete.",
-      ];
-    case 'timed_out':
-      return [
-        'Your payment is still being processed by your bank.',
-        'This is taking longer than expected. Please check back later.',
-        "You'll receive a notification once the payment is confirmed.",
-      ];
-  }
+  return texts.map((text, i) => ({
+    text,
+    image: images[i] || images[0],
+    imageRight: i > 0,
+    alignCenter: i > 0,
+  }));
 }
 
-const FAILED_INFO_ROWS = [
-  "Something didn't go through this time.",
-  "Your money is safe and hasn't been deducted.",
-  "If money was debited, it will automatically be refunded within 3-5 business days."
+const FAILED_INFO_DATA = [
+  { text: "Something didn't go through this time.", image: require('@/assets/images/status/failed_1.png'), imageRight: false, alignCenter: false },
+  { text: "Your money is safe and hasn't been deducted.", image: require('@/assets/images/status/failed_2.png'), imageRight: false, alignCenter: false },
+  { text: "If money was debited, it will automatically be refunded within 3-5 business days", image: require('@/assets/images/status/failed_3.png'), imageRight: false, alignCenter: false }
 ];
 
-const REFUNDED_INFO_ROWS = [
-  'Your payment was not completed and the amount has been returned to your account.',
-  'Refunds usually reflect within 3\u20135 business days.',
+const REFUNDED_INFO_DATA = [
+  { text: 'Your payment was not completed and the amount has been returned to your account.', image: require('@/assets/images/status/refunded_1.png'), imageRight: false, alignCenter: false },
+  { text: 'Refunds usually reflect within 3\u20135 business days.', image: require('@/assets/images/status/refunded_2.png'), imageRight: false, alignCenter: false },
 ];
 
 // ============================================
 // SUB-COMPONENTS
 // ============================================
-
-/** Timeline icon used for info rows in pending/failed/refunded states */
-const TimelineIcon = () => (
-  <View style={{ width: 52.5, height: 40, position: 'relative' }}>
-    <Image
-      source={require('@/assets/images/processing-icon.png')}
-      style={{ position: 'absolute', left: 6.72, top: 0.46, width: 39, height: 39 }}
-    />
-  </View>
-);
 
 /** Hash icon for receipt rows in success state */
 const ReceiptIcon = memo(() => (
@@ -226,11 +237,18 @@ const ReceiptIcon = memo(() => (
 ));
 ReceiptIcon.displayName = 'ReceiptIcon';
 
-/** Info row with timeline icon + text (pending/failed/refunded) */
-const InfoRow = memo(({ text }: { text: string }) => (
-  <View style={styles.infoRow}>
-    <TimelineIcon />
+interface InfoRowProps {
+  text: string;
+  image: any;
+  imageRight?: boolean;
+  alignCenter?: boolean;
+}
+
+const InfoRow = memo(({ text, image, imageRight, alignCenter }: InfoRowProps) => (
+  <View style={[styles.infoRow, alignCenter ? { alignItems: 'center' } : { alignItems: 'flex-start' }]}>
+    {!imageRight && <Image source={image} style={styles.infoImage} resizeMode="contain" />}
     <Text style={styles.infoText}>{text}</Text>
+    {imageRight && <Image source={image} style={styles.infoImage} resizeMode="contain" />}
   </View>
 ));
 InfoRow.displayName = 'InfoRow';
@@ -249,11 +267,16 @@ const ReceiptRow = memo(({ label, value, isPayableRent, isCashback }: ReceiptRow
       <ReceiptIcon />
       <Text style={styles.labelText}>{label}</Text>
     </View>
-    <Text style={
-      isPayableRent ? styles.payableRentValueText :
-      isCashback ? styles.cashbackValueText :
-      styles.valueText
-    }>
+    <Text
+      style={[
+        isPayableRent ? styles.payableRentValueText :
+        isCashback ? styles.cashbackValueText :
+        styles.valueText,
+        styles.valueMaxWidth,
+      ]}
+      numberOfLines={1}
+      ellipsizeMode="tail"
+    >
       {value}
     </Text>
   </View>
@@ -270,11 +293,11 @@ interface PendingContentProps {
 }
 
 const PendingContent = memo(({ isUpi, pendingSub }: PendingContentProps) => {
-  const rows = getPendingInfoRows(isUpi, pendingSub);
+  const rows = getPendingInfoData(isUpi, pendingSub);
   return (
     <View style={styles.infoSection}>
-      {rows.map((text, i) => (
-        <InfoRow key={i} text={text} />
+      {rows.map((row, i) => (
+        <InfoRow key={i} text={row.text} image={row.image} imageRight={row.imageRight} alignCenter={row.alignCenter} />
       ))}
     </View>
   );
@@ -334,8 +357,8 @@ SuccessContent.displayName = 'SuccessContent';
 
 const FailedContent = memo(() => (
   <View style={styles.infoSection}>
-    {FAILED_INFO_ROWS.map((text, i) => (
-      <InfoRow key={i} text={text} />
+    {FAILED_INFO_DATA.map((row, i) => (
+      <InfoRow key={i} text={row.text} image={row.image} imageRight={row.imageRight} alignCenter={row.alignCenter} />
     ))}
   </View>
 ));
@@ -343,8 +366,8 @@ FailedContent.displayName = 'FailedContent';
 
 const RefundedContent = memo(() => (
   <View style={styles.infoSection}>
-    {REFUNDED_INFO_ROWS.map((text, i) => (
-      <InfoRow key={i} text={text} />
+    {REFUNDED_INFO_DATA.map((row, i) => (
+      <InfoRow key={i} text={row.text} image={row.image} imageRight={row.imageRight} alignCenter={row.alignCenter} />
     ))}
   </View>
 ));
@@ -372,6 +395,7 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
 
 export default function PaymentStatusScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { clearLastPayment } = usePaymentStore();
 
@@ -708,13 +732,38 @@ export default function PaymentStatusScreen() {
 
   const handleTryAgain = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(payment)/confirm' as never);
+    router.replace('/(payment)/enter-rent' as never);
   }, [router]);
 
   const handleGoHome = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.replace('/(main)' as never);
   }, [router]);
+
+  const handleBack = useCallback(() => {
+    if (isReceiptView) {
+      router.back();
+      return;
+    }
+    if (state.status === 'pending') {
+      Alert.alert(
+        'Payment in progress',
+        'Your payment is still being processed. Are you sure you want to leave?',
+        [
+          { text: 'Stay', style: 'cancel' },
+          {
+            text: 'Leave',
+            style: 'destructive',
+            onPress: () => {
+              router.replace('/(main)' as never);
+            },
+          },
+        ],
+      );
+      return;
+    }
+    handleGoHome();
+  }, [isReceiptView, state.status, router, handleGoHome]);
 
   const handleDownloadReceipt = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -792,18 +841,38 @@ export default function PaymentStatusScreen() {
   // DERIVED UI VALUES
   // ============================================
 
-  const getStampConfig = (): { text: string; color: string } => {
+  const getStampConfig = (): { text: string; color: string; image?: any } => {
     switch (state.status) {
       case 'pending':
-        return { text: 'pending', color: FIGMA_COLORS.pendingStamp };
+        return {
+          text: 'pending',
+          color: FIGMA_COLORS.pendingStamp,
+          image: require('@/assets/images/status/stamps/stamp_pending.png'),
+        };
       case 'success':
-        return { text: 'paid', color: FIGMA_COLORS.successStamp };
+        return {
+          text: 'paid',
+          color: FIGMA_COLORS.successStamp,
+          image: require('@/assets/images/status/stamps/stamp_paid.png'),
+        };
       case 'failed':
-        return { text: 'failed', color: FIGMA_COLORS.failedStamp };
+        return {
+          text: 'failed',
+          color: FIGMA_COLORS.failedStamp,
+          image: require('@/assets/images/status/stamps/stamp_failed.png'),
+        };
       case 'refunded':
-        return { text: 'refunded', color: FIGMA_COLORS.refundedStamp };
+        return {
+          text: 'refunded',
+          color: FIGMA_COLORS.pendingStamp,
+          image: require('@/assets/images/status/stamps/stamp_refunded.png'),
+        };
       case 'timed_out':
-        return { text: 'pending', color: FIGMA_COLORS.pendingStamp };
+        return {
+          text: 'pending',
+          color: FIGMA_COLORS.pendingStamp,
+          image: require('@/assets/images/status/stamps/stamp_pending.png'),
+        };
     }
   };
 
@@ -814,11 +883,11 @@ export default function PaymentStatusScreen() {
           ? { line1: 'Verifying', line2: 'Payment...' }
           : { line1: 'Payment', line2: 'Processing' };
       case 'success':
-        return { line1: 'Payment', line2: 'Successful', line2Color: '#70BF73' };
+        return { line1: 'Payment', line2: 'Successful' };
       case 'failed':
-        return { line1: 'Payment', line2: 'Failed', line2Color: '#EF9194' };
+        return { line1: 'Payment', line2: 'Failed' };
       case 'refunded':
-        return { line1: 'Payment', line2: 'Refunded', line2Color: '#70BF73' };
+        return { line1: 'Payment', line2: 'Refunded' };
       case 'timed_out':
         return { line1: 'Payment', line2: 'Processing' };
     }
@@ -903,6 +972,7 @@ export default function PaymentStatusScreen() {
           <PrimaryButton
             title="Contact Support"
             onPress={handleContactSupport}
+            showDivider={true}
             testID="contact-support-button"
           />
         );
@@ -913,11 +983,13 @@ export default function PaymentStatusScreen() {
             <PrimaryButton
               title="Check Back Later"
               onPress={handleGoHome}
+              showDivider={true}
               testID="check-back-later-button"
             />
             <PrimaryButton
               title="Contact Support"
               onPress={handleContactSupport}
+              showDivider={true}
               testID="contact-support-button"
             />
           </>
@@ -929,6 +1001,7 @@ export default function PaymentStatusScreen() {
             <PrimaryButton
               title="Download Receipt"
               onPress={handleDownloadReceipt}
+              showDivider={true}
               testID="download-receipt-button"
             />
             <TouchableOpacity
@@ -945,15 +1018,16 @@ export default function PaymentStatusScreen() {
         return (
           <>
             <PrimaryButton
-              title="Contact Support"
-              onPress={handleContactSupport}
-              testID="contact-support-button"
+              title="Try Again"
+              onPress={handleTryAgain}
+              showDivider={true}
+              testID="try-again-button"
             />
             <TouchableOpacity
-              onPress={handleTryAgain}
+              onPress={handleContactSupport}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.tryAgainText}>Try Again</Text>
+              <Text style={styles.contactSupportText}>Contact Support</Text>
             </TouchableOpacity>
           </>
         );
@@ -976,47 +1050,50 @@ export default function PaymentStatusScreen() {
   // MAIN RENDER (wrapped in try-catch)
   // ============================================
 
+  const isSuccessState = state.status === 'success';
+
+  const backButton = (
+    <BackButton
+      style={StyleSheet.flatten([styles.backButton, { top: Math.max(sv(8), 111 - insets.top) }])}
+      onPress={handleBack}
+      testID="back-button"
+    />
+  );
+
+  const card = (
+    <PaymentReceiptCard
+      stampText={stampConfig.text}
+      stampColor={stampConfig.color}
+      stampImage={stampConfig.image}
+      titleLine1={titleConfig.line1}
+      titleLine2={titleConfig.line2}
+      titleLine2Color={FIGMA_COLORS.titleWhite}
+      contentPaddingTop={!isSuccessState ? sv(130) : undefined}
+      titleMarginLeft={!isSuccessState ? s(10) : undefined}
+    >
+      {renderCardContent()}
+    </PaymentReceiptCard>
+  );
+
+  const buttons = (
+    <View style={[styles.buttonContainer, (state.status === 'failed' || state.status === 'refunded') && { gap: sv(24) }]}>
+      {renderButtons()}
+    </View>
+  );
+
   let content: React.ReactNode;
   try {
     content = (
-      <View style={styles.container}>
-        {/* Back button for receipt view */}
-        {isReceiptView && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            testID="back-button"
-          >
-            <Svg width={32} height={32} viewBox="0 0 32 32" fill="none">
-              <Path
-                d="M20 8L12 16L20 24"
-                stroke={FIGMA_COLORS.titleWhite}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </TouchableOpacity>
-        )}
-
-        <PaymentReceiptCard
-          stampText={stampConfig.text}
-          stampColor={stampConfig.color}
-          titleLine1={titleConfig.line1}
-          titleLine2={titleConfig.line2}
-          titleLine2Color={titleConfig.line2Color || FIGMA_COLORS.titleAccent}
-          topMargin={80}
-        >
-          {renderCardContent()}
-        </PaymentReceiptCard>
-
-        {/* Spacer */}
-        <View style={styles.spacer} />
-
-        {/* Button Container */}
-        <View style={styles.buttonContainer}>{renderButtons()}</View>
-      </View>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={!isSuccessState ? styles.nonSuccessScrollContent : undefined}
+        bounces={isSuccessState}
+        showsVerticalScrollIndicator={false}
+      >
+        {backButton}
+        {card}
+        {buttons}
+      </ScrollView>
     );
   } catch (err) {
     if (__DEV__) {
@@ -1049,24 +1126,31 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: FIGMA_COLORS.background,
   },
-  container: {
+  scrollContainer: {
     flex: 1,
-    paddingHorizontal: s(40),
+    paddingHorizontal: s(24),
+  },
+  nonSuccessScrollContent: {
+    flexGrow: 1,
   },
 
   // -- Info section (pending/failed/refunded)
   infoSection: {
     gap: sv(24),
-    marginLeft: s(10),
   },
   infoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: s(16),
-    paddingHorizontal: s(8),
+    paddingHorizontal: s(32),
+    width: s(269),
+    justifyContent: 'space-between',
+  },
+  infoImage: {
+    width: s(53),
+    height: sv(40),
   },
   infoText: {
-    flex: 1,
+    width: s(136),
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: sf(12),
     lineHeight: sf(20),
@@ -1130,6 +1214,10 @@ const styles = StyleSheet.create({
     color: PAYMENT_COLORS.cashbackDeduct, // #EF9194
     textAlign: 'right' as const,
   },
+  valueMaxWidth: {
+    maxWidth: '55%',
+    flexShrink: 1,
+  },
   secondSection: {
     marginTop: sv(8),
     gap: sv(16),
@@ -1137,12 +1225,12 @@ const styles = StyleSheet.create({
 
   // -- Button container
   buttonContainer: {
-    width: s(313),
+    width: '100%',
     alignSelf: 'center',
     gap: sv(16),
     alignItems: 'center',
     paddingBottom: sv(24),
-    marginTop: sv(40),
+    marginTop: sv(24),
   },
   contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -1153,8 +1241,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute' as const,
-    top: 0,
-    left: 0,
+    left: s(40),
     zIndex: 10,
     width: s(32),
     height: sv(32),
@@ -1167,11 +1254,6 @@ const styles = StyleSheet.create({
     lineHeight: sf(20),
     color: FIGMA_COLORS.tryAgainText,
     textAlign: 'center',
-  },
-
-  // -- Spacer
-  spacer: {
-    flex: 1,
   },
 
   // -- Error fallback
