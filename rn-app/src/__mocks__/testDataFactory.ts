@@ -602,6 +602,7 @@ export function createMockDashboardData(
         cashback_earned: 200,
       },
     ],
+    landlord_bank: null,
     notifications: [],
     unread_notification_count: 0,
     payment_stamps: {

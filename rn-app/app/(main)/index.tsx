@@ -46,7 +46,7 @@
 
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
@@ -67,7 +67,7 @@ import {
   VerificationCheckSheet,
     EmptyPaymentsState,
   CashbackEmptyState,
-  PaymentMethodSelectionSheet,
+
   SetupProgressCard,
   // Import types from home components
   TabId,
@@ -78,6 +78,7 @@ import {
 
 // RecentPayment type from home components for the list props
 import type { RecentPayment } from '@/src/components/home/RecentPaymentsList';
+import type { CashbackEntry } from '@/src/components/home/CashbacksList';
 
 // Import hooks from useDashboard
 import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
@@ -85,9 +86,10 @@ import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
 // Import DashboardState type and mapped types from dashboard service
 import type { DashboardState, MappedRecentPayment, MappedCashbackEntry } from '@/src/services/api/dashboard';
 
-// Import saved payment methods hook
-import { useSavedPaymentMethods } from '@/src/hooks/usePayments';
+// Import saved payment methods hook and stamps
+import { useSavedPaymentMethods, usePaymentStamps } from '@/src/hooks/usePayments';
 import { usePaymentStore } from '@/src/stores/payment';
+import type { PaymentStampEntry } from '@/src/services/api/payments';
 
 // Import colors from theme
 import { colors } from '@/src/theme';
@@ -145,8 +147,9 @@ export default function HomeScreen() {
 
   // Tab state for Recent Payments / Cashbacks
   const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
-  const [showVerificationSheet, setShowVerificationSheet] = useState(false);
-  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const { showSheet } = useLocalSearchParams<{ showSheet?: string }>();
+  const [showVerificationSheet, setShowVerificationSheet] = useState(showSheet === 'cashback-setup');
+
 
   // Scroll tracking for scroll-down indicator
   const scrollViewRef = useRef<ScrollView>(null);
@@ -155,13 +158,12 @@ export default function HomeScreen() {
   // Get saved payment methods
   const { data: savedMethods } = useSavedPaymentMethods();
 
+  // Get payment stamps (per-month historical payment data)
+  const { data: stampsData } = usePaymentStamps(tenancy?.id);
+
   // ==============================================
   // DERIVED VALUES
   // ==============================================
-
-  const handleAddPayment = useCallback(() => {
-    setShowPaymentSheet(true);
-  }, []);
 
   // Convert saved methods to PaymentMethod type for carousel
   const paymentMethods: PaymentMethod[] = useMemo(() => {
@@ -197,40 +199,6 @@ export default function HomeScreen() {
   }, [savedMethods]);
 
   // Payment methods for the bottom sheet
-  const sheetPaymentMethods = useMemo(() => {
-    const hasCard = paymentMethods.some(m => m.type === 'card');
-    const hasUpi = paymentMethods.some(m => m.type === 'upi');
-    const hasNetbanking = paymentMethods.some(m => m.type === 'netbanking');
-
-    return [
-      {
-        id: 'card-1',
-        type: 'card' as const,
-        label: 'Credit Card',
-        isSetUp: hasCard,
-        cardLastFour: paymentMethods.find(m => m.type === 'card')?.cardLastFour,
-        cardExpiry: paymentMethods.find(m => m.type === 'card')?.cardExpiry,
-      },
-      {
-        id: 'upi-1',
-        type: 'upi' as const,
-        label: 'UPI',
-        isSetUp: hasUpi,
-        bankName: paymentMethods.find(m => m.type === 'upi')?.bankName,
-        accountMasked: paymentMethods.find(m => m.type === 'upi')?.accountMasked,
-        upiId: paymentMethods.find(m => m.type === 'upi')?.upiId,
-      },
-      {
-        id: 'netbanking-1',
-        type: 'netbanking' as const,
-        label: 'Net Banking',
-        isSetUp: hasNetbanking,
-      },
-    ];
-  }, [paymentMethods]);
-
-  const [selectedSheetMethod, setSelectedSheetMethod] = useState<string>('card-1');
-
   // User's first name for greeting
   const userName = user?.first_name ?? 'there';
 
@@ -257,9 +225,9 @@ export default function HomeScreen() {
   }, [upcomingPayment?.rent_month]);
 
   // Cashback values
-  const cashbackBalance = cashback?.available_balance ?? 0;
-  const allTimeCashback = cashback?.total_earned ?? 0;
-  const cashbackRate = 0.8; // 0.8% cashback rate
+  const cashbackBalance = cashback?.total_savings ?? 0;
+  const allTimeCashback = cashback?.total_savings ?? 0;
+  const cashbackRate = (cashback?.discount_rate ?? 0.01) * 100; // Backend sends 0.01 (1%), UI displays as percentage
 
   // Show bottom footer for active payment states when there's an upcoming payment
   // (not during processing or when no payment is due)
@@ -274,6 +242,35 @@ export default function HomeScreen() {
     );
   }, [dashboardState, upcomingPayment, rentAmount]);
 
+  // Helper: format month from ISO date to display format
+  const formatMonth = useCallback((dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'long', year: '2-digit' }).replace(' ', " '");
+    } catch {
+      return dateStr;
+    }
+  }, []);
+
+  // Helper: map stamp status to card status
+  const mapStampStatus = useCallback((status: PaymentStampEntry['status']): 'paid' | 'late' | 'missed' | 'upcoming' => {
+    switch (status) {
+      case 'on_time': return 'paid';
+      case 'late': return 'late';
+      case 'missed': return 'missed';
+      case 'pending': return 'upcoming';
+      case 'refunded': return 'missed'; // Show refunded as a failed-type stamp
+      default: return 'upcoming';
+    }
+  }, []);
+
+  // Build yearlyStamps array from stamps data for back-of-card grid
+  const yearlyStamps = useMemo(() => {
+    if (!stampsData?.stamps) return [];
+    return stampsData.stamps.map(s => mapStampStatus(s.status));
+  }, [stampsData, mapStampStatus]);
+
   // Generate carousel items based on state
   const carouselItems = useMemo((): CarouselCardItem[] => {
     // If no tenancy, we don't render dashboard
@@ -281,19 +278,12 @@ export default function HomeScreen() {
 
     const items: CarouselCardItem[] = [];
     let cardCounter = 0;
+    const summaryLate = stampsData?.summary?.late ?? paymentStamps?.summary?.late ?? 0;
+    const summaryMissed = stampsData?.summary?.missed ?? paymentStamps?.summary?.missed ?? 0;
+    const upcomingMonth = upcomingPayment?.rent_month ?? null;
 
-    // 1. Upcoming payment (if any)
+    // 1. Upcoming payment (always first if exists)
     if (upcomingPayment && rentAmount > 0) {
-      const formatMonth = (dateStr: string) => {
-        try {
-          const d = new Date(dateStr);
-          if (isNaN(d.getTime())) return dateStr;
-          return d.toLocaleDateString('en-US', { month: 'long', year: '2-digit' }).replace(' ', " '");
-        } catch {
-          return dateStr;
-        }
-      };
-
       let earlyStatus: 'upcoming' | 'late' | 'missed' = 'upcoming';
       if (isMissed || isMultipleOverdue) earlyStatus = 'missed';
       else if (isOverdue) earlyStatus = 'late';
@@ -305,9 +295,9 @@ export default function HomeScreen() {
           monthName: formatMonth(upcomingPayment.rent_month),
           cashbackEarned: 0,
           status: earlyStatus,
-          yearlyStamps: [],
-          lateCount: paymentStamps?.summary?.late ?? 0,
-          missedCount: paymentStamps?.summary?.missed ?? 0,
+          yearlyStamps,
+          lateCount: summaryLate,
+          missedCount: summaryMissed,
           onAddPaymentMethod: paymentMethods.length === 0 ? handleAddPayment : undefined,
           rentDueDay: tenancy.rent_due_day,
           cardIndex: cardCounter++,
@@ -315,53 +305,93 @@ export default function HomeScreen() {
       });
     }
 
-    // If verification is completely pending and no payment methods, add setup card after flip card
-    // Figma 243-4062/243-5870: Only show setup card when no UPI/Cards are added AND landlord is approved
-    if (paymentMethods.length === 0 && tenancy.verification_status?.landlord_approved && (!tenancy.verification_status?.bank_verified || !tenancy.verification_status?.utility_verified)) {
-      items.push({
-        type: 'payment_setup',
-        id: 'setup-payment',
-        data: {
-          variant: 'standalone',
-          onAddPayment: handleAddPayment,
-        }
+    // 2. Historical stamps (most recent first, deduplicated against upcoming)
+    if (stampsData?.stamps && stampsData.stamps.length > 0) {
+      const historicalStamps = stampsData.stamps
+        .filter(stamp => stamp.month !== upcomingMonth) // Deduplicate against upcoming
+        .slice(0, 6); // Limit to 6 historical cards
+
+      historicalStamps.forEach((stamp) => {
+        const cardStatus = mapStampStatus(stamp.status);
+        const hasPayment = stamp.payment_id && (stamp.status === 'on_time' || stamp.status === 'late');
+
+        items.push({
+          type: 'payment',
+          id: `stamp-${stamp.month}`,
+          data: {
+            monthName: formatMonth(stamp.month),
+            cashbackEarned: stamp.cashback_earned ?? 0,
+            status: cardStatus,
+            onViewReceipt: hasPayment ? () => {
+              router.push({
+                pathname: '/(payment)/status',
+                params: {
+                  paymentId: stamp.payment_id!,
+                  amount: String((stamp.amount_paise ?? 0) / 100),
+                  initialStatus: 'success',
+                  source: 'receipt_view',
+                  landlordName: tenancy?.landlord_name ?? '',
+                  agreementId: tenancy?.agreement_cert_id ?? '',
+                },
+              } as never);
+            } : undefined,
+            yearlyStamps,
+            lateCount: summaryLate,
+            missedCount: summaryMissed,
+            cardIndex: cardCounter++,
+          }
+        });
       });
-      return items;
+    } else if (recentPayments.length > 0) {
+      // Fallback: Use recent_payments from dashboard when stamps API hasn't loaded
+      recentPayments.slice(0, 3).forEach((payment) => {
+        items.push({
+          type: 'payment',
+          id: `payment-${payment.id}`,
+          data: {
+            monthName: payment.title.split(' ')[0] + " '26",
+            cashbackEarned: payment.amount * (cashbackRate / 100),
+            status: payment.status === 'failed' ? 'missed' : payment.status === 'pending' || payment.status === 'processing' ? 'upcoming' : 'paid',
+            onViewReceipt: () => {
+              router.push({
+                pathname: '/(payment)/status',
+                params: {
+                  paymentId: payment.id,
+                  amount: String(payment.amount),
+                  method: 'upi',
+                  initialStatus: 'success',
+                  source: 'receipt_view',
+                  landlordName: tenancy?.landlord_name ?? '',
+                  agreementId: tenancy?.agreement_cert_id ?? '',
+                },
+              } as never);
+            },
+            yearlyStamps,
+            lateCount: summaryLate,
+            missedCount: summaryMissed,
+            cardIndex: cardCounter++,
+          }
+        });
+      });
     }
 
-    // Upcoming payment already added above — add recent payments for active states
-
-    // 2. Recent payments (paid ones)
-    // Up to 3 past payments
-    recentPayments.slice(0, 3).forEach((payment, index) => {
+    // Zero state: No stamps, no upcoming, no saved methods
+    if (items.length === 0 && paymentMethods.length === 0) {
       items.push({
         type: 'payment',
-        id: `payment-${payment.id}`,
+        id: 'zero-state',
         data: {
-          monthName: payment.title.split(' ')[0] + " '26", // Mock format for UI
-          cashbackEarned: payment.amount * (cashbackRate / 100), // Approximate for UI
-          status: payment.status === 'failed' ? 'missed' : payment.status === 'pending' || payment.status === 'processing' ? 'upcoming' : 'paid',
-          onViewReceipt: () => {
-            router.push({
-              pathname: '/(payment)/status',
-              params: {
-                paymentId: payment.id,
-                amount: String(payment.amount),
-                method: 'upi',
-                initialStatus: 'success',
-                source: 'receipt_view',
-                landlordName: tenancy?.landlord_name ?? '',
-                agreementId: tenancy?.agreement_cert_id ?? '',
-              },
-            } as never);
-          },
+          monthName: formatMonth(new Date().toISOString()),
+          cashbackEarned: 0,
+          status: 'upcoming',
           yearlyStamps: [],
-          lateCount: paymentStamps?.summary?.late ?? 0,
-          missedCount: paymentStamps?.summary?.missed ?? 0,
-          cardIndex: cardCounter++,
+          lateCount: 0,
+          missedCount: 0,
+          onAddPaymentMethod: handleAddPayment,
+          cardIndex: 0,
         }
       });
-    });
+    }
 
     return items;
   }, [
@@ -376,6 +406,11 @@ export default function HomeScreen() {
     cashbackRate,
     handleAddPayment,
     paymentStamps,
+    stampsData,
+    yearlyStamps,
+    formatMonth,
+    mapStampStatus,
+    router,
   ]);
 
   // Determine empty state variant based on dashboard state
@@ -406,7 +441,7 @@ export default function HomeScreen() {
     // Landlord approved, check remaining verification steps
     if (!verificationStatus?.bank_verified || !verificationStatus?.utility_verified) {
       // Cashback setup available when payment methods exist but verification incomplete
-      if (cashback && cashback.pending_balance === 0 && cashback.total_earned === 0) {
+      if (cashback && cashback.total_savings === 0 && !cashback.verification_complete) {
         return 'setup_cashback';
       }
       return 'empty_with_upi';
@@ -426,32 +461,45 @@ export default function HomeScreen() {
   // HANDLERS
   // ==============================================
 
+  const handleAddPayment = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (!isSetupComplete) {
+      setShowVerificationSheet(true);
+    } else {
+      router.push('/(payment)/enter-rent' as never);
+    }
+  }, [isSetupComplete, router]);
+
   const handleRefresh = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     refresh();
   }, [refresh]);
 
-  const handleSheetSelectMethod = useCallback((method: any) => {
-    setSelectedSheetMethod(method.id);
-  }, []);
-
-  const handleSheetAddNewMethod = useCallback(() => {
-    setShowPaymentSheet(false);
-    router.push('/(payment)/confirm' as never);
-  }, [router]);
 
                 const setPaymentAmount = usePaymentStore(state => state.setAmount);
         const setVerificationSkippedStore = usePaymentStore(state => state.setVerificationSkipped);
         const setPendingPaymentReturn = usePaymentStore(state => state.setPendingPaymentReturn);
 
         // Check for pending payment return (user completed setup and should resume payment flow)
+        // Uses Zustand subscribe to handle async hydration — avoids race condition
+        // where store may not be hydrated yet on mount
         useEffect(() => {
-          const { pendingPaymentReturn, setPendingPaymentReturn: clearReturn } = usePaymentStore.getState();
+          // Check current state first (may already be hydrated)
+          const { pendingPaymentReturn } = usePaymentStore.getState();
           if (pendingPaymentReturn) {
-            clearReturn(false);
-            // Auto-open rent amount modal after returning from setup
-            setTimeout(() => router.push('/(payment)/confirm' as never), 500);
+            usePaymentStore.getState().setPendingPaymentReturn(false);
+            setTimeout(() => router.push('/(payment)/enter-rent' as never), 500);
+            return;
           }
+          // Subscribe for deferred hydration
+          const unsubscribe = usePaymentStore.subscribe((state) => {
+            if (state.pendingPaymentReturn) {
+              state.setPendingPaymentReturn(false);
+              unsubscribe();
+              setTimeout(() => router.push('/(payment)/enter-rent' as never), 500);
+            }
+          });
+          return () => unsubscribe();
         }, []);
 
         const handleVerificationFinishSetup = useCallback(() => {
@@ -463,13 +511,22 @@ export default function HomeScreen() {
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
           setVerificationSkippedStore(true);
-          setTimeout(() => router.push('/(payment)/confirm' as never), 300);
+          setTimeout(() => router.push('/(payment)/enter-rent' as never), 300);
         }, [setVerificationSkippedStore, router]);
 
         const handleFinishSetup = useCallback(() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          router.push('/(setup)/pending-steps' as never);
-        }, [router]);
+          // Route to first incomplete setup step
+          if (!verificationStatus?.bank_verified) {
+            router.push({ pathname: '/(setup)/add-bank', params: { reentry: '1' } } as never);
+          } else if (!verificationStatus?.utility_verified) {
+            router.push({ pathname: '/(setup)/add-utility', params: { reentry: '1' } } as never);
+          } else if (!verificationStatus?.landlord_approved) {
+            router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
+          } else {
+            router.push('/(setup)/pending-steps' as never);
+          }
+        }, [router, verificationStatus]);
 
         const handleHowItWorks = useCallback(async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -481,20 +538,21 @@ export default function HomeScreen() {
         }, []);
 
         const handlePayNow = useCallback(() => {
+          console.log('[PAY] handlePayNow fired, isSetupComplete:', isSetupComplete);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           if (!isSetupComplete) {
+            console.log('[PAY] Setup incomplete — showing verification sheet');
             setShowVerificationSheet(true);
           } else {
-            // Replaced RentAmountModal with PaymentMethodModal (unified overlay flow)
-            router.push('/(payment)/confirm' as never);
+            console.log('[PAY] Navigating to /(payment)/enter-rent');
+            try {
+              router.push('/(payment)/enter-rent' as never);
+              console.log('[PAY] router.push succeeded');
+            } catch (e) {
+              console.error('[PAY] router.push FAILED:', e);
+            }
           }
         }, [isSetupComplete, router]);
-
-        const handleRentAmountConfirm = useCallback((amount: string) => {
-          setShowRentAmountModal(false);
-          setPaymentAmount(parseFloat(amount));
-          router.push('/(payment)/confirm' as never);
-        }, [router, setPaymentAmount]);
 
   const handleAddAgreement = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -514,7 +572,7 @@ export default function HomeScreen() {
   const handlePaymentMethodPress = useCallback((method: PaymentMethod) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
-      pathname: '/(payment)/confirm' as never,
+      pathname: '/(payment)/enter-rent' as never,
       params: { methodType: method.type, methodAccount: method.accountMasked },
     });
   }, [router]);
@@ -545,9 +603,41 @@ export default function HomeScreen() {
         amount: String(payment.amount),
         cashback: String(rawPayment?.cashback_earned ?? 0),
         transactionId: payment.id,
+        source: 'receipt_view',
+        landlordName: tenancy?.landlord_name ?? '',
+        agreementId: tenancy?.agreement_cert_id ?? '',
       },
     });
-  }, [router, resolvedData?.recent_payments]);
+  }, [router, resolvedData?.recent_payments, tenancy]);
+
+  const handleCashbackEntryPress = useCallback((entry: CashbackEntry) => {
+    // Only navigate for entries with an associated payment
+    if (!entry.paymentId) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const rawPayment = resolvedData?.recent_payments?.find(p => p.id === entry.paymentId);
+
+    // Map cashback status → payment status screen
+    const statusMap: Record<string, string> = {
+      paid: 'success',
+      delayed: 'success',
+      pending: 'pending',
+      missed: 'failed',
+    };
+
+    router.push({
+      pathname: '/(payment)/status',
+      params: {
+        paymentId: entry.paymentId,
+        amount: String(rawPayment?.amount ?? 0),
+        initialStatus: statusMap[entry.status] ?? 'pending',
+        cashback: String(rawPayment?.cashback_earned ?? 0),
+        source: 'receipt_view',
+        landlordName: tenancy?.landlord_name ?? '',
+        agreementId: tenancy?.agreement_cert_id ?? '',
+      },
+    } as never);
+  }, [router, resolvedData?.recent_payments, tenancy]);
 
   // ==============================================
   // LOADING STATE
@@ -619,7 +709,7 @@ export default function HomeScreen() {
       >
         {/* Header: Logo + "Hi, [Name]" + Avatar */}
         {/* Figma: HomeHeader handles its own paddingHorizontal: 32 */}
-        <HomeHeader userName={userName} unreadCount={unreadCount} />
+        <HomeHeader userName={userName} avatarUrl={user?.avatar_url} unreadCount={unreadCount} />
 
         <View style={styles.mainContent}>
           {/* Dashboard Content */}
@@ -652,6 +742,7 @@ export default function HomeScreen() {
             onPaymentMethodPress: handlePaymentMethodPress,
             onPaymentMethodEdit: handlePaymentMethodEdit,
             onPaymentPress: handlePaymentPress,
+            onCashbackEntryPress: handleCashbackEntryPress,
             onHowItWorks: handleHowItWorks,
           })}
         </View>
@@ -670,16 +761,6 @@ export default function HomeScreen() {
           />
         </View>
       ) : null}
-
-      {/* Payment Method Selection Sheet Overlay */}
-      <PaymentMethodSelectionSheet
-        visible={showPaymentSheet}
-        methods={sheetPaymentMethods}
-        selectedMethodId={selectedSheetMethod}
-        onClose={() => setShowPaymentSheet(false)}
-        onSelectMethod={handleSheetSelectMethod}
-        onAddNewMethod={handleSheetAddNewMethod}
-      />
 
             {/* Verification Check Sheet — shown before payment when setup incomplete */}
       <VerificationCheckSheet
@@ -727,6 +808,7 @@ interface ContentProps {
   onPaymentMethodPress: (method: PaymentMethod) => void;
   onPaymentMethodEdit: (method: PaymentMethod) => void;
   onPaymentPress: (payment: RecentPayment) => void;
+  onCashbackEntryPress?: (entry: CashbackEntry) => void;
   onHowItWorks?: () => void;
 }
 
@@ -760,6 +842,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     onPaymentMethodPress,
     onPaymentMethodEdit,
     onPaymentPress,
+    onCashbackEntryPress,
     onHowItWorks,
   } = props;
 
@@ -786,9 +869,9 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               addressProofComplete={verificationStatus?.utility_verified ?? false}
               landlordInvited={verificationStatus?.landlord_approved ?? false}
               paymentMethods={paymentMethods}
-              cashbackAccrued={cashback?.pending_balance ?? 0}
-              cashbackAllTime={cashback?.total_earned ?? 0}
-              cashbackRate={0.8}
+              cashbackAccrued={cashback?.total_savings ?? 0}
+              cashbackAllTime={cashback?.total_savings ?? 0}
+              cashbackRate={cashbackRate}
               onAddPayment={onAddPayment}
               onFinishSetup={onFinishSetup}
               onCtaPress={onHowItWorks}
@@ -839,7 +922,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
                 accruedAmount={cashbackBalance}
                 allTimeTotal={allTimeCashback}
                 cashbackRate={cashbackRate}
-                showPlaceholder={true}
               />
             )}
           </View>
@@ -849,6 +931,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             bankDetailsComplete={verificationStatus?.bank_verified ?? false}
             addressProofComplete={verificationStatus?.utility_verified ?? false}
             landlordInvited={verificationStatus?.landlord_approved ?? false}
+            onPress={onFinishSetup}
             onCtaPress={onHowItWorks}
           />
         </View>
@@ -907,13 +990,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               allTimeTotal={allTimeCashback}
               cashbackRate={cashbackRate}
               entries={cashbackEntries}
+              onEntryPress={onCashbackEntryPress}
             />
           ) : (
             <CashbackEmptyState
               accruedAmount={cashbackBalance}
               allTimeTotal={allTimeCashback}
               cashbackRate={cashbackRate}
-              showPlaceholder={true}
             />
           )
         )}
@@ -925,6 +1008,25 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             if (isMissed) return <WarningBanner type="missed" />;
             if (isOverdue) return <WarningBanner type="late" />;
             return null;
+          })()}
+
+          {/* Setup Progress Card — shown until all 3 verifications complete */}
+          {(() => {
+            const vs = tenancy?.verification_status;
+            const setupComplete = vs?.bank_verified && vs?.utility_verified && vs?.landlord_approved;
+            if (setupComplete) return null;
+            return (
+              <>
+                <View style={styles.sectionDivider} />
+                <SetupProgressCard
+                  bankDetailsComplete={vs?.bank_verified ?? false}
+                  addressProofComplete={vs?.utility_verified ?? false}
+                  landlordInvited={vs?.landlord_approved ?? false}
+                  onPress={onFinishSetup}
+                  onCtaPress={onHowItWorks}
+                />
+              </>
+            );
           })()}
         </View>
       );
@@ -959,13 +1061,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             </Text>
           </View>
 
-          {cashback && (cashback.available_balance ?? 0) > 0 ? (
+          {cashback && (cashback.total_savings ?? 0) > 0 ? (
             <View style={styles.cashbackCard}>
               <Text variant="bodySm" color="muted">
-                Available Cashback
+                Total Savings
               </Text>
               <Text variant="h4" color="accent">
-                Rs.{(cashback.available_balance ?? 0).toLocaleString('en-IN')}
+                Rs.{(cashback.total_savings ?? 0).toLocaleString('en-IN')}
               </Text>
             </View>
           ) : null}
@@ -1072,8 +1174,8 @@ const styles = StyleSheet.create({
   tabSection: {
     gap: 48, // Figma 684:9002: gap 48 between toggle and content
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER
-    overflow: 'hidden', // Figma: clipsContent true
-    // NOTE: paddingHorizontal 32 is handled by child components (RecentPaymentsList, CashbacksList, etc.)
+    // NOTE: overflow hidden removed — was clipping cashback accrued amount (32px font)
+    // paddingHorizontal 32 is handled by child components (RecentPaymentsList, CashbacksList, etc.)
   },
   emptyStateContainer: {
     flex: 1,

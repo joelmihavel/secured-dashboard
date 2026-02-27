@@ -32,7 +32,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   Alert,
   Linking,
 } from 'react-native';
@@ -41,8 +40,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as StoreReview from 'expo-store-review';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, Avatar, TextInput, PhoneInput, BackButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
+import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal';
+import type { ModalView } from '@/src/components/payment/PaymentMethodModal/types';
 import { useDashboard, useAuth, useDeleteAccount, useSavedPaymentMethods } from '@/src/hooks';
 import { colors } from '@/src/theme';
 import { s } from '@/src/theme/scale';
@@ -117,10 +118,15 @@ function CardDivider() {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user } = useDashboard();
+  const { user, tenancy } = useDashboard();
   const { signOut } = useAuth();
   const deleteAccount = useDeleteAccount();
   const { data: savedMethods } = useSavedPaymentMethods();
+
+  // Payment method edit modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editModalMethodType, setEditModalMethodType] = useState<string>('upi');
+  const [editModalMethodId, setEditModalMethodId] = useState<string>('');
 
   // Build payment menu items dynamically from user's saved methods
   const paymentMenuItems = useMemo(() => {
@@ -128,16 +134,16 @@ export default function ProfileScreen() {
 
     const items: { title: string; type: string; cardType?: string; testID: string }[] = [];
 
-    if (savedMethods.some((m) => m.type === 'upi')) {
+    if (savedMethods.some((m: any) => m.type === 'upi')) {
       items.push({ title: 'Edit UPI Method', type: 'upi', testID: 'edit-upi-button' });
     }
-    if (savedMethods.some((m) => m.type === 'card' && m.card_type === 'credit')) {
+    if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'credit')) {
       items.push({ title: 'Edit Credit Card', type: 'card', cardType: 'credit', testID: 'edit-credit-card-button' });
     }
-    if (savedMethods.some((m) => m.type === 'card' && m.card_type === 'debit')) {
+    if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'debit')) {
       items.push({ title: 'Edit Debit Card', type: 'card', cardType: 'debit', testID: 'edit-debit-card-button' });
     }
-    if (savedMethods.some((m) => m.type === 'netbanking')) {
+    if (savedMethods.some((m: any) => m.type === 'netbanking')) {
       items.push({ title: 'Edit Bank Account', type: 'netbanking', testID: 'edit-bank-account-button' });
     }
 
@@ -159,12 +165,29 @@ export default function ProfileScreen() {
     router.push('/(profile)/edit' as never);
   }, [router]);
 
+  const handleEditBankDetails = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/(profile)/edit-bank-details' as never);
+  }, [router]);
+
   const handleEditPaymentMethod = useCallback((type: string, cardType?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const params: Record<string, string> = { type };
-    if (cardType) params.card_type = cardType;
-    router.push({ pathname: '/(profile)/edit-payment-method', params } as never);
-  }, [router]);
+    // Find the saved method ID for this type
+    const method = savedMethods?.find((m) => {
+      if (type === 'card' && cardType) return m.type === 'card' && m.card_type === cardType;
+      return m.type === type;
+    });
+    if (method) {
+      setEditModalMethodType(type === 'card' && cardType === 'debit' ? 'debit_card' : type);
+      setEditModalMethodId(method.id);
+      setEditModalVisible(true);
+    } else {
+      // Fallback to full screen if no saved method found
+      const params: Record<string, string> = { type };
+      if (cardType) params.card_type = cardType;
+      router.push({ pathname: '/(profile)/edit-payment-method', params } as never);
+    }
+  }, [router, savedMethods]);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -209,11 +232,12 @@ export default function ProfileScreen() {
     );
   }, [deleteAccount]);
 
-  const [avatarError, setAvatarError] = useState(false);
-
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User';
-  const initials = fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const joinDate = '15th sept 9:40am'; // Blueprint placeholder text
+  const userEmail = user?.email ?? '';
+  const userPhone = user?.phone ?? '';
+  const phoneCountryCode = '+91';
+  const phoneDigits = userPhone.replace('+91', '').trim();
 
   return (
     <Screen testID="profile-screen" padded={false}>
@@ -227,15 +251,11 @@ export default function ProfileScreen() {
         <View style={styles.mainContent}>
           {/* Header frame (41:8762): column, gap=24, paddingH=40 */}
           <View style={styles.headerSection}>
-            {/* Back arrow (41:8763): 32x32, stroke #FFFFFF */}
-            <TouchableOpacity
+            <BackButton
               onPress={handleBack}
               style={styles.backButton}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <Ionicons name="arrow-back" size={24} color={FIGMA_COLORS.textPrimary} />
-            </TouchableOpacity>
+              color={FIGMA_COLORS.textPrimary}
+            />
 
             {/* Title (41:8764): "My  Profile" single text with spans */}
             {/* Blueprint: width=313, height=128 (2 lines x 64px lineHeight) */}
@@ -260,20 +280,7 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`View profile for ${fullName}`}
               >
-                <View style={styles.avatarContainer}>
-                  {avatarError ? (
-                    <View style={styles.avatarFallback}>
-                      <Text style={styles.avatarInitials}>{initials}</Text>
-                    </View>
-                  ) : (
-                    <Image
-                      source={require('@/assets/images/profile-avatar.png')}
-                      style={styles.avatar}
-                      resizeMode="cover"
-                      onError={() => setAvatarError(true)}
-                    />
-                  )}
-                </View>
+                <Avatar uri={user?.avatar_url} name={fullName} size="md" />
                 {/* User details (41:8833): column, gap=4, flex=1 */}
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{fullName}</Text>
@@ -281,6 +288,33 @@ export default function ProfileScreen() {
                 </View>
                 <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
               </TouchableOpacity>
+
+              {/* User details - read-only input fields */}
+              <View style={styles.userFieldsContainer}>
+                <TextInput
+                  label="Name"
+                  value={fullName}
+                  onChangeText={() => {}}
+                  disabled
+                />
+                {userEmail ? (
+                  <TextInput
+                    label="Email"
+                    value={userEmail}
+                    onChangeText={() => {}}
+                    disabled
+                  />
+                ) : null}
+                {phoneDigits ? (
+                  <PhoneInput
+                    label="Phone Number"
+                    value={phoneDigits}
+                    onChangeText={() => {}}
+                    countryCode={phoneCountryCode}
+                    disabled
+                  />
+                ) : null}
+              </View>
 
               {/* View Agreement (41:8839) */}
               <MenuItem
@@ -293,13 +327,23 @@ export default function ProfileScreen() {
 
           {/* Payment Information section (41:8842): column, gap=24, paddingH=40 */}
           {/* Card (41:8844): single card bg #202020, radius=12, gap=8, with dividers */}
-          {/* Dynamic: only shows edit options for payment methods the user has saved */}
-          {paymentMenuItems.length > 0 && (
+          {/* Shows edit bank details when bank is verified, plus saved payment method edits */}
+          {(tenancy?.verification_status?.bank_verified || paymentMenuItems.length > 0) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
                 Payment Information
               </Text>
               <View style={styles.cardContainer}>
+                {tenancy?.verification_status?.bank_verified && (
+                  <>
+                    <CardMenuItem
+                      title="Edit Bank Details"
+                      onPress={handleEditBankDetails}
+                      testID="edit-bank-details-button"
+                    />
+                    {paymentMenuItems.length > 0 && <CardDivider />}
+                  </>
+                )}
                 {paymentMenuItems.map((item, index) => (
                   <React.Fragment key={item.testID}>
                     {index > 0 && <CardDivider />}
@@ -357,6 +401,17 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Payment Method Edit Modal — opens Card UI bottom sheet */}
+      <PaymentMethodModal
+        visible={editModalVisible}
+        onClose={() => setEditModalVisible(false)}
+        tenancyId={tenancy?.id ?? ''}
+        rentMonth={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+        initialView={'edit-method' as ModalView}
+        initialMethodType={editModalMethodType}
+        initialSavedMethodId={editModalMethodId}
+      />
     </Screen>
   );
 }
@@ -428,6 +483,11 @@ const styles = StyleSheet.create({
   menuStack: {
     gap: 4,
   },
+  // User details fields: read-only inputs for name, email, phone
+  userFieldsContainer: {
+    gap: 16,
+    paddingVertical: 8,
+  },
   // Card container for Payment Info / Support / App sections
   // Blueprint (41:8844, 41:8858, 41:8868): bg #202020, radius=12, gap=8, drop shadows
   cardContainer: {
@@ -464,34 +524,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     backgroundColor: colors.black[500],
     borderRadius: 12,
-  },
-  // Avatar (41:8832): 48x48 ellipse with image fill
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  // Fallback when profile-avatar.png fails to load
-  avatarFallback: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.brand[500],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitials: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.black[700],
-    textAlign: 'center',
   },
   // User details (41:8833): column, gap=4, grow=1 (flex=1)
   userDetails: {

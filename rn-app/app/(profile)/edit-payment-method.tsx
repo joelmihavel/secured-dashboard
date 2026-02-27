@@ -32,11 +32,12 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text } from '@/src/components';
+import { Screen, Text, BackButton } from '@/src/components';
 import { TextInput, PrimaryButton } from '@/src/components/ui';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { RadioButton } from '@/src/components/payment/RadioButton';
 import { SecureCardInput, type SecureCardInputRef } from '@/src/components/payment/SecureCardInput';
+import { PaymentCardVisual } from '@/src/components/payment/PaymentCardVisual';
 import {
   useSavedPaymentMethods,
   useAddUpiVpa,
@@ -83,22 +84,6 @@ const CARD_TYPE_HEADING: Record<string, string> = {
   credit: 'Credit Card',
   debit: 'Debit Card',
 };
-
-// ==============================================
-// BACK ARROW ICON
-// ==============================================
-
-const BackArrowIcon = () => (
-  <Svg width={32} height={32} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M19 12H5M5 12L12 19M5 12L12 5"
-      stroke={COLORS.white}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
 
 // ==============================================
 // INFO ROW (card read-only display)
@@ -353,10 +338,7 @@ function CardContent({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
-      // 1. Get Rs.1 PayU session from edge function
-      const session = await verifyCardMutation.mutateAsync();
-
-      // 2. Validate card data from SecureCardInput
+      // 1. Validate card data BEFORE making network call
       const validation = cardInputRef.current?.validate();
       if (!validation?.valid) {
         Alert.alert('Invalid Card', validation?.errors.join('\n') ?? 'Please check card details');
@@ -365,6 +347,9 @@ function CardContent({
       }
 
       const cardData = cardInputRef.current!.getCardData();
+
+      // 2. Get Rs.1 PayU session from edge function
+      const session = await verifyCardMutation.mutateAsync();
 
       // 3. Store session params for the payment flow
       setPayuSessionParams(session.payu as never);
@@ -423,7 +408,10 @@ function CardContent({
   if (savedMethod && !showReplaceForm) {
     return (
       <View style={styles.fieldsContainer}>
-        <View style={styles.cardInfoContainer}>
+        <PaymentCardVisual
+          methodType="card"
+          network={savedMethod.card_network}
+        >
           <InfoRow label="Card Number" value={`**** **** **** ${savedMethod.last_four ?? '----'}`} />
           <InfoRow label="Network" value={savedMethod.card_network?.toUpperCase() ?? 'Unknown'} />
           {savedMethod.card_expiry_month && savedMethod.card_expiry_year && (
@@ -432,7 +420,7 @@ function CardContent({
               value={`${String(savedMethod.card_expiry_month).padStart(2, '0')}/${String(savedMethod.card_expiry_year).slice(-2)}`}
             />
           )}
-        </View>
+        </PaymentCardVisual>
 
         <View style={styles.buttonContainer}>
           <PrimaryButton
@@ -703,15 +691,11 @@ export default function EditPaymentMethodScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Back Arrow */}
-          <TouchableOpacity
+          <BackButton
             style={styles.backButton}
             onPress={handleBack}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <BackArrowIcon />
-          </TouchableOpacity>
+            color={COLORS.white}
+          />
 
           {/* H1 Heading — dual-color per Figma 684:5467 */}
           <View style={styles.headingContainer}>
@@ -799,7 +783,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 0.5,
-    borderBottomColor: COLORS.divider,
+    borderBottomColor: 'rgba(77,77,77,0.5)',
   },
   infoLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -895,10 +879,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   deleteButtonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
     lineHeight: 20,
-    color: COLORS.errorRed,
+    color: '#A9A9A9',
     textAlign: 'center',
   },
 
