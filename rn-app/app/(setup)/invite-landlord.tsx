@@ -3,7 +3,7 @@
  * Figma Reference: 1-34150
  *
  * Screen: "onboarding / Invite Landlord"
- * Blueprint: /buildbot/data/blueprints/1-34150-blueprint.json
+ * Blueprint: figma-1on1parity/data/1-34150-blueprint.json
  *
  * Figma structure (dark area, node 1:34220):
  * - Frame column, gap 64

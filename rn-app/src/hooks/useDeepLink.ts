@@ -69,7 +69,7 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   // Waitlist
   '/waitlist': '/(waitlist)',
   '/waitlist/approved': '/(waitlist)/approved',
-  // Path-based state switching for BuildBot (query params unreliable in dev client)
+  // Path-based state switching for dev tooling (query params unreliable in dev client)
   '/waitlist/state/pending': '/(waitlist)',
   '/waitlist/state/accepted': '/(waitlist)',
   '/waitlist/state/rejected': '/(waitlist)',
@@ -231,7 +231,7 @@ export function handleDeepLinkUrl(url: string): boolean {
  * the module-level store and merges them with any URL params that did land.
  *
  * Priority: URL params (useLocalSearchParams) win over deep link params,
- * so real navigation always overrides BuildBot-injected mock state.
+ * so real navigation always overrides dev-injected mock state.
  *
  * Usage:
  *   const { state } = useDeepLinkParams<{ state?: string }>();

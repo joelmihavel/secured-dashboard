@@ -66,7 +66,7 @@ export default function BetaSplashScreen() {
     badgeTranslateY.value = withDelay(300, withTiming(0, { duration: duration.normal }));
 
     // Navigate to splash (Get Started) screen after animation completes
-    // Skip auto-navigate in preview mode (used by buildbot pipeline for screenshots)
+    // Skip auto-navigate in preview mode (used for dev screenshots)
     if (preview === 'true') return;
     const timeout = setTimeout(() => {
       router.replace('/(auth)/splash');

@@ -2,7 +2,7 @@
  * Profile Agreement Screen - View Agreement Details
  * Figma Reference: 41-9811 (My Profile / Agreement)
  *
- * Blueprint: buildbot/data/blueprints/41-9811-blueprint.json
+ * Blueprint: figma-1on1parity/data/41-9811-blueprint.json
  *
  * Layout hierarchy (agreement dark section):
  * - Content area (41:9880): column, gap=64

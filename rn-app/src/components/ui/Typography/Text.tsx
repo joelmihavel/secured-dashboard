@@ -69,7 +69,7 @@ function TextComponent({
   const textColor = color ? colorMap[color] : colorMap.primary;
 
   // fontWeight is intentionally NOT applied here.
-  // Per buildbot-learnings: "Map Figma fontWeight to fontFamily, never to RN fontWeight."
+  // Map Figma fontWeight to fontFamily, never to RN fontWeight.
   // RN's fontWeight resolves to system fonts, not custom font files.
   // fontFamily already encodes the weight (e.g., PlusJakartaSans-Medium = 500).
   return (

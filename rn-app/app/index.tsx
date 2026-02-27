@@ -22,7 +22,7 @@ import { SkeletonLoader } from '@/src/components';
 import { useAuthContext } from '@/src/providers';
 import { useUploadStore } from '@/src/stores/upload';
 
-// Global screenshot params for buildbot pipeline — set state for screens that need mock data
+// Global screenshot params for dev pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
 export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
 

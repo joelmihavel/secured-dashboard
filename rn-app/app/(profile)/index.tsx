@@ -2,7 +2,7 @@
  * Profile Screen - Pixel Perfect Figma Parity
  * Figma Reference: 41-8760
  *
- * Blueprint: buildbot/data/blueprints/41-8760-blueprint.json
+ * Blueprint: figma-1on1parity/data/41-8760-blueprint.json
  *
  * Layout hierarchy (from blueprint):
  * - Root frame (41:8760): Screen, bg #131313

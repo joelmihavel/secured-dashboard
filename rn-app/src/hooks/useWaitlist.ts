@@ -124,7 +124,7 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
   }, [enabled, useMock, queryClient]);
 
   // Include mockState in the query key so React Query refetches when the
-  // dev mock state changes (e.g., BuildBot switching from pending → accepted).
+  // dev mock state changes (e.g., switching from pending → accepted).
   const queryKey = useMock
     ? [...waitlistKeys.status(), 'mock', mockState]
     : waitlistKeys.status();

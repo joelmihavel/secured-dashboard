@@ -2,7 +2,7 @@
  * Edit Profile Screen - Pixel Perfect Figma Parity
  * Figma Reference: 41-8880
  *
- * Blueprint: buildbot/data/blueprints/41-8880-blueprint.json
+ * Blueprint: figma-1on1parity/data/41-8880-blueprint.json
  *
  * Layout hierarchy:
  * - Root (41:8880): 393x1069, bg #131313
