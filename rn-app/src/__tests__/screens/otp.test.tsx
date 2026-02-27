@@ -54,6 +54,14 @@ const mockBack = jest.fn();
 const mockReplace = jest.fn();
 let mockSearchParams: Record<string, string> = {};
 
+jest.mock('@gorhom/bottom-sheet', () => ({
+  BottomSheetModal: ({ children }: any) => children,
+  BottomSheetView: ({ children }: any) => children,
+  BottomSheetScrollView: ({ children }: any) => children,
+  BottomSheetTextInput: 'TextInput',
+  BottomSheetBackdrop: () => null,
+}));
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: mockPush,
