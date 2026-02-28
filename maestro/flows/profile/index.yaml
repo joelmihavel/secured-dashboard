@@ -1,26 +1,22 @@
 # =============================================================================
 # TE-120: Profile Screen Functional Flow
 # Route: /(profile)/index
-# Figma: 41-8760 (main), 41-8880 (edit-profile)
-# testIDs: profile-screen, view-agreement-button, edit-upi-button,
-#          edit-credit-card-button, edit-bank-account-button,
-#          contact-support-button, rate-app-button, sign-out-button,
-#          delete-account-button
+# Figma: 41-8760
+# testIDs: profile-screen, view-agreement-button, edit-bank-details-button,
+#          edit-upi-button, edit-credit-card-button, edit-bank-account-button,
+#          contact-support-button, rate-app-button, terms-conditions-button,
+#          privacy-policy-button, sign-out-button, delete-account-button
 # =============================================================================
 #
 # Validates:
 #   - Profile screen renders with user info header
-#   - User name and phone number display
-#   - Menu items are visible and tappable:
-#     - View Agreement
-#     - Edit UPI
-#     - Edit Credit Card
-#     - Edit Bank Account
-#     - Contact Support
-#     - Rate App
-#     - Sign Out
-#     - Delete Account
-#   - Tapping menu items navigates to sub-screens
+#   - "My Profile" title is visible
+#   - Secured Account section: user info row, View Agreement button
+#   - Payment Information section: Edit Bank Details (conditional)
+#   - Support section: Contact Support, Rate the App
+#   - App section: Terms & Conditions, Privacy Policy, Sign Out, Delete Account
+#   - Tapping user info row navigates to edit profile
+#   - Back navigation returns to profile
 # =============================================================================
 
 appId: com.flent.secured
@@ -35,24 +31,51 @@ appId: com.flent.secured
 - assertVisible:
     id: "profile-screen"
 
-# Verify profile header content
+# Verify profile title
 - assertVisible: "Profile"
 
-# Verify menu items
+# Verify Secured Account section
+- assertVisible: "Secured Account"
+
+# Verify View Agreement menu item
 - assertVisible:
     id: "view-agreement-button"
 
-# Scroll to see all menu items
+# Scroll to Support section
+- scrollUntilVisible:
+    element: "support"
+    direction: DOWN
+    timeout: 5000
+
+# Verify Contact Support
+- assertVisible:
+    id: "contact-support-button"
+
+# Verify Rate the App
+- assertVisible:
+    id: "rate-app-button"
+
+# Scroll to App section
+- scrollUntilVisible:
+    element: "App"
+    direction: DOWN
+    timeout: 5000
+
+# Verify Terms & Conditions
 - scrollUntilVisible:
     element:
-      id: "contact-support-button"
+      id: "terms-conditions-button"
     direction: DOWN
     timeout: 5000
 
 - assertVisible:
-    id: "contact-support-button"
+    id: "terms-conditions-button"
 
-# Continue scrolling to bottom items
+# Verify Privacy Policy
+- assertVisible:
+    id: "privacy-policy-button"
+
+# Verify Sign Out
 - scrollUntilVisible:
     element:
       id: "sign-out-button"
@@ -62,6 +85,7 @@ appId: com.flent.secured
 - assertVisible:
     id: "sign-out-button"
 
+# Verify Delete Account
 - scrollUntilVisible:
     element:
       id: "delete-account-button"
@@ -71,28 +95,28 @@ appId: com.flent.secured
 - assertVisible:
     id: "delete-account-button"
 
-# -- Test navigation to edit profile --
+# -- Test navigation to View Agreement --
 - scrollUntilVisible:
     element:
-      id: "edit-upi-button"
+      id: "view-agreement-button"
     direction: UP
     timeout: 5000
 
 - tapOn:
-    id: "edit-upi-button"
+    id: "view-agreement-button"
 
 - waitForAnimationToEnd
 
-# Verify navigated to payment methods screen
+# Verify navigated to agreement screen
 - assertVisible:
-    id: "payment-methods-screen"
-    optional: true
+    id: "profile-agreement-screen"
 
 # Go back to profile
 - back
-
 - waitForAnimationToEnd
 
 # Verify we are back on profile
 - assertVisible:
     id: "profile-screen"
+
+- takeScreenshot: "profile-screen-complete"

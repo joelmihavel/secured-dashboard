@@ -55,7 +55,7 @@ delete_rows() {
 
 # Step 1: Find test user count
 echo "--- Test User Discovery ---"
-TEST_USER_COUNT=$(count_rows "users" "is_test_user=eq.true")
+TEST_USER_COUNT=$(count_rows "users" "phone=like.*999990*")
 echo "  Test users found: $TEST_USER_COUNT"
 echo ""
 
@@ -91,7 +91,7 @@ if [ "$EXECUTE" = false ]; then
     TABLE="${entry%%:*}"
     COL="${entry##*:}"
     # Use inner join approach: filter by user_id in test users
-    COUNT=$(count_rows "$TABLE" "${COL}=in.(select(id).from(users).filter(is_test_user.eq.true))" 2>/dev/null || echo "?")
+    COUNT=$(count_rows "$TABLE" "${COL}=in.(select(id).from(users).filter(phone.like.*999990*))" 2>/dev/null || echo "?")
     echo "  $TABLE: $COUNT"
   done
 
@@ -122,14 +122,14 @@ DECLARE
   deleted_count int;
 BEGIN
   -- Gather test user IDs
-  SELECT array_agg(id) INTO test_user_ids FROM users WHERE is_test_user = true;
+  SELECT array_agg(id) INTO test_user_ids FROM users WHERE phone LIKE '%999990%';
   IF test_user_ids IS NULL THEN
     RAISE NOTICE 'No test users found';
     RETURN;
   END IF;
 
   -- Gather test phones
-  SELECT array_agg(phone) INTO test_phones FROM users WHERE is_test_user = true;
+  SELECT array_agg(phone) INTO test_phones FROM users WHERE phone LIKE '%999990%';
 
   -- Gather tenancy IDs
   SELECT array_agg(id) INTO test_tenancy_ids FROM tenancies WHERE user_id = ANY(test_user_ids);

@@ -27,7 +27,7 @@ HJ-008,Happy Journey,Setup,Add utility (electricity provider + bill),Add electri
 2. Tap ""Add Utility""
 3. Select electricity provider
 4. Enter consumer number
-5. Tap ""Fetch Bill""",Utility bill fetched and step marked complete,+919999900001,approved,P1,Automated,Covered,"Backend: verify-utility.test.ts, utility-bill-flow.test.ts | Frontend: setup.test.ts | E2E (new): flows/setup/add-utility.yaml"
+5. Tap ""Fetch Bill""",Utility bill fetched and step marked complete,+919999900001,approved,P1,Automated,Covered,"Backend: verify-utility.test.ts, utility-bill-flow.test.ts | Frontend: setup.test.ts | E2E: flows/setup/add-utility.yaml"
 HJ-009,Happy Journey,Setup,Invite landlord (phone + name),Invite landlord by entering their phone and name,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
 2. Tap ""Invite Landlord""
 3. Enter landlord name
@@ -44,19 +44,19 @@ HJ-012,Happy Journey,Payment,First rent payment end-to-end,Enter amount select m
 2. Enter amount
 3. Select payment method
 4. Complete payment
-5. Wait for success",Payment success screen shown with receipt,+919999900001,active,P0,Automated,Covered,"Backend: payment-flow.test.ts, initiate-payment.test.ts | Frontend: payment-flow.integration.test.ts, usePaymentFlow.test.ts | E2E: journeys/make-payment.yaml"
+5. Wait for success",Payment success screen shown with receipt,+919999900001,active,P0,Automated,Covered,"Backend: payment-flow.test.ts, initiate-payment.test.ts | Frontend: payment-flow.integration.test.ts, usePaymentFlow.test.ts | E2E: journeys/make-payment.yaml | E2E: flows/payment/enter-rent.yaml"
 HJ-013,Happy Journey,Setup,Skip landlord invitation,Complete setup without inviting landlord,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
 2. Complete bank step
 3. Skip landlord step
-4. Complete or skip utility",Setup completes with landlord step skipped,+919999900001,approved,P1,Automated,Covered,Frontend: useSetupGuard.test.ts | E2E (new): journeys/skip-setup.yaml
+4. Complete or skip utility",Setup completes with landlord step skipped,+919999900001,approved,P1,Automated,Covered,Frontend: useSetupGuard.test.ts | E2E: journeys/skip-setup.yaml
 HJ-014,Happy Journey,Setup,Skip utility verification,Complete setup without adding utility,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
 2. Complete bank step
 3. Complete or skip landlord
-4. Skip utility step",Setup completes with utility step skipped,+919999900001,approved,P1,E2E,Partial,"E2E (new): flows/setup/add-utility-skip.yaml, journeys/skip-setup.yaml"
+4. Skip utility step",Setup completes with utility step skipped,+919999900001,approved,P1,E2E,Partial,"E2E: flows/setup/add-utility-skip.yaml, journeys/skip-setup.yaml"
 HJ-015,Happy Journey,Setup,Skip both landlord and utility,Complete setup with only bank verification,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
 2. Complete bank step
 3. Skip landlord
-4. Skip utility",Setup completes with minimum steps,+919999900001,approved,P1,E2E,Partial,E2E (new): journeys/skip-setup.yaml
+4. Skip utility",Setup completes with minimum steps,+919999900001,approved,P1,E2E,Partial,E2E: journeys/skip-setup.yaml
 HJ-016,Happy Journey,Payment,Payment via UPI,Complete rent payment using UPI VPA,./scripts/seed-state.sh active +919999900001,"1. Tap ""Pay Rent""
 2. Enter amount
 3. Select UPI
@@ -67,7 +67,7 @@ HJ-017,Happy Journey,Payment,Payment via credit card,Complete rent payment using
 3. Select Credit Card
 4. Enter card details
 5. Complete 3DS
-6. Verify success",Payment success via credit card,+919999900001,active,P0,Semi-Auto,Partial,Backend: payment-flow.test.ts | Frontend: usePaymentFlow.test.ts | E2E (new): journeys/payment-card.yaml
+6. Verify success",Payment success via credit card,+919999900001,active,P0,Semi-Auto,Partial,Backend: payment-flow.test.ts | Frontend: usePaymentFlow.test.ts | E2E: journeys/payment-card.yaml
 HJ-018,Happy Journey,Payment,Payment via debit card,Complete rent payment using debit card,./scripts/seed-state.sh active +919999900001,"1. Tap ""Pay Rent""
 2. Enter amount
 3. Select Debit Card
@@ -79,7 +79,7 @@ HJ-019,Happy Journey,Payment,Payment via netbanking,Complete rent payment using 
 3. Select Netbanking
 4. Choose bank
 5. Complete bank auth
-6. Verify success",Payment success via netbanking,+919999900001,active,P0,Semi-Auto,Partial,Frontend: usePaymentFlow.test.ts | E2E (new): journeys/payment-netbanking.yaml
+6. Verify success",Payment success via netbanking,+919999900001,active,P0,Semi-Auto,Partial,Frontend: usePaymentFlow.test.ts | E2E: journeys/payment-netbanking.yaml
 HJ-020,Happy Journey,Transactions,View transaction history,View list of past transactions,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Navigate to Transactions tab
 2. Verify list loads
 3. Check transaction details shown",Transaction list displays with correct data,+919999900001,active,P1,Manual,Gap,"Frontend: usePayments.test.ts, payments.test.ts"
@@ -102,7 +102,19 @@ HJ-025,Happy Journey,Auth,Sign out and re-login,Sign out then sign back in with 
 2. Tap ""Sign Out""
 3. Confirm sign out
 4. Sign in again with same phone
-5. Enter OTP",User logged back in with data preserved,+919999900001,active,P1,Semi-Auto,Partial,"Frontend: auth-flow.integration.test.ts, useAuth.test.ts | E2E (new): journeys/sign-out-relogin.yaml"
+5. Enter OTP",User logged back in with data preserved,+919999900001,active,P1,Semi-Auto,Partial,"Frontend: auth-flow.integration.test.ts, useAuth.test.ts | E2E: journeys/sign-out-relogin.yaml"
+HJ-026,Happy Journey,Profile,Edit bank details,Update bank account details from profile,./scripts/seed-state.sh active +919999900001,"1. Navigate to Profile
+2. Tap bank account section
+3. Update IFSC or account number
+4. Tap Save",Bank details updated successfully,+919999900001,active,P1,E2E,Partial,E2E: flows/profile/edit-bank-details.yaml
+HJ-027,Happy Journey,Payment,Cashback setup from dashboard,Complete cashback setup modal from dashboard prompt,./scripts/seed-state.sh active +919999900001 --no-bank,"1. Navigate to Home dashboard
+2. Tap cashback setup prompt
+3. Complete required steps
+4. Dismiss modal",Cashback setup modal guides user through missing verification steps,+919999900001,active,P1,Manual,Gap,Frontend: CashbackSetupModal component
+HJ-028,Happy Journey,Payment,View fee breakdown before payment,View convenience fee breakdown before confirming payment,./scripts/seed-state.sh active +919999900001,"1. Enter rent amount
+2. Select payment method
+3. View fee breakdown
+4. Verify fee displayed",Fee breakdown shows convenience fee per payment method type,+919999900001,active,P1,Semi-Auto,Partial,Backend: get-fee-config.test.ts | E2E: flows/payment/confirm.yaml
 UI-001,UI Level,Splash,Splash screen renders correctly,Verify splash screen displays logo and brand elements,none,"1. Cold launch app
 2. Observe splash screen",Splash screen shows logo and brand gradient,+919999900001,clean,P1,Automated,Covered,Frontend: splash.test.tsx | E2E: flows/auth/splash.yaml
 UI-002,UI Level,Splash,Beta splash screen renders,Verify beta splash variant displays beta badge,none,"1. Launch app in beta mode
@@ -172,9 +184,9 @@ UI-030,UI Level,Setup,Setup skip states UI,Verify skip button and skipped step a
 UI-031,UI Level,Dashboard,Home dashboard zero state no tenancy,Verify dashboard when no tenancy exists,./scripts/seed-state.sh active +919999900001 --no-tenancy,"1. Navigate to home
 2. View zero state",Empty state prompting user to complete setup,+919999900001,active,P1,Manual,Gap,
 UI-032,UI Level,Dashboard,Home dashboard payment due,Verify dashboard with payment due card,./scripts/seed-state.sh active +919999900001,"1. Navigate to home
-2. View payment due state",Payment due card with amount and due date,+919999900001,active,P1,E2E,Partial,E2E (new): flows/main/dashboard-states.yaml
+2. View payment due state",Payment due card with amount and due date,+919999900001,active,P1,E2E,Partial,E2E: flows/main/dashboard-states.yaml
 UI-033,UI Level,Dashboard,Home dashboard overdue payment,Verify dashboard with overdue payment indicator,./scripts/seed-state.sh active +919999900001 --overdue,"1. Navigate to home
-2. View overdue state",Overdue badge with penalty amount shown,+919999900001,active,P1,E2E,Partial,E2E (new): flows/main/dashboard-states.yaml
+2. View overdue state",Overdue badge with penalty amount shown,+919999900001,active,P1,E2E,Partial,E2E: flows/main/dashboard-states.yaml
 UI-034,UI Level,Dashboard,Home dashboard pending verification,Verify dashboard during pending bank/utility verification,./scripts/seed-state.sh active +919999900001 --pending-verify,"1. Navigate to home
 2. View pending state",Pending verification banner shown,+919999900001,active,P2,Manual,Gap,
 UI-035,UI Level,Dashboard,Home dashboard loaded cashback,Verify cashback section on dashboard,./scripts/seed-state.sh active +919999900001 --with-cashback,"1. Navigate to home
@@ -182,16 +194,16 @@ UI-035,UI Level,Dashboard,Home dashboard loaded cashback,Verify cashback section
 UI-036,UI Level,Dashboard,Home dashboard multiple tenancies,Verify dashboard with multiple tenancy selector,./scripts/seed-state.sh active +919999900001 --multi-tenancy,"1. Navigate to home
 2. View tenancy selector",Tenancy selector visible with switch capability,+919999900001,active,P2,Manual,Gap,
 UI-037,UI Level,Payment Modal,PaymentMethodModal enter-amount view,Verify enter amount step in payment modal,./scripts/seed-state.sh active +919999900001,"1. Tap Pay Rent
-2. View enter-amount step",Amount input with keypad and Continue CTA,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/first-rent.yaml | E2E (new): flows/payment/enter-rent.yaml
+2. View enter-amount step",Amount input with keypad and Continue CTA,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/enter-rent.yaml
 UI-038,UI Level,Payment Modal,PaymentMethodModal method-selector view,Verify method selection step,./scripts/seed-state.sh active +919999900001,"1. Enter amount
 2. Tap Continue
-3. View method selector",List of payment methods (UPI Card Netbanking),+919999900001,active,P0,Semi-Auto,Partial,E2E: journeys/make-payment.yaml | E2E (new): flows/payment/method-selector.yaml
+3. View method selector",List of payment methods (UPI Card Netbanking),+919999900001,active,P0,Semi-Auto,Partial,E2E: journeys/make-payment.yaml | E2E: flows/payment/method-selector.yaml
 UI-039,UI Level,Payment Modal,PaymentMethodModal add-upi view,Verify UPI VPA entry view,./scripts/seed-state.sh active +919999900001,"1. In method selector tap UPI
-2. View add-upi form",UPI VPA input field with @ domain suggestions,+919999900001,active,P0,Semi-Auto,Partial,E2E (new): flows/payment/add-upi.yaml
+2. View add-upi form",UPI VPA input field with @ domain suggestions,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/add-upi.yaml
 UI-040,UI Level,Payment Modal,PaymentMethodModal add-card view,Verify card entry view,./scripts/seed-state.sh active +919999900001,"1. In method selector tap Card
-2. View add-card form",Card number expiry CVV fields with card preview,+919999900001,active,P0,Semi-Auto,Partial,E2E (new): flows/payment/add-card.yaml
+2. View add-card form",Card number expiry CVV fields with card preview,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/add-card.yaml
 UI-041,UI Level,Payment Modal,PaymentMethodModal add-netbanking view,Verify netbanking bank selection view,./scripts/seed-state.sh active +919999900001,"1. In method selector tap Netbanking
-2. View bank list",Bank list with search and popular banks section,+919999900001,active,P0,Semi-Auto,Partial,E2E (new): flows/payment/add-netbanking.yaml
+2. View bank list",Bank list with search and popular banks section,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/add-netbanking.yaml
 UI-042,UI Level,Payment Modal,PaymentMethodModal edit-method view,Verify edit/manage saved methods view,./scripts/seed-state.sh active +919999900001 --with-methods,"1. In method selector tap Edit
 2. View saved methods",List of saved methods with delete and default options,+919999900001,active,P1,Manual,Gap,
 UI-043,UI Level,Payment,Payment processing screen,Verify processing screen with animation,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
@@ -203,9 +215,10 @@ UI-045,UI Level,Payment,Payment failed screen,Verify failed screen with retry op
 UI-046,UI Level,Profile,Profile view screen,Verify profile display with user data,./scripts/seed-state.sh active +919999900001,"1. Navigate to Profile tab
 2. View profile",Name phone avatar and menu items displayed,+919999900001,active,P1,Manual,Gap,
 UI-047,UI Level,Profile,Profile edit screen,Verify profile edit form,./scripts/seed-state.sh active +919999900001,"1. Tap Edit Profile
-2. View edit form",Editable name field and avatar picker,+919999900001,active,P2,E2E,Partial,E2E (new): flows/profile/edit.yaml
-UI-048,UI Level,Profile,Payment methods list screen,Verify saved payment methods list,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Navigate to Payment Methods in profile
-2. View list",Saved methods listed with type icons and default indicator,+919999900001,active,P1,E2E,Partial,E2E (new): flows/profile/payment-methods.yaml
+2. View edit form",Editable name field and avatar picker,+919999900001,active,P2,E2E,Partial,E2E: flows/profile/edit.yaml
+UI-048,UI Level,Profile,Payment method management (inline modal),Verify payment method management via PaymentMethodModal edit-method view,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Open PaymentMethodModal
+2. Navigate to edit-method view
+3. View saved methods",Saved methods listed with type icons and default/delete options,+919999900001,active,P1,E2E,Covered,Dedicated payment-methods.tsx screen was REMOVED. Payment methods now managed inline via PaymentMethodModal (edit-method view). Covered by PM-014.
 UI-049,UI Level,Profile,Notifications settings screen,Verify notification preferences screen,./scripts/seed-state.sh active +919999900001,"1. Navigate to Notifications in profile
 2. View settings",Toggle switches for push SMS WhatsApp email,+919999900001,active,P2,Manual,Gap,
 UI-050,UI Level,Profile,Help screen,Verify help/support screen,./scripts/seed-state.sh active +919999900001,"1. Navigate to Help in profile
@@ -213,7 +226,7 @@ UI-050,UI Level,Profile,Help screen,Verify help/support screen,./scripts/seed-st
 UI-051,UI Level,Profile,About screen,Verify about screen with app version,./scripts/seed-state.sh active +919999900001,"1. Navigate to About in profile
 2. View about screen",App version build number and legal links,+919999900001,active,P2,Manual,Gap,
 UI-052,UI Level,Profile,Agreement view screen,Verify uploaded agreement view in profile,./scripts/seed-state.sh active +919999900001,"1. Navigate to Agreement in profile
-2. View agreement",Agreement details and document preview shown,+919999900001,active,P2,E2E,Partial,E2E (new): flows/profile/agreement.yaml
+2. View agreement",Agreement details and document preview shown,+919999900001,active,P2,E2E,Partial,E2E: flows/profile/agreement.yaml
 UI-053,UI Level,Transactions,Transaction list empty state,Verify empty transaction list,./scripts/seed-state.sh active +919999900001 --no-payments,"1. Navigate to Transactions
 2. View empty state",Empty state illustration with message,+919999900001,active,P1,Manual,Gap,
 UI-054,UI Level,Transactions,Transaction list populated,Verify populated transaction list,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Navigate to Transactions
@@ -231,19 +244,35 @@ UI-059,UI Level,Animation,Card flip animation,Verify payment card flip animation
 UI-060,UI Level,States,All error/empty/loading states,Verify error empty and loading states render for each screen,./scripts/seed-state.sh active +919999900001,"1. Trigger loading state (slow network)
 2. Trigger error state (network off)
 3. Trigger empty state (no data)",Each state renders appropriate UI without crashes,+919999900001,active,P1,Automated,Covered,Frontend: Jest tests
+UI-061,UI Level,Profile,Edit bank details screen,Verify edit bank details form renders with current data,./scripts/seed-state.sh active +919999900001,"1. Navigate to Profile
+2. Tap Edit Bank Details
+3. View form",Form shows current IFSC and account with edit fields,+919999900001,active,P1,E2E,Partial,E2E: flows/profile/edit-bank-details.yaml
+UI-062,UI Level,Dashboard,Cashback setup modal,Verify cashback setup modal renders with step checklist,./scripts/seed-state.sh active +919999900001 --no-bank,"1. Navigate to Home
+2. Tap cashback prompt
+3. View modal",Modal shows verification step checklist with completion status,+919999900001,active,P1,Manual,Gap,
+UI-063,UI Level,Payment,Payment card visual with network logos,Verify payment card shows correct network logo,./scripts/seed-state.sh active +919999900001,"1. Navigate to add card
+2. Enter card number
+3. Verify network logo",Card preview shows Visa/Mastercard/RuPay logo based on BIN,+919999900001,active,P2,Manual,Gap,Frontend: NetworkLogos.tsx component
+UI-064,UI Level,Payment,Fee config display per method,Verify convenience fee shown per payment method,./scripts/seed-state.sh active +919999900001,"1. Open payment modal
+2. Enter amount
+3. View method selector
+4. Check fee labels",Each payment method shows associated convenience fee,+919999900001,active,P1,Manual,Gap,Backend: get-fee-config edge function
+UI-065,UI Level,Payment,Payment confirm screen updated,Verify payment confirm screen shows amount breakdown,./scripts/seed-state.sh active +919999900001,"1. Select payment method
+2. View confirm screen
+3. Verify breakdown",Confirm screen shows rent + fee + total with selected method,+919999900001,active,P0,E2E,Partial,E2E: flows/payment/confirm.yaml
 EC-001,Edge Cases,OTP,Double OTP submission,Submit OTP twice rapidly to test idempotency,./scripts/seed-state.sh otp-sent +919999900001,"1. Enter valid OTP
 2. Rapidly tap submit twice",Only one verification processed no duplicate errors,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: otp.test.tsx
 EC-002,Edge Cases,OTP,Expired OTP after 5 minutes,Enter OTP after expiry window,./scripts/seed-state.sh otp-sent +919999900001,"1. Request OTP
 2. Wait 5+ minutes
-3. Enter OTP",Error message indicating OTP expired with resend option,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: useAuth.test.ts | E2E (new): flows/edge-cases/otp-error-states.yaml
+3. Enter OTP",Error message indicating OTP expired with resend option,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: useAuth.test.ts | E2E: flows/edge-cases/otp-error-states.yaml
 EC-003,Edge Cases,OTP,Wrong OTP 3 times,Enter incorrect OTP three consecutive times,./scripts/seed-state.sh otp-sent +919999900001,"1. Enter wrong OTP
-2. Repeat 2 more times",Account temporarily locked with cooldown message,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: otp.test.tsx | E2E (new): flows/edge-cases/otp-error-states.yaml
+2. Repeat 2 more times",Account temporarily locked with cooldown message,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: otp.test.tsx | E2E: flows/edge-cases/otp-error-states.yaml
 EC-004,Edge Cases,Payment,Network disconnect during payment initiation,Lose network after tapping pay but before server response,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
 2. Disable network immediately
 3. Observe behavior",Error shown with retry option no duplicate payment created,+919999900001,active,P0,Manual,Gap,
 EC-005,Edge Cases,Payment,App kill during payment processing,Force kill app while payment is processing,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
 2. Force kill app
-3. Reopen app",App checks pending payment status and shows correct result,+919999900001,active,P0,Automated,Covered,Frontend: usePaymentRecovery.test.ts | E2E (new): journeys/crash-recovery-payment.yaml
+3. Reopen app",App checks pending payment status and shows correct result,+919999900001,active,P0,Automated,Covered,Frontend: usePaymentRecovery.test.ts | E2E: journeys/crash-recovery-payment.yaml
 EC-006,Edge Cases,Agreement,App kill during agreement upload,Force kill app while document is uploading,./scripts/seed-state.sh verified +919999900001,"1. Start agreement upload
 2. Force kill app
 3. Reopen app",Upload state recovered or user prompted to re-upload,+919999900001,verified,P1,Manual,Gap,
@@ -256,7 +285,7 @@ EC-009,Edge Cases,Auth,Concurrent login from two devices,Login from second devic
 3. Check device A",Device A session invalidated or notification shown,+919999900001,active,P1,Manual,Gap,
 EC-010,Edge Cases,Network,Offline to online transition queue replay,Perform actions offline then reconnect,./scripts/seed-state.sh active +919999900001,"1. Go offline
 2. Attempt various actions
-3. Reconnect",Queued actions replay and data syncs,+919999900001,active,P1,E2E,Partial,E2E (new): journeys/network-offline.yaml
+3. Reconnect",Queued actions replay and data syncs,+919999900001,active,P1,E2E,Partial,E2E: journeys/network-offline.yaml
 EC-011,Edge Cases,Error,ErrorBoundary fallback rendering,Trigger JS error to test error boundary,./scripts/seed-state.sh active +919999900001,"1. Trigger a component crash (dev tools)
 2. Observe fallback UI",Error boundary fallback screen renders with retry,+919999900001,active,P1,Semi-Auto,Partial,Frontend: ErrorBoundary.test.tsx
 EC-012,Edge Cases,Payment,Amount mismatch webhook vs initiated,Webhook reports different amount than initiated,./scripts/seed-state.sh active +919999900001,"1. Initiate payment for 10000
@@ -271,11 +300,11 @@ EC-015,Edge Cases,Auth,Session token expiry mid-flow,Token expires during multi-
 2. Expire token on server
 3. Continue flow",Auth redirect triggered with state preserved,+919999900001,active,P1,Manual,Gap,
 EC-016,Edge Cases,Navigation,Deep link to invalid route,Open deep link with non-existent route,none,"1. Open flentsecured://invalid-route
-2. Observe behavior",App handles gracefully with redirect to home or error,+919999900001,active,P2,E2E,Partial,E2E (new): flows/edge-cases/deep-link-invalid.yaml
+2. Observe behavior",App handles gracefully with redirect to home or error,+919999900001,active,P2,E2E,Partial,E2E: flows/edge-cases/deep-link-invalid.yaml
 EC-017,Edge Cases,Payment,Back button during payment,Press back/swipe back during payment processing,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
-2. Press back during processing",Warning dialog shown or back disabled during processing,+919999900001,active,P0,E2E,Partial,E2E (new): flows/edge-cases/payment-back-button.yaml
+2. Press back during processing",Warning dialog shown or back disabled during processing,+919999900001,active,P0,E2E,Partial,E2E: flows/edge-cases/payment-back-button.yaml
 EC-018,Edge Cases,Payment,Rapid multi-tap on pay button,Tap pay button multiple times rapidly,./scripts/seed-state.sh active +919999900001,"1. Enter amount and select method
-2. Rapidly tap Pay 5 times",Only one payment initiated button disabled after first tap,+919999900001,active,P0,Semi-Auto,Partial,Frontend: usePaymentFlow.test.ts | E2E (new): flows/edge-cases/rapid-pay-tap.yaml
+2. Rapidly tap Pay 5 times",Only one payment initiated button disabled after first tap,+919999900001,active,P0,Semi-Auto,Partial,Frontend: usePaymentFlow.test.ts | E2E: flows/edge-cases/rapid-pay-tap.yaml
 EC-019,Edge Cases,API,Empty/null responses from edge functions,Edge function returns empty or null body,./scripts/seed-state.sh active +919999900001,"1. Mock edge function to return null
 2. Trigger the call
 3. Observe app behavior",App shows appropriate error without crashing,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
@@ -299,7 +328,7 @@ EC-026,Edge Cases,Network,Slow network 3G simulation,Use network conditioner to 
 3. Attempt payment",App remains functional with loading indicators and timeouts,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
 EC-027,Edge Cases,Payment,Payment with zero amount,Enter 0 as payment amount,./scripts/seed-state.sh active +919999900001,"1. Open payment modal
 2. Enter 0 as amount
-3. Try to proceed",Validation error prevents zero amount payment,+919999900001,active,P1,Semi-Auto,Partial,Backend: initiate-payment.test.ts | E2E (new): flows/edge-cases/payment-zero-amount.yaml
+3. Try to proceed",Validation error prevents zero amount payment,+919999900001,active,P1,Semi-Auto,Partial,Backend: initiate-payment.test.ts | E2E: flows/edge-cases/payment-zero-amount.yaml
 EC-028,Edge Cases,Payment,Payment with negative amount,Attempt negative amount via API manipulation,./scripts/seed-state.sh active +919999900001,"1. Call initiate-payment with negative amount
 2. Check response",Server rejects with validation error,+919999900001,active,P1,Semi-Auto,Partial,Backend: initiate-payment.test.ts
 EC-029,Edge Cases,Payment,Duplicate payment within 1 minute,Attempt second payment within 1 minute of first,./scripts/seed-state.sh active +919999900001,"1. Complete payment
@@ -334,6 +363,12 @@ EC-039,Edge Cases,Payment,Switch payment method during processing,Change method 
 EC-040,Edge Cases,Device,Memory pressure low memory,App behavior under low memory conditions,./scripts/seed-state.sh active +919999900001,"1. Simulate memory warning
 2. Navigate through app
 3. Check for crashes",App handles memory pressure without data loss,+919999900001,active,P2,Manual,Gap,
+EC-041,Edge Cases,Payment,BIN lookup failure during card entry,Handle BIN info API failure gracefully,./scripts/seed-state.sh active +919999900001,"1. Enter card number
+2. Simulate BIN API failure
+3. Observe behavior",Card form continues working with generic card type fallback,+919999900001,active,P1,Manual,Gap,
+EC-042,Edge Cases,Profile,Edit bank details with same values,Submit edit bank details with unchanged values,./scripts/seed-state.sh active +919999900001,"1. Navigate to Edit Bank Details
+2. Don't change any values
+3. Tap Save",Either no-op with message or re-verification triggered,+919999900001,active,P2,Manual,Gap,
 SM-001,State Management,Auth Store,Auth store persistence across app kill,Verify auth state survives app force kill,./scripts/seed-state.sh active +919999900001,"1. Login successfully
 2. Force kill app
 3. Reopen app",User remains authenticated without re-login,+919999900001,active,P0,Semi-Auto,Partial,"Frontend: auth.test.ts, auth-flow.integration.test.ts"
@@ -616,6 +651,16 @@ BA-111,Backend API,cleanup-stale-payments,cleanup-stale-payments success,Run sta
 2. Check response",200 with count of cleaned payments,+919999900001,active,P2,Automated,Covered,Backend: Deno tests | Service role only
 BA-112,Backend API,admin-waitlist,admin-waitlist approve user,Admin approves waitlist user,./scripts/seed-state.sh waitlisted +919999900001,"1. POST /admin-waitlist {action:approve user_id:X}
 2. Check response",200 user approved,+919999900001,waitlisted,P1,Automated,Covered,Backend: Deno tests | Service role only
+BA-113,Backend API,get-bin-info,get-bin-info success,Get card BIN information,./scripts/seed-state.sh active +919999900001,"1. POST /get-bin-info {bin:411111}
+2. Check response",200 with card_type issuer and network,+919999900001,active,P1,Manual,Gap,New edge function
+BA-114,Backend API,get-bin-info,get-bin-info invalid BIN,Get info for invalid BIN,./scripts/seed-state.sh active +919999900001,"1. POST /get-bin-info {bin:000000}
+2. Check response",400 with invalid BIN error,+919999900001,active,P1,Manual,Gap,New edge function
+BA-115,Backend API,notify-user,notify-user success,Send notification to user via notify-user function,./scripts/seed-state.sh active +919999900001,"1. POST /notify-user {user_id:X type:payment_success data:{}}
+2. Check response",200 notification queued via correct channel,+919999900001,active,P1,Manual,Gap,New edge function
+BA-116,Backend API,notify-user,notify-user invalid type,Send notification with invalid type,./scripts/seed-state.sh active +919999900001,"1. POST /notify-user {user_id:X type:invalid}
+2. Check response",400 with invalid notification type,+919999900001,active,P1,Manual,Gap,New edge function
+BA-117,Backend API,sync-netbanking-banks,sync-netbanking-banks success,Sync netbanking bank list from PayU,./scripts/seed-state.sh active +919999900001,"1. POST /sync-netbanking-banks
+2. Check response",200 with updated bank count,+919999900001,active,P2,Manual,Gap,New edge function - service role only
 EA-001,External API,PayU,PayU initiate payment sandbox success,Initiate payment via PayU sandbox,./scripts/seed-state.sh active +919999900001,"1. Call PayU sandbox API with test credentials
 2. Submit payment request
 3. Verify redirect URL",PayU returns valid redirect URL with txn_id,+919999900001,active,P0,Automated,Covered,Backend: initiate-payment.test.ts | Frontend: payuCoreService.test.ts

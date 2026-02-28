@@ -78,7 +78,6 @@ executionOrder:
     # ==========================================
     # Payment flows
     # ==========================================
-    - "flows/payment/first-rent.yaml"
     - "flows/payment/enter-rent.yaml"
     - "flows/payment/method-selector.yaml"
     - "flows/payment/add-upi.yaml"
@@ -94,7 +93,7 @@ executionOrder:
     # ==========================================
     - "flows/profile/index.yaml"
     - "flows/profile/edit.yaml"
-    - "flows/profile/payment-methods.yaml"
+    - "flows/profile/edit-bank-details.yaml"
     - "flows/profile/agreement.yaml"
     # ==========================================
     # Edge case flows

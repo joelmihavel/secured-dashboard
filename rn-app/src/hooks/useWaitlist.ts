@@ -5,9 +5,8 @@
  * Wraps waitlist API calls with caching and mutation handling.
  */
 
-import { useQuery, useMutation, useQueryClient, focusManager } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
-import { AppState, Platform } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getWaitlistStatus,
   joinWaitlist,
@@ -26,6 +25,7 @@ import {
 } from '../stores/waitlist';
 import { useAuthStore } from '../stores/auth';
 import { supabase } from '../services/supabase/client';
+import { useRealtimeQuery } from './useRealtimeQuery';
 
 // ==============================================
 // QUERY KEYS
@@ -36,21 +36,6 @@ export const waitlistKeys = {
   status: () => [...waitlistKeys.all, 'status'] as const,
   referral: (code: string) => [...waitlistKeys.all, 'referral', code] as const,
 };
-
-// ==============================================
-// APP STATE → REACT QUERY FOCUS (React Native has no window focus events)
-// ==============================================
-
-function useAppStateFocusManager() {
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (status) => {
-      if (Platform.OS !== 'web') {
-        focusManager.setFocused(status === 'active');
-      }
-    });
-    return () => subscription.remove();
-  }, []);
-}
 
 // ==============================================
 // POLLING INTERVAL
@@ -75,53 +60,19 @@ interface UseWaitlistStatusOptions {
 export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
   const { enabled = true, useMock = false, mockState = 'pending' } = options;
   const store = useWaitlistStore();
-  const queryClient = useQueryClient();
 
-  // Wire AppState changes to React Query's focus manager so
-  // refetchOnWindowFocus works on React Native
-  useAppStateFocusManager();
+  // Realtime subscription via centralized manager — no async race condition.
+  // userId is read synchronously from Zustand store.
+  const userId = useAuthStore((s) => s.userId);
 
-  // Realtime subscription — instantly refetch when admin approves/rejects
-  useEffect(() => {
-    if (!enabled || useMock) return;
-
-    let userId: string | null = null;
-
-    const setupRealtime = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      userId = session?.user?.id ?? null;
-      if (!userId) return;
-
-      const channel = supabase
-        .channel(`waitlist:${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'waitlist_entries',
-            filter: `user_id=eq.${userId}`,
-          },
-          () => {
-            // Immediately refetch status on any change to user's waitlist entry
-            queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
-          }
-        )
-        .subscribe();
-
-      // Store cleanup reference
-      return channel;
-    };
-
-    let channelRef: ReturnType<typeof supabase.channel> | undefined;
-    setupRealtime().then((ch) => { channelRef = ch; });
-
-    return () => {
-      if (channelRef) {
-        supabase.removeChannel(channelRef);
-      }
-    };
-  }, [enabled, useMock, queryClient]);
+  useRealtimeQuery({
+    table: 'waitlist_entries',
+    event: '*',
+    filter: userId ? `user_id=eq.${userId}` : undefined,
+    queryKeys: [waitlistKeys.status()],
+    enabled: enabled && !useMock && !!userId,
+    refetch: true,
+  });
 
   // Include mockState in the query key so React Query refetches when the
   // dev mock state changes (e.g., switching from pending → accepted).
@@ -359,6 +310,23 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
   const queryClient = useQueryClient();
   const authUserName = useAuthStore((s) => s.userName);
 
+  // Hydrate name from Supabase session when auth store is empty.
+  // This covers returning users where the Zustand store starts fresh
+  // but the name was saved to user_metadata during sign-up.
+  const [sessionName, setSessionName] = useState('');
+  useEffect(() => {
+    if (!authUserName) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const name = session?.user?.user_metadata?.name;
+        if (name) {
+          setSessionName(name);
+          // Also sync back to auth store so other screens pick it up
+          useAuthStore.getState().setUserName(name);
+        }
+      }).catch(() => {});
+    }
+  }, [authUserName]);
+
   // Status query
   const statusQuery = useWaitlistStatus(options);
 
@@ -432,7 +400,7 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
     // Status data
     status: statusQuery.data,
     viewState: store.viewState,
-    userName: authUserName || store.userName,
+    userName: authUserName || sessionName || store.userName,
     isLoading: statusQuery.isLoading,
     isRefetching: statusQuery.isRefetching,
     error: store.error,

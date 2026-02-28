@@ -53,10 +53,10 @@ export interface PrimaryButtonProps {
   testID?: string;
 }
 
-// Animation constants for 3D mechanical keyboard effect
+// Animation constants for 3D mechanical keyboard effect — stiffer for immediate feedback
 const SPRING_CONFIG = {
-  damping: 15,
-  stiffness: 400,
+  damping: 18,
+  stiffness: 500,
   mass: 0.5,
 };
 
@@ -120,6 +120,7 @@ function PrimaryButtonComponent({
 
   const handlePressOut = useCallback(() => {
     pressed.value = withSpring(0, SPRING_CONFIG);
+    Haptics.selectionAsync().catch(() => {});
   }, [pressed]);
 
   const handlePress = useCallback(() => {

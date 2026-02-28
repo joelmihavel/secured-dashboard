@@ -86,22 +86,10 @@ serve(async (req: Request) => {
 
     const sanitizedPhone = phone.replace(/^\+91/, "");
 
-    // Safety check: refuse to overwrite a real user
+    // Safety: TEST_PHONE_REGEX already ensures only +91999990XXXX phones reach here.
+    // No additional is_test_user check needed — demo phones may have is_test_user=false
+    // (only Apple review phones 00001/00002 have is_test_user=true).
     const supabase = createServiceClient();
-
-    const { data: existingProfile } = await supabase
-      .from("users")
-      .select("id, is_test_user")
-      .eq("phone", phone)
-      .maybeSingle();
-
-    if (existingProfile && existingProfile.is_test_user !== true) {
-      throw new AppError(
-        "Phone number belongs to a real user. Refusing to overwrite.",
-        "SAFETY_BLOCK",
-        403
-      );
-    }
 
     // Execute seed using shared helpers (service role, server-side only)
     const result = await seedTestUser(

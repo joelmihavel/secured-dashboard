@@ -5,6 +5,10 @@
  * This is the SINGLE most important file in the app -- all userStatus branches
  * must be covered.
  *
+ * Routing strategy:
+ *  PRIMARY:  getUser() → PostgREST query for user_status (SDK-managed auth)
+ *  FALLBACK: getWaitlistStatus() edge function via callEdgeFunction
+ *
  * userStatus -> target:
  *   not authenticated     -> /(auth)/beta-splash
  *   signed_up             -> /(agreement)/upload
@@ -14,7 +18,7 @@
  *   approved              -> /(setup)
  *   active                -> /(main)
  *   unknown/default       -> /(agreement)/upload
- *   error (no data)       -> /(agreement)/upload (fallback after retry)
+ *   error (both paths)    -> /(agreement)/upload (fallback)
  */
 
 import { act, waitFor } from '@testing-library/react-native';
@@ -26,6 +30,7 @@ import { act, waitFor } from '@testing-library/react-native';
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
+  useRootNavigationState: () => ({ key: 'root-nav-state' }),
   useLocalSearchParams: () => ({}),
 }));
 
@@ -37,6 +42,22 @@ jest.mock('@/src/providers', () => ({
 const mockGetWaitlistStatus = jest.fn();
 jest.mock('@/src/services/api/waitlist', () => ({
   getWaitlistStatus: (...args: unknown[]) => mockGetWaitlistStatus(...args),
+}));
+
+// Mock Supabase client for PostgREST primary path
+const mockGetUser = jest.fn();
+const mockSingle = jest.fn();
+const mockEq = jest.fn(() => ({ single: mockSingle }));
+const mockSelect = jest.fn(() => ({ eq: mockEq }));
+const mockFrom = jest.fn(() => ({ select: mockSelect }));
+
+jest.mock('@/src/services/supabase/client', () => ({
+  supabase: {
+    auth: {
+      getUser: () => mockGetUser(),
+    },
+    from: (...args: unknown[]) => mockFrom(...args),
+  },
 }));
 
 jest.mock('@/src/components', () => ({
@@ -72,6 +93,31 @@ function mockAuthState(isAuthenticated: boolean, isLoading = false) {
   });
 }
 
+/**
+ * Mock the PostgREST primary path to return a given user_status.
+ * This sets up: getUser() → from('users').select().eq().single()
+ */
+function mockPostgRESTUserStatus(userStatus: string) {
+  mockGetUser.mockResolvedValue({
+    data: { user: { id: 'test-user-id' } },
+    error: null,
+  });
+  mockSingle.mockResolvedValue({
+    data: { user_status: userStatus },
+    error: null,
+  });
+}
+
+/**
+ * Mock the PostgREST path to fail (getUser returns error).
+ */
+function mockPostgRESTFailure() {
+  mockGetUser.mockResolvedValue({
+    data: { user: null },
+    error: { message: 'Session expired' },
+  });
+}
+
 function mockWaitlistResponse(userStatus: string) {
   mockGetWaitlistStatus.mockResolvedValue({
     data: { userStatus },
@@ -88,7 +134,6 @@ function mockWaitlistError() {
 
 /**
  * Flush all pending microtasks (resolved promises).
- * This is needed because the retry logic uses setTimeout after a promise resolves.
  */
 function flushMicrotasks() {
   return act(async () => {});
@@ -117,9 +162,10 @@ describe('Journey Router (app/index.tsx)', () => {
       expect(mockReplace).not.toHaveBeenCalled();
     });
 
-    it('does not call getWaitlistStatus while auth is loading', () => {
+    it('does not call getUser or getWaitlistStatus while auth is loading', () => {
       mockAuthState(false, true);
       renderIndex();
+      expect(mockGetUser).not.toHaveBeenCalled();
       expect(mockGetWaitlistStatus).not.toHaveBeenCalled();
     });
   });
@@ -138,21 +184,22 @@ describe('Journey Router (app/index.tsx)', () => {
       });
     });
 
-    it('does not call getWaitlistStatus', () => {
+    it('does not call getUser or getWaitlistStatus', () => {
       mockAuthState(false);
       renderIndex();
+      expect(mockGetUser).not.toHaveBeenCalled();
       expect(mockGetWaitlistStatus).not.toHaveBeenCalled();
     });
   });
 
   // =========================================================================
-  // Authenticated user -- all 6 userStatus values
+  // Authenticated user -- all 6 userStatus values (PostgREST primary path)
   // =========================================================================
 
-  describe('authenticated user -- userStatus routing', () => {
+  describe('authenticated user -- userStatus routing via PostgREST', () => {
     it('signed_up -> /(agreement)/upload', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('signed_up');
+      mockPostgRESTUserStatus('signed_up');
       renderIndex();
 
       await waitFor(() => {
@@ -162,7 +209,7 @@ describe('Journey Router (app/index.tsx)', () => {
 
     it('agreement_confirmed -> /(waitlist)', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('agreement_confirmed');
+      mockPostgRESTUserStatus('agreement_confirmed');
       renderIndex();
 
       await waitFor(() => {
@@ -172,7 +219,7 @@ describe('Journey Router (app/index.tsx)', () => {
 
     it('waitlisted -> /(waitlist)', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('waitlisted');
+      mockPostgRESTUserStatus('waitlisted');
       renderIndex();
 
       await waitFor(() => {
@@ -182,7 +229,7 @@ describe('Journey Router (app/index.tsx)', () => {
 
     it('not_eligible -> /(waitlist)', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('not_eligible');
+      mockPostgRESTUserStatus('not_eligible');
       renderIndex();
 
       await waitFor(() => {
@@ -192,7 +239,7 @@ describe('Journey Router (app/index.tsx)', () => {
 
     it('approved -> /(setup)', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('approved');
+      mockPostgRESTUserStatus('approved');
       renderIndex();
 
       await waitFor(() => {
@@ -202,7 +249,7 @@ describe('Journey Router (app/index.tsx)', () => {
 
     it('active -> /(main)', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('active');
+      mockPostgRESTUserStatus('active');
       renderIndex();
 
       await waitFor(() => {
@@ -212,7 +259,49 @@ describe('Journey Router (app/index.tsx)', () => {
 
     it('unknown status -> /(agreement)/upload (default fallback)', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('some_unknown_status');
+      mockPostgRESTUserStatus('some_unknown_status');
+      renderIndex();
+
+      await waitFor(() => {
+        expect(mockReplace).toHaveBeenCalledWith('/(agreement)/upload');
+      });
+    });
+
+    it('does NOT call getWaitlistStatus when PostgREST succeeds', async () => {
+      mockAuthState(true);
+      mockPostgRESTUserStatus('active');
+      renderIndex();
+
+      await waitFor(() => {
+        expect(mockReplace).toHaveBeenCalledWith('/(main)');
+      });
+
+      expect(mockGetWaitlistStatus).not.toHaveBeenCalled();
+    });
+  });
+
+  // =========================================================================
+  // Fallback: PostgREST fails -> edge function fallback
+  // =========================================================================
+
+  describe('fallback to edge function when PostgREST fails', () => {
+    it('uses edge function when PostgREST fails', async () => {
+      mockAuthState(true);
+      mockPostgRESTFailure();
+      mockWaitlistResponse('approved');
+      renderIndex();
+
+      await waitFor(() => {
+        expect(mockReplace).toHaveBeenCalledWith('/(setup)');
+      });
+
+      expect(mockGetWaitlistStatus).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to /(agreement)/upload when both paths fail', async () => {
+      mockAuthState(true);
+      mockPostgRESTFailure();
+      mockWaitlistError();
       renderIndex();
 
       await waitFor(() => {
@@ -226,76 +315,26 @@ describe('Journey Router (app/index.tsx)', () => {
   // =========================================================================
 
   describe('error handling', () => {
-    it('falls back to /(agreement)/upload on API error after retry', async () => {
-      jest.useFakeTimers();
+    it('falls back to /(agreement)/upload when both paths fail', async () => {
       mockAuthState(true);
-      mockWaitlistError();
-      renderIndex();
-
-      // First call resolves with error -> schedules setTimeout(retry, 1000)
-      await flushMicrotasks();
-
-      // Advance past the 1s retry delay
-      await act(async () => {
-        jest.advanceTimersByTime(1100);
-      });
-
-      // Retry call resolves with error again -> sets fallback target
-      await flushMicrotasks();
-
-      await waitFor(() => {
-        expect(mockReplace).toHaveBeenCalledWith('/(agreement)/upload');
-      });
-
-      // Should have attempted twice (initial + 1 retry)
-      expect(mockGetWaitlistStatus).toHaveBeenCalledTimes(2);
-      jest.useRealTimers();
-    });
-
-    it('falls back to /(agreement)/upload when data is null', async () => {
-      jest.useFakeTimers();
-      mockAuthState(true);
+      mockPostgRESTFailure();
       mockGetWaitlistStatus.mockResolvedValue({ data: null, error: null });
       renderIndex();
 
-      // First call resolves with null data -> schedules setTimeout(retry, 1000)
-      await flushMicrotasks();
-
-      // Advance past the 1s retry delay
-      await act(async () => {
-        jest.advanceTimersByTime(1100);
-      });
-
-      // Retry resolves with null again -> sets fallback
-      await flushMicrotasks();
-
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledWith('/(agreement)/upload');
       });
-      jest.useRealTimers();
     });
 
-    it('falls back to /(agreement)/upload on exception after retry', async () => {
-      jest.useFakeTimers();
+    it('falls back to /(agreement)/upload on exception', async () => {
       mockAuthState(true);
+      mockGetUser.mockRejectedValue(new Error('Network error'));
       mockGetWaitlistStatus.mockRejectedValue(new Error('Network error'));
       renderIndex();
 
-      // First call rejects -> schedules setTimeout(retry, 1000)
-      await flushMicrotasks();
-
-      // Advance past the 1s retry delay
-      await act(async () => {
-        jest.advanceTimersByTime(1100);
-      });
-
-      // Retry rejects again -> sets fallback
-      await flushMicrotasks();
-
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledWith('/(agreement)/upload');
       });
-      jest.useRealTimers();
     });
   });
 
@@ -306,7 +345,7 @@ describe('Journey Router (app/index.tsx)', () => {
   describe('navigation guard', () => {
     it('navigates only once (hasNavigatedRef)', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('active');
+      mockPostgRESTUserStatus('active');
 
       const { rerender } = renderIndex();
 
@@ -323,17 +362,29 @@ describe('Journey Router (app/index.tsx)', () => {
   });
 
   // =========================================================================
-  // Calls getWaitlistStatus when authenticated
+  // PostgREST is called first (primary path)
   // =========================================================================
 
-  describe('waitlist API interaction', () => {
-    it('calls getWaitlistStatus when authenticated', async () => {
+  describe('PostgREST primary path', () => {
+    it('calls getUser when authenticated', async () => {
       mockAuthState(true);
-      mockWaitlistResponse('active');
+      mockPostgRESTUserStatus('active');
       renderIndex();
 
       await waitFor(() => {
-        expect(mockGetWaitlistStatus).toHaveBeenCalledTimes(1);
+        expect(mockGetUser).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('queries users table with correct parameters', async () => {
+      mockAuthState(true);
+      mockPostgRESTUserStatus('active');
+      renderIndex();
+
+      await waitFor(() => {
+        expect(mockFrom).toHaveBeenCalledWith('users');
+        expect(mockSelect).toHaveBeenCalledWith('user_status');
+        expect(mockEq).toHaveBeenCalledWith('id', 'test-user-id');
       });
     });
   });

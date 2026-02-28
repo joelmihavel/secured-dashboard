@@ -404,6 +404,7 @@ describe('PaymentMethodModal', () => {
 
 describe('MethodSelectorContent', () => {
   const defaultSelectorProps = {
+    onBack: jest.fn(),
     onProceed: jest.fn(),
     onSetup: jest.fn(),
     onEdit: jest.fn(),

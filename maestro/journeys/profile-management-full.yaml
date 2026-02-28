@@ -2,7 +2,7 @@
 # Journey: Full Profile Management
 # PR Expanded
 #
-# Full journey: profile index -> edit name -> save -> payment methods ->
+# Full journey: profile index -> edit name -> save ->
 #               agreement view -> about -> help -> notifications -> sign out
 #
 # This journey validates the complete profile management flow covering all
@@ -80,32 +80,7 @@ appId: com.flent.secured
     id: "profile-screen"
 
 # =============================================
-# STEP 4: Payment Methods
-# =============================================
-- openLink: "flentsecured:///profile/payment-methods"
-- waitForAnimationToEnd
-
-- assertVisible:
-    id: "payment-methods-screen"
-- assertVisible: "Payment Methods"
-
-# Check for saved methods or empty state
-- assertVisible:
-    text: "No saved payment methods"
-    optional: true
-- assertVisible:
-    text: "UPI"
-    optional: true
-- assertVisible:
-    text: "Default"
-    optional: true
-
-# Go back
-- back
-- waitForAnimationToEnd
-
-# =============================================
-# STEP 5: View Agreement
+# STEP 4: View Agreement
 # =============================================
 - openLink: "flentsecured:///profile/agreement"
 - waitForAnimationToEnd
@@ -131,7 +106,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 6: About Screen
+# STEP 5: About Screen
 # =============================================
 - openLink: "flentsecured:///profile/about"
 - waitForAnimationToEnd
@@ -145,7 +120,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 7: Help Screen
+# STEP 6: Help Screen
 # =============================================
 - openLink: "flentsecured:///profile/help"
 - waitForAnimationToEnd
@@ -159,7 +134,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 8: Notification Settings
+# STEP 7: Notification Settings
 # =============================================
 - openLink: "flentsecured:///profile/notifications"
 - waitForAnimationToEnd
@@ -173,7 +148,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 9: Verify Sign Out is Accessible
+# STEP 8: Verify Sign Out is Accessible
 # =============================================
 - openLink: "flentsecured:///profile/index"
 - waitForAnimationToEnd

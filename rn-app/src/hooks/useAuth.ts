@@ -8,6 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, VerifyOtpRequest } from '../services/api/auth';
+import { isReviewMode, deactivateReviewMode } from '../review/reviewMode';
 import { useAuthStore } from '../stores/auth';
 import { useUploadStore } from '../stores/upload';
 import { useWaitlistStore } from '../stores/waitlist';
@@ -248,6 +249,7 @@ export function useAuth() {
   );
 
   const signOut = useCallback(async () => {
+    if (isReviewMode()) deactivateReviewMode();
     await apiSignOut();
     clearUserContext();
     authStore.reset();

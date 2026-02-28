@@ -14,6 +14,9 @@ import { AppError } from "./errors.ts";
 
 export const TEST_PHONE_REGEX = /^\+91999990\d{4}$/;
 
+/** Apple review phones — only these get is_test_user=true (bypasses PayU/Cashfree). */
+const APPLE_REVIEW_PHONES = new Set(["+919999900001", "+919999900002"]);
+
 export const VALID_STATES = [
   "signed_up",
   "agreement_confirmed",
@@ -70,12 +73,15 @@ export async function seedTestUser(
   const created: string[] = [];
   const cleaned: string[] = [];
 
+  // Determine if this phone qualifies for test-user bypass (Apple review only)
+  const isAppleReview = APPLE_REVIEW_PHONES.has(phoneWithCountryCode);
+
   // Step 1: Create or find the auth user
-  const userId = await ensureAuthUser(phoneWithCountryCode, supabase);
+  const userId = await ensureAuthUser(phoneWithCountryCode, supabase, isAppleReview);
   created.push("auth_user");
 
   // Step 2: Upsert the users profile row
-  await upsertUserProfile(userId, phoneWithCountryCode, sanitizedPhone, targetState, supabase);
+  await upsertUserProfile(userId, phoneWithCountryCode, sanitizedPhone, targetState, supabase, isAppleReview);
   created.push("user_profile");
 
   // Step 3: Clean downstream data that may conflict with target state
@@ -221,13 +227,14 @@ export async function seedTestUser(
 
 export async function ensureAuthUser(
   phoneWithCountryCode: string,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  isAppleReview: boolean = false
 ): Promise<string> {
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     phone: phoneWithCountryCode,
     phone_confirm: true,
     user_metadata: {
-      is_test_user: true,
+      is_test_user: isAppleReview,
       full_name: "Test User",
     },
   });
@@ -262,7 +269,7 @@ export async function ensureAuthUser(
     }
 
     await supabase.auth.admin.updateUserById(existingId, {
-      user_metadata: { is_test_user: true, full_name: "Test User" },
+      user_metadata: { is_test_user: isAppleReview, full_name: "Test User" },
     });
 
     return existingId;
@@ -280,7 +287,8 @@ export async function upsertUserProfile(
   phoneWithCountryCode: string,
   sanitizedPhone: string,
   targetState: TargetState,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  isAppleReview: boolean = false
 ): Promise<void> {
   const stateIndex = VALID_STATES.indexOf(targetState);
   const userStatus =
@@ -299,7 +307,7 @@ export async function upsertUserProfile(
         full_name: "Test User",
         first_name: "Test",
         last_name: "User",
-        is_test_user: true,
+        is_test_user: isAppleReview,
         user_status: userStatus,
         role: "tenant",
         is_active: true,

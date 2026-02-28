@@ -369,6 +369,7 @@ export function createMockPaymentStampEntry(
     due_date: '2026-02-10',
     days_late: null,
     amount_paise: 2500000,
+    cashback_earned: 200,
     ...overrides,
   };
 }
@@ -643,6 +644,8 @@ export function createMockWaitlistStatus(
       batchNumber: null,
       currentBatch: 1,
       rejectionCooldownDays: 30,
+      requiresManualReview: false,
+      extractionStatus: null,
     },
     pending_long: {
       state: 'pending_long',
@@ -659,6 +662,8 @@ export function createMockWaitlistStatus(
       batchNumber: null,
       currentBatch: 1,
       rejectionCooldownDays: 30,
+      requiresManualReview: false,
+      extractionStatus: null,
     },
     approved: {
       state: 'approved',
@@ -675,6 +680,8 @@ export function createMockWaitlistStatus(
       batchNumber: 1,
       currentBatch: 1,
       rejectionCooldownDays: 30,
+      requiresManualReview: false,
+      extractionStatus: null,
     },
     rejected: {
       state: 'rejected',
@@ -691,6 +698,8 @@ export function createMockWaitlistStatus(
       batchNumber: null,
       currentBatch: 1,
       rejectionCooldownDays: 30,
+      requiresManualReview: false,
+      extractionStatus: null,
     },
   };
 

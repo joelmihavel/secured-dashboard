@@ -10,22 +10,26 @@
 export const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY") ?? "";
 export const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT") ?? "";
 
+// OAuth credentials for PayU REST API (refunds, settlements, etc.)
+export const PAYU_CLIENT_ID = Deno.env.get("PAYU_CLIENT_ID") ?? "";
+export const PAYU_CLIENT_SECRET = Deno.env.get("PAYU_CLIENT_SECRET") ?? "";
+
 // ── URLs ────────────────────────────────────────────────────────────────────
 
 /**
  * Base URL for PayU payment pages / Custom Browser.
- * Sandbox: https://test.payu.in  |  Production: https://secure.payu.in
+ * Production: https://secure.payu.in  |  Sandbox: https://test.payu.in
  */
 export const PAYU_BASE_URL =
-  Deno.env.get("PAYU_BASE_URL") ?? "https://test.payu.in";
+  Deno.env.get("PAYU_BASE_URL") ?? "https://secure.payu.in";
 
 /**
  * Info/API URL for PayU server-to-server calls
  * (verify_payment, get_settlement_details, cancel_refund_transaction, validate_vpa, etc.)
- * Sandbox: https://test.payu.in/merchant/postservice  |  Production: https://info.payu.in/merchant/postservice
+ * Production: https://info.payu.in/merchant/postservice  |  Sandbox: https://test.payu.in/merchant/postservice
  */
 export const PAYU_INFO_URL =
-  Deno.env.get("PAYU_INFO_URL") ?? "https://test.payu.in/merchant/postservice";
+  Deno.env.get("PAYU_INFO_URL") ?? "https://info.payu.in/merchant/postservice";
 
 // ── Sandbox Detection ───────────────────────────────────────────────────────
 

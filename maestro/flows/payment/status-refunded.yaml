@@ -12,9 +12,8 @@
 #   - Status screen renders in refunded state
 #   - Title shows "Payment" + "Refunded" text
 #   - Info rows display refund messages
-#   - "Contact Support" button is visible
-#   - "Try Again" link is visible
-#   - Receipt card with "refunded" stamp is displayed
+#   - "Try Again" button is visible
+#   - "Contact Support" link text is visible
 # =============================================================================
 
 appId: com.flent.secured
@@ -36,12 +35,11 @@ appId: com.flent.secured
 # Verify refund info messages
 - assertVisible: "not completed"
 - assertVisible: "returned to your account"
-- assertVisible: "3\u20135 business days"
 
-# Verify Contact Support button
+# Verify Try Again button
 - assertVisible:
-    id: "contact-support-button"
-- assertVisible: "Contact Support"
-
-# Verify Try Again link
+    id: "try-again-button"
 - assertVisible: "Try Again"
+
+# Verify Contact Support link text
+- assertVisible: "Contact Support"

@@ -37,6 +37,13 @@ interface CardInstrumentParams {
   store_card?: string;
 }
 
+interface StoredCardInstrumentParams {
+  bankcode: 'CC' | 'DC';
+  store_card_token: string;
+  storecard_token_type: '0';  // PayU vault token
+  cvv: string;
+}
+
 interface NBInstrumentParams {
   bankcode: string;
 }
@@ -45,18 +52,17 @@ interface UPIInstrumentParams {
   vpa: string;
 }
 
-export type InstrumentParams = CardInstrumentParams | NBInstrumentParams | UPIInstrumentParams;
+export type InstrumentParams = CardInstrumentParams | StoredCardInstrumentParams | NBInstrumentParams | UPIInstrumentParams;
 
 // ===================================================
 // SDK LOADING (Expo Go safe)
 // ===================================================
 
 interface CBWrapperModule {
-  startPayment(
-    config: { payUPaymentParams: Record<string, unknown> },
-    paymentMode: string,
+  openCB(
+    config: { payu_payment_params: Record<string, unknown> },
     errorCallback: (error: string) => void,
-    successCallback: (payuResponse: string) => void,
+    successCallback: (initMessage: string) => void,
   ): void;
 }
 
@@ -126,23 +132,40 @@ export function launchCorePayment(
   // 10-minute timeout — safety net for Card/NB if SDK crashes or app is backgrounded
   const SDK_TIMEOUT_MS = 10 * 60 * 1000;
 
-  const sdkPromise = new Promise<CorePaymentOutcome>((resolve) => {
-    let cbListenerSub: EmitterSubscription | null = null;
-    let resolved = false;
+  // Shared cleanup state — prevents memory leaks from CBListener and timeout timer
+  let cbListenerSub: EmitterSubscription | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let resolved = false;
 
+  return new Promise<CorePaymentOutcome>((resolve) => {
     const finish = (outcome: CorePaymentOutcome) => {
       if (resolved) return;
       resolved = true;
-      cbListenerSub?.remove();
+      // Clean up BOTH listener and timeout regardless of which path triggered finish
+      if (cbListenerSub) { cbListenerSub.remove(); cbListenerSub = null; }
+      if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
       resolve(outcome);
     };
 
-    // Listen for CBListener events (failure, cancel, errors)
+    // Start timeout
+    timeoutId = setTimeout(() => {
+      finish({
+        status: 'failure',
+        error: 'Payment timed out. Check your payment status in the app.',
+      });
+    }, SDK_TIMEOUT_MS);
+
+    // Listen for CBListener events (success, failure, cancel, errors)
     cbListenerSub = DeviceEventEmitter.addListener('CBListener', (event) => {
       // Defensive: SDK has known typo "eveneType" on some events
       const eventType: string = event.eventType ?? event.eveneType ?? '';
 
       switch (eventType) {
+        case 'onPaymentSuccess': {
+          const response = parseSDKResponse(event.payuResult ?? event.merchantResponse);
+          finish({ status: 'success', payuResponse: response ?? undefined });
+          break;
+        }
         case 'onPaymentFailure': {
           const response = parseSDKResponse(event.payuResult ?? event.merchantResponse);
           finish({
@@ -216,17 +239,16 @@ export function launchCorePayment(
     };
 
     try {
-      CBWrapper!.startPayment(
-        { payUPaymentParams },
-        mode,
-        // Error callback
+      CBWrapper!.openCB(
+        { payu_payment_params: payUPaymentParams },
+        // Error callback — SDK failed to initialize
         (error: string) => {
           finish({ status: 'failure', error });
         },
-        // Success callback — payment succeeded
-        (payuResponse: string) => {
-          const parsed = parseSDKResponse(payuResponse);
-          finish({ status: 'success', payuResponse: parsed ?? undefined });
+        // Success callback — webview presented (NOT payment success).
+        // Actual outcome arrives via CBListener events above.
+        (_initMessage: string) => {
+          // no-op: wait for CBListener onPaymentSuccess/onPaymentFailure
         },
       );
     } catch (err) {
@@ -236,17 +258,6 @@ export function launchCorePayment(
       });
     }
   });
-
-  const timeoutPromise = new Promise<CorePaymentOutcome>((resolve) => {
-    setTimeout(() => {
-      resolve({
-        status: 'failure',
-        error: 'Payment timed out. Check your payment status in the app.',
-      });
-    }, SDK_TIMEOUT_MS);
-  });
-
-  return Promise.race([sdkPromise, timeoutPromise]);
 }
 
 // ===================================================

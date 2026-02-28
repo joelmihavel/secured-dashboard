@@ -14,8 +14,21 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { Text as RNText, TextInput } from 'react-native';
 
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { colors } from '@/src/theme';
 import { QueryProvider, AuthProvider } from '@/src/providers';
+
+// Custom dark theme to prevent white flashes during navigation transitions
+const AppDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: colors.black[700], // #131313
+    card: colors.black[700],
+    border: colors.black[600],
+    primary: colors.brand[500],
+  },
+};
 // Conditional require: tree-shaken in production (DevNavigator is dev-only)
 const DevNavigator = __DEV__
   ? require('@/src/components/dev/DevNavigator').DevNavigator
@@ -23,8 +36,9 @@ const DevNavigator = __DEV__
 import { ErrorBoundary } from '@/src/components/ui';
 import { initSentry, wrapWithSentry, registerNavigationContainer } from '@/src/config/sentry';
 import { setupNotificationHandlers } from '@/src/services/notifications';
-import { setupAutoUpdateCheck } from '@/src/config/updates';
+import { setupAutoUpdateCheck, getEmergencyLaunchInfo } from '@/src/config/updates';
 import { OfflineBanner } from '@/src/components/ui';
+import { UpdateBanner } from '@/src/components/ui/Layout/UpdateBanner';
 import { useDeepLink } from '@/src/hooks/useDeepLink';
 import { useErrorNavigation } from '@/src/hooks/useErrorNavigation';
 import { usePaymentRecovery } from '@/src/hooks/usePaymentRecovery';
@@ -89,6 +103,11 @@ function RootLayoutInner() {
     return cleanup;
   }, []);
 
+  // Detect emergency launch (fallback to embedded bundle after OTA crash)
+  useEffect(() => {
+    getEmergencyLaunchInfo();
+  }, []);
+
   // Handle deep links (ST-107)
   useDeepLink();
 
@@ -117,31 +136,34 @@ function RootLayoutInner() {
       <QueryProvider>
         <AuthProvider>
           <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
+            <ThemeProvider value={AppDarkTheme}>
               <SafeAreaProvider>
                 <StatusBar style="light" backgroundColor={colors.black[700]} />
                 <OfflineBanner />
+                <UpdateBanner />
                 <Stack
                   screenOptions={{
                     headerShown: false,
                     contentStyle: { backgroundColor: colors.black[700] },
-                    animation: 'fade', // Smooth cross-fade transition to avoid flashes
-                    gestureEnabled: false, // Disable iOS back-swipe between top-level groups
+                    animation: 'fade',
+                    animationDuration: 200, // Snappier cross-fade
+                    gestureEnabled: false,
                   }}
                 >
                   <Stack.Screen name="index" />
                   <Stack.Screen name="error" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right' }} />
+                  <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                   <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(profile)" options={{ animation: 'slide_from_right' }} />
-                  {/* Development only screens */}
+                  <Stack.Screen name="(profile)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                   {__DEV__ && <Stack.Screen name="(dev)" />}
                 </Stack>
                 {DevNavigator && <DevNavigator />}
               </SafeAreaProvider>
+            </ThemeProvider>
           </GestureHandlerRootView>
         </AuthProvider>
       </QueryProvider>

@@ -26,9 +26,11 @@ try {
   // Native module not available — notifications will be no-ops
 }
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { addBreadcrumb } from '../config/sentry';
+
+const APP_STORE_URL = 'https://apps.apple.com/in/app/secured-by-flent/id6757275258';
 
 // ==============================================
 // CONFIGURATION
@@ -194,6 +196,7 @@ export const NOTIFICATION_ROUTES: Record<string, string> = {
   landlord_rejected: '/(setup)/invite-landlord',
   new_cashback: '/(main)',
   rent_reminder: '/(payment)/confirm',
+  app_update: '/(main)',
   reminder_utility: '/(setup)/add-utility',
   reminder_landlord_invite: '/(setup)/invite-landlord',
   reminder_agreement: '/(agreement)/upload',
@@ -292,10 +295,23 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
 /**
  * Handle a notification tap -- navigate to the relevant screen.
+ * Special case: app_update opens the App Store instead of in-app navigation.
  */
 export function handleNotificationResponse(data: Record<string, unknown>): void {
   const route = data?.route as string | undefined;
   const params = data?.params as Record<string, string> | undefined;
+  const notificationType = data?.notification_type as string | undefined;
+  const storeUrl = data?.store_url as string | undefined;
+
+  // App update: open App Store
+  if (notificationType === 'app_update' || storeUrl) {
+    const url = storeUrl || APP_STORE_URL;
+    addBreadcrumb('App update notification tapped', 'notifications', { url });
+    Linking.openURL(url).catch((err) => {
+      console.warn('[Notifications] Failed to open store URL:', err);
+    });
+    return;
+  }
 
   if (!route) return;
 

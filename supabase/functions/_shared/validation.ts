@@ -149,8 +149,8 @@ function validateField(
 export function isValidIndianPhone(phone: string): boolean {
   // Remove any spaces or dashes
   const cleaned = phone.replace(/[\s-]/g, "");
-  // Indian mobile: 10 digits starting with 6-9, or +91 followed by 10 digits
-  return /^(\+91)?[6-9]\d{9}$/.test(cleaned);
+  // Indian mobile: 10 digits starting with 6-9, or [+]91 prefix followed by 10 digits
+  return /^(\+?91)?[6-9]\d{9}$/.test(cleaned);
 }
 
 /**
@@ -181,6 +181,15 @@ export function isValidPhone(phone: string, countryCode: string): boolean {
     return cleaned.length === expectedLength;
   }
   // Fallback: accept 7-15 digit numbers (ITU E.164 range)
+  return cleaned.length >= 7 && cleaned.length <= 15;
+}
+
+/**
+ * Validates an E.164 phone number (with or without + prefix).
+ * E.164: 1-3 digit country code + subscriber number, total 7-15 digits.
+ */
+export function isValidE164Phone(phone: string): boolean {
+  const cleaned = phone.replace(/\D/g, "");
   return cleaned.length >= 7 && cleaned.length <= 15;
 }
 
@@ -257,31 +266,45 @@ export function isValidRentDueDay(day: unknown): boolean {
 // ==============================================
 
 /**
- * Sanitizes a phone number to standard 10-digit format (no country code).
+ * Sanitizes a phone number to E.164 digits (with country code, no +).
+ * Examples: "+91 98765 43210" -> "919876543210", "14155551234" -> "14155551234"
+ * Legacy: bare 10-digit Indian numbers -> prepends "91" for backward compat.
  */
 export function sanitizePhone(phone: string): string {
-  // Remove all non-digits
-  let cleaned = phone.replace(/\D/g, "");
+  const hadPlusPrefix = phone.trimStart().startsWith("+");
+  const cleaned = phone.replace(/\D/g, "");
 
-  // Remove leading 91 if present (handles both 91XXXXXXXXXX and +91XXXXXXXXXX after digit extraction)
-  if (cleaned.length === 12 && cleaned.startsWith("91")) {
-    cleaned = cleaned.substring(2);
-  }
-  // Also handle case where 91 was already stripped but we still have extra digits
-  if (cleaned.length > 10) {
-    // Take the last 10 digits (the actual phone number)
-    cleaned = cleaned.slice(-10);
+  // Already has country code (11+ digits) -- return as-is
+  if (cleaned.length >= 11) {
+    return cleaned;
   }
 
+  // If original had + prefix, the number already has a country code
+  // even if total digits < 11 (e.g., Singapore +65 = 10 digits)
+  if (hadPlusPrefix) {
+    return cleaned;
+  }
+
+  // Legacy: bare 10-digit number starting with 6-9 -> assume Indian, prepend 91
+  if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
+    return `91${cleaned}`;
+  }
+
+  // Short numbers (7-10 digits from other countries) -- return as-is
+  // The caller is responsible for providing E.164 format
   return cleaned;
 }
 
 /**
- * Formats a phone number with +91 country code.
+ * Formats a phone number to E.164 with + prefix.
+ * If the phone already starts with +, normalizes it.
+ * Otherwise, sanitizes and adds + prefix.
  */
 export function formatPhoneWithCountryCode(phone: string): string {
-  const sanitized = sanitizePhone(phone);
-  return `+91${sanitized}`;
+  if (phone.startsWith("+")) {
+    return `+${phone.replace(/\D/g, "")}`;
+  }
+  return `+${sanitizePhone(phone)}`;
 }
 
 /**

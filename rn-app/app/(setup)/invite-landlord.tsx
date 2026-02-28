@@ -35,15 +35,14 @@ import {
   Dimensions,
   ScrollView,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   Linking,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
+import { Screen, AlertBanner, Text, PhoneInput, TextInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
 import { DottedGridPattern, DottedGridPresets } from '@/src/components/patterns/DottedGridPattern';
 import { useSendLandlordInvite, useDashboard } from '@/src/hooks';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
@@ -75,6 +74,7 @@ export default function InviteLandlordScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [maxDigits, setMaxDigits] = useState(10);
+  const [landlordEmail, setLandlordEmail] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [inviteSent, setInviteSent] = useState(false);
@@ -107,15 +107,35 @@ export default function InviteLandlordScreen() {
     setMaxDigits(country.maxDigits);
   }, []);
 
+  const handleEmailChange = useCallback((text: string) => {
+    setLandlordEmail(text);
+    setErrors((prev) => { const { email: _, ...rest } = prev; return rest; });
+    setApiError(null);
+  }, []);
+
+  const handlePhoneBlur = useCallback(() => {
+    const cleaned = phoneNumber.replace(/\D/g, '');
+    if (cleaned.length > 0 && cleaned.length < maxDigits) {
+      setErrors((prev) => ({ ...prev, phone: `Enter ${maxDigits} digit number` }));
+    } else if (countryCode === '+91' && cleaned.length === maxDigits && !/^[6-9]/.test(cleaned)) {
+      setErrors((prev) => ({ ...prev, phone: 'Must start with 6-9' }));
+    }
+  }, [phoneNumber, maxDigits, countryCode]);
+
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
     const cleaned = phoneNumber.replace(/\D/g, '');
     if (!cleaned) newErrors.phone = 'Required';
     else if (cleaned.length < maxDigits) newErrors.phone = `Enter ${maxDigits} digit number`;
 
+    const trimmedEmail = landlordEmail.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      newErrors.email = 'Enter a valid email address';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [phoneNumber, maxDigits]);
+  }, [phoneNumber, maxDigits, landlordEmail]);
 
   const handleSubmit = useCallback(() => {
     if (!validateForm()) {
@@ -137,6 +157,7 @@ export default function InviteLandlordScreen() {
         tenancyId: tenancy.id,
         landlordName: 'Landlord',
         landlordPhone: cleaned,
+        landlordEmail: landlordEmail.trim() || undefined,
         countryCode: countryCode,
       },
       {
@@ -165,7 +186,7 @@ export default function InviteLandlordScreen() {
         },
       }
     );
-  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, tenancy?.id, router]);
+  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, landlordEmail, tenancy?.id, router]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -239,9 +260,20 @@ export default function InviteLandlordScreen() {
               onChangeText={handlePhoneChange}
               countryCode={countryCode}
               onCountryChange={handleCountryChange}
+              onBlur={handlePhoneBlur}
               placeholder="Enter Number"
               error={errors.phone}
               disabled={sendLandlordInvite.isPending}
+            />
+
+            <TextInput
+              label="Landlord's Email (optional)"
+              value={landlordEmail}
+              onChangeText={handleEmailChange}
+              placeholder="e.g. landlord@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
             />
 
             <TouchableOpacity style={styles.inviteBanner} onPress={handleLearnMore}>

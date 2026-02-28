@@ -283,7 +283,7 @@ serve(async (req: Request) => {
         landlord_token_expires_at: tokenExpiresAt,
         landlord_invite_sent_at: now.toISOString(),
         landlord_invite_count: (tenancy.landlord_invite_count ?? 0) + 1,
-        landlord_status: "invite_pending",
+        landlord_status: "invited",
       };
       if (finalLandlordEmail) updatePayload.landlord_email = finalLandlordEmail;
       if (finalLandlordPhone) updatePayload.landlord_phone = finalLandlordPhone;
@@ -375,7 +375,7 @@ serve(async (req: Request) => {
         message: "Landlord invitation sent successfully",
         invite_link: approvalUrl,
         landlord_email_masked: hasValidEmail ? maskEmail(finalLandlordEmail!) : undefined,
-        landlord_status: "invite_pending",
+        landlord_status: "invited",
       },
     });
   } catch (error) {

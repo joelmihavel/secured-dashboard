@@ -18,7 +18,7 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text as RNText, TouchableOpacity, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text as RNText, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +36,7 @@ import {
   DottedGridPattern,
   SkeletonLoader,
 } from '@/src/components';
-import { useWaitlist } from '@/src/hooks';
+import { useWaitlist, useDeleteAccount } from '@/src/hooks';
 import { colors } from '@/src/theme/colors';
 import { s } from '@/src/theme/scale';
 import { typography } from '@/src/theme/typography';
@@ -271,6 +271,23 @@ export default function WaitlistScreen() {
     isClaimingInviteCode,
   } = useWaitlist();
 
+  const deleteAccount = useDeleteAccount();
+
+  const handleDeleteAccount = React.useCallback(() => {
+    Alert.alert(
+      'Delete Account',
+      'This action is permanent and cannot be undone. All your data will be deleted.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteAccount.mutate({ reason: 'user_requested' }),
+        },
+      ],
+    );
+  }, [deleteAccount]);
+
   const [isNavigating, setIsNavigating] = useState(false);
   const transitionOpacity = useSharedValue(0);
 
@@ -315,7 +332,7 @@ export default function WaitlistScreen() {
   }, [error?.code, navigateToAgreement, isNavigating, transitionOpacity]);
 
 
-  const displayName = userName || 'there';
+  const displayName = (userName ? userName.split(' ')[0] : '') || 'there';
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';
   const membersOnboarded = status?.currentOnboarded ?? 0;
@@ -534,6 +551,16 @@ export default function WaitlistScreen() {
                 </Text>
               )}
             </Animated.View>
+
+            {/* Delete Account — subtle link for App Store compliance */}
+            <Animated.View
+              entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
+              style={styles.deleteAccountContainer}
+            >
+              <TouchableOpacity onPress={handleDeleteAccount} hitSlop={12}>
+                <Text style={styles.deleteAccountText}>Delete Account</Text>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </ScrollView>
 
@@ -555,12 +582,12 @@ export default function WaitlistScreen() {
         )}
 
       {/* Transition Overlay */}
-      <Animated.View 
+      <Animated.View
         style={[
-          StyleSheet.absoluteFill, 
+          StyleSheet.absoluteFill,
           { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
           transitionAnimatedStyle
-        ]} 
+        ]}
       />
       </View>
     );
@@ -734,6 +761,16 @@ export default function WaitlistScreen() {
             entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
           >
             <BenefitsCard variant="benefits" />
+          </Animated.View>
+
+          {/* Delete Account — subtle link for App Store compliance */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
+            style={styles.deleteAccountContainer}
+          >
+            <TouchableOpacity onPress={handleDeleteAccount} hitSlop={12}>
+              <Text style={styles.deleteAccountText}>Delete Account</Text>
+            </TouchableOpacity>
           </Animated.View>
         </View>
       </ScrollView>
@@ -1022,6 +1059,19 @@ const styles = StyleSheet.create({
     lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textHint, // #797979
     textAlign: 'center',
+  },
+
+  deleteAccountContainer: {
+    alignItems: 'center',
+    paddingTop: spacing.sm,
+  },
+
+  deleteAccountText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: FIGMA.colors.textHint, // #797979
+    textDecorationLine: 'underline',
   },
 
 });

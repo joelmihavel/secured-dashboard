@@ -82,7 +82,7 @@ appId: com.flent.secured
     id: "save-changes-button"
 - waitForAnimationToEnd
 
-# -- Wait for save response --
+# -- Wait for save response (navigates back on success) --
 - extendedWaitUntil:
     notVisible:
       id: "edit-profile-screen"

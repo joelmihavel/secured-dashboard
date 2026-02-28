@@ -79,6 +79,23 @@ export const animationValues = {
   },
 } as const;
 
+// CSS Transition defaults (Reanimated 4)
+export const cssTransition = {
+  fast: { transitionDuration: '150ms' },
+  normal: { transitionDuration: '250ms' },
+  slow: { transitionDuration: '350ms' },
+} as const;
+
+// Entering animation presets (Reanimated layout animations)
+// Usage: <Animated.View entering={enteringPresets.staggerItem(index)}>
+export { FadeIn, FadeInDown, FadeInUp, FadeInRight } from 'react-native-reanimated';
+export const enteringPresets = {
+  staggerDelay: 80,
+  staggerDuration: 350,
+  fadeInDuration: 300,
+  slideUpDuration: 300,
+} as const;
+
 export type DurationKey = keyof typeof duration;
 export type SpringConfigKey = keyof typeof springConfig;
 export type TimingConfigKey = keyof typeof timingConfig;

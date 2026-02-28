@@ -36,16 +36,14 @@ appId: com.flent.secured
 # =============================================
 # STEP 2: Initiate Payment
 # =============================================
-# Scroll to Pay Now button
+# Scroll to Pay Now button (text: "Pay ₹ ... now")
 - scrollUntilVisible:
-    element:
-      id: "pay-now-button"
+    element: "Pay"
     direction: DOWN
     timeout: 5000
 
-# Tap Pay Now to begin payment
-- tapOn:
-    id: "pay-now-button"
+# Tap Pay Now to begin payment (text-based, no testID on CTA)
+- tapOn: "now"
 - waitForAnimationToEnd
 
 # Brief wait to let payment initiation start

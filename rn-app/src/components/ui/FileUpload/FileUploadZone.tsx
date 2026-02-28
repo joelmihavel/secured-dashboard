@@ -11,18 +11,14 @@
  * - Text: Plus Jakarta Sans, 12px, #4D4D4D
  */
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
 
 import { Text } from '../Typography';
-import { colors, spacing, springConfig } from '@/src/theme';
+import { colors, spacing } from '@/src/theme';
 
 // Exact Figma color values
 const UPLOAD_COLORS = {
@@ -53,24 +49,16 @@ function FileUploadZoneComponent({
   style,
   testID,
 }: FileUploadZoneProps) {
-  const scale = useSharedValue(1);
-  const borderColor = useSharedValue<string>(UPLOAD_COLORS.border);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    borderColor: borderColor.value,
-  }));
+  const [pressed, setPressed] = useState(false);
 
   const handlePressIn = useCallback(() => {
     if (disabled) return;
-    scale.value = withSpring(0.98, springConfig.snappy);
-    borderColor.value = UPLOAD_COLORS.borderActive;
+    setPressed(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [disabled]);
 
   const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, springConfig.snappy);
-    borderColor.value = UPLOAD_COLORS.border;
+    setPressed(false);
   }, []);
 
   const handlePress = useCallback(async () => {
@@ -99,7 +87,12 @@ function FileUploadZoneComponent({
       accessibilityLabel={placeholder}
       accessibilityState={{ disabled }}
     >
-      <Animated.View style={[styles.container, animatedStyle, style]}>
+      <Animated.View style={[styles.container, {
+        transitionProperty: ['transform', 'borderColor'],
+        transitionDuration: '150ms',
+        transform: [{ scale: pressed ? 0.98 : 1 }],
+        borderColor: pressed ? UPLOAD_COLORS.borderActive : UPLOAD_COLORS.border,
+      }, style]}>
         {/* Document Icon Container */}
         <View style={styles.iconContainer}>
           {/* Document icon placeholder - replace with SVG */}

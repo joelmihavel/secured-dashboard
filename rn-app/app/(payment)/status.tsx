@@ -45,6 +45,7 @@ import { PaymentReceiptCard } from '@/src/components/payment/PaymentReceiptCard'
 import { DashedDivider } from '@/src/components/payment';
 import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
+import { useRealtimeQuery } from '@/src/hooks/useRealtimeQuery';
 import { checkPaymentStatus, generateReceipt } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
@@ -99,7 +100,7 @@ function statusReducer(state: ReducerState, action: StatusAction): ReducerState 
 // CONSTANTS
 // ============================================
 
-const VERIFICATION_INTERVAL_MS = 3000;
+const VERIFICATION_INTERVAL_MS = 5000; // Relaxed from 3s — realtime handles the fast path
 const VERIFICATION_TIMEOUT_MS_DEFAULT = 120000; // 120s
 const VERIFICATION_TIMEOUT_MS_UPI = 360000;     // 360s (6 min) for UPI collect
 const VALID_INITIAL_STATUSES = new Set(['pending', 'success', 'failed', 'refunded']);
@@ -462,6 +463,22 @@ export default function PaymentStatusScreen() {
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 
+  // -- Realtime acceleration: immediately trigger pollStatus on DB event
+  const pollStatusRef = useRef<(() => void) | null>(null);
+  useRealtimeQuery({
+    table: 'payments',
+    event: 'UPDATE',
+    filter: paymentId ? `id=eq.${paymentId}` : undefined,
+    queryKeys: [['dashboard'], ['paymentHistory']],
+    enabled: !!paymentId && state.status === 'pending',
+    onEvent: () => {
+      // Bypass the 5s polling interval — immediately check status
+      if (pollStatusRef.current) {
+        pollStatusRef.current();
+      }
+    },
+  });
+
   // -- Polling refs
   const attemptsRef = useRef(0);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -574,6 +591,9 @@ export default function PaymentStatusScreen() {
       isPollingRef.current = false;
     }
   }, [paymentId, state.pendingSub, maxVerificationAttempts, resolveStatus]);
+
+  // Wire ref so realtime onEvent can trigger immediate poll
+  pollStatusRef.current = pollStatus;
 
   // ============================================
   // DEEP LINK: Server status override

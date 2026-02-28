@@ -31,14 +31,15 @@ const FONT_SIZE_MAP = {
  * Deterministic default avatar URL from Supabase Storage.
  * Hashes userId to one of 30 Pokemon sprite PNGs (orange-tinted pixel art).
  */
-function getDefaultAvatarUrl(userId: string): string {
+function getDefaultAvatarUrl(userId: string): string | null {
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return null;
   // Simple hash: sum char codes, mod 30, 1-indexed
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
     hash = ((hash << 5) - hash + userId.charCodeAt(i)) | 0;
   }
   const index = (Math.abs(hash) % 30) + 1;
-  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
   return `${supabaseUrl}/storage/v1/object/public/avatars/defaults/${index}.png`;
 }
 
@@ -58,8 +59,7 @@ export interface AvatarProps {
 }
 
 function AvatarComponent({ uri, userId, name, size = 'sm', testID }: AvatarProps) {
-  const [hasError, setHasError] = useState(false);
-  const [defaultError, setDefaultError] = useState(false);
+  const [failedUri, setFailedUri] = useState<string | null>(null);
   const px = SIZE_MAP[size];
   const fontSize = FONT_SIZE_MAP[size];
   const borderRadius = px / 2;
@@ -67,22 +67,21 @@ function AvatarComponent({ uri, userId, name, size = 'sm', testID }: AvatarProps
   const initial = name?.charAt(0).toUpperCase() || '?';
 
   // Resolve image URL: custom avatar → default Pokemon avatar
-  const resolvedUri = uri || (userId && !defaultError ? getDefaultAvatarUrl(userId) : null);
+  const defaultUrl = userId ? getDefaultAvatarUrl(userId) : null;
+  const resolvedUri = uri || defaultUrl;
 
-  if (resolvedUri && !hasError) {
+  // Show image if we have a URI that hasn't failed
+  if (resolvedUri && resolvedUri !== failedUri) {
     return (
       <Image
+        key={resolvedUri}
         source={{ uri: resolvedUri }}
         style={[styles.image, { width: px, height: px, borderRadius }]}
         contentFit="cover"
         cachePolicy="disk"
         recyclingKey={resolvedUri}
         onError={() => {
-          if (!uri && userId) {
-            // Default avatar failed — fall through to initials
-            setDefaultError(true);
-          }
-          setHasError(true);
+          setFailedUri(resolvedUri);
         }}
         testID={testID}
       />

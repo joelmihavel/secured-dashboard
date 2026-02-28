@@ -8,6 +8,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { addBreadcrumb } from '@/src/config/sentry';
+import { interceptEdgeFunction } from '@/src/review/reviewInterceptor';
 
 // Environment configuration - fail fast if not set
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -125,6 +126,15 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       'x-client-info': 'flent-secured-rn',
     },
   },
+  realtime: {
+    heartbeatIntervalMs: 15_000,
+    reconnectAfterMs: (tries: number) =>
+      Math.min(1000 * Math.pow(2, tries), 30_000),
+    ...(__DEV__ && {
+      logger: (kind: string, msg: string, data?: unknown) =>
+        console.log(`[Realtime:${kind}]`, msg, data ?? ''),
+    }),
+  },
 });
 
 /**
@@ -159,6 +169,10 @@ export async function callEdgeFunction<T = unknown>(
   const startTime = Date.now();
 
   try {
+    // Review mode: intercept before any network call
+    const reviewResult = interceptEdgeFunction(functionName, body);
+    if (reviewResult) return reviewResult as { data: T; error: null };
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'apikey': SUPABASE_ANON_KEY!,

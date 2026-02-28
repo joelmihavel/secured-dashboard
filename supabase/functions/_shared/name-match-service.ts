@@ -7,7 +7,7 @@
  * Used by: verify-bank, verify-utility, verify-pan
  */
 
-import { matchNamesWithGemini, type NameMatchResult } from "./gemini.ts";
+import { matchNamesWithGemini, matchConsumerNameWithPropertyGemini, type NameMatchResult } from "./gemini.ts";
 
 // ==============================================
 // TYPES
@@ -278,4 +278,70 @@ export function calculateNameMatchScore(name1: string, name2: string): number {
   const distance = dp[len1][len2];
   const maxLen = Math.max(len1, len2);
   return 1 - distance / maxLen;
+}
+
+// ==============================================
+// UTILITY CONSUMER → BUILDING/SOCIETY NAME MATCH
+// ==============================================
+
+export interface PropertyNameMatchInput {
+  consumerName: string;
+  propertyAddress: string;
+}
+
+/**
+ * Checks if a utility bill consumer name matches the building/society/apartment
+ * at the given property address. Uses Gemini AI with word-overlap fallback.
+ *
+ * This is a standalone check, separate from landlord name matching.
+ * Used by verify-utility when the consumer name doesn't match any landlord.
+ */
+export async function matchUtilityConsumerAgainstProperty(
+  input: PropertyNameMatchInput
+): Promise<NameMatchOutput> {
+  const { consumerName, propertyAddress } = input;
+
+  if (!consumerName?.trim() || !propertyAddress?.trim()) {
+    return {
+      matched: false,
+      matchedName: null,
+      score: 0,
+      details: {
+        gemini_used: false,
+        skipped: true,
+        reason: !consumerName?.trim() ? "empty_consumer_name" : "empty_property_address",
+      },
+    };
+  }
+
+  try {
+    console.log(`[name-match-service] Matching utility consumer "${consumerName}" against property for building/society name`);
+
+    const result = await matchConsumerNameWithPropertyGemini(consumerName, propertyAddress);
+
+    return {
+      matched: result.is_match,
+      matchedName: result.normalized_name2 || null,
+      score: result.confidence,
+      details: {
+        gemini_used: true,
+        reasoning: result.reasoning,
+        match_type: result.match_type,
+        name_at_source: consumerName,
+      },
+    };
+  } catch (error) {
+    console.error("[name-match-service] Building name matching failed:", error);
+
+    return {
+      matched: false,
+      matchedName: null,
+      score: 0,
+      details: {
+        gemini_used: false,
+        reason: "building_match_error",
+        name_at_source: consumerName,
+      },
+    };
+  }
 }

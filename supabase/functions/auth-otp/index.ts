@@ -297,10 +297,47 @@ async function handleRouteOtp(
     });
   }
 
-  // New user → M360 OTP (consent is mandatory, always present)
-  return await sendViaCashfreeM360(
-    sanitizedPhone, phoneWithCountryCode, name ?? "User", clientIp, supabase, audit
-  );
+  // New user → try M360 OTP first, fallback to Supabase Auth if M360 fails
+  try {
+    return await sendViaCashfreeM360(
+      sanitizedPhone, phoneWithCountryCode, name ?? "User", clientIp, supabase, audit
+    );
+  } catch (m360Error) {
+    console.warn("[auth-otp] M360 failed for new user, falling back to Supabase Auth:", m360Error instanceof Error ? m360Error.message : m360Error);
+
+    // Create auth user first so Supabase signInWithOtp works
+    const { error: createError } = await supabase.auth.admin.createUser({
+      phone: phoneWithCountryCode,
+      phone_confirm: false,
+      user_metadata: { full_name: name },
+    });
+
+    if (createError && !createError.message?.includes("already")) {
+      console.error("[auth-otp] Failed to create user for fallback:", createError);
+      throw m360Error; // Re-throw original M360 error if user creation also fails
+    }
+
+    await audit.logSuccess(
+      AuditActions.AUTH_OTP_INITIATED,
+      "auth",
+      "phone",
+      undefined,
+      {
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+        method: "supabase",
+        m360_fallback: true,
+        m360_error: m360Error instanceof Error ? m360Error.message : String(m360Error),
+      }
+    );
+
+    return jsonResponse({
+      success: true,
+      data: {
+        method: "supabase",
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+      },
+    });
+  }
 }
 
 // ==============================================
@@ -408,7 +445,6 @@ async function sendViaCashfreeM360(
       verification_id: result.verification_id,
       status: "pending",
       expires_at: expiresAt,
-      client_ip: clientIp || null,
       ip_address: clientIp || null,
     })
     .select("id")

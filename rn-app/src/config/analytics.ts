@@ -111,4 +111,14 @@ export const AnalyticsEvents = {
   // Profile
   PROFILE_UPDATED: 'profile_updated',
   AVATAR_UPLOADED: 'avatar_uploaded',
+
+  // OTA Updates
+  OTA_CHECK: 'ota_check',
+  OTA_DOWNLOADED: 'ota_downloaded',
+  OTA_RELOAD: 'ota_reload',
+  OTA_EMERGENCY_LAUNCH: 'ota_emergency_launch',
+  OTA_BANNER_DISMISSED: 'ota_banner_dismissed',
+  OTA_BANNER_APPLY_TAPPED: 'ota_banner_apply_tapped',
+  OTA_CRITICAL_AUTO_APPLY: 'ota_critical_auto_apply',
+  OTA_ERROR: 'ota_error',
 } as const;

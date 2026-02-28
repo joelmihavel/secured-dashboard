@@ -8,7 +8,7 @@
  * Bank picker uses country-picker-style pageSheet Modal (matching PhoneInput).
  */
 
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -124,6 +124,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: A
 
   const [selectedBankCode, setSelectedBankCode] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
 
@@ -176,42 +177,48 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: A
   }, []);
 
   const handleProceed = useCallback(async () => {
-    if (!selectedBankCode || isSubmitting) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (!selectedBankCode || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
-    let currentPaymentId = paymentId;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Setup flow: initiate payment first if no paymentId yet
-    if (!currentPaymentId && onInitiatePayment) {
-      const result = await onInitiatePayment('netbanking');
-      if (!result) {
-        setIsSubmitting(false);
+    try {
+      let currentPaymentId = paymentId;
+
+      // Setup flow: initiate payment first if no paymentId yet
+      if (!currentPaymentId && onInitiatePayment) {
+        const result = await onInitiatePayment('netbanking');
+        if (!result) {
+          return;
+        }
+        currentPaymentId = result.paymentId;
+      }
+
+      // Re-read sessionParams after potential initiatePayment call
+      const currentSessionParams = usePaymentStore.getState().payuSessionParams;
+      if (!currentSessionParams) {
+        Alert.alert('Session Error', 'Please go back and try again.');
         return;
       }
-      currentPaymentId = result.paymentId;
-    }
 
-    // Re-read sessionParams after potential initiatePayment call
-    const currentSessionParams = usePaymentStore.getState().payuSessionParams;
-    if (!currentSessionParams) {
-      Alert.alert('Session Error', 'Please go back and try again.');
-      setIsSubmitting(false);
-      return;
-    }
+      const outcome = await executePayment(
+        'NB',
+        { bankcode: selectedBankCode },
+        currentPaymentId,
+        () => {},
+      );
 
-    const outcome = await executePayment(
-      'NB',
-      { bankcode: selectedBankCode },
-      currentPaymentId,
-      () => {},
-    );
-
-    if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+      if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+        // Reset so user can retry
+      } else if (outcome.status === 'failure') {
+        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
+      }
+    } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [selectedBankCode, sessionParams, paymentId, isSubmitting, executePayment, onInitiatePayment]);
+  }, [selectedBankCode, paymentId, executePayment, onInitiatePayment]);
 
   return (
     <View style={styles.container}>
@@ -368,7 +375,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: A
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
     paddingTop: 16,
   },
   headerSection: {

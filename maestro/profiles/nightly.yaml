@@ -37,7 +37,6 @@ flows:
   - "flows/main/home.yaml"
   - "flows/main/dashboard-states.yaml"
   # Payment
-  - "flows/payment/first-rent.yaml"
   - "flows/payment/enter-rent.yaml"
   - "flows/payment/method-selector.yaml"
   - "flows/payment/add-upi.yaml"
@@ -51,7 +50,7 @@ flows:
   # Profile
   - "flows/profile/index.yaml"
   - "flows/profile/edit.yaml"
-  - "flows/profile/payment-methods.yaml"
+  - "flows/profile/edit-bank-details.yaml"
   - "flows/profile/agreement.yaml"
   # Routing
   - "flows/routing/auth-guard.yaml"
@@ -73,6 +72,7 @@ flows:
   - "journeys/sign-out-relogin.yaml"
   - "journeys/skip-setup.yaml"
   - "journeys/crash-recovery-payment.yaml"
+  - "journeys/network-offline.yaml"
 
 # Extended timeout for complex flows and edge cases
 timeout: 180

@@ -10,7 +10,7 @@
 # Protected route groups:
 #   - (main): home dashboard
 #   - (payment): enter-rent, confirm, status
-#   - (profile): index, edit, payment-methods, agreement, edit-bank-details
+#   - (profile): index, edit, agreement, edit-bank-details
 #   - (setup): index, add-bank, add-utility, invite-landlord, pending-steps
 #   - (agreement): upload, review
 #
@@ -70,11 +70,6 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 - assertNotVisible:
     id: "edit-profile-screen"
-
-- openLink: "flentsecured:///profile/payment-methods"
-- waitForAnimationToEnd
-- assertNotVisible:
-    id: "payment-methods-screen"
 
 - openLink: "flentsecured:///profile/agreement"
 - waitForAnimationToEnd

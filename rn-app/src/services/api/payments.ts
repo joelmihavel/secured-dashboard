@@ -1160,7 +1160,7 @@ export interface PaymentStampsResponse {
   summary: PaymentStampSummary;
 }
 
-export async function fetchPaymentStamps(
+async function fetchPaymentStampsReal(
   tenancyId: string
 ): Promise<{ data: PaymentStampsResponse | null; error: string | null }> {
   const { data, error } = await callEdgeFunction<{ success: boolean; data: PaymentStampsResponse }>(
@@ -1173,6 +1173,22 @@ export async function fetchPaymentStamps(
   if (!data?.success) return { data: null, error: 'Failed to fetch payment stamps' };
   return { data: data.data, error: null };
 }
+
+async function fetchPaymentStampsMock(
+  _tenancyId: string
+): Promise<{ data: PaymentStampsResponse | null; error: string | null }> {
+  const { MOCK_PAYMENT_STAMPS } = await import('./__mocks__/payments-mock');
+  return { data: MOCK_PAYMENT_STAMPS, error: null };
+}
+
+const _fetchPaymentStamps = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', fetchPaymentStampsReal, fetchPaymentStampsMock, { delayMs: 200 });
+    })()
+  : fetchPaymentStampsReal;
+
+export const fetchPaymentStamps = _fetchPaymentStamps;
 
 // ==============================================
 // SAVE BANK PREFERENCE
@@ -1303,6 +1319,45 @@ export async function fetchBankList(): Promise<{
   }
 
   return { data: data.data.banks, error: null };
+}
+
+// ==============================================
+// PAYU STORED CARDS (for CVV-only flow)
+// ==============================================
+
+export interface PayuStoredCard {
+  saved_method_id: string;
+  card_token: string;
+  card_no: string;
+  card_brand: string;
+  card_type: 'CC' | 'DC';
+  name_on_card: string;
+  cvv_required: boolean;
+}
+
+/**
+ * Fetch stored card tokens from PayU via our edge function.
+ * Returns matched cards with tokens for CVV-only payment flow.
+ * Gracefully returns empty array on any error (client falls back to full card entry).
+ */
+export async function getPayuStoredCards(): Promise<{
+  data: PayuStoredCard[] | null;
+  error: string | null;
+}> {
+  const { data, error } = await callEdgeFunction<{
+    success: boolean;
+    data: { cards: PayuStoredCard[] };
+  }>('get-payu-stored-cards', {}, true, 'GET');
+
+  if (error) {
+    return { data: [], error: null }; // Graceful degradation
+  }
+
+  if (!data?.success) {
+    return { data: [], error: null };
+  }
+
+  return { data: data.data.cards, error: null };
 }
 
 export function sanitizeErrorForUI(errorMessage: string): string {

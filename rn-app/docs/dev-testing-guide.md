@@ -542,7 +542,7 @@ The script:
 |--------------------------|---------------------------------------------------------------------|
 | Service role auth        | Only callable with the service role key (not user JWTs)             |
 | Test phone regex         | Only `+91999990XXXX` phones are allowed -- rejects all others       |
-| Real user protection     | Refuses to overwrite if the phone belongs to a user without `is_test_user: true` metadata |
+| Real user protection     | Only phones matching `+91999990XXXX` are accepted; `is_test_user=true` is set only for Apple review phones (00001, 00002) |
 | Rate limiting            | 1 invocation per 5 seconds (checked via audit_logs)                 |
 | Audit logging            | Every seed operation is recorded with masked phone + target state   |
 

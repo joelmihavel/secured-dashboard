@@ -10,13 +10,13 @@
  * Figma Reference: 41-8369 (Add UPI Payment)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
   Alert,
+  ScrollView,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/src/components/ui/Typography';
@@ -55,6 +55,7 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
   const [error, setError] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [isPayingUpi, setIsPayingUpi] = useState(false);
+  const isPayingRef = useRef(false);
 
   const validateUpiId = (id: string): string | null => {
     const trimmed = id.trim();
@@ -97,9 +98,9 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
           const message = err instanceof Error ? err.message : '';
           console.warn('[AddUpiContent] verifyUpi error:', message);
 
-          // In non-production, treat verification errors as "skip" so testing isn't blocked
+          // In dev, treat verification errors as "skip" so testing isn't blocked
           // PayU sandbox keys can't validate VPAs — skip to unblock testing
-          if (__DEV__ || !process.env.EXPO_PUBLIC_PAYU_PRODUCTION) {
+          if (__DEV__) {
             console.log('[AddUpiContent] Non-production — skipping VPA verification after error:', message);
             setIsVerified(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -121,43 +122,49 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
 
   // --- Pay via UPI ---
   const handlePayUpi = useCallback(async () => {
-    if (isPayingUpi) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (isPayingRef.current) return;
+    isPayingRef.current = true;
     setIsPayingUpi(true);
 
-    let currentPaymentId = paymentId;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Setup flow: initiate payment first if no paymentId yet
-    if (!currentPaymentId && onInitiatePayment) {
-      const result = await onInitiatePayment('upi');
-      if (!result) {
-        setIsPayingUpi(false);
+    try {
+      let currentPaymentId = paymentId;
+
+      // Setup flow: initiate payment first if no paymentId yet
+      if (!currentPaymentId && onInitiatePayment) {
+        const result = await onInitiatePayment('upi', { vpa: upiId.trim() });
+        if (!result) {
+          return;
+        }
+        currentPaymentId = result.paymentId;
+      }
+
+      if (!currentPaymentId) {
+        Alert.alert('Error', 'Unable to start payment. Please try again.');
         return;
       }
-      currentPaymentId = result.paymentId;
-    }
 
-    if (!currentPaymentId) {
-      Alert.alert('Error', 'Unable to start payment. Please try again.');
-      setIsPayingUpi(false);
-      return;
-    }
+      const outcome = await executePayment(
+        'upi',
+        { vpa: upiId.trim() },
+        currentPaymentId,
+        () => {
+          setUpiId('');
+          setAccountName('');
+        },
+      );
 
-    const outcome = await executePayment(
-      'upi',
-      { vpa: upiId.trim() },
-      currentPaymentId,
-      () => {
-        setUpiId('');
-        setAccountName('');
-      },
-    );
-
-    if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+      if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+        // Reset so user can retry
+      } else if (outcome.status === 'failure') {
+        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
+      }
+    } finally {
+      isPayingRef.current = false;
       setIsPayingUpi(false);
     }
-  }, [isPayingUpi, upiId, paymentId, executePayment, onInitiatePayment]);
+  }, [upiId, paymentId, executePayment, onInitiatePayment]);
 
   const isFormValid = accountName.length > 0 && upiId.includes('@');
   const isLoading = verifyUpi.isPending || isPayingUpi;
@@ -174,12 +181,11 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
         />
       </View>
 
-      <KeyboardAwareScrollView
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        bottomOffset={16}
       >
         {/* Title */}
         <RNText style={styles.title}>
@@ -247,7 +253,7 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
             This will be used to make rent payments and earn cashback.
           </Text>
         </View>
-      </KeyboardAwareScrollView>
+      </ScrollView>
     </View>
   );
 }
@@ -261,13 +267,13 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   stickyHeader: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
   },
   scrollView: {
-    flexGrow: 0,
+    flexGrow: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
     paddingBottom: 24,
   },
   backButton: {

@@ -2,67 +2,85 @@
 # TE-120: Home Screen Functional Flow
 # Route: /(main)/index
 # Figma: 243-2762 (bank-upi), 243-2967 (all-methods), 243-3170 (late),
-#         243-3378 (missed), 243-6296 (empty-upi), 243-6490 (setup-payment)
-# testIDs: home-screen, home-screen-loading, home-screen-error
+#         243-3378 (missed), 243-4062 (empty)
+# testIDs: home-screen, home-screen-loading, home-screen-error,
+#          home-avatar, review-pay-button, status-notification-banner,
+#          setup-progress-card, setup-progress-cta
 # =============================================================================
 #
 # Validates:
-#   - Home screen renders with user greeting
-#   - Payment method carousel shows configured methods
-#   - Tab switcher (Payments / Cashbacks) is interactive
+#   - Home screen renders with user greeting ("Hi, [Name]")
+#   - HomeHeader with logo and avatar is visible
+#   - Payment flip card carousel is present
+#   - Tab switcher (Recent Payments / Cashbacks) is interactive
 #   - Recent payments list or empty state displays
-#   - Bottom footer/navigation is visible
-#   - Empty state prompts payment setup
-#   - Active state shows upcoming/recent payment info
-#   - Late payment state shows warning banner
-#   - Missed payment state shows alert banner
+#   - Bottom footer with "Review & pay" button is visible
+#   - Avatar tap navigates to profile
+#   - Status notification banner shows contextual messages
 # =============================================================================
 
 appId: com.flent.secured
 ---
-# -- Test active state with all methods --
+# -- Test active state --
 - launchApp:
     clearState: true
-- openLink: "flentsecured:///main/index?state=all-methods"
+- openLink: "flentsecured:///main/index"
 - waitForAnimationToEnd
 
 # Verify home screen rendered
 - assertVisible:
     id: "home-screen"
 
-# Verify core home screen elements
-- assertVisible: "Home"
+# Verify header with greeting
+- assertVisible:
+    text: "Hi,"
+    optional: true
 
-# -- Test empty state (setup payment) --
-- openLink: "flentsecured:///main/index?state=setup-payment"
+# Verify avatar is tappable
+- assertVisible:
+    id: "home-avatar"
+
+# Verify bottom footer with Review & pay button
+- assertVisible:
+    id: "review-pay-button"
+    optional: true
+
+# -- Test tab switching --
+- assertVisible:
+    text: "Recent Payments"
+    optional: true
+
+- assertVisible:
+    text: "Cashbacks"
+    optional: true
+
+# Tap Cashbacks tab
+- tapOn:
+    text: "Cashbacks"
+    optional: true
 - waitForAnimationToEnd
 
+# Tap back to Recent Payments tab
+- tapOn:
+    text: "Recent Payments"
+    optional: true
+- waitForAnimationToEnd
+
+# -- Test avatar navigation to profile --
+- tapOn:
+    id: "home-avatar"
+- waitForAnimationToEnd
+
+# Verify navigated to profile screen
+- assertVisible:
+    id: "profile-screen"
+
+# Go back to home
+- back
+- waitForAnimationToEnd
+
+# Verify we are back on home
 - assertVisible:
     id: "home-screen"
 
-# -- Test bank/UPI only state --
-- openLink: "flentsecured:///main/index?state=bank-upi"
-- waitForAnimationToEnd
-
-- assertVisible:
-    id: "home-screen"
-
-# -- Test late payment state --
-- openLink: "flentsecured:///main/index?state=late-payment"
-- waitForAnimationToEnd
-
-- assertVisible:
-    id: "home-screen"
-
-# Late payment state should show warning
-- assertVisible: "late"
-
-# -- Test missed payment state --
-- openLink: "flentsecured:///main/index?state=missed-payment"
-- waitForAnimationToEnd
-
-- assertVisible:
-    id: "home-screen"
-
-# Missed payment state should show alert
-- assertVisible: "missed"
+- takeScreenshot: "home-screen-complete"

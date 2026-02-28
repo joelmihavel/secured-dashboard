@@ -2,7 +2,7 @@
 # Cascade-delete a single test user by phone number
 # Usage: ./scripts/cleanup-user.sh <phone>
 #
-# Safety: Only deletes users where is_test_user = true
+# Safety: Only deletes users matching the +91999990XXXX test phone pattern
 # Deletes in FK order to avoid constraint violations
 
 set -euo pipefail
@@ -33,13 +33,13 @@ echo ""
 # Step 1: Look up user ID by phone
 echo "Looking up user..."
 USER_RESPONSE=$(curl -s -X GET \
-  "${BASE_URL}/users?phone=eq.${PHONE}&is_test_user=eq.true&select=id" \
+  "${BASE_URL}/users?phone=eq.${PHONE}&select=id" \
   "${AUTH_HEADERS[@]}")
 
 USER_ID=$(echo "$USER_RESPONSE" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data[0]['id'] if data else '')" 2>/dev/null)
 
 if [ -z "$USER_ID" ]; then
-  echo "No test user found with phone $PHONE (or user is not a test user)"
+  echo "No test user found with phone $PHONE"
   exit 0
 fi
 
@@ -95,7 +95,7 @@ delete_from "waitlist_entries" "user_id=eq.${USER_ID}"
 delete_from "referral_redemptions" "user_id=eq.${USER_ID}"
 delete_from "otp_requests" "phone=eq.${PHONE}"
 delete_from "idempotency_keys" "user_id=eq.${USER_ID}"
-delete_from "users" "id=eq.${USER_ID}&is_test_user=eq.true"
+delete_from "users" "id=eq.${USER_ID}&phone=like.*999990*"
 
 # Step 3: Delete auth user via admin API
 echo ""

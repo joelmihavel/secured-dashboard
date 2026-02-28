@@ -6,8 +6,7 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo } from 'react';
-import { supabase } from '../services/supabase/client';
+import { useCallback, useMemo } from 'react';
 import {
   fetchDashboard,
   DashboardData,
@@ -19,6 +18,9 @@ import {
   MappedCashbackEntry,
   DashboardPaymentStamps,
 } from '../services/api/dashboard';
+import { useRealtimeQuery } from './useRealtimeQuery';
+import { useAuthStore } from '../stores/auth';
+import { paymentKeys } from './usePayments';
 
 // ==============================================
 // QUERY KEYS
@@ -90,8 +92,8 @@ export function useDashboard(options: UseDashboardOptions = {}) {
       return { type: 'landlord_rejected' as const, message: undefined };
     }
 
-    // Priority 2: Verifications pending (any incomplete)
-    const allVerified = vs?.bank_verified && vs?.utility_verified && vs?.landlord_approved;
+    // Priority 2: Verifications pending (any incomplete) — prefer backend flag
+    const allVerified = query.data?.cashback?.verification_complete ?? false;
     if (!allVerified) {
       return { type: 'verification_pending' as const, message: undefined };
     }
@@ -109,25 +111,45 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     return null;
   }, [query.data?.tenancy, query.data?.upcoming_payment]);
 
-  // Realtime subscription for tenancy status changes
+  // Realtime subscriptions via centralized RealtimeManager
   const tenancyId = query.data?.tenancy?.id;
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    if (!tenancyId) return;
+  const userId = useAuthStore((s) => s.userId);
 
-    const channel = supabase.channel(`tenancy-${tenancyId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tenancies',
-        filter: `id=eq.${tenancyId}`,
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-      })
-      .subscribe();
+  // 1. Tenancy status changes (existing, migrated from manual channel)
+  useRealtimeQuery({
+    table: 'tenancies',
+    event: 'UPDATE',
+    filter: tenancyId ? `id=eq.${tenancyId}` : undefined,
+    queryKeys: [dashboardKeys.all],
+    enabled: !!tenancyId,
+  });
 
-    return () => { supabase.removeChannel(channel); };
-  }, [tenancyId, queryClient]);
+  // 2. Payment status changes → refresh dashboard + payment history
+  useRealtimeQuery({
+    table: 'payments',
+    event: 'UPDATE',
+    filter: userId ? `user_id=eq.${userId}` : undefined,
+    queryKeys: [dashboardKeys.all, paymentKeys.history()],
+    enabled: !!userId,
+  });
+
+  // 3. New notifications → refresh dashboard (updates unread count)
+  useRealtimeQuery({
+    table: 'notifications',
+    event: 'INSERT',
+    filter: userId ? `user_id=eq.${userId}` : undefined,
+    queryKeys: [dashboardKeys.all],
+    enabled: !!userId,
+  });
+
+  // 4. User profile changes → refresh dashboard
+  useRealtimeQuery({
+    table: 'users',
+    event: 'UPDATE',
+    filter: userId ? `id=eq.${userId}` : undefined,
+    queryKeys: [dashboardKeys.all],
+    enabled: !!userId,
+  });
 
   return {
     ...query,
@@ -183,7 +205,7 @@ export function useRefreshDashboard() {
  * Hook to get just the verification status
  */
 export function useVerificationStatus() {
-  const { tenancy, isLoading, error } = useDashboard();
+  const { tenancy, cashback, isLoading, error } = useDashboard();
 
   if (!tenancy) {
     return {
@@ -211,7 +233,7 @@ export function useVerificationStatus() {
     bankVerified: bank_verified,
     utilityVerified: utility_verified,
     landlordApproved: landlord_approved,
-    allVerified: bank_verified && utility_verified && landlord_approved,
+    allVerified: cashback?.verification_complete ?? (bank_verified && utility_verified && landlord_approved),
     pendingSteps,
   };
 }

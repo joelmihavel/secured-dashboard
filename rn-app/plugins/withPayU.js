@@ -82,9 +82,45 @@ function withPayUInfoPlist(config) {
   });
 }
 
+function withPayUAndroid(config) {
+  return withDangerousMod(config, [
+    "android",
+    async (config) => {
+      const buildGradlePath = path.join(
+        config.modRequest.platformProjectRoot,
+        "build.gradle"
+      );
+
+      if (!fs.existsSync(buildGradlePath)) {
+        return config;
+      }
+
+      let contents = fs.readFileSync(buildGradlePath, "utf8");
+
+      // PhonePe SDK maven repository — required for PayU UPI intent payments
+      const phonePeRepo = '        maven { url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android" }';
+
+      if (!contents.includes("phonepe.mycloudrepo.io")) {
+        // Add to allprojects.repositories block
+        const repoMatch = contents.match(/(allprojects\s*\{[\s\S]*?repositories\s*\{)/);
+        if (repoMatch) {
+          contents = contents.replace(
+            repoMatch[1],
+            repoMatch[1] + "\n" + phonePeRepo
+          );
+        }
+      }
+
+      fs.writeFileSync(buildGradlePath, contents);
+      return config;
+    },
+  ]);
+}
+
 function withPayU(config) {
   config = withPayUPodfile(config);
   config = withPayUInfoPlist(config);
+  config = withPayUAndroid(config);
   return config;
 }
 

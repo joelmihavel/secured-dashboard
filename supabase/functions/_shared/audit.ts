@@ -179,6 +179,12 @@ export const AuditActions = {
   LOGIN_SUCCESS: "LOGIN_SUCCESS",
   LOGIN_FAILED: "LOGIN_FAILED",
   LOGOUT: "LOGOUT",
+  AUTH_OTP_INITIATED: "AUTH_OTP_INITIATED",
+  AUTH_OTP_VERIFIED: "AUTH_OTP_VERIFIED",
+  AUTH_OTP_FAILED: "AUTH_OTP_FAILED",
+  AUTH_SUCCESS: "AUTH_SUCCESS",
+  AUTH_RESEND: "AUTH_RESEND",
+  AUTH_RATE_LIMITED: "AUTH_RATE_LIMITED",
 
   // Payment
   PAYMENT_INITIATED: "PAYMENT_INITIATED",
@@ -244,21 +250,16 @@ export const AuditActions = {
  * Extracts client IP from request headers.
  */
 function getClientIp(request: Request): string | undefined {
-  // Check common proxy headers
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
-  }
-
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) {
-    return realIp;
-  }
-
-  // Supabase/Deno Deploy specific
+  // cf-connecting-ip is set by Cloudflare — authoritative, not client-spoofable
   const cfConnectingIp = request.headers.get("cf-connecting-ip");
   if (cfConnectingIp) {
     return cfConnectingIp;
+  }
+
+  // x-real-ip is set by reverse proxy, not client
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) {
+    return realIp;
   }
 
   return undefined;

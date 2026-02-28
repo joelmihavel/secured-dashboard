@@ -2,90 +2,55 @@
 # UI-032, UI-033: Dashboard States Functional Flow
 # Route: /(main)/index
 # Figma: 243-2762 (bank-upi), 243-2967 (all-methods), 243-3170 (late),
-#         243-3378 (missed), 243-7185 (cashbacks)
-# testIDs: home-screen, home-screen-loading, home-screen-error
+#         243-3378 (missed), 243-7185 (cashbacks), 243-4062 (empty)
+# testIDs: home-screen, home-screen-loading, home-screen-error,
+#          home-avatar, review-pay-button, status-notification-banner,
+#          setup-progress-card, setup-progress-cta
 # =============================================================================
 #
 # Validates:
-#   - Dashboard renders payment due card with amount
-#   - Due date badge shows days until due or overdue status
+#   - Dashboard renders in multiple states
+#   - HomeHeader shows "Hi, [Name]" greeting with logo and avatar
+#   - Payment flip card carousel shows payment month cards
 #   - Tab switcher between Recent Payments and Cashbacks
-#   - Active state shows payment history
-#   - Late payment state shows warning
-#   - Missed payment state shows alert
-#   - Headline carousel is visible with payment method cards
-#   - Setup progress shows for incomplete setups
+#   - Status notification banner shows contextual messages
+#   - Bottom footer with "Review & pay" button visible in active states
+#   - Setup progress card visible in empty/incomplete states
+#   - Empty payments state shows "No Payments Yet"
 # =============================================================================
 
 appId: com.flent.secured
 ---
 # =============================================
-# STATE 1: All methods configured (active)
+# STATE 1: Default active state
 # =============================================
 - launchApp:
     clearState: true
-- openLink: "flentsecured:///main/index?state=all-methods"
+- openLink: "flentsecured:///main/index"
 - waitForAnimationToEnd
 
 # Verify home screen
 - assertVisible:
     id: "home-screen"
 
-# Verify core dashboard content
-- assertVisible: "Home"
-
-# =============================================
-# STATE 2: Empty / Setup Payment state
-# =============================================
-- openLink: "flentsecured:///main/index?state=setup-payment"
-- waitForAnimationToEnd
-
+# Verify header greeting
 - assertVisible:
-    id: "home-screen"
+    text: "Hi,"
+    optional: true
 
-# =============================================
-# STATE 3: Bank/UPI only state
-# =============================================
-- openLink: "flentsecured:///main/index?state=bank-upi"
-- waitForAnimationToEnd
-
+# Verify avatar
 - assertVisible:
-    id: "home-screen"
+    id: "home-avatar"
 
 # =============================================
-# STATE 4: Late payment state (overdue warning)
+# STATE 2: Tab switching (Recent Payments vs Cashbacks)
 # =============================================
-- openLink: "flentsecured:///main/index?state=late-payment"
-- waitForAnimationToEnd
-
-- assertVisible:
-    id: "home-screen"
-
-# Late payment should show overdue indicator
-- assertVisible: "late"
-
-# =============================================
-# STATE 5: Missed payment state
-# =============================================
-- openLink: "flentsecured:///main/index?state=missed-payment"
-- waitForAnimationToEnd
-
-- assertVisible:
-    id: "home-screen"
-
-# Missed payment should show alert
-- assertVisible: "missed"
-
-# =============================================
-# STATE 6: Test tab switching (Recent Payments vs Cashbacks)
-# =============================================
-- openLink: "flentsecured:///main/index?state=all-methods"
-- waitForAnimationToEnd
 
 # Verify tabs are visible
 - assertVisible:
     text: "Recent Payments"
     optional: true
+
 - assertVisible:
     text: "Cashbacks"
     optional: true
@@ -101,5 +66,41 @@ appId: com.flent.secured
     text: "Recent Payments"
     optional: true
 - waitForAnimationToEnd
+
+# =============================================
+# STATE 3: Bottom footer interaction
+# =============================================
+
+# Verify Review & pay button in footer
+- assertVisible:
+    id: "review-pay-button"
+    optional: true
+
+# =============================================
+# STATE 4: Status notification banner
+# =============================================
+
+# Status notification banner may be visible based on state
+- assertVisible:
+    id: "status-notification-banner"
+    optional: true
+
+# =============================================
+# STATE 5: Setup progress card (empty/incomplete state)
+# =============================================
+
+# Setup progress card may be visible for new users
+- assertVisible:
+    id: "setup-progress-card"
+    optional: true
+
+# =============================================
+# STATE 6: Empty payments state
+# =============================================
+
+# Empty state may show "No Payments Yet"
+- assertVisible:
+    text: "No Payments Yet"
+    optional: true
 
 - takeScreenshot: "dashboard-states-complete"

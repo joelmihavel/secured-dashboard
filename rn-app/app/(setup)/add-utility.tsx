@@ -35,12 +35,12 @@ import {
   Dimensions,
   ScrollView,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Modal,
   FlatList,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,7 +75,7 @@ export default function AddUtilityScreen() {
   const insets = useSafeAreaInsets();
   const verifyUtility = useVerifyUtility();
   const { tenancy } = useDashboard();
-  const { data: operators, isLoading: operatorsLoading } = useUtilityOperators();
+  const { data: operators, isLoading: operatorsLoading, isError: operatorsError, refetch: refetchOperators } = useUtilityOperators();
 
   const [selectedOperator, setSelectedOperator] = useState<UtilityOperator | null>(null);
   const [consumerNumber, setConsumerNumber] = useState('');
@@ -333,9 +333,23 @@ export default function AddUtilityScreen() {
                   <View style={styles.modalLoading}>
                     <ActivityIndicator size="large" color={FIGMA_COLORS.accent} />
                   </View>
+                ) : operatorsError || !operators?.length ? (
+                  <View style={styles.modalLoading}>
+                    <Text style={[styles.operatorName, { textAlign: 'center', marginBottom: 16 }]}>
+                      Failed to load operators
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => refetchOperators()}
+                      style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: FIGMA_COLORS.accent, borderRadius: 12 }}
+                    >
+                      <Text style={{ fontFamily: 'PlusJakartaSans-Medium', fontSize: 14, color: colors.white }}>
+                        Retry
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 ) : (
                   <FlatList
-                    data={operators ?? []}
+                    data={operators}
                     keyExtractor={(item) => item.operatorCode}
                     renderItem={({ item }) => (
                       <TouchableOpacity

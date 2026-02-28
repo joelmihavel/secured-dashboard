@@ -710,14 +710,26 @@ export default function UploadScreen() {
   // ============================================
 
   const storePhase = useUploadStore((s) => s.uploadPhase);
+  const storeErrorMessage = useUploadStore((s) => s.errorMessage);
   useEffect(() => {
     if (storePhase === 'idle' && uploadState === 'uploading' && !agreement.isUploading) {
+      // Mount discovery found extractionId no longer exists — reset to idle
       setUploadState('idle');
       setUploadProgress(0);
       setDocument(null);
       setErrorOverrideMessage(null);
+    } else if (storePhase === 'failed' && uploadState === 'uploading') {
+      // processDocument fire-and-forget failed, or other async error —
+      // store.setError() was called outside the mutation lifecycle.
+      // Surface the error immediately instead of waiting for staleness timeout.
+      setUploadState('error_expired');
+      setUploadProgress(0);
+      setErrorOverrideMessage(
+        storeErrorMessage ?? 'Document processing failed. Please try uploading again.'
+      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
-  }, [storePhase, uploadState, agreement.isUploading]);
+  }, [storePhase, storeErrorMessage, uploadState, agreement.isUploading]);
 
   // ============================================
   // EXTRACTION STATUS → UI STATE (single navigation authority)
@@ -885,55 +897,17 @@ export default function UploadScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const result = await agreement.upload(
+      await agreement.upload(
         document.uri,
         document.name,
         document.size ?? 0
       );
 
-      // Upload + process-document edge function completed.
-      // BUG 6 FIX: The mutation already sets phase to 'completed' inside useAgreement.
-      // Only set server_processing if we haven't already reached a terminal phase.
-      const currentPhase = useUploadStore.getState().uploadPhase;
-      if (currentPhase !== 'completed' && currentPhase !== 'failed') {
-        useUploadStore.getState().setPhase('server_processing');
-      }
-      setUploadProgress(100);
-
-      // If the backend specifically flags the document as invalid or expired,
-      // handle immediately (process-document returned synchronously)
-      if (
-        result.processResult.contractStatus === 'invalid_document' ||
-        result.processResult.contractStatus === 'expired'
-      ) {
-        setUploadState('error_expired');
-        if (result.processResult.reviewReason) {
-          setErrorOverrideMessage(result.processResult.reviewReason);
-        } else {
-          setErrorOverrideMessage('The agreement is invalid or expired. Please upload a valid one.');
-        }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        return;
-      }
-
-      // Check processing result for manual review
-      if (result.processResult.needsManualReview) {
-        setUploadState('manual_review');
-        if (result.processResult.reviewReason) {
-          setErrorOverrideMessage(result.processResult.reviewReason);
-        }
-        return;
-      }
-
-      if (!result.processResult.isCitySupported) {
-        setUploadState('manual_review');
-        setErrorOverrideMessage("Our team will review it manually and get back to you within 24 hours.");
-        return;
-      }
-
-      // Happy path: process-document returned completed synchronously.
-      // The useEffect reacting to extractionStatus.data will detect the
-      // completed status and auto-navigate to review. No navigation here.
+      // Upload completed + processDocument fired in background.
+      // The useExtractionStatus polling + Realtime now drives all transitions:
+      // completed → review screen, failed → error state, manual_review → waitlist.
+      // No synchronous result to check here — the useEffect on extractionStatus.data
+      // (above) handles everything.
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

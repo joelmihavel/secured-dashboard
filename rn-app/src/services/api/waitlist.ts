@@ -44,6 +44,10 @@ export interface WaitlistStatusData {
   currentBatch: number;
   /** Days before rejected users can re-apply */
   rejectionCooldownDays: number;
+  /** Whether the extraction requires manual admin review */
+  requiresManualReview: boolean;
+  /** Extraction pipeline status (pending/processing/completed/failed) */
+  extractionStatus: string | null;
 }
 
 export interface ClaimInviteCodeResponse {
@@ -286,6 +290,8 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
       batchNumber: null,
       currentBatch: batchConfig?.current_batch ?? 1,
       rejectionCooldownDays,
+      requiresManualReview: raw.requires_manual_review ?? false,
+      extractionStatus: raw.extraction_status ?? null,
     };
   }
 
@@ -373,6 +379,8 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
     batchNumber: raw.waitlist_entry?.batch_number ?? null,
     currentBatch: batchConfig?.current_batch ?? 1,
     rejectionCooldownDays,
+    requiresManualReview: raw.requires_manual_review ?? raw.waitlist_entry?.requires_manual_review ?? false,
+    extractionStatus: extractionStatus ?? null,
   };
 }
 

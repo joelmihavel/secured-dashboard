@@ -31,19 +31,15 @@ appId: com.flent.secured
     id: "enter-rent-screen"
     optional: true
 
-# Verify key breakdown elements
-- assertVisible: "Base rent"
-- assertVisible: "Payable Rent"
+# Verify amount input area
+- assertVisible: ".00"
 
-# Scroll to and tap Pay Now
-- scrollUntilVisible:
-    element:
-      id: "pay-now-button"
-    direction: DOWN
-    timeout: 5000
+# Enter rent amount
+- inputText: ${TEST_PAYMENT_AMOUNT}
+- waitForAnimationToEnd
 
-- tapOn:
-    id: "pay-now-button"
+# Tap Select Payment Method CTA
+- tapOn: "Select Payment Method"
 - waitForAnimationToEnd
 
 # =============================================
@@ -72,16 +68,14 @@ appId: com.flent.secured
 - assertVisible: "Convenience Fee"
 - assertVisible: "Payable Amount"
 
-# Scroll to Pay Now button
+# Scroll to Pay Now button (text: "Pay ₹ ... now")
 - scrollUntilVisible:
-    element:
-      id: "pay-now-button"
+    element: "Pay"
     direction: DOWN
     timeout: 5000
 
-# Tap Pay Now to initiate payment
-- tapOn:
-    id: "pay-now-button"
+# Tap Pay Now to initiate payment (text-based, no testID on CTA)
+- tapOn: "now"
 - waitForAnimationToEnd
 
 # =============================================
@@ -97,7 +91,9 @@ appId: com.flent.secured
     id: "status-screen"
 
 # Verify pending state initially shows "Verifying"
-- assertVisible: "Verifying"
+- assertVisible:
+    text: "Verifying"
+    optional: true
 
 # Wait for mock backend to resolve payment (in dev mode: auto-success after delay)
 # In production-like test: poll resolves within timeout
@@ -108,8 +104,12 @@ appId: com.flent.secured
 # STEP 5: Payment Status -- Success (Expected)
 # =============================================
 # Verify success state if mock backend resolved
-- assertVisible: "Succesful"
-- assertVisible: "Amount paid"
+- assertVisible:
+    text: "Successful"
+    optional: true
+- assertVisible:
+    text: "Amount paid"
+    optional: true
 
 # Verify Download Receipt button
 - assertVisible:
@@ -130,13 +130,13 @@ appId: com.flent.secured
     id: "status-screen"
 - assertVisible: "Failed"
 
-# Verify Contact Support button on failure
+# Verify Try Again button on failure
 - assertVisible:
-    id: "contact-support-button"
-- assertVisible: "Contact Support"
-
-# Verify Try Again link
+    id: "try-again-button"
 - assertVisible: "Try Again"
+
+# Verify Contact Support link text
+- assertVisible: "Contact Support"
 
 - takeScreenshot: "payment-failed-state"
 

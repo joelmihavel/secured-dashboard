@@ -10,6 +10,7 @@ import Animated, {
   interpolateColor,
   Extrapolation,
   Easing,
+  FadeIn,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -328,25 +329,40 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
         </Animated.View>
       </View>
 
-      <View style={[styles.contentPadding, styles.backContent]}>
-        {/* Grid of 12 Stamps */}
-        <View style={styles.stampsGrid}>
-          {data.yearlyStamps.slice(0, 12).map((status, idx) => (
-            <View key={idx} style={[styles.stampSlot, styles[`stamp_${status}`]]}>
-              {/* If we had specific images, we'd render them here. 
-                  For now, we render deterministic colored indicators matching Figma */}
-            </View>
-          ))}
-        </View>
-      </View>
+      <View style={[styles.contentPadding, styles.backContent]} />
     </Animated.View>
   );
 
+  // Shadow animation during flip: grows at midpoint, shrinks on land
+  const shadowStyle = useAnimatedStyle(() => {
+    const shadowRadius = interpolate(
+      flipAnim.value,
+      [0, 0.5, 1],
+      [4, 16, 4],
+      Extrapolation.CLAMP,
+    );
+    const shadowOpacity = interpolate(
+      flipAnim.value,
+      [0, 0.5, 1],
+      [0.15, 0.4, 0.15],
+      Extrapolation.CLAMP,
+    );
+    return {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius,
+      shadowOpacity,
+      elevation: interpolate(flipAnim.value, [0, 0.5, 1], [4, 12, 4], Extrapolation.CLAMP),
+    };
+  });
+
   return (
-    <Pressable onPress={handlePress} style={styles.wrapper}>
-      {renderFront()}
-      {renderBack()}
-    </Pressable>
+    <Animated.View entering={FadeIn.duration(400)} style={shadowStyle}>
+      <Pressable onPress={handlePress} style={styles.wrapper}>
+        {renderFront()}
+        {renderBack()}
+      </Pressable>
+    </Animated.View>
   );
 });
 
@@ -555,40 +571,6 @@ const styles = StyleSheet.create({
     color: '#FF9A6D',
     fontSize: sf(16),
     fontFamily: 'PlusJakartaSans-Regular',
-  },
-  stampsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: s(16),
-    justifyContent: 'center',
-    marginTop: sv(88), // Push down to avoid overlapping the absolute topSection
-  },
-  stampSlot: {
-    width: s(60),
-    height: s(60),
-    borderRadius: s(30),
-    backgroundColor: 'rgba(255,255,255,0.05)', // empty state
-    borderWidth: 1, // keep 1px hairline
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  stamp_paid: {
-    backgroundColor: 'rgba(6, 194, 112, 0.2)',
-    borderColor: '#06C270',
-  },
-  stamp_late: {
-    backgroundColor: 'rgba(255, 154, 109, 0.2)',
-    borderColor: '#FF9A6D',
-  },
-  stamp_missed: {
-    backgroundColor: 'rgba(229, 72, 77, 0.2)',
-    borderColor: '#E5484D',
-  },
-  stamp_pending: {
-    backgroundColor: 'rgba(199, 201, 217, 0.2)',
-    borderColor: '#C7C9D9',
-  },
-  stamp_future: {
-    // defaults to empty slot style
   },
 
   // FURNITURE & PATTERN

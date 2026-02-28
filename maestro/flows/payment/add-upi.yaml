@@ -1,5 +1,5 @@
 # =============================================================================
-# UI-039: Add UPI Payment Method Flow
+# Payment: Add UPI Payment Method Flow
 # Route: Modal overlay (AddUpiContent in PaymentMethodModal)
 # Figma: 41-8369 (Add UPI Payment)
 # testIDs: modal-account-name-input, modal-upi-id-input,
@@ -8,14 +8,12 @@
 # =============================================================================
 #
 # Validates:
-#   - UPI form renders with "Add your UPI Method" title
+#   - UPI form renders with "Add your / UPI Method" title
 #   - Account holder name input is visible and accepts input
 #   - UPI ID input is visible and accepts input
 #   - Proceed button is disabled until form is valid
-#   - UPI ID validation (must contain @)
 #   - Verify button triggers UPI verification
-#   - Error messages display for invalid UPI IDs
-#   - Footer text about cashback is visible
+#   - Footer text about rent payments and cashback is visible
 # =============================================================================
 
 appId: com.flent.secured
@@ -31,8 +29,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # Open method selector
-- tapOn:
-    id: "enter-rent-continue-button"
+- tapOn: "Select Payment Method"
 - waitForAnimationToEnd
 
 # Wait for modal

@@ -1,0 +1,125 @@
+# =============================================================================
+# UI-053: Edit Bank Details Screen Functional Flow
+# Route: /(profile)/edit-bank-details
+# testIDs: edit-bank-details-screen, save-changes-button
+# =============================================================================
+#
+# Validates:
+#   - Edit Bank Details screen renders with testID
+#   - "Edit your Landlord's Bank Details" title is visible
+#   - Form fields present:
+#     - Account Holder Name (editable, pre-filled)
+#     - Account Number (editable)
+#     - Confirm Account Number (editable)
+#     - IFSC Code (editable, pre-filled)
+#     - PAN Card (disabled, masked)
+#   - "Verify & Save" button is visible
+#   - Verification footer text is shown
+#   - Back navigation works
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to edit bank details screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///profile/edit-bank-details"
+- waitForAnimationToEnd
+
+# -- Verify screen rendered --
+- assertVisible:
+    id: "edit-bank-details-screen"
+
+# -- Verify title --
+- assertVisible: "Bank Details"
+
+# -- Verify form fields --
+- assertVisible: "Account Holder Name"
+
+- scrollUntilVisible:
+    element: "Account Number"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Account Number"
+
+- scrollUntilVisible:
+    element: "Confirm Account Number"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Confirm Account Number"
+
+- scrollUntilVisible:
+    element: "IFSC Code"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "IFSC Code"
+
+- scrollUntilVisible:
+    element: "PAN Card"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "PAN Card"
+
+# -- Fill in form fields --
+- scrollUntilVisible:
+    element: "Account Holder Name"
+    direction: UP
+    timeout: 5000
+
+- tapOn: "Account Holder Name"
+- clearText
+- inputText: "Test Landlord Name"
+- hideKeyboard
+
+- scrollUntilVisible:
+    element: "Account Number"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "Account Number"
+- inputText: "1234567890123"
+- hideKeyboard
+
+- scrollUntilVisible:
+    element: "Confirm Account Number"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "Confirm Account Number"
+- inputText: "1234567890123"
+- hideKeyboard
+
+- scrollUntilVisible:
+    element: "IFSC Code"
+    direction: DOWN
+    timeout: 5000
+
+- tapOn: "IFSC Code"
+- clearText
+- inputText: "SBIN0002125"
+- hideKeyboard
+
+# -- Scroll to and verify Verify & Save button --
+- scrollUntilVisible:
+    element:
+      id: "save-changes-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "save-changes-button"
+
+# -- Verify footer text --
+- assertVisible:
+    text: "verification message"
+    optional: true
+
+# -- Test back navigation --
+- back
+- waitForAnimationToEnd
+
+- takeScreenshot: "edit-bank-details-complete"

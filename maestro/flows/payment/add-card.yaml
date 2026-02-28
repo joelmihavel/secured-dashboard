@@ -1,5 +1,5 @@
 # =============================================================================
-# UI-040: Add Card Payment Method Flow
+# Payment: Add Card Payment Method Flow
 # Route: Modal overlay (AddCardContent in PaymentMethodModal)
 # Figma: Add Card Payment
 # testIDs: card-number-input, expiry-input, cvv-input, name-on-card-input,
@@ -7,7 +7,7 @@
 # =============================================================================
 #
 # Validates:
-#   - Card form renders with "Add your Credit Card" or "Debit Card" title
+#   - Card form renders with "Add your / Credit Card" or "Debit Card" title
 #   - Card number input field is visible (SecureCardInput)
 #   - Expiry date input field is visible
 #   - CVV input field is visible
@@ -29,8 +29,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # Open method selector
-- tapOn:
-    id: "enter-rent-continue-button"
+- tapOn: "Select Payment Method"
 - waitForAnimationToEnd
 
 # Wait for modal
@@ -38,8 +37,7 @@ appId: com.flent.secured
     visible: "Payment Method"
     timeout: 5000
 
-# Select Credit Card (may be disabled if landlord not approved)
-# Fallback to Debit Card if Credit Card is disabled
+# Select Debit Card (Credit Card may be disabled if landlord not approved)
 - tapOn: "Debit Card"
 - waitForAnimationToEnd
 - tapOn:

@@ -13,6 +13,7 @@
 
 import { supabase } from '../supabase';
 import { tryCatch, logError, getErrorMessage } from '@/src/utils';
+import { isReviewPhone, activateReviewMode, isReviewMode, deactivateReviewMode, REVIEW_OTP } from '@/src/review/reviewMode';
 
 // ==============================================
 // TYPES
@@ -76,6 +77,12 @@ export interface AuthError {
 export async function sendOtp(
   request: SendOtpRequest
 ): Promise<{ data: SendOtpResult | null; error: AuthError | null }> {
+  // Review mode: intercept before any network call
+  if (isReviewPhone(request.phone_number)) {
+    activateReviewMode();
+    return { data: { method: 'supabase' as OtpMethod }, error: null };
+  }
+
   try {
     // 1. Call edge function for routing
     const { data: routeData, error: routeError } = await supabase.functions.invoke('auth-otp', {
@@ -140,6 +147,38 @@ export async function sendOtp(
 export async function verifyOtp(
   request: VerifyOtpRequest
 ): Promise<{ data: VerifyOtpResult | null; error: AuthError | null }> {
+  // Review mode: validate OTP locally, then inject a fake Supabase session
+  // so onAuthStateChange(SIGNED_IN) fires and the OTP screen navigates naturally.
+  if (isReviewMode()) {
+    if (request.otp !== REVIEW_OTP) {
+      return { data: null, error: { code: 'INVALID_OTP', message: 'The code you entered is incorrect' } };
+    }
+
+    // Build a structurally valid JWT (Supabase decodes payload but doesn't verify signature locally)
+    const header = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+    const payload = btoa(JSON.stringify({
+      sub: 'review-user-id',
+      phone: '+919999900001',
+      email: 'reviewer@flent.in',
+      role: 'authenticated',
+      aud: 'authenticated',
+      exp: Math.floor(Date.now() / 1000) + 86400,
+      user_metadata: { name: 'Alex Reviewer' },
+    }));
+    const fakeJwt = `${header}.${payload}.review-mode`;
+
+    // This fires onAuthStateChange(SIGNED_IN) → AuthProvider sets session → OTP screen navigates
+    await supabase.auth.setSession({
+      access_token: fakeJwt,
+      refresh_token: `review-refresh-${Date.now()}`,
+    });
+
+    return {
+      data: { user_id: 'review-user-id', is_new_user: false, identity_status: null },
+      error: null,
+    };
+  }
+
   if (request.method === 'supabase') {
     return verifyOtpViaSupabaseAuth(request);
   }
@@ -178,6 +217,12 @@ export async function resendOtp(
  * Sign out the current user
  */
 export async function signOut(): Promise<{ success: boolean; error: string | null }> {
+  // Review mode: deactivate, then clear the fake session from SecureStore
+  if (isReviewMode()) {
+    deactivateReviewMode();
+    // Let the real sign-out run to clear SecureStore + fire SIGNED_OUT event
+  }
+
   const result = await tryCatch(
     async () => {
       const { error } = await supabase.auth.signOut();

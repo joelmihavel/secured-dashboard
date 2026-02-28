@@ -17,7 +17,7 @@ import type {
 // Mocks
 // ---------------------------------------------------------------------------
 
-const mockStartPayment = jest.fn();
+const mockOpenCB = jest.fn();
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -77,9 +77,9 @@ interface CoreServiceModule {
  */
 function loadServiceWithCBWrapper(): CoreServiceModule {
   jest.resetModules();
-  mockStartPayment.mockReset();
+  mockOpenCB.mockReset();
   jest.doMock('payu-custom-browser-react', () => ({
-    default: { startPayment: mockStartPayment },
+    default: { openCB: mockOpenCB },
   }), { virtual: true });
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('../payment/payuCoreService');
@@ -195,10 +195,11 @@ describe('payuCoreService', () => {
     it('builds CC/DC params with card instrument merged', () => {
       service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      expect(mockStartPayment).toHaveBeenCalledTimes(1);
-      const callArgs = mockStartPayment.mock.calls[0];
+      expect(mockOpenCB).toHaveBeenCalledTimes(1);
+      const callArgs = mockOpenCB.mock.calls[0];
       const config = callArgs[0];
-      const params = config.payUPaymentParams;
+      // Native SDK expects snake_case key
+      const params = config.payu_payment_params;
 
       // Core fields
       expect(params.key).toBe('test_merchant_key');
@@ -229,14 +230,16 @@ describe('payuCoreService', () => {
       expect(params.expiry_month).toBe('12');
       expect(params.name_on_card).toBe('Arjun Kumar');
 
-      // Mode passed as second arg
-      expect(callArgs[1]).toBe('CC');
+      // openCB takes 3 args: config, errorCb, successCb (no mode arg)
+      expect(callArgs).toHaveLength(3);
+      expect(typeof callArgs[1]).toBe('function'); // errorCallback
+      expect(typeof callArgs[2]).toBe('function'); // successCallback
     });
 
     it('builds NB params with bankcode merged', () => {
       service.launchCorePayment('NB', baseSessionParams, nbInstrumentParams);
 
-      const params = mockStartPayment.mock.calls[0][0].payUPaymentParams;
+      const params = mockOpenCB.mock.calls[0][0].payu_payment_params;
 
       expect(params.bankcode).toBe('HDFCB');
       expect(params.key).toBe('test_merchant_key');
@@ -246,7 +249,7 @@ describe('payuCoreService', () => {
     it('builds UPI params with vpa merged', () => {
       service.launchCorePayment('upi', baseSessionParams, upiInstrumentParams);
 
-      const params = mockStartPayment.mock.calls[0][0].payUPaymentParams;
+      const params = mockOpenCB.mock.calls[0][0].payu_payment_params;
 
       expect(params.vpa).toBe('arjun@okicici');
       expect(params.key).toBe('test_merchant_key');
@@ -255,7 +258,7 @@ describe('payuCoreService', () => {
     it('sets environment to "1" in __DEV__ mode', () => {
       service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      const params = mockStartPayment.mock.calls[0][0].payUPaymentParams;
+      const params = mockOpenCB.mock.calls[0][0].payu_payment_params;
       expect(params.environment).toBe('1');
     });
 
@@ -266,7 +269,7 @@ describe('payuCoreService', () => {
       const prodService = loadServiceWithCBWrapper();
       prodService.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      const params = mockStartPayment.mock.calls[0][0].payUPaymentParams;
+      const params = mockOpenCB.mock.calls[0][0].payu_payment_params;
       expect(params.environment).toBe('0');
 
       (global as Record<string, unknown>).__DEV__ = originalDev;
@@ -282,7 +285,7 @@ describe('payuCoreService', () => {
 
       service.launchCorePayment('CC', sessionWithoutOptionalHashes, cardInstrumentParams);
 
-      const params = mockStartPayment.mock.calls[0][0].payUPaymentParams;
+      const params = mockOpenCB.mock.calls[0][0].payu_payment_params;
       expect(params.hashes).toEqual({
         payment: 'abc123hash',
       });
@@ -302,32 +305,35 @@ describe('payuCoreService', () => {
       service = loadServiceWithCBWrapper();
     });
 
-    it('resolves success when successCallback is invoked with JSON', async () => {
-      const payuResponseJson = JSON.stringify({
-        status: 'success',
-        txnid: 'TXN_001',
-        amount: '25000',
-      });
-
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, _errorCb: (e: string) => void, successCb: (r: string) => void) => {
-          successCb(payuResponseJson);
+    it('does NOT resolve on successCallback (webview presented, not payment success)', async () => {
+      // successCallback means "webview opened" — promise should NOT resolve yet
+      mockOpenCB.mockImplementation(
+        (_config: unknown, _errorCb: (e: string) => void, successCb: (r: string) => void) => {
+          successCb('Payment Initiated');
         }
       );
 
-      const result = await service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
+      const promise = service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      expect(result.status).toBe('success');
-      expect(result.payuResponse).toEqual({
-        status: 'success',
-        txnid: 'TXN_001',
-        amount: '25000',
+      let resolved = false;
+      promise.then(() => { resolved = true; });
+      jest.advanceTimersByTime(0);
+      expect(resolved).toBe(false);
+
+      // Now emit actual payment success via CBListener
+      DeviceEventEmitter.emit('CBListener', {
+        eventType: 'onPaymentSuccess',
+        payuResult: JSON.stringify({ status: 'success', txnid: 'TXN_001', amount: '25000' }),
       });
+
+      const result = await promise;
+      expect(result.status).toBe('success');
+      expect(result.payuResponse).toEqual({ status: 'success', txnid: 'TXN_001', amount: '25000' });
     });
 
     it('resolves failure when errorCallback is invoked', async () => {
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, errorCb: (e: string) => void) => {
+      mockOpenCB.mockImplementation(
+        (_config: unknown, errorCb: (e: string) => void) => {
           errorCb('Bank server down');
         }
       );
@@ -351,7 +357,34 @@ describe('payuCoreService', () => {
     });
 
     beforeEach(() => {
-      mockStartPayment.mockImplementation(() => {});
+      // Simulate SDK opening webview (successCallback fires, promise stays pending)
+      mockOpenCB.mockImplementation(
+        (_config: unknown, _errorCb: (e: string) => void, successCb: (r: string) => void) => {
+          successCb('Payment Initiated');
+        }
+      );
+    });
+
+    it('resolves success on onPaymentSuccess event', async () => {
+      const promise = service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
+
+      DeviceEventEmitter.emit('CBListener', {
+        eventType: 'onPaymentSuccess',
+        payuResult: JSON.stringify({
+          status: 'success',
+          txnid: 'TXN_001',
+          amount: '25000',
+        }),
+      });
+
+      const result = await promise;
+
+      expect(result.status).toBe('success');
+      expect(result.payuResponse).toEqual({
+        status: 'success',
+        txnid: 'TXN_001',
+        amount: '25000',
+      });
     });
 
     it('resolves failure on onPaymentFailure event', async () => {
@@ -504,8 +537,8 @@ describe('payuCoreService', () => {
       service = loadServiceWithCBWrapper();
     });
 
-    it('resolves failure when startPayment throws', async () => {
-      mockStartPayment.mockImplementation(() => {
+    it('resolves failure when openCB throws', async () => {
+      mockOpenCB.mockImplementation(() => {
         throw new Error('Native module crash');
       });
 
@@ -516,7 +549,7 @@ describe('payuCoreService', () => {
     });
 
     it('resolves failure with generic message for non-Error throw', async () => {
-      mockStartPayment.mockImplementation(() => {
+      mockOpenCB.mockImplementation(() => {
         throw 'some string error'; // eslint-disable-line no-throw-literal
       });
 
@@ -539,23 +572,23 @@ describe('payuCoreService', () => {
     });
 
     it('prevents second resolution after first', async () => {
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, errorCb: (e: string) => void, successCb: (r: string) => void) => {
-          successCb(JSON.stringify({ status: 'success', txnid: 'TXN_001' }));
-          // Second call should be ignored
-          errorCb('Late error');
+      mockOpenCB.mockImplementation(
+        (_config: unknown, errorCb: (e: string) => void, successCb: (r: string) => void) => {
+          // errorCb fires first, then late successCb — second should be ignored
+          errorCb('Init error');
+          successCb('Payment Initiated');
         }
       );
 
       const result = await service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      expect(result.status).toBe('success');
-      expect(result.payuResponse).toEqual({ status: 'success', txnid: 'TXN_001' });
+      expect(result.status).toBe('failure');
+      expect(result.error).toBe('Init error');
     });
 
     it('prevents CBListener event from resolving after callback already resolved', async () => {
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, errorCb: (e: string) => void) => {
+      mockOpenCB.mockImplementation(
+        (_config: unknown, errorCb: (e: string) => void) => {
           errorCb('Callback error');
         }
       );
@@ -579,58 +612,70 @@ describe('payuCoreService', () => {
   // parseSDKResponse (tested indirectly via callbacks)
   // ===================================================
 
-  describe('parseSDKResponse behavior', () => {
+  describe('parseSDKResponse behavior (via CBListener events)', () => {
     let service: CoreServiceModule;
 
     beforeAll(() => {
       service = loadServiceWithCBWrapper();
     });
 
-    it('passes through object responses', async () => {
-      const responseObj = { status: 'success', txnid: 'TXN_001' };
-
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, _errorCb: (e: string) => void, successCb: (r: unknown) => void) => {
-          successCb(responseObj as unknown as string);
+    beforeEach(() => {
+      mockOpenCB.mockImplementation(
+        (_config: unknown, _errorCb: (e: string) => void, successCb: (r: string) => void) => {
+          successCb('Payment Initiated');
         }
       );
+    });
 
-      const result = await service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
+    it('passes through object responses', async () => {
+      const responseObj = { status: 'success', txnid: 'TXN_001' };
+      const promise = service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
+
+      DeviceEventEmitter.emit('CBListener', {
+        eventType: 'onPaymentSuccess',
+        payuResult: responseObj,
+      });
+
+      const result = await promise;
       expect(result.payuResponse).toEqual(responseObj);
     });
 
     it('handles null/undefined response gracefully', async () => {
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, _errorCb: (e: string) => void, successCb: (r: string) => void) => {
-          successCb(null as unknown as string);
-        }
-      );
+      const promise = service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      const result = await service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
+      DeviceEventEmitter.emit('CBListener', {
+        eventType: 'onPaymentSuccess',
+        payuResult: null,
+        merchantResponse: null,
+      });
+
+      const result = await promise;
       expect(result.status).toBe('success');
       expect(result.payuResponse).toBeUndefined();
     });
 
     it('handles invalid JSON string gracefully', async () => {
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, _errorCb: (e: string) => void, successCb: (r: string) => void) => {
-          successCb('not valid json {{{');
-        }
-      );
+      const promise = service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      const result = await service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
+      DeviceEventEmitter.emit('CBListener', {
+        eventType: 'onPaymentSuccess',
+        payuResult: 'not valid json {{{',
+      });
+
+      const result = await promise;
       expect(result.status).toBe('success');
       expect(result.payuResponse).toBeUndefined();
     });
 
     it('parses valid JSON string', async () => {
-      mockStartPayment.mockImplementation(
-        (_config: unknown, _mode: string, _errorCb: (e: string) => void, successCb: (r: string) => void) => {
-          successCb('{"status":"success","amount":"25000"}');
-        }
-      );
+      const promise = service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
 
-      const result = await service.launchCorePayment('CC', baseSessionParams, cardInstrumentParams);
+      DeviceEventEmitter.emit('CBListener', {
+        eventType: 'onPaymentSuccess',
+        payuResult: '{"status":"success","amount":"25000"}',
+      });
+
+      const result = await promise;
       expect(result.payuResponse).toEqual({ status: 'success', amount: '25000' });
     });
   });

@@ -121,11 +121,11 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 
   payment_stamps: {
     summary: {
-      on_time: 2,
-      late: 0,
-      missed: 1,
+      on_time: 5,
+      late: 2,
+      missed: 2,
       pending: 0,
-      total_months: 3,
+      total_months: 9,
     },
     current_month_status: 'pending',
   },

@@ -55,7 +55,7 @@ export interface UploadAndProcessOptions {
 
 export interface UploadAndProcessResult {
   extractionId: string;
-  processResult: ProcessDocumentResult;
+  processResult?: ProcessDocumentResult;
 }
 
 /**
@@ -171,26 +171,31 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
         throw uploadResult.error;
       }
 
-      // Step 3: Trigger processing
+      // Step 3: Trigger processing — fire-and-forget.
+      // The edge function runs OCR + AI extraction (30-120s). Instead of blocking
+      // the mutation for the entire duration, we fire the request and let
+      // useExtractionStatus (polling + Realtime) drive all UI transitions.
+      // This gives immediate feedback: the UI shows "Processing your agreement..."
+      // and the status tracking detects completion/failure/manual_review.
       setUploadProgress(75);
       onUploadProgress?.(75);
-      useUploadStore.getState().setPhase('processing');
+      useUploadStore.getState().setPhase('server_processing');
 
-      const processResult = await processDocument(extractionId, documentPath);
-      if (processResult.error) {
-        throw processResult.error;
-      }
-
-      setUploadProgress(100);
-      onUploadProgress?.(100);
-      useUploadStore.getState().setPhase('completed');
-
-      // Invalidate any cached extraction data
-      queryClient.invalidateQueries({ queryKey: agreementKeys.extraction(extractionId) });
+      // Fire processing request — don't await.
+      // If the request itself fails (network drop, edge function 500),
+      // the DB row stays at 'pending' and polling would spin forever.
+      // Surface the error immediately so the UI can show retry.
+      processDocument(extractionId, documentPath).catch((err) => {
+        if (__DEV__) console.log('[useAgreement] processDocument fire-and-forget error:', err);
+        const agreementErr = err as unknown as AgreementError;
+        useUploadStore.getState().setError(
+          agreementErr?.code ?? 'PROCESSING_TRIGGER_FAILED',
+          agreementErr?.message ?? 'Failed to start document processing. Please try again.'
+        );
+      });
 
       return {
         extractionId,
-        processResult: processResult.data!,
       };
     },
     onError: (error) => {

@@ -170,7 +170,7 @@ UNION ALL
 SELECT 'test_users_in_production',
        COUNT(*)
 FROM users
-WHERE is_test_user = true;
+WHERE phone LIKE '%999990%';
 EOSQL
 )
 

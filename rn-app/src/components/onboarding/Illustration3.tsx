@@ -359,7 +359,7 @@ function Dot({ d, borderIdx, progress, borderCount }: {
   return <AnimatedPath d={d} animatedProps={animatedProps} />;
 }
 
-export default function Illustration3(props: any) {
+function Illustration3Component(props: any) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -385,3 +385,8 @@ export default function Illustration3(props: any) {
     </Svg>
   );
 }
+
+const Illustration3 = React.memo(Illustration3Component, (prev, next) =>
+  prev.width === next.width && prev.height === next.height
+);
+export default Illustration3;

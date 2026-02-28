@@ -335,52 +335,63 @@ serve(async (req: Request) => {
     // ============================================
 
     // Calculate upcoming payment (depends on tenancy)
+    // Look ahead up to 3 months to find the next unpaid cycle
+    // (handles early payments, e.g. user paid March in February)
     let upcomingPayment = null;
     if (tenancy) {
       const today = new Date();
       const currentMonth = today.getMonth();
       const currentYear = today.getFullYear();
 
-      let dueDate = new Date(currentYear, currentMonth, tenancy.rent_due_day);
-      if (dueDate < today) {
-        dueDate = new Date(currentYear, currentMonth + 1, tenancy.rent_due_day);
+      let baseDueDate = new Date(currentYear, currentMonth, tenancy.rent_due_day);
+      if (baseDueDate < today) {
+        baseDueDate = new Date(currentYear, currentMonth + 1, tenancy.rent_due_day);
       }
 
-      const daysUntilDue = Math.ceil(
-        (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      // Check up to 3 months ahead for the next unpaid month
+      for (let offset = 0; offset < 3 && !upcomingPayment; offset++) {
+        const dueDate = new Date(baseDueDate.getFullYear(), baseDueDate.getMonth() + offset, baseDueDate.getDate());
 
-      const rentMonthYYYYMM = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}`;
-      const rentMonthStr = `${rentMonthYYYYMM}-01`;
+        // Stop if beyond lease end
+        if (tenancy.lease_end_date) {
+          const leaseEnd = new Date(tenancy.lease_end_date);
+          if (dueDate > leaseEnd) break;
+        }
 
-      // Check if already paid (secondary query only when tenancy exists)
-      const { data: existingPayment } = await supabase
-        .from("payments")
-        .select("id, status")
-        .eq("tenancy_id", tenancy.id)
-        .eq("payment_month", rentMonthStr)
-        .in("status", ["success", "processing", "pending"])
-        .maybeSingle();
+        const daysUntilDue = Math.ceil(
+          (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        );
 
-      if (!existingPayment) {
-        // Cashback cutoff check: payment must be before the cutoff day to be eligible
-        const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
-        const paymentMonth = dueDate.getMonth(); // 0-based
-        const paymentYear = dueDate.getFullYear();
-        const cutoffDate = new Date(Date.UTC(paymentYear, paymentMonth, cutoffDay, 18, 29, 59, 999));
-        const pastCutoff = new Date() > cutoffDate;
+        const rentMonthYYYYMM = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}`;
+        const rentMonthStr = `${rentMonthYYYYMM}-01`;
 
-        upcomingPayment = {
-          due_date: dueDate.toISOString().split("T")[0],
-          amount: tenancy.monthly_rent_paise / 100,
-          amount_paise: tenancy.monthly_rent_paise,
-          days_until_due: daysUntilDue,
-          is_overdue: daysUntilDue < 0,
-          cashback_eligible: !pastCutoff,
-          past_cutoff: pastCutoff,
-          cutoff_day: cutoffDay,
-          rent_month: rentMonthYYYYMM,
-        };
+        const { data: existingPayment } = await supabase
+          .from("payments")
+          .select("id, status")
+          .eq("tenancy_id", tenancy.id)
+          .eq("payment_month", rentMonthStr)
+          .in("status", ["success", "processing", "pending"])
+          .maybeSingle();
+
+        if (!existingPayment) {
+          const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
+          const paymentMonth = dueDate.getMonth();
+          const paymentYear = dueDate.getFullYear();
+          const cutoffDate = new Date(Date.UTC(paymentYear, paymentMonth, cutoffDay, 18, 29, 59, 999));
+          const pastCutoff = new Date() > cutoffDate;
+
+          upcomingPayment = {
+            due_date: dueDate.toISOString().split("T")[0],
+            amount: tenancy.monthly_rent_paise / 100,
+            amount_paise: tenancy.monthly_rent_paise,
+            days_until_due: daysUntilDue,
+            is_overdue: daysUntilDue < 0,
+            cashback_eligible: !pastCutoff,
+            past_cutoff: pastCutoff,
+            cutoff_day: cutoffDay,
+            rent_month: rentMonthYYYYMM,
+          };
+        }
       }
     }
 

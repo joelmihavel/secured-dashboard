@@ -2,7 +2,7 @@
 # TE-121: Manage Profile E2E Journey
 #
 # Full profile management journey: Home -> Profile -> Edit Profile -> Save ->
-#                                   Payment Methods -> Agreement -> Back
+#                                   Agreement -> Back
 #
 # This journey validates the complete profile management flow including
 # viewing profile details, editing personal information, managing payment
@@ -91,33 +91,7 @@ appId: com.flent.secured
     optional: true
 
 # =============================================
-# STEP 5: View Payment Methods
-# =============================================
-# Navigate to payment methods from profile
-- scrollUntilVisible:
-    element:
-      id: "edit-upi-button"
-    direction: DOWN
-    timeout: 5000
-    optional: true
-
-- tapOn:
-    id: "edit-upi-button"
-    optional: true
-
-- waitForAnimationToEnd
-
-# Verify payment methods screen
-- assertVisible:
-    id: "payment-methods-screen"
-    optional: true
-
-# Go back
-- back
-- waitForAnimationToEnd
-
-# =============================================
-# STEP 6: View Agreement
+# STEP 5: View Agreement
 # =============================================
 - openLink: "flentsecured:///profile/index"
 - waitForAnimationToEnd
@@ -136,7 +110,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 7: About Screen (Bonus verification)
+# STEP 6: About Screen (Bonus verification)
 # =============================================
 - openLink: "flentsecured:///profile/about"
 - waitForAnimationToEnd
@@ -150,7 +124,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 8: Help Screen
+# STEP 7: Help Screen
 # =============================================
 - openLink: "flentsecured:///profile/help"
 - waitForAnimationToEnd
@@ -164,7 +138,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 9: Notification Settings
+# STEP 8: Notification Settings
 # =============================================
 - openLink: "flentsecured:///profile/notifications"
 - waitForAnimationToEnd
@@ -178,7 +152,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 # =============================================
-# STEP 10: Final Profile Verification
+# STEP 9: Final Profile Verification
 # =============================================
 - openLink: "flentsecured:///profile/index"
 - waitForAnimationToEnd

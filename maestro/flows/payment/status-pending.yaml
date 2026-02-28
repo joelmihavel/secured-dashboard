@@ -10,11 +10,9 @@
 #
 # Validates:
 #   - Status screen renders in pending/verifying state
-#   - Title shows "Verifying" text
-#   - "Payment..." subtitle is visible
+#   - Title shows "Verifying" + "Payment..." text
 #   - Info rows with bank confirmation messages appear
 #   - "Contact Support" button is visible
-#   - Receipt card with "pending" stamp is displayed
 # =============================================================================
 
 appId: com.flent.secured
@@ -31,8 +29,6 @@ appId: com.flent.secured
 
 # Verify pending/verifying title text
 - assertVisible: "Verifying"
-
-# Verify subtitle
 - assertVisible: "Payment..."
 
 # Verify info row content for non-UPI verifying state

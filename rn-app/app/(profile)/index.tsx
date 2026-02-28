@@ -35,6 +35,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -85,7 +86,9 @@ function MenuItem({ title, onPress, testID }: MenuItemProps) {
       >
         {title}
       </Text>
-      <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
+      <View style={styles.arrowIcon}>
+        <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -106,7 +109,9 @@ function CardMenuItem({ title, onPress, testID }: MenuItemProps) {
       accessibilityLabel={title}
     >
       <Text style={styles.menuItemText}>{title}</Text>
-      <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
+      <View style={styles.arrowIcon}>
+        <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -237,7 +242,6 @@ export default function ProfileScreen() {
       return '';
     }
   })();
-  const userEmail = user?.email ?? '';
   const userPhone = user?.phone ?? '';
   const phoneCountryCode = '+91';
   const phoneDigits = userPhone.replace('+91', '').trim();
@@ -253,24 +257,22 @@ export default function ProfileScreen() {
         {/* Main content frame (41:8761): column, gap=40, paddingBottom=48 */}
         <View style={styles.mainContent}>
           {/* Header frame (41:8762): column, gap=24, paddingH=40 */}
-          <View style={styles.headerSection}>
+          <Animated.View entering={FadeInDown.delay(0).duration(350)} style={styles.headerSection}>
             <BackButton
               onPress={handleBack}
               style={styles.backButton}
               color={FIGMA_COLORS.textPrimary}
             />
 
-            {/* Title (41:8764): "My  Profile" single text with spans */}
-            {/* Blueprint: width=313, height=128 (2 lines x 64px lineHeight) */}
             <Text style={styles.titleBase}>
               <Text inherit style={styles.titleMy}>{'My '}</Text>
               <Text inherit style={styles.titleSpace}>{' '}</Text>
               <Text inherit style={styles.titleProfile}>{'Profile'}</Text>
             </Text>
-          </View>
+          </Animated.View>
 
           {/* Secured Account section (41:8828): column, gap=24, paddingH=40 */}
-          <View style={styles.section}>
+          <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.section}>
             <Text style={styles.sectionTitle}>
               Secured Account
             </Text>
@@ -289,7 +291,9 @@ export default function ProfileScreen() {
                   <Text style={styles.userName}>{fullName}</Text>
                   <Text style={styles.userJoinDate}>{joinDate}</Text>
                 </View>
-                <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
+                <View style={styles.arrowIcon}>
+                  <Ionicons name="arrow-forward" size={16} color={FIGMA_COLORS.accentOrange} />
+                </View>
               </TouchableOpacity>
 
               {/* User details - read-only input fields */}
@@ -300,14 +304,6 @@ export default function ProfileScreen() {
                   onChangeText={() => {}}
                   disabled
                 />
-                {userEmail ? (
-                  <TextInput
-                    label="Email"
-                    value={userEmail}
-                    onChangeText={() => {}}
-                    disabled
-                  />
-                ) : null}
                 {phoneDigits ? (
                   <PhoneInput
                     label="Phone Number"
@@ -326,13 +322,11 @@ export default function ProfileScreen() {
                 testID="view-agreement-button"
               />
             </View>
-          </View>
+          </Animated.View>
 
           {/* Payment Information section (41:8842): column, gap=24, paddingH=40 */}
-          {/* Card (41:8844): single card bg #202020, radius=12, gap=8, with dividers */}
-          {/* Shows edit bank details when bank is verified, plus saved payment method edits */}
           {(tenancy?.verification_status?.bank_verified || paymentMenuItems.length > 0) && (
-            <View style={styles.section}>
+            <Animated.View entering={FadeInDown.delay(160).duration(350)} style={styles.section}>
               <Text style={styles.sectionTitle}>
                 Payment Information
               </Text>
@@ -358,12 +352,11 @@ export default function ProfileScreen() {
                   </React.Fragment>
                 ))}
               </View>
-            </View>
+            </Animated.View>
           )}
 
-          {/* Support section (41:8856): column, gap=24, paddingH=40 */}
-          {/* Card (41:8858): single card bg #202020, radius=12, gap=8, with dividers */}
-          <View style={styles.section}>
+          {/* Support section */}
+          <Animated.View entering={FadeInDown.delay(240).duration(350)} style={styles.section}>
             <Text style={styles.sectionTitle}>
               support
             </Text>
@@ -380,11 +373,10 @@ export default function ProfileScreen() {
                 testID="rate-app-button"
               />
             </View>
-          </View>
+          </Animated.View>
 
-          {/* App section (41:8866): column, gap=24, paddingH=40 */}
-          {/* Card (41:8868): single card bg #202020, radius=12, gap=8, with dividers */}
-          <View style={styles.section}>
+          {/* App section */}
+          <Animated.View entering={FadeInDown.delay(320).duration(350)} style={styles.section}>
             <Text style={styles.sectionTitle}>
               App
             </Text>
@@ -413,7 +405,7 @@ export default function ProfileScreen() {
                 testID="delete-account-button"
               />
             </View>
-          </View>
+          </Animated.View>
         </View>
       </ScrollView>
 
@@ -426,6 +418,7 @@ export default function ProfileScreen() {
         initialView={'edit-method' as ModalView}
         initialMethodType={editModalMethodType}
         initialSavedMethodId={editModalMethodId}
+        context="profile"
       />
     </Screen>
   );
@@ -449,6 +442,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: s(24),                  // Blueprint: itemSpacing 24
     paddingHorizontal: s(40),    // Blueprint: padding left=40, right=40
+    paddingTop: s(16),           // Breathing room below safe area
   },
   // Back button (41:8763): 32x32
   backButton: {
@@ -533,7 +527,7 @@ const styles = StyleSheet.create({
   // User info row (41:8831): row, gap=16, padding 16/24, bg #202020, radius=12
   userInfoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -581,5 +575,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     color: colors.neutral[300],
     textAlign: 'left',
+  },
+  // Arrow icon wrapper: fixed size to prevent flex collapse
+  arrowIcon: {
+    width: 16,
+    height: 16,
+    flexShrink: 0,
+    alignSelf: 'center',
   },
 });

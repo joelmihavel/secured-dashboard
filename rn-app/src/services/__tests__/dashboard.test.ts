@@ -196,7 +196,7 @@ describe('Dashboard API Service', () => {
         { input: 'success', expected: 'paid' },
         { input: 'processing', expected: 'processing' },
         { input: 'failed', expected: 'failed' },
-        { input: 'refunded', expected: 'failed' },
+        { input: 'refunded', expected: 'pending' },
         { input: 'pending', expected: 'pending' },
       ];
 
@@ -267,15 +267,23 @@ describe('Dashboard API Service', () => {
       expect(entries[0].statusLabel).toBe('Paid - Delayed');
     });
 
-    it('maps failed/refunded payments as "missed"', () => {
+    it('maps failed payments as "missed"', () => {
       const entries = deriveCashbackEntries([
         { id: 'p1', amount: 25000, status: 'failed', rent_month: '2026-03-01', paid_at: null, cashback_earned: 0 },
-        { id: 'p2', amount: 25000, status: 'refunded', rent_month: '2026-04-01', paid_at: null, cashback_earned: 0 },
       ]);
 
       expect(entries[0].status).toBe('missed');
       expect(entries[0].amount).toBeNull();
-      expect(entries[1].status).toBe('missed');
+    });
+
+    it('maps refunded payments as "pending" (awaiting re-payment)', () => {
+      const entries = deriveCashbackEntries([
+        { id: 'p2', amount: 25000, status: 'refunded', rent_month: '2026-04-01', paid_at: null, cashback_earned: 0 },
+      ]);
+
+      expect(entries[0].status).toBe('pending');
+      expect(entries[0].statusLabel).toBe('Refunded - Awaiting Payment');
+      expect(entries[0].amount).toBeNull();
     });
 
     it('maps pending/processing payments as "pending"', () => {

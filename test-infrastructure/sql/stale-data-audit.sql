@@ -5,14 +5,13 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- 1. Users flagged as test users
+-- 1. Users with is_test_user flag (Apple review accounts only)
 -- -----------------------------------------------------------------------------
-SELECT 'test_users (is_test_user flag)' AS check_name,
+SELECT 'apple_review_users (is_test_user flag)' AS check_name,
        COUNT(*) AS found_count,
        ARRAY_AGG(u.id) AS user_ids
-FROM auth.users u
-JOIN public.profiles p ON u.id = p.user_id
-WHERE p.is_test_user = true;
+FROM public.users u
+WHERE u.is_test_user = true;
 
 -- -----------------------------------------------------------------------------
 -- 2. Users with test phone pattern +91999990XXXX

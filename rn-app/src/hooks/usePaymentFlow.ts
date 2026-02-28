@@ -58,6 +58,8 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         return { status: 'blocked' };
       }
       isExecutingRef.current = true;
+      // Flag prevents outer finally from double-clearing sensitive data for UPI background flow
+      let upiBackgroundLaunched = false;
 
       try {
         const sessionParams = usePaymentStore.getState().payuSessionParams;
@@ -67,6 +69,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
 
         // UPI Collect: navigate immediately — SDK waits up to 6 min with no webview
         if (paymentMode === 'upi') {
+          upiBackgroundLaunched = true;
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setLastPayment(paymentId);
 
@@ -81,6 +84,8 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
           } as never);
 
           // Fire SDK in background — don't await
+          // Cleanup (onClearSensitiveData, clearPayuSessionParams, isExecutingRef)
+          // is handled in .finally() below, NOT the outer finally block.
           launchCorePayment(paymentMode, sessionParams, instrumentParams)
             .then((outcome) => {
               if (__DEV__) {
@@ -208,9 +213,12 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         };
       } finally {
         // S2: Zero sensitive data immediately
-        onClearSensitiveData();
-        clearPayuSessionParams();
-        isExecutingRef.current = false;
+        // Skip for UPI background flow — its .finally() handles cleanup after SDK completes
+        if (!upiBackgroundLaunched) {
+          onClearSensitiveData();
+          clearPayuSessionParams();
+          isExecutingRef.current = false;
+        }
       }
     },
     [router, setLastPayment, clearPayuSessionParams, queryClient],

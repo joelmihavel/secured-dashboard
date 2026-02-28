@@ -61,7 +61,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 - tapOn:
-    id: "enter-rent-continue-button"
+    text: "Select Payment Method"
     optional: true
 - waitForAnimationToEnd
 
@@ -87,21 +87,7 @@ appId: com.flent.secured
     id: "profile-screen"
 
 # =============================================
-# STEP 4: Test Payment Methods (Network-Dependent)
-# =============================================
-- openLink: "flentsecured:///profile/payment-methods"
-- waitForAnimationToEnd
-
-- assertVisible:
-    id: "payment-methods-screen"
-
-# Check for loading indicator (API call in progress)
-- assertVisible:
-    text: "No saved payment methods"
-    optional: true
-
-# =============================================
-# STEP 5: Test Agreement Screen (Offline-Capable?)
+# STEP 4: Test Agreement Screen (Offline-Capable?)
 # =============================================
 - openLink: "flentsecured:///profile/agreement"
 - waitForAnimationToEnd
@@ -115,7 +101,7 @@ appId: com.flent.secured
     optional: true
 
 # =============================================
-# STEP 6: Verify App Stability After Network Issues
+# STEP 5: Verify App Stability After Network Issues
 # =============================================
 # Navigate to a simple, low-network screen
 - openLink: "flentsecured:///splash"

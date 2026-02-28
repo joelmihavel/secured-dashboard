@@ -5,7 +5,9 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/src/components/ui/Typography';
@@ -37,6 +39,28 @@ function getDeleteCta(methodType: string): string {
   }
 }
 
+/** Get the replace CTA text for profile context */
+function getReplaceCta(methodType: string): string {
+  switch (methodType) {
+    case 'upi': return 'Replace UPI';
+    case 'card': return 'Replace Card';
+    case 'debit_card': return 'Replace Card';
+    case 'netbanking': return 'Replace Bank';
+    default: return 'Replace Method';
+  }
+}
+
+/** Get a human-readable method name */
+function getMethodName(methodType: string): string {
+  switch (methodType) {
+    case 'upi': return 'UPI ID';
+    case 'card':
+    case 'debit_card': return 'card';
+    case 'netbanking': return 'bank account';
+    default: return 'payment method';
+  }
+}
+
 export function EditMethodContent({
   onBack,
   methodType,
@@ -44,7 +68,9 @@ export function EditMethodContent({
   onProceed,
   onDeleteSuccess,
   isInitiating,
+  context = 'payment',
 }: EditMethodContentProps) {
+  const isProfile = context === 'profile';
   const { data: savedMethods } = useSavedPaymentMethods();
   const { mutateAsync: deletePaymentMethod } = useDeletePaymentMethod();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -66,24 +92,41 @@ export function EditMethodContent({
   }, [deletePaymentMethod, savedMethodId, methodType, onDeleteSuccess]);
 
   const confirmDelete = useCallback(() => {
-    Alert.alert(
-      'Delete Payment Method',
-      `This will remove your current ${methodType === 'upi' ? 'UPI ID' : (methodType === 'card' || methodType === 'debit_card') ? 'card' : 'bank account'}.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: handleReplace },
-      ]
-    );
-  }, [handleReplace, methodType]);
+    const name = getMethodName(methodType);
+    if (isProfile) {
+      Alert.alert(
+        `Replace ${name.charAt(0).toUpperCase() + name.slice(1)}`,
+        `This will remove your current ${name} and let you set up a new one.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Replace', style: 'destructive', onPress: handleReplace },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Delete Payment Method',
+        `This will remove your current ${name}.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: handleReplace },
+        ]
+      );
+    }
+  }, [handleReplace, methodType, isProfile]);
 
   const getPaymentCardProps = () => {
     if (!methodData) return { type: methodType as any };
 
     if (methodData.type === 'card') {
+      // Format expiry from month/year if available
+      const expiry = methodData.card_expiry_month && methodData.card_expiry_year
+        ? `${String(methodData.card_expiry_month).padStart(2, '0')}/${String(methodData.card_expiry_year).slice(-2)}`
+        : undefined;
       return {
         type: methodData.card_type === 'debit' ? 'debit' : 'credit',
         lastFourDigits: methodData.last_four,
         bankName: methodData.card_issuer,
+        expiryDate: expiry,
       } as const;
     }
 
@@ -113,90 +156,103 @@ export function EditMethodContent({
         />
       </View>
 
-      {/* Card UI — Figma 773:11937 */}
-      <View style={styles.cardSection}>
-        <View style={styles.cardContainer}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        bounces={false}
+      >
+        {/* Card Visual Container — fades in on mount */}
+        <Animated.View entering={FadeIn.duration(300)} style={styles.cardContainer}>
           {methodData ? (
             <View pointerEvents="none" style={styles.cardVisualWrapper}>
-              <PaymentCard 
-                {...cardProps} 
-                variant="profile" 
-                selected={false}
-              />
+              <PaymentCard {...cardProps} variant="profile" selected />
             </View>
           ) : (
             <View style={styles.emptyCardPlaceholder}>
               <Text style={styles.emptyCardText}>No method data</Text>
             </View>
           )}
-        </View>
-      </View>
+        </Animated.View>
 
-      {/* Footer Actions */}
-      <View style={styles.footer}>
-        <PrimaryButton
-          title="Proceed to Payment"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            const details: SavedMethodDetails | undefined = methodData ? {
-              savedMethodId: methodData.id,
-              vpa: methodData.vpa,
-              bankCode: methodData.bank_code,
-            } : undefined;
-            onProceed(methodType, details);
-          }}
-          disabled={isInitiating || isDeleting || !methodData}
-          loading={isInitiating}
-          showDivider
-        />
-
-        <TouchableOpacity
-          onPress={confirmDelete}
-          disabled={isInitiating || isDeleting}
-          style={styles.deleteButton}
-          hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
-        >
-          {isDeleting ? (
-            <ActivityIndicator size="small" color={FIGMA_COLORS.muted} />
+        {/* Footer Actions — staggers in */}
+        <Animated.View entering={FadeInUp.delay(100).duration(250)} style={styles.footer}>
+          {isProfile ? (
+            <>
+              {/* Profile context: Replace is the primary action */}
+              <PrimaryButton
+                title={getReplaceCta(methodType)}
+                onPress={confirmDelete}
+                disabled={isDeleting || !methodData}
+                loading={isDeleting}
+                showDivider
+              />
+            </>
           ) : (
-            <Text style={styles.deleteText}>
-              {getDeleteCta(methodType)}
-            </Text>
+            <>
+              {/* Payment context: Proceed + Delete secondary */}
+              <PrimaryButton
+                title="Proceed to Payment"
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  const details: SavedMethodDetails | undefined = methodData ? {
+                    savedMethodId: methodData.id,
+                    vpa: methodData.vpa,
+                    bankCode: methodData.bank_code,
+                  } : undefined;
+                  onProceed(methodType, details);
+                }}
+                disabled={isInitiating || isDeleting || !methodData}
+                loading={isInitiating}
+                showDivider
+              />
+
+              <TouchableOpacity
+                onPress={confirmDelete}
+                disabled={isInitiating || isDeleting}
+                style={styles.deleteButton}
+                hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color={FIGMA_COLORS.muted} />
+                ) : (
+                  <Text style={styles.deleteText}>
+                    {getDeleteCta(methodType)}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </>
           )}
-        </TouchableOpacity>
-      </View>
+        </Animated.View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 48,
+    paddingHorizontal: 48,
+    paddingTop: 8,
+  },
+  scrollContent: {
     gap: 32,
-    backgroundColor: colors.black[600],
+    paddingBottom: 24,
   },
   header: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    height: 32,
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginLeft: 0,
-  },
-  cardSection: {
-    alignItems: 'center',
-    // Gap 32 is handled by parent container
+    marginLeft: -12,
   },
   cardContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 16,
     width: '100%',
   },
   cardVisualWrapper: {
@@ -219,10 +275,10 @@ const styles = StyleSheet.create({
   footer: {
     gap: 24,
     alignItems: 'center',
-    width: '100%',
   },
   deleteButton: {
-    width: '100%',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   deleteText: {
     fontFamily: 'PlusJakartaSans-Regular',

@@ -4,6 +4,8 @@
 
 import { callEdgeFunction } from '../supabase';
 
+import type { PayUSessionParams } from '@/src/stores/payment';
+
 // Re-export individual services for direct access
 export * from './storageService';
 export { launchCorePayment, isCoreSdkAvailable } from './payuCoreService';
@@ -48,21 +50,47 @@ export function getGatewayFeeRates(): GatewayFeeRates {
   return PAYU_FEE_RATES;
 }
 
-/** Compute fee in paise for a given rate config and amount in paise */
-export function computeFee(config: FeeRateConfig, amountPaise: number): number {
-  if (config.fee_type === 'flat_paise') return Math.round(config.rate);
-  return Math.ceil(amountPaise * config.rate);
+/** Compute fee in rupees for a given rate config and amount in rupees */
+export function computeFee(config: FeeRateConfig, amount: number): number {
+  if (config.fee_type === 'flat_paise') return Math.round(config.rate / 100);
+  return Math.ceil(amount * config.rate);
 }
 
 /** Format fee config as a human-readable label (e.g. "Free", "1.85%", "₹15 fee") */
-export function formatFeeLabel(config: FeeRateConfig, amountPaise: number): string {
+export function formatFeeLabel(config: FeeRateConfig, amount: number): string {
   if (config.fee_type === 'flat_paise') {
     const rupees = Math.round(config.rate / 100);
     return `\u20B9${rupees.toLocaleString('en-IN')} fee`;
   }
   if (config.rate === 0) return 'Free';
-  const feePaise = Math.ceil(amountPaise * config.rate);
-  return `\u20B9${feePaise.toLocaleString('en-IN')} fee`;
+  const fee = Math.ceil(amount * config.rate);
+  return `\u20B9${fee.toLocaleString('en-IN')} fee`;
+}
+
+/** Map raw edge function PayU params to typed PayUSessionParams */
+export function buildSessionParams(p: Record<string, string>): PayUSessionParams {
+  return {
+    key: p.key,
+    txnid: p.txnid,
+    amount: p.amount,
+    productinfo: p.productinfo,
+    firstname: p.firstname,
+    email: p.email,
+    phone: p.phone,
+    surl: p.surl,
+    furl: p.furl,
+    hash: p.hash,
+    vas_hash: p.vas_for_mobile_sdk_hash,
+    prd_hash: p.payment_related_details_for_mobile_sdk_hash,
+    user_credential: p.user_credential ?? `${p.key}:${p.email}`,
+    udf1: p.udf1,
+    udf2: p.udf2,
+    udf3: p.udf3,
+    udf4: p.udf4,
+    udf5: p.udf5,
+    enforce_paymethod: p.enforce_paymethod,
+    environment: (p.environment as '0' | '1') ?? undefined,
+  };
 }
 
 /** Normalize a fee value — if the backend returns a plain number (old shape), wrap it as percentage */

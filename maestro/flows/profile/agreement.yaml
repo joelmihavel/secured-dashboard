@@ -18,7 +18,6 @@
 #     - Rent Duration (inline row)
 #     - Exit Date (inline row)
 #   - Back button navigates back to profile
-#   - All detail values display correctly
 # =============================================================================
 
 appId: com.flent.secured

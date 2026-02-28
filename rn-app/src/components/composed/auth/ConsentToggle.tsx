@@ -13,20 +13,13 @@
  * - "Cashfree" link: Plus Jakarta Sans Medium, underline, #eeeeee
  */
 
-import React, { memo, useCallback, useEffect } from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Linking } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  interpolate,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Text } from '../../ui/Typography';
-import { springConfig } from '@/src/theme';
 
 // Figma exact color values from get_design_context
 const TOGGLE_COLORS = {
@@ -66,27 +59,12 @@ function ConsentToggleComponent({
   disabled,
   testID,
 }: ConsentToggleProps) {
-  const progress = useSharedValue(value ? 1 : 0);
-
-  // Sync when value prop changes
-  useEffect(() => {
-    progress.value = withTiming(value ? 1 : 0, { duration: 150 });
-  }, [value]);
-
   const handlePress = useCallback(() => {
     if (disabled) return;
 
-    const newValue = !value;
-    progress.value = withSpring(newValue ? 1 : 0, springConfig.snappy);
-    onValueChange(newValue);
+    onValueChange(!value);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }, [value, onValueChange, disabled]);
-
-  const thumbAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: interpolate(progress.value, [0, 1], [0, TOGGLE_DIMENSIONS.thumbTravel]) },
-    ],
-  }));
 
   return (
     <View style={styles.container}>
@@ -114,7 +92,11 @@ function ConsentToggleComponent({
         <View style={styles.trackInnerShadow} />
 
         {/* Thumb with 3D effect */}
-        <Animated.View style={[styles.thumbContainer, thumbAnimatedStyle]}>
+        <Animated.View style={[styles.thumbContainer, {
+          transitionProperty: 'transform',
+          transitionDuration: '150ms',
+          transform: [{ translateX: value ? TOGGLE_DIMENSIONS.thumbTravel : 0 }],
+        }]}>
           <View style={[
             styles.thumb,
             value && styles.thumbActive

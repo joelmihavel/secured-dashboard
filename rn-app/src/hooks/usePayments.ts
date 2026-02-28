@@ -24,6 +24,7 @@ import {
   saveBankPreference,
   verifyCard,
   fetchBankList,
+  getPayuStoredCards,
   InitiatePaymentRequest,
   InitiatePaymentData,
   PaymentHistoryItem,
@@ -40,6 +41,7 @@ import {
   SavingsHistoryData,
   fetchPaymentStamps,
   PaymentStampsResponse,
+  PayuStoredCard,
   NetbankingBank,
 } from '../services/api/payments';
 import { fetchFeeConfig, getGatewayFeeRates, type GatewayFeeRates } from '../services/payment';
@@ -53,6 +55,7 @@ export const paymentKeys = {
   all: ['payments'] as const,
   history: () => [...paymentKeys.all, 'history'] as const,
   methods: () => [...paymentKeys.all, 'methods'] as const,
+  storedCards: () => [...paymentKeys.all, 'stored-cards'] as const,
   receipt: (paymentId: string) => [...paymentKeys.all, 'receipt', paymentId] as const,
   schedules: () => [...paymentKeys.all, 'schedules'] as const,
   cashback: () => [...paymentKeys.all, 'cashback'] as const,
@@ -156,6 +159,26 @@ export function useBankList() {
       return data;
     },
     staleTime: 1000 * 60 * 60, // 1 hour
+  });
+}
+
+// ==============================================
+// PAYU STORED CARDS QUERY
+// ==============================================
+
+/**
+ * Hook to fetch stored card tokens from PayU.
+ * Used by the CVV-only payment flow for saved cards.
+ * Gracefully returns empty array on error (client falls back to full card entry).
+ */
+export function usePayuStoredCards() {
+  return useQuery<PayuStoredCard[]>({
+    queryKey: paymentKeys.storedCards(),
+    queryFn: async () => {
+      const { data } = await getPayuStoredCards();
+      return data ?? [];
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 

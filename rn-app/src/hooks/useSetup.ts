@@ -33,6 +33,7 @@ import type {
   SetupProgress,
   SetupError,
 } from '@/src/types/setup';
+import type { DashboardData } from '@/src/services/api/dashboard';
 import { dashboardKeys, useDashboard } from './useDashboard';
 
 // ==============================================
@@ -68,8 +69,21 @@ export function useVerifyBank() {
       if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
       return data;
     },
-    onSuccess: (_data, variables) => {
-      // Invalidate dashboard to refresh verification status
+    onSuccess: (_data, _variables) => {
+      // Optimistic update: mark bank as verified in cached dashboard data
+      queryClient.setQueryData(
+        dashboardKeys.data(),
+        (prev: DashboardData | undefined) => {
+          if (!prev?.tenancy) return prev;
+          const vs = { ...prev.tenancy.verification_status, bank_verified: true };
+          const allDone = vs.bank_verified && vs.utility_verified && vs.landlord_approved;
+          return {
+            ...prev,
+            tenancy: { ...prev.tenancy, verification_status: vs },
+            cashback: { ...prev.cashback, verification_complete: allDone },
+          };
+        }
+      );
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
@@ -120,9 +134,13 @@ export function useUtilityOperators() {
       if (error) {
         throw error;
       }
-      return data ?? [];
+      if (!data || data.length === 0) {
+        throw { code: 'EMPTY_RESPONSE', message: 'No operators returned' } as SetupError;
+      }
+      return data;
     },
     staleTime: 1000 * 60 * 60, // 1 hour - operators rarely change
+    retry: 3,
   });
 }
 
@@ -148,7 +166,20 @@ export function useVerifyUtility() {
       return data;
     },
     onSuccess: (_data, _variables) => {
-      // Invalidate dashboard to refresh verification status
+      // Optimistic update: mark utility as verified in cached dashboard data
+      queryClient.setQueryData(
+        dashboardKeys.data(),
+        (prev: DashboardData | undefined) => {
+          if (!prev?.tenancy) return prev;
+          const vs = { ...prev.tenancy.verification_status, utility_verified: true };
+          const allDone = vs.bank_verified && vs.utility_verified && vs.landlord_approved;
+          return {
+            ...prev,
+            tenancy: { ...prev.tenancy, verification_status: vs },
+            cashback: { ...prev.cashback, verification_complete: allDone },
+          };
+        }
+      );
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });

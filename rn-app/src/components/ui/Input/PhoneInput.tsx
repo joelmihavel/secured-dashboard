@@ -57,7 +57,7 @@ const COLORS = {
 
 // Exact Figma spacing values
 const SPACING = {
-  labelGap: 6,        // Gap between label and input - Figma: I1:29184;48:606 gap:6
+  labelGap: 8,        // Gap between label and input
   inputPaddingV: 16,  // Vertical padding in input container - Figma: py-[16px]
   countryCodeGap: 16, // Gap between +91 and input field - Figma: I1:29184;48:712 gap:16
   inputBorderRadius: 12, // Figma: I1:29184;48:712 borderRadius:12
@@ -329,6 +329,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4, // Figma: itemSpacing 4 between "+91" and chevron
+    height: 32, // Match input height for baseline alignment
   },
   flagText: {
     fontSize: 18,
@@ -343,12 +344,13 @@ const styles = StyleSheet.create({
   },
   // Input field - Figma: Plus Jakarta Sans 20px, line-height 32px
   // Height 32 to match countryCodeContainer for alignment
+  // NOTE: lineHeight omitted on iOS TextInput — it causes asymmetric vertical offset.
+  // height + fontSize + padding:0 lets iOS center text naturally.
   input: {
     flex: 1,
     height: 32,
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    lineHeight: 32,
     color: COLORS.placeholder,
     padding: 0,
     margin: 0,

@@ -9,9 +9,11 @@ import {
   BackHandler,
   InteractionManager,
   Keyboard,
+  Platform,
 } from 'react-native';
-import { useKeyboardContext } from 'react-native-keyboard-controller';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
@@ -20,6 +22,7 @@ import Animated, {
   withTiming,
   runOnJS,
   Easing,
+  FadeIn,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
@@ -55,10 +58,12 @@ export function BottomSheet({
   useSafeArea = true,
 }: CustomBottomSheetProps) {
   const insets = useSafeAreaInsets();
-  const { reanimated: { height: keyboardHeight } } = useKeyboardContext();
+
   const [mounted, setMounted] = useState(false);
   const isMountedRef = useRef(true);
   const isDismissingRef = useRef(false);
+
+  const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
 
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
@@ -92,16 +97,16 @@ export function BottomSheet({
     backdropOpacity.value = 0;
     setMounted(true);
     InteractionManager.runAfterInteractions(() => {
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || isDismissingRef.current) return;
       translateY.value = withSpring(0, SPRING_CONFIG);
       backdropOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
     });
   }, [translateY, backdropOpacity]);
 
   useEffect(() => {
-    if (visible) {
+    if (visible && !mounted) {
       present();
-    } else if (mounted) {
+    } else if (!visible && mounted) {
       dismiss();
     }
   }, [visible, present, dismiss, mounted]);
@@ -134,15 +139,8 @@ export function BottomSheet({
       'worklet';
       if (event.translationY > DISMISS_THRESHOLD || event.velocityY > 500) {
         runOnJS(Keyboard.dismiss)();
-        // Animate on UI thread, then call JS dismiss for cleanup
-        translateY.value = withSpring(SCREEN_HEIGHT, { ...SPRING_CONFIG, damping: 20 });
-        backdropOpacity.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (finished) => {
-          'worklet';
-          if (finished) {
-            runOnJS(setMounted)(false);
-            runOnJS(onClose)();
-          }
-        });
+        // Delegate to JS-thread dismiss for single code path + isDismissingRef guard
+        runOnJS(dismiss)();
       } else {
         translateY.value = withSpring(0, SPRING_CONFIG);
         backdropOpacity.value = withTiming(1, { duration: 200 });
@@ -150,7 +148,8 @@ export function BottomSheet({
     });
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value + keyboardHeight.value }],
+    transform: [{ translateY: translateY.value }],
+    maxHeight: SCREEN_HEIGHT * 0.9 - Math.abs(keyboardHeight.value),
   }));
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
@@ -175,29 +174,38 @@ export function BottomSheet({
           </Pressable>
         </Animated.View>
 
-        {/* Sheet */}
-        <Animated.View style={[styles.sheetContainer, sheetAnimatedStyle]}>
-          {/* Drag handle */}
-          <GestureDetector gesture={panGesture}>
-            <Animated.View style={styles.handleArea}>
-              <View style={styles.handleIndicator} />
-            </Animated.View>
-          </GestureDetector>
+        {/* KeyboardAvoidingView wraps the entire sheet so it moves upward when
+            the keyboard opens, rather than just adding internal padding. */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidOuter}
+          pointerEvents="box-none"
+        >
+          {/* Sheet */}
+          <Animated.View style={[styles.sheetContainer, sheetAnimatedStyle]}>
+            {/* Drag handle */}
+            <GestureDetector gesture={panGesture}>
+              <Animated.View style={styles.handleArea}>
+                <View style={styles.handleIndicator} />
+              </Animated.View>
+            </GestureDetector>
 
-          {/* Content */}
-          <View
-            style={[
-              styles.contentContainer,
-              {
-                paddingHorizontal,
-                paddingBottom: useSafeArea ? Math.max(insets.bottom, 24) : 24,
-              },
-              containerStyle,
-            ]}
-          >
-            {children}
-          </View>
-        </Animated.View>
+            {/* Content — fades in after sheet lands to prevent flash during slide-up */}
+            <Animated.View
+              style={[
+                styles.contentContainer,
+                {
+                  paddingHorizontal,
+                  paddingBottom: useSafeArea ? Math.max(insets.bottom, 24) : 24,
+                },
+                containerStyle,
+              ]}
+              entering={FadeIn.delay(200).duration(200)}
+            >
+              {children}
+            </Animated.View>
+          </Animated.View>
+        </KeyboardAvoidingView>
       </View>
     </View>
   );
@@ -210,7 +218,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
   },
   backdropOverlay: {
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -219,7 +226,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[600], // #1A1A1A
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: SCREEN_HEIGHT * 0.9,
+    overflow: 'hidden',
   },
   handleArea: {
     alignItems: 'center',
@@ -231,6 +238,10 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: colors.black[400], // #4D4D4D
     borderRadius: 200,
+  },
+  keyboardAvoidOuter: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   contentContainer: {
     width: '100%',

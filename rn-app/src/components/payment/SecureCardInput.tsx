@@ -124,8 +124,23 @@ function detectNetwork(digits: string): SecureCardNetwork {
 // FORMATTING
 // ===================================================
 
-function formatCardNumber(raw: string): string {
+function getMaxCardLength(network: SecureCardNetwork): number {
+  if (network === 'amex') return 15;
+  if (network === 'diners') return 14;
+  return 16;
+}
+
+function getExpectedCvvLength(network: SecureCardNetwork): number {
+  return network === 'amex' ? 4 : 3;
+}
+
+function formatCardNumber(raw: string, network: SecureCardNetwork = 'unknown'): string {
   const digits = raw.replace(/\D/g, '');
+  // Amex: 4-6-5 grouping
+  if (network === 'amex') {
+    const parts = [digits.slice(0, 4), digits.slice(4, 10), digits.slice(10, 15)];
+    return parts.filter(Boolean).join(' ');
+  }
   // Standard: 4-4-4-4
   const parts = [digits.slice(0, 4), digits.slice(4, 8), digits.slice(8, 12), digits.slice(12, 16)];
   return parts.filter(Boolean).join(' ');
@@ -265,9 +280,11 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
           return;
         }
         const exDigits = ex.replace(/\D/g, '');
+        const expectedCardLen = getMaxCardLength(net);
+        const expectedCvvLen = getExpectedCvvLength(net);
         const isValid =
-          digits.length >= 16 &&
-          cv.length === 3 &&
+          digits.length >= expectedCardLen &&
+          cv.length >= expectedCvvLen &&
           exDigits.length === 4 &&
           nm.trim().length >= 2;
         onValidityChange?.(isValid);
@@ -280,11 +297,12 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         // Strip non-digits, handle paste with spaces/dashes (E11)
         const digits = text.replace(/\D/g, '');
         const net = detectNetwork(digits);
-        const trimmed = digits.slice(0, 16);
+        const maxLen = getMaxCardLength(net);
+        const trimmed = digits.slice(0, maxLen);
 
         cardNumberRef.current = trimmed;
         setNetwork(net);
-        setDisplayCardNumber(formatCardNumber(trimmed));
+        setDisplayCardNumber(formatCardNumber(trimmed, net));
 
         // Debounced BIN info fetch when 6+ digits entered
         const bin6 = trimmed.slice(0, 6);
@@ -335,7 +353,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         checkValidity(trimmed, cvvRef.current, expiryRef.current, nameRef.current);
 
         // Auto-advance to expiry when full
-        if (trimmed.length === 16) {
+        if (trimmed.length === maxLen) {
           expiryInputRef.current?.focus();
         }
       },
@@ -361,18 +379,19 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
     const handleCvvChange = useCallback(
       (text: string) => {
         const digits = text.replace(/\D/g, '');
-        const trimmed = digits.slice(0, 3);
+        const cvvLen = getExpectedCvvLength(network);
+        const trimmed = digits.slice(0, cvvLen);
         cvvRef.current = trimmed;
         setDisplayCvv(trimmed);
         setErrors((prev) => ({ ...prev, cvv: '' }));
         checkValidity(cardNumberRef.current, trimmed, expiryRef.current, nameRef.current);
 
         // Auto-advance to name when full
-        if (trimmed.length === 3) {
+        if (trimmed.length === cvvLen) {
           nameInputRef.current?.focus();
         }
       },
-      [checkValidity],
+      [checkValidity, network],
     );
 
     const handleNameChange = useCallback(
@@ -447,7 +466,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         errs.push(`${displayName} cards are not supported. Please use Visa, Mastercard, or RuPay.`);
       } else if (digits.length >= 8 && net === 'unknown') {
         errs.push('This card type is not supported');
-      } else if (digits.length < 16) {
+      } else if (digits.length < getMaxCardLength(net)) {
         errs.push('Card number is too short');
       } else if (!luhnCheck(digits)) {
         errs.push('Invalid card number');
@@ -462,7 +481,8 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         if (!validateExpiry(month, yearFull)) errs.push('Card expired or invalid date');
       }
 
-      if (cvvRef.current.length < 3) errs.push('CVV must be 3 digits');
+      const expectedCvv = getExpectedCvvLength(net);
+      if (cvvRef.current.length < expectedCvv) errs.push(`CVV must be ${expectedCvv} digits`);
       if (nameRef.current.trim().length < 2) errs.push('Enter name on card');
 
       // Set field-level errors for display
@@ -471,7 +491,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         newErrors.cardNumber = errs.find((e) => e.toLowerCase().includes('card') || e.includes('not supported')) ?? 'Invalid card number';
       }
       if (errs.some((e) => e.includes('expir') || e.includes('date'))) newErrors.expiry = 'Invalid expiry';
-      if (errs.some((e) => e.includes('CVV'))) newErrors.cvv = 'Enter 3-digit CVV';
+      if (errs.some((e) => e.includes('CVV'))) newErrors.cvv = errs.find((e) => e.includes('CVV')) ?? 'Invalid CVV';
       if (errs.some((e) => e.includes('name'))) newErrors.name = 'Enter name on card';
       setErrors(newErrors);
 
@@ -604,7 +624,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
                 placeholder="123"
                 placeholderTextColor={INPUT_COLORS.placeholder}
                 keyboardType="number-pad"
-                maxLength={3}
+                maxLength={getExpectedCvvLength(network)}
                 style={[styles.input, { color: getInputTextColor('cvv') }]}
                 testID="cvv-input"
                 // S3 + S6: CVV security
@@ -698,11 +718,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // NOTE: lineHeight omitted on iOS TextInput — it causes asymmetric vertical offset
+  // and text clipping. fontSize + padding:0 lets iOS center text naturally.
   input: {
     flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    lineHeight: 32,
     padding: 0,
     margin: 0,
     color: INPUT_COLORS.text,

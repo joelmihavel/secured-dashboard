@@ -44,7 +44,7 @@ import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal'
 import { useDashboard, useFeeRates, useSavedPaymentMethods } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
-import { getGatewayFeeRates, initiatePayment, computeFee } from '@/src/services/payment';
+import { getGatewayFeeRates, initiatePayment, computeFee, buildSessionParams } from '@/src/services/payment';
 import type { FeeRateConfig, GatewayFeeRates } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import type { ModalView } from '@/src/components/payment/PaymentMethodModal/types';
@@ -144,6 +144,7 @@ export default function ConfirmPaymentScreen() {
   const { tenancy, upcomingPayment, cashback } = useDashboard();
   const { data: feeRates } = useFeeRates();
   const selectedInstrument = usePaymentStore((s) => s.selectedInstrument);
+  const enteredAmount = usePaymentStore((s) => s.enteredAmount);
   const { executePayment } = usePaymentFlow();
   const { data: savedMethods } = useSavedPaymentMethods();
 
@@ -223,7 +224,6 @@ export default function ConfirmPaymentScreen() {
       )
     : 28;
 
-  const enteredAmount = usePaymentStore.getState().enteredAmount;
   const paymentAmountForAccrual = enteredAmount || baseRent;
   const cashbackAccrualAmount = Math.round(paymentAmountForAccrual * 0.01);
   const annualSavings = Math.round((tenancy?.monthly_rent || 30000) * 0.01 * 12);
@@ -245,30 +245,6 @@ export default function ConfirmPaymentScreen() {
     demoMode?: boolean;
   } | null>(null);
   const prefetchInFlightRef = useRef(false);
-
-  /** Build PayUSessionParams from raw edge function response */
-  const buildSessionParams = useCallback((p: Record<string, string>): PayUSessionParams => ({
-    key: p.key,
-    txnid: p.txnid,
-    amount: p.amount,
-    productinfo: p.productinfo,
-    firstname: p.firstname,
-    email: p.email,
-    phone: p.phone,
-    surl: p.surl,
-    furl: p.furl,
-    hash: p.hash,
-    vas_hash: p.vas_for_mobile_sdk_hash,
-    prd_hash: p.payment_related_details_for_mobile_sdk_hash,
-    user_credential: p.user_credential ?? `${p.key}:${p.email}`,
-    udf1: p.udf1,
-    udf2: p.udf2,
-    udf3: p.udf3,
-    udf4: p.udf4,
-    udf5: p.udf5,
-    enforce_paymethod: p.enforce_paymethod,
-    environment: (p.environment as '0' | '1') ?? undefined,
-  }), []);
 
   // Pre-fetch when confirm screen mounts (if instrument is already selected)
   useEffect(() => {
@@ -298,7 +274,7 @@ export default function ConfirmPaymentScreen() {
     }).finally(() => {
       prefetchInFlightRef.current = false;
     });
-  }, [tenancyId, rentMonth, buildSessionParams]);
+  }, [tenancyId, rentMonth]);
 
   // ── Pay Now Handler ──────────────────────────────────────────────────────────
 
@@ -326,14 +302,15 @@ export default function ConfirmPaymentScreen() {
     const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
 
     try {
-      let paymentId: string;
-      let payuParams: PayUSessionParams;
+      let paymentId = '';
+      let payuParams: PayUSessionParams | null = null;
 
       // Use pre-fetched session if available and method hasn't changed
       const prefetched = prefetchedSessionRef.current;
       if (prefetched && prefetched.methodType === methodType) {
         if (prefetched.demoMode) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          prefetchedSessionRef.current = null;
           router.replace({
             pathname: '/(payment)/status',
             params: {
@@ -345,10 +322,18 @@ export default function ConfirmPaymentScreen() {
           } as never);
           return;
         }
-        paymentId = prefetched.paymentId;
-        payuParams = prefetched.payuParams!;
-        prefetchedSessionRef.current = null; // consume it
-      } else {
+        if (!prefetched.payuParams) {
+          // Pre-fetch returned no session params — fall through to fresh initiation
+          prefetchedSessionRef.current = null;
+        } else {
+          paymentId = prefetched.paymentId;
+          payuParams = prefetched.payuParams;
+          prefetchedSessionRef.current = null; // consume it
+        }
+      }
+      if (!payuParams) {
+        // Clear any stale/concurrent prefetch to prevent txnid reuse
+        prefetchedSessionRef.current = null;
         // Fallback: fetch now (if pre-fetch failed or method changed)
         const { data, error } = await initiatePayment({
           tenancyId,
@@ -383,7 +368,7 @@ export default function ConfirmPaymentScreen() {
       // Batch all store updates into a single sync block — avoids 5 separate re-renders
       const store = usePaymentStore.getState();
       store.setConfirming();
-      store.setPayuSessionParams(payuParams);
+      store.setPayuSessionParams(payuParams!);
       store.setProcessing(paymentId);
       store.setLastPayment(paymentId);
 
@@ -428,7 +413,7 @@ export default function ConfirmPaymentScreen() {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, tenancyId, rentMonth, buildSessionParams, router, payableAmount, savedMethods, executePayment]);
+  }, [isProcessing, tenancyId, rentMonth, router, payableAmount, savedMethods, executePayment]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -506,16 +491,10 @@ export default function ConfirmPaymentScreen() {
                 label="Convenience Fee"
                 value={convenienceFee === 0 ? 'Free' : `₹ ${fmt(convenienceFee)}`}
               />
-              {isVerified ? (
+              {cashbackAmount > 0 ? (
                 <BreakdownRow
                   label="Cashback"
-                  value={`- ₹ ${fmt(cashbackAmount)}`}
-                  isCashback={true}
-                />
-              ) : cashbackAmount > 0 ? (
-                <BreakdownRow
-                  label="Cashback"
-                  value={`Verify to unlock ₹${fmt(cashbackAmount)}`}
+                  value={`₹ ${fmt(cashbackAmount)} accrued`}
                   isAccrued={true}
                 />
               ) : null}
@@ -527,7 +506,7 @@ export default function ConfirmPaymentScreen() {
               />
 
               {/* Credit card fee disclosure pill — inside Section 2 now */}
-              {usePaymentStore.getState().selectedInstrument?.type === 'card' && (
+              {selectedInstrument?.type === 'card' && (
                 <View style={s.feePill}>
                   <RNText style={s.feePillText}>Additional bank fees upto 1% might apply</RNText>
                 </View>

@@ -15,6 +15,7 @@ export default function AuthLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.black[700] },
         animation: 'slide_from_right',
+        animationDuration: 250,
       }}
     >
       <Stack.Screen name="splash" options={{ gestureEnabled: false }} />
@@ -26,6 +27,7 @@ export default function AuthLayout() {
         options={{
           presentation: 'transparentModal',
           animation: 'fade',
+          animationDuration: 200,
           contentStyle: { backgroundColor: 'transparent' },
         }}
       />

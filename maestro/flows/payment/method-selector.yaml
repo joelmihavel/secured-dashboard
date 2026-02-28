@@ -1,17 +1,14 @@
 # =============================================================================
-# UI-038: Payment Method Selector Modal Functional Flow
-# Route: Overlay modal via /(payment)/enter-rent
+# Payment: Method Selector Modal Functional Flow
+# Route: Overlay modal via /(payment)/enter-rent or /(payment)/confirm
 # Figma: 769:309407 (first visit), 684:6128 (all setup)
 # testIDs: modal-method-proceed-button
 # =============================================================================
 #
 # Validates:
-#   - Payment method modal renders after tapping Continue on enter-rent
-#   - "Choose a Payment Method" heading is visible
-#   - UPI option is visible with fee text
-#   - Net Banking option is visible with fee text
-#   - Debit Card option is visible with fee text
-#   - Credit Card option is visible (may be disabled)
+#   - Payment method modal renders after entering amount and tapping CTA
+#   - "Choose a / Payment Method" heading is visible
+#   - UPI, Net Banking, Debit Card, Credit Card options are visible
 #   - Radio selection works (tapping selects a method)
 #   - Proceed/Setup button is visible and functional
 #   - Disclaimer text is shown at bottom
@@ -19,7 +16,7 @@
 
 appId: com.flent.secured
 ---
-# Navigate to enter-rent first, then trigger modal
+# Navigate to enter-rent first, enter amount, then trigger modal
 - launchApp:
     clearState: true
 - openLink: "flentsecured:///payment/enter-rent"
@@ -29,13 +26,12 @@ appId: com.flent.secured
 - assertVisible:
     id: "enter-rent-screen"
 
-# Enter amount to enable Continue
+# Enter amount to enable CTA
 - inputText: ${TEST_PAYMENT_AMOUNT}
 - waitForAnimationToEnd
 
-# Tap Continue to open method selector modal
-- tapOn:
-    id: "enter-rent-continue-button"
+# Tap CTA to open method selector modal
+- tapOn: "Select Payment Method"
 - waitForAnimationToEnd
 
 # -- Verify method selector modal content --
@@ -43,7 +39,7 @@ appId: com.flent.secured
     visible: "Payment Method"
     timeout: 5000
 
-# Verify heading
+# Verify heading (two-line: "Choose a\nPayment Method")
 - assertVisible: "Choose a"
 - assertVisible: "Payment Method"
 
@@ -52,9 +48,6 @@ appId: com.flent.secured
 - assertVisible: "Net Banking"
 - assertVisible: "Debit Card"
 - assertVisible: "Credit Card"
-
-# Verify fee text is shown (at least one "fee" label)
-- assertVisible: "fee"
 
 # Verify proceed/setup button
 - assertVisible:

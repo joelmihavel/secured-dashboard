@@ -255,10 +255,11 @@ const styles = StyleSheet.create({
     paddingVertical: INPUT_SPACING.inputPaddingVertical, // 16px to match PhoneInput container
     paddingHorizontal: 12,
   },
+  // NOTE: lineHeight omitted on iOS TextInput — it causes asymmetric vertical offset
+  // and text clipping. height + fontSize + padding:0 lets iOS center text naturally.
   input: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    lineHeight: 32,
     height: 32,
     padding: 0,
     margin: 0,

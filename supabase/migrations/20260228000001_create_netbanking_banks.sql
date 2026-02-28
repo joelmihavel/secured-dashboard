@@ -15,10 +15,15 @@ CREATE TABLE IF NOT EXISTS netbanking_banks (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-ALTER TABLE netbanking_banks ADD CONSTRAINT netbanking_banks_code_key UNIQUE (bank_code);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'netbanking_banks_code_key') THEN
+    ALTER TABLE netbanking_banks ADD CONSTRAINT netbanking_banks_code_key UNIQUE (bank_code);
+  END IF;
+END $$;
 
 -- RLS: public read, no user writes
 ALTER TABLE netbanking_banks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can read netbanking banks" ON netbanking_banks;
 CREATE POLICY "Anyone can read netbanking banks" ON netbanking_banks
   FOR SELECT USING (true);
 

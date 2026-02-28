@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
+import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
 import type { Session } from '@supabase/supabase-js';
 
 interface AuthContextValue {
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (hasRedirectedRef.current) return;
     hasRedirectedRef.current = true;
 
+    if (isReviewMode()) deactivateReviewMode();
     clearAllStores();
     setSession(null);
 

@@ -31,7 +31,6 @@ flows:
   - "flows/setup/pending-steps.yaml"
   - "flows/main/home.yaml"
   - "flows/main/dashboard-states.yaml"
-  - "flows/payment/first-rent.yaml"
   - "flows/payment/enter-rent.yaml"
   - "flows/payment/method-selector.yaml"
   - "flows/payment/add-upi.yaml"
@@ -44,7 +43,7 @@ flows:
   - "flows/payment/status-refunded.yaml"
   - "flows/profile/index.yaml"
   - "flows/profile/edit.yaml"
-  - "flows/profile/payment-methods.yaml"
+  - "flows/profile/edit-bank-details.yaml"
   - "flows/profile/agreement.yaml"
   - "flows/routing/auth-guard.yaml"
   - "flows/routing/auth-guard-all.yaml"
@@ -59,6 +58,7 @@ flows:
   - "journeys/sign-out-relogin.yaml"
   - "journeys/skip-setup.yaml"
   - "journeys/crash-recovery-payment.yaml"
+  - "journeys/network-offline.yaml"
 
 # Standard timeout per flow
 timeout: 120

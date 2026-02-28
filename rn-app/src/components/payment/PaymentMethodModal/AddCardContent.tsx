@@ -16,8 +16,8 @@ import {
   View,
   StyleSheet,
   Alert,
+  ScrollView,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/src/components/ui/Typography';
@@ -25,6 +25,8 @@ import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Text as RNText } from 'react-native';
 import { SecureCardInput, type SecureCardInputRef } from '@/src/components/payment/SecureCardInput';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
+import { launchCorePayment } from '@/src/services/payment/payuCoreService';
+import { addCardToken } from '@/src/services/api/payments';
 import { usePaymentStore } from '@/src/stores';
 import { colors } from '@/src/theme';
 
@@ -43,56 +45,60 @@ const FIGMA_COLORS = {
 // ADD CARD CONTENT
 // ==============================================
 
-export function AddCardContent({ paymentId, onBack, cardType = 'credit', onInitiatePayment }: AddMethodContentProps) {
+export function AddCardContent({ paymentId, onBack, cardType = 'credit', onInitiatePayment, context = 'payment', onSaveComplete }: AddMethodContentProps) {
+  const isProfile = context === 'profile';
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const storedAmount = usePaymentStore((s) => s.amount);
-  const amount = sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0');
+  const { clearPayuSessionParams } = usePaymentStore();
+  const amount = isProfile ? '1' : (sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0'));
 
   const cardInputRef = useRef<SecureCardInputRef>(null);
+  const isSubmittingRef = useRef(false);
   const [isCardValid, setIsCardValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { executePayment } = usePaymentFlow();
 
   const handlePay = useCallback(async () => {
-    if (!cardInputRef.current || isSubmitting) return;
+    if (!cardInputRef.current || isSubmittingRef.current) return;
 
     const { valid } = cardInputRef.current.validate();
     if (!valid) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return; // SecureCardInput already displays field-level errors inline
-    }
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsSubmitting(true);
-
-    let currentPaymentId = paymentId;
-
-    // Setup flow: initiate payment first if no paymentId yet
-    if (!currentPaymentId && onInitiatePayment) {
-      const methodType = cardType === 'credit' ? 'card' as const : 'debit_card' as const;
-      const result = await onInitiatePayment(methodType);
-      if (!result) {
-        setIsSubmitting(false);
-        return;
-      }
-      currentPaymentId = result.paymentId;
-    }
-
-    // Re-read sessionParams after potential initiatePayment call
-    const currentSessionParams = usePaymentStore.getState().payuSessionParams;
-    if (!currentSessionParams) {
-      Alert.alert('Session Error', 'Please go back and try again.');
-      setIsSubmitting(false);
       return;
     }
 
-    const cardData = cardInputRef.current.getCardData();
-    const bankcode = cardType === 'credit' ? 'CC' : 'DC';
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    const outcome = await executePayment(
-      bankcode,
-      {
+    try {
+      let currentPaymentId = paymentId;
+
+      // Setup flow: initiate payment first if no paymentId yet
+      if (!currentPaymentId && onInitiatePayment) {
+        const methodType = cardType === 'credit' ? 'card' as const : 'debit_card' as const;
+        const result = await onInitiatePayment(methodType);
+        if (!result) {
+          return;
+        }
+        currentPaymentId = result.paymentId;
+      }
+
+      // Re-read sessionParams after potential initiatePayment/verifyCard call
+      const currentSessionParams = usePaymentStore.getState().payuSessionParams;
+      if (!currentSessionParams) {
+        Alert.alert('Session Error', 'Please go back and try again.');
+        return;
+      }
+
+      if (!cardInputRef.current) {
+        Alert.alert('Error', 'Card form was reset. Please try again.');
+        return;
+      }
+      const cardData = cardInputRef.current.getCardData();
+      const bankcode = cardType === 'credit' ? 'CC' : 'DC';
+      const instrumentParams = {
         bankcode,
         card_number: cardData.cardNumber,
         cvv: cardData.cvv,
@@ -100,16 +106,54 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
         expiry_month: cardData.expiryMonth,
         name_on_card: cardData.nameOnCard,
         store_card: '1',
-      },
-      currentPaymentId,
-      () => cardInputRef.current?.clearCardData(),
-    );
+      };
 
-    if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+      // Profile context: Rs.1 verification — use launchCorePayment directly
+      // (executePayment navigates to status screen which we don't want)
+      if (isProfile && onSaveComplete) {
+        const sdkOutcome = await launchCorePayment(bankcode, currentSessionParams, instrumentParams);
+        cardInputRef.current?.clearCardData();
+        clearPayuSessionParams();
+
+        if (sdkOutcome.status === 'success') {
+          // Save card token client-side (webhook also saves as backup)
+          const payuResponse = sdkOutcome.payuResponse ?? {};
+          if (payuResponse.store_card_token) {
+            addCardToken({
+              card_token: String(payuResponse.store_card_token),
+              card_last4: String(payuResponse.card_no ?? '').slice(-4),
+              card_network: (String(payuResponse.bankcode ?? '').toLowerCase()) as 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro',
+              card_type: cardType === 'credit' ? 'credit' : 'debit',
+              ...(Number(payuResponse.card_expiry_month) ? { card_expiry_month: Number(payuResponse.card_expiry_month) } : {}),
+              ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
+            }).catch(() => {});
+          }
+          onSaveComplete();
+        } else if (sdkOutcome.status === 'failure') {
+          Alert.alert('Verification Failed', sdkOutcome.error || 'Card verification failed. Please try again.');
+        }
+        // cancelled/other: stay on form for retry
+        return;
+      }
+
+      // Payment context: full rent payment via executePayment (navigates to status)
+      const outcome = await executePayment(
+        bankcode,
+        instrumentParams,
+        currentPaymentId,
+        () => cardInputRef.current?.clearCardData(),
+      );
+
+      if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+        // Reset so user can retry
+      } else if (outcome.status === 'failure') {
+        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
+      }
+    } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-    // Other outcomes (navigating, failure) handle their own navigation
-  }, [sessionParams, paymentId, isSubmitting, executePayment, onInitiatePayment, cardType]);
+  }, [paymentId, executePayment, onInitiatePayment, cardType, isProfile, onSaveComplete, clearPayuSessionParams]);
 
   const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
@@ -123,12 +167,11 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
         />
       </View>
 
-      <KeyboardAwareScrollView
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        bottomOffset={16}
       >
         {/* Title */}
         <RNText style={styles.title}>
@@ -147,7 +190,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
         {/* Pay Button + Footer */}
         <View style={styles.buttonFooterSection}>
           <PrimaryButton
-            title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Save Card Details'}
+            title={isProfile ? 'Verify Card (\u20B91)' : (parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Save Card Details')}
             onPress={handlePay}
             disabled={!isCardValid || isSubmitting}
             loading={isSubmitting}
@@ -158,7 +201,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
             You may receive a verification message to confirm your bank account and unlock benefits.
           </Text>
         </View>
-      </KeyboardAwareScrollView>
+      </ScrollView>
     </View>
   );
 }
@@ -172,13 +215,13 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   stickyHeader: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
   },
   scrollView: {
-    flexGrow: 0,
+    flexGrow: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
     paddingBottom: 24,
   },
   backButton: {

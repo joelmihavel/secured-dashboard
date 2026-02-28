@@ -6,7 +6,7 @@
 # what settings when triggered from the CI pipeline.
 #
 # Coverage: 39 screen flows + 10 journey flows = 49 E2E tests
-#   Screen flows: auth(6), waitlist(1), agreement(2), setup(5),
+#   Screen flows: auth(6), waitlist(1), agreement(2), setup(6),
 #                 main(2), payment(10), profile(4), edge-cases(5),
 #                 routing(3)
 #   Journeys: new-user-onboarding, make-payment, manage-profile,

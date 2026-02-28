@@ -29,11 +29,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   Alert,
   ActionSheetIOS,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -63,7 +63,6 @@ export default function EditProfileScreen() {
 
   const fullName = user ? `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : '';
   const [name, setName] = useState(fullName || '');
-  const [email, setEmail] = useState(user?.email ?? '');
   const [city, setCity] = useState('Bangalore');
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatar_url ?? null);
 
@@ -148,7 +147,6 @@ export default function EditProfileScreen() {
     updateProfile.mutate(
       {
         fullName: name.trim(),
-        email: email.trim() || undefined,
       },
       {
         onSuccess: () => {
@@ -160,7 +158,7 @@ export default function EditProfileScreen() {
         },
       }
     );
-  }, [updateProfile, name, email, router]);
+  }, [updateProfile, name, router]);
 
   return (
     <Screen testID="edit-profile-screen" padded={false}>
@@ -226,14 +224,6 @@ export default function EditProfileScreen() {
               />
 
               <TextInput
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-
-              <TextInput
                 label="City"
                 value={city}
                 onChangeText={setCity}
@@ -287,6 +277,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 24,
     paddingHorizontal: 40,
+    paddingTop: 16,  // Breathing room below safe area
   },
   // Back button (41:8883): 32x32
   backButton: {

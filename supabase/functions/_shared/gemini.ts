@@ -196,6 +196,140 @@ Context-specific guidance:
 }
 
 // ==============================================
+// UTILITY CONSUMER NAME → BUILDING/SOCIETY MATCHING
+// ==============================================
+
+/**
+ * Checks if a utility bill consumer name corresponds to the building,
+ * society, or apartment complex at the given property address.
+ *
+ * In India, electricity connections in apartment complexes are often
+ * registered under the building name, housing society, or Residents'
+ * Welfare Association (RWA) — not the individual flat owner.
+ *
+ * Cloned from matchNamesWithGemini() with a specialized prompt.
+ * Does NOT modify the original person-name matching function.
+ */
+export async function matchConsumerNameWithPropertyGemini(
+  consumerName: string,
+  propertyAddress: string,
+): Promise<NameMatchResult> {
+  const prompt = `You are an expert at matching utility bill consumer names with building/property information in India.
+
+In many Indian apartment complexes and housing societies, electricity bills are registered under
+the building name, society name, or residents' welfare association (RWA) rather than the
+individual flat owner's name.
+
+Your task is to determine if the consumer name on this electricity bill corresponds to the
+building, society, or apartment complex at the given property address.
+
+Consumer Name (from electricity bill): "${consumerName}"
+Property Address: "${propertyAddress}"
+
+Consider these common patterns in India:
+1. Society/Association names: "GREEN VALLEY APARTMENTS RWA", "PRESTIGE LAKESIDE HABITAT OWNERS ASSOC"
+2. Housing society suffixes: "CHS" (Co-op Housing Society), "CHSL", "RWA", "AOA" (Apartment Owners Association)
+3. Builder/Project names: "BRIGADE GATEWAY", "GODREJ INFINITY", "SOBHA DREAM ACRES", "DLF PINNACLE"
+4. Complex/Colony names: "HIRANANDANI GARDENS", "MANTRI SERENITY", "PURVA VENEZIA"
+5. Abbreviated forms: "PVRA" = "Palm Valley Residents Association", abbreviations of long society names
+6. Welfare associations: "OWNERS WELFARE ASSOCIATION", "MAINTENANCE COMMITTEE"
+7. The consumer name may be a partial match (core building name without suffixes)
+8. State-specific patterns: Maharashtra uses "CHS/CHSL", Karnataka uses "OWNERS ASSOCIATION", Delhi uses "RWA"
+
+Return a JSON object with:
+{
+  "is_match": boolean (true if the consumer name refers to the building/society at this address),
+  "confidence": number (0-100, how confident you are),
+  "reasoning": string (brief explanation),
+  "normalized_name1": string (the consumer name cleaned up),
+  "normalized_name2": string (the building/society name extracted from the property address),
+  "match_type": "exact" | "strong" | "partial" | "weak" | "no_match"
+}
+
+Rules for match_type:
+- "exact": Consumer name IS the building/society name (possibly with RWA/CHS suffix)
+- "strong": Clear reference to the same building/society (core name matches, abbreviation)
+- "partial": Likely the same building but some uncertainty (partial overlap in name)
+- "weak": Possibly related but significant differences
+- "no_match": Consumer name is clearly a person's name or refers to a different property
+
+IMPORTANT:
+- Only return is_match=true if the consumer name clearly refers to a building, society, or
+  residential complex that matches the property address.
+- If the consumer name appears to be an individual person's name (not a building/society),
+  return is_match=false — person-name matching is handled separately.
+- Be lenient with suffixes: "GREEN VALLEY" matching "GREEN VALLEY APARTMENTS OWNERS ASSOCIATION" is a strong match.`;
+
+  try {
+    const result = await callGemini(prompt);
+    const parsed = JSON.parse(result) as NameMatchResult;
+
+    if (typeof parsed.is_match !== "boolean" || typeof parsed.confidence !== "number") {
+      throw new Error("Invalid response format from Gemini");
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Gemini building name matching failed:", error);
+    return fallbackBuildingNameMatch(consumerName, propertyAddress);
+  }
+}
+
+function fallbackBuildingNameMatch(consumerName: string, propertyAddress: string): NameMatchResult {
+  const normalize = (s: string) =>
+    s.toUpperCase().replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
+  const name = normalize(consumerName);
+  const address = normalize(propertyAddress);
+
+  if (!name || !address) {
+    return {
+      is_match: false,
+      confidence: 0,
+      reasoning: "Empty input",
+      normalized_name1: name,
+      normalized_name2: address,
+      match_type: "no_match",
+    };
+  }
+
+  // Extract significant words from consumer name (skip common suffixes)
+  const ignoreWords = new Set([
+    "RWA", "ASSOCIATION", "SOCIETY", "WELFARE", "CHS", "CHSL", "OWNERS",
+    "RESIDENTS", "LIMITED", "LTD", "PVT", "PRIVATE", "THE", "OF", "AND",
+    "APARTMENT", "APARTMENTS", "FLAT", "FLATS", "AOA", "COMMITTEE",
+  ]);
+  const nameWords = name.split(" ").filter((w) => w.length > 1 && !ignoreWords.has(w));
+  const addressWords = new Set(address.split(" "));
+
+  if (nameWords.length === 0) {
+    return {
+      is_match: false,
+      confidence: 0,
+      reasoning: "No significant words in consumer name after filtering",
+      normalized_name1: name,
+      normalized_name2: address,
+      match_type: "no_match",
+    };
+  }
+
+  const matchCount = nameWords.filter((w) => addressWords.has(w)).length;
+  const similarity = (matchCount / nameWords.length) * 100;
+
+  return {
+    is_match: similarity >= 60,
+    confidence: Math.round(similarity),
+    reasoning: `Word overlap: ${matchCount}/${nameWords.length} significant words found in address`,
+    normalized_name1: name,
+    normalized_name2: address,
+    match_type:
+      similarity >= 90 ? "strong" :
+      similarity >= 70 ? "partial" :
+      similarity >= 60 ? "weak" : "no_match",
+  };
+}
+
+// ==============================================
 // ADDRESS MATCHING
 // ==============================================
 

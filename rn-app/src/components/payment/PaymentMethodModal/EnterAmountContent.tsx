@@ -4,8 +4,9 @@ import {
   StyleSheet,
   TextInput,
   Keyboard,
+  ScrollView,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, BounceIn } from 'react-native-reanimated';
 
 import { Text } from '@/src/components/ui/Typography/Text';
 import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
@@ -158,77 +159,91 @@ export function EnterAmountContent({
   }, [canContinue, parsedAmount, onProceed]);
 
   return (
-    <View style={styles.container}>
-      {/* Header Row */}
-      <View style={styles.headerRow}>
-        <Text style={styles.headerLabelLeft}>{monthDisplay}</Text>
-        <Text style={[styles.headerLabelRight, isOverdue && styles.headerLabelOverdue]}>
-          {dueBadgeText}
-        </Text>
-      </View>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      bounces={false}
+    >
+      <View style={styles.container}>
+        {/* Header Row */}
+        <View style={styles.headerRow}>
+          <Text style={styles.headerLabelLeft}>{monthDisplay}</Text>
+          <Text style={[styles.headerLabelRight, isOverdue && styles.headerLabelOverdue]}>
+            {dueBadgeText}
+          </Text>
+        </View>
 
-      {/* Amount Display */}
-      <View style={styles.amountContainer}>
-        <Text style={styles.currencySymbol}>{'\u20B9'}  </Text>
-        <TextInput
-          ref={inputRef}
-          style={[
-            styles.amountInput,
-            validation?.severity === 'error' && styles.amountInputError,
-          ]}
-          value={displayValue}
-          onChangeText={handleChangeText}
-          keyboardType="numeric"
-          placeholder="0"
-          placeholderTextColor="#4D4D4D"
-          selectionColor={colors.brand[500]}
-          maxLength={12}
-          accessibilityLabel="Rent amount"
-        />
-        <Text style={styles.decimalSuffix}>.00</Text>
-      </View>
+        {/* Amount Display */}
+        <View style={styles.amountContainer}>
+          <Text style={styles.currencySymbol}>{'\u20B9'}  </Text>
+          <TextInput
+            ref={inputRef}
+            style={[
+              styles.amountInput,
+              validation?.severity === 'error' && styles.amountInputError,
+            ]}
+            value={displayValue}
+            onChangeText={handleChangeText}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor="#4D4D4D"
+            selectionColor={colors.brand[500]}
+            maxLength={12}
+            accessibilityLabel="Rent amount"
+          />
+          <Text style={styles.decimalSuffix}>.00</Text>
+        </View>
 
-      {/* Validation / Cashback Pill */}
-      <View style={styles.pillContainer}>
-        {validation ? (
-          <Animated.View
-            entering={FadeIn.duration(250)}
-            exiting={FadeOut.duration(200)}
-            style={styles.pill}
-          >
-            <Text style={[styles.pillText, { color: SEVERITY_COLORS[validation.severity].text }]}>
-              {validation.message}
-            </Text>
-          </Animated.View>
-        ) : showDefaultPill ? (
-          <Animated.View
-            entering={FadeIn.duration(250)}
-            exiting={FadeOut.duration(200)}
-            style={styles.pill}
-          >
-            <Text style={styles.pillTextDefault}>
-              Cashback will be accumulated
-            </Text>
-          </Animated.View>
-        ) : null}
-      </View>
+        {/* Validation / Cashback Pill */}
+        <View style={styles.pillContainer}>
+          {validation ? (
+            <Animated.View
+              entering={FadeIn.springify().damping(14).stiffness(120)}
+              exiting={FadeOut.duration(200)}
+              style={styles.pill}
+            >
+              <Text style={[styles.pillText, { color: SEVERITY_COLORS[validation.severity].text }]}>
+                {validation.message}
+              </Text>
+            </Animated.View>
+          ) : showDefaultPill ? (
+            <Animated.View
+              entering={FadeIn.springify().damping(14).stiffness(120)}
+              exiting={FadeOut.duration(200)}
+              style={styles.pill}
+            >
+              <Text style={styles.pillTextDefault}>
+                Cashback will be accumulated
+              </Text>
+            </Animated.View>
+          ) : null}
+        </View>
 
-      {/* CTA Button */}
-      <View style={styles.buttonContainer}>
-        <PrimaryButton
-          title="Select Payment Method →"
-          onPress={handleProceed}
-          disabled={!canContinue}
-          showDivider
-        />
+        {/* CTA Button */}
+        <View style={styles.buttonContainer}>
+          <PrimaryButton
+            title="Select Payment Method →"
+            onPress={handleProceed}
+            disabled={!canContinue}
+            showDivider
+          />
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    width: '100%',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   container: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
     paddingTop: 16,
     paddingBottom: 24,
     width: '100%',
@@ -273,10 +288,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#444444',
   },
+  // NOTE: lineHeight omitted on iOS TextInput — it causes asymmetric vertical offset.
   amountInput: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 32,
-    lineHeight: 48,
     letterSpacing: -1,
     color: colors.brand[500], // #FF9A6D
     minWidth: 60,

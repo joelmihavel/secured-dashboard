@@ -63,8 +63,8 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     body: "{landlord_name} didn't confirm the details. Tap to update and resend.",
   },
   app_update: {
-    title: 'A better Flent is here',
-    body: "We've made things smoother. Update now for the latest fixes.",
+    title: 'New update available',
+    body: "We've improved speed and stability. Update now for the best experience.",
   },
   reminder_utility: {
     title: 'One step left — utility verification',

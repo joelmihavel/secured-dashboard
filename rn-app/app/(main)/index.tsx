@@ -46,6 +46,7 @@
 
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -260,7 +261,7 @@ export default function HomeScreen() {
       case 'late': return 'late';
       case 'missed': return 'missed';
       case 'pending': return 'upcoming';
-      case 'refunded': return 'missed'; // Show refunded as a failed-type stamp
+      case 'refunded': return 'upcoming'; // Refund reverts month to pending — overdue/missed logic applies naturally
       default: return 'upcoming';
     }
   }, []);
@@ -450,12 +451,9 @@ export default function HomeScreen() {
     return 'empty_with_upi_payments';
   }, [paymentMethods.length, tenancy, cashback]);
 
-  // Setup completion check
+  // Setup completion check — use backend-computed flag as single source of truth
   const verificationStatus = tenancy?.verification_status;
-  const isSetupComplete =
-    verificationStatus?.bank_verified &&
-    verificationStatus?.utility_verified &&
-    verificationStatus?.landlord_approved;
+  const isSetupComplete = cashback?.verification_complete ?? false;
 
   // ==============================================
   // HANDLERS
@@ -722,9 +720,11 @@ export default function HomeScreen() {
       >
         {/* Header: Logo + "Hi, [Name]" + Avatar */}
         {/* Figma: HomeHeader handles its own paddingHorizontal: 32 */}
-        <HomeHeader userName={userName} avatarUrl={user?.avatar_url} userId={user?.id} unreadCount={unreadCount} />
+        <Animated.View entering={FadeInDown.duration(350)}>
+          <HomeHeader userName={userName} avatarUrl={user?.avatar_url} userId={user?.id} unreadCount={unreadCount} />
+        </Animated.View>
 
-        <View style={styles.mainContent}>
+        <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.mainContent}>
           {/* Dashboard Content */}
           {renderDashboardContent(dashboardState, {
             tenancy,
@@ -758,7 +758,7 @@ export default function HomeScreen() {
             onCashbackEntryPress: handleCashbackEntryPress,
             onHowItWorks: handleHowItWorks,
           })}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Fixed Bottom Footer - Figma: absolutely positioned, height 118, bg #202020 */}

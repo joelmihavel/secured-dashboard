@@ -12,4 +12,4 @@ ALTER TABLE otp_requests
 
 ALTER TABLE otp_requests
   ADD CONSTRAINT otp_requests_provider_check
-  CHECK (provider IN ('cashfree_m360'));
+  CHECK (provider IN ('cashfree_m360')) NOT VALID;

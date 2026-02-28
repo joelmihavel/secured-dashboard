@@ -33,7 +33,7 @@ function ScrollDownIndicatorComponent({
 
   useEffect(() => {
     bounceValue.value = withRepeat(
-      withTiming(10, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(10, { duration: 1000, easing: Easing.bezier(0.45, 0, 0.55, 1) }),
       -1,
       true
     );

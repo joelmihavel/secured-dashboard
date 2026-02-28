@@ -388,6 +388,18 @@ export async function pixelateAvatar(
   error: ProfileError | null;
 }> {
   try {
+    // Review mode: return mock pixelated avatar URLs
+    const { isReviewMode } = await import('@/src/review/reviewMode');
+    if (isReviewMode()) {
+      return {
+        data: {
+          avatarUrl: 'https://example.com/review-avatar-pixel.png',
+          thumbnailUrl: 'https://example.com/review-avatar-pixel-thumb.png',
+        },
+        error: null,
+      };
+    }
+
     // Build FormData
     const response = await fetch(fileUri);
     const blob = await response.blob();

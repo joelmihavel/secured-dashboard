@@ -33,6 +33,7 @@ import { matchNamesWithGemini, matchAddressesWithGemini } from "../_shared/gemin
 import {
   resolveAgreementNames,
   matchAgainstAgreementNames,
+  matchUtilityConsumerAgainstProperty,
   calculateNameMatchScore as sharedCalculateNameMatchScore,
 } from "../_shared/name-match-service.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
@@ -382,6 +383,8 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       bank_name_reasoning?: string;
       bank_name_match_type?: string;
       bank_account_holder_name?: string;
+      building_name_matched?: boolean;
+      building_name?: string;
     } = { gemini_used: false };
 
     if (isBillFetched && USE_GEMINI_MATCHING && consumerName && allLandlordNames.length > 0) {
@@ -455,7 +458,38 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       isNameVerified = isBillFetched && nameMatchScore >= NAME_MATCH_THRESHOLD;
     }
 
-    // 3. Bank account name cross-check — Gemini-first, lenient matching
+    // 3. Building/society name fallback — if consumer name didn't match any landlord,
+    //    check if it's a building/society/apartment name matching the property address.
+    //    Common in Indian apartments where electricity is under building/RWA name.
+    if (isBillFetched && consumerName && !isNameVerified && tenancyAddress) {
+      try {
+        console.log("[verify-utility] Landlord name match failed — trying building/society name match");
+        const propertyResult = await matchUtilityConsumerAgainstProperty({
+          consumerName,
+          propertyAddress: tenancyAddress,
+        });
+
+        if (propertyResult.matched) {
+          isNameVerified = true;
+          nameMatchScore = propertyResult.score / 100;
+          matchDetails.name_reasoning = propertyResult.details.reasoning;
+          matchDetails.name_match_type = propertyResult.details.match_type ?? "building_match";
+          matchDetails.building_name_matched = true;
+          matchDetails.building_name = propertyResult.matchedName ?? undefined;
+          matchDetails.gemini_used = matchDetails.gemini_used || (propertyResult.details.gemini_used ?? false);
+
+          console.log("[verify-utility] Building/society name match result:", {
+            matched: true,
+            score: propertyResult.score,
+            building_name: propertyResult.matchedName,
+          });
+        }
+      } catch (buildingMatchError) {
+        console.warn("[verify-utility] Building name match failed:", buildingMatchError);
+      }
+    }
+
+    // 4. Bank account name cross-check — Gemini-first, lenient matching
     //    Goal: catch fraud (completely different person), NOT penalize formatting differences
     //    between utility bills and bank records.
     let bankNameMatchScore = 0;
@@ -550,6 +584,8 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
         bank_name_reasoning: matchDetails.bank_name_reasoning,
         bank_name_match_type: matchDetails.bank_name_match_type,
         bank_account_holder_name: matchDetails.bank_account_holder_name,
+        building_name_matched: matchDetails.building_name_matched,
+        building_name: matchDetails.building_name,
       },
     };
 

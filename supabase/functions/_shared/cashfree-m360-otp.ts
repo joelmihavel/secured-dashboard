@@ -210,13 +210,16 @@ export async function callCashfreeSendOtp(
   }
 
   try {
+    // Cashfree M360 expects 10-digit Indian mobile number (no country code)
+    const mobileNumber = params.mobile_number.replace(/^\+?91/, "");
+
     const headers = await getCashfreeHeaders(appId, secretKey);
     const response = await fetch(`${baseUrl}/mobile360/otp/send`, {
       method: "POST",
       headers,
       body: JSON.stringify({
         verification_id: params.verification_id,
-        mobile_number: params.mobile_number,
+        mobile_number: mobileNumber,
         name: params.name,
         user_consent: {
           obtained: true,
@@ -241,6 +244,18 @@ export async function callCashfreeSendOtp(
           verification_id: params.verification_id,
           status: "INVALID_MOBILE_NUMBER",
           message: "Invalid mobile number format",
+        };
+      }
+
+      // Cashfree rejects duplicate requests for the same phone while an OTP is active.
+      // Treat as soft success — the OTP was already sent.
+      const msg = (data.message ?? "").toLowerCase();
+      if (msg.includes("already processed") || msg.includes("already been processed")) {
+        console.log("[cashfree-m360-otp] OTP already active for this phone, returning soft success");
+        return {
+          verification_id: params.verification_id,
+          status: "OTP_GENERATED",
+          message: "OTP already sent. Please check your phone.",
         };
       }
 

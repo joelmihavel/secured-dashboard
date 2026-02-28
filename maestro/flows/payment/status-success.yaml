@@ -10,12 +10,12 @@
 #
 # Validates:
 #   - Status screen renders in success state
-#   - Title shows "Payment" + "Succesful" text (Figma spelling)
-#   - Receipt details visible: Amount paid, Date, Method, Transaction ID
+#   - Title shows "Payment" + "Successful" text
+#   - Receipt details visible: Amount paid, Cashback Applied, Date, Method,
+#     Landlord, PAN Card, Agreement ID, Transaction ID
 #   - Payable Rent total row is visible
-#   - Cashback pill text is displayed
 #   - "Download Receipt" button is visible
-#   - Settlement note text is visible
+#   - "Contact Support" link text is visible
 # =============================================================================
 
 appId: com.flent.secured
@@ -30,21 +30,20 @@ appId: com.flent.secured
 - assertVisible:
     id: "status-screen"
 
-# Verify success title text (Note: Figma uses "Succesful" with one 's')
+# Verify success title text
 - assertVisible: "Payment"
-- assertVisible: "Succesful"
+- assertVisible: "Successful"
 
 # Verify receipt detail rows
 - assertVisible: "Amount paid"
+- assertVisible: "Cashback Applied"
 - assertVisible: "Date"
 - assertVisible: "Method"
+- assertVisible: "Landlord"
 - assertVisible: "Transaction ID"
 
 # Verify payable rent total
 - assertVisible: "Payable Rent"
-
-# Verify cashback pill (either "saved" or "Complete setup" variant)
-- assertVisible: "Flent"
 
 # Scroll to verify Download Receipt button
 - scrollUntilVisible:
@@ -57,5 +56,5 @@ appId: com.flent.secured
     id: "download-receipt-button"
 - assertVisible: "Download Receipt"
 
-# Verify settlement note
-- assertVisible: "Settlement to your landlord"
+# Verify Contact Support link text
+- assertVisible: "Contact Support"

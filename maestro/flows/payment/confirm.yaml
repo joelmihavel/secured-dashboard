@@ -1,19 +1,18 @@
 # =============================================================================
 # Payment: Confirm (Transaction) Screen Functional Flow
 # Route: /(payment)/confirm
-# Figma: 684:13115 (verified), 684:13148 (unverified)
-# testIDs: confirm-payment-screen, pay-now-button, confirm-back-button
+# Figma: 799:3380
+# testIDs: confirm-payment-screen
 # =============================================================================
 #
 # Validates:
 #   - Confirm payment screen renders with breakdown card
-#   - "Rent due in" title is visible in top card
-#   - Cashback pill is displayed (locked or unlocked)
-#   - Breakdown rows: Base rent, Maintenance, Total Rent, Convenience Fee
+#   - "Rent due in" title is visible in top info card
+#   - Cashback info text and pill are displayed
+#   - Breakdown rows: Base rent, Total Rent, Convenience Fee
 #   - Cashback row visible (locked or deducted)
 #   - "Payable Amount" total row is visible
-#   - "Pay now" CTA button with amount is visible
-#   - Footer countdown text is present
+#   - "Pay ... now" CTA button with amount is visible
 # =============================================================================
 
 appId: com.flent.secured
@@ -28,12 +27,17 @@ appId: com.flent.secured
 - assertVisible:
     id: "confirm-payment-screen"
 
-# Verify top card title
+# Verify top info card text
 - assertVisible: "Rent due in"
+
+# Verify cashback info
+- assertVisible: "1% cashback"
+
+# Verify cashback pill
+- assertVisible: "cashback after payment"
 
 # Verify breakdown rows
 - assertVisible: "Base rent"
-- assertVisible: "Maintenance"
 
 # Scroll to see full breakdown
 - scrollUntilVisible:
@@ -50,12 +54,6 @@ appId: com.flent.secured
 # Verify payable amount total
 - assertVisible: "Payable Amount"
 
-# Scroll to and verify Pay Now button
-- scrollUntilVisible:
-    element:
-      id: "pay-now-button"
-    direction: DOWN
-    timeout: 5000
-
-- assertVisible:
-    id: "pay-now-button"
+# Verify Pay Now button is visible (text includes "Pay" and "now")
+- assertVisible: "Pay"
+- assertVisible: "now"

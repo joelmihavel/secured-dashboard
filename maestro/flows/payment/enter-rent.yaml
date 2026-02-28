@@ -1,23 +1,20 @@
 # =============================================================================
-# UI-037: Enter Rent Amount Screen Functional Flow
+# Payment: Enter Rent Amount Screen Functional Flow
 # Route: /(payment)/enter-rent
-# Figma: Enter Rent Amount
-# testIDs: enter-rent-screen, enter-rent-continue-button
+# Figma: Enter Rent Amount (EnterAmountContent inside PaymentMethodModal)
+# testIDs: enter-rent-screen
 # =============================================================================
+#
+# The enter-rent screen is a thin wrapper that opens the PaymentMethodModal
+# with initialView="enter-amount". The actual UI lives in EnterAmountContent.tsx.
 #
 # Validates:
 #   - Enter rent screen renders with testID
-#   - Month label is displayed (current month in uppercase)
+#   - Month label (e.g. "FEBRUARY 2026 RENT") is displayed
 #   - Due badge shows "DUE IN X DAYS" or "OVERDUE"
-#   - Amount input field is visible and auto-focused
-#   - Rupee symbol is displayed
-#   - ".00" decimal suffix is visible
-#   - Monthly rent hint displays when contract value > 0
-#   - "Continue" button is visible
-#   - Entering a valid amount enables the Continue button
-#   - Entering amount > monthly rent shows error validation bubble
-#   - Entering amount < monthly rent shows warning validation bubble
-#   - Entering 0 keeps Continue button disabled
+#   - Amount input area with rupee symbol and ".00" suffix is visible
+#   - "Select Payment Method" CTA button is visible
+#   - Entering a valid amount enables the button
 # =============================================================================
 
 appId: com.flent.secured
@@ -32,47 +29,24 @@ appId: com.flent.secured
 - assertVisible:
     id: "enter-rent-screen"
 
-# -- Verify amount input area --
+# -- Verify amount display area --
 - assertVisible: ".00"
 
-# -- Verify Continue button --
-- assertVisible:
-    id: "enter-rent-continue-button"
+# -- Verify CTA button --
+- assertVisible: "Select Payment Method"
 
 # -- Test: Enter a valid rent amount --
 - inputText: "32500"
 - waitForAnimationToEnd
 
-# -- Verify Continue button is enabled with valid amount --
-- assertVisible:
-    id: "enter-rent-continue-button"
+# -- Verify CTA is still visible after entering amount --
+- assertVisible: "Select Payment Method"
 
-# -- Clear and enter zero amount to test disabled state --
-- clearText
-- inputText: "0"
+# -- Tap CTA to proceed to method selection --
+- tapOn: "Select Payment Method"
 - waitForAnimationToEnd
 
-# -- Clear and test over-limit validation --
-- clearText
-- inputText: "999999"
-- waitForAnimationToEnd
-
-# -- Verify validation bubble shows error --
-- assertVisible:
-    text: "Rent cannot exceed contract value"
-    optional: true
-
-# -- Clear and enter valid amount again --
-- clearText
-- inputText: ${TEST_PAYMENT_AMOUNT}
-- waitForAnimationToEnd
-
-# -- Tap Continue to proceed to method selection --
-- tapOn:
-    id: "enter-rent-continue-button"
-- waitForAnimationToEnd
-
-# -- Verify Payment Method Modal appears --
+# -- Verify Payment Method selector appears --
 - extendedWaitUntil:
     visible: "Payment Method"
     timeout: 5000

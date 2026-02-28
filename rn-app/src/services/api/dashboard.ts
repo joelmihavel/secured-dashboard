@@ -236,8 +236,9 @@ function mapPaymentStatusToUI(
     case 'processing':
       return 'processing';
     case 'failed':
-    case 'refunded':
       return 'failed';
+    case 'refunded':
+      return 'pending';
     case 'pending':
     default:
       return 'pending';
@@ -295,9 +296,13 @@ export function deriveCashbackEntries(
         }
         break;
       case 'failed':
-      case 'refunded':
         status = 'missed';
         statusLabel = 'Missed - No Payment';
+        amount = null;
+        break;
+      case 'refunded':
+        status = 'pending';
+        statusLabel = 'Refunded - Awaiting Payment';
         amount = null;
         break;
       case 'pending':
@@ -404,11 +409,8 @@ export function getDashboardState(data: DashboardData | null): DashboardState {
   // No tenancy yet
   if (!data.tenancy) return 'no_tenancy';
 
-  // Check verification status
-  const { bank_verified, utility_verified, landlord_approved } =
-    data.tenancy.verification_status;
-
-  if (!bank_verified || !utility_verified || !landlord_approved) {
+  // Check verification status — use backend-computed flag as single source of truth
+  if (!data.cashback.verification_complete) {
     return 'pending_verification';
   }
 

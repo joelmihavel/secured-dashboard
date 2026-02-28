@@ -24,7 +24,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text as RNText, Image, StyleSheet, Dimensions, FlatList, ViewToken, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { Illustration1, Illustration2, Illustration3 } from '@/src/components/onboarding';
 
 import { Screen, Logo, Text, DottedGridPattern } from '@/src/components';
@@ -94,17 +94,12 @@ export default function CarouselScreen() {
   const initialPage = page ? Math.max(0, Math.min(parseInt(page, 10) - 1, slides.length - 1)) : 0;
   const [activeIndex, setActiveIndex] = useState(initialPage);
   const flatListRef = useRef<FlatList<Slide>>(null);
-  const activeSlide = useSharedValue(initialPage);
 
-  const style1 = useAnimatedStyle(() => ({
-    opacity: withTiming(activeSlide.value === 0 ? 1 : 0, { duration: 300 }),
-  }));
-  const style2 = useAnimatedStyle(() => ({
-    opacity: withTiming(activeSlide.value === 1 ? 1 : 0, { duration: 300 }),
-  }));
-  const style3 = useAnimatedStyle(() => ({
-    opacity: withTiming(activeSlide.value === 2 ? 1 : 0, { duration: 300 }),
-  }));
+  // CSS Transitions (Reanimated 4) — opacity driven by activeIndex state
+  const cssTransitionStyle = { transitionProperty: 'opacity' as const, transitionDuration: '300ms' as const };
+  const style1 = { ...cssTransitionStyle, opacity: activeIndex === 0 ? 1 : 0 };
+  const style2 = { ...cssTransitionStyle, opacity: activeIndex === 1 ? 1 : 0 };
+  const style3 = { ...cssTransitionStyle, opacity: activeIndex === 2 ? 1 : 0 };
 
 
   useEffect(() => {
@@ -125,7 +120,6 @@ export default function CarouselScreen() {
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index !== null) {
         setActiveIndex(viewableItems[0].index);
-        activeSlide.value = viewableItems[0].index;
       }
     },
     []

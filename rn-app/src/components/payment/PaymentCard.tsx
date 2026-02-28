@@ -2,26 +2,25 @@
  * Payment Card Component
  * Figma: Credit/Debit card display with selected state
  *
- * EXACT Figma Values:
- * - Container: 270x400, radius 12px
- * - Card body: #202020
- * - Card footer: #1A1A1A, 64px height
- * - Selected state: orange accent border
- * - Text: Plus Jakarta Sans
+ * EXACT Figma Values (from figma-1on1parity extraction 2990-13009):
+ * - Container: 270x400, radius 12px, stroke #663E2C 2px INSIDE
+ * - Background: #1A1A1A, left panel #202020 (w=94), right panel #131313
+ * - Gradient lines: x=220/225, y=17, h=140
+ * - Divider: y=108, stroke #131313
+ * - Plus icons: #FF9A6D at (4,201), (4,381), (254,381)
+ * - Logo: y=46 in left panel, center aligned
+ * - Badge: x=188, y=36, bg #202020, borderRadius 200
+ * - Details: y=240, paddingLeft=32, paddingRight=16, gap=28
  */
 
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle, Image, ImageSourcePropType } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/src/components/ui/Typography';
-import { colors, springConfig } from '@/src/theme';
+import { colors } from '@/src/theme';
 
 // Exact Figma color values
 const CARD_COLORS = {
@@ -42,8 +41,6 @@ const CARD_COLORS = {
 export type PaymentCardType = 'credit' | 'debit' | 'upi' | 'netbanking';
 export type PaymentCardVariant = 'default' | 'profile';
 
-const CARD_TEXTURE_DOTS = require('@/assets/images/payment/card_texture_dots.png');
-const CARD_TEXTURE_CROSS = require('@/assets/images/payment/card_texture_cross.png');
 export interface PaymentCardProps {
   type: PaymentCardType;
   variant?: PaymentCardVariant;
@@ -59,6 +56,14 @@ export interface PaymentCardProps {
   style?: ViewStyle;
   testID?: string;
 }
+
+/** Decorative plus icon used at card corners in profile variant */
+const PlusIcon = ({ style: iconStyle }: { style: ViewStyle }) => (
+  <View style={[profileStyles.plusIcon, iconStyle]}>
+    <View style={profileStyles.plusH} />
+    <View style={profileStyles.plusV} />
+  </View>
+);
 
 function PaymentCardComponent({
   type,
@@ -76,19 +81,15 @@ function PaymentCardComponent({
   testID,
 }: PaymentCardProps) {
 
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const [pressed, setPressed] = useState(false);
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, springConfig.snappy);
+    setPressed(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig.snappy);
+    setPressed(false);
   };
 
   const handlePress = () => {
@@ -112,30 +113,18 @@ function PaymentCardComponent({
   };
 
   const renderProfileContent = () => {
+    const isCard = type === 'credit' || type === 'debit';
+
     return (
       <View style={styles.profileContainer}>
-        {/* Background Split */}
+        {/* Background Split — Figma 2990:13010 (left #202020) + 2990:13012 (right #131313) */}
         <View style={styles.profileBgLeft} />
         <View style={styles.profileBgRight} />
 
-        {/* Texture Overlays */}
-        <Image
-          source={CARD_TEXTURE_DOTS}
-          style={styles.profileTextureDots}
-          resizeMode="cover"
-        />
-        {(type === 'credit' || type === 'debit') && (
-          <View style={styles.profileTextureCrossWrap} pointerEvents="none">
-            <Image
-              source={CARD_TEXTURE_CROSS}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-            />
-            <View style={styles.profileDarkOverlay} />
-          </View>
-        )}
+        {/* Horizontal Divider — Figma 2990:13011, y=108 */}
+        <View style={styles.profileDivider} />
 
-        {/* Decorative Vertical Lines */}
+        {/* Decorative Vertical Gradient Lines — Figma 2990:13013 (x=220) + 2990:13014 (x=225) */}
         <LinearGradient
           colors={['#131313', '#995C41', '#131313']}
           locations={[0.1, 0.52, 0.75]}
@@ -147,33 +136,85 @@ function PaymentCardComponent({
           style={[styles.profileLine, { left: 225 }]}
         />
 
-        {/* Current/Selected Badge */}
+        {/* Decorative Plus Icons — Figma 2990:13016 (4,201) / 13017 (4,381) / 13018 (254,381) */}
+        <PlusIcon style={{ left: 4, top: 201 }} />
+        <PlusIcon style={{ left: 4, top: 381 }} />
+        <PlusIcon style={{ left: 254, top: 381 }} />
+
+        {/* Network Logo — Figma 2990:13019, x=0 y=46 w=94 h=28, center aligned */}
+        {logo && (
+          <View style={styles.profileNetworkContainer}>
+            <Image source={logo} style={styles.profileLogo} resizeMode="contain" />
+          </View>
+        )}
+
+        {/* Current/Selected Badge — Figma 2990:13021, x=188 y=36 */}
         {selected && (
           <View style={styles.profileBadge}>
             <Text style={styles.profileBadgeText}>current</Text>
           </View>
         )}
 
-        {/* Logo/Network (placeholder for now or use prop) */}
-        <View style={styles.profileNetworkContainer}>
-          {logo ? (
-            <Image source={logo} style={styles.logo} resizeMode="contain" />
+        {/* Card Details — Figma 2990:13023 (y=240, pl=32, pr=16) → 13024 (gap=28) */}
+        <View style={styles.profileDetailsSection}>
+          {isCard ? (
+            <>
+              {/* Figma 2990:13025 — info block, gap=8 */}
+              <View style={styles.profileInfoBlock}>
+                {/* Figma 2990:13026 — "Visa · Credit", 14/20, base #D2D2D2, span 7-13 #FF9A6D */}
+                <Text style={styles.profileDetailLine}>
+                  <Text style={styles.profileTextLight}>{bankName || 'Visa'} · </Text>
+                  <Text style={styles.profileTextAccent}>
+                    {type === 'debit' ? 'Debit' : 'Credit'}
+                  </Text>
+                </Text>
+                {/* Figma 2990:13027 — "Expiry 06/26", 14/20, base #D2D2D2, span 7-12 #FF9A6D */}
+                {expiryDate && (
+                  <Text style={styles.profileDetailLine}>
+                    <Text style={styles.profileTextLight}>Expiry </Text>
+                    <Text style={styles.profileTextAccent}>{expiryDate}</Text>
+                  </Text>
+                )}
+              </View>
+              {/* Figma 2990:13028 — "•••• 2341", 16/24, base #FF9A6D, span 5-9 #D2D2D2 */}
+              <Text style={styles.profileCardNumber}>
+                <Text style={styles.profileTextAccent}>•••• </Text>
+                <Text style={styles.profileTextLight}>
+                  {lastFourDigits || '****'}
+                </Text>
+              </Text>
+            </>
+          ) : type === 'upi' ? (
+            <>
+              <View style={styles.profileInfoBlock}>
+                <Text style={styles.profileDetailLine}>
+                  <Text style={styles.profileTextAccent}>UPI</Text>
+                </Text>
+              </View>
+              {/* Figma 2990:13044 — "rishabh@•••", 16/24, prefix #D2D2D2 + masked #FF9A6D */}
+              <Text style={styles.profileCardNumber}>
+                {upiId && upiId.includes('@') ? (
+                  <>
+                    <Text style={styles.profileTextLight}>{upiId.split('@')[0]}@</Text>
+                    <Text style={styles.profileTextAccent}>•••</Text>
+                  </>
+                ) : (
+                  <Text style={styles.profileTextLight}>{upiId || ''}</Text>
+                )}
+              </Text>
+            </>
           ) : (
-            <View style={styles.networkPlaceholder} />
+            <>
+              <View style={styles.profileInfoBlock}>
+                <Text style={styles.profileDetailLine}>
+                  <Text style={styles.profileTextAccent}>Netbanking</Text>
+                </Text>
+              </View>
+              <Text style={styles.profileCardNumber}>
+                <Text style={styles.profileTextLight}>{bankName || ''}</Text>
+              </Text>
+            </>
           )}
-        </View>
-
-        {/* Divider Line */}
-        <View style={styles.profileDivider} />
-
-        {/* Card Details at bottom */}
-        <View style={styles.profileDetails}>
-          <Text style={styles.profileDetailsTitle}>
-            {type === 'upi' ? 'UPI' : `${bankName || 'Visa'} · ${type === 'debit' ? 'Debit' : 'Credit'}`}
-          </Text>
-          <Text style={styles.profileDetailsValue}>
-            {type === 'upi' ? upiId : `•••• ${lastFourDigits || '****'}`}
-          </Text>
         </View>
       </View>
     );
@@ -254,9 +295,12 @@ function PaymentCardComponent({
         style={[
           styles.container,
           variant === 'profile' && styles.containerProfile,
-          variant === 'profile' && (type === 'credit' || type === 'debit') && { borderColor: CARD_COLORS.borderProfile },
-          selected && styles.containerSelected,
-          animatedStyle,
+          selected && variant !== 'profile' && styles.containerSelected,
+          {
+            transitionProperty: 'transform',
+            transitionDuration: '150ms',
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          },
           style,
         ]}
       >
@@ -422,19 +466,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: CARD_COLORS.textPrimary,
   },
+  // Figma 2990:13009 — profile container: stroke #663E2C 2px INSIDE
   containerProfile: {
     borderWidth: 2,
-    borderColor: '#4D4D4D',
+    borderColor: '#663E2C',
   },
   cardBodyProfile: {
     padding: 0,
-    backgroundColor: 'transparent', // Split handled in profileContainer
+    backgroundColor: 'transparent',
   },
+  // Figma 2990:13009 — root bg #1A1A1A, overflow hidden
   profileContainer: {
     flex: 1,
     backgroundColor: '#1A1A1A',
     overflow: 'hidden',
   },
+  // Figma 2990:13010 — left panel, x=0, w=94, bg #202020
   profileBgLeft: {
     position: 'absolute',
     left: 0,
@@ -443,6 +490,7 @@ const styles = StyleSheet.create({
     width: 94,
     backgroundColor: '#202020',
   },
+  // Figma 2990:13012 — right panel, x=94, bg #131313
   profileBgRight: {
     position: 'absolute',
     left: 94,
@@ -451,26 +499,23 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#131313',
   },
+  // Figma 2990:13013/14 — vertical gradient lines, y=17, h=140
   profileLine: {
     position: 'absolute',
     width: 2,
     height: 140,
     top: 17,
   },
-  profileBadge: {
+  // Figma 2990:13011 — horizontal divider, y=108
+  profileDivider: {
     position: 'absolute',
-    top: 36,
-    right: 16,
-    backgroundColor: '#202020',
-    borderRadius: 200,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    left: 0,
+    right: 0,
+    top: 108,
+    height: 1,
+    backgroundColor: '#131313',
   },
-  profileBadgeText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    color: '#FF9A6D',
-  },
+  // Figma 2990:13019 — network logo in left panel, y=46, w=94, h=16
   profileNetworkContainer: {
     position: 'absolute',
     left: 0,
@@ -480,53 +525,84 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  networkPlaceholder: {
-    width: 32,
-    height: 12,
-    backgroundColor: '#333333',
-    borderRadius: 2,
+  profileLogo: {
+    width: 50,
+    height: 16,
   },
-  profileDivider: {
+  // Figma 2990:13021 — "current" badge, x=188 y=36, bg #202020, borderRadius 200, padding 8/12
+  profileBadge: {
     position: 'absolute',
+    top: 36,
+    right: 16,
+    backgroundColor: '#202020',
+    borderRadius: 200,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  // Figma 2990:13022 — "current" text, 12/20, #FF9A6D
+  profileBadgeText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#FF9A6D',
+  },
+  // Figma 2990:13023 — details section, y=240, pl=32, pr=16
+  profileDetailsSection: {
+    position: 'absolute',
+    top: 240,
     left: 0,
     right: 0,
-    top: 108,
-    height: 1,
-    backgroundColor: '#131313',
+    paddingLeft: 32,
+    paddingRight: 16,
+    gap: 28, // Figma 2990:13024 gap
   },
-  profileDetails: {
-    position: 'absolute',
-    left: 32,
-    bottom: 48,
+  // Figma 2990:13025 — info block (type + expiry), gap=8
+  profileInfoBlock: {
     gap: 8,
   },
-  profileDetailsTitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    color: CARD_COLORS.textDetails,
-    lineHeight: 20,
-  },
-  profileDetailsValue: {
+  // Figma 2990:13044 ref — all detail text 16/24 (md-2/Regular 400)
+  profileDetailLine: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 16,
-    color: CARD_COLORS.textDetails,
     lineHeight: 24,
   },
-  profileTextureDots: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.06,
+  // Figma 2990:13028 — card number row, 16px/24
+  profileCardNumber: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 16,
+    lineHeight: 24,
   },
-  profileTextureCrossWrap: {
+  // Mixed-color text spans
+  profileTextLight: {
+    color: CARD_COLORS.textDetails, // #D2D2D2
+  },
+  profileTextAccent: {
+    color: CARD_COLORS.textAccent, // #FF9A6D
+  },
+});
+
+// Figma 2990:13016/17/18 — decorative plus icons, stroke #FF9A6D weight 1 ROUND
+const profileStyles = StyleSheet.create({
+  plusIcon: {
     position: 'absolute',
-    left: 10,
-    top: 269,
-    width: 250,
-    height: 118,
-    opacity: 0.16,
+    width: 12,
+    height: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  profileDarkOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.64)',
+  plusH: {
+    position: 'absolute',
+    width: 7,
+    height: 1,
+    backgroundColor: '#FF9A6D',
+    borderRadius: 0.5,
+  },
+  plusV: {
+    position: 'absolute',
+    width: 1,
+    height: 7,
+    backgroundColor: '#FF9A6D',
+    borderRadius: 0.5,
   },
 });
 

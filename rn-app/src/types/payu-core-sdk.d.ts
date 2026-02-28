@@ -5,7 +5,7 @@
  * - payu-core-pg-react: Core payment gateway (PayUSdk)
  * - payu-custom-browser-react: Custom Browser wrapper (CBWrapper)
  *
- * IMPORTANT: We ONLY use Mode B (CBWrapper.startPayment) — never Mode A (PayUSdk.makePayment).
+ * IMPORTANT: We ONLY use Mode B (CBWrapper.openCB) — never Mode A (PayUSdk.makePayment).
  * Mode A requires the merchant salt on the client which is a security disqualification.
  */
 
@@ -95,20 +95,11 @@ declare module 'payu-custom-browser-react' {
   }
 
   /**
-   * CBWrapper start payment config.
+   * CBWrapper openCB config — uses snake_case key per native SDK.
    */
-  export interface CBStartPaymentConfig {
-    payUPaymentParams: PayUPaymentParamsCB;
+  export interface CBOpenConfig {
+    payu_payment_params: PayUPaymentParamsCB;
   }
-
-  /**
-   * Payment mode strings accepted by CBWrapper.
-   * - "CC" = Credit Card
-   * - "DC" = Debit Card
-   * - "NB" = Net Banking
-   * - "upi" = UPI
-   */
-  export type CBPaymentMode = 'CC' | 'DC' | 'NB' | 'upi';
 
   /**
    * CBListener event from DeviceEventEmitter.
@@ -130,6 +121,7 @@ declare module 'payu-custom-browser-react' {
    * CBListener event types.
    */
   export type CBEventType =
+    | 'onPaymentSuccess'
     | 'onPaymentFailure'
     | 'onPaymentTerminate'
     | 'onCBErrorReceived'
@@ -140,13 +132,15 @@ declare module 'payu-custom-browser-react' {
   /**
    * Custom Browser wrapper — Mode B.
    * Safe: takes pre-computed hashes, salt stays server-side.
+   * Native method is openCB (3 args: config, errorCallback, successCallback).
+   * successCallback fires when webview is presented, NOT when payment succeeds.
+   * Actual payment outcome arrives via CBListener events.
    */
   interface CBWrapperModule {
-    startPayment(
-      config: CBStartPaymentConfig,
-      paymentMode: CBPaymentMode,
+    openCB(
+      config: CBOpenConfig,
       errorCallback: (error: string) => void,
-      successCallback: (payuResponse: string) => void,
+      successCallback: (initMessage: string) => void,
     ): void;
   }
 

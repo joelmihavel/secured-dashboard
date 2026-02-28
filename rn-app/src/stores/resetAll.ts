@@ -12,8 +12,12 @@ import { usePaymentStore } from './payment';
 import { useSetupStore } from './setup';
 import { useProfileStore } from './profile';
 import { queryClient } from '@/src/providers/QueryProvider';
+import { removeAllChannels } from '@/src/services/supabase/realtimeManager';
 
 export function clearAllStores() {
+  // Tear down all WebSocket channels before clearing query cache
+  removeAllChannels();
+
   useAuthStore.getState().reset();
   useUploadStore.getState().reset();
   useWaitlistStore.getState().reset();

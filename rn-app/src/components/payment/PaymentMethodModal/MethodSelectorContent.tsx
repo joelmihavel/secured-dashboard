@@ -22,11 +22,17 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  interpolateColor,
+  FadeInRight,
+} from 'react-native-reanimated';
 
-import { PrimaryButton } from '@/src/components/ui/Button';
+import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Pill } from '@/src/components/ui/Pill';
-import { useDashboard, useSavedPaymentMethods, useFeeRates } from '@/src/hooks';
+import { useDashboard, useSavedPaymentMethods, usePayuStoredCards, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import { getGatewayFeeRates, computeFee, formatFeeLabel } from '@/src/services/payment';
 import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
@@ -77,11 +83,37 @@ interface PaymentMethod {
 // ==============================================
 
 const RadioCircle = memo(({ isSelected }: { isSelected: boolean }) => {
+  // Drive animation via SharedValue so the UI-thread worklet always has a
+  // stable reference. Plain boolean props captured inside useAnimatedStyle
+  // can go stale when memo prevents re-renders or when React reconciliation
+  // reinstalls the worklet, leaving borderWidth=0 AND backgroundColor=transparent
+  // for one or more frames (the "disappearing radio" bug).
+  const progress = useSharedValue(isSelected ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(isSelected ? 1 : 0, { duration: 150 });
+  }, [isSelected, progress]);
+
+  // Smoothly interpolate colors on the UI thread using interpolateColor.
+  // This avoids the discrete threshold snap (t > 0.5) that created frames
+  // where neither the border ring nor the fill was visible.
   const animatedStyle = useAnimatedStyle(() => {
+    const t = progress.value;
     return {
-      backgroundColor: withTiming(isSelected ? FIGMA.radioSelected : 'transparent', { duration: 150 }),
-      borderColor: withTiming(isSelected ? FIGMA.radioSelected : FIGMA.radioUnselected, { duration: 150 }),
-      borderWidth: isSelected ? 0 : 1.5,
+      backgroundColor: interpolateColor(
+        t,
+        [0, 1],
+        ['rgba(0,0,0,0)', FIGMA.radioSelected],
+      ),
+      borderColor: interpolateColor(
+        t,
+        [0, 1],
+        [FIGMA.radioUnselected, FIGMA.radioSelected],
+      ),
+      // Keep a minimum 0.5px border during transition so the circle never
+      // fully vanishes. At t=1 (selected), the border matches the fill color
+      // so the 0.5px border is visually invisible against the orange fill.
+      borderWidth: Math.max(1.5 * (1 - t), 0.5),
     };
   });
 
@@ -128,10 +160,6 @@ const EditPencil = memo(({ onPress }: { onPress: () => void }) => (
 // PILLS — using shared Pill component
 // ==============================================
 
-const SetItUpPill = memo(() => (
-  <Pill text="Set it up" variant="tag" />
-));
-
 const UnavailablePill = memo(() => (
   <Pill text="Unavailable now" variant="tagDisabled" />
 ));
@@ -158,6 +186,7 @@ const PaymentMethodRow = memo(({
   onSelect,
   onEdit,
   isInitiating,
+  showEdit = false,
 }: {
   method: PaymentMethod;
   isSelected: boolean;
@@ -165,15 +194,27 @@ const PaymentMethodRow = memo(({
   onSelect: (id: string) => void;
   onEdit: (type: PaymentMethodType, savedMethodId?: string) => void;
   isInitiating: boolean;
+  showEdit?: boolean;
 }) => {
   const isDisabled = method.isDisabled ?? false;
 
-  // Smoothly animate the label color instead of snapping
+  // Use SharedValue so the Reanimated worklet reactively tracks selection.
+  // interpolateColor ensures smooth color blending without threshold snaps.
+  const labelProgress = useSharedValue(isSelected && !isDisabled ? 1 : 0);
+
+  useEffect(() => {
+    labelProgress.value = withTiming(
+      isSelected && !isDisabled ? 1 : 0,
+      { duration: 200 }
+    );
+  }, [isSelected, isDisabled, labelProgress]);
+
   const animatedLabelStyle = useAnimatedStyle(() => {
     return {
-      color: withTiming(
-        isDisabled ? FIGMA.unselectedLabel : isSelected ? FIGMA.selectedLabel : FIGMA.unselectedLabel,
-        { duration: 200 }
+      color: interpolateColor(
+        labelProgress.value,
+        [0, 1],
+        [FIGMA.unselectedLabel, FIGMA.selectedLabel],
       ),
     };
   });
@@ -204,7 +245,7 @@ const PaymentMethodRow = memo(({
               {method.title}
             </Animated.Text>
           </View>
-          {method.isSetUp && !isDisabled && (
+          {method.isSetUp && !isDisabled && showEdit && (
             <EditPencil onPress={() => { if (method.savedMethodId) onEdit(method.type as PaymentMethodType, method.savedMethodId); }} />
           )}
         </View>
@@ -246,14 +287,17 @@ const PaymentMethodRow = memo(({
 // ==============================================
 
 export function MethodSelectorContent({
+  onBack,
   onProceed,
   onSetup,
   onEdit,
   isInitiating,
+  showEdit = false,
 }: MethodSelectorContentProps) {
   const { tenancy } = useDashboard();
   const storedAmount = usePaymentStore((state) => state.amount);
   const { data: savedMethods } = useSavedPaymentMethods();
+  const { data: storedCards } = usePayuStoredCards();
   const { data: dynamicRates } = useFeeRates();
 
   // Credit card disabled logic
@@ -372,7 +416,7 @@ export function MethodSelectorContent({
   const isSelectedDisabled = selectedPaymentMethod?.isDisabled ?? false;
   const ctaText = selectedPaymentMethod?.isSetUp
     ? 'Proceed'
-    : `Setup ${selectedPaymentMethod?.title ?? 'Payment Method'}`;
+    : `Set up ${selectedPaymentMethod?.title ?? 'Payment Method'}`;
 
   const handleSelectMethod = useCallback((methodId: string) => {
     setSelectedMethod(methodId);
@@ -383,23 +427,44 @@ export function MethodSelectorContent({
     const method = paymentMethods.find((m) => m.id === selectedMethod);
     const methodType: PaymentMethodType = method?.type ?? 'upi';
     if (method?.isSetUp && method.savedMethodId) {
-      // Build saved method details for direct execution (UPI/Netbanking)
+      // Build saved method details for direct execution
       const saved = savedMethods?.find((m: SavedMethod) => m.id === method.savedMethodId);
       const details: SavedMethodDetails | undefined = saved ? {
         savedMethodId: saved.id,
         vpa: saved.vpa,
         bankCode: saved.bank_code,
       } : undefined;
+
+      // For card methods, look up stored card token from PayU
+      if (details && (methodType === 'card' || methodType === 'debit_card') && storedCards?.length) {
+        const storedCard = storedCards.find((sc) => sc.saved_method_id === method.savedMethodId);
+        if (storedCard) {
+          details.cardToken = storedCard.card_token;
+          details.cardType = storedCard.card_type;
+          details.lastFour = saved?.last_four;
+          details.cardNetwork = saved?.card_network ?? storedCard.card_brand;
+        }
+      }
+
       onProceed(methodType, details);
     } else if (method?.isSetUp) {
       onProceed(methodType);
     } else {
       onSetup(methodType);
     }
-  }, [paymentMethods, selectedMethod, savedMethods, onProceed, onSetup]);
+  }, [paymentMethods, selectedMethod, savedMethods, storedCards, onProceed, onSetup]);
 
   return (
     <View style={styles.sheetContent}>
+      {/* Back button */}
+      <View style={styles.backButtonContainer}>
+        <BackButton
+          onPress={onBack}
+          style={styles.backButton}
+          color={colors.white}
+        />
+      </View>
+
       {/* Heading: "Choose a\nPayment Method" — Figma: 28px Regular, accent on line 2 */}
       <View style={styles.headingContainer}>
         <RNText style={styles.headingText}>
@@ -415,18 +480,21 @@ export function MethodSelectorContent({
         </View>
       )}
 
-      {/* Payment Method Rows */}
+      {/* Payment Method Rows — cascading reveal */}
       <View style={styles.methodsContainer}>
         {paymentMethods.map((method, index) => (
           <React.Fragment key={method.id}>
-            <PaymentMethodRow
-              method={method}
-              isSelected={selectedMethod === method.id}
-              allSetUp={allSetUp}
-              onSelect={handleSelectMethod}
-              onEdit={(type, id) => onEdit(type, id as string)}
-              isInitiating={isInitiating ?? false}
-            />
+            <Animated.View entering={FadeInRight.delay(index * 60).duration(300)}>
+              <PaymentMethodRow
+                method={method}
+                isSelected={selectedMethod === method.id}
+                allSetUp={allSetUp}
+                onSelect={handleSelectMethod}
+                onEdit={(type, id) => onEdit(type, id as string)}
+                isInitiating={isInitiating ?? false}
+                showEdit={showEdit}
+              />
+            </Animated.View>
             {index < paymentMethods.length - 1 && <SolidDivider />}
           </React.Fragment>
         ))}
@@ -434,6 +502,7 @@ export function MethodSelectorContent({
 
       {/* CTA Section */}
       <View style={styles.ctaSection}>
+        <View style={styles.ctaDivider} />
         <PrimaryButton
           title={ctaText}
           onPress={handleProceed}
@@ -470,9 +539,20 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
+  // Back button
+  backButtonContainer: {
+    paddingHorizontal: 48,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+
   // Heading — Figma: 28px Regular, 40 line-height, -1 letter-spacing, px 48
   headingContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
   },
   headingText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -487,12 +567,12 @@ const styles = StyleSheet.create({
 
   // Cashback pill container
   cashbackPillContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
   },
 
   // Methods container — Figma: px 48, gap 16
   methodsContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
     gap: 16,
   },
 
@@ -594,11 +674,21 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline' as const,
   },
 
+  // CTA decorative divider — Figma: 2px tall, 24px wide, #4D4D4D, centered
+  ctaDivider: {
+    width: 24,
+    height: 2,
+    borderRadius: 200,
+    backgroundColor: FIGMA.divider,
+    alignSelf: 'center',
+  },
+
   // CTA Section — Figma: px 48, gap 16
   ctaSection: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 48,
     gap: 16,
     paddingBottom: 24,
+    alignItems: 'stretch',
   },
 
   // Disclaimer — Figma: 12px Regular #A9A9A9, center

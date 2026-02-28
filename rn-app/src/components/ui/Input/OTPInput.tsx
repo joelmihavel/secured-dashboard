@@ -34,6 +34,7 @@ import Animated, {
   withSequence,
   withRepeat,
   cancelAnimation,
+  Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -224,13 +225,13 @@ interface OTPBoxProps {
 function OTPBox({ digit, isActive, hasError, disabled }: OTPBoxProps) {
   const cursorOpacity = useSharedValue(0);
 
-  // Blinking cursor animation with cleanup
+  // Breathing cursor animation — smooth ease in/out, never fully invisible
   useEffect(() => {
     if (isActive && !disabled) {
       cursorOpacity.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 500 }),
-          withTiming(0, { duration: 500 })
+          withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 500, easing: Easing.inOut(Easing.ease) })
         ),
         -1,
         false

@@ -32,9 +32,8 @@ appId: com.flent.secured
 - inputText: ${TEST_PAYMENT_AMOUNT}
 - waitForAnimationToEnd
 
-# Tap Continue
-- tapOn:
-    id: "enter-rent-continue-button"
+# Tap Select Payment Method CTA
+- tapOn: "Select Payment Method"
 - waitForAnimationToEnd
 
 # =============================================
@@ -65,11 +64,11 @@ appId: com.flent.secured
 
 # Verify search input
 - assertVisible:
-    id: "modal-bank-search-input"
+    id: "bank-picker-search"
 
 # Search for a specific bank
 - tapOn:
-    id: "modal-bank-search-input"
+    id: "bank-picker-search"
 - inputText: "HDFC"
 - waitForAnimationToEnd
 
@@ -130,7 +129,7 @@ appId: com.flent.secured
 - waitForAnimationToEnd
 
 - assertVisible:
-    text: "Succesful"
+    text: "Successful"
     optional: true
 - assertVisible:
     text: "Failed"

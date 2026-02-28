@@ -4,17 +4,21 @@
  * Robust background-aware tracking of agreement extraction status.
  * Combines three mechanisms for reliable status detection:
  *
- * 1. React Query polling (PRIMARY) — 10s interval, up to 60 polls (10 min cap)
- * 2. Supabase Realtime (ACCELERATOR) — instant WebSocket updates, just invalidates query
+ * 1. React Query polling (PRIMARY) — 3s interval during processing, 200 polls (10 min cap)
+ * 2. Supabase Realtime (ACCELERATOR) — instant WebSocket updates, triggers refetchQueries
  * 3. AppState listener (FOREGROUND RECOVERY) — immediate refetch on app resume
  *
  * Plus mount-time discovery: finds active extractions in DB when the hook mounts
  * (handles app-kill-and-reopen scenario).
  *
+ * Latency characteristics:
+ * - Best case: ~200-500ms (Realtime WebSocket fires → refetchQueries → UI update)
+ * - Worst case: 3s (polling fallback when WebSocket is dead)
+ *
  * Design decisions:
  * - Polling is primary because Realtime WebSocket dies on iOS background
- * - Realtime only triggers invalidateQueries — does NOT update store directly
- * - Per-poll staleness check: if processing >7 min without DB update, treat as failed
+ * - Realtime triggers refetchQueries for immediate fetch (not invalidateQueries)
+ * - Per-poll staleness: pending >2 min or processing >7 min without DB update → failed
  * - Follows useDashboard.ts synchronous channel pattern (NOT async useWaitlist.ts)
  */
 
@@ -30,12 +34,18 @@ import { useUploadStore } from '../stores/upload';
 // CONSTANTS
 // ==============================================
 
-/** Max polling duration: 60 polls * 10s = 10 minutes */
-const MAX_POLL_COUNT = 60;
-const POLL_INTERVAL_MS = 10_000;
+/** Max polling duration: 200 polls * 3s = 10 minutes */
+const MAX_POLL_COUNT = 200;
+/** Fast polling during active processing — 3s for near-realtime feedback */
+const POLL_INTERVAL_FAST_MS = 3_000;
+/** Slower polling once first data arrives or for non-critical states */
+const POLL_INTERVAL_SLOW_MS = 10_000;
 
 /** If extraction_status=processing and updated_at > 7 min old, treat as failed */
 const PROCESSING_STALENESS_MS = 7 * 60 * 1000;
+
+/** If extraction_status=pending for > 2 min, processDocument likely failed silently */
+const PENDING_STALENESS_MS = 2 * 60 * 1000;
 
 /** Skip records older than 5 min for mount discovery (except completed) */
 const DISCOVERY_MAX_AGE_MS = 5 * 60 * 1000;
@@ -71,20 +81,45 @@ function useExtractionStatusQuery(extractionId: string | null) {
       if (!extractionId) return null;
 
       pollCountRef.current += 1;
-      const data = await fetchExtractionStatus(extractionId);
 
-      if (!data) return null;
-
-      // Per-poll staleness check: if backend hasn't updated in 7 min, treat as failed
-      if (data.extractionStatus === 'processing') {
-        const updatedAge = Date.now() - new Date(data.updatedAt).getTime();
-        if (updatedAge > PROCESSING_STALENESS_MS) {
+      // Poll cap exhaustion: after 200 polls (10 min), force-fail non-terminal states
+      // so the UI doesn't stay stuck on "scanning" indefinitely.
+      // (Staleness checks at 2 min/7 min cover most cases, this is the final safety net.)
+      if (pollCountRef.current >= MAX_POLL_COUNT) {
+        const lastData = await fetchExtractionStatus(extractionId);
+        if (lastData && lastData.extractionStatus !== 'completed' && lastData.extractionStatus !== 'failed') {
           return {
-            ...data,
+            ...lastData,
             extractionStatus: 'failed',
             extractionError: 'Processing timed out. Please try uploading again.',
           };
         }
+        return lastData;
+      }
+
+      const data = await fetchExtractionStatus(extractionId);
+
+      if (!data) return null;
+
+      // Per-poll staleness checks
+      const updatedAge = Date.now() - new Date(data.updatedAt).getTime();
+
+      // If stuck at 'pending' for > 2 min, processDocument never triggered
+      if (data.extractionStatus === 'pending' && updatedAge > PENDING_STALENESS_MS) {
+        return {
+          ...data,
+          extractionStatus: 'failed',
+          extractionError: 'Document processing failed to start. Please try uploading again.',
+        };
+      }
+
+      // If stuck at 'processing' for > 7 min, backend is hung
+      if (data.extractionStatus === 'processing' && updatedAge > PROCESSING_STALENESS_MS) {
+        return {
+          ...data,
+          extractionStatus: 'failed',
+          extractionError: 'Processing timed out. Please try uploading again.',
+        };
       }
 
       return data;
@@ -95,11 +130,15 @@ function useExtractionStatusQuery(extractionId: string | null) {
       // Stop polling on terminal states or if we've hit the cap
       if (status === 'completed' || status === 'failed') return false;
       if (pollCountRef.current >= MAX_POLL_COUNT) return false;
-      // Poll while pending or processing
-      if (status === 'pending' || status === 'processing') return POLL_INTERVAL_MS;
+      // Fast poll during processing (backend is actively working)
+      if (status === 'processing') return POLL_INTERVAL_FAST_MS;
+      // Pending = file uploaded but processing hasn't started yet — fast poll
+      if (status === 'pending') return POLL_INTERVAL_FAST_MS;
+      // No data yet (first poll) — fast poll to get initial status quickly
+      if (!status) return POLL_INTERVAL_FAST_MS;
       return false;
     },
-    staleTime: 5_000,
+    staleTime: 2_000,
     retry: 2,
   });
 }
@@ -107,7 +146,7 @@ function useExtractionStatusQuery(extractionId: string | null) {
 /**
  * Supabase Realtime channel (ACCELERATOR).
  * Follows useDashboard.ts SYNCHRONOUS pattern.
- * Just invalidates the query — React Query handles refetch.
+ * Immediately refetches the query on DB change for instant UI update.
  */
 function useExtractionRealtime(extractionId: string | null) {
   const queryClient = useQueryClient();
@@ -126,7 +165,8 @@ function useExtractionRealtime(extractionId: string | null) {
           filter: `id=eq.${extractionId}`,
         },
         () => {
-          queryClient.invalidateQueries({
+          // Use refetchQueries for immediate fetch (not just invalidate + wait for next poll)
+          queryClient.refetchQueries({
             queryKey: extractionStatusKey(extractionId),
           });
         }
@@ -222,6 +262,18 @@ function useMountDiscovery(enabled: boolean) {
               return;
             }
 
+            // Don't restore completed extractions flagged for manual review.
+            // These are awaiting admin review — the journey router will route
+            // to waitlist. Restoring them causes a "Join Waitlist" button to
+            // appear on the upload screen without the user having uploaded.
+            if (
+              status.extractionStatus === 'completed' &&
+              (status.needsManualReview || !status.isCitySupported)
+            ) {
+              currentStore.reset();
+              return;
+            }
+
             // Record exists and is active — resume tracking
             if (currentStore.uploadPhase !== 'completed') {
               currentStore.setPhase('server_processing');
@@ -246,7 +298,7 @@ function useMountDiscovery(enabled: boolean) {
 
         const { data } = await supabase
           .from('extracted_rental_info')
-          .select('id, extraction_status, updated_at, user_verified')
+          .select('id, extraction_status, updated_at, user_verified, needs_manual_review, is_city_supported')
           .eq('user_id', session.user.id)
           .in('extraction_status', ['processing', 'completed'])
           .eq('user_verified', false)
@@ -263,6 +315,15 @@ function useMountDiscovery(enabled: boolean) {
 
         // Skip stale processing records (completed records are always resumable)
         if (status === 'processing' && ageMs > DISCOVERY_MAX_AGE_MS) return;
+
+        // Don't restore completed extractions flagged for manual review.
+        // These are awaiting admin action — the journey router routes to waitlist.
+        if (
+          status === 'completed' &&
+          ((row.needs_manual_review as boolean) || !(row.is_city_supported as boolean))
+        ) {
+          return;
+        }
 
         // Found active extraction — set in store so query picks it up
         const currentStore = useUploadStore.getState();
