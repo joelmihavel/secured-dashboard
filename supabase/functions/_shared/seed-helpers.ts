@@ -97,13 +97,13 @@ export async function seedTestUser(
     .select("id");
   if (deletedCashback?.length) cleaned.push(`cashback(${deletedCashback.length})`);
 
-  // Clean saved_payment_methods
+  // Clean payment_methods
   const { data: deletedSavedMethods } = await supabase
-    .from("saved_payment_methods")
+    .from("payment_methods")
     .delete()
     .eq("user_id", userId)
     .select("id");
-  if (deletedSavedMethods?.length) cleaned.push(`saved_payment_methods(${deletedSavedMethods.length})`);
+  if (deletedSavedMethods?.length) cleaned.push(`payment_methods(${deletedSavedMethods.length})`);
 
   // Clean tenancies (exist in 'approved' and 'active')
   if (stateIndex < VALID_STATES.indexOf("approved")) {
@@ -202,7 +202,7 @@ export async function seedTestUser(
     const shouldSeedMethods = options.with_saved_methods ?? isActive;
     if (shouldSeedMethods) {
       await ensureSavedPaymentMethods(userId, supabase);
-      created.push("saved_payment_methods");
+      created.push("payment_methods");
     }
   }
 
@@ -514,9 +514,9 @@ export async function ensureSavedPaymentMethods(
   userId: string,
   supabase: SupabaseClient
 ): Promise<void> {
-  await supabase.from("saved_payment_methods").delete().eq("user_id", userId);
+  await supabase.from("payment_methods").delete().eq("user_id", userId);
 
-  const { error } = await supabase.from("saved_payment_methods").insert([
+  const { error } = await supabase.from("payment_methods").insert([
     {
       user_id: userId,
       type: "upi",

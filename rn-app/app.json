@@ -24,7 +24,7 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
-        "aps-environment": "development"
+        "aps-environment": "production"
       },
       "associatedDomains": [
         "applinks:app.flent.in"
@@ -178,7 +178,7 @@
     ],
     "updates": {
       "url": "https://u.expo.dev/76348d87-1f03-489a-a606-9d7bab4acd66",
-      "enabled": false,
+      "enabled": true,
       "fallbackToCacheTimeout": 0,
       "checkAutomatically": "ON_LOAD"
     },
