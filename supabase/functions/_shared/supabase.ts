@@ -151,8 +151,22 @@ export function verifyServiceRole(authHeader: string | null): boolean {
 
   const token = authHeader.replace("Bearer ", "");
 
-  // Use strict equality comparison - no substring matching
-  if (token !== SUPABASE_SERVICE_ROLE_KEY) {
+  // Validate the token is a service_role JWT.
+  // Note: SUPABASE_SERVICE_ROLE_KEY env var in the Deno runtime may be an
+  // sb_secret_* string (not a JWT), so we decode the incoming JWT payload
+  // and verify the role claim instead of doing a direct string comparison.
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      throw new AuthError("Unauthorized - invalid token format");
+    }
+    // Decode JWT payload (base64url)
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (payload.role !== "service_role") {
+      throw new AuthError("Unauthorized - service role required");
+    }
+  } catch (e) {
+    if (e instanceof AuthError) throw e;
     throw new AuthError("Unauthorized - service role required");
   }
 
@@ -170,7 +184,14 @@ export function hasServiceRoleAuth(authHeader: string | null): boolean {
   if (!authHeader) return false;
 
   const token = authHeader.replace("Bearer ", "");
-  return token === SUPABASE_SERVICE_ROLE_KEY;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload.role === "service_role";
+  } catch {
+    return false;
+  }
 }
 
 // ==============================================

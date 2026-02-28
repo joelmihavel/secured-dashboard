@@ -181,7 +181,7 @@ export async function seedTestUser(
         penny_drop_status: "SUCCESS",
         penny_drop_name_match_score: 100,
         verified_account_holder_name: "Demo Landlord",
-        verified_at: now.toISOString(),
+        verified_at: new Date().toISOString(),
         is_primary: true,
         agreement_name_matched: true,
       });

@@ -22,6 +22,7 @@ import {
 } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { matchNamesWithGemini } from "../_shared/gemini.ts";
+import { isTestUser } from "../_shared/demo-helpers.ts";
 
 // ==============================================
 // TYPES
@@ -393,6 +394,64 @@ serve(async (req) => {
     );
 
     // ==============================================
+    // DEMO AUTO-APPROVE: Skip waitlist for test users
+    // ==============================================
+    // After confirming extraction, test users are instantly approved
+    // so Apple reviewers never see the waitlist screen.
+
+    let finalUserStatus = "agreement_confirmed";
+
+    if (await isTestUser(user.id, adminClient)) {
+      try {
+        // Join waitlist via RPC (idempotent)
+        const { data: rpcResult } = await adminClient
+          .rpc("join_waitlist", { p_user_id: user.id })
+          .single();
+
+        if (rpcResult) {
+          const entryId = (rpcResult as any).entry_id;
+
+          // Auto-approve the waitlist entry
+          await adminClient
+            .from("waitlist_entries")
+            .update({ admin_review: "approved" })
+            .eq("id", entryId);
+
+          // Advance user_status to "approved"
+          await adminClient
+            .from("users")
+            .update({
+              user_status: "approved",
+              status_updated_at: new Date().toISOString(),
+            })
+            .eq("id", user.id);
+
+          // Update tenancy to pending_verification (setup phase)
+          if (tenancyId) {
+            await adminClient
+              .from("tenancies")
+              .update({ status: "pending_verification" })
+              .eq("id", tenancyId);
+          }
+
+          finalUserStatus = "approved";
+          console.log(`[confirm-extraction] Demo auto-approved test user ${user.id}`);
+
+          await audit.logSuccess(
+            "EXTRACTION_DEMO_AUTO_APPROVED",
+            "extraction",
+            "waitlist_entries",
+            entryId,
+            { demo: true, tenancy_id: tenancyId }
+          );
+        }
+      } catch (autoApproveError) {
+        console.error("[confirm-extraction] Demo auto-approve failed (non-fatal):", autoApproveError);
+        // Falls back to normal waitlist flow
+      }
+    }
+
+    // ==============================================
     // RETURN V1-COMPATIBLE RESPONSE
     // ==============================================
 
@@ -407,7 +466,7 @@ serve(async (req) => {
       // Nested data object for iOS compatibility
       data: tenancyId ? {
         tenancy_id: tenancyId,
-        user_status: "agreement_confirmed",
+        user_status: finalUserStatus,
       } : undefined,
     };
 
