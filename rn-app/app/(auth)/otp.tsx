@@ -49,6 +49,7 @@ import { colors, typography } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
+import { supabase } from '@/src/services/supabase/client';
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
@@ -77,7 +78,6 @@ export default function OTPScreen() {
   const router = useRouter();
   const {
     phoneNumber,
-    status,
     error,
     verifyCode,
     resendCode,
@@ -104,8 +104,13 @@ export default function OTPScreen() {
   const [otp, setOtp] = React.useState('');
   const [cooldownRemaining, setCooldownRemaining] = React.useState(0);
 
-  // OTP expiration timer -- Supabase OTPs expire after 5 minutes (300s)
-  const OTP_VALIDITY_SECONDS = 300;
+  // Resend cooldown: 10 seconds (matches Supabase max_frequency)
+  const RESEND_COOLDOWN_SECONDS = 10;
+  const [resendCountdown, setResendCountdown] = React.useState(RESEND_COOLDOWN_SECONDS);
+  const [canResend, setCanResend] = React.useState(false);
+
+  // OTP expiration timer -- Supabase OTPs expire after 10 minutes (600s)
+  const OTP_VALIDITY_SECONDS = 600;
   const [otpExpirySeconds, setOtpExpirySeconds] = React.useState(OTP_VALIDITY_SECONDS);
   const [isOtpExpired, setIsOtpExpired] = React.useState(false);
 
@@ -142,6 +147,16 @@ export default function OTPScreen() {
     }, 1000);
     return () => clearTimeout(timer);
   }, [cooldownRemaining]);
+
+  // Resend countdown timer (10s)
+  useEffect(() => {
+    if (resendCountdown <= 0) {
+      setCanResend(true);
+      return;
+    }
+    const timer = setTimeout(() => setResendCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
 
   // OTP expiration countdown -- ticks every second
   useEffect(() => {
@@ -203,22 +218,27 @@ export default function OTPScreen() {
     return () => backHandler.remove();
   }, [handleClose]);
 
-  // Navigate based on user journey state after authentication.
-  // Sets isNavigating=true immediately to lock the UI (prevents double-press),
-  // then fades the overlay to fully opaque to hide sign-up underneath during
-  // the cross-group transition from (auth) → destination.
+  // Guard: redirect to sign-up if no phone number
   useEffect(() => {
-    if (status !== 'authenticated') return;
-    if (isNavigating) return; // Prevent duplicate runs
+    if (!phoneNumber) {
+      router.replace('/(auth)/sign-up');
+    }
+  }, [phoneNumber, router]);
 
-    setIsNavigating(true);
-    Keyboard.dismiss();
-
-    setIsVisible(false);
-    setTimeout(() => {
-      router.replace('/');
-    }, 300);
-  }, [status, router, isNavigating]);
+  // Navigate on auth state change — single source of truth (no Zustand race)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session && !isNavigating) {
+        setIsNavigating(true);
+        Keyboard.dismiss();
+        setIsVisible(false);
+        setTimeout(() => {
+          router.replace('/');
+        }, 300);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [router, isNavigating]);
 
   const handleProceed = useCallback((otpValue?: string | any) => {
     // Ref-based guard: prevents double-fire even before React Query isPending updates.
@@ -239,17 +259,21 @@ export default function OTPScreen() {
   }, [otp, verifyCode, userName, isVerifyingOtp, cooldownRemaining, isOtpExpired, isNavigating]);
 
   const handleResend = useCallback(() => {
+    if (!canResend || isVerifyingOtp || isResendingOtp) return;
     setOtp('');
     // Reset failure tracking on resend -- new OTP means fresh attempts
     failureCountRef.current = 0;
     lastFailureTimeRef.current = 0;
     setCooldownRemaining(0);
+    // Reset resend countdown
+    setCanResend(false);
+    setResendCountdown(RESEND_COOLDOWN_SECONDS);
     // Reset OTP expiration timer for the new code
     setOtpExpirySeconds(OTP_VALIDITY_SECONDS);
     setIsOtpExpired(false);
     if (error) clearError();
-    resendCode();
-  }, [resendCode, error, clearError]);
+    resendCode(); // Always Supabase Auth
+  }, [resendCode, error, clearError, isVerifyingOtp, isResendingOtp, canResend]);
 
   // Figma: Button is ACTIVE (gradient) in error states -- only disabled when OTP incomplete,
   // during cooldown/expiry, or when navigating after successful verification.
@@ -310,12 +334,12 @@ export default function OTPScreen() {
                   <RNText
                     style={styles.resendLink}
                     onPress={handleResend}
-                    disabled={isResendingOtp}
+                    disabled={isResendingOtp || !canResend}
                   >
-                    {isResendingOtp ? 'Sending...' : 'Send a new code'}
+                    {isResendingOtp ? 'Sending...' : canResend ? 'Send a new code' : `Resend in ${resendCountdown}s`}
                   </RNText>
                 </RNText>
-              ) : (
+              ) : canResend ? (
                 <RNText style={styles.resendText}>
                   {otpExpirySeconds > 0 && otpExpirySeconds <= 60
                     ? `Code expires in ${otpExpirySeconds}s. `
@@ -327,6 +351,10 @@ export default function OTPScreen() {
                   >
                     {isResendingOtp ? 'Sending...' : 'Resend'}
                   </RNText>
+                </RNText>
+              ) : (
+                <RNText style={styles.resendText}>
+                  Resend in {resendCountdown}s
                 </RNText>
               )}
             </View>

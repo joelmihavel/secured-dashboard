@@ -2,8 +2,7 @@
  * Auth Hooks
  *
  * React Query hooks for authentication operations.
- * Supports both OTP routing (via auth-otp edge function) and
- * legacy GoTrue SDK (signInWithOtp / verifyOtp).
+ * Dual-path: Supabase Auth (existing users + resend) and Cashfree M360 (new users).
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -24,10 +23,6 @@ import { setUserContext, clearUserContext } from '../config/sentry';
 // ERROR NORMALIZATION
 // ==============================================
 
-/**
- * Normalize any thrown error into a { code, message } shape.
- * Handles plain Error objects, string throws, and structured auth errors.
- */
 function normalizeError(error: unknown): { code: string; message: string } {
   if (
     error &&
@@ -78,8 +73,8 @@ export function useSendOtp() {
       setPhoneNumber(variables.phone_number);
     },
     onSuccess: (data) => {
-      // Pass otp_request_id from the new routing path
-      setOtpSent(data.otp_request_id);
+      // Store method and otp_request_id
+      setOtpSent(data.otp_request_id, data.method);
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);
@@ -94,7 +89,7 @@ export function useSendOtp() {
 
 export function useVerifyOtp() {
   const queryClient = useQueryClient();
-  const { setVerifying, setAuthenticated, setError } = useAuthStore();
+  const { setVerifying, setError } = useAuthStore();
 
   return useMutation({
     mutationFn: async (request: VerifyOtpRequest) => {
@@ -109,8 +104,11 @@ export function useVerifyOtp() {
       setVerifying();
     },
     onSuccess: (data) => {
-      // Session is already established (by GoTrue SDK or token_hash exchange)
-      setAuthenticated(data.user_id, data.is_new_user, data.identity_status ?? null);
+      useAuthStore.getState().setAuthenticated(
+        data.user_id,
+        data.is_new_user ?? false,
+        data.identity_status ?? null,
+      );
       setUserContext(data.user_id);
       queryClient.invalidateQueries({ queryKey: authKeys.session() });
     },
@@ -126,14 +124,15 @@ export function useVerifyOtp() {
 // ==============================================
 
 export function useResendOtp() {
-  const { phoneNumber, otpRequestId, setOtpSent, setError, clearError } = useAuthStore();
+  const { phoneNumber, setOtpSent, setOtpMethod, setError, clearError } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (channel: 'sms' | 'whatsapp' = 'whatsapp') => {
+    mutationFn: async () => {
       if (!phoneNumber) {
         throw { code: 'NO_PHONE', message: 'No phone number to resend to' };
       }
-      const result = await resendOtp(phoneNumber, channel, otpRequestId ?? undefined);
+      // Resend ALWAYS uses Supabase Auth
+      const result = await resendOtp(phoneNumber);
       if (result.error) {
         throw result.error;
       }
@@ -143,9 +142,11 @@ export function useResendOtp() {
     onMutate: () => {
       clearError();
     },
-    onSuccess: (data) => {
-      // Update otp_request_id if a new one was returned (resend creates new request)
-      setOtpSent(data.otp_request_id);
+    onSuccess: () => {
+      // Switch to Supabase method permanently (M360 gets one shot)
+      setOtpMethod('supabase');
+      // Clear otp_request_id since we're now on Supabase path
+      setOtpSent(undefined, 'supabase');
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);
@@ -158,10 +159,6 @@ export function useResendOtp() {
 // COMBINED AUTH HOOK
 // ==============================================
 
-/**
- * Combined hook for auth operations
- * Provides all auth mutations and state in one hook
- */
 export function useAuth() {
   const authStore = useAuthStore();
   const sendOtpMutation = useSendOtp();
@@ -178,41 +175,35 @@ export function useAuth() {
         const name = session?.user?.user_metadata?.name;
         if (name) authStore.setUserName(name);
       }).catch(() => {
-        // Non-critical — session hydration can fail transiently
+        // Non-critical
       });
     }
   }, [authStore.status]);
 
-  // Non-blocking Mobile 360 flow after OTP verification:
-  // Only fires if identity was NOT already completed by the Cashfree OTP path.
-  // Step 1: Record consent to backend (persists timestamp, IP, phone)
-  // Step 2: Trigger Cashfree Mobile 360 fetch using persisted consent
+  // Non-blocking Mobile 360 flow after OTP verification
   useEffect(() => {
     if (
       authStore.status === 'authenticated' &&
       authStore.isNewUser &&
       authStore.consentForMobile360 &&
-      authStore.identityStatus !== 'completed' &&     // Skip if M360 already done (Cashfree path)
-      authStore.identityStatus !== 'not_available' &&  // Skip if no data exists
+      authStore.identityStatus !== 'completed' &&
+      authStore.identityStatus !== 'not_available' &&
       !identityFiredRef.current
     ) {
       identityFiredRef.current = true;
       const consentTimestamp = authStore.consentTimestamp || new Date().toISOString();
       const userName = authStore.userName || undefined;
 
-      // Step 1: Record consent, then Step 2: trigger Mobile 360
       recordConsentMutation.mutate(
         { consent_timestamp: consentTimestamp, name: userName },
         {
           onSuccess: () => {
-            // Consent persisted — now trigger Cashfree Mobile 360
             identityFetchMutation.mutate({
               consent_timestamp: consentTimestamp,
               name: userName,
             });
           },
           onError: () => {
-            // Consent recording failed — still try Mobile 360 (it auto-creates consent as fallback)
             identityFetchMutation.mutate({
               consent_timestamp: consentTimestamp,
               name: userName,
@@ -224,12 +215,14 @@ export function useAuth() {
   }, [authStore.status, authStore.isNewUser, authStore.consentForMobile360, authStore.identityStatus]);
 
   const sendCode = useCallback(
-    (phoneNumber: string, channel?: 'sms' | 'whatsapp', name?: string) => {
-      sendOtpMutation.mutate({
-        phone_number: phoneNumber,
-        channel: channel ?? 'whatsapp',
-        name,
-      });
+    (phoneNumber: string, name?: string, onSuccess?: () => void) => {
+      sendOtpMutation.mutate(
+        {
+          phone_number: phoneNumber,
+          name,
+        },
+        onSuccess ? { onSuccess } : undefined,
+      );
     },
     [sendOtpMutation]
   );
@@ -239,16 +232,17 @@ export function useAuth() {
       verifyOtpMutation.mutate({
         phone_number: authStore.phoneNumber,
         otp,
+        method: authStore.otpMethod ?? 'supabase',
         name,
         otp_request_id: authStore.otpRequestId ?? undefined,
       });
     },
-    [verifyOtpMutation, authStore.phoneNumber, authStore.otpRequestId]
+    [verifyOtpMutation, authStore.phoneNumber, authStore.otpRequestId, authStore.otpMethod]
   );
 
   const resendCode = useCallback(
-    (channel?: 'sms' | 'whatsapp') => {
-      resendOtpMutation.mutate(channel ?? 'whatsapp');
+    () => {
+      resendOtpMutation.mutate();
     },
     [resendOtpMutation]
   );
@@ -256,15 +250,12 @@ export function useAuth() {
   const signOut = useCallback(async () => {
     await apiSignOut();
     clearUserContext();
-    // Reset ALL stores so the next user starts completely fresh.
-    // Critical for persisted stores (upload, payment) which survive app kills.
     authStore.reset();
     useUploadStore.getState().reset();
     useWaitlistStore.getState().reset();
     usePaymentStore.getState().reset();
     useSetupStore.getState().reset();
     useProfileStore.getState().reset();
-    // Wipe all cached server data — prevents stale dashboard/waitlist/agreement data.
     globalQueryClient.clear();
   }, [authStore]);
 

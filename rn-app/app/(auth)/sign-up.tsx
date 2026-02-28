@@ -22,8 +22,9 @@
  * - Consent text: Plus Jakarta Sans Regular, 12px, line-height 20px, #A9A9A9 (neutral.500)
  */
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput as RNTextInput, Keyboard, useWindowDimensions, findNodeHandle } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput, SkeletonLoader } from '@/src/components';
@@ -88,69 +89,30 @@ const FIGMA_LAYOUT = {
   contentTopOffset: sv(101),            // Figma: 101px total from top of screen
 };
 
-// Bottom padding when keyboard is visible — just enough room for the button + consent below the inputs
-const KEYBOARD_EXTRA_PADDING = sv(120);
-
-export default function SignUpScreen({ background }: { background?: boolean } = {}) {
+export default function SignUpScreen() {
   const router = useRouter();
   const nameInputRef = useRef<RNTextInput>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const nameWrapperRef = useRef<View>(null);
-  const scrollContentRef = useRef<View>(null);
-  const { sendCode, status, error, isSendingOtp, clearError } = useAuth();
+  const { sendCode, error, isSendingOtp, clearError } = useAuth();
   const setUserName = useAuthStore((s) => s.setUserName);
   const setConsentForMobile360 = useAuthStore((s) => s.setConsentForMobile360);
 
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [maxDigits, setMaxDigits] = useState(10);
   const [name, setName] = useState('');
   const [consent, setConsent] = useState(true);
   const [phoneBlurError, setPhoneBlurError] = useState<string | undefined>();
 
   // Check if form is valid
-  const isPhoneValid = phone.replace(/\D/g, '').length === 10;
+  const isPhoneValid = (() => {
+    const clean = phone.replace(/\D/g, '');
+    if (clean.length !== maxDigits) return false;
+    // India-specific: first digit must be 6-9
+    if (countryCode === '+91') return /^[6-9]/.test(clean);
+    return true;
+  })();
   const isNameValid = name.trim().length >= 2;
   const isFormValid = isPhoneValid && isNameValid && consent;
-
-  // Navigate to OTP screen when send-OTP mutation completes successfully.
-  const wasSendingOtpRef = useRef(false);
-  useEffect(() => {
-    if (!background && wasSendingOtpRef.current && !isSendingOtp && status === 'otp_sent') {
-      router.push('/(auth)/otp');
-    }
-    wasSendingOtpRef.current = isSendingOtp;
-  }, [isSendingOtp, status, background]);
-
-  // Track keyboard visibility to only allow scroll when keyboard is open
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', () => {
-      setIsKeyboardVisible(true);
-      if (nameInputRef.current?.isFocused() && nameWrapperRef.current && scrollContentRef.current) {
-        try {
-          const scrollContentHandle = findNodeHandle(scrollContentRef.current);
-          if (scrollContentHandle) {
-            nameWrapperRef.current.measureLayout(
-              scrollContentHandle as any,
-              (_x, y) => {
-                scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 40), animated: true });
-              },
-              () => {},
-            );
-          }
-        } catch {
-          // measureLayout can fail if refs aren't native — gracefully ignore
-        }
-      }
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setIsKeyboardVisible(false);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
   // Error message mapping - only show phone-related errors, not OTP errors
   const getPhoneErrorMessage = (): string | undefined => {
@@ -178,11 +140,13 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   }, [error, clearError, phoneBlurError]);
 
   const handlePhoneBlur = useCallback(() => {
-    const digitCount = phone.replace(/\D/g, '').length;
-    if (digitCount > 0 && digitCount < 10) {
+    const clean = phone.replace(/\D/g, '');
+    if (clean.length > 0 && clean.length < maxDigits) {
       setPhoneBlurError('Enter valid number');
+    } else if (countryCode === '+91' && clean.length === 10 && !/^[6-9]/.test(clean)) {
+      setPhoneBlurError('Must start with 6-9');
     }
-  }, [phone]);
+  }, [phone, maxDigits, countryCode]);
 
   const handleNameChange = useCallback((text: string) => {
     setName(text);
@@ -191,6 +155,15 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
   const handleConsentChange = useCallback((value: boolean) => {
     setConsent(value);
   }, []);
+
+  const handleCountryChange = useCallback((country: { code: string; maxDigits: number }) => {
+    setCountryCode(country.code);
+    setMaxDigits(country.maxDigits);
+    // Clear phone when country changes (different format/length)
+    setPhone('');
+    if (phoneBlurError) setPhoneBlurError(undefined);
+    if (error) clearError();
+  }, [error, clearError, phoneBlurError]);
 
   // Ref-based guard to prevent double-submission before isSendingOtp updates
   const isSendingRef = useRef(false);
@@ -206,14 +179,16 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
     if (!isFormValid || isSendingRef.current || isSendingOtp) return;
 
     const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = `+91${cleanPhone}`;
+    const formattedPhone = `${countryCode}${cleanPhone}`;
 
     isSendingRef.current = true;
 
     setUserName(name.trim());
     setConsentForMobile360(consent);
-    sendCode(formattedPhone, 'whatsapp', name.trim());
-  }, [isFormValid, phone, name, consent, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
+    sendCode(formattedPhone, name.trim(), () => {
+      router.push('/(auth)/otp');
+    });
+  }, [isFormValid, phone, name, consent, countryCode, sendCode, setUserName, setConsentForMobile360, isSendingOtp, router]);
 
   const authStatus = useAuthStore((s) => s.status);
   const isAuthSuccess = authStatus === 'authenticated';
@@ -227,86 +202,78 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
       {/* Background Pattern - uses actual Figma images with correct opacity (8%) */}
       <DottedGridPattern fadeMask={false} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAwareScrollView
+        bottomOffset={20}
         style={styles.keyboardView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          ref={scrollViewRef}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: isKeyboardVisible ? KEYBOARD_EXTRA_PADDING : 0 },
-          ]}
-          scrollEnabled={isKeyboardVisible}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Main Container - Figma Frame 1686557268 */}
-          <View ref={scrollContentRef} style={styles.container}>
-            {/* Inner Stack - Figma Frame 1686557318 with gap: 48 */}
-            <View style={styles.innerStack}>
-              {/* Logo - Figma: 32.04x38.4 (Frame 1686557264) */}
-              <Logo size={38.4} />
+        {/* Main Container - Figma Frame 1686557268 */}
+        <View style={styles.container}>
+          {/* Inner Stack - Figma Frame 1686557318 with gap: 48 */}
+          <View style={styles.innerStack}>
+            {/* Logo - Figma: 32.04x38.4 (Frame 1686557264) */}
+            <Logo size={38.4} />
 
-              {/* Title - Figma 1:29183: "Let's get to " in #A9A9A9, "know you" in #FF9A6D */}
-              <Text style={styles.headingGray}>
-                Let's get to{'\n'}
-                <Text inherit style={styles.headingAccent}>know  you</Text>
-              </Text>
+            {/* Title - Figma 1:29183: "Let's get to " in #A9A9A9, "know you" in #FF9A6D */}
+            <Text style={styles.headingGray}>
+              Let's get to{'\n'}
+              <Text inherit style={styles.headingAccent}>know  you</Text>
+            </Text>
 
-              {/* Form - Figma Frame 90:2928 with gap: 16 */}
-              <View style={styles.formContainer}>
-                {/* Phone Input - Figma placeholder: "Enter Number" */}
-                {/* Figma 1:29108: Hint Text#48:17 = false in empty state; show only when filled */}
-                <PhoneInput
-                  label="Phone"
-                  value={phone}
-                  onChangeText={handlePhoneChange}
-                  onBlur={handlePhoneBlur}
-                  error={getPhoneErrorMessage()}
-                  placeholder="Enter Number"
-                  testID="phone-input"
-                />
+            {/* Form - Figma Frame 90:2928 with gap: 16 */}
+            <View style={styles.formContainer}>
+              {/* Phone Input - Figma placeholder: "Enter Number" */}
+              {/* Figma 1:29108: Hint Text#48:17 = false in empty state; show only when filled */}
+              <PhoneInput
+                label="Phone"
+                value={phone}
+                onChangeText={handlePhoneChange}
+                onBlur={handlePhoneBlur}
+                countryCode={countryCode}
+                onCountryChange={handleCountryChange}
+                error={getPhoneErrorMessage()}
+                placeholder="Enter Number"
+                testID="phone-input"
+              />
 
-                {/* Name Input - Figma placeholder: "e.g. John Appleseed" */}
-                {/* Figma 1:29108: Hint Text = hidden in empty state; show only when filled */}
-                <View ref={nameWrapperRef}>
-                  <TextInput
-                    ref={nameInputRef}
-                    label="Name"
-                    value={name}
-                    onChangeText={handleNameChange}
-                    placeholder="e.g. John Appleseed"
-                    keyboardType="default"
-                    autoCapitalize="words"
-                    testID="name-input"
-                  />
-                </View>
-              </View>
+              {/* Name Input - Figma placeholder: "e.g. John Appleseed" */}
+              {/* Figma 1:29108: Hint Text = hidden in empty state; show only when filled */}
+              <TextInput
+                ref={nameInputRef}
+                label="Name"
+                value={name}
+                onChangeText={handleNameChange}
+                placeholder="e.g. John Appleseed"
+                keyboardType="default"
+                autoCapitalize="words"
+                testID="name-input"
+              />
+            </View>
 
-              {/* Button + Consent - Figma Frame 1:29185 with gap: 16 */}
-              <View style={styles.bottomSection}>
-                {/* Get Started Button - Figma shows NO divider above button */}
-                <PrimaryButton
-                  title="Get Started"
-                  onPress={handleGetStarted}
-                  disabled={!isFormValid}
-                  loading={isSendingOtp}
-                  showDivider={true}
-                  testID="get-started-button"
-                />
+            {/* Button + Consent - Figma Frame 1:29185 with gap: 16 */}
+            <View style={styles.bottomSection}>
+              {/* Get Started Button - Figma shows NO divider above button */}
+              <PrimaryButton
+                title="Get Started"
+                onPress={handleGetStarted}
+                disabled={!isFormValid}
+                loading={isSendingOtp}
+                showDivider={true}
+                testID="get-started-button"
+              />
 
-                {/* Consent Toggle */}
-                <ConsentToggle
-                  value={consent}
-                  onValueChange={handleConsentChange}
-                  testID="consent-toggle"
-                />
-              </View>
+              {/* Consent Toggle */}
+              <ConsentToggle
+                value={consent}
+                onValueChange={handleConsentChange}
+                testID="consent-toggle"
+              />
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+      </KeyboardAwareScrollView>
     </Screen>
   );
 }

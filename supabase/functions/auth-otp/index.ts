@@ -1,23 +1,23 @@
 /**
- * Flent Secured v2 - Auth OTP Edge Function
+ * Flent Secured v2 - Auth OTP Edge Function (v2)
  *
- * Unified OTP routing: sends OTP via Twilio (existing users) or Cashfree M360
- * (new users needing identity verification), combining auth + identity in one step.
+ * Thin router for Supabase Auth + Cashfree M360 hybrid OTP.
  *
- * Routing:
- *   Client → auth-otp (thin router)
- *     ├─ Twilio path: callTwilioSendOtp → callTwilioVerifyOtp → GoTrue session
- *     └─ Cashfree path: callCashfreeSendOtp → callCashfreeVerifyOtp → identity + admin session
+ * Architecture:
+ *   Client → auth-otp (route_otp)
+ *     ├─ Existing user → { method: "supabase" }  → client calls signInWithOtp directly
+ *     └─ New user ──────→ Cashfree M360 OTP (SMS) → { method: "cashfree", otp_request_id }
  *
- * Client is provider-agnostic. Single coordination token: otp_request_id.
+ *   Verify:
+ *     ├─ Supabase path → client calls supabase.auth.verifyOtp (no edge function needed)
+ *     └─ Cashfree path → verify_otp → identity data + generateLink → token_hash
  *
- * Feature-flagged: When EXPO_PUBLIC_USE_OTP_ROUTING is off, the client still uses
- * the GoTrue SDK directly. This function serves both legacy and new paths.
+ *   Resend:
+ *     └─ Client ALWAYS switches to Supabase Auth (signInWithOtp)
+ *        M360 resend_otp provided only for edge cases (expires old request)
  *
- * Actions:
- *   send_otp    — Routes to Twilio or Cashfree, returns { otp_request_id, expires_in }
- *   verify_otp  — Looks up otp_request to determine provider, verifies accordingly
- *   resend_otp  — Server-side resend via same provider (no force_provider)
+ * Supabase Auth handles: Twilio Programmable Messaging, OTP codes, sessions, demo phones.
+ * This function handles: M360 identity OTP for new users only.
  *
  * Endpoint: POST /functions/v1/auth-otp
  * Auth: None (creates session on verify)
@@ -32,53 +32,28 @@ import {
   ExternalServiceError,
   handleError,
 } from "../_shared/errors.ts";
-import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, isValidIndianPhone } from "../_shared/validation.ts";
+import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, isValidE164Phone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { extractFirstName } from "../_shared/name-utils.ts";
 import { callCashfreeSendOtp, callCashfreeVerifyOtp } from "../_shared/cashfree-m360-otp.ts";
-import { processM360IdentityResult, buildVerificationData, markM360Pending } from "../_shared/m360-identity-processor.ts";
+import { processM360IdentityResult, buildVerificationData } from "../_shared/m360-identity-processor.ts";
 
 // ==============================================
 // CONFIGURATION
 // ==============================================
 
-const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-const TWILIO_VERIFY_SERVICE_SID = Deno.env.get("TWILIO_VERIFY_SERVICE_SID");
-
-// OTP expires in 10 minutes
-const OTP_EXPIRY_MS = 10 * 60 * 1000;
-// Idempotency window: 30 seconds
-const IDEMPOTENCY_WINDOW_MS = 30_000;
-
-// Demo phone numbers for testing (Apple Review + dev Quick Login)
-// Format: "919999900001=123456,919999900002=654321"
-const ALLOW_DEMO = Deno.env.get("ALLOW_DEMO_AUTH") === "true";
-const DEMO_PHONES_RAW = Deno.env.get("DEMO_PHONES");
-const DEMO_PHONES: Record<string, string> = {};
-if (DEMO_PHONES_RAW) {
-  DEMO_PHONES_RAW.split(",").forEach((pair) => {
-    const [rawPhone, otp] = pair.split("=");
-    if (rawPhone && otp) {
-      // Strip leading 91 country code to match sanitizePhone() output (10-digit)
-      let phone = rawPhone.trim();
-      if (phone.length === 12 && phone.startsWith("91")) {
-        phone = phone.substring(2);
-      }
-      DEMO_PHONES[phone] = otp.trim();
-    }
-  });
-}
+const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+const IDEMPOTENCY_WINDOW_MS = 30_000;  // 30 seconds
+const SYNTHETIC_EMAIL_DOMAIN = "phone.flentsecured.com";
 
 // ==============================================
 // TYPES
 // ==============================================
 
-interface SendOtpRequest {
-  action: "send_otp";
+interface RouteOtpRequest {
+  action: "route_otp" | "send_otp"; // send_otp kept for backward compat
   phone_number: string;
   name?: string;
-  channel?: "sms" | "whatsapp" | "call";
   consent_for_mobile360?: boolean;
 }
 
@@ -87,9 +62,7 @@ interface VerifyOtpRequest {
   phone_number: string;
   otp: string;
   name?: string;
-  otp_request_id?: string;       // New: opaque server ref
-  verification_sid?: string;     // Legacy: Twilio SID
-  consent_for_mobile360?: boolean;
+  otp_request_id: string;
 }
 
 interface ResendOtpRequest {
@@ -97,69 +70,85 @@ interface ResendOtpRequest {
   otp_request_id: string;
 }
 
-type AuthOtpRequest = SendOtpRequest | VerifyOtpRequest | ResendOtpRequest;
+// ==============================================
+// RATE LIMITING (M360 path only)
+// ==============================================
 
-// Twilio Verify API responses
-interface TwilioVerificationResponse {
-  sid: string;
-  service_sid: string;
-  account_sid: string;
-  to: string;
-  channel: string;
-  status: "pending" | "approved" | "canceled" | "max_attempts_reached" | "deleted" | "failed" | "expired";
-  valid: boolean;
-  date_created: string;
-  date_updated: string;
-  lookup?: {
-    carrier?: {
-      name: string;
-      type: string;
-      mobile_country_code: string;
-      mobile_network_code: string;
-    };
-  };
-  send_code_attempts?: Array<{
-    time: string;
-    channel: string;
-    attempt_sid: string;
-  }>;
-}
+async function checkM360RateLimit(
+  phone: string,
+  ip: string,
+  action: "send" | "verify",
+  supabaseAdmin: ReturnType<typeof createServiceClient>,
+  otpRequestId?: string
+): Promise<{ allowed: boolean; retryAfterSeconds?: number }> {
+  const now = new Date();
+  const windowMs = 10 * 60 * 1000;
+  const windowStart = new Date(now.getTime() - windowMs).toISOString();
 
-interface TwilioVerificationCheckResponse {
-  sid: string;
-  service_sid: string;
-  account_sid: string;
-  to: string;
-  channel: string;
-  status: "pending" | "approved" | "canceled" | "max_attempts_reached" | "deleted" | "failed" | "expired";
-  valid: boolean;
-  date_created: string;
-  date_updated: string;
+  if (action === "send") {
+    // Per-phone: max 5 M360 sends per 10 minutes
+    const { count } = await supabaseAdmin
+      .from("otp_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("phone", phone)
+      .gte("created_at", windowStart);
+
+    if ((count ?? 0) >= 5) {
+      return { allowed: false, retryAfterSeconds: 60 };
+    }
+
+    // Per-IP: max 20 sends per 10 minutes
+    if (ip && ip !== "unknown") {
+      const { count: ipCount } = await supabaseAdmin
+        .from("otp_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("ip_address", ip)
+        .gte("created_at", windowStart);
+
+      if ((ipCount ?? 0) >= 20) {
+        return { allowed: false, retryAfterSeconds: 60 };
+      }
+    }
+  }
+
+  if (action === "verify" && otpRequestId) {
+    // Per-request: max 5 verify attempts
+    const { data: request } = await supabaseAdmin
+      .from("otp_requests")
+      .select("attempt_count")
+      .eq("id", otpRequestId)
+      .single();
+
+    if ((request?.attempt_count ?? 0) >= 5) {
+      await supabaseAdmin
+        .from("otp_requests")
+        .update({ status: "failed" })
+        .eq("id", otpRequestId);
+      return { allowed: false, retryAfterSeconds: 0 };
+    }
+  }
+
+  return { allowed: true };
 }
 
 // ==============================================
 // VALIDATION SCHEMAS
 // ==============================================
 
-const sendOtpSchema = {
-  action: { required: true, type: "string" as const, enum: ["send_otp"] },
+const routeOtpSchema = {
+  action: { required: true, type: "string" as const, enum: ["route_otp", "send_otp"] },
   phone_number: {
     required: true,
     type: "string" as const,
-    minLength: 10,
-    maxLength: 15,
-    custom: (v: unknown) => isValidIndianPhone(v as string) || "Invalid Indian phone number",
+    minLength: 7,
+    maxLength: 16,
+    custom: (v: unknown) => isValidE164Phone(v as string) || "Invalid phone number",
   },
   name: {
     required: false,
     type: "string" as const,
     minLength: 2,
     maxLength: 100,
-  },
-  channel: {
-    required: false,
-    type: "string" as const,
-    enum: ["sms", "whatsapp", "call"],
   },
   consent_for_mobile360: { required: false, type: "boolean" as const },
 };
@@ -169,15 +158,16 @@ const verifyOtpSchema = {
   phone_number: {
     required: true,
     type: "string" as const,
-    minLength: 10,
-    maxLength: 15,
-    custom: (v: unknown) => isValidIndianPhone(v as string) || "Invalid Indian phone number",
+    minLength: 7,
+    maxLength: 16,
+    custom: (v: unknown) => isValidE164Phone(v as string) || "Invalid phone number",
   },
   otp: {
     required: true,
     type: "string" as const,
-    minLength: 4,
-    maxLength: 8,
+    minLength: 6,
+    maxLength: 6,
+    pattern: /^\d{6}$/,
   },
   name: {
     required: false,
@@ -186,16 +176,10 @@ const verifyOtpSchema = {
     maxLength: 100,
   },
   otp_request_id: {
-    required: false,
+    required: true,
     type: "string" as const,
+    minLength: 1,
   },
-  verification_sid: {
-    required: false,
-    type: "string" as const,
-    minLength: 10,
-    maxLength: 100,
-  },
-  consent_for_mobile360: { required: false, type: "boolean" as const },
 };
 
 const resendOtpSchema = {
@@ -212,11 +196,9 @@ const resendOtpSchema = {
 // ==============================================
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  // Only allow POST
   if (req.method !== "POST") {
     return errorResponse("Method not allowed", 405);
   }
@@ -225,44 +207,39 @@ serve(async (req: Request) => {
   let audit: AuditLogger | null = null;
 
   try {
-    // Initialize audit logger (no user auth yet, system action)
     audit = new AuditLogger(supabase, {
       actorType: "service",
       functionName: "auth-otp",
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
-    // Parse request body to determine action
     const body = await req.json();
 
     if (!body.action) {
       throw new ValidationError("action is required", { action: "Required field" });
     }
 
-    // Get client IP for consent tracking
     const clientIp = getClientIp(req);
 
-    // Route based on action
-    if (body.action === "send_otp") {
-      return await handleSendOtp(body, supabase, audit, clientIp);
+    if (body.action === "route_otp" || body.action === "send_otp") {
+      return await handleRouteOtp(body, supabase, audit, clientIp);
     } else if (body.action === "verify_otp") {
       return await handleVerifyOtp(body, supabase, audit, clientIp);
     } else if (body.action === "resend_otp") {
       return await handleResendOtp(body, supabase, audit, clientIp);
     } else {
-      throw new ValidationError("Invalid action. Use 'send_otp', 'verify_otp', or 'resend_otp'", {
-        action: "Must be 'send_otp', 'verify_otp', or 'resend_otp'",
+      throw new ValidationError("Invalid action. Use 'route_otp', 'verify_otp', or 'resend_otp'", {
+        action: "Must be 'route_otp', 'verify_otp', or 'resend_otp'",
       });
     }
   } catch (error) {
-    // Log failure if audit logger initialized
     if (audit) {
       await audit.logFailure(
-        "AUTH_OTP_FAILED",
-        "authentication",
+        AuditActions.AUTH_OTP_FAILED,
+        "auth",
         error instanceof AppError ? error.code : "UNKNOWN_ERROR",
         error instanceof Error ? error.message : "Unknown error",
-        "auth"
+        "phone"
       );
     }
 
@@ -271,39 +248,80 @@ serve(async (req: Request) => {
 });
 
 // ==============================================
-// SEND OTP HANDLER (with routing)
+// ROUTE OTP HANDLER (replaces send_otp)
 // ==============================================
 
-async function handleSendOtp(
+async function handleRouteOtp(
   body: unknown,
   supabase: ReturnType<typeof createServiceClient>,
   audit: AuditLogger,
   clientIp: string
 ): Promise<Response> {
-  // Validate request
-  const validatedBody = validateSchema<SendOtpRequest>(body, sendOtpSchema, true);
-  const {
-    phone_number,
-    name,
-    channel = "sms",
-    consent_for_mobile360 = true,
-  } = validatedBody;
+  const validatedBody = validateSchema<RouteOtpRequest>(body, routeOtpSchema, true);
+  const { phone_number, name } = validatedBody;
 
-  // Sanitize phone number and format with country code
   const sanitizedPhone = sanitizePhone(phone_number);
   const phoneWithCountryCode = formatPhoneWithCountryCode(phone_number);
 
   const isProduction = Deno.env.get("ENVIRONMENT") === "production";
   if (!isProduction) {
-    console.log("[auth-otp] send_otp - phone:", `XXXXXX${sanitizedPhone.slice(-4)}`, "channel:", channel);
+    console.log("[auth-otp] route_otp - phone:", `XXXXXX${sanitizedPhone.slice(-4)}`);
   }
 
-  // Idempotency check: reuse existing pending otp_request within 30s
+  // Fast user existence check (~5ms)
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("id")
+    .eq("phone", phoneWithCountryCode)
+    .maybeSingle();
+
+  // Existing user → Supabase Auth handles everything (client calls signInWithOtp directly)
+  if (existingUser) {
+    await audit.logSuccess(
+      AuditActions.AUTH_OTP_INITIATED,
+      "auth",
+      "phone",
+      existingUser.id,
+      {
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+        method: "supabase",
+      }
+    );
+
+    return jsonResponse({
+      success: true,
+      data: {
+        method: "supabase",
+        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+      },
+    });
+  }
+
+  // New user → M360 OTP (consent is mandatory, always present)
+  return await sendViaCashfreeM360(
+    sanitizedPhone, phoneWithCountryCode, name ?? "User", clientIp, supabase, audit
+  );
+}
+
+// ==============================================
+// SEND VIA CASHFREE M360 (new users only)
+// ==============================================
+
+async function sendViaCashfreeM360(
+  sanitizedPhone: string,
+  phoneWithCountryCode: string,
+  name: string,
+  clientIp: string,
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger
+): Promise<Response> {
+  // Idempotency check: reuse existing pending M360 otp_request within 30s
   const { data: recentRequest } = await supabase
     .from("otp_requests")
     .select("id, expires_at")
-    .eq("phone", sanitizedPhone)
+    .eq("phone", phoneWithCountryCode)
     .eq("status", "pending")
+    .eq("provider", "cashfree_m360")
     .gt("created_at", new Date(Date.now() - IDEMPOTENCY_WINDOW_MS).toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
@@ -314,6 +332,7 @@ async function handleSendOtp(
     return jsonResponse({
       success: true,
       data: {
+        method: "cashfree",
         otp_request_id: recentRequest.id,
         expires_in: expiresIn,
         phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
@@ -322,222 +341,29 @@ async function handleSendOtp(
     });
   }
 
-  // Demo phone bypass — skip real SMS provider, create a demo otp_request
-  if (ALLOW_DEMO && DEMO_PHONES[sanitizedPhone]) {
-    const { data: otpRequest, error: insertError } = await supabase
-      .from("otp_requests")
-      .insert({
-        phone: sanitizedPhone,
-        provider: "demo",
-        verification_id: `demo_${Date.now()}`,
-        status: "pending",
-        expires_at: new Date(Date.now() + OTP_EXPIRY_MS).toISOString(),
-        client_ip: clientIp || null,
-      })
-      .select()
-      .single();
-
-    if (insertError || !otpRequest) {
-      throw new AppError("Failed to create demo OTP request", "DEMO_OTP_INSERT_FAILED", 500);
-    }
-
-    await audit.logSuccess(
-      "AUTH_OTP_INITIATED",
+  // Rate limit check (M360 path only)
+  const rateLimit = await checkM360RateLimit(phoneWithCountryCode, clientIp, "send", supabase);
+  if (!rateLimit.allowed) {
+    await audit.logFailure(
+      AuditActions.AUTH_RATE_LIMITED,
       "auth",
-      "authentication",
-      undefined,
-      {
-        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-        provider: "demo",
-      }
+      "RATE_LIMITED",
+      "Too many M360 OTP requests",
+      "phone"
     );
-
     return jsonResponse({
-      success: true,
-      data: {
-        otp_request_id: otpRequest.id,
-        expires_in: 600,
-        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-        message: "Demo OTP sent.",
-      },
-    });
+      error: { message: "Too many attempts. Please wait before trying again.", code: "RATE_LIMITED" }
+    }, 429);
   }
 
-  // Log OTP initiation
-  await audit.logSuccess(
-    "AUTH_OTP_INITIATED",
-    "authentication",
-    "auth",
-    undefined,
-    {
-      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-      channel,
-      consent_for_mobile360,
-    }
-  );
-
-  // Determine provider
-  const provider = await chooseOtpProvider(sanitizedPhone, phoneWithCountryCode, clientIp, supabase);
-
-  if (!isProduction) {
-    console.log("[auth-otp] Chosen provider:", provider, "for phone:", `XXXXXX${sanitizedPhone.slice(-4)}`);
-  }
-
-  if (provider === "cashfree_m360") {
-    try {
-      return await sendViaCashfree(
-        sanitizedPhone, phoneWithCountryCode, name ?? "User", clientIp,
-        channel, consent_for_mobile360, supabase, audit
-      );
-    } catch (error) {
-      console.error("[auth-otp] M360 send failed, falling back to Twilio:", error instanceof Error ? error.message : error);
-      // Synchronous fallback — user gets Twilio OTP seamlessly
-      return await sendViaTwilio(
-        sanitizedPhone, phoneWithCountryCode, channel, name,
-        consent_for_mobile360, clientIp, supabase, audit
-      );
-    }
-  }
-
-  return await sendViaTwilio(
-    sanitizedPhone, phoneWithCountryCode, channel, name,
-    consent_for_mobile360, clientIp, supabase, audit
-  );
-}
-
-// ==============================================
-// PROVIDER ROUTING
-// ==============================================
-
-async function chooseOtpProvider(
-  phone: string,
-  phoneFormatted: string,
-  clientIp: string,
-  supabase: ReturnType<typeof createServiceClient>
-): Promise<"twilio" | "cashfree_m360"> {
-  // Rule 0: No IP → Twilio (Cashfree requires IP for consent compliance)
-  if (!clientIp) return "twilio";
-
-  // Rule 1: Test numbers (env-gated to non-production)
-  const isProduction = Deno.env.get("ENVIRONMENT") === "production";
-  const TEST_PHONES = ["9876543210", "9999999999"];
-  if (!isProduction && TEST_PHONES.includes(phone)) return "twilio";
-
-  // Rule 2: Check user's M360 status
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, m360_status, m360_status_updated_at")
-    .or(`phone.eq.${phoneFormatted},phone.eq.${phone}`)
-    .maybeSingle();
-
-  // Rule 3: New user → Cashfree M360
-  if (!user) return "cashfree_m360";
-
-  // Rule 4: Already has M360 data or M360 failed → Twilio
-  if (user.m360_status === "fetched" || user.m360_status === "not_available" || user.m360_status === "failed") {
-    return "twilio";
-  }
-
-  // Rule 5: Active M360 in progress (< 15 min old) → Twilio (avoid concurrent)
-  if (user.m360_status === "pending" && user.m360_status_updated_at) {
-    const age = Date.now() - new Date(user.m360_status_updated_at).getTime();
-    if (age < 15 * 60 * 1000) return "twilio";
-    // Stale pending (> 15 min) → eligible for retry via Cashfree
-  }
-
-  // Rule 6: NULL m360_status on existing user → Cashfree M360
-  return "cashfree_m360";
-}
-
-// ==============================================
-// SEND VIA TWILIO
-// ==============================================
-
-async function sendViaTwilio(
-  sanitizedPhone: string,
-  phoneWithCountryCode: string,
-  channel: "sms" | "whatsapp" | "call",
-  name: string | undefined,
-  consentForMobile360: boolean,
-  clientIp: string,
-  supabase: ReturnType<typeof createServiceClient>,
-  audit: AuditLogger
-): Promise<Response> {
-  // Call Twilio Verify Send API
-  const result = await callTwilioSendOtp({
-    phone_number: phoneWithCountryCode,
-    channel,
-  });
-
-  // Insert otp_request record
-  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
-  const { data: otpRequest, error: insertError } = await supabase
-    .from("otp_requests")
-    .insert({
-      phone: sanitizedPhone,
-      provider: "twilio",
-      verification_id: result.sid,
-      status: "pending",
-      expires_at: expiresAt,
-      client_ip: clientIp || null,
-    })
-    .select("id")
-    .single();
-
-  if (insertError || !otpRequest) {
-    console.error("[auth-otp] Failed to insert otp_request:", insertError);
-    throw new AppError("Failed to track OTP request", "DB_ERROR", 500);
-  }
-
-  // Store pending consent if requested (for post-auth M360 flow)
-  if (consentForMobile360) {
-    await storePendingConsent(sanitizedPhone, result.sid, clientIp, supabase);
-  }
-
-  const expiresIn = Math.floor(OTP_EXPIRY_MS / 1000);
-  return jsonResponse({
-    success: result.status === "pending",
-    data: {
-      otp_request_id: otpRequest.id,
-      expires_in: expiresIn,
-      // Legacy fields for backward compatibility
-      verification_sid: result.sid,
-      status: result.status,
-      channel: result.channel,
-      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-      message:
-        result.status === "pending"
-          ? `OTP sent via ${channel.toUpperCase()}. Please verify to continue.`
-          : "Failed to send OTP. Please try again.",
-    },
-  });
-}
-
-// ==============================================
-// SEND VIA CASHFREE M360
-// ==============================================
-
-async function sendViaCashfree(
-  sanitizedPhone: string,
-  phoneWithCountryCode: string,
-  name: string,
-  clientIp: string,
-  channel: "sms" | "whatsapp" | "call",
-  consentForMobile360: boolean,
-  supabase: ReturnType<typeof createServiceClient>,
-  audit: AuditLogger
-): Promise<Response> {
-  // Generate a verification ID for Cashfree
+  // Generate verification ID for Cashfree
   const cashfreeVerificationId = `FLENT_AUTH_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
-
-  // Strip +91 prefix for Cashfree (expects 10-digit)
-  const mobileNumber = sanitizedPhone;
 
   const result = await callCashfreeSendOtp({
     verification_id: cashfreeVerificationId,
-    mobile_number: mobileNumber,
+    mobile_number: sanitizedPhone,
     name,
-    notification_modes: channel === "call" ? ["sms"] : [channel === "whatsapp" ? "whatsapp" : "sms"],
+    notification_modes: ["sms"],
     consent_ip: clientIp,
   });
 
@@ -545,17 +371,45 @@ async function sendViaCashfree(
     throw new ExternalServiceError("Cashfree", result.message ?? "Failed to send OTP");
   }
 
+  // If Cashfree returned soft success (OTP already active), reuse existing otp_request
+  if (result.message?.includes("already sent")) {
+    const { data: existingRequest } = await supabase
+      .from("otp_requests")
+      .select("id, expires_at")
+      .eq("phone", phoneWithCountryCode)
+      .eq("status", "pending")
+      .eq("provider", "cashfree_m360")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingRequest) {
+      const expiresIn = Math.max(0, Math.floor((new Date(existingRequest.expires_at).getTime() - Date.now()) / 1000));
+      return jsonResponse({
+        success: true,
+        data: {
+          method: "cashfree",
+          otp_request_id: existingRequest.id,
+          expires_in: expiresIn,
+          phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+          message: "OTP already sent. Please check your phone.",
+        },
+      });
+    }
+  }
+
   // Insert otp_request record
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
   const { data: otpRequest, error: insertError } = await supabase
     .from("otp_requests")
     .insert({
-      phone: sanitizedPhone,
+      phone: phoneWithCountryCode,
       provider: "cashfree_m360",
       verification_id: result.verification_id,
       status: "pending",
       expires_at: expiresAt,
       client_ip: clientIp || null,
+      ip_address: clientIp || null,
     })
     .select("id")
     .single();
@@ -565,12 +419,23 @@ async function sendViaCashfree(
     throw new AppError("Failed to track OTP request", "DB_ERROR", 500);
   }
 
-  const expiresIn = Math.floor(OTP_EXPIRY_MS / 1000);
+  await audit.logSuccess(
+    AuditActions.AUTH_OTP_INITIATED,
+    "auth",
+    "phone",
+    undefined,
+    {
+      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+      method: "cashfree",
+    }
+  );
+
   return jsonResponse({
     success: true,
     data: {
+      method: "cashfree",
       otp_request_id: otpRequest.id,
-      expires_in: expiresIn,
+      expires_in: Math.floor(OTP_EXPIRY_MS / 1000),
       phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
       message: "OTP sent. Please verify to continue.",
     },
@@ -578,7 +443,7 @@ async function sendViaCashfree(
 }
 
 // ==============================================
-// VERIFY OTP HANDLER (routes by otp_request_id)
+// VERIFY OTP HANDLER (M360 path only)
 // ==============================================
 
 async function handleVerifyOtp(
@@ -587,62 +452,23 @@ async function handleVerifyOtp(
   audit: AuditLogger,
   clientIp: string
 ): Promise<Response> {
-  // Validate request
   const validatedBody = validateSchema<VerifyOtpRequest>(body, verifyOtpSchema, true);
-  const {
-    phone_number,
-    otp,
-    name,
-    otp_request_id,
-    verification_sid,
-    consent_for_mobile360 = true,
-  } = validatedBody;
+  const { phone_number, otp, name, otp_request_id } = validatedBody;
 
-  // Sanitize phone number and format with country code
   const sanitizedPhone = sanitizePhone(phone_number);
   const phoneWithCountryCode = formatPhoneWithCountryCode(phone_number);
 
   const isProduction = Deno.env.get("ENVIRONMENT") === "production";
   if (!isProduction) {
-    console.log("[auth-otp] verify_otp - phone:", `XXXXXX${sanitizedPhone.slice(-4)}`, "otp_request_id:", otp_request_id ?? "LEGACY");
+    console.log("[auth-otp] verify_otp - phone:", `XXXXXX${sanitizedPhone.slice(-4)}`, "otp_request_id:", otp_request_id);
   }
 
-  // New path: route by otp_request_id
-  if (otp_request_id) {
-    return await verifyViaOtpRequest(
-      otp_request_id, sanitizedPhone, phoneWithCountryCode, otp, name,
-      consent_for_mobile360, clientIp, supabase, audit
-    );
-  }
-
-  // Legacy path: Twilio verify (backward compatible with old client)
-  return await verifyViaTwilioLegacy(
-    sanitizedPhone, phoneWithCountryCode, otp, name, verification_sid,
-    consent_for_mobile360, clientIp, supabase, audit
-  );
-}
-
-// ==============================================
-// VERIFY VIA OTP REQUEST (new unified path)
-// ==============================================
-
-async function verifyViaOtpRequest(
-  otpRequestId: string,
-  sanitizedPhone: string,
-  phoneWithCountryCode: string,
-  otp: string,
-  name: string | undefined,
-  consentForMobile360: boolean,
-  clientIp: string,
-  supabase: ReturnType<typeof createServiceClient>,
-  audit: AuditLogger
-): Promise<Response> {
-  // Look up otp_request to determine provider
+  // Look up otp_request (M360 only)
   const { data: otpRequest, error: lookupError } = await supabase
     .from("otp_requests")
     .select("*")
-    .eq("id", otpRequestId)
-    .eq("phone", sanitizedPhone)
+    .eq("id", otp_request_id)
+    .eq("phone", phoneWithCountryCode)
     .eq("status", "pending")
     .single();
 
@@ -652,164 +478,26 @@ async function verifyViaOtpRequest(
 
   // Check expiry
   if (new Date(otpRequest.expires_at) < new Date()) {
-    await supabase.from("otp_requests").update({ status: "expired" }).eq("id", otpRequestId);
+    await supabase.from("otp_requests").update({ status: "expired" }).eq("id", otp_request_id);
     throw new ValidationError("OTP has expired. Please request a new OTP.");
   }
 
-  // Demo provider — verify OTP against DEMO_PHONES map
-  if (otpRequest.provider === "demo") {
-    if (!ALLOW_DEMO || !DEMO_PHONES[sanitizedPhone]) {
-      throw new ValidationError("Demo authentication is not available.");
-    }
-    if (otp !== DEMO_PHONES[sanitizedPhone]) {
-      throw new ValidationError("Invalid OTP.", { otp: "Invalid" });
-    }
-
-    // OTP verified — create/find user and session (same as Twilio/Cashfree paths)
-    const { userId, isNewUser } = await createOrFindUser(
-      sanitizedPhone, phoneWithCountryCode, name, consentForMobile360, clientIp, supabase
-    );
-
-    // Ensure synthetic email is set on auth user (required for generateLink magiclink)
-    const syntheticEmail = `${sanitizedPhone}@phone.flentsecured.com`;
-    await supabase.auth.admin.updateUserById(userId, { email: syntheticEmail });
-
-    // Generate session token
-    const tokenHash = await generateSessionToken(sanitizedPhone, supabase);
-
-    // Mark otp_request as verified
-    await supabase.from("otp_requests")
-      .update({ status: "verified", verified_at: new Date().toISOString() })
-      .eq("id", otpRequestId);
-
-    // Log success
-    await audit.logSuccess(
-      AuditActions.AUTH_SUCCESS,
-      "auth",
-      "authentication",
-      userId,
-      {
-        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-        provider: "demo",
-        is_new_user: isNewUser,
-      }
-    );
-
+  // Rate limit: check attempt count
+  const rateLimit = await checkM360RateLimit(sanitizedPhone, clientIp, "verify", supabase, otp_request_id);
+  if (!rateLimit.allowed) {
     return jsonResponse({
-      success: true,
-      data: {
-        user_id: userId,
-        is_new_user: isNewUser,
-        identity_status: "not_applicable",
-        token_hash: tokenHash,
-        otp_request_id: otpRequestId,
-        message: "Demo phone verified successfully. You are now signed in.",
-      },
-    });
+      error: { message: "Too many verification attempts. Request a new code.", code: "MAX_ATTEMPTS" }
+    }, 429);
   }
 
-  if (otpRequest.provider === "twilio") {
-    return await verifyTwilioPath(
-      otpRequestId, otpRequest.verification_id, sanitizedPhone, phoneWithCountryCode,
-      otp, name, consentForMobile360, clientIp, supabase, audit
-    );
-  } else {
-    return await verifyCashfreePath(
-      otpRequestId, otpRequest.verification_id, sanitizedPhone, phoneWithCountryCode,
-      otp, name, clientIp, supabase, audit
-    );
-  }
-}
+  // Increment attempt count
+  await supabase.rpc("increment_otp_attempt", { req_id: otp_request_id });
 
-// ==============================================
-// TWILIO VERIFY PATH
-// ==============================================
-
-async function verifyTwilioPath(
-  otpRequestId: string,
-  verificationId: string | null,
-  sanitizedPhone: string,
-  phoneWithCountryCode: string,
-  otp: string,
-  name: string | undefined,
-  consentForMobile360: boolean,
-  clientIp: string,
-  supabase: ReturnType<typeof createServiceClient>,
-  audit: AuditLogger
-): Promise<Response> {
-  // Call Twilio Verify Check API
-  const result = await callTwilioVerifyOtp({
-    phone_number: phoneWithCountryCode,
-    otp,
-    verification_sid: verificationId ?? undefined,
-  });
-
-  if (result.status !== "approved" || !result.valid) {
-    const errorMessage =
-      result.status === "max_attempts_reached"
-        ? "Maximum OTP attempts reached. Please request a new OTP."
-        : result.status === "expired"
-        ? "OTP has expired. Please request a new OTP."
-        : "Invalid OTP. Please try again.";
-
-    if (result.status === "expired" || result.status === "max_attempts_reached") {
-      await supabase.from("otp_requests").update({ status: "failed" }).eq("id", otpRequestId);
-    }
-
-    throw new ValidationError(errorMessage, {
-      otp: result.status === "max_attempts_reached" ? "Max attempts" : "Invalid",
-    });
-  }
-
-  // OTP verified — create/find user and session
-  const { userId, isNewUser } = await createOrFindUser(
-    sanitizedPhone, phoneWithCountryCode, name, consentForMobile360, clientIp, supabase
+  // Verify with Cashfree M360
+  return await verifyCashfreePath(
+    otp_request_id, otpRequest.verification_id, sanitizedPhone, phoneWithCountryCode,
+    otp, name, clientIp, supabase, audit
   );
-
-  // Record consent for post-auth M360 flow
-  let consentVerificationId: string | null = null;
-  if (consentForMobile360) {
-    consentVerificationId = await recordMobile360Consent(
-      userId, sanitizedPhone, name, clientIp, supabase
-    );
-  }
-
-  // Generate session token
-  const tokenHash = await generateSessionToken(sanitizedPhone, supabase);
-
-  // Mark otp_request as verified
-  await supabase.from("otp_requests")
-    .update({ status: "verified", verified_at: new Date().toISOString() })
-    .eq("id", otpRequestId);
-
-  // Log success
-  await audit.logSuccess(
-    AuditActions.AUTH_SUCCESS,
-    "authentication",
-    "auth",
-    userId,
-    {
-      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-      provider: "twilio",
-      consent_recorded: !!consentVerificationId,
-      is_new_user: isNewUser,
-    }
-  );
-
-  return jsonResponse({
-    success: true,
-    data: {
-      user_id: userId,
-      is_new_user: isNewUser,
-      identity_status: "pending",  // Twilio path: identity not yet fetched
-      token_hash: tokenHash,
-      otp_request_id: otpRequestId,
-      // Legacy fields
-      consent_verification_id: consentVerificationId,
-      consent_status: consentVerificationId ? "CONSENT_GIVEN" : null,
-      message: "Phone verified successfully. You are now signed in.",
-    },
-  });
 }
 
 // ==============================================
@@ -852,14 +540,13 @@ async function verifyCashfreePath(
 
   // 2. Create/find Supabase auth user
   const { userId, isNewUser } = await createOrFindUser(
-    sanitizedPhone, phoneWithCountryCode, name, true, clientIp, supabase
+    sanitizedPhone, phoneWithCountryCode, name, clientIp, supabase
   );
 
   // 3. Process identity data + update m360_status
   let identityStatus: "completed" | "not_available" | "pending" = "pending";
 
   if (m360Result.status === "SUCCESS" || m360Result.status === "DETAILS_NOT_FOUND") {
-    // Store verification data in identity_verifications
     const verificationData = buildVerificationData(
       m360Result.status,
       m360Result.reference_id,
@@ -879,7 +566,6 @@ async function verifyCashfreePath(
         ...verificationData,
       });
 
-    // Process identity: update user profile, risk, m360_status
     identityStatus = await processM360IdentityResult(
       userId, m360Result.status, m360Result.data, supabase
     );
@@ -888,16 +574,23 @@ async function verifyCashfreePath(
   // 4. Generate session token
   const tokenHash = await generateSessionToken(sanitizedPhone, supabase);
 
-  // 5. Mark otp_request as verified
-  await supabase.from("otp_requests")
+  // 5. Mark otp_request as verified (atomic claim)
+  const { data: claimed } = await supabase.from("otp_requests")
     .update({ status: "verified", verified_at: new Date().toISOString() })
-    .eq("id", otpRequestId);
+    .eq("id", otpRequestId)
+    .eq("status", "pending")
+    .select()
+    .single();
+
+  if (!claimed) {
+    return jsonResponse({ error: { message: "OTP already used or expired", code: "OTP_ALREADY_USED" } }, 409);
+  }
 
   // 6. Log success
   await audit.logSuccess(
-    AuditActions.AUTH_SUCCESS,
-    "authentication",
+    AuditActions.AUTH_OTP_VERIFIED,
     "auth",
+    "user",
     userId,
     {
       phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
@@ -923,7 +616,7 @@ async function verifyCashfreePath(
 }
 
 // ==============================================
-// RESEND OTP HANDLER
+// RESEND OTP HANDLER (M360 only — client uses Supabase Auth for resend)
 // ==============================================
 
 async function handleResendOtp(
@@ -946,161 +639,17 @@ async function handleResendOtp(
     throw new ValidationError("OTP request not found. Please start a new request.");
   }
 
-  const sanitizedPhone = originalRequest.phone;
-  const phoneWithCountryCode = formatPhoneWithCountryCode(sanitizedPhone);
-
   // Expire the old request
   await supabase.from("otp_requests")
     .update({ status: "expired" })
     .eq("id", otp_request_id);
 
-  // Resend via the same provider
-  if (originalRequest.provider === "demo") {
-    // Demo resend — just create a new demo otp_request (no real SMS)
-    if (!ALLOW_DEMO || !DEMO_PHONES[sanitizedPhone]) {
-      throw new ValidationError("Demo authentication is not available.");
-    }
-
-    const { data: otpRequest, error: insertError } = await supabase
-      .from("otp_requests")
-      .insert({
-        phone: sanitizedPhone,
-        provider: "demo",
-        verification_id: `demo_${Date.now()}`,
-        status: "pending",
-        expires_at: new Date(Date.now() + OTP_EXPIRY_MS).toISOString(),
-        client_ip: clientIp || null,
-      })
-      .select()
-      .single();
-
-    if (insertError || !otpRequest) {
-      throw new AppError("Failed to create demo OTP request", "DEMO_OTP_INSERT_FAILED", 500);
-    }
-
-    return jsonResponse({
-      success: true,
-      data: {
-        otp_request_id: otpRequest.id,
-        expires_in: 600,
-        phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-        message: "Demo OTP re-sent.",
-      },
-    });
-  }
-
-  if (originalRequest.provider === "cashfree_m360") {
-    try {
-      return await sendViaCashfree(
-        sanitizedPhone, phoneWithCountryCode, "User", clientIp,
-        "sms", true, supabase, audit
-      );
-    } catch (error) {
-      console.error("[auth-otp] M360 resend failed, falling back to Twilio:", error instanceof Error ? error.message : error);
-      return await sendViaTwilio(
-        sanitizedPhone, phoneWithCountryCode, "sms", undefined,
-        true, clientIp, supabase, audit
-      );
-    }
-  }
-
-  return await sendViaTwilio(
-    sanitizedPhone, phoneWithCountryCode, "sms", undefined,
-    true, clientIp, supabase, audit
-  );
-}
-
-// ==============================================
-// LEGACY TWILIO VERIFY (backward compatible)
-// ==============================================
-
-async function verifyViaTwilioLegacy(
-  sanitizedPhone: string,
-  phoneWithCountryCode: string,
-  otp: string,
-  name: string | undefined,
-  verificationSid: string | undefined,
-  consentForMobile360: boolean,
-  clientIp: string,
-  supabase: ReturnType<typeof createServiceClient>,
-  audit: AuditLogger
-): Promise<Response> {
-  // Call Twilio Verify Check API
-  const result = await callTwilioVerifyOtp({
-    phone_number: phoneWithCountryCode,
-    otp,
-    verification_sid: verificationSid,
-  });
-
-  if (!Deno.env.get("ENVIRONMENT") || Deno.env.get("ENVIRONMENT") !== "production") {
-    console.log("[auth-otp] verify_otp (legacy) - Twilio result:", result.status, result.valid);
-  }
-
-  if (result.status !== "approved" || !result.valid) {
-    // Increment attempt counter on identity_verifications
-    await supabase
-      .from("identity_verifications")
-      .update({
-        otp_attempts: supabase.rpc("increment_otp_attempts", {
-          p_phone: sanitizedPhone,
-        }),
-      })
-      .eq("consent_phone", sanitizedPhone)
-      .eq("status", "OTP_SENT");
-
-    const errorMessage =
-      result.status === "max_attempts_reached"
-        ? "Maximum OTP attempts reached. Please request a new OTP."
-        : result.status === "expired"
-        ? "OTP has expired. Please request a new OTP."
-        : "Invalid OTP. Please try again.";
-
-    throw new ValidationError(errorMessage, {
-      otp: result.status === "max_attempts_reached" ? "Max attempts" : "Invalid",
-    });
-  }
-
-  // OTP verified — create/find user and session
-  const { userId, isNewUser } = await createOrFindUser(
-    sanitizedPhone, phoneWithCountryCode, name, consentForMobile360, clientIp, supabase
-  );
-
-  // Record consent
-  let consentVerificationId: string | null = null;
-  if (consentForMobile360) {
-    consentVerificationId = await recordMobile360Consent(
-      userId, sanitizedPhone, name, clientIp, supabase
-    );
-  }
-
-  // Generate session token
-  const tokenHash = await generateSessionToken(sanitizedPhone, supabase);
-
-  // Log success
-  await audit.logSuccess(
-    AuditActions.AUTH_SUCCESS,
-    "authentication",
-    "auth",
-    userId,
-    {
-      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-      consent_recorded: !!consentVerificationId,
-      is_new_user: isNewUser,
-    }
-  );
-
+  // M360 has ~45s cooldown — tell client to use Supabase Auth instead
   return jsonResponse({
     success: true,
     data: {
-      user_id: userId,
-      is_new_user: isNewUser,
-      token_hash: tokenHash,
-      consent_verification_id: consentVerificationId,
-      consent_status: consentVerificationId ? "CONSENT_GIVEN" : null,
-      message: "Phone verified successfully. You are now signed in.",
-      next_steps: consentVerificationId
-        ? ["identity_verification_ready"]
-        : ["identity_verification_requires_separate_consent"],
+      fallback: "supabase",
+      message: "Please use Supabase Auth for resend. M360 request expired.",
     },
   });
 }
@@ -1117,7 +666,6 @@ async function createOrFindUser(
   sanitizedPhone: string,
   phoneWithCountryCode: string,
   name: string | undefined,
-  consentForMobile360: boolean,
   clientIp: string,
   supabase: ReturnType<typeof createServiceClient>
 ): Promise<{ userId: string; isNewUser: boolean }> {
@@ -1126,7 +674,7 @@ async function createOrFindUser(
     phone_confirm: true,
     user_metadata: {
       full_name: name,
-      consent_for_mobile360: consentForMobile360,
+      consent_for_mobile360: true,
       consent_timestamp: new Date().toISOString(),
       consent_ip: clientIp,
     },
@@ -1137,11 +685,10 @@ async function createOrFindUser(
     const { data: existingUser } = await supabase
       .from("users")
       .select("id, name_source")
-      .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone},phone.eq.91${sanitizedPhone}`)
+      .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
       .single();
 
     if (existingUser) {
-      // Update phone + name for returning users
       const updatePayload: Record<string, unknown> = { phone: phoneWithCountryCode };
       if (name && existingUser.name_source !== "m360") {
         const extracted = extractFirstName(name);
@@ -1156,16 +703,13 @@ async function createOrFindUser(
 
     // Auth user exists but no profile row — look up auth user and create profile
     console.log("[auth-otp] Auth user exists but no profile found, creating profile...");
-    const { data: authUsers } = await supabase.auth.admin.listUsers();
-    const authUser = authUsers?.users?.find(
-      (u) => u.phone === phoneWithCountryCode || u.phone === sanitizedPhone || u.phone === `91${sanitizedPhone}`
-    );
+    const { data: authUser } = await supabase
+      .rpc("get_auth_user_by_phone", { p_phone: phoneWithCountryCode });
 
     if (!authUser) {
       throw new AppError("User account exists but could not be located", "USER_NOT_FOUND", 404);
     }
 
-    // Create the missing profile row
     const extracted = name ? extractFirstName(name) : { first_name: null, last_name: null };
     const { error: insertError } = await supabase.from("users").upsert({
       id: authUser.id,
@@ -1206,101 +750,16 @@ async function createOrFindUser(
       .eq("id", userId);
   }
 
+  // Set synthetic email for generateLink compatibility
+  const syntheticEmail = `${sanitizedPhone}@${SYNTHETIC_EMAIL_DOMAIN}`;
+  await supabase.auth.admin.updateUserById(userId, { email: syntheticEmail });
+
   return { userId, isNewUser: true };
 }
 
 /**
- * Records Mobile 360 consent in identity_verifications table.
- */
-async function recordMobile360Consent(
-  userId: string,
-  sanitizedPhone: string,
-  name: string | undefined,
-  clientIp: string,
-  supabase: ReturnType<typeof createServiceClient>
-): Promise<string | null> {
-  const consentIpData = clientIp ? { consent_ip: clientIp } : {};
-
-  // Update pending consent record to CONSENT_GIVEN
-  const { data: consentRecord, error: consentError } = await supabase
-    .from("identity_verifications")
-    .update({
-      user_id: userId,
-      status: "CONSENT_GIVEN",
-      consent_timestamp: new Date().toISOString(),
-      ...consentIpData,
-      m360_full_name: name,
-    })
-    .eq("consent_phone", sanitizedPhone)
-    .eq("status", "OTP_SENT")
-    .select("id")
-    .single();
-
-  if (!consentError && consentRecord) {
-    return consentRecord.id;
-  }
-
-  // Create new consent record if pending one doesn't exist
-  const { data: newConsent } = await supabase
-    .from("identity_verifications")
-    .insert({
-      user_id: userId,
-      verification_id: `CONSENT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
-      status: "CONSENT_GIVEN",
-      consent_phone: sanitizedPhone,
-      consent_timestamp: new Date().toISOString(),
-      ...consentIpData,
-      m360_full_name: name,
-    })
-    .select("id")
-    .single();
-
-  return newConsent?.id ?? null;
-}
-
-/**
- * Stores a pending consent record during send_otp (for post-auth M360 flow).
- */
-async function storePendingConsent(
-  sanitizedPhone: string,
-  verificationSid: string,
-  clientIp: string,
-  supabase: ReturnType<typeof createServiceClient>
-): Promise<void> {
-  const { data: existingConsent } = await supabase
-    .from("identity_verifications")
-    .select("id")
-    .eq("consent_phone", sanitizedPhone)
-    .eq("status", "OTP_SENT")
-    .single();
-
-  if (existingConsent) {
-    await supabase
-      .from("identity_verifications")
-      .update({
-        otp_sent_at: new Date().toISOString(),
-        otp_expires_at: new Date(Date.now() + OTP_EXPIRY_MS).toISOString(),
-        otp_attempts: 0,
-        ...(clientIp ? { consent_ip: clientIp } : {}),
-      })
-      .eq("id", existingConsent.id);
-  } else {
-    await supabase
-      .from("identity_verifications")
-      .insert({
-        verification_id: verificationSid,
-        status: "OTP_SENT",
-        consent_phone: sanitizedPhone,
-        ...(clientIp ? { consent_ip: clientIp } : {}),
-        otp_sent_at: new Date().toISOString(),
-        otp_expires_at: new Date(Date.now() + OTP_EXPIRY_MS).toISOString(),
-        otp_attempts: 0,
-      });
-  }
-}
-
-/**
  * Generates a session token via admin generateLink.
+ * Used for M360 path only (Supabase Auth path creates sessions automatically).
  */
 async function generateSessionToken(
   sanitizedPhone: string,
@@ -1308,7 +767,7 @@ async function generateSessionToken(
 ): Promise<string> {
   const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
     type: "magiclink",
-    email: `${sanitizedPhone}@phone.flentsecured.com`,
+    email: `${sanitizedPhone}@${SYNTHETIC_EMAIL_DOMAIN}`,
     options: {
       data: { phone: sanitizedPhone },
     },
@@ -1336,202 +795,14 @@ async function generateSessionToken(
   return tokenHash;
 }
 
-// ==============================================
-// TWILIO VERIFY API CALLS
-// ==============================================
-
-interface TwilioSendOtpParams {
-  phone_number: string;
-  channel: "sms" | "whatsapp" | "call";
-}
-
-async function callTwilioSendOtp(
-  params: TwilioSendOtpParams
-): Promise<TwilioVerificationResponse> {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
-    throw new ExternalServiceError("Twilio", "API credentials not configured");
-  }
-
-  try {
-    const url = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/Verifications`;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
-      },
-      body: new URLSearchParams({
-        To: params.phone_number,
-        Channel: params.channel,
-      }).toString(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("[auth-otp] Twilio Send OTP error:", data);
-
-      if (data.code === 60200) {
-        throw new ValidationError("Invalid phone number format");
-      }
-      if (data.code === 60203) {
-        throw new AppError("Max send attempts reached. Please wait before trying again.", "RATE_LIMITED", 429);
-      }
-      if (data.code === 60212) {
-        throw new AppError("Phone number is invalid for this country", "INVALID_PHONE", 400);
-      }
-
-      throw new ExternalServiceError(
-        "Twilio",
-        data.message ?? `HTTP ${response.status}`
-      );
-    }
-
-    return data as TwilioVerificationResponse;
-  } catch (error) {
-    if (error instanceof ExternalServiceError || error instanceof ValidationError || error instanceof AppError) {
-      throw error;
-    }
-
-    console.error("[auth-otp] Twilio Send OTP failed:", error);
-    throw new ExternalServiceError(
-      "Twilio",
-      error instanceof Error ? error.message : "Unknown error"
-    );
-  }
-}
-
-interface TwilioVerifyOtpParams {
-  phone_number: string;
-  otp: string;
-  verification_sid?: string;
-}
-
-async function callTwilioVerifyOtp(
-  params: TwilioVerifyOtpParams
-): Promise<TwilioVerificationCheckResponse> {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SERVICE_SID) {
-    throw new ExternalServiceError("Twilio", "API credentials not configured");
-  }
-
-  try {
-    const url = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SERVICE_SID}/VerificationCheck`;
-
-    const formParams: Record<string, string> = {
-      Code: params.otp,
-    };
-    if (params.verification_sid) {
-      formParams.VerificationSid = params.verification_sid;
-    } else {
-      formParams.To = params.phone_number;
-    }
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
-      },
-      body: new URLSearchParams(formParams).toString(),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("[auth-otp] Twilio Verify OTP error:", data);
-
-      if (data.code === 60202) {
-        return {
-          sid: "",
-          service_sid: TWILIO_VERIFY_SERVICE_SID,
-          account_sid: TWILIO_ACCOUNT_SID,
-          to: params.phone_number,
-          channel: "sms",
-          status: "max_attempts_reached",
-          valid: false,
-          date_created: new Date().toISOString(),
-          date_updated: new Date().toISOString(),
-        };
-      }
-      if (data.code === 20404) {
-        // Verification not found — retry with phone number if we used SID
-        if (params.verification_sid) {
-          const retryResponse = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-              Authorization: `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`,
-            },
-            body: new URLSearchParams({
-              To: params.phone_number,
-              Code: params.otp,
-            }).toString(),
-          });
-          const retryData = await retryResponse.json();
-
-          if (retryResponse.ok) {
-            return retryData as TwilioVerificationCheckResponse;
-          }
-        }
-
-        return {
-          sid: "",
-          service_sid: TWILIO_VERIFY_SERVICE_SID!,
-          account_sid: TWILIO_ACCOUNT_SID!,
-          to: params.phone_number,
-          channel: "sms",
-          status: "expired",
-          valid: false,
-          date_created: new Date().toISOString(),
-          date_updated: new Date().toISOString(),
-        };
-      }
-
-      throw new ExternalServiceError(
-        "Twilio",
-        data.message ?? `HTTP ${response.status}`
-      );
-    }
-
-    return data as TwilioVerificationCheckResponse;
-  } catch (error) {
-    if (error instanceof ExternalServiceError) throw error;
-
-    console.error("[auth-otp] Twilio Verify OTP failed:", error);
-    throw new ExternalServiceError(
-      "Twilio",
-      error instanceof Error ? error.message : "Unknown error"
-    );
-  }
-}
-
-// ==============================================
-// UTILITY FUNCTIONS
-// ==============================================
-
 /**
  * Extracts client IP from request headers.
  */
 function getClientIp(req: Request): string {
-  const headers = [
-    "cf-connecting-ip",
-    "x-real-ip",
-    "x-forwarded-for",
-    "x-client-ip",
-    "true-client-ip",
-  ];
-
-  for (const header of headers) {
-    const value = req.headers.get(header);
-    if (value) {
-      const ip = value.split(",")[0].trim();
-      if (ip && ip !== "unknown") {
-        return ip;
-      }
-    }
-  }
-
-  console.warn("[auth-otp] Could not determine client IP from headers");
-  return "";
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown"
+  );
 }

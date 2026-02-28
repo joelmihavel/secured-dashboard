@@ -158,7 +158,7 @@ async function ensureLoggedIn(
     await supabase.auth.signOut();
   }
 
-  // Send OTP (edge function recognizes test number, skips SMS)
+  // Send OTP (Supabase Auth recognizes test phone numbers)
   const { data: sendData, error: sendError } = await sendOtp({
     phone_number: phone,
   });
@@ -167,10 +167,11 @@ async function ensureLoggedIn(
     return { success: false, error: `Login send OTP failed: ${sendError.message}` };
   }
 
-  // Verify OTP (auto-accepted for test phones)
+  // Verify OTP (auto-accepted for test phones via Supabase test phone numbers)
   const { error: verifyError } = await verifyOtp({
     phone_number: phone,
     otp,
+    method: sendData?.method ?? 'supabase',
     otp_request_id: sendData?.otp_request_id,
   });
 

@@ -44,6 +44,7 @@ import { clearAllStores } from '@/src/stores/resetAll';
 import { queryClient } from '@/src/providers/QueryProvider';
 import { sendOtp, verifyOtp } from '@/src/services/api/auth';
 import { jumpToScreen, getSeedConfig } from '@/src/__dev__/jumpToScreen';
+import { paymentKeys } from '@/src/hooks/usePayments';
 import type { StoreApi, UseBoundStore } from 'zustand';
 
 /**
@@ -125,6 +126,8 @@ const SECTIONS: Section[] = [
         scenarios: [
           { label: 'Payment Due', key: 'home:payment_due' },
           { label: 'Payment Overdue', key: 'home:payment_overdue' },
+          { label: 'Late Payment', key: 'home:late_payment' },
+          { label: 'Missed Payment', key: 'home:missed_payment' },
           { label: 'No Tenancy', key: 'home:no_tenancy' },
           { label: 'Pending Verification', key: 'home:pending_verification' },
         ],
@@ -280,7 +283,7 @@ export function DevNavigator() {
       setLoginLoading(phone);
 
       try {
-        // Step 1: Send OTP (edge function recognizes test number, skips SMS)
+        // Step 1: Send OTP (Supabase Auth recognizes test phone numbers)
         const { data: sendData, error: sendError } = await sendOtp({
           phone_number: phone,
         });
@@ -290,10 +293,11 @@ export function DevNavigator() {
           return;
         }
 
-        // Step 2: Auto-verify with known OTP (exchanges token_hash for session)
+        // Step 2: Auto-verify with known OTP (Supabase test phones auto-verify)
         const { error: verifyError } = await verifyOtp({
           phone_number: phone,
           otp,
+          method: sendData?.method ?? 'supabase',
           otp_request_id: sendData?.otp_request_id,
         });
         if (verifyError) {
@@ -380,6 +384,12 @@ export function DevNavigator() {
           data: (scenario as Record<string, unknown>).paymentHistory,
           error: null,
         });
+      }
+      if ('paymentStamps' in scenario) {
+        // Seed stamps with the mock tenancy ID from dashboard data
+        const dashboardData = 'dashboard' in scenario ? (scenario as Record<string, any>).dashboard : null;
+        const tenancyId = dashboardData?.tenancy?.id ?? 'mock-tenancy';
+        queryClient.setQueryData(paymentKeys.stamps(tenancyId), (scenario as Record<string, unknown>).paymentStamps);
       }
       // 6. Navigate
       setScenarioTarget(null);

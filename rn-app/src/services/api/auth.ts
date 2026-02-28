@@ -1,46 +1,40 @@
 /**
  * Auth API Service
  *
- * Handles phone-based OTP authentication.
+ * Dual-path OTP authentication:
+ *   1. Supabase Auth (existing users + resend): Uses supabase.auth.signInWithOtp / verifyOtp
+ *      directly. Supabase handles Twilio Programmable Messaging, OTP codes, and sessions.
+ *   2. Cashfree M360 (new users): Calls auth-otp edge function for identity-enriched OTP.
+ *      Edge function returns token_hash which is exchanged for a session via verifyOtp.
  *
- * Two paths (feature-flagged via EXPO_PUBLIC_USE_OTP_ROUTING):
- *   1. OTP Routing (new): Calls auth-otp edge function which routes to
- *      Twilio or Cashfree M360 server-side. Client is provider-agnostic.
- *   2. GoTrue SDK (legacy): Uses supabase.auth.signInWithOtp / verifyOtp
- *      directly. Kept as fallback.
- *
- * The OTP routing path returns an opaque otp_request_id. On verify,
- * the server looks up the provider and handles accordingly.
+ * The route_otp action determines which path to use based on user existence.
+ * Resend ALWAYS uses Supabase Auth (M360 has ~45s cooldown, incompatible with 10s resend).
  */
 
 import { supabase } from '../supabase';
 import { tryCatch, logError, getErrorMessage } from '@/src/utils';
 
 // ==============================================
-// FEATURE FLAG
-// ==============================================
-
-const USE_OTP_ROUTING = process.env.EXPO_PUBLIC_USE_OTP_ROUTING === 'true';
-
-// ==============================================
 // TYPES
 // ==============================================
+
+export type OtpMethod = 'supabase' | 'cashfree';
 
 export interface SendOtpRequest {
   phone_number: string;
   name?: string;
-  channel?: 'sms' | 'whatsapp';
 }
 
 export interface SendOtpResult {
-  success: boolean;
+  method: OtpMethod;
   otp_request_id?: string;
-  verification_sid?: string;
+  expires_in?: number;
 }
 
 export interface VerifyOtpRequest {
   phone_number: string;
   otp: string;
+  method: OtpMethod;
   name?: string;
   otp_request_id?: string;
 }
@@ -48,7 +42,7 @@ export interface VerifyOtpRequest {
 export interface VerifyOtpResult {
   user_id: string;
   is_new_user: boolean;
-  identity_status?: 'completed' | 'pending' | 'not_available';
+  identity_status?: 'completed' | 'pending' | 'not_available' | null;
 }
 
 export type AuthErrorCode =
@@ -57,6 +51,8 @@ export type AuthErrorCode =
   | 'RATE_LIMITED'
   | 'INVALID_OTP'
   | 'OTP_EXPIRED'
+  | 'OTP_ALREADY_USED'
+  | 'ALREADY_PROCESSED'
   | 'MAX_ATTEMPTS'
   | 'NETWORK_ERROR'
   | 'TIMEOUT'
@@ -73,43 +69,109 @@ export interface AuthError {
 
 /**
  * Send OTP to phone number.
- * Uses auth-otp edge function (routed) or GoTrue SDK (legacy).
+ * 1. Calls edge function route_otp to determine new vs existing user.
+ * 2a. Existing user: calls signInWithOtp directly (Supabase Auth sends SMS).
+ * 2b. New user: M360 OTP already sent by edge function.
  */
 export async function sendOtp(
   request: SendOtpRequest
 ): Promise<{ data: SendOtpResult | null; error: AuthError | null }> {
-  if (USE_OTP_ROUTING) {
-    return sendOtpViaEdgeFunction(request);
+  try {
+    // 1. Call edge function for routing
+    const { data: routeData, error: routeError } = await supabase.functions.invoke('auth-otp', {
+      body: {
+        action: 'route_otp',
+        phone_number: request.phone_number,
+        name: request.name,
+      },
+    });
+
+    if (routeError) {
+      return { data: null, error: await mapEdgeFunctionError(routeError) };
+    }
+
+    if (!routeData?.success) {
+      return { data: null, error: await mapEdgeFunctionError(routeData) };
+    }
+
+    const method = routeData.data.method as OtpMethod;
+
+    if (method === 'supabase') {
+      // 2a. Existing user — Supabase Auth sends OTP directly
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        phone: request.phone_number,
+      });
+
+      if (signInError) {
+        return { data: null, error: mapAuthError(signInError.message) };
+      }
+
+      return {
+        data: { method: 'supabase' },
+        error: null,
+      };
+    }
+
+    // 2b. New user — M360 OTP already sent by edge function
+    return {
+      data: {
+        method: 'cashfree',
+        otp_request_id: routeData.data.otp_request_id,
+        expires_in: routeData.data.expires_in,
+      },
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        code: 'NETWORK_ERROR',
+        message: err instanceof Error ? err.message : 'Network error',
+      },
+    };
   }
-  return sendOtpViaGoTrue(request);
 }
 
 /**
  * Verify OTP code.
- * Uses auth-otp edge function (routed) or GoTrue SDK (legacy).
+ * Supabase path: direct SDK call, session auto-created.
+ * Cashfree path: edge function verify, then exchange token_hash for session.
  */
 export async function verifyOtp(
   request: VerifyOtpRequest
 ): Promise<{ data: VerifyOtpResult | null; error: AuthError | null }> {
-  if (USE_OTP_ROUTING && request.otp_request_id) {
-    return verifyOtpViaEdgeFunction(request);
+  if (request.method === 'supabase') {
+    return verifyOtpViaSupabaseAuth(request);
   }
-  return verifyOtpViaGoTrue(request);
+  return verifyOtpViaCashfree(request);
 }
 
 /**
- * Resend OTP using server-side otp_request_id (same provider).
- * Falls back to sendOtp if no otp_request_id.
+ * Resend OTP — ALWAYS uses Supabase Auth.
+ * M360 has ~45s cooldown, so resend switches to Supabase Auth permanently.
  */
 export async function resendOtp(
-  phoneNumber: string,
-  channel: 'sms' | 'whatsapp' = 'whatsapp',
-  otpRequestId?: string
-): Promise<{ data: SendOtpResult | null; error: AuthError | null }> {
-  if (USE_OTP_ROUTING && otpRequestId) {
-    return resendOtpViaEdgeFunction(otpRequestId);
+  phoneNumber: string
+): Promise<{ data: { method: 'supabase' } | null; error: AuthError | null }> {
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: phoneNumber,
+    });
+
+    if (error) {
+      return { data: null, error: mapAuthError(error.message) };
+    }
+
+    return { data: { method: 'supabase' }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        code: 'NETWORK_ERROR',
+        message: err instanceof Error ? err.message : 'Network error',
+      },
+    };
   }
-  return sendOtp({ phone_number: phoneNumber, channel });
 }
 
 /**
@@ -136,171 +198,10 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
 }
 
 // ==============================================
-// OTP ROUTING PATH (new)
+// SUPABASE AUTH VERIFY PATH
 // ==============================================
 
-async function sendOtpViaEdgeFunction(
-  request: SendOtpRequest
-): Promise<{ data: SendOtpResult | null; error: AuthError | null }> {
-  try {
-    const { data, error } = await supabase.functions.invoke('auth-otp', {
-      body: {
-        action: 'send_otp',
-        phone_number: request.phone_number,
-        name: request.name,
-        channel: request.channel ?? 'whatsapp',
-      },
-    });
-
-    if (error) {
-      return { data: null, error: mapEdgeFunctionError(error) };
-    }
-
-    if (!data?.success) {
-      return { data: null, error: mapEdgeFunctionError(data) };
-    }
-
-    return {
-      data: {
-        success: true,
-        otp_request_id: data.data.otp_request_id,
-        verification_sid: data.data.verification_sid,
-      },
-      error: null,
-    };
-  } catch (err) {
-    return {
-      data: null,
-      error: {
-        code: 'NETWORK_ERROR',
-        message: err instanceof Error ? err.message : 'Network error',
-      },
-    };
-  }
-}
-
-async function verifyOtpViaEdgeFunction(
-  request: VerifyOtpRequest
-): Promise<{ data: VerifyOtpResult | null; error: AuthError | null }> {
-  try {
-    const { data, error } = await supabase.functions.invoke('auth-otp', {
-      body: {
-        action: 'verify_otp',
-        otp_request_id: request.otp_request_id,
-        otp: request.otp,
-        phone_number: request.phone_number,
-        name: request.name,
-      },
-    });
-
-    if (error) {
-      return { data: null, error: mapEdgeFunctionError(error) };
-    }
-
-    if (!data?.success) {
-      return { data: null, error: mapEdgeFunctionError(data) };
-    }
-
-    // Exchange token_hash for a real Supabase session
-    if (data.data.token_hash) {
-      const { error: sessionError } = await supabase.auth.verifyOtp({
-        token_hash: data.data.token_hash,
-        type: 'magiclink',
-      });
-
-      if (sessionError) {
-        return { data: null, error: mapAuthError(sessionError.message) };
-      }
-    }
-
-    return {
-      data: {
-        user_id: data.data.user_id,
-        is_new_user: data.data.is_new_user,
-        identity_status: data.data.identity_status,
-      },
-      error: null,
-    };
-  } catch (err) {
-    return {
-      data: null,
-      error: {
-        code: 'NETWORK_ERROR',
-        message: err instanceof Error ? err.message : 'Network error',
-      },
-    };
-  }
-}
-
-async function resendOtpViaEdgeFunction(
-  otpRequestId: string
-): Promise<{ data: SendOtpResult | null; error: AuthError | null }> {
-  try {
-    const { data, error } = await supabase.functions.invoke('auth-otp', {
-      body: {
-        action: 'resend_otp',
-        otp_request_id: otpRequestId,
-      },
-    });
-
-    if (error) {
-      return { data: null, error: mapEdgeFunctionError(error) };
-    }
-
-    if (!data?.success) {
-      return { data: null, error: mapEdgeFunctionError(data) };
-    }
-
-    return {
-      data: {
-        success: true,
-        otp_request_id: data.data.otp_request_id,
-      },
-      error: null,
-    };
-  } catch (err) {
-    return {
-      data: null,
-      error: {
-        code: 'NETWORK_ERROR',
-        message: err instanceof Error ? err.message : 'Network error',
-      },
-    };
-  }
-}
-
-// ==============================================
-// GOTRUE SDK PATH (legacy)
-// ==============================================
-
-async function sendOtpViaGoTrue(
-  request: SendOtpRequest
-): Promise<{ data: SendOtpResult | null; error: AuthError | null }> {
-  try {
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: request.phone_number,
-      options: {
-        channel: request.channel ?? 'whatsapp',
-      },
-    });
-
-    if (error) {
-      return { data: null, error: mapAuthError(error.message) };
-    }
-
-    return { data: { success: true }, error: null };
-  } catch (err) {
-    return {
-      data: null,
-      error: {
-        code: 'NETWORK_ERROR',
-        message: err instanceof Error ? err.message : 'Network error',
-      },
-    };
-  }
-}
-
-async function verifyOtpViaGoTrue(
+async function verifyOtpViaSupabaseAuth(
   request: VerifyOtpRequest
 ): Promise<{ data: VerifyOtpResult | null; error: AuthError | null }> {
   try {
@@ -337,6 +238,64 @@ async function verifyOtpViaGoTrue(
       data: {
         user_id: user.id,
         is_new_user: isNewUser,
+        identity_status: null, // No M360 data for Supabase path
+      },
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        code: 'NETWORK_ERROR',
+        message: err instanceof Error ? err.message : 'Network error',
+      },
+    };
+  }
+}
+
+// ==============================================
+// CASHFREE M360 VERIFY PATH
+// ==============================================
+
+async function verifyOtpViaCashfree(
+  request: VerifyOtpRequest
+): Promise<{ data: VerifyOtpResult | null; error: AuthError | null }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('auth-otp', {
+      body: {
+        action: 'verify_otp',
+        otp_request_id: request.otp_request_id,
+        otp: request.otp,
+        phone_number: request.phone_number,
+        name: request.name,
+      },
+    });
+
+    if (error) {
+      return { data: null, error: await mapEdgeFunctionError(error) };
+    }
+
+    if (!data?.success) {
+      return { data: null, error: await mapEdgeFunctionError(data) };
+    }
+
+    // Exchange token_hash for a real Supabase session
+    if (data.data.token_hash) {
+      const { error: sessionError } = await supabase.auth.verifyOtp({
+        token_hash: data.data.token_hash,
+        type: 'magiclink',
+      });
+
+      if (sessionError) {
+        return { data: null, error: mapAuthError(sessionError.message) };
+      }
+    }
+
+    return {
+      data: {
+        user_id: data.data.user_id,
+        is_new_user: data.data.is_new_user,
+        identity_status: data.data.identity_status,
       },
       error: null,
     };
@@ -390,22 +349,30 @@ function mapAuthError(errorMessage: string): AuthError {
     return { code: 'NETWORK_ERROR', message: 'Please check your internet connection' };
   }
 
+  if (lowerMessage.includes('already used') || lowerMessage.includes('already_used')) {
+    return { code: 'OTP_EXPIRED', message: 'This code has already been used. Request a new one.' };
+  }
+
+  if (lowerMessage.includes('already processed') || lowerMessage.includes('already_processed')) {
+    return { code: 'RATE_LIMITED', message: 'OTP already sent. Please check your SMS.' };
+  }
+
   return { code: 'UNKNOWN_ERROR', message: errorMessage };
 }
 
 /**
  * Maps edge function error responses to AuthError.
+ * Handles FunctionsHttpError (context is a Response object that must be awaited).
  */
-function mapEdgeFunctionError(error: unknown): AuthError {
+async function mapEdgeFunctionError(error: unknown): Promise<AuthError> {
   if (!error) {
     return { code: 'UNKNOWN_ERROR', message: 'An unexpected error occurred' };
   }
 
-  // Edge function returns { error: { message, code } } or FunctionsHttpError
   if (typeof error === 'object' && error !== null) {
     const errObj = error as Record<string, unknown>;
 
-    // Check for nested error in response data
+    // Check for nested error in response data (plain JSON body)
     if (errObj.error && typeof errObj.error === 'object') {
       const nested = errObj.error as Record<string, unknown>;
       if (typeof nested.message === 'string') {
@@ -413,17 +380,24 @@ function mapEdgeFunctionError(error: unknown): AuthError {
       }
     }
 
-    // FunctionsHttpError shape
-    if (typeof errObj.message === 'string') {
-      return mapAuthError(errObj.message);
+    // FunctionsHttpError: context is a Response object — read the JSON body
+    if (errObj.context && typeof (errObj.context as Response).json === 'function') {
+      try {
+        const body = await (errObj.context as Response).json();
+        if (body?.error?.message) {
+          return mapAuthError(body.error.message);
+        }
+        if (body?.message) {
+          return mapAuthError(body.message);
+        }
+      } catch {
+        // Response body couldn't be parsed — fall through
+      }
     }
 
-    // Response body with error details
-    if (typeof errObj.context === 'object' && errObj.context !== null) {
-      const ctx = errObj.context as Record<string, unknown>;
-      if (typeof ctx.message === 'string') {
-        return mapAuthError(ctx.message);
-      }
+    // FunctionsHttpError.message
+    if (typeof errObj.message === 'string') {
+      return mapAuthError(errObj.message);
     }
   }
 

@@ -21,6 +21,7 @@ export type AuthStatus =
   | 'error'; // Error state
 
 export type IdentityStatus = 'completed' | 'pending' | 'not_available' | null;
+export type OtpMethod = 'supabase' | 'cashfree' | null;
 
 interface AuthState {
   status: AuthStatus;
@@ -32,6 +33,7 @@ interface AuthState {
   consentForMobile360: boolean;
   consentTimestamp: string | null;
   otpRequestId: string | null;       // Opaque server ref for OTP routing
+  otpMethod: OtpMethod;              // Which OTP path is active
   identityStatus: IdentityStatus;    // M360 identity verification result
   error: {
     code: string;
@@ -48,7 +50,8 @@ interface AuthActions {
   setConsentForMobile360: (value: boolean) => void;
 
   // OTP flow
-  setOtpSent: (otpRequestId?: string) => void;
+  setOtpSent: (otpRequestId?: string, method?: OtpMethod) => void;
+  setOtpMethod: (method: OtpMethod) => void;
   setVerifying: () => void;
   setAuthenticated: (userId: string, isNewUser: boolean, identityStatus?: IdentityStatus) => void;
 
@@ -79,6 +82,7 @@ const initialState: AuthState = {
   consentForMobile360: false,
   consentTimestamp: null,
   otpRequestId: null,
+  otpMethod: null,
   identityStatus: null,
   error: null,
 };
@@ -109,7 +113,7 @@ export const useAuthStore = create<AuthStore>()(
         state.consentTimestamp = value ? new Date().toISOString() : null;
       }),
 
-    setOtpSent: (otpRequestId) =>
+    setOtpSent: (otpRequestId, method) =>
       set((state) => {
         state.otpSent = true;
         state.status = 'otp_sent';
@@ -117,6 +121,14 @@ export const useAuthStore = create<AuthStore>()(
         if (otpRequestId !== undefined) {
           state.otpRequestId = otpRequestId;
         }
+        if (method !== undefined) {
+          state.otpMethod = method;
+        }
+      }),
+
+    setOtpMethod: (method) =>
+      set((state) => {
+        state.otpMethod = method;
       }),
 
     setVerifying: () =>
@@ -168,4 +180,5 @@ export const selectPhoneNumber = (state: AuthStore) => state.phoneNumber;
 export const selectIsAuthenticated = (state: AuthStore) => state.status === 'authenticated';
 export const selectAuthError = (state: AuthStore) => state.error;
 export const selectOtpRequestId = (state: AuthStore) => state.otpRequestId;
+export const selectOtpMethod = (state: AuthStore) => state.otpMethod;
 export const selectIdentityStatus = (state: AuthStore) => state.identityStatus;

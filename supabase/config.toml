@@ -53,12 +53,12 @@ enable_confirmations = false
 [auth.sms]
 enable_signup = true
 enable_confirmations = false
+max_frequency = "10s"
 
 [auth.sms.twilio]
-enabled = false
-# Required fields (even when disabled)
-account_sid = "PLACEHOLDER_NOT_USED"
-message_service_sid = "PLACEHOLDER_NOT_USED"
+enabled = true
+account_sid = "env(TWILIO_ACCOUNT_SID)"
+message_service_sid = "env(TWILIO_MESSAGE_SERVICE_SID)"
 auth_token = "env(TWILIO_AUTH_TOKEN)"
 
 [auth.external.apple]
@@ -245,8 +245,6 @@ verify_jwt = false
 [functions.sync-netbanking-banks]
 verify_jwt = false
 
-[functions.test-cashfree-m360]
-verify_jwt = false
 
 [functions.update-extraction]
 verify_jwt = false
