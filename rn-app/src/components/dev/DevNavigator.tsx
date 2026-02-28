@@ -158,7 +158,6 @@ const SECTIONS: Section[] = [
     screens: [
       { name: 'Profile Home', path: '/(profile)' },
       { name: 'Edit Profile', path: '/(profile)/edit' },
-      { name: 'Payment Methods', path: '/(profile)/payment-methods' },
       { name: 'Agreement', path: '/(profile)/agreement' },
     ],
   },
@@ -192,7 +191,6 @@ const SECTIONS: Section[] = [
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
       { name: 'Review Agreement', path: '/(agreement)/review' },
-      { name: 'Agreement Success', path: '/(agreement)/success' },
     ],
   },
 ];

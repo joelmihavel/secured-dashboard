@@ -22,14 +22,12 @@ import {
 } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
-
-// ==============================================
-// CONFIGURATION
-// ==============================================
-
-const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY")!;
-const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
-const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://test.payu.in";
+import {
+  PAYU_MERCHANT_KEY,
+  PAYU_MERCHANT_SALT,
+  PAYU_INFO_URL,
+  fetchWithTimeout,
+} from "../_shared/payu-config.ts";
 
 // How old a payment must be (in ms) before we check PayU directly
 const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
@@ -194,6 +192,10 @@ serve(async (req: Request) => {
                 source: "payu_verify",
               }
             );
+
+            // Note: Reconciliation to "success" means the user's payment went through,
+            // NOT that the landlord has been paid. settlement_complete notification
+            // fires when landlord payout is manually confirmed via admin endpoint.
           }
         }
       } catch (verifyError) {
@@ -249,8 +251,7 @@ async function verifyWithPayU(txnId: string): Promise<Record<string, unknown>> {
   formData.set("var1", txnId);
   formData.set("hash", hash);
 
-  const PAYU_INFO_URL = Deno.env.get("PAYU_INFO_URL") ?? "https://info.payu.in/merchant/postservice";
-  const response = await fetch(PAYU_INFO_URL, {
+  const response = await fetchWithTimeout(PAYU_INFO_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

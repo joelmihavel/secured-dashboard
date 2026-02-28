@@ -1,0 +1,181 @@
+/**
+ * Flent Secured v2 - Notification Templates (Server-Side)
+ *
+ * Server-side copy of notification templates with deep link routing,
+ * preference mapping, and DB type mapping.
+ *
+ * Keep in sync with: rn-app/src/constants/notificationTemplates.ts
+ */
+
+// ==============================================
+// TYPES
+// ==============================================
+
+export type NotificationType =
+  | "waitlist_approved"
+  | "waitlist_rejected"
+  | "rent_due"
+  | "settlement_complete"
+  | "settlement_failed"
+  | "rent_due_tomorrow"
+  | "rent_overdue"
+  | "landlord_confirmed"
+  | "landlord_rejected"
+  | "app_update"
+  | "reminder_utility"
+  | "reminder_landlord_invite"
+  | "reminder_agreement";
+
+interface NotificationTemplate {
+  title: string;
+  body: string;
+}
+
+// ==============================================
+// TEMPLATES
+// ==============================================
+
+export const NOTIFICATION_TEMPLATES: Record<
+  NotificationType,
+  NotificationTemplate
+> = {
+  waitlist_approved: {
+    title: "You're in, {name}.",
+    body: "Welcome to the right side of renting. Tap to get started.",
+  },
+  waitlist_rejected: {
+    title: "We couldn't approve your application",
+    body: "Sorry, your current rental contract doesn't qualify our eligibility criteria.",
+  },
+  rent_due: {
+    title: "Rent's coming up",
+    body: "₹{amount} due on {date}. Pay early, earn cashback.",
+  },
+  settlement_complete: {
+    title: "Your landlord got paid",
+    body: "₹{amount} settled to {landlord_name}'s account. One less thing to worry about.",
+  },
+  settlement_failed: {
+    title: "Landlord payout didn't go through",
+    body: "₹{amount} has been reversed to your account. We're looking into it.",
+  },
+  rent_due_tomorrow: {
+    title: "Tomorrow's the last day",
+    body: "Pay ₹{amount} before it's overdue. Takes under a minute.",
+  },
+  rent_overdue: {
+    title: "Gentle reminder",
+    body: "Don't miss your payment. ₹{amount} was due on {date}.",
+  },
+  landlord_confirmed: {
+    title: "Your landlord confirmed you",
+    body: "{landlord_name} verified your tenancy. You're all set to pay rent through Flent.",
+  },
+  landlord_rejected: {
+    title: "Landlord couldn't verify tenancy",
+    body: "{landlord_name} didn't confirm the details. Tap to update and resend.",
+  },
+  app_update: {
+    title: "A better Flent is here",
+    body: "We've made things smoother. Update now for the latest fixes.",
+  },
+  reminder_utility: {
+    title: "One step left — utility verification",
+    body: "Add your electricity or water bill ID to complete setup. Takes 30 seconds.",
+  },
+  reminder_landlord_invite: {
+    title: "Your landlord's waiting",
+    body: "Send the invite so they can confirm your tenancy and you can start paying.",
+  },
+  reminder_agreement: {
+    title: "Upload your rent agreement",
+    body: "It'll only take a minute to verify your tenancy.",
+  },
+};
+
+// ==============================================
+// INTERPOLATION
+// ==============================================
+
+/**
+ * Interpolate {key} placeholders in a template string.
+ * e.g. interpolateTemplate("Hello {name}", { name: "Rishi" }) → "Hello Rishi"
+ */
+export function interpolateTemplate(
+  template: string,
+  vars: Record<string, string>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match);
+}
+
+// ==============================================
+// DEEP LINK ROUTES
+// ==============================================
+
+/**
+ * Maps notification type → deep link route within the app.
+ * Used to set `data.route` on push payloads so the app opens the right screen.
+ */
+export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
+  waitlist_approved: "/(main)",
+  waitlist_rejected: "/(waitlist)",
+  rent_due: "/(payment)/enter-rent",
+  settlement_complete: "/(main)",
+  settlement_failed: "/(main)",
+  rent_due_tomorrow: "/(payment)/enter-rent",
+  rent_overdue: "/(payment)/enter-rent",
+  landlord_confirmed: "/(main)",
+  landlord_rejected: "/(setup)/invite-landlord",
+  app_update: "/(main)",
+  reminder_utility: "/(setup)/add-utility",
+  reminder_landlord_invite: "/(setup)/invite-landlord",
+  reminder_agreement: "/(agreement)/upload",
+};
+
+// ==============================================
+// PREFERENCE MAPPING
+// ==============================================
+
+/**
+ * Maps notification type → column name in `notification_preferences` table.
+ * `null` means always send (cannot be disabled by the user).
+ */
+export const PREFERENCE_MAP: Record<NotificationType, string | null> = {
+  waitlist_approved: null, // always send
+  waitlist_rejected: null, // always send
+  rent_due: "payment_reminders",
+  settlement_complete: "payment_confirmations",
+  settlement_failed: "payment_confirmations",
+  rent_due_tomorrow: "payment_reminders",
+  rent_overdue: "payment_reminders",
+  landlord_confirmed: "landlord_updates",
+  landlord_rejected: "landlord_updates",
+  app_update: "promotional",
+  reminder_utility: "verification_updates",
+  reminder_landlord_invite: "verification_updates",
+  reminder_agreement: "verification_updates",
+};
+
+// ==============================================
+// DB TYPE MAPPING
+// ==============================================
+
+/**
+ * Maps notification type → value stored in the `type` column of the
+ * `notifications` table (must match the CHECK constraint).
+ */
+export const DB_TYPE_MAP: Record<NotificationType, string> = {
+  waitlist_approved: "waitlist_approved",
+  waitlist_rejected: "waitlist_rejected",
+  rent_due: "rent_due",
+  settlement_complete: "settlement_complete",
+  settlement_failed: "settlement_failed",
+  rent_due_tomorrow: "rent_due_tomorrow",
+  rent_overdue: "rent_overdue",
+  landlord_confirmed: "landlord_confirmed",
+  landlord_rejected: "landlord_rejected",
+  app_update: "app_update",
+  reminder_utility: "reminder_utility",
+  reminder_landlord_invite: "reminder_landlord_invite",
+  reminder_agreement: "reminder_agreement",
+};

@@ -12,7 +12,7 @@ UPDATE payments SET payment_gateway = 'payu' WHERE payment_gateway = 'cashfree';
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_gateway_check;
 
 ALTER TABLE payments ADD CONSTRAINT payments_payment_gateway_check
-  CHECK (payment_gateway IN ('payu'));
+  CHECK (payment_gateway IN ('payu', 'demo'));
 
 -- 3. Drop the Cashfree-only partial index (filters on payment_gateway = 'cashfree', zero rows)
 DROP INDEX IF EXISTS idx_payments_cf_settlement_pending;

@@ -350,7 +350,8 @@ serve(async (req: Request) => {
         (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      const rentMonthStr = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-01`;
+      const rentMonthYYYYMM = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}`;
+      const rentMonthStr = `${rentMonthYYYYMM}-01`;
 
       // Check if already paid (secondary query only when tenancy exists)
       const { data: existingPayment } = await supabase
@@ -378,7 +379,7 @@ serve(async (req: Request) => {
           cashback_eligible: !pastCutoff,
           past_cutoff: pastCutoff,
           cutoff_day: cutoffDay,
-          rent_month: rentMonthStr,
+          rent_month: rentMonthYYYYMM,
         };
       }
     }

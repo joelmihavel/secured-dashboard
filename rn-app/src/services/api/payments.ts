@@ -850,7 +850,7 @@ export async function verifyUpiVpa(
 ): Promise<{ valid: boolean; name?: string; vpa: string }> {
   const { data, error } = await callEdgeFunction<{
     success: boolean;
-    data: { valid: boolean; account_holder_name?: string; upi_vpa: string };
+    data: { is_valid: boolean; account_holder_name?: string; upi_vpa: string };
   }>(
     'add-upi-vpa',
     { upi_vpa: vpa, verify_only: true },
@@ -861,7 +861,7 @@ export async function verifyUpiVpa(
   if (!data?.success) throw new Error('VPA verification failed');
 
   return {
-    valid: data.data.valid,
+    valid: data.data.is_valid,
     name: data.data.account_holder_name,
     vpa: data.data.upi_vpa,
   };

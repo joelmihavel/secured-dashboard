@@ -12,28 +12,27 @@
  *   CTA: outlined button with thin #FF9A6D border
  */
 
-import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   Pressable,
-  ActivityIndicator,
   Linking,
   Text as RNText,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { PrimaryButton } from '@/src/components/ui/Button';
 import { Pill } from '@/src/components/ui/Pill';
 import { useDashboard, useSavedPaymentMethods, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { getGatewayFeeRates } from '@/src/services/payment';
+import { getGatewayFeeRates, computeFee, formatFeeLabel } from '@/src/services/payment';
 import type { SavedPaymentMethod as SavedMethod } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
 
-import type { PaymentMethodType, MethodSelectorContentProps } from './types';
+import type { PaymentMethodType, MethodSelectorContentProps, SavedMethodDetails } from './types';
 
 // ==============================================
 // FIGMA COLOR TOKENS (from REST API extraction)
@@ -82,8 +81,7 @@ const RadioCircle = memo(({ isSelected }: { isSelected: boolean }) => {
     return {
       backgroundColor: withTiming(isSelected ? FIGMA.radioSelected : 'transparent', { duration: 150 }),
       borderColor: withTiming(isSelected ? FIGMA.radioSelected : FIGMA.radioUnselected, { duration: 150 }),
-      borderWidth: withTiming(isSelected ? 0 : 1.5, { duration: 150 }),
-      transform: [{ scale: withSpring(isSelected ? 1.05 : 1, { damping: 15, stiffness: 300 }) }]
+      borderWidth: isSelected ? 0 : 1.5,
     };
   });
 
@@ -159,15 +157,17 @@ const PaymentMethodRow = memo(({
   allSetUp,
   onSelect,
   onEdit,
+  isInitiating,
 }: {
   method: PaymentMethod;
   isSelected: boolean;
   allSetUp: boolean;
   onSelect: (id: string) => void;
   onEdit: (type: PaymentMethodType, savedMethodId?: string) => void;
+  isInitiating: boolean;
 }) => {
   const isDisabled = method.isDisabled ?? false;
-  
+
   // Smoothly animate the label color instead of snapping
   const animatedLabelStyle = useAnimatedStyle(() => {
     return {
@@ -184,16 +184,16 @@ const PaymentMethodRow = memo(({
     <View>
       <Pressable
         onPress={() => {
-          if (isDisabled) return;
+          if (isDisabled || isInitiating) return;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onSelect(method.id);
         }}
         accessibilityRole="radio"
-        accessibilityState={{ selected: isSelected, disabled: isDisabled }}
+        accessibilityState={{ selected: isSelected, disabled: isDisabled || isInitiating }}
         accessibilityLabel={`${method.title}, ${isDisabled ? method.disabledReason : method.fee}`}
         style={({ pressed }) => [
           styles.methodRow,
-          pressed && !isDisabled && { opacity: 0.6, transform: [{ scale: 0.98 }] } // Fast touch feedback
+          pressed && !isDisabled && !isInitiating && { opacity: 0.6, transform: [{ scale: 0.98 }] },
         ]}
       >
         {/* Left: Radio + Label group + Edit pencil */}
@@ -253,7 +253,7 @@ export function MethodSelectorContent({
 }: MethodSelectorContentProps) {
   const { tenancy } = useDashboard();
   const storedAmount = usePaymentStore((state) => state.amount);
-  const { data: savedMethods, isLoading: isLoadingMethods } = useSavedPaymentMethods();
+  const { data: savedMethods } = useSavedPaymentMethods();
   const { data: dynamicRates } = useFeeRates();
 
   // Credit card disabled logic
@@ -267,25 +267,19 @@ export function MethodSelectorContent({
       : undefined;
 
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
 
-  // Saved method lookups
-  const hasSavedCreditCard = useMemo(
-    () => savedMethods?.some((m: SavedMethod) => m.type === 'card' && m.card_type === 'credit') ?? false,
-    [savedMethods],
-  );
-  const hasSavedDebitCard = useMemo(
-    () => savedMethods?.some((m: SavedMethod) => m.type === 'card' && m.card_type === 'debit') ?? false,
-    [savedMethods],
-  );
-  const hasSavedUpi = useMemo(
-    () => savedMethods?.some((m: SavedMethod) => m.type === 'upi') ?? false,
-    [savedMethods],
-  );
-  const hasSavedNetbanking = useMemo(
-    () => savedMethods?.some((m: SavedMethod) => m.type === 'netbanking') ?? false,
-    [savedMethods],
-  );
+  // Consolidated saved method lookups
+  const savedMethodMap = useMemo(() => {
+    if (!savedMethods?.length) return { upi: false, creditCard: false, debitCard: false, netbanking: false };
+    return {
+      upi: savedMethods.some((m: SavedMethod) => m.type === 'upi'),
+      creditCard: savedMethods.some((m: SavedMethod) => m.type === 'card' && m.card_type === 'credit'),
+      debitCard: savedMethods.some((m: SavedMethod) => m.type === 'card' && m.card_type === 'debit'),
+      netbanking: savedMethods.some((m: SavedMethod) => m.type === 'netbanking'),
+    };
+  }, [savedMethods]);
 
   const getMaskedDetail = (type: 'upi' | 'card' | 'netbanking', cardTypeFilter?: 'credit' | 'debit'): string | null => {
     if (!savedMethods?.length) return null;
@@ -311,58 +305,68 @@ export function MethodSelectorContent({
 
   const paymentMethods: PaymentMethod[] = useMemo(() => {
     const rates = dynamicRates ?? getGatewayFeeRates();
-    const creditCardFee = Math.round(rentAmount * rates.credit_card);
-    const debitCardFee = Math.round(rentAmount * rates.debit_card);
-    const upiFee = Math.round(rentAmount * rates.upi);
-    const netbankingFee = Math.round(rentAmount * rates.netbanking);
+    const upiFee = computeFee(rates.upi, rentAmount);
+    const netbankingFee = computeFee(rates.netbanking, rentAmount);
+    const debitCardFee = computeFee(rates.debit_card, rentAmount);
+    const creditCardFee = computeFee(rates.credit_card, rentAmount);
 
     return [
       {
         id: 'upi-1',
         type: 'upi' as const,
         title: 'UPI',
-        maskedDetail: hasSavedUpi ? (getMaskedDetail('upi') ?? '\u2022\u2022\u2022\u2022el@oksbi') : null,
-        fee: rates.upi === 0 ? 'Free' : `\u20B9${upiFee.toLocaleString('en-IN')} fee`,
+        maskedDetail: savedMethodMap.upi ? (getMaskedDetail('upi') ?? '\u2022\u2022\u2022\u2022el@oksbi') : null,
+        fee: formatFeeLabel(rates.upi, rentAmount),
         feeAmount: upiFee,
-        isSetUp: hasSavedUpi,
-        savedMethodId: hasSavedUpi ? getMethodId('upi') : undefined,
+        isSetUp: savedMethodMap.upi,
+        savedMethodId: savedMethodMap.upi ? getMethodId('upi') : undefined,
       },
       {
         id: 'netbanking-1',
         type: 'netbanking' as const,
         title: 'Net Banking',
-        maskedDetail: hasSavedNetbanking ? (getMaskedDetail('netbanking') ?? '\u2022\u2022\u2022\u2022 2345') : null,
-        fee: `\u20B9${netbankingFee.toLocaleString('en-IN')} fee`,
+        maskedDetail: savedMethodMap.netbanking ? (getMaskedDetail('netbanking') ?? '\u2022\u2022\u2022\u2022 2345') : null,
+        fee: formatFeeLabel(rates.netbanking, rentAmount),
         feeAmount: netbankingFee,
-        isSetUp: hasSavedNetbanking,
-        savedMethodId: hasSavedNetbanking ? getMethodId('netbanking') : undefined,
+        isSetUp: savedMethodMap.netbanking,
+        savedMethodId: savedMethodMap.netbanking ? getMethodId('netbanking') : undefined,
       },
       {
         id: 'debit-card-1',
         type: 'debit_card' as const,
         title: 'Debit Card',
-        maskedDetail: hasSavedDebitCard ? (getMaskedDetail('card', 'debit') ?? '\u2022\u2022\u2022\u2022 2345') : null,
-        fee: `\u20B9${debitCardFee.toLocaleString('en-IN')} fee`,
+        maskedDetail: savedMethodMap.debitCard ? (getMaskedDetail('card', 'debit') ?? '\u2022\u2022\u2022\u2022 2345') : null,
+        fee: formatFeeLabel(rates.debit_card, rentAmount),
         feeAmount: debitCardFee,
-        isSetUp: hasSavedDebitCard,
-        savedMethodId: hasSavedDebitCard ? getMethodId('card', 'debit') : undefined,
+        isSetUp: savedMethodMap.debitCard,
+        savedMethodId: savedMethodMap.debitCard ? getMethodId('card', 'debit') : undefined,
       },
       {
         id: 'card-1',
         type: 'card' as const,
         title: 'Credit Card',
-        maskedDetail: hasSavedCreditCard ? (getMaskedDetail('card', 'credit') ?? '\u2022\u2022\u2022\u2022 2345') : null,
-        fee: `\u20B9${creditCardFee.toLocaleString('en-IN')} fee`,
+        maskedDetail: savedMethodMap.creditCard ? (getMaskedDetail('card', 'credit') ?? '\u2022\u2022\u2022\u2022 2345') : null,
+        fee: formatFeeLabel(rates.credit_card, rentAmount),
         feeAmount: creditCardFee,
-        isSetUp: hasSavedCreditCard,
+        isSetUp: savedMethodMap.creditCard,
         isDisabled: creditCardDisabled,
         disabledReason: creditCardDisabledReason,
-        savedMethodId: hasSavedCreditCard ? getMethodId('card', 'credit') : undefined,
+        savedMethodId: savedMethodMap.creditCard ? getMethodId('card', 'credit') : undefined,
       },
     ];
-  }, [rentAmount, savedMethods, dynamicRates, hasSavedCreditCard, hasSavedDebitCard, hasSavedUpi, hasSavedNetbanking, creditCardDisabled, creditCardDisabledReason]);
+  }, [rentAmount, savedMethods, dynamicRates, savedMethodMap, creditCardDisabled, creditCardDisabledReason]);
 
   const allSetUp = paymentMethods.every((m) => m.isSetUp);
+
+  // Auto-select first saved method when data loads (instead of always defaulting to UPI)
+  useEffect(() => {
+    if (hasAutoSelected || !savedMethods?.length) return;
+    const firstSaved = paymentMethods.find((m) => m.isSetUp && !m.isDisabled);
+    if (firstSaved) {
+      setSelectedMethod(firstSaved.id);
+      setHasAutoSelected(true);
+    }
+  }, [savedMethods, paymentMethods, hasAutoSelected]);
 
   const selectedPaymentMethod = paymentMethods.find((m) => m.id === selectedMethod);
   const isSelectedDisabled = selectedPaymentMethod?.isDisabled ?? false;
@@ -378,12 +382,21 @@ export function MethodSelectorContent({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const method = paymentMethods.find((m) => m.id === selectedMethod);
     const methodType: PaymentMethodType = method?.type ?? 'upi';
-    if (method?.isSetUp) {
+    if (method?.isSetUp && method.savedMethodId) {
+      // Build saved method details for direct execution (UPI/Netbanking)
+      const saved = savedMethods?.find((m: SavedMethod) => m.id === method.savedMethodId);
+      const details: SavedMethodDetails | undefined = saved ? {
+        savedMethodId: saved.id,
+        vpa: saved.vpa,
+        bankCode: saved.bank_code,
+      } : undefined;
+      onProceed(methodType, details);
+    } else if (method?.isSetUp) {
       onProceed(methodType);
     } else {
       onSetup(methodType);
     }
-  }, [paymentMethods, selectedMethod, onProceed, onSetup]);
+  }, [paymentMethods, selectedMethod, savedMethods, onProceed, onSetup]);
 
   return (
     <View style={styles.sheetContent}>
@@ -404,11 +417,6 @@ export function MethodSelectorContent({
 
       {/* Payment Method Rows */}
       <View style={styles.methodsContainer}>
-        {isLoadingMethods && (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator size="small" color={FIGMA.headingAccent} />
-          </View>
-        )}
         {paymentMethods.map((method, index) => (
           <React.Fragment key={method.id}>
             <PaymentMethodRow
@@ -417,6 +425,7 @@ export function MethodSelectorContent({
               allSetUp={allSetUp}
               onSelect={handleSelectMethod}
               onEdit={(type, id) => onEdit(type, id as string)}
+              isInitiating={isInitiating ?? false}
             />
             {index < paymentMethods.length - 1 && <SolidDivider />}
           </React.Fragment>
@@ -463,7 +472,7 @@ const styles = StyleSheet.create({
 
   // Heading — Figma: 28px Regular, 40 line-height, -1 letter-spacing, px 48
   headingContainer: {
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
   },
   headingText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -478,18 +487,13 @@ const styles = StyleSheet.create({
 
   // Cashback pill container
   cashbackPillContainer: {
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
   },
 
   // Methods container — Figma: px 48, gap 16
   methodsContainer: {
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
     gap: 16,
-  },
-
-  loadingRow: {
-    alignItems: 'center',
-    paddingVertical: 8,
   },
 
   // Solid divider — Figma: 0.25px #4D4D4D (NOT dashed)
@@ -592,7 +596,7 @@ const styles = StyleSheet.create({
 
   // CTA Section — Figma: px 48, gap 16
   ctaSection: {
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
     gap: 16,
     paddingBottom: 24,
   },

@@ -33,6 +33,7 @@ import Animated, {
   withTiming,
   withSequence,
   withRepeat,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -223,7 +224,7 @@ interface OTPBoxProps {
 function OTPBox({ digit, isActive, hasError, disabled }: OTPBoxProps) {
   const cursorOpacity = useSharedValue(0);
 
-  // Blinking cursor animation
+  // Blinking cursor animation with cleanup
   useEffect(() => {
     if (isActive && !disabled) {
       cursorOpacity.value = withRepeat(
@@ -235,8 +236,10 @@ function OTPBox({ digit, isActive, hasError, disabled }: OTPBoxProps) {
         false
       );
     } else {
+      cancelAnimation(cursorOpacity);
       cursorOpacity.value = withTiming(0, { duration: duration.fast });
     }
+    return () => cancelAnimation(cursorOpacity);
   }, [isActive, disabled]);
 
   const cursorStyle = useAnimatedStyle(() => ({

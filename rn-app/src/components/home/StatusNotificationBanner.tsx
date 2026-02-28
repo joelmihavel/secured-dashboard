@@ -11,8 +11,9 @@
  * Spacing: Component centers itself; parent layout applies margins as needed.
  */
 
-import React, { memo, useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { memo, useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 // ==============================================
 // TYPES
@@ -54,20 +55,20 @@ export const StatusNotificationBanner = memo(function StatusNotificationBanner({
   customMessage,
   onPress,
 }: StatusNotificationBannerProps) {
-  const opacity = useRef(new Animated.Value(0)).current;
+  const opacity = useSharedValue(0);
   const config = notificationConfig[type];
   const displayText = customMessage ?? config.text;
 
   useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [opacity]);
+    opacity.value = withTiming(1, { duration: 300 });
+  }, []);
+
+  const animatedPillStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
 
   const pill = (
-    <Animated.View style={[styles.pill, { opacity }]} testID="status-notification-banner">
+    <Animated.View style={[styles.pill, animatedPillStyle]} testID="status-notification-banner">
       <Text style={[styles.text, { color: config.textColor }]}>
         {displayText}
       </Text>

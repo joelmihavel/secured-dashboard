@@ -153,16 +153,22 @@ function withExceptionLoggerFile(config) {
     "ios",
     async (config) => {
       const projectRoot = config.modRequest.platformProjectRoot;
-      const filePath = path.join(projectRoot, "FlentSecured", OBJC_FILE_NAME);
 
-      // Ensure directory exists
-      const dir = path.dirname(filePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      // Write to both locations so Xcode can find it regardless of group path resolution
+      const paths = [
+        path.join(projectRoot, "FlentSecured", OBJC_FILE_NAME),
+        path.join(projectRoot, OBJC_FILE_NAME),
+      ];
+
+      for (const filePath of paths) {
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, OBJC_CONTENTS);
+        console.log(`[withExceptionLogger] Wrote ${filePath}`);
       }
 
-      fs.writeFileSync(filePath, OBJC_CONTENTS);
-      console.log(`[withExceptionLogger] Wrote ${filePath}`);
       return config;
     },
   ]);

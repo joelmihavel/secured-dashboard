@@ -13,11 +13,16 @@ export type { CorePaymentMode, CorePaymentOutcome, InstrumentParams } from './pa
 // TYPES
 // ==============================================
 
+export interface FeeRateConfig {
+  rate: number;
+  fee_type: 'percentage' | 'flat_paise';
+}
+
 export interface GatewayFeeRates {
-  upi: number;
-  credit_card: number;
-  debit_card: number;
-  netbanking: number;
+  upi: FeeRateConfig;
+  credit_card: FeeRateConfig;
+  debit_card: FeeRateConfig;
+  netbanking: FeeRateConfig;
 }
 
 export interface UnifiedInitiateResult {
@@ -32,22 +37,50 @@ export interface UnifiedInitiateResult {
 // FEE RATES
 // ==============================================
 
-const PAYU_FEE_RATES: GatewayFeeRates = { upi: 0, credit_card: 0.02, debit_card: 0.02, netbanking: 0.015 };
+const PAYU_FEE_RATES: GatewayFeeRates = {
+  upi: { rate: 0, fee_type: 'percentage' },
+  credit_card: { rate: 0.0185, fee_type: 'percentage' },
+  debit_card: { rate: 0.009, fee_type: 'percentage' },
+  netbanking: { rate: 1500, fee_type: 'flat_paise' },
+};
 
 export function getGatewayFeeRates(): GatewayFeeRates {
   return PAYU_FEE_RATES;
+}
+
+/** Compute fee in paise for a given rate config and amount in paise */
+export function computeFee(config: FeeRateConfig, amountPaise: number): number {
+  if (config.fee_type === 'flat_paise') return Math.round(config.rate);
+  return Math.ceil(amountPaise * config.rate);
+}
+
+/** Format fee config as a human-readable label (e.g. "Free", "1.85%", "₹15 fee") */
+export function formatFeeLabel(config: FeeRateConfig, amountPaise: number): string {
+  if (config.fee_type === 'flat_paise') {
+    const rupees = Math.round(config.rate / 100);
+    return `\u20B9${rupees.toLocaleString('en-IN')} fee`;
+  }
+  if (config.rate === 0) return 'Free';
+  const feePaise = Math.ceil(amountPaise * config.rate);
+  return `\u20B9${feePaise.toLocaleString('en-IN')} fee`;
+}
+
+/** Normalize a fee value — if the backend returns a plain number (old shape), wrap it as percentage */
+function normalizeFeeRate(value: unknown): FeeRateConfig {
+  if (typeof value === 'object' && value !== null && 'rate' in value && 'fee_type' in value) {
+    return value as FeeRateConfig;
+  }
+  if (typeof value === 'number') {
+    return { rate: value, fee_type: 'percentage' };
+  }
+  return { rate: 0, fee_type: 'percentage' };
 }
 
 export async function fetchFeeConfig(): Promise<GatewayFeeRates> {
   const { data, error } = await callEdgeFunction<{
     success: boolean;
     data: {
-      fee_rates: {
-        upi: number;
-        credit_card: number;
-        debit_card: number;
-        netbanking: number;
-      };
+      fee_rates: Record<string, unknown>;
     };
   }>('get-fee-config', {}, true, 'GET');
 
@@ -55,7 +88,13 @@ export async function fetchFeeConfig(): Promise<GatewayFeeRates> {
     return PAYU_FEE_RATES; // Fallback to hardcoded defaults
   }
 
-  return data.data.fee_rates;
+  const raw = data.data.fee_rates;
+  return {
+    upi: normalizeFeeRate(raw.upi),
+    credit_card: normalizeFeeRate(raw.credit_card),
+    debit_card: normalizeFeeRate(raw.debit_card),
+    netbanking: normalizeFeeRate(raw.netbanking),
+  };
 }
 
 // ==============================================
@@ -68,7 +107,7 @@ export async function initiatePayment(params: {
   rentMonth: string;
   cardType?: 'credit' | 'debit';
 }): Promise<{ data: UnifiedInitiateResult | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: {
       payment_id: string;
@@ -81,10 +120,19 @@ export async function initiatePayment(params: {
     tenancy_id: params.tenancyId,
     payment_method: params.paymentMethod === 'debit_card' ? 'card' : params.paymentMethod,
     card_type: params.cardType,
-    rent_month: params.rentMonth,
+    rent_month: params.rentMonth.slice(0, 7),
+    checkout_mode: 'sdk',
   }, true);
 
   if (error) {
+    // Surface field-level validation details for debugging
+    const details = errorBody?.details as Record<string, unknown> | undefined;
+    const fieldErrors = (details?.fields ?? details) as Record<string, string> | undefined;
+    if (fieldErrors && typeof fieldErrors === 'object') {
+      const fieldInfo = Object.entries(fieldErrors).map(([k, v]) => `${k}: ${v}`).join(', ');
+      console.error('[initiatePayment] Validation details:', fieldInfo);
+      return { data: null, error: `${error} (${fieldInfo})` };
+    }
     return { data: null, error };
   }
 

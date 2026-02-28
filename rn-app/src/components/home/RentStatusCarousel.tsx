@@ -4,14 +4,15 @@
  * Figma Reference: 684-8639, 684-9249
  */
 
-import React, { memo, useRef, useState } from 'react';
+import React, { memo, useRef, useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
+  FlatList,
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  ListRenderItemInfo,
 } from 'react-native';
 
 import { PaymentFlipCard, PaymentMonthData } from './PaymentFlipCard';
@@ -43,54 +44,74 @@ function RentStatusCarouselComponent({
   items,
 }: RentStatusCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const flatListRef = useRef<FlatList<CarouselCardItem>>(null);
 
   const totalCards = items.length;
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / (CARD_WIDTH + CARD_GAP));
-    if (index !== activeIndex && index >= 0 && index < totalCards) {
-      setActiveIndex(index);
+    setActiveIndex((prev) => {
+      if (index !== prev && index >= 0 && index < items.length) return index;
+      return prev;
+    });
+  }, [items.length]);
+
+  const renderItem = useCallback(({ item }: ListRenderItemInfo<CarouselCardItem>) => {
+    switch (item.type) {
+      case 'payment':
+        return (
+          <View style={styles.cardWrapper}>
+            <PaymentFlipCard data={item.data} />
+          </View>
+        );
+      case 'setup_progress':
+        return (
+          <View style={styles.cardWrapper}>
+            <View style={styles.fixedCardWidth}>
+              <SetupProgressCard {...item.data} />
+            </View>
+          </View>
+        );
+      case 'landlord_status':
+        return (
+          <View style={styles.cardWrapper}>
+            <View style={styles.fixedCardWidth}>
+              <LandlordStatusCard {...item.data} />
+            </View>
+          </View>
+        );
+      default:
+        return null;
     }
-  };
+  }, []);
+
+  const keyExtractor = useCallback((item: CarouselCardItem) => item.id, []);
+
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: CARD_WIDTH + CARD_GAP,
+    offset: (CARD_WIDTH + CARD_GAP) * index,
+    index,
+  }), []);
 
   if (items.length === 0) {
     return null;
   }
 
   // Figma 684:9453 / 684:9458 - single card should be perfectly centered
-  // (SCREEN_WIDTH - CARD_WIDTH) / 2
   const isSingleCard = items.length === 1;
   const singleCardPadding = Math.max(0, (SCREEN_WIDTH - CARD_WIDTH) / 2);
-
-  const renderCard = (item: CarouselCardItem) => {
-    switch (item.type) {
-      case 'payment':
-        return <PaymentFlipCard data={item.data} />;
-      case 'setup_progress':
-        return (
-          <View style={styles.fixedCardWidth}>
-            <SetupProgressCard {...item.data} />
-          </View>
-        );
-      case 'landlord_status':
-        return (
-          <View style={styles.fixedCardWidth}>
-            <LandlordStatusCard {...item.data} />
-          </View>
-        );
-      default:
-        return null;
-    }
-  };
 
   return (
     <View style={styles.container}>
       {/* bg_line — Figma 768:303932 behind flip card */}
       <BgLine style={styles.bgLine} />
-      <ScrollView
-        ref={scrollViewRef}
+      <FlatList
+        ref={flatListRef}
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
@@ -98,20 +119,14 @@ function RentStatusCarouselComponent({
         snapToAlignment={isSingleCard ? 'center' : 'start'}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        windowSize={3}
+        initialNumToRender={2}
+        maxToRenderPerBatch={1}
         contentContainerStyle={[
           styles.scrollContent,
           isSingleCard && { paddingLeft: singleCardPadding, paddingRight: singleCardPadding }
         ]}
-      >
-        {items.map((item, index) => (
-          <View
-            key={item.id}
-            style={styles.cardWrapper}
-          >
-            {renderCard(item)}
-          </View>
-        ))}
-      </ScrollView>
+      />
 
       {/* Pagination dots */}
       {totalCards > 1 && (

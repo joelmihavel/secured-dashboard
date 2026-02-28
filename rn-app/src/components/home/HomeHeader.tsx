@@ -23,6 +23,7 @@ import { s } from '@/src/theme/scale';
 export interface HomeHeaderProps {
   userName: string;
   avatarUrl?: string | null;
+  userId?: string | null;
   onAvatarPress?: () => void;
   onNotificationPress?: () => void;
   unreadCount?: number;
@@ -31,6 +32,7 @@ export interface HomeHeaderProps {
 function HomeHeaderComponent({
   userName,
   avatarUrl,
+  userId,
   onAvatarPress,
   onNotificationPress,
   unreadCount = 0,
@@ -60,7 +62,7 @@ function HomeHeaderComponent({
         testID="home-avatar"
         activeOpacity={0.8}
       >
-        <Avatar uri={avatarUrl} name={userName} size="sm" />
+        <Avatar uri={avatarUrl} userId={userId} name={userName} size="sm" />
       </TouchableOpacity>
     </View>
   );

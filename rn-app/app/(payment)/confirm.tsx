@@ -41,28 +41,33 @@ import * as Haptics from 'expo-haptics';
 
 import { PrimaryButton, BackButton, Pill } from '@/src/components';
 import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal';
-import { useDashboard, useFeeRates } from '@/src/hooks';
+import { useDashboard, useFeeRates, useSavedPaymentMethods } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { getGatewayFeeRates, initiatePayment } from '@/src/services/payment';
+import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
+import { getGatewayFeeRates, initiatePayment, computeFee } from '@/src/services/payment';
+import type { FeeRateConfig, GatewayFeeRates } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import type { ModalView } from '@/src/components/payment/PaymentMethodModal/types';
 import type { PaymentMethodType, PayUSessionParams } from '@/src/stores/payment';
+import type { SavedPaymentMethod } from '@/src/services/api/payments';
 
 const fmt = (n: number) => n.toLocaleString('en-IN');
 
-/** Map store method type → GatewayFeeRates key */
-function getFeeRate(
-  rates: { upi: number; credit_card: number; debit_card: number; netbanking: number },
+const ZERO_FEE: FeeRateConfig = { rate: 0, fee_type: 'percentage' };
+
+/** Map store method type → GatewayFeeRates key, returning the full FeeRateConfig */
+function getFeeConfig(
+  rates: GatewayFeeRates,
   methodType: PaymentMethodType | undefined,
-): number {
-  if (!methodType) return 0;
-  const map: Record<PaymentMethodType, number> = {
+): FeeRateConfig {
+  if (!methodType) return ZERO_FEE;
+  const map: Record<PaymentMethodType, FeeRateConfig> = {
     upi: rates.upi,
     card: rates.credit_card,
     debit_card: rates.debit_card,
     netbanking: rates.netbanking,
   };
-  return map[methodType] ?? 0;
+  return map[methodType] ?? ZERO_FEE;
 }
 
 // ── Icons ────────────────────────────────────────────────────────────────────
@@ -139,6 +144,8 @@ export default function ConfirmPaymentScreen() {
   const { tenancy, upcomingPayment, cashback } = useDashboard();
   const { data: feeRates } = useFeeRates();
   const selectedInstrument = usePaymentStore((s) => s.selectedInstrument);
+  const { executePayment } = usePaymentFlow();
+  const { data: savedMethods } = useSavedPaymentMethods();
 
   const validModalViews: ModalView[] = ['enter-amount', 'selector', 'add-upi', 'add-card', 'add-debit-card', 'add-netbanking', 'edit-method'];
   const parsedModalView = validModalViews.includes(modalViewParam as ModalView) ? (modalViewParam as ModalView) : undefined;
@@ -196,8 +203,8 @@ export default function ConfirmPaymentScreen() {
   const totalRent = baseRent + maintenance;
 
   const rates = feeRates ?? getGatewayFeeRates();
-  const feeRate = getFeeRate(rates, selectedInstrument?.type);
-  const convenienceFee = Math.ceil(totalRent * feeRate);
+  const feeConfig = getFeeConfig(rates, selectedInstrument?.type);
+  const convenienceFee = computeFee(feeConfig, totalRent);
 
   const cashbackPct = cashback?.discount_rate ?? 0.01;
   const cashbackAmount = Math.round(totalRent * cashbackPct);
@@ -260,6 +267,7 @@ export default function ConfirmPaymentScreen() {
     udf4: p.udf4,
     udf5: p.udf5,
     enforce_paymethod: p.enforce_paymethod,
+    environment: (p.environment as '0' | '1') ?? undefined,
   }), []);
 
   // Pre-fetch when confirm screen mounts (if instrument is already selected)
@@ -296,9 +304,11 @@ export default function ConfirmPaymentScreen() {
 
   const handlePayNow = useCallback(async () => {
     if (isProcessing) return;
+    setIsProcessing(true);
 
     if (!tenancyId) {
       Alert.alert('Error', 'Payment details are still loading. Please wait a moment.');
+      setIsProcessing(false);
       return;
     }
 
@@ -306,11 +316,11 @@ export default function ConfirmPaymentScreen() {
     if (!instrument) {
       setModalInitialView('selector');
       setMethodModalVisible(true);
+      setIsProcessing(false);
       return;
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setIsProcessing(true);
 
     const methodType = instrument.type;
     const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
@@ -376,9 +386,34 @@ export default function ConfirmPaymentScreen() {
       store.setPayuSessionParams(payuParams);
       store.setProcessing(paymentId);
       store.setLastPayment(paymentId);
-      setPaymentIdLocal(paymentId);
 
-      // Open modal at the appropriate add-method view
+      // Check for saved method details — execute directly for UPI/Netbanking
+      const saved = savedMethods?.find((m: SavedPaymentMethod) => {
+        if (methodType === 'upi') return m.type === 'upi';
+        if (methodType === 'netbanking') return m.type === 'netbanking';
+        return false; // Cards always need CVV → go through modal
+      });
+
+      // Saved UPI → execute directly with saved VPA
+      if (saved?.vpa && methodType === 'upi') {
+        const outcome = await executePayment('upi', { vpa: saved.vpa }, paymentId, () => {});
+        if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+          setIsProcessing(false);
+        }
+        return;
+      }
+
+      // Saved Netbanking → execute directly with saved bank code
+      if (saved?.bank_code && methodType === 'netbanking') {
+        const outcome = await executePayment('NB', { bankcode: saved.bank_code }, paymentId, () => {});
+        if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+          setIsProcessing(false);
+        }
+        return;
+      }
+
+      // Card or no saved details → open modal at add-method view
+      setPaymentIdLocal(paymentId);
       const viewMap: Record<string, ModalView> = {
         upi: 'add-upi',
         card: 'add-card',
@@ -393,7 +428,7 @@ export default function ConfirmPaymentScreen() {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, tenancyId, rentMonth, buildSessionParams, router, payableAmount]);
+  }, [isProcessing, tenancyId, rentMonth, buildSessionParams, router, payableAmount, savedMethods, executePayment]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

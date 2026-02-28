@@ -51,7 +51,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Ionicons } from '@expo/vector-icons';
-import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
+import { Screen, Text, Logo, PrimaryButton, DottedGridPattern } from '@/src/components';
 import {
   HomeHeader,
   HeadlineSection,
@@ -92,7 +92,7 @@ import { usePaymentStore } from '@/src/stores/payment';
 import type { PaymentStampEntry } from '@/src/services/api/payments';
 
 // Import colors from theme
-import { colors } from '@/src/theme';
+import { colors, spacing, radius } from '@/src/theme';
 
 import { mapRecentPayments, deriveCashbackEntries, getDashboardState } from '@/src/services/api/dashboard';
 
@@ -293,7 +293,7 @@ export default function HomeScreen() {
         id: 'upcoming',
         data: {
           monthName: formatMonth(upcomingPayment.rent_month),
-          cashbackEarned: 0,
+          cashbackEarned: paymentMethods.length > 0 ? Math.round(rentAmount * (cashbackRate / 100)) : 0,
           status: earlyStatus,
           yearlyStamps,
           lateCount: summaryLate,
@@ -652,13 +652,19 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <Screen testID="home-screen-loading" padded={false}>
-        <View style={styles.loadingContainer}>
-          <Logo size={64} />
-          <ActivityIndicator size="large" color={colors.brand[500]} />
-          <Text variant="bodyMd2" color="muted" style={styles.loadingText}>
-            Loading your dashboard...
-          </Text>
+      <Screen testID="home-screen-loading" padded={false} safeAreaTop={false} safeAreaBottom={false}
+        style={{ backgroundColor: colors.black[700] }}
+      >
+        <DottedGridPattern fadeMask={false} />
+        <View style={styles.betaSplashContainer}>
+          <View style={styles.betaSplashLogoWrap}>
+            <Logo size={40} />
+          </View>
+          <View style={styles.betaSplashBadge}>
+            <Text variant="bodySmMedium" style={styles.betaSplashBadgeText}>
+              BETA LAUNCH
+            </Text>
+          </View>
         </View>
       </Screen>
     );
@@ -716,7 +722,7 @@ export default function HomeScreen() {
       >
         {/* Header: Logo + "Hi, [Name]" + Avatar */}
         {/* Figma: HomeHeader handles its own paddingHorizontal: 32 */}
-        <HomeHeader userName={userName} avatarUrl={user?.avatar_url} unreadCount={unreadCount} />
+        <HomeHeader userName={userName} avatarUrl={user?.avatar_url} userId={user?.id} unreadCount={unreadCount} />
 
         <View style={styles.mainContent}>
           {/* Dashboard Content */}
@@ -1083,11 +1089,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
 
     default:
       return (
-        <View style={styles.contentContainer}>
-          <View style={styles.emptyStateContainer}>
-            <Logo size={64} />
-            <Text variant="bodyMd2" color="muted" align="center" style={styles.emptyStateText}>
-              Loading your dashboard...
+        <View style={styles.betaSplashContainer}>
+          <View style={styles.betaSplashLogoWrap}>
+            <Logo size={40} />
+          </View>
+          <View style={styles.betaSplashBadge}>
+            <Text variant="bodySmMedium" style={styles.betaSplashBadgeText}>
+              BETA LAUNCH
             </Text>
           </View>
         </View>
@@ -1129,16 +1137,27 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10, // Figma: footer sits above scroll content
   },
-  loadingContainer: {
+  betaSplashContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
-    backgroundColor: colors.black[700], // Figma: #131313 (colors.black[700])
   },
-  loadingText: {
-    marginTop: 12,
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
+  betaSplashLogoWrap: {
+    marginBottom: 12, // Figma: logo-to-badge gap 12px (beta-splash 176:2750→176:2752)
+  },
+  betaSplashBadge: {
+    backgroundColor: colors.brand[500],    // #FF9A6D
+    borderRadius: radius.xs,               // 4px
+    flexDirection: 'row' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: spacing.xs,         // 8px
+    paddingVertical: spacing.xxs,          // 4px
+  },
+  betaSplashBadgeText: {
+    letterSpacing: -0.2,
+    color: colors.black[900],              // #000000
+    textAlign: 'center' as const,
   },
   errorContainer: {
     flex: 1,
@@ -1183,17 +1202,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Figma: counterAxisAlignItems CENTER
     // NOTE: overflow hidden removed — was clipping cashback accrued amount (32px font)
     // paddingHorizontal 32 is handled by child components (RecentPaymentsList, CashbacksList, etc.)
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40, // Figma: larger padding for empty state centering
-    gap: 16,
-  },
-  emptyStateText: {
-    marginTop: 8,
-    textAlign: 'center', // Figma: textAlignHorizontal CENTER
   },
   emptyStateButton: {
     marginTop: 24,

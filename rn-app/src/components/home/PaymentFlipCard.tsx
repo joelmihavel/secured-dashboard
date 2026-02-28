@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useRef } from 'react';
 import { View, StyleSheet, Pressable, Dimensions, Text as RNText } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -63,8 +63,8 @@ interface PaymentFlipCardProps {
   data: PaymentMonthData;
 }
 
-export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
-  const [flipped, setFlipped] = useState(false);
+export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFlipCardProps) {
+  const flippedRef = useRef(false);
   const flipAnim = useSharedValue(0);
 
   // Cycle through furniture sequentially: Sofa Yellow -> Chair Green -> Chair Red -> repeat
@@ -79,8 +79,8 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
   const furnitureAnim = useSharedValue(0);
 
   const handlePress = () => {
-    const toFlipped = !flipped;
-    setFlipped(toFlipped);
+    const toFlipped = !flippedRef.current;
+    flippedRef.current = toFlipped;
 
     // Smooth card flip (600ms ease-in-out)
     flipAnim.value = withTiming(toFlipped ? 1 : 0, {
@@ -263,9 +263,11 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
             <View style={styles.cashbackRow}>
               <Text style={styles.cashbackLabel}>{config.label}</Text>
               <View style={styles.cashbackAmountContainer}>
-                <Text style={styles.cashbackAmount}>
-                  ₹  {data.cashbackEarned === 0 ? '00.00' : data.cashbackEarned.toFixed(2)}
-                </Text>
+                <RNText style={styles.cashbackCurrency}>₹</RNText>
+                <RNText style={styles.cashbackAmountValue}>
+                  {Math.round(data.cashbackEarned)}
+                </RNText>
+                <RNText style={styles.cashbackDecimal}>.00</RNText>
               </View>
             </View>
           </LinearGradient>
@@ -346,7 +348,7 @@ export function PaymentFlipCard({ data }: PaymentFlipCardProps) {
       {renderBack()}
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -491,12 +493,25 @@ const styles = StyleSheet.create({
   },
   cashbackAmountContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
   },
-  cashbackAmount: {
+  cashbackCurrency: {
+    color: '#878787',
+    fontSize: sf(14),
+    lineHeight: sf(28),
+    fontFamily: 'PlusJakartaSans-Regular',
+  },
+  cashbackAmountValue: {
     color: '#FF9A6D',
-    fontSize: sf(28), // Figma: 28px
-    lineHeight: sf(40), // Figma: 40px
+    fontSize: sf(32),
+    lineHeight: sf(40),
+    fontFamily: 'PlusJakartaSans-Regular',
+    letterSpacing: -1,
+  },
+  cashbackDecimal: {
+    color: '#878787',
+    fontSize: sf(14),
+    lineHeight: sf(28),
     fontFamily: 'PlusJakartaSans-Regular',
   },
   addPaymentContainer: {

@@ -181,11 +181,6 @@ export default function ProfileScreen() {
       setEditModalMethodType(type === 'card' && cardType === 'debit' ? 'debit_card' : type);
       setEditModalMethodId(method.id);
       setEditModalVisible(true);
-    } else {
-      // Fallback to full screen if no saved method found
-      const params: Record<string, string> = { type };
-      if (cardType) params.card_type = cardType;
-      router.push({ pathname: '/(profile)/edit-payment-method', params } as never);
     }
   }, [router, savedMethods]);
 
@@ -288,7 +283,7 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`View profile for ${fullName}`}
               >
-                <Avatar uri={user?.avatar_url} name={fullName} size="md" />
+                <Avatar uri={user?.avatar_url} userId={user?.id} name={fullName} size="md" />
                 {/* User details (41:8833): column, gap=4, flex=1 */}
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{fullName}</Text>

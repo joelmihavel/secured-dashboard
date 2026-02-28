@@ -2,8 +2,8 @@
  * Avatar Component
  * Reusable pixel-art avatar with fallback chain:
  * 1. Network image (expo-image with caching)
- * 2. Initials circle (brand orange bg + white initial)
- * 3. Loading shimmer
+ * 2. Default Pokemon avatar (deterministic per userId, from Supabase Storage)
+ * 3. Initials circle (brand orange bg + white initial)
  *
  * Sizes: sm=32, md=48, lg=80
  */
@@ -27,11 +27,28 @@ const FONT_SIZE_MAP = {
   lg: 28,
 } as const;
 
+/**
+ * Deterministic default avatar URL from Supabase Storage.
+ * Hashes userId to one of 30 Pokemon sprite PNGs (orange-tinted pixel art).
+ */
+function getDefaultAvatarUrl(userId: string): string {
+  // Simple hash: sum char codes, mod 30, 1-indexed
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash + userId.charCodeAt(i)) | 0;
+  }
+  const index = (Math.abs(hash) % 30) + 1;
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  return `${supabaseUrl}/storage/v1/object/public/avatars/defaults/${index}.png`;
+}
+
 export type AvatarSize = keyof typeof SIZE_MAP;
 
 export interface AvatarProps {
   /** Remote image URL */
   uri?: string | null;
+  /** User ID — used to pick a deterministic default Pokemon avatar */
+  userId?: string | null;
   /** User's display name (used for initials fallback) */
   name?: string;
   /** Avatar size preset */
@@ -40,23 +57,33 @@ export interface AvatarProps {
   testID?: string;
 }
 
-function AvatarComponent({ uri, name, size = 'sm', testID }: AvatarProps) {
+function AvatarComponent({ uri, userId, name, size = 'sm', testID }: AvatarProps) {
   const [hasError, setHasError] = useState(false);
+  const [defaultError, setDefaultError] = useState(false);
   const px = SIZE_MAP[size];
   const fontSize = FONT_SIZE_MAP[size];
   const borderRadius = px / 2;
 
   const initial = name?.charAt(0).toUpperCase() || '?';
 
-  if (uri && !hasError) {
+  // Resolve image URL: custom avatar → default Pokemon avatar
+  const resolvedUri = uri || (userId && !defaultError ? getDefaultAvatarUrl(userId) : null);
+
+  if (resolvedUri && !hasError) {
     return (
       <Image
-        source={{ uri }}
+        source={{ uri: resolvedUri }}
         style={[styles.image, { width: px, height: px, borderRadius }]}
         contentFit="cover"
         cachePolicy="disk"
-        recyclingKey={uri}
-        onError={() => setHasError(true)}
+        recyclingKey={resolvedUri}
+        onError={() => {
+          if (!uri && userId) {
+            // Default avatar failed — fall through to initials
+            setDefaultError(true);
+          }
+          setHasError(true);
+        }}
         testID={testID}
       />
     );

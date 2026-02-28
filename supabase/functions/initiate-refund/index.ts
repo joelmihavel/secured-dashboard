@@ -23,22 +23,19 @@ import { AppError, ValidationError, NotFoundError, ExternalServiceError, Payment
 import { validateSchema, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
+import {
+  PAYU_MERCHANT_KEY,
+  PAYU_MERCHANT_SALT,
+  PAYU_INFO_URL,
+  fetchWithTimeout,
+  requirePayUCredentials,
+} from "../_shared/payu-config.ts";
 
-// ==============================================
-// CONFIGURATION
-// ==============================================
-
-const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY");
-const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT");
-const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://sandboxsecure.payu.in";
-
-// Refund API endpoint
-const PAYU_REFUND_URL = `${PAYU_BASE_URL.replace("secure", "info")}/merchant/postservice`;
+// PayU uses the same info endpoint for refunds (cancel_refund_transaction command)
+const PAYU_REFUND_URL = PAYU_INFO_URL;
 
 // Validate PayU credentials at startup
-if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
-  console.error("[initiate-refund] FATAL: PayU credentials not configured");
-}
+requirePayUCredentials();
 
 // ==============================================
 // TYPES & VALIDATION
@@ -127,7 +124,7 @@ async function initiatePayURefund(
   console.log(`[initiate-refund] Calling PayU refund API for mihpayid: ${mihpayid}, amount: ${amountRupees}`);
 
   try {
-    const response = await fetch(PAYU_REFUND_URL, {
+    const response = await fetchWithTimeout(PAYU_REFUND_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

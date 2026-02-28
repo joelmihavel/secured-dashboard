@@ -12,13 +12,13 @@
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createServiceClient } from "../_shared/supabase.ts";
+import { createServiceClient, getSupabaseUrl } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, ValidationError, NotFoundError, handleError } from "../_shared/errors.ts";
 import { validateSchema, isValidIfsc, sanitizeIfsc, maskAccountNumber } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { encrypt } from "../_shared/crypto.ts";
-import { sendEmail } from "../_shared/notifications.ts";
+import { sendEmail, notifyUser } from "../_shared/notifications.ts";
 
 // ==============================================
 // TYPES
@@ -493,24 +493,15 @@ async function handleApprove(
     bank_account_id: bankAccount.id,
   });
 
-  // Create in-app notification for tenant
-  const { data: user } = await supabase
-    .from("users")
-    .select("first_name")
-    .eq("id", tenancy.user_id)
-    .single();
-
-  await supabase.rpc("create_notification", {
-    p_user_id: tenancy.user_id,
-    p_title: "Landlord Approved!",
-    p_body: `Great news${user?.first_name ? `, ${user.first_name}` : ""}! Your landlord has approved your tenancy. You can now make rent payments.`,
-    p_notification_type: "landlord_approved",
-    p_action_type: "navigate",
-    p_action_data: { screen: "tenancy", tenancy_id: tenancy.id },
-    p_related_entity_type: "tenancy",
-    p_related_entity_id: tenancy.id,
-    p_priority: "high",
-  });
+  // Notify tenant via notify-user (in-app + push)
+  notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    user_id: tenancy.user_id,
+    notification_type: "landlord_confirmed",
+    template_vars: { landlord_name: tenancy.landlord_name },
+    related_entity_type: "tenancy",
+    related_entity_id: tenancy.id,
+    priority: "high",
+  }).catch((e) => console.error("Failed to notify tenant of landlord approval:", e));
 
   return jsonResponse({
     success: true,
@@ -595,18 +586,15 @@ async function handleDispute(
     },
   });
 
-  // Create in-app notification for tenant
-  await supabase.rpc("create_notification", {
-    p_user_id: tenancy.user_id,
-    p_title: "Tenancy Dispute",
-    p_body: "Your landlord has raised a concern about the tenancy details. Our team will contact you shortly to resolve this.",
-    p_notification_type: "landlord_disputed",
-    p_action_type: "navigate",
-    p_action_data: { screen: "support" },
-    p_related_entity_type: "tenancy",
-    p_related_entity_id: tenancy.id,
-    p_priority: "high",
-  });
+  // Notify tenant via notify-user (in-app + push)
+  notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    user_id: tenancy.user_id,
+    notification_type: "landlord_rejected",
+    template_vars: { landlord_name: tenancy.landlord_name },
+    related_entity_type: "tenancy",
+    related_entity_id: tenancy.id,
+    priority: "high",
+  }).catch((e) => console.error("Failed to notify tenant of landlord dispute:", e));
 
   return jsonResponse({
     success: true,

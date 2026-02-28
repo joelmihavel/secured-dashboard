@@ -18,14 +18,13 @@ import { ValidationError, ExternalServiceError, handleError } from "../_shared/e
 import { validateSchema } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
-
-// ==============================================
-// CONFIGURATION
-// ==============================================
-
-const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY");
-const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT");
-const PAYU_INFO_URL = Deno.env.get("PAYU_INFO_URL") ?? "https://info.payu.in/merchant/postservice";
+import {
+  PAYU_MERCHANT_KEY,
+  PAYU_MERCHANT_SALT,
+  PAYU_INFO_URL,
+  IS_SANDBOX,
+  fetchWithTimeout,
+} from "../_shared/payu-config.ts";
 
 // UPI provider detection patterns
 const UPI_PROVIDERS: Record<string, RegExp> = {
@@ -92,6 +91,12 @@ async function validateUpiVpa(vpa: string): Promise<VpaValidationResult> {
     return { valid: true, message: "Validation skipped - PayU not configured" };
   }
 
+  // PayU test/sandbox keys don't support validate_vpa on info.payu.in
+  if (IS_SANDBOX) {
+    console.log("[add-upi-vpa] Sandbox mode — skipping PayU VPA validation");
+    return { valid: true, message: "Validation skipped - sandbox mode" };
+  }
+
   try {
     const command = "validate_vpa";
     const hashString = `${PAYU_MERCHANT_KEY}|${command}|${vpa}|${PAYU_MERCHANT_SALT}`;
@@ -103,7 +108,7 @@ async function validateUpiVpa(vpa: string): Promise<VpaValidationResult> {
     formData.set("var1", vpa);
     formData.set("hash", hash);
 
-    const response = await fetch(PAYU_INFO_URL, {
+    const response = await fetchWithTimeout(PAYU_INFO_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -118,7 +123,6 @@ async function validateUpiVpa(vpa: string): Promise<VpaValidationResult> {
     }
 
     const data = await response.json();
-    console.log("[add-upi-vpa] PayU validate_vpa raw response:", JSON.stringify(data));
 
     // PayU returns: { status: 1, msg: "...", isVPAValid: 1, payerAccountName: "..." }
     if (data.status !== 1) {
@@ -171,23 +175,23 @@ serve(async (req: Request) => {
   let userId: string | null = null;
 
   try {
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    const { userId: uid } = await createAuthenticatedClient(authHeader);
-    userId = uid;
-
-    // Initialize audit logger
-    audit = AuditLogger.fromRequest(supabase, req, userId, "add-upi-vpa");
-
-    // Parse and validate request
+    // Parse body early to check verify_only
     const body = await req.json();
+    const verify_only = body.verify_only === true;
+
+    // Authenticate user (skip for verify_only in sandbox to allow testing)
+    if (!verify_only || !IS_SANDBOX) {
+      const authHeader = req.headers.get("Authorization");
+      const { userId: uid } = await createAuthenticatedClient(authHeader);
+      userId = uid;
+      audit = AuditLogger.fromRequest(supabase, req, userId, "add-upi-vpa");
+    }
+
     const { upi_vpa, nickname, set_primary = false } = validateSchema<AddUpiVpaRequest>(
       body,
       requestSchema,
       true
     );
-
-    const verify_only = body.verify_only === true;
 
     // Normalize VPA to lowercase
     const normalizedVpa = upi_vpa.toLowerCase().trim();
@@ -210,6 +214,7 @@ serve(async (req: Request) => {
         data: {
           upi_vpa: normalizedVpa,
           upi_provider: provider,
+          valid: validation.valid,
           is_valid: validation.valid,
           account_holder_name: validation.name,
           message: validation.message,

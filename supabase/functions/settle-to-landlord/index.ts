@@ -11,11 +11,12 @@
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createServiceClient, verifyServiceRole } from "../_shared/supabase.ts";
+import { createServiceClient, verifyServiceRole, getSupabaseUrl } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag } from "../_shared/transfer-flags.ts";
+import { notifyUser } from "../_shared/notifications.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -183,6 +184,15 @@ serve(async (req: Request) => {
           payment.id,
           { tenancy_id: tenancy?.id, payout_paise: payoutAmountPaise, rent_paise: maxAllowedPayout },
         );
+        // Notify user of settlement failure
+        notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+          user_id: payment.user_id,
+          notification_type: "settlement_failed",
+          template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
+          related_entity_type: "payment",
+          related_entity_id: payment.id,
+        }).catch((e) => console.error("Failed to notify user of settlement failure:", e));
+
         results.push({
           payment_id: payment.id,
           status: "failed",
@@ -216,6 +226,15 @@ serve(async (req: Request) => {
           payment.id,
           { tenancy_id: tenancy.id, amount_paise: payoutAmountPaise },
         );
+
+        // Notify user of settlement failure
+        notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+          user_id: payment.user_id,
+          notification_type: "settlement_failed",
+          template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
+          related_entity_type: "payment",
+          related_entity_id: payment.id,
+        }).catch((e) => console.error("Failed to notify user of settlement failure:", e));
 
         results.push({
           payment_id: payment.id,

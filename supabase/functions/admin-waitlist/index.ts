@@ -14,10 +14,11 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createServiceClient } from "../_shared/supabase.ts";
+import { createServiceClient, getSupabaseUrl } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { ValidationError, AuthError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
+import { notifyUser } from "../_shared/notifications.ts";
 
 // ==============================================
 // TYPES
@@ -136,6 +137,30 @@ serve(async (req: Request) => {
         user_ids: body.user_ids,
       });
 
+      // Send push notifications to approved users
+      if (approvedIds.size > 0) {
+        const supabaseUrl = getSupabaseUrl();
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+        // Fetch first names for template
+        const { data: users } = await supabase
+          .from("users")
+          .select("id, first_name")
+          .in("id", Array.from(approvedIds));
+
+        const nameMap = new Map((users ?? []).map((u: { id: string; first_name: string }) => [u.id, u.first_name]));
+
+        await Promise.allSettled(
+          Array.from(approvedIds).map((uid) =>
+            notifyUser(supabaseUrl, serviceKey, {
+              user_id: uid,
+              notification_type: "waitlist_approved",
+              template_vars: { name: nameMap.get(uid) ?? "there" },
+            })
+          )
+        );
+      }
+
     } else if (body.action === "reject") {
       const cooldownHours = body.next_application_hours ?? 24;
       const nextApplicationAt = new Date(Date.now() + cooldownHours * 60 * 60 * 1000).toISOString();
@@ -184,6 +209,21 @@ serve(async (req: Request) => {
         rejection_reasons: body.rejection_reasons,
         next_application_at: nextApplicationAt,
       });
+
+      // Send push notifications to rejected users
+      if (rejectedIds.size > 0) {
+        const supabaseUrl = getSupabaseUrl();
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+        await Promise.allSettled(
+          Array.from(rejectedIds).map((uid) =>
+            notifyUser(supabaseUrl, serviceKey, {
+              user_id: uid,
+              notification_type: "waitlist_rejected",
+            })
+          )
+        );
+      }
 
     } else if (body.action === "set_in_progress") {
       const { data, error } = await supabase

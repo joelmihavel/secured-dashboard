@@ -345,14 +345,15 @@ const styles = StyleSheet.create({
   // Height 32 to match countryCodeContainer for alignment
   input: {
     flex: 1,
-    height: 32, // Match countryCodeContainer height
+    height: 32,
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
+    lineHeight: 32,
     color: COLORS.placeholder,
     padding: 0,
     margin: 0,
-    includeFontPadding: false, // Remove Android extra font padding
-    textAlignVertical: 'center', // Center text vertically within height
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   inputFilled: {
     color: COLORS.textFilled,

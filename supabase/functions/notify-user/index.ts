@@ -156,15 +156,32 @@ serve(async (req: Request) => {
     if (prefColumn) {
       const { data: prefs } = await supabase
         .from("notification_preferences")
-        .select(prefColumn)
+        .select(`push_enabled, ${prefColumn}`)
+        .eq("user_id", user_id)
+        .single();
+
+      if (prefs) {
+        // deno-lint-ignore no-explicit-any
+        if ((prefs as any).push_enabled === false) {
+          pushAllowed = false;
+        // deno-lint-ignore no-explicit-any
+        } else if ((prefs as any)[prefColumn] === false) {
+          pushAllowed = false;
+        }
+      }
+      // If no prefs row → fail-open: send anyway
+    } else {
+      // No preference column (always-send types like waitlist) — still check global push_enabled
+      const { data: prefs } = await supabase
+        .from("notification_preferences")
+        .select("push_enabled")
         .eq("user_id", user_id)
         .single();
 
       // deno-lint-ignore no-explicit-any
-      if (prefs && (prefs as any)[prefColumn] === false) {
+      if (prefs && (prefs as any).push_enabled === false) {
         pushAllowed = false;
       }
-      // If no prefs row → fail-open: send anyway
     }
 
     // ------------------------------------------
@@ -192,9 +209,11 @@ serve(async (req: Request) => {
       "create_notification",
       {
         p_user_id: user_id,
-        p_type: dbType,
+        p_notification_type: dbType,
         p_title: title,
         p_body: bodyText,
+        p_action_type: "navigate",
+        p_action_data: { route },
         p_related_entity_type: related_entity_type ?? null,
         p_related_entity_id: related_entity_id ?? null,
       },

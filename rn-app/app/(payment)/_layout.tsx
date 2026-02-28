@@ -22,7 +22,7 @@ export default function PaymentLayout() {
 
   if (!isReady || !isAuthenticated) {
     return (
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.brand[500]} />
       </View>
     );
@@ -37,10 +37,14 @@ export default function PaymentLayout() {
         contentStyle: { backgroundColor: 'transparent' },
       }}
     >
-      
-      <Stack.Screen name="enter-rent" />
+
+      <Stack.Screen name="enter-rent" options={{ animation: 'none' }} />
       <Stack.Screen name="confirm" />
-      <Stack.Screen name="status" />
+      <Stack.Screen name="status" options={{
+        presentation: 'card',
+        animation: 'fade',
+        contentStyle: { backgroundColor: colors.black[700] },
+      }} />
     </Stack>
   );
 }

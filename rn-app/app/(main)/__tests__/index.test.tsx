@@ -51,7 +51,6 @@ jest.mock('@/src/components/home', () => {
     HomeHeader: (props: any) => <View testID="home-header" />,
     HeadlineSection: (props: any) => <View testID="headline-section"><Text>{props.userName}</Text></View>,
     WarningBanner: (props: any) => <View testID="warning-banner" />,
-    PaymentMethodCarousel: (props: any) => <View testID="payment-carousel" />,
     TabSwitcher: (props: any) => <View testID="tab-switcher" />,
     RecentPaymentsList: (props: any) => <View testID="recent-payments" />,
     CashbacksList: (props: any) => <View testID="cashbacks-list" />,
@@ -63,7 +62,6 @@ jest.mock('@/src/components/home', () => {
     RentAmountModal: (props: any) => null,
     EmptyPaymentsState: (props: any) => <View testID="empty-payments" />,
     CashbackEmptyState: (props: any) => <View testID="cashback-empty" />,
-    PaymentMethodSelectionSheet: (props: any) => null,
     RentStatusCarousel: (props: any) => <View testID="rent-status-carousel" />,
     SetupProgressCard: (props: any) => <View testID="setup-progress-card" />,
   };

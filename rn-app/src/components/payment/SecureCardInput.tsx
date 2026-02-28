@@ -711,11 +711,11 @@ const styles = StyleSheet.create({
   },
   errorBelowText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 14,
+    lineHeight: 20,
     color: INPUT_COLORS.error,
     paddingHorizontal: 12,
-    marginTop: 4,
+    marginTop: 6,
   },
   networkIcon: {
     marginLeft: 8,

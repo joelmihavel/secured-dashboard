@@ -46,12 +46,12 @@ const FIGMA_COLORS = {
   popularBankBg: colors.black[500],
   selectedBorder: colors.brand[500],
   divider: colors.black[400],
-  placeholder: '#A9A9A9',
-  accent: '#FF9A6D',
-  triggerBg: '#202020',
-  triggerBorder: '#4D4D4D',
-  modalBg: '#131313',
-  searchBg: '#202020',
+  placeholder: colors.neutral[500],
+  accent: colors.brand[500],
+  triggerBg: colors.black[500],
+  triggerBorder: colors.black[400],
+  modalBg: colors.black[700],
+  searchBg: colors.black[500],
   searchBorder: '#2A2A2A',
   rowBorder: '#2A2A2A',
 };
@@ -368,7 +368,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: A
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
     paddingTop: 16,
   },
   headerSection: {

@@ -14,16 +14,16 @@ import { PaymentCard } from '@/src/components/payment/PaymentCard';
 import { useSavedPaymentMethods, useDeletePaymentMethod } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
-import type { EditMethodContentProps } from './types';
+import type { EditMethodContentProps, SavedMethodDetails } from './types';
 import type { SavedPaymentMethod } from '@/src/services/api/payments';
 
 const FIGMA_COLORS = {
   white: colors.white,
-  muted: '#A9A9A9',
+  muted: colors.neutral[500],
   accent: colors.brand[500],
-  background: '#1A1A1A',
-  cardBg: '#202020',
-  cardBorder: '#4D4D4D',
+  background: colors.black[600],
+  cardBg: colors.black[500],
+  cardBorder: colors.black[400],
 };
 
 /** Get the delete CTA text */
@@ -138,7 +138,12 @@ export function EditMethodContent({
           title="Proceed to Payment"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            onProceed(methodType);
+            const details: SavedMethodDetails | undefined = methodData ? {
+              savedMethodId: methodData.id,
+              vpa: methodData.vpa,
+              bankCode: methodData.bank_code,
+            } : undefined;
+            onProceed(methodType, details);
           }}
           disabled={isInitiating || isDeleting || !methodData}
           loading={isInitiating}
@@ -166,11 +171,11 @@ export function EditMethodContent({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 48,
     gap: 32,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: colors.black[600],
   },
   header: {
     width: '100%',
@@ -201,7 +206,7 @@ const styles = StyleSheet.create({
   emptyCardPlaceholder: {
     width: 270,
     height: 400,
-    backgroundColor: '#202020',
+    backgroundColor: colors.black[500],
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -209,7 +214,7 @@ const styles = StyleSheet.create({
   emptyCardText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
-    color: '#A9A9A9',
+    color: colors.neutral[500],
   },
   footer: {
     gap: 24,
@@ -223,7 +228,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: '#A9A9A9',
+    color: colors.neutral[500],
     textAlign: 'center',
   },
 });

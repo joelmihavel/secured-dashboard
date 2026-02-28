@@ -63,6 +63,8 @@ export interface PayUSessionParams {
   udf4?: string;
   udf5?: string;
   enforce_paymethod?: string;
+  /** SDK environment: '1' = sandbox/test, '0' = production. Set by server. */
+  environment?: '0' | '1';
 }
 
 interface PaymentState {

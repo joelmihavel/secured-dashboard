@@ -65,7 +65,49 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
           return { status: 'failure', error: 'Payment session expired. Please try again.' };
         }
 
-        // Launch Core SDK
+        // UPI Collect: navigate immediately — SDK waits up to 6 min with no webview
+        if (paymentMode === 'upi') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setLastPayment(paymentId);
+
+          router.replace({
+            pathname: '/(payment)/status',
+            params: {
+              paymentId,
+              amount: sessionParams.amount,
+              method: 'upi',
+              initialStatus: 'pending',
+            },
+          } as never);
+
+          // Fire SDK in background — don't await
+          launchCorePayment(paymentMode, sessionParams, instrumentParams)
+            .then((outcome) => {
+              if (__DEV__) {
+                console.log('[usePaymentFlow] UPI background SDK outcome:', outcome.status);
+              }
+              if (outcome.status === 'success' && outcome.payuResponse?.field7) {
+                addUpiVpa(String(outcome.payuResponse.field7)).catch(() => {});
+              }
+              queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
+              queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            })
+            .catch((err) => {
+              captureError(
+                err instanceof Error ? err : new Error(String(err)),
+                { flow: 'upi_background_sdk', paymentId },
+              );
+            })
+            .finally(() => {
+              onClearSensitiveData();
+              clearPayuSessionParams();
+              isExecutingRef.current = false;
+            });
+
+          return { status: 'navigating' };
+        }
+
+        // Card / NB flows: await SDK outcome before navigating
         const outcome: CorePaymentOutcome = await launchCorePayment(
           paymentMode,
           sessionParams,

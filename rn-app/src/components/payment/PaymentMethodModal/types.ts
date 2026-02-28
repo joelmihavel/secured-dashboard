@@ -21,6 +21,15 @@ export type ModalView =
 /** Method type passed from selector to orchestrator */
 export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';
 
+/** Saved method details passed when proceeding with an already-saved payment method */
+export interface SavedMethodDetails {
+  savedMethodId: string;
+  /** UPI VPA for direct UPI execution */
+  vpa?: string;
+  /** Bank code for direct netbanking execution */
+  bankCode?: string;
+}
+
 /** Props shared by all add-method content components */
 export interface AddMethodContentProps {
   paymentId: string;
@@ -32,7 +41,7 @@ export interface AddMethodContentProps {
 
 /** Props for the method selector content */
 export interface MethodSelectorContentProps {
-  onProceed: (methodType: PaymentMethodType) => void;
+  onProceed: (methodType: PaymentMethodType, savedDetails?: SavedMethodDetails) => void;
   onSetup: (methodType: PaymentMethodType) => void;
   onEdit: (methodType: PaymentMethodType, savedMethodId: string) => void;
   isInitiating: boolean;
@@ -60,7 +69,7 @@ export interface EditMethodContentProps {
   onBack: () => void;
   methodType: PaymentMethodType;
   savedMethodId: string;
-  onProceed: (methodType: PaymentMethodType) => void;
+  onProceed: (methodType: PaymentMethodType, savedDetails?: SavedMethodDetails) => void;
   onDeleteSuccess: (methodType: PaymentMethodType) => void;
   isInitiating: boolean;
 }

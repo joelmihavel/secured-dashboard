@@ -17,14 +17,12 @@ import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
 import { getSystemTransferFlag, checkTransferEligibility, type SystemTransferFlag } from "../_shared/transfer-flags.ts";
-
-// ==============================================
-// CONFIGURATION
-// ==============================================
-
-const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY")!;
-const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
-const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://sandboxsecure.payu.in";
+import {
+  PAYU_MERCHANT_KEY,
+  PAYU_MERCHANT_SALT,
+  PAYU_INFO_URL,
+  fetchWithTimeout,
+} from "../_shared/payu-config.ts";
 
 const BATCH_SIZE = 50;
 const STUCK_THRESHOLD_MINUTES = 15;
@@ -307,6 +305,9 @@ async function pollPayUSettlement(
 
               if (settlementStatus === "settled") {
                 result.updated++;
+                // Note: This is Tier 1 (PayU → Flent). The settlement_complete
+                // notification fires later when landlord actually gets paid
+                // (manual payout confirmed via admin endpoint).
               }
             }
           } catch (err) {
@@ -542,8 +543,6 @@ async function reconcileStuckPayments(
 // PAYU API HELPERS
 // ==============================================
 
-const PAYU_INFO_URL = Deno.env.get("PAYU_INFO_URL") ?? "https://info.payu.in/merchant/postservice";
-
 /**
  * Calls PayU get_settlement_details API.
  * Hash formula: sha512(key|command|var1|salt)
@@ -561,7 +560,7 @@ async function getPayUSettlementDetails(dateStr: string): Promise<Record<string,
     formData.set("var1", dateStr);
     formData.set("hash", hash);
 
-    const response = await fetch(PAYU_INFO_URL, {
+    const response = await fetchWithTimeout(PAYU_INFO_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -634,7 +633,7 @@ async function verifyWithPayU(txnId: string): Promise<Record<string, unknown>> {
   formData.set("var1", txnId);
   formData.set("hash", hash);
 
-  const response = await fetch(PAYU_INFO_URL, {
+  const response = await fetchWithTimeout(PAYU_INFO_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

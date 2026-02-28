@@ -146,6 +146,123 @@ verify_jwt = false
 [functions.seed-test-data]
 verify_jwt = false
 
+[functions.add-card-token]
+verify_jwt = false
+
+[functions.add-upi-vpa]
+verify_jwt = false
+
+[functions.admin-waitlist]
+verify_jwt = false
+
+[functions.agreement-lifecycle]
+verify_jwt = false
+
+[functions.apply-referral-code]
+verify_jwt = false
+
+[functions.assign-default-avatar]
+verify_jwt = false
+
+[functions.check-payment-status]
+verify_jwt = false
+
+[functions.cleanup-stale-payments]
+verify_jwt = false
+
+[functions.delete-payment-method]
+verify_jwt = false
+
+[functions.dev-seed]
+verify_jwt = false
+
+[functions.generate-payu-hash]
+verify_jwt = false
+
+[functions.get-bin-info]
+verify_jwt = false
+
+[functions.get-cashback-history]
+verify_jwt = false
+
+[functions.get-fee-config]
+verify_jwt = false
+
+[functions.get-my-referral-code]
+verify_jwt = false
+
+[functions.get-netbanking-banks]
+verify_jwt = false
+
+[functions.get-payment-schedule]
+verify_jwt = false
+
+[functions.get-payment-stamps]
+verify_jwt = false
+
+[functions.get-refund-status]
+verify_jwt = false
+
+[functions.get-saved-payment-methods]
+verify_jwt = false
+
+[functions.initiate-refund]
+verify_jwt = false
+
+[functions.join-waitlist]
+verify_jwt = false
+
+[functions.manage-landlord]
+verify_jwt = false
+
+[functions.mark-notification-read]
+verify_jwt = false
+
+[functions.notify-user]
+verify_jwt = false
+
+[functions.pixelate-avatar]
+verify_jwt = false
+
+[functions.poll-settlement-status]
+verify_jwt = false
+
+[functions.register-device-token]
+verify_jwt = false
+
+[functions.save-bank-preference]
+verify_jwt = false
+
+[functions.schedule-payment]
+verify_jwt = false
+
+[functions.set-default-payment-method]
+verify_jwt = false
+
+[functions.settle-to-landlord]
+verify_jwt = false
+
+[functions.sync-netbanking-banks]
+verify_jwt = false
+
+[functions.test-cashfree-m360]
+verify_jwt = false
+
+[functions.update-extraction]
+verify_jwt = false
+
+[functions.upload-avatar]
+verify_jwt = false
+
+[functions.validate-referral-code]
+verify_jwt = false
+
+[functions.verify-card]
+verify_jwt = false
+
+[functions.verify-pan]
+verify_jwt = false
+
 [edge_runtime]
 policy = "oneshot"
 inspector_port = 8083

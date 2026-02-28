@@ -123,7 +123,10 @@ export function launchCorePayment(
     });
   }
 
-  return new Promise<CorePaymentOutcome>((resolve) => {
+  // 10-minute timeout — safety net for Card/NB if SDK crashes or app is backgrounded
+  const SDK_TIMEOUT_MS = 10 * 60 * 1000;
+
+  const sdkPromise = new Promise<CorePaymentOutcome>((resolve) => {
     let cbListenerSub: EmitterSubscription | null = null;
     let resolved = false;
 
@@ -176,6 +179,8 @@ export function launchCorePayment(
     });
 
     // Build CBWrapper params
+    // environment: '1' = sandbox, '0' = production — server decides based on PAYU_BASE_URL
+    const sdkEnvironment = sessionParams.environment ?? (__DEV__ ? '1' : '0');
     const payUPaymentParams: Record<string, unknown> = {
       key: sessionParams.key,
       transaction_id: sessionParams.txnid,
@@ -188,7 +193,7 @@ export function launchCorePayment(
       ios_furl: sessionParams.furl,
       android_surl: sessionParams.surl,
       android_furl: sessionParams.furl,
-      environment: __DEV__ ? '1' : '0',
+      environment: sdkEnvironment,
       user_credentials: sessionParams.user_credential,
       hashes: {
         payment: sessionParams.hash,
@@ -231,6 +236,17 @@ export function launchCorePayment(
       });
     }
   });
+
+  const timeoutPromise = new Promise<CorePaymentOutcome>((resolve) => {
+    setTimeout(() => {
+      resolve({
+        status: 'failure',
+        error: 'Payment timed out. Check your payment status in the app.',
+      });
+    }, SDK_TIMEOUT_MS);
+  });
+
+  return Promise.race([sdkPromise, timeoutPromise]);
 }
 
 // ===================================================

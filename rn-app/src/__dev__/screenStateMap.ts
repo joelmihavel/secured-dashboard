@@ -81,6 +81,5 @@ export const SCREEN_STATE_MAP: Record<string, ScreenSeedConfig> = {
     },
   },
   '/(profile)/edit':            { targetState: 'active' },
-  '/(profile)/payment-methods': { targetState: 'active', seedOptions: { with_saved_methods: true } },
   '/(profile)/agreement':       { targetState: 'active' },
 };

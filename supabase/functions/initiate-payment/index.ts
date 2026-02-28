@@ -26,14 +26,17 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generatePayUHash, generateTransactionId, sha512 } from "../_shared/crypto.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
+import {
+  PAYU_MERCHANT_KEY,
+  PAYU_MERCHANT_SALT,
+  PAYU_BASE_URL,
+  PAYU_SDK_ENVIRONMENT,
+} from "../_shared/payu-config.ts";
 
 // ==============================================
 // CONFIGURATION
 // ==============================================
 
-const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY")!;
-const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
-const PAYU_BASE_URL = Deno.env.get("PAYU_BASE_URL") ?? "https://test.payu.in";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 
 // PG fee rates — read from env vars, fallback to defaults
@@ -48,6 +51,20 @@ function getPgFeeRates(): Record<string, number> {
     netbanking: parseFloat(Deno.env.get("FEE_RATE_NETBANKING") ?? "0.015"),
     wallet: parseFloat(Deno.env.get("FEE_RATE_WALLET") ?? "0.02"),
   };
+}
+
+// Fee config from DB (with flat fee support)
+async function getFeeConfigForMethod(method: string, supabase: any) {
+  const { data } = await supabase
+    .from("fee_config")
+    .select("rate, fee_type")
+    .eq("method", method)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (data) return { rate: Number(data.rate), fee_type: data.fee_type ?? 'percentage' };
+  // Fallback to env-based percentage rates
+  const pgFeeRates = getPgFeeRates();
+  return { rate: pgFeeRates[method] ?? 0, fee_type: 'percentage' as const };
 }
 
 // PayU enforce_paymethod values per normalized payment method.
@@ -169,6 +186,7 @@ serve(async (req: Request) => {
 
     // Parse and validate request body
     const body = await req.json();
+    console.log("[initiate-payment] Request for tenancy:", body.tenancy_id, "method:", body.payment_method);
     const validatedBody = validateSchema<InitiatePaymentRequest>(
       body,
       requestSchema,
@@ -272,6 +290,17 @@ serve(async (req: Request) => {
 
     // Check for existing payment this month
     const rentMonthDate = `${rent_month}-01`;
+
+    // Expire stale initiated payments (abandoned pre-fetch or user exit)
+    const TEN_MINUTES_AGO = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    await supabase
+      .from("payments")
+      .update({ status: "failed", payu_status: "expired_stale" })
+      .eq("tenancy_id", tenancy_id)
+      .eq("payment_month", rentMonthDate)
+      .eq("status", "initiated")
+      .lt("created_at", TEN_MINUTES_AGO);
+
     const { data: existingPayment } = await supabase
       .from("payments")
       .select("id, status")
@@ -316,13 +345,14 @@ serve(async (req: Request) => {
           payment_month: rentMonthDate,
           due_date: demoDueDate,
           paid_at: new Date().toISOString(),
-          landlord_payout_status: "demo",
+          landlord_payout_status: "settled",
         })
         .select()
         .single();
 
       if (demoError || !demoPayment) {
-        throw new PaymentError("Failed to create demo payment", "DB_ERROR");
+        console.error("[initiate-payment] Demo insert error:", JSON.stringify(demoError));
+        throw new PaymentError(`Failed to create demo payment: ${demoError?.message ?? "unknown"}`, "DB_ERROR");
       }
 
       await audit!.logSuccess("PAYMENT_DEMO_BYPASS", "payment", "payment", demoPayment.id, {
@@ -382,11 +412,12 @@ serve(async (req: Request) => {
     const netRentPaise = originalRentPaise - cashbackDiscountPaise;
 
     // PG fee on net payable (what the gateway actually charges)
-    const pgFeeRates = getPgFeeRates();
     // Use card_type-specific rate if available, otherwise fall back to payment_method
     const feeRateKey = (payment_method === "card" && card_type) ? `${card_type}_card` : payment_method;
-    const feeRate = pgFeeRates[feeRateKey] ?? pgFeeRates[payment_method] ?? 0.02;
-    const pgFeePaise = Math.ceil(netRentPaise * feeRate);
+    const feeConfig = await getFeeConfigForMethod(feeRateKey, supabase);
+    const pgFeePaise = feeConfig.fee_type === 'flat_paise'
+      ? Math.round(feeConfig.rate)
+      : Math.ceil(netRentPaise * feeConfig.rate);
 
     // Total amount the gateway charges the user
     const totalAmountPaise = netRentPaise + pgFeePaise;
@@ -542,6 +573,8 @@ serve(async (req: Request) => {
         vas_for_mobile_sdk_hash: vasHash,
         payment_related_details_for_mobile_sdk_hash: paymentRelatedHash,
         enforce_paymethod: resolveEnforcePaymethod(payment_method, card_type),
+        // SDK environment: '1' = sandbox, '0' = production — client uses this instead of __DEV__
+        environment: PAYU_SDK_ENVIRONMENT,
       },
 
       // Method-specific data (PayU UPI intent only)

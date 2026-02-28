@@ -16,7 +16,7 @@
  * - sessionParams from Zustand (single source of truth).
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -30,7 +30,8 @@ import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { BottomSheet } from '@/src/components/ui';
 
-import type { ModalView, PaymentMethodType, PaymentMethodModalProps } from './types';
+import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
+import type { ModalView, PaymentMethodType, SavedMethodDetails, PaymentMethodModalProps } from './types';
 import { EnterAmountContent } from './EnterAmountContent';
 import { MethodSelectorContent } from './MethodSelectorContent';
 import { AddUpiContent } from './AddUpiContent';
@@ -58,6 +59,7 @@ export function PaymentMethodModal({
     initialMethodType as PaymentMethodType ?? null
   );
   const [editSavedMethodId, setEditSavedMethodId] = useState<string>(initialSavedMethodId ?? '');
+  const isProceedingRef = useRef(false);
 
   // Sync paymentId when parent provides a new one (e.g. confirm screen)
   useEffect(() => {
@@ -74,6 +76,7 @@ export function PaymentMethodModal({
   }, [visible, initialView, initialMethodType, initialSavedMethodId]);
 
   const { isConnected } = useNetworkStatus();
+  const { executePayment } = usePaymentFlow();
 
   const {
     setPayuSessionParams,
@@ -89,6 +92,7 @@ export function PaymentMethodModal({
     setModalView(initialView);
     setPaymentId('');
     setIsInitiating(false);
+    isProceedingRef.current = false;
     onClose();
   }, [clearPayuSessionParams, onClose, initialView]);
 
@@ -203,9 +207,13 @@ export function PaymentMethodModal({
     setModalView(viewMap[methodType]);
   }, []);
 
-  // --- Proceed from method selector: initiate payment + navigate to add-method ---
+  // --- Proceed from method selector: initiate payment + execute or navigate ---
   const handleProceed = useCallback(
-    async (methodType: PaymentMethodType) => {
+    async (methodType: PaymentMethodType, savedDetails?: SavedMethodDetails) => {
+      if (isProceedingRef.current) return;
+      isProceedingRef.current = true;
+
+      try {
       // Network connectivity check
       if (!isConnected) {
         Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
@@ -232,48 +240,78 @@ export function PaymentMethodModal({
         }
 
         if (onProceed) {
+          // enter-rent flow: delegate to parent (navigates to confirm screen)
           setProcessing(data.paymentId);
           setLastPayment(data.paymentId);
           onProceed(methodType);
-        } else {
-          // Store PayU session params + processing state in Zustand
-          if (data.payuParams) {
-            const p = data.payuParams as Record<string, string>;
-            setPayuSessionParams({
-              key: p.key,
-              txnid: p.txnid,
-              amount: p.amount,
-              productinfo: p.productinfo,
-              firstname: p.firstname,
-              email: p.email,
-              phone: p.phone,
-              surl: p.surl,
-              furl: p.furl,
-              hash: p.hash,
-              vas_hash: p.vas_for_mobile_sdk_hash,
-              prd_hash: p.payment_related_details_for_mobile_sdk_hash,
-              user_credential: p.user_credential ?? `${p.key}:${p.email}`,
-              udf1: p.udf1,
-              udf2: p.udf2,
-              udf3: p.udf3,
-              udf4: p.udf4,
-              udf5: p.udf5,
-              enforce_paymethod: p.enforce_paymethod,
-            });
-          }
-          setProcessing(data.paymentId);
-          setLastPayment(data.paymentId);
-
-          // Set paymentId and switch to the add-method view
-          setPaymentId(data.paymentId);
-          const viewMap: Record<PaymentMethodType, ModalView> = {
-            upi: 'add-upi',
-            card: 'add-card',
-            debit_card: 'add-debit-card',
-            netbanking: 'add-netbanking',
-          };
-          setModalView(viewMap[methodType]);
+          return;
         }
+
+        // Self-contained flow: store PayU session params
+        if (data.payuParams) {
+          const p = data.payuParams as Record<string, string>;
+          setPayuSessionParams({
+            key: p.key,
+            txnid: p.txnid,
+            amount: p.amount,
+            productinfo: p.productinfo,
+            firstname: p.firstname,
+            email: p.email,
+            phone: p.phone,
+            surl: p.surl,
+            furl: p.furl,
+            hash: p.hash,
+            vas_hash: p.vas_for_mobile_sdk_hash,
+            prd_hash: p.payment_related_details_for_mobile_sdk_hash,
+            user_credential: p.user_credential ?? `${p.key}:${p.email}`,
+            udf1: p.udf1,
+            udf2: p.udf2,
+            udf3: p.udf3,
+            udf4: p.udf4,
+            udf5: p.udf5,
+            enforce_paymethod: p.enforce_paymethod,
+          });
+        }
+        setProcessing(data.paymentId);
+        setLastPayment(data.paymentId);
+        setPaymentId(data.paymentId);
+
+        // Saved UPI → execute directly with saved VPA
+        if (savedDetails?.vpa && methodType === 'upi') {
+          const outcome = await executePayment(
+            'upi',
+            { vpa: savedDetails.vpa },
+            data.paymentId,
+            () => {},
+          );
+          if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+            setModalView('selector');
+          }
+          return;
+        }
+
+        // Saved Netbanking → execute directly with saved bank code
+        if (savedDetails?.bankCode && methodType === 'netbanking') {
+          const outcome = await executePayment(
+            'NB',
+            { bankcode: savedDetails.bankCode },
+            data.paymentId,
+            () => {},
+          );
+          if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+            setModalView('selector');
+          }
+          return;
+        }
+
+        // Card or no saved details → navigate to add-method form
+        const viewMap: Record<PaymentMethodType, ModalView> = {
+          upi: 'add-upi',
+          card: 'add-card',
+          debit_card: 'add-debit-card',
+          netbanking: 'add-netbanking',
+        };
+        setModalView(viewMap[methodType]);
       } catch (err) {
         console.error('PaymentMethodModal initiate error:', err);
         const rawMessage = err instanceof Error ? err.message : 'An error occurred';
@@ -282,11 +320,15 @@ export function PaymentMethodModal({
       } finally {
         setIsInitiating(false);
       }
+      } finally {
+        isProceedingRef.current = false;
+      }
     },
     [
       tenancyId,
       rentMonth,
       isConnected,
+      executePayment,
       setConfirming,
       setProcessing,
       setLastPayment,
@@ -295,7 +337,7 @@ export function PaymentMethodModal({
   );
 
   return (
-    <BottomSheet visible={visible} onClose={handleClose} paddingHorizontal={0}>
+    <BottomSheet visible={visible} onClose={handleClose} paddingHorizontal={8}>
       <View style={styles.sheetPanel}>
         {modalView === 'enter-amount' && (
           <EnterAmountContent

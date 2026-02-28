@@ -19,9 +19,6 @@ export type { VerificationCheckSheetProps } from './CashbackSetupModal';
 export * from './PaymentMethodCard';
 export type { PaymentMethodCardProps, PaymentMethod, HomePaymentMethodType } from './PaymentMethodCard';
 
-export { PaymentMethodCarousel } from './PaymentMethodCarousel';
-export type { PaymentMethodCarouselProps } from './PaymentMethodCarousel';
-
 export { RentStatusCarousel } from './RentStatusCarousel';
 export type { RentStatusCarouselProps, CarouselCardItem } from './RentStatusCarousel';
 
@@ -70,9 +67,3 @@ export type { CashbackEmptyStateProps } from './CashbackEmptyState';
 export { HomeEmptyState } from './HomeEmptyState';
 export type { HomeEmptyStateProps, EmptyStateVariant } from './HomeEmptyState';
 
-// Payment Method Selection Sheet (243-6490)
-export { PaymentMethodSelectionSheet } from './PaymentMethodSelectionSheet';
-export type {
-  PaymentMethodSelectionSheetProps,
-  PaymentMethodOption,
-} from './PaymentMethodSelectionSheet';

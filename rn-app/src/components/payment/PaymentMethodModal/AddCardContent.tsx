@@ -15,11 +15,9 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/src/components/ui/Typography';
@@ -59,13 +57,10 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
   const handlePay = useCallback(async () => {
     if (!cardInputRef.current || isSubmitting) return;
 
-    const { valid, errors } = cardInputRef.current.validate();
+    const { valid } = cardInputRef.current.validate();
     if (!valid) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      if (errors.length > 0) {
-        Alert.alert('Card Error', errors[0]);
-      }
-      return;
+      return; // SecureCardInput already displays field-level errors inline
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -119,48 +114,52 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
   const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
   return (
-    <ScrollView
-      style={styles.scrollView}
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Back Button */}
-      <BackButton
-        onPress={onBack}
-        style={styles.backButton}
-        color={FIGMA_COLORS.white}
-      />
-
-      {/* Title */}
-      <RNText style={styles.title}>
-        {'Add your \n'}
-        <RNText style={styles.titleAccent}>{cardType === 'credit' ? 'Credit Card' : 'Debit Card'}</RNText>
-      </RNText>
-
-      {/* Card Input */}
-      <View style={styles.formSection}>
-        <SecureCardInput
-          ref={cardInputRef}
-          onValidityChange={setIsCardValid}
+    <View style={styles.outerContainer}>
+      <View style={styles.stickyHeader}>
+        <BackButton
+          onPress={onBack}
+          style={styles.backButton}
+          color={FIGMA_COLORS.white}
         />
       </View>
 
-      {/* Pay Button + Footer */}
-      <View style={styles.buttonFooterSection}>
-        <PrimaryButton
-          title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Save Card Details'}
-          onPress={handlePay}
-          disabled={!isCardValid || isSubmitting}
-          loading={isSubmitting}
-          testID="modal-pay-card-button"
-        />
+      <KeyboardAwareScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bottomOffset={16}
+      >
+        {/* Title */}
+        <RNText style={styles.title}>
+          {'Add your \n'}
+          <RNText style={styles.titleAccent}>{cardType === 'credit' ? 'Credit Card' : 'Debit Card'}</RNText>
+        </RNText>
 
-        <Text style={styles.footerText}>
-          You may receive a verification message to confirm your bank account and unlock benefits.
-        </Text>
-      </View>
-    </ScrollView>
+        {/* Card Input */}
+        <View style={styles.formSection}>
+          <SecureCardInput
+            ref={cardInputRef}
+            onValidityChange={setIsCardValid}
+          />
+        </View>
+
+        {/* Pay Button + Footer */}
+        <View style={styles.buttonFooterSection}>
+          <PrimaryButton
+            title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Save Card Details'}
+            onPress={handlePay}
+            disabled={!isCardValid || isSubmitting}
+            loading={isSubmitting}
+            testID="modal-pay-card-button"
+          />
+
+          <Text style={styles.footerText}>
+            You may receive a verification message to confirm your bank account and unlock benefits.
+          </Text>
+        </View>
+      </KeyboardAwareScrollView>
+    </View>
   );
 }
 
@@ -169,12 +168,17 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
 // ==============================================
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    paddingTop: 16,
+  },
+  stickyHeader: {
+    paddingHorizontal: 24,
+  },
   scrollView: {
     flexGrow: 0,
   },
   scrollContent: {
-    paddingHorizontal: 48,
-    paddingTop: 16,
+    paddingHorizontal: 24,
     paddingBottom: 24,
   },
   backButton: {

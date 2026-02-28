@@ -195,9 +195,6 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
           />
         </View>
 
-        {hasError && error ? (
-          <Text style={styles.belowError}>{error}</Text>
-        ) : null}
       </View>
     );
   }
@@ -261,7 +258,8 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    height: 32, // Match Figma line-height and PhoneInput for exact visual parity
+    lineHeight: 32,
+    height: 32,
     padding: 0,
     margin: 0,
     includeFontPadding: false,
@@ -270,14 +268,6 @@ const styles = StyleSheet.create({
   },
   inputDisabled: {
     opacity: 0.5,
-  },
-  belowError: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#E5484D',
-    marginTop: 6,
-    paddingHorizontal: 12,
   },
 });
 

@@ -194,7 +194,7 @@ export default function EditProfileScreen() {
 
             {/* Avatar section (41:8885): row, gap=10, paddingH=40 */}
             <View style={styles.avatarSection}>
-              <Avatar uri={avatarUri} name={fullName} size="lg" />
+              <Avatar uri={avatarUri} userId={user?.id} name={fullName} size="lg" />
 
               {/* Edit Picture button (41:8887): 107x36, bg #CC7B57, pad=4, radius=12 */}
               <TouchableOpacity

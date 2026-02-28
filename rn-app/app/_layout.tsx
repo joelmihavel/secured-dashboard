@@ -10,6 +10,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { Text as RNText, TextInput } from 'react-native';
 
@@ -111,6 +112,7 @@ function RootLayoutInner() {
   // until fonts load, so the user never sees unstyled content.
 
   return (
+    <KeyboardProvider>
     <ErrorBoundary>
       <QueryProvider>
         <AuthProvider>
@@ -134,7 +136,7 @@ function RootLayoutInner() {
                   <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(profile)" />
+                  <Stack.Screen name="(profile)" options={{ animation: 'slide_from_right' }} />
                   {/* Development only screens */}
                   {__DEV__ && <Stack.Screen name="(dev)" />}
                 </Stack>
@@ -144,6 +146,7 @@ function RootLayoutInner() {
         </AuthProvider>
       </QueryProvider>
     </ErrorBoundary>
+    </KeyboardProvider>
   );
 }
 

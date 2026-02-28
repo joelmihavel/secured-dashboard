@@ -13,7 +13,7 @@
 import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/ui';
-import { Avatar } from '@/src/components/ui/Avatar';
+import { colors } from '@/src/theme';
 
 export interface EmptyPaymentsStateProps {
   title?: string;
@@ -28,8 +28,10 @@ function EmptyPaymentsStateComponent({
     <View style={styles.container}>
       {/* Figma 769:309109: column, gap 16, center */}
       <View style={styles.innerContainer}>
-        {/* Avatar — Figma 769:309110: 32x32 circular orange */}
-        <Avatar name="P" size="sm" />
+        {/* Icon — Figma 769:309110: 32x32 circular orange */}
+        <View style={styles.iconCircle}>
+          <Text style={styles.iconText}>₹</Text>
+        </View>
 
         {/* Text group — Figma 769:309111: column, gap 8, center */}
         <View style={styles.textContainer}>
@@ -46,6 +48,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'stretch',
+  },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.brand[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconText: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.white,
+    textAlign: 'center',
   },
   innerContainer: {
     alignItems: 'center',

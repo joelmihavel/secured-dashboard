@@ -17,11 +17,16 @@ import { handleError } from "../_shared/errors.ts";
 // DEFAULT FEE RATES (fallback if DB query fails)
 // ==============================================
 
-const DEFAULT_RATES: Record<string, number> = {
-  upi: 0,
-  credit_card: 0.02,
-  debit_card: 0.02,
-  netbanking: 0.015,
+interface FeeEntry {
+  rate: number;
+  fee_type: 'percentage' | 'flat_paise';
+}
+
+const DEFAULT_RATES: Record<string, FeeEntry> = {
+  upi: { rate: 0, fee_type: 'percentage' },
+  credit_card: { rate: 0.0185, fee_type: 'percentage' },
+  debit_card: { rate: 0.009, fee_type: 'percentage' },
+  netbanking: { rate: 1500, fee_type: 'flat_paise' },
 };
 
 // ==============================================
@@ -45,20 +50,23 @@ serve(async (req: Request) => {
     const supabase = createServiceClient();
 
     // Read fee rates from fee_config table
-    let feeRates = { ...DEFAULT_RATES };
+    let feeRates: Record<string, FeeEntry> = { ...DEFAULT_RATES };
     let lastUpdated = new Date().toISOString();
 
     const { data: rows, error: dbError } = await supabase
       .from("fee_config")
-      .select("method, rate, updated_at")
+      .select("method, rate, fee_type, updated_at")
       .eq("is_active", true);
 
     if (dbError) {
       console.warn("[get-fee-config] DB query failed, using defaults:", dbError.message);
     } else if (rows && rows.length > 0) {
-      // Map rows to fee rates object
+      // Map rows to fee rates object with fee_type
       for (const row of rows) {
-        feeRates[row.method] = Number(row.rate);
+        feeRates[row.method] = {
+          rate: Number(row.rate),
+          fee_type: row.fee_type ?? 'percentage',
+        };
       }
       // Use the most recent updated_at
       const dates = rows
@@ -78,7 +86,6 @@ serve(async (req: Request) => {
           debit_card: feeRates.debit_card ?? DEFAULT_RATES.debit_card,
           netbanking: feeRates.netbanking ?? DEFAULT_RATES.netbanking,
         },
-        fee_type: "percentage",
         last_updated: lastUpdated.split("T")[0],
       },
     });

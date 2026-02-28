@@ -6,11 +6,11 @@ import {
   StyleProp,
   Dimensions,
   Pressable,
-  KeyboardAvoidingView,
-  Platform,
   BackHandler,
   InteractionManager,
+  Keyboard,
 } from 'react-native';
+import { useKeyboardContext } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -55,6 +55,7 @@ export function BottomSheet({
   useSafeArea = true,
 }: CustomBottomSheetProps) {
   const insets = useSafeAreaInsets();
+  const { reanimated: { height: keyboardHeight } } = useKeyboardContext();
   const [mounted, setMounted] = useState(false);
   const isMountedRef = useRef(true);
   const isDismissingRef = useRef(false);
@@ -132,6 +133,7 @@ export function BottomSheet({
     .onEnd((event) => {
       'worklet';
       if (event.translationY > DISMISS_THRESHOLD || event.velocityY > 500) {
+        runOnJS(Keyboard.dismiss)();
         // Animate on UI thread, then call JS dismiss for cleanup
         translateY.value = withSpring(SCREEN_HEIGHT, { ...SPRING_CONFIG, damping: 20 });
         backdropOpacity.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (finished) => {
@@ -148,7 +150,7 @@ export function BottomSheet({
     });
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value + keyboardHeight.value }],
   }));
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
@@ -156,6 +158,7 @@ export function BottomSheet({
   }));
 
   const handleBackdropPress = useCallback(() => {
+    Keyboard.dismiss();
     dismiss();
   }, [dismiss]);
 
@@ -163,11 +166,7 @@ export function BottomSheet({
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-        pointerEvents="box-none"
-      >
+      <View style={styles.container} pointerEvents="box-none">
         {/* Backdrop — BlurView at full opacity, parent opacity not animated */}
         <Animated.View style={[StyleSheet.absoluteFill, backdropAnimatedStyle]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleBackdropPress}>
@@ -199,7 +198,7 @@ export function BottomSheet({
             {children}
           </View>
         </Animated.View>
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }

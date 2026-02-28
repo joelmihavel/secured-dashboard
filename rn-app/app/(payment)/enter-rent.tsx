@@ -30,10 +30,9 @@ export default function EnterRentScreen() {
   const rentMonth = upcomingPayment?.rent_month
     ?? `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
-  // Auto-open modal on mount
+  // Open modal immediately — the BottomSheet handles its own animation
   useEffect(() => {
-    const timeout = setTimeout(() => setShowModal(true), 50);
-    return () => clearTimeout(timeout);
+    setShowModal(true);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -66,6 +65,6 @@ export default function EnterRentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.black[700],
+    backgroundColor: 'transparent',
   },
 });

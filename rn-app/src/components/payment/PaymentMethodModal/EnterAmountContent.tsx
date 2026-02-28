@@ -84,7 +84,7 @@ export function EnterAmountContent({
 
   // Auto-focus
   useEffect(() => {
-    const timeout = setTimeout(() => inputRef.current?.focus(), 100);
+    const timeout = setTimeout(() => inputRef.current?.focus(), 320);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -228,7 +228,7 @@ export function EnterAmountContent({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 48,
+    paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
     width: '100%',

@@ -31,7 +31,6 @@ export default function ProfileLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="edit" />
-      <Stack.Screen name="edit-payment-method" />
       <Stack.Screen name="edit-bank-details" />
       <Stack.Screen name="agreement" />
     </Stack>

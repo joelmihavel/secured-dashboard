@@ -21,17 +21,22 @@
  *   - "I'll do it later": 12/20, white, underlined
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text as RNText,
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Animated,
   Dimensions,
   BackHandler,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -63,8 +68,8 @@ export function VerificationCheckSheet({
   landlordApproved,
 }: VerificationCheckSheetProps) {
   const insets = useSafeAreaInsets();
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useSharedValue(SCREEN_HEIGHT);
+  const fadeAnim = useSharedValue(0);
 
   // Android back button
   useEffect(() => {
@@ -76,41 +81,29 @@ export function VerificationCheckSheet({
     return () => handler.remove();
   }, [visible, onClose]);
 
-  // Slide + fade animation
+  // Slide + fade animation (UI thread via Reanimated)
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          damping: 20,
-          mass: 1,
-          stiffness: 100,
-          overshootClamping: true,
-          restDisplacementThreshold: 0.01,
-          restSpeedThreshold: 2,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      slideAnim.value = withSpring(0, {
+        damping: 20,
+        mass: 1,
+        stiffness: 100,
+        overshootClamping: true,
+      });
+      fadeAnim.value = withTiming(1, { duration: 250 });
     } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: SCREEN_HEIGHT,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      slideAnim.value = withTiming(SCREEN_HEIGHT, { duration: 250 });
+      fadeAnim.value = withTiming(0, { duration: 200 });
     }
-  }, [visible, slideAnim, fadeAnim]);
+  }, [visible]);
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: fadeAnim.value,
+  }));
+
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: slideAnim.value }],
+  }));
 
   if (!visible) return null;
 
@@ -145,7 +138,7 @@ export function VerificationCheckSheet({
     >
       <View style={styles.modalContainer}>
         {/* Blur overlay */}
-        <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
           <BlurView style={StyleSheet.absoluteFill} intensity={8} tint="dark" />
           <TouchableOpacity
             style={styles.overlayTouchable}
@@ -160,10 +153,8 @@ export function VerificationCheckSheet({
         <Animated.View
           style={[
             styles.sheet,
-            {
-              transform: [{ translateY: slideAnim }],
-              paddingBottom: Math.max(insets.bottom, 24),
-            },
+            sheetAnimatedStyle,
+            { paddingBottom: Math.max(insets.bottom, 24) },
           ]}
         >
           {/* Handle — Figma I791:6714;137:37: 24x2, #4D4D4D */}
