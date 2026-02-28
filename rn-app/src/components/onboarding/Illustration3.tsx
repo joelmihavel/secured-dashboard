@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import Svg, { Path } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedProps, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedProps, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
 import { computeBorderData } from './snakeUtils';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -368,6 +368,7 @@ export default function Illustration3(props: any) {
       -1,
       false
     );
+    return () => cancelAnimation(progress);
   }, []);
 
   return (

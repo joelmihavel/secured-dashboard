@@ -19,17 +19,19 @@
  * - Real-time enable/disable of Pay button
  */
 
-import React, { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useCallback, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import {
   View,
   TextInput as RNTextInput,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '@/src/components/ui/Typography';
 import { colors } from '@/src/theme';
+import { getBinInfo, type BinInfo } from '@/src/services/api/payments';
 
 // ===================================================
 // TYPES
@@ -237,6 +239,12 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
+    // BIN info state (informational, non-blocking)
+    const [binInfo, setBinInfo] = useState<BinInfo | null>(null);
+    const [binLoading, setBinLoading] = useState(false);
+    const lastFetchedBin = useRef<string>('');
+    const binDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // Field refs for focus chaining
     const expiryInputRef = useRef<RNTextInput>(null);
     const cvvInputRef = useRef<RNTextInput>(null);
@@ -277,6 +285,30 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         cardNumberRef.current = trimmed;
         setNetwork(net);
         setDisplayCardNumber(formatCardNumber(trimmed));
+
+        // Debounced BIN info fetch when 6+ digits entered
+        const bin6 = trimmed.slice(0, 6);
+        if (trimmed.length >= 6 && bin6 !== lastFetchedBin.current) {
+          if (binDebounceTimer.current) clearTimeout(binDebounceTimer.current);
+          binDebounceTimer.current = setTimeout(async () => {
+            lastFetchedBin.current = bin6;
+            setBinLoading(true);
+            try {
+              const { data } = await getBinInfo(bin6);
+              setBinInfo(data);
+            } catch {
+              // Non-blocking — ignore errors
+            } finally {
+              setBinLoading(false);
+            }
+          }, 400);
+        } else if (trimmed.length < 6) {
+          // Clear BIN info when digits are deleted below 6
+          if (binDebounceTimer.current) clearTimeout(binDebounceTimer.current);
+          lastFetchedBin.current = '';
+          setBinInfo(null);
+          setBinLoading(false);
+        }
 
         // Block unsupported networks inline
         if (net !== 'unknown' && !SUPPORTED_NETWORKS.includes(net)) {
@@ -369,7 +401,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         const yearShort = digits.slice(2, 4);
         const yearFull = `20${yearShort}`;
         if (!validateExpiry(month, yearFull)) {
-          setErrors((prev) => ({ ...prev, expiry: 'Invalid or expired date' }));
+          setErrors((prev) => ({ ...prev, expiry: 'Invalid expiry' }));
         }
       }
     }, []);
@@ -386,20 +418,21 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
       setDisplayName('');
       setNetwork('unknown');
       setErrors({});
+      setBinInfo(null);
+      setBinLoading(false);
+      lastFetchedBin.current = '';
+      if (binDebounceTimer.current) clearTimeout(binDebounceTimer.current);
     }, []);
 
     // S2: Auto-zero on unmount — prevent card data lingering if caller forgets clearCardData
-    React.useEffect(() => {
+    useEffect(() => {
       return () => {
         cardNumberRef.current = '';
         cvvRef.current = '';
         expiryRef.current = '';
         nameRef.current = '';
-        setDisplayCardNumber('');
-        setDisplayExpiry('');
-        setDisplayCvv('');
-        setDisplayName('');
-        setNetwork('unknown');
+        lastFetchedBin.current = '';
+        if (binDebounceTimer.current) clearTimeout(binDebounceTimer.current);
       };
     }, []);
 
@@ -464,10 +497,23 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
       validate,
     }));
 
-    const getBorderColor = (field: string) => {
-      if (errors[field]) return INPUT_COLORS.borderError;
-      if (focusedField === field) return INPUT_COLORS.borderFocus;
-      return INPUT_COLORS.border;
+    const getBorderStyle = (field: string) => {
+      if (errors[field]) {
+        return {
+          borderWidth: 0,
+          borderBottomWidth: 0.5,
+          borderBottomColor: INPUT_COLORS.borderError,
+          borderRadius: 12,
+        };
+      }
+      if (focusedField === field) {
+        return { borderColor: INPUT_COLORS.borderFocus };
+      }
+      return { borderColor: INPUT_COLORS.border };
+    };
+
+    const getInputTextColor = (field: string) => {
+      return errors[field] ? INPUT_COLORS.error : INPUT_COLORS.text;
     };
 
     return (
@@ -476,11 +522,8 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         <View style={styles.fieldContainer}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Card number</Text>
-            {errors.cardNumber ? (
-              <Text style={styles.errorText}>{errors.cardNumber}</Text>
-            ) : null}
           </View>
-          <View style={[styles.inputContainer, { borderColor: getBorderColor('cardNumber') }]}>
+          <View style={[styles.inputContainer, getBorderStyle('cardNumber')]}>
             <RNTextInput
               value={displayCardNumber}
               onChangeText={handleCardNumberChange}
@@ -490,7 +533,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
               placeholderTextColor={INPUT_COLORS.placeholder}
               keyboardType="number-pad"
               maxLength={19}
-              style={styles.input}
+              style={[styles.input, { color: getInputTextColor('cardNumber') }]}
               testID="card-number-input"
               // S6: Security props
               autoComplete="off"
@@ -500,12 +543,21 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
               contextMenuHidden
               importantForAutofill="no"
             />
+            {binLoading && (
+              <ActivityIndicator size="small" color={INPUT_COLORS.label} style={styles.binLoader} />
+            )}
             {network !== 'unknown' && (
               <View style={styles.networkIcon}>
                 <NetworkIcon network={network} />
               </View>
             )}
           </View>
+          {errors.cardNumber ? (
+            <Text style={styles.errorBelowText}>{errors.cardNumber}</Text>
+          ) : null}
+          {binInfo?.issuing_bank ? (
+            <Text style={styles.binInfoText}>{binInfo.issuing_bank}</Text>
+          ) : null}
         </View>
 
         {/* Expiry + CVV row */}
@@ -513,11 +565,8 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
           <View style={[styles.fieldContainer, styles.halfField]}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Expiry</Text>
-              {errors.expiry ? (
-                <Text style={styles.errorText}>{errors.expiry}</Text>
-              ) : null}
             </View>
-            <View style={[styles.inputContainer, { borderColor: getBorderColor('expiry') }]}>
+            <View style={[styles.inputContainer, getBorderStyle('expiry')]}>
               <RNTextInput
                 ref={expiryInputRef}
                 value={displayExpiry}
@@ -528,7 +577,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
                 placeholderTextColor={INPUT_COLORS.placeholder}
                 keyboardType="number-pad"
                 maxLength={5}
-                style={styles.input}
+                style={[styles.input, { color: getInputTextColor('expiry') }]}
                 testID="expiry-input"
                 autoComplete="off"
                 autoCorrect={false}
@@ -536,16 +585,16 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
                 contextMenuHidden
               />
             </View>
+            {errors.expiry ? (
+              <Text style={styles.errorBelowText}>{errors.expiry}</Text>
+            ) : null}
           </View>
 
           <View style={[styles.fieldContainer, styles.halfField]}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>CVV</Text>
-              {errors.cvv ? (
-                <Text style={styles.errorText}>{errors.cvv}</Text>
-              ) : null}
             </View>
-            <View style={[styles.inputContainer, { borderColor: getBorderColor('cvv') }]}>
+            <View style={[styles.inputContainer, getBorderStyle('cvv')]}>
               <RNTextInput
                 ref={cvvInputRef}
                 value={displayCvv}
@@ -556,7 +605,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
                 placeholderTextColor={INPUT_COLORS.placeholder}
                 keyboardType="number-pad"
                 maxLength={3}
-                style={styles.input}
+                style={[styles.input, { color: getInputTextColor('cvv') }]}
                 testID="cvv-input"
                 // S3 + S6: CVV security
                 secureTextEntry
@@ -568,6 +617,9 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
                 importantForAutofill="no"
               />
             </View>
+            {errors.cvv ? (
+              <Text style={styles.errorBelowText}>{errors.cvv}</Text>
+            ) : null}
           </View>
         </View>
 
@@ -575,11 +627,8 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
         <View style={styles.fieldContainer}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Name on card</Text>
-            {errors.name ? (
-              <Text style={styles.errorText}>{errors.name}</Text>
-            ) : null}
           </View>
-          <View style={[styles.inputContainer, { borderColor: getBorderColor('name') }]}>
+          <View style={[styles.inputContainer, getBorderStyle('name')]}>
             <RNTextInput
               ref={nameInputRef}
               value={displayName}
@@ -589,7 +638,7 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
               placeholder="e.g. John Smith"
               placeholderTextColor={INPUT_COLORS.placeholder}
               autoCapitalize="words"
-              style={styles.input}
+              style={[styles.input, { color: getInputTextColor('name') }]}
               testID="name-on-card-input"
               autoComplete="off"
               autoCorrect={false}
@@ -597,6 +646,9 @@ export const SecureCardInput = forwardRef<SecureCardInputRef, Props>(
               contextMenuHidden
             />
           </View>
+          {errors.name ? (
+            <Text style={styles.errorBelowText}>{errors.name}</Text>
+          ) : null}
         </View>
       </View>
     );
@@ -636,13 +688,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: INPUT_COLORS.label,
   },
-  errorText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: INPUT_COLORS.error,
-    textAlign: 'right',
-  },
   inputContainer: {
     borderWidth: 1,
     borderColor: 'transparent',
@@ -657,14 +702,33 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 20,
-    height: 32,
+    lineHeight: 32,
     padding: 0,
     margin: 0,
     color: INPUT_COLORS.text,
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
+  errorBelowText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16,
+    color: INPUT_COLORS.error,
+    paddingHorizontal: 12,
+    marginTop: 4,
+  },
   networkIcon: {
     marginLeft: 8,
+  },
+  binLoader: {
+    marginLeft: 8,
+  },
+  binInfoText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16,
+    color: INPUT_COLORS.label,
+    paddingHorizontal: 12,
+    marginTop: 4,
   },
 });

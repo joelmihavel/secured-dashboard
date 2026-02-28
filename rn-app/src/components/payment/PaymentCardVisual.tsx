@@ -1,122 +1,106 @@
 /**
  * Payment Card Visual
  *
- * Renders a premium textured card with:
- * - Figma 773:12114: Dotted grid texture at 6% opacity
- * - Figma 773:12124: Crosshatch texture at 16% opacity + rgba(0,0,0,0.64) overlay
- * - Orange/brand 1px border
- * - 3D depth effect (shadows + inner gradient highlights)
- * - Network logo top-right (Visa, Mastercard, UPI, Net Banking)
+ * Vertical portrait credit card per Figma 773:12110
  */
 
 import React, { memo } from 'react';
-import { View, Image, StyleSheet, Text as RNText } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { View, Text, Image, StyleSheet } from 'react-native';
 
 import { colors } from '@/src/theme';
+import { NetworkLogo } from './NetworkLogos';
+import Svg, { Path } from 'react-native-svg';
 
-const CARD_TEXTURE_DOTS = require('@/assets/images/payment/card_texture_dots.png');
-const CARD_TEXTURE_CROSS = require('@/assets/images/payment/card_texture_cross.png');
-
-type MethodType = 'card' | 'upi' | 'netbanking';
+const CREDIT_CARD_BG = require('@/assets/images/payment/credit_card_bg.png');
+const CREDIT_CARD_CHIP = require('@/assets/images/payment/credit_card_chip.png');
 
 interface PaymentCardVisualProps {
-  methodType: MethodType;
+  methodType: 'card' | 'upi' | 'netbanking';
   network?: string;
-  children: React.ReactNode;
+  lastFour?: string;
+  isDefault?: boolean;
+  cardType?: string; // credit or debit
 }
 
-// ── Network Logo Components ──────────────────────────────────────────
+function PaymentCardVisualComponent({
+  methodType,
+  network,
+  lastFour = '----',
+  isDefault = false,
+  cardType = 'credit',
+}: PaymentCardVisualProps) {
+  if (methodType !== 'card') {
+    return null;
+  }
 
-function VisaLogo() {
   return (
-    <RNText style={styles.visaText}>VISA</RNText>
-  );
-}
-
-function MastercardLogo() {
-  return (
-    <Svg width={36} height={22} viewBox="0 0 36 22">
-      <Circle cx={13} cy={11} r={10} fill="#EB001B" opacity={0.9} />
-      <Circle cx={23} cy={11} r={10} fill="#F79E1B" opacity={0.9} />
-      <Path
-        d="M18 2.6A10.97 10.97 0 0 1 23 11a10.97 10.97 0 0 1-5 8.4A10.97 10.97 0 0 1 13 11a10.97 10.97 0 0 1 5-8.4z"
-        fill="#FF5F00"
-        opacity={0.9}
-      />
-    </Svg>
-  );
-}
-
-function UpiLogo() {
-  return (
-    <View style={styles.upiBadge}>
-      <RNText style={styles.upiText}>UPI</RNText>
-    </View>
-  );
-}
-
-function NetBankingLogo() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      {/* Simple bank/building icon */}
-      <Path d="M12 2L2 7v2h20V7L12 2z" fill="rgba(255,255,255,0.6)" />
-      <Path d="M4 11v7h3v-7H4zm5 0v7h3v-7H9zm5 0v7h3v-7h-3z" fill="rgba(255,255,255,0.6)" />
-      <Path d="M2 20h20v2H2v-2z" fill="rgba(255,255,255,0.6)" />
-    </Svg>
-  );
-}
-
-function NetworkLogo({ methodType, network }: { methodType: MethodType; network?: string }) {
-  if (methodType === 'upi') return <UpiLogo />;
-  if (methodType === 'netbanking') return <NetBankingLogo />;
-
-  const n = network?.toLowerCase();
-  if (n === 'mastercard' || n === 'master') return <MastercardLogo />;
-  // Default to Visa for cards
-  return <VisaLogo />;
-}
-
-// ── Main Component ───────────────────────────────────────────────────
-
-function PaymentCardVisualComponent({ methodType, network, children }: PaymentCardVisualProps) {
-  return (
-    <View style={styles.cardOuter}>
+    <View style={styles.cardContainer}>
+      {/* The main credit card frame */}
       <View style={styles.cardInner}>
-        {/* Layer 1: Dotted grid texture (Figma 773:12114) — 6% opacity */}
+        {/* The background texture from Figma */}
         <Image
-          source={CARD_TEXTURE_DOTS}
-          style={styles.textureDots}
+          source={CREDIT_CARD_BG}
+          style={StyleSheet.absoluteFill}
           resizeMode="cover"
         />
 
-        {/* Layer 2: Crosshatch texture (Figma 773:12124) — 16% opacity + dark overlay */}
-        <View style={styles.textureCrossWrap} pointerEvents="none">
-          <Image
-            source={CARD_TEXTURE_CROSS}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-          />
-          <View style={styles.darkOverlay} />
-        </View>
+        {/* Rectangle 141 (Left strip) */}
+        <View style={styles.leftStrip} />
 
-        {/* 3D depth: top-edge highlight */}
-        <View style={styles.topHighlight} pointerEvents="none" />
+        {/* Rectangle 142 (Right strip) */}
+        <View style={styles.rightStrip} />
 
-        {/* 3D depth: bottom-edge shadow */}
-        <View style={styles.bottomShadow} pointerEvents="none" />
+        {/* Rectangles 143 & 144 (Vertical lines) */}
+        <View style={styles.gradientLine1} />
+        <View style={styles.gradientLine2} />
 
-        {/* 3D depth: inner edge glow (top) */}
-        <View style={styles.innerEdgeTop} pointerEvents="none" />
-
-        {/* Network logo — top right */}
+        {/* Network Logo */}
         <View style={styles.logoContainer}>
           <NetworkLogo methodType={methodType} network={network} />
         </View>
 
-        {/* Card content (info rows) */}
-        <View style={styles.content}>
-          {children}
+        {/* "current" badge */}
+        {isDefault && (
+          <View style={styles.currentBadge}>
+            <Text style={styles.currentText}>current</Text>
+          </View>
+        )}
+
+        {/* Horizontal Line 1 */}
+        <View style={styles.horizontalLine} />
+
+        {/* Chip area - Rectangle 140 */}
+        <View style={styles.chipContainer}>
+          <Image
+            source={CREDIT_CARD_CHIP}
+            style={styles.chipImage}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Corner Decors */}
+        <View style={[styles.cornerDecor, styles.decorBottomLeft]}>
+          <Svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <Path d="M6 3V10M3 6H10" stroke="#4D4D4D" strokeWidth="1" />
+          </Svg>
+        </View>
+        <View style={[styles.cornerDecor, styles.decorBottomRight]}>
+          <Svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <Path d="M6 3V10M3 6H10" stroke="#4D4D4D" strokeWidth="1" />
+          </Svg>
+        </View>
+        <View style={[styles.cornerDecor, styles.decorMidLeft]}>
+          <Svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <Path d="M6 3V10M3 6H10" stroke="#4D4D4D" strokeWidth="1" />
+          </Svg>
+        </View>
+
+        {/* Text Details */}
+        <View style={styles.textContainer}>
+          <Text style={styles.cardTypeLabel}>
+            {network ? (network.charAt(0).toUpperCase() + network.slice(1)) : 'Unknown'} · {cardType.charAt(0).toUpperCase() + cardType.slice(1)}
+          </Text>
+          <Text style={styles.cardNumberLabel}>•••• {lastFour}</Text>
         </View>
       </View>
     </View>
@@ -124,102 +108,128 @@ function PaymentCardVisualComponent({ methodType, network, children }: PaymentCa
 }
 
 const styles = StyleSheet.create({
-  // 3D outer shadow — orange-tinted glow beneath card
-  cardOuter: {
-    shadowColor: '#FF9A6D',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 10,
+  cardContainer: {
+    width: 270,
+    height: 400,
+    alignSelf: 'center',
+    marginVertical: 16,
   },
-  // Card body — clipped container for textures
   cardInner: {
+    flex: 1,
     backgroundColor: '#1A1A1A',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 154, 109, 0.25)',
+    borderColor: '#663E2C',
+    borderWidth: 2,
+    borderRadius: 12,
     overflow: 'hidden',
-    position: 'relative',
   },
-  // Figma 773:12114 — dotted grid at 6% opacity
-  textureDots: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.06,
-  },
-  // Figma 773:12124 — crosshatch at 16% opacity
-  textureCrossWrap: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.16,
-  },
-  // Dark tint over crosshatch — rgba(0,0,0,0.64)
-  darkOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.64)',
-  },
-  // 3D depth: subtle highlight along top edge
-  topHighlight: {
+  leftStrip: {
     position: 'absolute',
-    top: 0,
     left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    top: -20,
+    width: 94,
+    height: 440,
+    backgroundColor: '#202020',
   },
-  // 3D depth: gradient shadow along bottom
-  bottomShadow: {
+  rightStrip: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 40,
-    backgroundColor: 'rgba(0,0,0,0.12)',
+    left: 94,
+    top: -20,
+    width: 186,
+    height: 440,
+    backgroundColor: '#131313',
   },
-  // 3D depth: inner top glow band
-  innerEdgeTop: {
+  gradientLine1: {
     position: 'absolute',
-    top: 1,
-    left: 1,
-    right: 1,
-    height: 32,
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+    left: 220,
+    top: 17,
+    width: 2,
+    height: 140,
+    backgroundColor: '#995C41', // Simulating gradient logic
   },
-  // Network logo position
+  gradientLine2: {
+    position: 'absolute',
+    left: 225,
+    top: 17,
+    width: 2,
+    height: 140,
+    backgroundColor: '#995C41',
+  },
   logoContainer: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 2,
+    left: 16,
+    top: 46,
   },
-  // Card info rows sit above all layers
-  content: {
-    padding: 16,
-    paddingTop: 12,
-    gap: 0,
-    zIndex: 1,
+  currentBadge: {
+    position: 'absolute',
+    left: 188,
+    top: 36,
+    width: 66,
+    height: 36,
+    backgroundColor: '#202020',
+    borderRadius: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
-  // ── Logo styles ────────────────────────
-  visaText: {
-    fontFamily: 'PlusJakartaSans-Bold',
+  currentText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#FF9A6D',
+  },
+  horizontalLine: {
+    position: 'absolute',
+    left: -65,
+    top: 108,
+    width: 400,
+    height: 1,
+    backgroundColor: '#131313',
+  },
+  chipContainer: {
+    position: 'absolute',
+    left: 10,
+    top: 269,
+    width: 250,
+    height: 118,
+  },
+  chipImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cornerDecor: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+  },
+  decorMidLeft: {
+    left: 4,
+    top: 263,
+  },
+  decorBottomLeft: {
+    left: 4,
+    top: 381,
+  },
+  decorBottomRight: {
+    left: 254,
+    top: 381,
+  },
+  textContainer: {
+    position: 'absolute',
+    left: 32,
+    top: 302,
+    width: 222,
+    gap: 8,
+  },
+  cardTypeLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#D2D2D2',
+  },
+  cardNumberLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 16,
-    color: 'rgba(255,255,255,0.7)',
-    letterSpacing: 3,
-  },
-  upiBadge: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  upiText: {
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
-    letterSpacing: 2,
+    lineHeight: 24,
+    color: '#D2D2D2',
   },
 });
 

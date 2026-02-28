@@ -1,0 +1,177 @@
+# =============================================================================
+# Flent Secured v2 - Backend Tests (Lightweight)
+# =============================================================================
+# Lightweight pipeline that runs on every push affecting Supabase functions.
+# Complements the full ci-backend.yml (which handles migrations, seeding,
+# and deployment to a branch) by running fast unit tests only.
+#
+# For the full backend CI with database setup, see ci-backend.yml.
+#
+# IMPORTANT: This pipeline runs checks only. Merging is always manual.
+# =============================================================================
+
+name: Backend Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/backend-tests.yml'
+
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/backend-tests.yml'
+
+# Cancel in-progress runs for the same branch/PR
+concurrency:
+  group: backend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DENO_VERSION: v1.x
+
+jobs:
+  # ===========================================================================
+  # Job 1: Unit Tests (fast, no database needed)
+  # ===========================================================================
+  unit-tests:
+    name: Edge Function Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Check formatting
+        run: deno fmt --check supabase/functions/
+        continue-on-error: true
+
+      - name: Lint
+        run: deno lint supabase/functions/
+        continue-on-error: true
+
+      - name: Run unit tests
+        id: tests
+        env:
+          PAYU_MERCHANT_KEY: ${{ secrets.PAYU_SANDBOX_KEY }}
+          PAYU_MERCHANT_SALT: ${{ secrets.PAYU_SANDBOX_SALT }}
+        run: |
+          set +e
+          deno test supabase/functions/_tests/ \
+            --allow-env \
+            --allow-net \
+            --allow-read 2>&1 | tee test-output.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+
+          # Parse results
+          TOTAL=$(grep -oE 'ok \| [0-9]+' test-output.log | grep -oE '[0-9]+' | head -1 || echo "0")
+          FAILED=$(grep -oE 'failed \| [0-9]+' test-output.log | grep -oE '[0-9]+' | head -1 || echo "0")
+
+          echo "## Backend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Passed | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+
+          exit $EXIT_CODE
+
+      - name: Generate coverage
+        env:
+          PAYU_MERCHANT_KEY: ${{ secrets.PAYU_SANDBOX_KEY }}
+          PAYU_MERCHANT_SALT: ${{ secrets.PAYU_SANDBOX_SALT }}
+        run: |
+          deno test supabase/functions/_tests/ \
+            --allow-env \
+            --allow-net \
+            --allow-read \
+            --coverage=./coverage
+
+          deno coverage ./coverage --lcov > coverage.lcov
+
+          # Generate summary
+          if command -v python3 &>/dev/null; then
+            python3 -c "
+          import re
+          with open('coverage.lcov') as f:
+              content = f.read()
+          lf = len(re.findall(r'^LF:(\d+)', content, re.MULTILINE))
+          lh = len(re.findall(r'^LH:(\d+)', content, re.MULTILINE))
+          total_lines = sum(int(m) for m in re.findall(r'^LF:(\d+)', content, re.MULTILINE))
+          hit_lines = sum(int(m) for m in re.findall(r'^LH:(\d+)', content, re.MULTILINE))
+          pct = round(hit_lines / total_lines * 100, 1) if total_lines > 0 else 0
+          print(f'Coverage: {hit_lines}/{total_lines} lines ({pct}%)')
+          " || echo "Coverage parsing skipped"
+          fi
+        continue-on-error: true
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.lcov
+          flags: edge-functions
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  # ===========================================================================
+  # Job 2: Post Coverage on PR
+  # ===========================================================================
+  coverage-comment:
+    name: Coverage Summary
+    needs: unit-tests
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post coverage summary
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body = [
+              '## Backend Test Results',
+              '',
+              'Edge function unit tests completed.',
+              '',
+              `> [View workflow run](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`,
+              '',
+              '_Generated by [Backend Tests](.github/workflows/backend-tests.yml) pipeline_',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const marker = '## Backend Test Results';
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }

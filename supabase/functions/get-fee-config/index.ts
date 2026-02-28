@@ -2,22 +2,22 @@
  * Flent Secured v2 - Fee Configuration Edge Function
  *
  * Returns dynamic payment gateway fee rates.
- * Reads from environment variables, falls back to hardcoded defaults.
+ * Reads from fee_config DB table, falls back to hardcoded defaults.
  *
  * Endpoint: GET /functions/v1/get-fee-config
  * Auth: Required (JWT)
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createAuthenticatedClient } from "../_shared/supabase.ts";
+import { createServiceClient, createAuthenticatedClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 
 // ==============================================
-// DEFAULT FEE RATES
+// DEFAULT FEE RATES (fallback if DB query fails)
 // ==============================================
 
-const DEFAULT_RATES = {
+const DEFAULT_RATES: Record<string, number> = {
   upi: 0,
   credit_card: 0.02,
   debit_card: 0.02,
@@ -42,20 +42,44 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     await createAuthenticatedClient(authHeader);
 
-    // Read fee rates from environment variables, fall back to defaults
-    const feeRates = {
-      upi: parseFloat(Deno.env.get("FEE_RATE_UPI") ?? String(DEFAULT_RATES.upi)),
-      credit_card: parseFloat(Deno.env.get("FEE_RATE_CREDIT_CARD") ?? String(DEFAULT_RATES.credit_card)),
-      debit_card: parseFloat(Deno.env.get("FEE_RATE_DEBIT_CARD") ?? String(DEFAULT_RATES.debit_card)),
-      netbanking: parseFloat(Deno.env.get("FEE_RATE_NETBANKING") ?? String(DEFAULT_RATES.netbanking)),
-    };
+    const supabase = createServiceClient();
+
+    // Read fee rates from fee_config table
+    let feeRates = { ...DEFAULT_RATES };
+    let lastUpdated = new Date().toISOString();
+
+    const { data: rows, error: dbError } = await supabase
+      .from("fee_config")
+      .select("method, rate, updated_at")
+      .eq("is_active", true);
+
+    if (dbError) {
+      console.warn("[get-fee-config] DB query failed, using defaults:", dbError.message);
+    } else if (rows && rows.length > 0) {
+      // Map rows to fee rates object
+      for (const row of rows) {
+        feeRates[row.method] = Number(row.rate);
+      }
+      // Use the most recent updated_at
+      const dates = rows
+        .map((r: { updated_at?: string }) => r.updated_at)
+        .filter(Boolean) as string[];
+      if (dates.length > 0) {
+        lastUpdated = dates.sort().pop()!;
+      }
+    }
 
     return jsonResponse({
       success: true,
       data: {
-        fee_rates: feeRates,
+        fee_rates: {
+          upi: feeRates.upi ?? DEFAULT_RATES.upi,
+          credit_card: feeRates.credit_card ?? DEFAULT_RATES.credit_card,
+          debit_card: feeRates.debit_card ?? DEFAULT_RATES.debit_card,
+          netbanking: feeRates.netbanking ?? DEFAULT_RATES.netbanking,
+        },
         fee_type: "percentage",
-        last_updated: new Date().toISOString().split("T")[0],
+        last_updated: lastUpdated.split("T")[0],
       },
     });
   } catch (error) {

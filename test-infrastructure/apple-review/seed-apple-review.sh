@@ -1,0 +1,1 @@
+../scripts/seed-apple-review.sh

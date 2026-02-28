@@ -12,6 +12,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, useCallb
 import { useRouter } from 'expo-router';
 import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
+import { registerForPushNotifications } from '@/src/services/notifications';
 import type { Session } from '@supabase/supabase-js';
 
 interface AuthContextValue {
@@ -82,6 +83,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } else if (event === 'SIGNED_IN' && newSession) {
           setSession(newSession);
           hasRedirectedRef.current = false;
+          // Register push token after successful auth
+          registerForPushNotifications().catch(() => {
+            // Non-blocking — token registration failures are logged inside the function
+          });
         } else if (event === 'INITIAL_SESSION') {
           // Already handled by getSession() above — but update if different
           setSession(newSession);

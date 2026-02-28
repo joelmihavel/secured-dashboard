@@ -31,12 +31,12 @@ appId: com.flent.secured
 - assertNotVisible:
     id: "home-screen"
 
-# -- Test 2: Payment first-rent (protected) --
-- openLink: "flentsecured:///payment/first-rent"
+# -- Test 2: Payment enter-rent (protected) --
+- openLink: "flentsecured:///payment/enter-rent"
 - waitForAnimationToEnd
 
 - assertNotVisible:
-    id: "first-rent-payment-screen"
+    id: "enter-rent-screen"
 
 # -- Test 3: Profile index (protected) --
 - openLink: "flentsecured:///profile/index"

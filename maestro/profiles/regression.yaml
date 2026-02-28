@@ -1,0 +1,96 @@
+# =============================================================================
+# Maestro Profile: regression
+# =============================================================================
+# Full screen flows + all journey flows. Used for weekly full regression
+# and manual dispatch. Validates all screens and multi-step user journeys.
+#
+# Target execution time: < 15 minutes
+# Retries: 2 per flow (handles transient flakiness)
+# =============================================================================
+
+name: "Regression (Full Suite)"
+profile: regression
+
+# All screen flows and journey flows
+flows:
+  # Screen-level functional flows
+  - "flows/auth/beta-splash.yaml"
+  - "flows/auth/splash.yaml"
+  - "flows/auth/carousel.yaml"
+  - "flows/auth/sign-up.yaml"
+  - "flows/auth/otp.yaml"
+  - "flows/auth/otp-error.yaml"
+  - "flows/waitlist/index.yaml"
+  - "flows/agreement/upload.yaml"
+  - "flows/agreement/review.yaml"
+  - "flows/setup/index.yaml"
+  - "flows/setup/add-bank.yaml"
+  - "flows/setup/add-utility.yaml"
+  - "flows/setup/add-utility-skip.yaml"
+  - "flows/setup/invite-landlord.yaml"
+  - "flows/setup/pending-steps.yaml"
+  - "flows/main/home.yaml"
+  - "flows/main/dashboard-states.yaml"
+  - "flows/payment/first-rent.yaml"
+  - "flows/payment/enter-rent.yaml"
+  - "flows/payment/method-selector.yaml"
+  - "flows/payment/add-upi.yaml"
+  - "flows/payment/add-card.yaml"
+  - "flows/payment/add-netbanking.yaml"
+  - "flows/payment/confirm.yaml"
+  - "flows/payment/status-pending.yaml"
+  - "flows/payment/status-success.yaml"
+  - "flows/payment/status-failed.yaml"
+  - "flows/payment/status-refunded.yaml"
+  - "flows/profile/index.yaml"
+  - "flows/profile/edit.yaml"
+  - "flows/profile/payment-methods.yaml"
+  - "flows/profile/agreement.yaml"
+  - "flows/routing/auth-guard.yaml"
+  - "flows/routing/auth-guard-all.yaml"
+  - "flows/routing/deep-links.yaml"
+  # End-to-end journey flows
+  - "journeys/new-user-onboarding.yaml"
+  - "journeys/make-payment.yaml"
+  - "journeys/payment-card.yaml"
+  - "journeys/payment-netbanking.yaml"
+  - "journeys/manage-profile.yaml"
+  - "journeys/profile-management-full.yaml"
+  - "journeys/sign-out-relogin.yaml"
+  - "journeys/skip-setup.yaml"
+  - "journeys/crash-recovery-payment.yaml"
+
+# Standard timeout per flow
+timeout: 120
+
+# 2 retries to handle transient flakiness
+retry:
+  maxRetries: 2
+  retryOnFailure: true
+
+# Screenshot on failure for debugging
+artifacts:
+  screenshots:
+    enabled: true
+    onFailure: true
+    onSuccess: false
+  video:
+    enabled: false
+  logs:
+    enabled: true
+
+# Multi-device for sharding
+devices:
+  - platform: iOS
+    model: "iPhone 16 Pro"
+    osVersion: "18"
+  - platform: iOS
+    model: "iPhone 15"
+    osVersion: "17"
+  - platform: Android
+    model: "Pixel 8"
+    osVersion: "34"
+
+# Continue on failure to get full picture
+executionOrder:
+  continueOnFailure: true

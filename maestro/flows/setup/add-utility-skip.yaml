@@ -1,0 +1,45 @@
+# =============================================================================
+# HJ-014: Add Utility Skip Flow
+# Route: /(setup)/add-utility
+# Figma: 1-34343 (onboarding / Add BESCOM Number)
+# testIDs: None on screen (uses text-based selectors)
+# =============================================================================
+#
+# Validates:
+#   - Add utility screen renders correctly
+#   - "Skip" button is visible and tappable
+#   - Tapping Skip navigates to the next step (invite-landlord)
+#   - User does not need to fill in utility details to proceed
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link directly to the add-utility screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///setup/add-utility"
+- waitForAnimationToEnd
+
+# -- Verify screen rendered --
+- assertVisible: "Verify"
+- assertVisible: "utility bill"
+
+# -- Verify Skip button is visible --
+- assertVisible: "Skip"
+
+# -- Tap Skip to bypass utility verification --
+- tapOn: "Skip"
+- waitForAnimationToEnd
+
+# -- Verify navigation to invite-landlord screen --
+- extendedWaitUntil:
+    visible: "Invite"
+    timeout: 5000
+    optional: true
+
+# Fallback: verify we left the add-utility screen
+- assertNotVisible:
+    text: "electricity bill helps us verify"
+    optional: true
+
+- takeScreenshot: "add-utility-skipped"

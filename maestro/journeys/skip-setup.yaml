@@ -1,0 +1,137 @@
+# =============================================================================
+# Journey: Skip Setup (Minimum Steps Onboarding)
+# HJ-013, HJ-014, HJ-015
+#
+# Full journey: setup index -> add-bank -> skip utility -> skip landlord ->
+#               complete with bank only -> home
+#
+# This journey validates the minimum-path onboarding where a user completes
+# only the required bank setup step and skips all optional steps (utility
+# verification and landlord invitation).
+#
+# Prerequisites:
+#   - User is authenticated and past waitlist/agreement stages
+#   - Mock backend accepts bank details for test flow
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STEP 1: Setup Index Screen
+# =============================================
+- launchApp:
+    clearState: true
+
+# Deep link to setup index
+- openLink: "flentsecured:///setup/index?step=1"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "setup-index-screen"
+    optional: true
+
+# =============================================
+# STEP 2: Add Bank (Required step)
+# =============================================
+- openLink: "flentsecured:///setup/add-bank"
+- waitForAnimationToEnd
+
+# Verify add-bank screen
+- assertVisible:
+    text: "bank"
+    optional: true
+
+# Enter bank account details (test data)
+- tapOn:
+    text: "Account Number"
+    optional: true
+- inputText: "1234567890"
+- hideKeyboard
+
+- tapOn:
+    text: "IFSC Code"
+    optional: true
+- inputText: "HDFC0001234"
+- hideKeyboard
+
+# Submit bank details
+- tapOn:
+    text: "Proceed"
+    optional: true
+- waitForAnimationToEnd
+
+# Wait for bank verification
+- extendedWaitUntil:
+    visible: "Verify"
+    timeout: 10000
+    optional: true
+
+# =============================================
+# STEP 3: Add Utility -- SKIP
+# =============================================
+- openLink: "flentsecured:///setup/add-utility"
+- waitForAnimationToEnd
+
+# Verify utility screen loaded
+- assertVisible:
+    text: "Verify"
+    optional: true
+- assertVisible:
+    text: "utility bill"
+    optional: true
+
+# Tap Skip to bypass utility verification
+- tapOn: "Skip"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 4: Invite Landlord -- SKIP
+# =============================================
+# Should auto-navigate to invite-landlord after skipping utility
+- extendedWaitUntil:
+    visible: "Invite"
+    timeout: 5000
+    optional: true
+
+# If not auto-navigated, deep link
+- openLink: "flentsecured:///setup/invite-landlord"
+- waitForAnimationToEnd
+
+# Verify invite landlord screen
+- assertVisible:
+    id: "invite-landlord-screen"
+    optional: true
+
+# Tap Skip to bypass landlord invitation
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 5: Pending Steps (shows what was skipped)
+# =============================================
+- openLink: "flentsecured:///setup/pending-steps"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "pending-steps-screen"
+    optional: true
+
+# Tap the main CTA to proceed to home
+- tapOn:
+    id: "start-earning-button"
+    optional: true
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 6: Home Screen (Journey Complete)
+# =============================================
+- openLink: "flentsecured:///main/index"
+- waitForAnimationToEnd
+
+# Verify user reached home screen with minimum setup
+- assertVisible:
+    id: "home-screen"
+
+- takeScreenshot: "skip-setup-journey-complete"

@@ -7,17 +7,26 @@
  * Uses dynamic import to gracefully handle Expo Go where native module may not be available.
  */
 
-import Constants from 'expo-constants';
+// DISABLED: Sentry native SDK triggers TurboModule void method crash in release builds.
+// React Native ships as a prebuilt xcframework — the RCTTurboModule.mm patch cannot fix it.
+// The Sentry native init (SentryFileManager, SentryScopePersistentStore) runs during startup
+// and a concurrent TurboModule void method throws an NSException → SIGABRT.
+// Re-enable once RN 0.82+ ships with the upstream fix (RN #53960).
+const Sentry: typeof import('@sentry/react-native') | null = null;
+const SENTRY_DSN = '';
 
-// Dynamic import to prevent crash in Expo Go (native module not available)
-let Sentry: typeof import('@sentry/react-native') | null = null;
-try {
-  Sentry = require('@sentry/react-native');
-} catch {
-  // Native module not available — Sentry will be no-ops
+// Lazy-init navigation integration to avoid TurboModule access at module scope
+let navigation: ReturnType<typeof import('@sentry/react-native').reactNavigationIntegration> | null = null;
+
+function getNavigationIntegration() {
+  if (!Sentry) return null;
+  if (!navigation) {
+    navigation = Sentry.reactNavigationIntegration({
+      enableTimeToInitialDisplay: true,
+    });
+  }
+  return navigation;
 }
-
-const SENTRY_DSN = Constants.expoConfig?.extra?.sentryDsn ?? process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
 
 export function initSentry() {
   if (!Sentry) {
@@ -43,7 +52,12 @@ export function initSentry() {
     sessionTrackingIntervalMillis: 30000,
     attachStacktrace: true,
     enableNativeCrashHandling: true,
+    integrations: getNavigationIntegration() ? [getNavigationIntegration()!] : [],
   });
+}
+
+export function registerNavigationContainer(ref: unknown) {
+  getNavigationIntegration()?.registerNavigationContainer(ref as any);
 }
 
 export function captureError(error: Error, context?: Record<string, unknown>) {

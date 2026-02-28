@@ -1,5 +1,6 @@
 -- Flent Secured v2 - Migration: Create Users Table
 -- Base users table linked to Supabase Auth
+-- Made idempotent for v2→main merge (table may already exist with v1 schema)
 
 -- ==============================================
 -- USERS TABLE
@@ -23,8 +24,24 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add columns that may not exist on a pre-existing v1 table
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pan_number VARCHAR(10);
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pan_verified BOOLEAN DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS aadhaar_last4 VARCHAR(4);
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS aadhaar_verified BOOLEAN DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS cashback_balance_paise INTEGER DEFAULT 0;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS referral_code VARCHAR(10);
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS referred_by UUID;
+
+-- Add kyc_status with check constraint (needs exception handler)
+DO $$ BEGIN
+  ALTER TABLE public.users ADD COLUMN kyc_status VARCHAR(20) NOT NULL DEFAULT 'pending';
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
 -- ==============================================
--- INDEXES
+-- INDEXES (safe: columns now guaranteed to exist)
 -- ==============================================
 
 CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users(phone);
@@ -76,35 +93,39 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION handle_new_user();
 
 -- ==============================================
--- RLS POLICIES
+-- RLS POLICIES (idempotent: drop if exists, then create)
 -- ==============================================
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
--- Users can read their own profile
-CREATE POLICY users_select_own ON public.users
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = id);
+DO $$ BEGIN
+  CREATE POLICY users_select_own ON public.users
+    FOR SELECT TO authenticated USING (auth.uid() = id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Users can update their own profile
-CREATE POLICY users_update_own ON public.users
-  FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
+DO $$ BEGIN
+  CREATE POLICY users_update_own ON public.users
+    FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Service role has full access
-CREATE POLICY users_service_all ON public.users
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY users_service_all ON public.users
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ==============================================
 -- COMMENTS
 -- ==============================================
 
 COMMENT ON TABLE public.users IS 'Extended user profiles linked to Supabase Auth';
-COMMENT ON COLUMN public.users.cashback_balance_paise IS 'Current cashback balance in paise (1/100 of INR)';
-COMMENT ON COLUMN public.users.kyc_status IS 'KYC verification status: pending, in_progress, verified, failed';
+DO $$ BEGIN
+  COMMENT ON COLUMN public.users.cashback_balance_paise IS 'Current cashback balance in paise (1/100 of INR)';
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  COMMENT ON COLUMN public.users.kyc_status IS 'KYC verification status: pending, in_progress, verified, failed';
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;

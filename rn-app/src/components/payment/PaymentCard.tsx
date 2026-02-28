@@ -42,6 +42,8 @@ const CARD_COLORS = {
 export type PaymentCardType = 'credit' | 'debit' | 'upi' | 'netbanking';
 export type PaymentCardVariant = 'default' | 'profile';
 
+const CARD_TEXTURE_DOTS = require('@/assets/images/payment/card_texture_dots.png');
+const CARD_TEXTURE_CROSS = require('@/assets/images/payment/card_texture_cross.png');
 export interface PaymentCardProps {
   type: PaymentCardType;
   variant?: PaymentCardVariant;
@@ -115,6 +117,23 @@ function PaymentCardComponent({
         {/* Background Split */}
         <View style={styles.profileBgLeft} />
         <View style={styles.profileBgRight} />
+
+        {/* Texture Overlays */}
+        <Image
+          source={CARD_TEXTURE_DOTS}
+          style={styles.profileTextureDots}
+          resizeMode="cover"
+        />
+        {(type === 'credit' || type === 'debit') && (
+          <View style={styles.profileTextureCrossWrap} pointerEvents="none">
+            <Image
+              source={CARD_TEXTURE_CROSS}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+            <View style={styles.profileDarkOverlay} />
+          </View>
+        )}
 
         {/* Decorative Vertical Lines */}
         <LinearGradient
@@ -235,6 +254,7 @@ function PaymentCardComponent({
         style={[
           styles.container,
           variant === 'profile' && styles.containerProfile,
+          variant === 'profile' && (type === 'credit' || type === 'debit') && { borderColor: CARD_COLORS.borderProfile },
           selected && styles.containerSelected,
           animatedStyle,
           style,
@@ -404,7 +424,7 @@ const styles = StyleSheet.create({
   },
   containerProfile: {
     borderWidth: 2,
-    borderColor: CARD_COLORS.borderProfile,
+    borderColor: '#4D4D4D',
   },
   cardBodyProfile: {
     padding: 0,
@@ -491,6 +511,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: CARD_COLORS.textDetails,
     lineHeight: 24,
+  },
+  profileTextureDots: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.06,
+  },
+  profileTextureCrossWrap: {
+    position: 'absolute',
+    left: 10,
+    top: 269,
+    width: 250,
+    height: 118,
+    opacity: 0.16,
+  },
+  profileDarkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.64)',
   },
 });
 

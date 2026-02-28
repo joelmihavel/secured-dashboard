@@ -115,7 +115,7 @@ function PrimaryButtonComponent({
   const handlePressIn = useCallback(() => {
     if (isDisabled) return;
     pressed.value = withSpring(1, SPRING_CONFIG);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, [isDisabled, pressed]);
 
   const handlePressOut = useCallback(() => {
@@ -124,7 +124,7 @@ function PrimaryButtonComponent({
 
   const handlePress = useCallback(() => {
     if (!isDisabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       onPress();
     }
   }, [isDisabled, onPress]);

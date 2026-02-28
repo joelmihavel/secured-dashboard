@@ -167,7 +167,32 @@ export async function seedTestUser(
     );
     created.push(`tenancy(${tenancyStatus})`);
 
-    if (isActive && options.with_payment_history) {
+    // Seed bank account for active state (landlord bank must be verified)
+    if (isActive) {
+      await supabase.from("bank_accounts").delete().eq("user_id", userId).eq("party_type", "landlord");
+      const { error: bankErr } = await supabase.from("bank_accounts").insert({
+        user_id: userId,
+        party_type: "landlord",
+        account_holder_name: "Demo Landlord",
+        account_number_encrypted: "SEED_DEMO_00001234",
+        account_number_masked: "XXXX XXXX 1234",
+        ifsc_code: "HDFC0001234",
+        verified: true,
+        penny_drop_status: "SUCCESS",
+        penny_drop_name_match_score: 100,
+        verified_account_holder_name: "Demo Landlord",
+        verified_at: now.toISOString(),
+        is_primary: true,
+        agreement_name_matched: true,
+      });
+      if (bankErr) {
+        console.warn("[seed-helpers] Failed to seed bank account:", bankErr.message);
+      } else {
+        created.push("bank_account(landlord)");
+      }
+    }
+
+    if (isActive && (options.with_payment_history ?? true)) {
       const count = options.payment_count ?? 3;
       await seedPayments(userId, tenancyId, count, options.with_cashback ?? false, supabase);
       created.push(`payments(${count})`);
@@ -259,6 +284,7 @@ export async function upsertUserProfile(
 ): Promise<void> {
   const stateIndex = VALID_STATES.indexOf(targetState);
   const userStatus =
+    targetState === "active" ? "active" :
     stateIndex >= VALID_STATES.indexOf("approved") ? "approved" :
     stateIndex >= VALID_STATES.indexOf("waitlisted") ? "waitlisted" :
     "signed_up";

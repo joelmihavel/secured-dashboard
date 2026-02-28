@@ -1,0 +1,23 @@
+{
+  "session_id": "20260227_235015_86647",
+  "status": "interrupted",
+  "current_layer": "cleanup",
+  "timestamp": "2026-02-27T18:20:16Z",
+  "config": {
+    "layers": "frontend",
+    "category": "components",
+    "priority": "",
+    "parallel": false,
+    "cloud": false,
+    "smoke": false,
+    "nightly": false,
+    "coverage": false
+  },
+  "results": {
+    "backend": "pending",
+    "frontend": "completed",
+    "e2e": "pending"
+  },
+  "report_dir": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/test-infrastructure/orchestrator/reports/2026-02-27_23-50-15",
+  "details": {"exit_code": 0}}
+}

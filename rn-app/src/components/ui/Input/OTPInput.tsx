@@ -109,7 +109,7 @@ function OTPInputComponent({
 
       // Haptic feedback for each digit
       if (cleaned.length > value.length) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }
 
       // Call onComplete when all digits entered

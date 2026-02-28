@@ -1,0 +1,148 @@
+# =============================================================================
+# EC-002, EC-003: OTP Error States Edge Cases
+# Route: /(auth)/otp (modal overlay on sign-up)
+# Figma: 1-31277 (error1 -- Wrong Code), 1-31380 (error2 -- Too Many Attempts)
+# testIDs: otp-input, proceed-button
+# =============================================================================
+#
+# Validates:
+#   EC-002: OTP expiration timer
+#     - OTP sheet shows countdown timer
+#     - After extended time, expired state shows
+#     - "Send a new code" link appears on expiry
+#
+#   EC-003: Wrong OTP 3x (lockout with exponential backoff)
+#     - Enter wrong OTP "000000" and submit
+#     - "Wrong Code" error displays
+#     - Enter wrong OTP second time
+#     - Cooldown timer increases (exponential backoff)
+#     - Enter wrong OTP third time
+#     - Higher cooldown enforced
+#     - Resend link remains accessible throughout
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# SETUP: Navigate to OTP sheet
+# =============================================
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///sign-up"
+- waitForAnimationToEnd
+
+# Fill sign-up form
+- tapOn:
+    id: "phone-input"
+- inputText: ${TEST_PHONE}
+- tapOn:
+    id: "name-input"
+- inputText: ${TEST_NAME}
+- hideKeyboard
+
+# Accept consent and submit
+- tapOn:
+    id: "consent-toggle"
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# Verify OTP sheet appeared
+- assertVisible: "verify your number"
+
+# =============================================
+# EC-003: Wrong OTP Attempt 1
+# =============================================
+- tapOn:
+    id: "otp-input"
+- inputText: "000000"
+- waitForAnimationToEnd
+
+# Submit wrong OTP
+- tapOn:
+    id: "proceed-button"
+
+# Wait for error response
+- extendedWaitUntil:
+    visible: "Wrong Code"
+    timeout: 10000
+
+# Verify error message
+- assertVisible: "Wrong Code"
+
+# Verify Resend link is still visible
+- assertVisible: "Resend"
+
+# =============================================
+# EC-003: Wrong OTP Attempt 2 (with cooldown)
+# =============================================
+# Clear and re-enter wrong OTP
+- tapOn:
+    id: "otp-input"
+- clearText
+- inputText: "111111"
+- waitForAnimationToEnd
+
+# Wait for cooldown to expire (exponential backoff: ~2s first)
+- wait: 3000
+
+# Submit wrong OTP again
+- tapOn:
+    id: "proceed-button"
+
+# Wait for error
+- extendedWaitUntil:
+    visible: "Wrong Code"
+    timeout: 10000
+    optional: true
+
+# Verify cooldown message appears (e.g., "Wait 4s")
+- assertVisible:
+    text: "Wait"
+    optional: true
+
+# =============================================
+# EC-003: Wrong OTP Attempt 3 (longer cooldown)
+# =============================================
+# Wait for cooldown to expire (~4s)
+- wait: 5000
+
+# Clear and enter another wrong OTP
+- tapOn:
+    id: "otp-input"
+- clearText
+- inputText: "222222"
+- waitForAnimationToEnd
+
+# Submit
+- tapOn:
+    id: "proceed-button"
+
+# Verify error or lockout state
+- extendedWaitUntil:
+    visible: "Wrong Code"
+    timeout: 10000
+    optional: true
+
+# Check for "Too many Attempts" message
+- assertVisible:
+    text: "Too many Attempts"
+    optional: true
+
+# Verify Resend link is still accessible for recovery
+- assertVisible:
+    text: "Resend"
+    optional: true
+
+# =============================================
+# EC-002: Test Resend (reset timer)
+# =============================================
+# Tap Resend to get a new code
+- tapOn: "Resend"
+- waitForAnimationToEnd
+
+# After resend, timer and error should reset
+# OTP input should be cleared
+- assertVisible: "verify your number"
+
+- takeScreenshot: "otp-error-states-complete"

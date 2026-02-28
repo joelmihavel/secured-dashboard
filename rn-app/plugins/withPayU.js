@@ -69,7 +69,7 @@ function withPayUInfoPlist(config) {
   return withInfoPlist(config, (config) => {
     // Add UPI app query schemes for intent detection
     const schemes = config.modResults.LSApplicationQueriesSchemes || [];
-    const upiSchemes = ["phonepe", "tez", "paytm", "bhim", "credpay"];
+    const upiSchemes = ["phonepe", "tez", "paytm", "paytmmp", "bhim", "credpay", "amazonpay"];
 
     for (const scheme of upiSchemes) {
       if (!schemes.includes(scheme)) {

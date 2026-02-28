@@ -15,14 +15,13 @@
       "@/constants/*": ["./src/constants/*"],
       "@/assets/*": ["./assets/*"]
     },
-    "types": ["nativewind/types", "jest"]
+    "types": ["jest"]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    "nativewind-env.d.ts",
     "global.d.ts"
   ]
 }

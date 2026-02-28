@@ -153,17 +153,23 @@ export default function CarouselScreen() {
       <DottedGridPattern fadeMask={false} />
 
 
-      {/* Illustrations */}
+      {/* Illustrations — only render active + adjacent to avoid 941 simultaneous worklets */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Animated.View style={[styles.illus1Container, style1]}>
-          <Illustration1 width={104} height={70} />
-        </Animated.View>
-        <Animated.View style={[styles.illus2Container, style2]}>
-          <Illustration2 width={106} height={78} />
-        </Animated.View>
-        <Animated.View style={[styles.illus3Container, style3]}>
-          <Illustration3 width={76} height={92} />
-        </Animated.View>
+        {activeIndex <= 1 && (
+          <Animated.View style={[styles.illus1Container, style1]}>
+            <Illustration1 width={104} height={70} />
+          </Animated.View>
+        )}
+        {activeIndex >= 0 && activeIndex <= 2 && (
+          <Animated.View style={[styles.illus2Container, style2]}>
+            <Illustration2 width={106} height={78} />
+          </Animated.View>
+        )}
+        {activeIndex >= 1 && (
+          <Animated.View style={[styles.illus3Container, style3]}>
+            <Illustration3 width={76} height={92} />
+          </Animated.View>
+        )}
       </View>
 
       <View style={styles.outerContainer} pointerEvents="box-none">

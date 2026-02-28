@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "project": "flent-secured",
+  "production_project_ref": "zqlowjveyqiagnbmfwsb",
+  "timeouts": {
+    "backend": 300000,
+    "frontend": 600000,
+    "e2e": 1200000,
+    "global": 3600000,
+    "per_test": 30000
+  },
+  "retries": {
+    "backend": 2,
+    "frontend": 2,
+    "e2e": 3
+  },
+  "parallel": false,
+  "paths": {
+    "project_root_relative": "../..",
+    "rn_app": "rn-app",
+    "backend_tests": "supabase/functions/_tests",
+    "frontend_tests": "rn-app",
+    "e2e_flows": "maestro/flows",
+    "e2e_journeys": "maestro/journeys",
+    "e2e_config": "maestro/config.yaml",
+    "category_map": "test-infrastructure/orchestrator/category-map.json",
+    "seed_script": "test-infrastructure/scripts/seed-state.sh"
+  },
+  "report_dir": "test-infrastructure/orchestrator/reports",
+  "session_dir": "test-infrastructure/orchestrator/.session",
+  "smoke": {
+    "priority": "P0",
+    "description": "Critical path tests only"
+  },
+  "nightly": {
+    "priority": "all",
+    "parallel": true,
+    "retries": 3,
+    "description": "Full regression with extended retries"
+  },
+  "supabase": {
+    "local_url": "http://127.0.0.1:54321",
+    "app_id": "com.flent.secured",
+    "deep_link_scheme": "flentsecured",
+    "test_phone": "9876543210",
+    "test_name": "Test User",
+    "test_otp": "123456"
+  },
+  "exit_codes": {
+    "success": 0,
+    "test_failure": 1,
+    "config_error": 2,
+    "infra_error": 3
+  }
+}

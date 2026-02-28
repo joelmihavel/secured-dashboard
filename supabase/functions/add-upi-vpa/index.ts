@@ -2,7 +2,7 @@
  * Flent Secured v2 - Add UPI VPA Edge Function
  *
  * Validates and saves a UPI Virtual Payment Address.
- * Optional: Uses Cashfree VPA validation API for verification.
+ * Optional: Uses PayU validate_vpa API for verification.
  *
  * Endpoint: POST /functions/v1/add-upi-vpa
  * Auth: Required (JWT)
@@ -17,14 +17,15 @@ import { handleCors, jsonResponse } from "../_shared/cors.ts";
 import { ValidationError, ExternalServiceError, handleError } from "../_shared/errors.ts";
 import { validateSchema } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
+import { sha512 } from "../_shared/crypto.ts";
 
 // ==============================================
 // CONFIGURATION
 // ==============================================
 
-const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
-const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
-const CASHFREE_BASE_URL = Deno.env.get("CASHFREE_BASE_URL") ?? "https://sandbox.cashfree.com/verification";
+const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY");
+const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT");
+const PAYU_INFO_URL = Deno.env.get("PAYU_INFO_URL") ?? "https://info.payu.in/merchant/postservice";
 
 // UPI provider detection patterns
 const UPI_PROVIDERS: Record<string, RegExp> = {
@@ -75,7 +76,7 @@ const requestSchema = {
 };
 
 // ==============================================
-// UPI VPA VALIDATION (CASHFREE)
+// UPI VPA VALIDATION (PAYU)
 // ==============================================
 
 interface VpaValidationResult {
@@ -85,38 +86,52 @@ interface VpaValidationResult {
 }
 
 async function validateUpiVpa(vpa: string): Promise<VpaValidationResult> {
-  // Skip external validation if Cashfree is not configured
-  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
-    console.warn("[add-upi-vpa] Cashfree not configured, skipping VPA validation");
-    return { valid: true, message: "Validation skipped - Cashfree not configured" };
+  // Skip external validation if PayU is not configured
+  if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
+    console.warn("[add-upi-vpa] PayU not configured, skipping VPA validation");
+    return { valid: true, message: "Validation skipped - PayU not configured" };
   }
 
   try {
-    const response = await fetch(`${CASHFREE_BASE_URL}/upi/vpa`, {
+    const command = "validate_vpa";
+    const hashString = `${PAYU_MERCHANT_KEY}|${command}|${vpa}|${PAYU_MERCHANT_SALT}`;
+    const hash = await sha512(hashString);
+
+    const formData = new URLSearchParams();
+    formData.set("key", PAYU_MERCHANT_KEY);
+    formData.set("command", command);
+    formData.set("var1", vpa);
+    formData.set("hash", hash);
+
+    const response = await fetch(PAYU_INFO_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-client-id": CASHFREE_APP_ID,
-        "x-client-secret": CASHFREE_SECRET_KEY,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: JSON.stringify({ vpa }),
+      body: formData.toString(),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      console.warn(`[add-upi-vpa] VPA validation API error: ${response.status}`, data);
+      console.warn(`[add-upi-vpa] PayU validate_vpa API error: ${response.status}`);
       // Don't fail on API errors - allow with warning
       return { valid: true, message: "Validation service unavailable" };
     }
 
-    // Cashfree returns account_exists: "YES" or valid: true
-    const isValid = data.valid === true || data.account_exists === "YES";
+    const data = await response.json();
+    console.log("[add-upi-vpa] PayU validate_vpa raw response:", JSON.stringify(data));
+
+    // PayU returns: { status: 1, msg: "...", isVPAValid: 1, payerAccountName: "..." }
+    if (data.status !== 1) {
+      console.warn("[add-upi-vpa] PayU validate_vpa returned non-success:", data.msg);
+      return { valid: true, message: "Validation service returned error" };
+    }
+
+    const isValid = data.isVPAValid === 1;
 
     return {
       valid: isValid,
-      name: data.name ?? data.name_at_bank,
-      message: data.message,
+      name: data.payerAccountName ?? undefined,
+      message: isValid ? "VPA verified via PayU" : (data.msg ?? "VPA not found"),
     };
   } catch (error) {
     console.error("[add-upi-vpa] VPA validation error:", error);
@@ -177,7 +192,7 @@ serve(async (req: Request) => {
     // Normalize VPA to lowercase
     const normalizedVpa = upi_vpa.toLowerCase().trim();
 
-    // Validate VPA with Cashfree (optional)
+    // Validate VPA with PayU (optional)
     const validation = await validateUpiVpa(normalizedVpa);
     if (!validation.valid) {
       throw new ValidationError(`Invalid UPI VPA: ${validation.message ?? "Account not found"}`, {

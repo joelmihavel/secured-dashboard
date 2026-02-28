@@ -1,0 +1,67 @@
+{
+  "title": "Flent Secured Test Report",
+  "version": "1.0.0",
+  "theme": {
+    "background": "#131313",
+    "backgroundAlt": "#0a0a0a",
+    "card": "#202020",
+    "cardBorder": "#2a2a2a",
+    "cardHover": "#282828",
+    "accent": "#FF9A6D",
+    "accentDim": "rgba(255,154,109,0.15)",
+    "success": "#4CAF50",
+    "successDim": "rgba(76,175,80,0.15)",
+    "failure": "#FF5252",
+    "failureDim": "rgba(255,82,82,0.15)",
+    "warning": "#FFB74D",
+    "warningDim": "rgba(255,183,77,0.15)",
+    "skip": "#90A4AE",
+    "skipDim": "rgba(144,164,174,0.15)",
+    "textPrimary": "#DDDDDD",
+    "textSecondary": "#878787",
+    "textMuted": "#555555",
+    "border": "#333333"
+  },
+  "categories": [
+    "auth",
+    "payment",
+    "agreement",
+    "setup",
+    "waitlist",
+    "profile",
+    "dashboard",
+    "routing",
+    "security",
+    "referral",
+    "onboarding",
+    "verification",
+    "utility",
+    "components",
+    "services",
+    "hooks"
+  ],
+  "trend_history_max": 90,
+  "coverage_threshold": {
+    "good": 80,
+    "warning": 60,
+    "critical": 40
+  },
+  "flaky_threshold": {
+    "quarantine_rate": 0.3,
+    "min_sessions": 5
+  },
+  "quick_fix_patterns": {
+    "timeout": "Increase test timeout or check for async leaks. The operation may be waiting on a network call that never resolves.",
+    "network": "Check Supabase local instance is running (supabase status). Verify SUPABASE_URL environment variable.",
+    "render": "Component may have missing providers or context. Check that test wraps component in required providers.",
+    "navigation": "Ensure expo-router mock is properly configured. Check that navigation state is initialized in test setup.",
+    "permission": "Check RLS policies on the Supabase table. Verify the test user has the correct role/permissions.",
+    "mock": "A mock may be stale or incorrectly configured. Verify mock return values match the current API contract.",
+    "snapshot": "Run with --updateSnapshot to regenerate. Review the diff to ensure changes are intentional.",
+    "import": "Check for circular imports or missing module resolution. Verify path aliases in jest.config.js.",
+    "act": "Wrap state updates in act(). This usually means an async operation completed after the test ended.",
+    "element": "Element not found in the DOM. Check testID, text content, or role used in the query. The component may not have rendered yet.",
+    "maestro": "Flow step failed. Check if the app state matches expectations. The screen transition may need a longer wait.",
+    "assertion": "Expected value does not match actual. Verify test data setup and check if the API response format changed."
+  }
+}

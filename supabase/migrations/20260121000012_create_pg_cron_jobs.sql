@@ -1,25 +1,21 @@
 -- Flent Secured v2 - Migration: pg_cron Scheduled Jobs
 -- Automated tasks for payment reminders, cleanup, and processing
+-- Made idempotent for v2→main merge
 
 -- ==============================================
 -- ENABLE EXTENSIONS
 -- ==============================================
 
--- Enable pg_cron (should already be enabled on Supabase Pro)
 CREATE EXTENSION IF NOT EXISTS pg_cron;
-
--- Enable pg_net for HTTP calls from cron jobs
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- ==============================================
 -- HELPER FUNCTIONS
 -- ==============================================
 
--- Function to get Supabase Edge Function URL
 CREATE OR REPLACE FUNCTION get_edge_function_url(function_name TEXT)
 RETURNS TEXT AS $$
 BEGIN
-  -- This should be replaced with actual project URL in production
   RETURN 'https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/' || function_name;
 END;
 $$ LANGUAGE plpgsql STABLE;
@@ -43,22 +39,37 @@ CREATE TABLE IF NOT EXISTS notification_queue (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_notification_queue_pending ON notification_queue(scheduled_for)
-  WHERE status = 'pending';
-CREATE INDEX idx_notification_queue_user ON notification_queue(user_id);
+-- Add columns that may not exist on a pre-existing table
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS notification_type TEXT DEFAULT 'push';
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS payload JSONB DEFAULT '{}';
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ;
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS error_message TEXT;
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS external_id TEXT;
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0;
+ALTER TABLE notification_queue ADD COLUMN IF NOT EXISTS max_retries INTEGER DEFAULT 3;
 
--- Enable RLS
+DO $$ BEGIN
+  CREATE INDEX idx_notification_queue_pending ON notification_queue(scheduled_for)
+    WHERE status = 'pending';
+EXCEPTION WHEN duplicate_table THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_notification_queue_user ON notification_queue(user_id);
+
 ALTER TABLE notification_queue ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY notification_queue_service_all ON notification_queue
-  FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY notification_queue_service_all ON notification_queue
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ==============================================
 -- CRON JOB: Payment Reminders (Daily 9 AM IST = 3:30 AM UTC)
 -- ==============================================
 
--- Function to send payment reminders
 CREATE OR REPLACE FUNCTION send_payment_reminders()
 RETURNS void AS $$
 DECLARE
@@ -67,37 +78,26 @@ DECLARE
   v_due_date DATE;
   v_days_until_due INTEGER;
 BEGIN
-  -- Get active tenancies with upcoming due dates (3 days before)
   FOR v_tenancy IN
     SELECT t.id, t.user_id, t.monthly_rent_paise, t.rent_due_day, t.landlord_name
     FROM tenancies t
     WHERE t.status = 'active'
       AND t.bank_verified = true
   LOOP
-    -- Calculate due date for current month
     v_due_date := DATE_TRUNC('month', CURRENT_DATE) + (v_tenancy.rent_due_day - 1) * INTERVAL '1 day';
-
-    -- If already past this month's due date, use next month
     IF v_due_date < CURRENT_DATE THEN
       v_due_date := v_due_date + INTERVAL '1 month';
     END IF;
-
     v_days_until_due := v_due_date - CURRENT_DATE;
-
-    -- Send reminder 3 days before due date
     IF v_days_until_due = 3 THEN
-      -- Check if payment already made for this month
       IF NOT EXISTS (
         SELECT 1 FROM payments
         WHERE tenancy_id = v_tenancy.id
           AND rent_month = DATE_TRUNC('month', v_due_date)
           AND status IN ('success', 'processing', 'pending')
       ) THEN
-        -- Get user details
         SELECT first_name, phone INTO v_user
         FROM users WHERE id = v_tenancy.user_id;
-
-        -- Queue WhatsApp notification
         INSERT INTO notification_queue (
           user_id, notification_type, payload, scheduled_for
         ) VALUES (
@@ -106,7 +106,7 @@ BEGIN
           jsonb_build_object(
             'to', v_user.phone,
             'body', format(
-              'Hi %s, your rent of Rs %s is due on %s. Pay now to earn 1%% cashback! 💰',
+              'Hi %s, your rent of Rs %s is due on %s. Pay now to earn 1%% cashback!',
               v_user.first_name,
               (v_tenancy.monthly_rent_paise / 100)::TEXT,
               TO_CHAR(v_due_date, 'DD Mon')
@@ -114,8 +114,6 @@ BEGIN
           ),
           NOW()
         );
-
-        -- Queue push notification
         INSERT INTO notification_queue (
           user_id, notification_type, payload, scheduled_for
         )
@@ -124,7 +122,7 @@ BEGIN
           'push',
           jsonb_build_object(
             'device_token', dt.token,
-            'title', 'Rent Due Soon 📅',
+            'title', 'Rent Due Soon',
             'body', format('Rs %s due on %s. Pay now for 1%% cashback!',
               (v_tenancy.monthly_rent_paise / 100)::TEXT,
               TO_CHAR(v_due_date, 'DD Mon')
@@ -143,7 +141,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Schedule payment reminders (9:00 AM IST = 3:30 AM UTC)
+-- Schedule cron jobs (guarded: unschedule first if exists)
+DO $$ BEGIN
+  PERFORM cron.unschedule('payment-reminders');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 SELECT cron.schedule(
   'payment-reminders',
   '30 3 * * *',
@@ -160,7 +162,6 @@ DECLARE
   v_notification RECORD;
   v_function_url TEXT;
 BEGIN
-  -- Process pending notifications
   FOR v_notification IN
     SELECT *
     FROM notification_queue
@@ -168,15 +169,13 @@ BEGIN
       AND scheduled_for <= NOW()
       AND retry_count < max_retries
     ORDER BY scheduled_for
-    LIMIT 50 -- Process in batches
+    LIMIT 50
     FOR UPDATE SKIP LOCKED
   LOOP
-    -- Mark as processing
     UPDATE notification_queue
     SET status = 'processing'
     WHERE id = v_notification.id;
 
-    -- Determine which function to call
     v_function_url := get_edge_function_url(
       CASE v_notification.notification_type
         WHEN 'whatsapp' THEN 'send-whatsapp'
@@ -186,7 +185,6 @@ BEGIN
       END
     );
 
-    -- Call the Edge Function via pg_net
     PERFORM net.http_post(
       url := v_function_url,
       headers := jsonb_build_object(
@@ -199,13 +197,14 @@ BEGIN
         'user_id', v_notification.user_id
       )
     );
-
-    -- Note: The Edge Function will update the notification status
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
--- Schedule notification queue processing (every 5 minutes)
+DO $$ BEGIN
+  PERFORM cron.unschedule('process-notifications');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 SELECT cron.schedule(
   'process-notifications',
   '*/5 * * * *',
@@ -216,6 +215,10 @@ SELECT cron.schedule(
 -- CRON JOB: Cleanup Expired Idempotency Keys (Daily 2 AM IST)
 -- ==============================================
 
+DO $$ BEGIN
+  PERFORM cron.unschedule('cleanup-idempotency-keys');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 SELECT cron.schedule(
   'cleanup-idempotency-keys',
   '30 20 * * *',
@@ -232,7 +235,6 @@ DECLARE
   v_entry RECORD;
   v_current_balance BIGINT;
 BEGIN
-  -- Find cashback entries that have expired
   FOR v_entry IN
     SELECT DISTINCT ON (user_id) user_id, id, amount_paise
     FROM cashback_ledger
@@ -241,10 +243,7 @@ BEGIN
       AND expires_at < NOW()
     ORDER BY user_id, created_at
   LOOP
-    -- Get current balance
     SELECT get_cashback_balance(v_entry.user_id) INTO v_current_balance;
-
-    -- Create expiry ledger entry
     INSERT INTO cashback_ledger (
       user_id, transaction_type, amount_paise, balance_after_paise,
       description
@@ -255,8 +254,6 @@ BEGIN
       GREATEST(v_current_balance - v_entry.amount_paise, 0),
       'Cashback expired after 90 days'
     );
-
-    -- Mark original entry as expired
     UPDATE cashback_ledger
     SET expired_at = NOW()
     WHERE id = v_entry.id;
@@ -264,6 +261,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DO $$ BEGIN
+  PERFORM cron.unschedule('expire-cashback');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 SELECT cron.schedule(
   'expire-cashback',
   '30 19 * * *',
@@ -274,6 +275,10 @@ SELECT cron.schedule(
 -- CRON JOB: Retry Failed Notifications (Every 15 minutes)
 -- ==============================================
 
+DO $$ BEGIN
+  PERFORM cron.unschedule('retry-failed-notifications');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 SELECT cron.schedule(
   'retry-failed-notifications',
   '*/15 * * * *',
@@ -290,10 +295,13 @@ SELECT cron.schedule(
 -- CRON JOB: Clean Old Audit Logs (Weekly)
 -- ==============================================
 
--- Keep audit logs for 1 year
+DO $$ BEGIN
+  PERFORM cron.unschedule('cleanup-audit-logs');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 SELECT cron.schedule(
   'cleanup-audit-logs',
-  '0 0 * * 0', -- Every Sunday at midnight UTC
+  '0 0 * * 0',
   $$
     DELETE FROM audit_logs
     WHERE created_at < NOW() - INTERVAL '1 year'
@@ -305,7 +313,6 @@ SELECT cron.schedule(
 -- VIEW SCHEDULED JOBS
 -- ==============================================
 
--- Helper view to see all scheduled jobs
 CREATE OR REPLACE VIEW scheduled_jobs AS
 SELECT
   jobid,

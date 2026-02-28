@@ -19,7 +19,7 @@
  * - Button→login gap: 24px
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -32,9 +32,13 @@ import { s, sf, sv } from '@/src/theme/scale';
 export default function SplashScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const navigating = useRef(false);
 
   const handleGetStarted = useCallback(() => {
+    if (navigating.current) return;
+    navigating.current = true;
     router.replace('/(auth)/carousel');
+    setTimeout(() => { navigating.current = false; }, 1000);
   }, [router]);
 
   const handleLogin = useCallback(() => {

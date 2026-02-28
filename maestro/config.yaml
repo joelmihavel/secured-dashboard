@@ -16,6 +16,8 @@
 #   maestro test maestro/journeys/      # Run all journey flows
 #   maestro test maestro/flows/auth/    # Run auth flows only
 #   maestro test maestro/flows/payment/ # Run payment flows only
+#
+# Total flows: 39 screen flows + 10 journey flows = 49 E2E tests
 # =============================================================================
 
 appId: com.flent.secured
@@ -45,7 +47,9 @@ env:
 executionOrder:
   continueOnFailure: false
   flowsOrder:
+    # ==========================================
     # Auth flows (unprotected, run first)
+    # ==========================================
     - "flows/auth/beta-splash.yaml"
     - "flows/auth/splash.yaml"
     - "flows/auth/carousel.yaml"
@@ -57,22 +61,52 @@ executionOrder:
     # Agreement flows
     - "flows/agreement/upload.yaml"
     - "flows/agreement/review.yaml"
+    # ==========================================
     # Setup flows
+    # ==========================================
     - "flows/setup/index.yaml"
     - "flows/setup/add-bank.yaml"
+    - "flows/setup/add-utility.yaml"
+    - "flows/setup/add-utility-skip.yaml"
     - "flows/setup/invite-landlord.yaml"
     - "flows/setup/pending-steps.yaml"
+    # ==========================================
     # Main dashboard
+    # ==========================================
     - "flows/main/home.yaml"
+    - "flows/main/dashboard-states.yaml"
+    # ==========================================
     # Payment flows
+    # ==========================================
     - "flows/payment/first-rent.yaml"
+    - "flows/payment/enter-rent.yaml"
+    - "flows/payment/method-selector.yaml"
+    - "flows/payment/add-upi.yaml"
+    - "flows/payment/add-card.yaml"
+    - "flows/payment/add-netbanking.yaml"
     - "flows/payment/confirm.yaml"
     - "flows/payment/status-pending.yaml"
     - "flows/payment/status-success.yaml"
     - "flows/payment/status-failed.yaml"
     - "flows/payment/status-refunded.yaml"
-    # Profile flow
+    # ==========================================
+    # Profile flows
+    # ==========================================
     - "flows/profile/index.yaml"
+    - "flows/profile/edit.yaml"
+    - "flows/profile/payment-methods.yaml"
+    - "flows/profile/agreement.yaml"
+    # ==========================================
+    # Edge case flows
+    # ==========================================
+    - "flows/edge-cases/payment-zero-amount.yaml"
+    - "flows/edge-cases/rapid-pay-tap.yaml"
+    - "flows/edge-cases/payment-back-button.yaml"
+    - "flows/edge-cases/otp-error-states.yaml"
+    - "flows/edge-cases/deep-link-invalid.yaml"
+    # ==========================================
     # Routing stress tests (run last)
+    # ==========================================
     - "flows/routing/auth-guard.yaml"
+    - "flows/routing/auth-guard-all.yaml"
     - "flows/routing/deep-links.yaml"

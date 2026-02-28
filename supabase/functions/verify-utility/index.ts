@@ -35,6 +35,7 @@ import {
   matchAgainstAgreementNames,
   calculateNameMatchScore as sharedCalculateNameMatchScore,
 } from "../_shared/name-match-service.ts";
+import { isTestUser } from "../_shared/demo-helpers.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -43,6 +44,7 @@ import {
 const API_CLUB_KEY = Deno.env.get("API_CLUB_KEY");
 const API_CLUB_BASE_URL =
   Deno.env.get("API_CLUB_BASE_URL") ?? "https://prod.apiclub.in/api/v1";
+const PROXY_SECRET = Deno.env.get("PROXY_SECRET");
 
 // Matching thresholds (used as fallback if Gemini fails)
 const ADDRESS_MATCH_THRESHOLD = 0.7; // 70%
@@ -147,6 +149,7 @@ async function handleGetOperators(): Promise<Response> {
       headers: {
         "x-api-key": API_CLUB_KEY,
         "X-Request-Id": `FLENT_OP_${Date.now()}`,
+        ...(PROXY_SECRET && { "X-Proxy-Secret": PROXY_SECRET }),
       },
     });
 
@@ -299,6 +302,35 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
     if (tenancy.user_id !== userId) {
       throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
     }
+
+    // ── DEMO BYPASS ──────────────────────────────────────────────────
+    if (await isTestUser(userId, supabase)) {
+      await supabase.from("tenancies").update({ utility_verified: true }).eq("id", tenancy_id);
+
+      await audit!.logSuccess("UTILITY_VERIFICATION_DEMO_BYPASS", "verification", "utility_verification", undefined, {
+        demo: true, tenancy_id, operator_code,
+      });
+
+      return jsonResponse({
+        success: true,
+        data: {
+          verification_id: null,
+          verified: true,
+          name_verified: true,
+          address_verified: true,
+          bank_name_verified: true,
+          consumer_name: "Demo Consumer",
+          landlord_name: tenancy.landlord_name ?? "Demo Landlord",
+          name_match_score: 100,
+          address_match_score: 100,
+          bank_name_match_score: 100,
+          match_threshold: 70,
+          message: "Ownership verified successfully",
+          matching_method: "demo_bypass",
+        },
+      });
+    }
+    // ── END DEMO BYPASS ──────────────────────────────────────────────
 
     // Resolve landlord names from agreement (shared service)
     const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
@@ -684,6 +716,7 @@ async function fetchElectricityBill(
         "Content-Type": "application/json",
         "x-api-key": API_CLUB_KEY,
         "X-Request-Id": requestId,
+        ...(PROXY_SECRET && { "X-Proxy-Secret": PROXY_SECRET }),
       },
       body: JSON.stringify(requestBody),
     });

@@ -123,7 +123,9 @@ serve(async (req: Request) => {
     const ageMs = Date.now() - createdAt;
     const isStale = ageMs > STALE_THRESHOLD_MS;
 
-    if (isStuck && isStale && payment.payu_txn_id) {
+    const isDemoPayment = payment.payment_gateway === "demo";
+
+    if (isStuck && isStale && payment.payu_txn_id && !isDemoPayment) {
       try {
         // PayU verification path
         payuVerifyResult = await verifyWithPayU(payment.payu_txn_id);

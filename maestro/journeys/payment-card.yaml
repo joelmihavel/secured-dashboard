@@ -1,0 +1,132 @@
+# =============================================================================
+# Journey: Payment via Credit/Debit Card
+# HJ-017
+#
+# Full journey: enter-rent -> enter amount -> method selector -> select card ->
+#               enter card details -> confirm -> payment status
+#
+# This journey validates the complete card payment flow from entering the
+# rent amount through card detail entry and payment execution.
+#
+# Prerequisites:
+#   - User is authenticated with active tenancy
+#   - PayU sandbox configured for test card processing
+#   - Test card: 4111111111111111 (Visa test card)
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STEP 1: Enter Rent Amount
+# =============================================
+- launchApp:
+    clearState: true
+
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "enter-rent-screen"
+
+# Enter rent amount
+- inputText: ${TEST_PAYMENT_AMOUNT}
+- waitForAnimationToEnd
+
+# Tap Continue
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 2: Method Selector -- Choose Card
+# =============================================
+- extendedWaitUntil:
+    visible: "Payment Method"
+    timeout: 5000
+
+# Select Debit Card (Credit Card may be disabled without landlord approval)
+- tapOn: "Debit Card"
+- waitForAnimationToEnd
+
+# Tap Proceed/Setup
+- tapOn:
+    id: "modal-method-proceed-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 3: Enter Card Details
+# =============================================
+- extendedWaitUntil:
+    visible: "Add your"
+    timeout: 5000
+
+- assertVisible: "Card"
+
+# Enter card number (Visa test card)
+- tapOn:
+    id: "card-number-input"
+- inputText: "4111111111111111"
+- hideKeyboard
+
+# Enter expiry date
+- tapOn:
+    id: "expiry-input"
+- inputText: "1228"
+- hideKeyboard
+
+# Enter CVV
+- tapOn:
+    id: "cvv-input"
+- inputText: "123"
+- hideKeyboard
+
+# Enter name on card
+- tapOn:
+    id: "name-on-card-input"
+- inputText: ${TEST_NAME}
+- hideKeyboard
+
+# =============================================
+# STEP 4: Submit Payment
+# =============================================
+# Verify Pay button is enabled
+- assertVisible:
+    id: "modal-pay-card-button"
+
+# Tap Pay
+- tapOn:
+    id: "modal-pay-card-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 5: Payment Processing
+# =============================================
+# Wait for PayU SDK or processing screen
+- extendedWaitUntil:
+    visible:
+      id: "status-screen"
+    timeout: 30000
+    optional: true
+
+# If status screen appeared, verify it
+- assertVisible:
+    id: "status-screen"
+    optional: true
+
+# Check for success or pending state
+- assertVisible:
+    text: "Verifying"
+    optional: true
+- assertVisible:
+    text: "Succesful"
+    optional: true
+
+# =============================================
+# STEP 6: Verify Final Status
+# =============================================
+# Wait additional time for status resolution
+- wait: 5000
+- waitForAnimationToEnd
+
+# Take final screenshot regardless of outcome
+- takeScreenshot: "payment-card-journey-result"

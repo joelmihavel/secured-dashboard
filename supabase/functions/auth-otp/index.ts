@@ -52,14 +52,21 @@ const OTP_EXPIRY_MS = 10 * 60 * 1000;
 const IDEMPOTENCY_WINDOW_MS = 30_000;
 
 // Demo phone numbers for testing (Apple Review + dev Quick Login)
-// Format: "+919999900001:123456,+919999900002:654321"
+// Format: "919999900001=123456,919999900002=654321"
 const ALLOW_DEMO = Deno.env.get("ALLOW_DEMO_AUTH") === "true";
 const DEMO_PHONES_RAW = Deno.env.get("DEMO_PHONES");
 const DEMO_PHONES: Record<string, string> = {};
 if (DEMO_PHONES_RAW) {
   DEMO_PHONES_RAW.split(",").forEach((pair) => {
-    const [phone, otp] = pair.split(":");
-    if (phone && otp) DEMO_PHONES[phone.trim()] = otp.trim();
+    const [rawPhone, otp] = pair.split("=");
+    if (rawPhone && otp) {
+      // Strip leading 91 country code to match sanitizePhone() output (10-digit)
+      let phone = rawPhone.trim();
+      if (phone.length === 12 && phone.startsWith("91")) {
+        phone = phone.substring(2);
+      }
+      DEMO_PHONES[phone] = otp.trim();
+    }
   });
 }
 

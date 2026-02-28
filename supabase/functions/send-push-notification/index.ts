@@ -1,9 +1,8 @@
 /**
  * Flent Secured v2 - Send Push Notification Edge Function
  *
- * Sends push notifications via APNs (iOS) or FCM (Android/Web).
- * Can send to a specific user or specific device token.
- * Handles token invalidation and batch sending.
+ * Sends push notifications via the Expo Push API.
+ * Expo tokens (ExponentPushToken[xxx]) are routed automatically to APNs/FCM.
  *
  * Endpoint: POST /functions/v1/send-push-notification
  * Auth: Service Role only (internal use)
@@ -27,34 +26,22 @@ import { AuditLogger } from "../_shared/audit.ts";
 // CONFIGURATION
 // ==============================================
 
-const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID");
-const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID");
-const APNS_PRIVATE_KEY = Deno.env.get("APNS_PRIVATE_KEY"); // Base64 encoded
-const APNS_BUNDLE_ID =
-  Deno.env.get("APNS_BUNDLE_ID") ?? "com.flent.secured";
-
-// APNs URLs
-const APNS_PRODUCTION_URL = "https://api.push.apple.com";
-const APNS_SANDBOX_URL = "https://api.sandbox.push.apple.com";
-
-// JWT cache (APNs tokens valid for 1 hour)
-let apnsJwtCache: { token: string; expires: number } | null = null;
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+const EXPO_BATCH_LIMIT = 100;
 
 // ==============================================
 // TYPES
 // ==============================================
 
 interface SendPushNotificationRequest {
-  user_id?: string; // Send to all devices of a user
-  device_token?: string; // Or send to specific device
-  platform?: "ios" | "android" | "web"; // Required if device_token is provided
+  user_id?: string;
+  expo_push_token?: string; // Single token override
   title: string;
   body: string;
   data?: Record<string, string>;
   badge?: number;
   sound?: string;
-  priority?: "high" | "normal";
-  sandbox?: boolean; // Override sandbox detection
+  priority?: "high" | "normal" | "default";
 }
 
 interface SendPushNotificationResponse {
@@ -62,16 +49,16 @@ interface SendPushNotificationResponse {
   data: {
     sent_count: number;
     failed_count: number;
-    apns_id?: string;
     errors?: Array<{ token: string; error: string }>;
     message?: string;
   };
 }
 
-interface DeviceToken {
-  token: string;
-  platform: string;
-  sandbox: boolean;
+interface ExpoPushTicket {
+  status: "ok" | "error";
+  id?: string; // receipt id on success
+  message?: string;
+  details?: { error?: string };
 }
 
 // ==============================================
@@ -88,15 +75,10 @@ const requestSchema = {
       return true;
     },
   },
-  device_token: {
+  expo_push_token: {
     required: false,
     type: "string" as const,
-    minLength: 32,
-  },
-  platform: {
-    required: false,
-    type: "string" as const,
-    enum: ["ios", "android", "web"],
+    minLength: 10,
   },
   title: {
     required: true,
@@ -123,181 +105,78 @@ const requestSchema = {
   priority: {
     required: false,
     type: "string" as const,
-    enum: ["high", "normal"],
-  },
-  sandbox: {
-    required: false,
-    type: "boolean" as const,
+    enum: ["high", "normal", "default"],
   },
 };
 
 // ==============================================
-// APNs JWT GENERATION
+// EXPO PUSH API
 // ==============================================
 
-async function getApnsJwt(): Promise<string> {
-  // Return cached token if still valid (refresh 5 mins before expiry)
-  if (apnsJwtCache && apnsJwtCache.expires > Date.now() + 5 * 60 * 1000) {
-    return apnsJwtCache.token;
-  }
-
-  if (!APNS_KEY_ID || !APNS_TEAM_ID || !APNS_PRIVATE_KEY) {
-    throw new ExternalServiceError(
-      "APNs",
-      "APNs credentials not configured. Set APNS_KEY_ID, APNS_TEAM_ID, and APNS_PRIVATE_KEY environment variables."
-    );
-  }
-
-  try {
-    // Decode private key from base64
-    const privateKeyPem = atob(APNS_PRIVATE_KEY);
-
-    // Create JWT header and payload
-    const header = { alg: "ES256", kid: APNS_KEY_ID };
-    const now = Math.floor(Date.now() / 1000);
-    const payload = {
-      iss: APNS_TEAM_ID,
-      iat: now,
-    };
-
-    // Base64url encode header and payload
-    const headerB64 = btoa(JSON.stringify(header))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-    const payloadB64 = btoa(JSON.stringify(payload))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
-    const message = `${headerB64}.${payloadB64}`;
-
-    // Import private key and sign
-    const keyData = pemToArrayBuffer(privateKeyPem);
-    const key = await crypto.subtle.importKey(
-      "pkcs8",
-      keyData,
-      { name: "ECDSA", namedCurve: "P-256" },
-      false,
-      ["sign"]
-    );
-
-    const signature = await crypto.subtle.sign(
-      { name: "ECDSA", hash: "SHA-256" },
-      key,
-      new TextEncoder().encode(message)
-    );
-
-    // Convert signature to base64url (DER to raw conversion for ES256)
-    const signatureBytes = new Uint8Array(signature);
-    const signatureB64 = btoa(String.fromCharCode(...signatureBytes))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
-    const token = `${message}.${signatureB64}`;
-
-    // Cache token (valid for ~1 hour, refresh at 55 minutes)
-    apnsJwtCache = {
-      token,
-      expires: Date.now() + 55 * 60 * 1000,
-    };
-
-    return token;
-  } catch (error) {
-    console.error("Failed to generate APNs JWT:", error);
-    throw new ExternalServiceError(
-      "APNs",
-      `Failed to generate authentication token: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
-  }
-}
-
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const b64 = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
-    .replace(/-----BEGIN EC PRIVATE KEY-----/, "")
-    .replace(/-----END EC PRIVATE KEY-----/, "")
-    .replace(/\s/g, "");
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-// ==============================================
-// SEND APNs NOTIFICATION
-// ==============================================
-
-async function sendApns(
-  deviceToken: string,
+/**
+ * Sends push notifications via the Expo Push API.
+ * Batches tokens into groups of EXPO_BATCH_LIMIT.
+ */
+async function sendExpoPush(
+  tokens: string[],
   payload: {
     title: string;
     body: string;
     data?: Record<string, string>;
     badge?: number;
     sound?: string;
+    priority?: "high" | "normal" | "default";
   },
-  sandbox: boolean,
-  priority: "high" | "normal" = "high"
-): Promise<{ success: boolean; apnsId?: string; error?: string }> {
-  try {
-    const jwt = await getApnsJwt();
-    const url = sandbox ? APNS_SANDBOX_URL : APNS_PRODUCTION_URL;
+): Promise<{
+  tickets: Array<{ token: string; ticket: ExpoPushTicket }>;
+}> {
+  const messages = tokens.map((token) => ({
+    to: token,
+    title: payload.title,
+    body: payload.body,
+    data: payload.data,
+    badge: payload.badge,
+    sound: payload.sound ?? "default",
+    priority: payload.priority ?? "high",
+    channelId: "default",
+  }));
 
-    const apnsPayload = {
-      aps: {
-        alert: {
-          title: payload.title,
-          body: payload.body,
-        },
-        badge: payload.badge,
-        sound: payload.sound ?? "default",
-        "mutable-content": 1,
-      },
-      ...payload.data,
-    };
+  const allTickets: Array<{ token: string; ticket: ExpoPushTicket }> = [];
 
-    const response = await fetch(`${url}/3/device/${deviceToken}`, {
+  // Batch into groups of EXPO_BATCH_LIMIT
+  for (let i = 0; i < messages.length; i += EXPO_BATCH_LIMIT) {
+    const batch = messages.slice(i, i + EXPO_BATCH_LIMIT);
+
+    const response = await fetch(EXPO_PUSH_URL, {
       method: "POST",
       headers: {
-        authorization: `bearer ${jwt}`,
-        "apns-topic": APNS_BUNDLE_ID,
-        "apns-push-type": "alert",
-        "apns-priority": priority === "high" ? "10" : "5",
-        "apns-expiration": "0",
-        "content-type": "application/json",
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      body: JSON.stringify(apnsPayload),
+      body: JSON.stringify(batch),
     });
 
-    if (response.ok) {
-      const apnsId = response.headers.get("apns-id");
-      return { success: true, apnsId: apnsId ?? undefined };
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new ExternalServiceError(
+        "Expo Push",
+        `HTTP ${response.status}: ${errorText}`,
+      );
     }
 
-    const errorData = await response.json().catch(() => ({}));
-    const reason = errorData.reason ?? `HTTP ${response.status}`;
+    const result = await response.json();
+    const tickets: ExpoPushTicket[] = result.data ?? [];
 
-    // Handle token invalidation
-    if (
-      response.status === 410 ||
-      reason === "Unregistered" ||
-      reason === "BadDeviceToken"
-    ) {
-      return { success: false, error: "INVALID_TOKEN" };
+    // Pair each ticket with its token
+    for (let j = 0; j < tickets.length; j++) {
+      allTickets.push({
+        token: batch[j].to,
+        ticket: tickets[j],
+      });
     }
-
-    return { success: false, error: reason };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
   }
+
+  return { tickets: allTickets };
 }
 
 // ==============================================
@@ -321,12 +200,12 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     verifyServiceRole(authHeader);
 
-    // Initialize audit logger (no user context for service role)
+    // Initialize audit logger
     audit = AuditLogger.fromRequest(
       supabase,
       req,
       undefined,
-      "send-push-notification"
+      "send-push-notification",
     );
 
     // Parse and validate request
@@ -334,53 +213,37 @@ serve(async (req: Request) => {
     const validatedBody = validateSchema<SendPushNotificationRequest>(
       body,
       requestSchema,
-      true
+      true,
     );
 
     const {
       user_id,
-      device_token,
-      platform,
+      expo_push_token,
       title,
       body: messageBody,
       data,
       badge,
       sound,
       priority = "high",
-      sandbox,
     } = validatedBody;
 
-    // Must provide either user_id or device_token
-    if (!user_id && !device_token) {
-      throw new ValidationError("Either user_id or device_token is required");
-    }
-
-    // If device_token is provided, platform should also be provided
-    if (device_token && !platform) {
+    // Must provide either user_id or expo_push_token
+    if (!user_id && !expo_push_token) {
       throw new ValidationError(
-        "platform is required when device_token is provided"
+        "Either user_id or expo_push_token is required",
       );
     }
 
-    // Collect device tokens to send to
-    let tokens: DeviceToken[] = [];
+    // Collect Expo Push Tokens
+    let tokens: string[] = [];
 
-    if (device_token) {
-      // Single device
-      tokens = [
-        {
-          token: device_token,
-          platform: platform ?? "ios",
-          sandbox: sandbox ?? false,
-        },
-      ];
+    if (expo_push_token) {
+      tokens = [expo_push_token];
     } else if (user_id) {
-      // Get all active tokens for user using the database function
+      // Get all active tokens for user via RPC
       const { data: userTokens, error } = await supabase.rpc(
         "get_user_device_tokens",
-        {
-          p_user_id: user_id,
-        }
+        { p_user_id: user_id },
       );
 
       if (error) {
@@ -388,11 +251,7 @@ serve(async (req: Request) => {
       }
 
       tokens = (userTokens || []).map(
-        (t: { token: string; platform: string; sandbox: boolean }) => ({
-          token: t.token,
-          platform: t.platform,
-          sandbox: sandbox !== undefined ? sandbox : t.sandbox,
-        })
+        (t: { token: string }) => t.token,
       );
     }
 
@@ -408,39 +267,37 @@ serve(async (req: Request) => {
       return jsonResponse(response);
     }
 
-    // Send to each device
-    const results: Array<{
-      token: string;
-      success: boolean;
-      apnsId?: string;
-      error?: string;
-    }> = [];
+    // Send via Expo Push API
+    const { tickets } = await sendExpoPush(tokens, {
+      title,
+      body: messageBody,
+      data,
+      badge,
+      sound,
+      priority: priority as "high" | "normal" | "default",
+    });
+
+    // Process results
     const invalidTokens: string[] = [];
+    const errors: Array<{ token: string; error: string }> = [];
+    let sentCount = 0;
+    let failedCount = 0;
 
-    for (const deviceInfo of tokens) {
-      if (deviceInfo.platform === "ios") {
-        const result = await sendApns(
-          deviceInfo.token,
-          { title, body: messageBody, data, badge, sound },
-          deviceInfo.sandbox,
-          priority as "high" | "normal"
-        );
+    for (const { token, ticket } of tickets) {
+      if (ticket.status === "ok") {
+        sentCount++;
+      } else {
+        failedCount++;
+        const errorType = ticket.details?.error;
 
-        results.push({ token: deviceInfo.token, ...result });
-
-        if (result.error === "INVALID_TOKEN") {
-          invalidTokens.push(deviceInfo.token);
+        if (errorType === "DeviceNotRegistered") {
+          invalidTokens.push(token);
+        } else {
+          errors.push({
+            token: token.substring(0, 20) + "...",
+            error: ticket.message ?? errorType ?? "Unknown error",
+          });
         }
-      } else if (deviceInfo.platform === "android" || deviceInfo.platform === "web") {
-        // FCM not implemented yet - log and skip
-        console.warn(
-          `FCM not implemented for platform: ${deviceInfo.platform}`
-        );
-        results.push({
-          token: deviceInfo.token,
-          success: false,
-          error: "FCM_NOT_IMPLEMENTED",
-        });
       }
     }
 
@@ -451,9 +308,6 @@ serve(async (req: Request) => {
       }
       console.log(`Deactivated ${invalidTokens.length} invalid tokens`);
     }
-
-    const sentCount = results.filter((r) => r.success).length;
-    const failedCount = results.filter((r) => !r.success).length;
 
     // Log audit
     await audit.logSuccess(
@@ -466,7 +320,7 @@ serve(async (req: Request) => {
         sent_count: sentCount,
         failed_count: failedCount,
         invalid_tokens_deactivated: invalidTokens.length,
-      }
+      },
     );
 
     // Build response
@@ -475,13 +329,7 @@ serve(async (req: Request) => {
       data: {
         sent_count: sentCount,
         failed_count: failedCount,
-        apns_id: results.find((r) => r.apnsId)?.apnsId,
-        errors: results
-          .filter((r) => !r.success && r.error !== "INVALID_TOKEN")
-          .map((r) => ({
-            token: r.token.substring(0, 10) + "...",
-            error: r.error!,
-          })),
+        errors: errors.length > 0 ? errors : undefined,
       },
     };
 
@@ -498,7 +346,7 @@ serve(async (req: Request) => {
             ? "EXTERNAL_SERVICE_ERROR"
             : "SEND_FAILED",
         error instanceof Error ? error.message : "Unknown error",
-        "push_notification"
+        "push_notification",
       );
     }
 

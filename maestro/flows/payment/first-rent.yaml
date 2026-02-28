@@ -1,8 +1,8 @@
 # =============================================================================
-# Payment: First Rent Screen Functional Flow
-# Route: /(payment)/first-rent
+# Payment: Enter Rent Screen Functional Flow
+# Route: /(payment)/enter-rent
 # Figma: 684:6018 / 684:6128 / 684:5915
-# testIDs: first-rent-payment-screen, pay-now-button
+# testIDs: enter-rent-screen, pay-now-button
 # =============================================================================
 #
 # Validates:
@@ -17,15 +17,15 @@
 
 appId: com.flent.secured
 ---
-# Deep link to first-rent payment screen
+# Deep link to enter-rent payment screen
 - launchApp:
     clearState: true
-- openLink: "flentsecured:///payment/first-rent"
+- openLink: "flentsecured:///payment/enter-rent"
 - waitForAnimationToEnd
 
 # Verify screen rendered via testID
 - assertVisible:
-    id: "first-rent-payment-screen"
+    id: "enter-rent-screen"
 
 # Verify top card content: "Rent due in" heading
 - assertVisible: "Rent due in"

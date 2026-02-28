@@ -184,7 +184,10 @@ export default function OTPScreen() {
     if (error) clearError();
   }, [error, clearError]);
 
+  const isClosingRef = useRef(false);
   const handleClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
     setIsVisible(false);
     setTimeout(() => {
       router.back();

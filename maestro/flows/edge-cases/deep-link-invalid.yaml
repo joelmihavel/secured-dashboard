@@ -1,0 +1,62 @@
+# =============================================================================
+# EC-016: Invalid Deep Link Handling
+# Route: Various invalid routes
+# =============================================================================
+#
+# Validates:
+#   - Opening an invalid deep link does not crash the app
+#   - App handles gracefully (redirect to home, error screen, or no-op)
+#   - App remains functional after invalid deep link attempts
+#   - Multiple invalid deep links in succession do not destabilize the app
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Launch app fresh
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+
+# -- Test 1: Completely invalid route --
+- openLink: "flentsecured:///invalid-route"
+- waitForAnimationToEnd
+
+# App should still be alive (not crashed)
+# Check for any visible screen element
+- assertVisible:
+    id: "splash-screen"
+    optional: true
+- assertVisible:
+    id: "beta-splash-screen"
+    optional: true
+
+# -- Test 2: Invalid route with query params --
+- openLink: "flentsecured:///nonexistent/page?foo=bar&baz=qux"
+- waitForAnimationToEnd
+
+# -- Test 3: Empty path --
+- openLink: "flentsecured:///"
+- waitForAnimationToEnd
+
+# -- Test 4: Deeply nested invalid path --
+- openLink: "flentsecured:///a/b/c/d/e/f"
+- waitForAnimationToEnd
+
+# -- Test 5: Valid group prefix, invalid screen --
+- openLink: "flentsecured:///payment/nonexistent"
+- waitForAnimationToEnd
+
+# -- Test 6: Special characters in path --
+- openLink: "flentsecured:///profile/%20%3Cscript%3E"
+- waitForAnimationToEnd
+
+# -- Final stability check --
+# Navigate to a known good route to verify app is still responsive
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "splash-screen"
+    optional: true
+
+- takeScreenshot: "deep-link-invalid-handled"

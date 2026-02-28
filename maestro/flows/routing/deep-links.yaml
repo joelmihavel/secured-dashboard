@@ -61,18 +61,18 @@ appId: com.flent.secured
     id: "status-screen"
     optional: true
 
-# 6. Payment first-rent
-- openLink: "flentsecured:///payment/first-rent"
+# 6. Payment enter-rent
+- openLink: "flentsecured:///payment/enter-rent"
 - waitForAnimationToEnd
 - assertVisible:
-    id: "first-rent-payment-screen"
+    id: "enter-rent-screen"
     optional: true
 
 # 7. Payment confirm
 - openLink: "flentsecured:///payment/confirm"
 - waitForAnimationToEnd
 - assertVisible:
-    id: "confirm-screen"
+    id: "confirm-payment-screen"
     optional: true
 
 # 8. Setup index with step param

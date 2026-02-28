@@ -353,13 +353,25 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding-bottom: 16px;
     margin-bottom: 20px;
+    border-bottom: 1px solid #2E2E2E;
   }
 
   .logo-text {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+  }
+
+  .logo-text .brand {
     color: #FF9A6D;
+  }
+
+  .logo-subtitle {
+    font-size: 11px;
+    color: #878787;
+    margin-top: 2px;
   }
 
   /* ------------------------------------------------------------------ */
@@ -378,14 +390,13 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
 
   <!-- Logo -->
   <div class="logo-row">
-    <svg width="32" height="32" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Arch background -->
-      <rect x="0" y="20" width="80" height="60" rx="0" fill="#FF9A6D"/>
-      <rect x="0" y="0" width="80" height="50" rx="25" fill="#FF9A6D"/>
-      <!-- "fl" lettermark in dark -->
-      <path d="M30.93 64H26.38V51.73H24.45V48.35H26.38C25.3 43.11 28.34 40.17 29.99 39.36C34.83 36.16 39.84 40.42 41.75 42.95V64H37.21V45.54C34.59 40.14 31.3 41.39 29.99 42.69C28.31 46.32 30.69 47.99 32.09 48.35H34.44V51.73H30.93V64Z" fill="#131313"/>
+    <svg width="40" height="40" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="#FF9A6D"/>
     </svg>
-    <span class="logo-text">Rent Receipt</span>
+    <div>
+      <div class="logo-text"><span class="brand">Flent</span> Secured</div>
+      <div class="logo-subtitle">Rent Receipt</div>
+    </div>
   </div>
 
   <!-- Header -->
@@ -395,7 +406,7 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
         Payment <span class="accent">Successful</span>
       </div>
       <div class="header-subtitle">
-        ${esc(payment.rentMonthDisplay)} &middot; ${esc(propertyLine)}
+        ${esc(payment.rentMonthDisplay)}${propertyLine ? ` &middot; ${esc(propertyLine)}` : ''}
       </div>
     </div>
     <div class="stamp">
@@ -439,17 +450,17 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
     <span class="row-value">${esc(landlord.name)}</span>
   </div>
 
-  <!-- PAN Card -->
+  ${landlord.panMasked ? `<!-- PAN Card -->
   <div class="row">
     <span class="row-label"><span class="hash">#</span>PAN Card</span>
-    <span class="row-value">${esc(landlord.panMasked ?? 'Not provided')}</span>
-  </div>
+    <span class="row-value">${esc(landlord.panMasked)}</span>
+  </div>` : ''}
 
-  <!-- Agreement ID -->
+  ${agreement.certId ? `<!-- Agreement ID -->
   <div class="row">
     <span class="row-label"><span class="hash">#</span>Agreement ID</span>
-    <span class="row-value">${esc(agreement.certId ?? 'N/A')}</span>
-  </div>
+    <span class="row-value">${esc(agreement.certId)}</span>
+  </div>` : ''}
 
   <!-- Transaction ID -->
   <div class="row">
@@ -478,10 +489,80 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
   <div class="receipt-no">Receipt No. ${esc(receipt.receiptNumber)}</div>
   <div class="company-name">${esc(company.name)}</div>
   <div>${esc(company.address)}</div>
-  <div>GSTIN: ${esc(company.gstin)}</div>
+  ${company.gstin ? `<div>GSTIN: ${esc(company.gstin)}</div>` : ''}
   <div>${esc(company.supportEmail)} &middot; ${esc(company.supportPhone)}</div>
 </div>
 
 </body>
 </html>`;
+}
+
+// ---------------------------------------------------------------------------
+// Fallback builder (when server receipt data is unavailable)
+// ---------------------------------------------------------------------------
+
+interface FallbackReceiptParams {
+  amount?: string;
+  method?: string;
+  cashback?: string;
+  transactionId?: string;
+  landlordName?: string;
+  agreementId?: string;
+  paymentId?: string;
+}
+
+export function buildFallbackReceiptData(params: FallbackReceiptParams): ReceiptHtmlData {
+  const amountNum = parseFloat((params.amount ?? '0').replace(/,/g, '')) || 0;
+  const cashbackNum = parseFloat((params.cashback ?? '0').replace(/,/g, '')) || 0;
+  const netAmount = Math.max(amountNum - cashbackNum, 0);
+  const receiptNumber = params.paymentId
+    ? `FR-${params.paymentId.slice(-8).toUpperCase()}`
+    : `FR-${Date.now().toString().slice(-8)}`;
+
+  const now = new Date();
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  const rentMonth = `${months[now.getMonth()]} ${now.getFullYear()}`;
+
+  return {
+    receiptNumber,
+    payment: {
+      amount: amountNum,
+      netAmountPaid: netAmount,
+      pgFee: 0,
+      cashbackApplied: cashbackNum,
+      cashbackEarned: 0,
+      paymentMethod: params.method ?? null,
+      paidAt: now.toISOString(),
+      rentMonthDisplay: rentMonth,
+      utr: null,
+      timeliness: null,
+      transactionId: params.transactionId ?? null,
+    },
+    tenant: {
+      name: '',
+      phone: null,
+      email: null,
+    },
+    property: {
+      address: '',
+      city: null,
+    },
+    landlord: {
+      name: params.landlordName ?? '',
+      panMasked: null,
+    },
+    agreement: {
+      certId: params.agreementId ?? null,
+    },
+    company: {
+      name: 'Flent Technologies Private Limited',
+      address: 'Mumbai, Maharashtra',
+      gstin: '',
+      supportEmail: 'support@flent.in',
+      supportPhone: '+91 93210 93210',
+    },
+  };
 }

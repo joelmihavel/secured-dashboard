@@ -4,7 +4,7 @@
  * Unified interface for sending notifications via:
  * - Email (Resend)
  * - Twilio (WhatsApp, SMS)
- * - APNs (Push notifications)
+ * - Expo Push API (Push notifications)
  */
 
 import { ExternalServiceError } from "./errors.ts";
@@ -241,19 +241,19 @@ export async function sendSms(message: SmsMessage): Promise<NotificationResult> 
 }
 
 // ==============================================
-// PUSH NOTIFICATIONS (APNs)
+// PUSH NOTIFICATIONS (Expo Push API)
 // ==============================================
 
-// Note: APNs push is handled by the existing send-push-notification Edge Function
-// This is a wrapper that calls that function
+// Note: Push is handled by the send-push-notification Edge Function (Expo Push API).
+// This is a convenience wrapper that calls that function.
 
 /**
- * Sends a push notification via APNs.
+ * Sends a push notification via the Expo Push API.
  */
 export async function sendPushNotification(
   notification: PushNotification,
   supabaseUrl: string,
-  serviceKey: string
+  serviceKey: string,
 ): Promise<NotificationResult> {
   try {
     const response = await fetch(
@@ -265,14 +265,14 @@ export async function sendPushNotification(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          device_token: notification.deviceToken,
+          expo_push_token: notification.deviceToken,
           title: notification.title,
           body: notification.body,
           data: notification.data,
           badge: notification.badge,
           sound: notification.sound ?? "default",
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -281,7 +281,76 @@ export async function sendPushNotification(
     }
 
     const data = await response.json();
-    return { success: true, messageId: data.apns_id };
+    const sentCount = data.data?.sent_count ?? 0;
+    return {
+      success: sentCount > 0,
+      messageId: sentCount > 0 ? `sent:${sentCount}` : undefined,
+      error: sentCount === 0 ? "No tokens delivered" : undefined,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// ==============================================
+// NOTIFY USER (HIGH-LEVEL ORCHESTRATOR)
+// ==============================================
+
+import type { NotificationType } from "./notification-templates.ts";
+
+/**
+ * Convenience wrapper that calls the notify-user edge function.
+ * Handles template resolution, preference checking, in-app creation, and push delivery.
+ */
+export async function notifyUser(
+  supabaseUrl: string,
+  serviceKey: string,
+  params: {
+    user_id: string;
+    notification_type: NotificationType;
+    template_vars?: Record<string, string>;
+    data?: Record<string, string>;
+    priority?: "high" | "normal" | "default";
+    related_entity_type?: string;
+    related_entity_id?: string;
+  },
+): Promise<{
+  success: boolean;
+  notification_id?: string | null;
+  in_app_created?: boolean;
+  push_sent_count?: number;
+  push_failed_count?: number;
+  error?: string;
+}> {
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/notify-user`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(params),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      return { success: false, error };
+    }
+
+    const result = await response.json();
+    return {
+      success: true,
+      notification_id: result.data?.notification_id,
+      in_app_created: result.data?.in_app_created,
+      push_sent_count: result.data?.push_sent_count,
+      push_failed_count: result.data?.push_failed_count,
+    };
   } catch (error) {
     return {
       success: false,

@@ -153,25 +153,25 @@ export default function ProfileAgreementScreen() {
     return [
       {
         label: 'Agreement ID',
-        value: (t?.agreement_id as string) ?? 'KIA 123456789',
+        value: (t?.agreement_id as string) ?? 'N/A',
       },
       {
         label: 'Property Name',
         value:
           (t?.property_address as string) ??
-          'Prestige Pinestripe, Bommanahalli, Bengaluru 560037',
+          'Not available',
       },
       {
         label: 'Tenant(s)',
         value:
           (t?.tenant_names as string) ??
-          'Rahul Joshi, Ashish Shakya,  Gursimran Khamba',
+          'Not available',
       },
       {
         label: 'Landlord(s)',
         value:
           (t?.landlord_name as string) ??
-          'Tanmay Bhatt, Kaneez Surkha',
+          'Not available',
       },
       {
         label: 'Monthly Rent',
@@ -198,7 +198,7 @@ export default function ProfileAgreementScreen() {
 
   return (
     <Screen testID="profile-agreement-screen" padded={false}>
-      <DottedGridPattern animated={true} />
+      <DottedGridPattern />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}

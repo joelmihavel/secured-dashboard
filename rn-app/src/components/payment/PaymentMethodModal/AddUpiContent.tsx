@@ -16,11 +16,14 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Text, PrimaryButton, TextInput, BackButton } from '@/src/components';
+import { Text } from '@/src/components/ui/Typography';
+import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
+import { TextInput } from '@/src/components/ui/Input';
 import { Text as RNText } from 'react-native';
 import { useVerifyUpi } from '@/src/hooks';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
@@ -43,10 +46,11 @@ const FIGMA_COLORS = {
 // ADD UPI CONTENT
 // ==============================================
 
-export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
+export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMethodContentProps) {
   const verifyUpi = useVerifyUpi();
   const { executePayment } = usePaymentFlow();
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
+  const storedAmount = usePaymentStore((s) => s.amount);
 
   const [accountName, setAccountName] = useState('');
   const [upiId, setUpiId] = useState('');
@@ -113,10 +117,28 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsPayingUpi(true);
 
+    let currentPaymentId = paymentId;
+
+    // Setup flow: initiate payment first if no paymentId yet
+    if (!currentPaymentId && onInitiatePayment) {
+      const result = await onInitiatePayment('upi');
+      if (!result) {
+        setIsPayingUpi(false);
+        return;
+      }
+      currentPaymentId = result.paymentId;
+    }
+
+    if (!currentPaymentId) {
+      Alert.alert('Error', 'Unable to start payment. Please try again.');
+      setIsPayingUpi(false);
+      return;
+    }
+
     const outcome = await executePayment(
       'upi',
       { vpa: upiId.trim() },
-      paymentId,
+      currentPaymentId,
       () => {
         setUpiId('');
         setAccountName('');
@@ -126,11 +148,11 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
     if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
       setIsPayingUpi(false);
     }
-  }, [isPayingUpi, upiId, paymentId, executePayment]);
+  }, [isPayingUpi, upiId, paymentId, executePayment, onInitiatePayment]);
 
   const isFormValid = accountName.length > 0 && upiId.includes('@');
   const isLoading = verifyUpi.isPending || isPayingUpi;
-  const amount = sessionParams?.amount ?? '0';
+  const amount = sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0');
   const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
   return (
@@ -160,7 +182,6 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
           value={accountName}
           onChangeText={setAccountName}
           placeholder="e.g. John Smith"
-          hintText="edit"
           autoCapitalize="words"
           testID="modal-account-name-input"
         />
@@ -174,7 +195,6 @@ export function AddUpiContent({ paymentId, onBack }: AddMethodContentProps) {
             setIsVerified(false);
           }}
           placeholder="e.g. john@oksbi"
-          hintText="edit"
           error={error || undefined}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -246,7 +266,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.white,
     textAlign: 'left',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   titleAccent: {
     color: colors.brand[500],

@@ -1,11 +1,12 @@
 -- Flent Secured v2 - Migration: Extracted Rental Info Table
 -- Stores rental information extracted from uploaded documents (lease agreements)
+-- Made idempotent for v2→main merge (table may already exist with 32 rows)
 
 -- ==============================================
 -- TABLE: extracted_rental_info
 -- ==============================================
 
-CREATE TABLE extracted_rental_info (
+CREATE TABLE IF NOT EXISTS extracted_rental_info (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- References
@@ -62,15 +63,61 @@ CREATE TABLE extracted_rental_info (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add ALL columns that may not exist on a pre-existing v1 table
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS tenancy_id UUID;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS document_storage_path TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS document_type TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS original_filename TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS file_size_bytes INTEGER;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS mime_type TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS extraction_status TEXT DEFAULT 'pending';
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS extraction_provider TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS extraction_confidence DECIMAL(5,4);
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS extraction_error TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS landlord_name TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS landlord_phone TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS landlord_email TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS landlord_address TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS tenant_name TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS tenant_phone TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS tenant_email TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS property_address TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS property_city TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS property_state TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS property_pincode TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS property_type TEXT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS monthly_rent_paise BIGINT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS security_deposit_paise BIGINT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS maintenance_paise BIGINT;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS rent_due_day INTEGER;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS lease_start_date DATE;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS lease_end_date DATE;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS raw_extraction_response JSONB;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS user_verified BOOLEAN DEFAULT false;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+ALTER TABLE extracted_rental_info ADD COLUMN IF NOT EXISTS corrections_made JSONB;
+
 -- ==============================================
 -- INDEXES
 -- ==============================================
 
-CREATE INDEX idx_extracted_rental_info_user ON extracted_rental_info(user_id);
-CREATE INDEX idx_extracted_rental_info_tenancy ON extracted_rental_info(tenancy_id) WHERE tenancy_id IS NOT NULL;
-CREATE INDEX idx_extracted_rental_info_status ON extracted_rental_info(extraction_status);
-CREATE INDEX idx_extracted_rental_info_pending ON extracted_rental_info(created_at)
-  WHERE extraction_status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_extracted_rental_info_user ON extracted_rental_info(user_id);
+DO $$ BEGIN
+  CREATE INDEX idx_extracted_rental_info_tenancy ON extracted_rental_info(tenancy_id) WHERE tenancy_id IS NOT NULL;
+EXCEPTION WHEN duplicate_table THEN NULL;
+  WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE INDEX idx_extracted_rental_info_status ON extracted_rental_info(extraction_status);
+EXCEPTION WHEN duplicate_table THEN NULL;
+  WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE INDEX idx_extracted_rental_info_pending ON extracted_rental_info(created_at)
+    WHERE extraction_status = 'pending';
+EXCEPTION WHEN duplicate_table THEN NULL;
+  WHEN undefined_column THEN NULL;
+END $$;
 
 -- ==============================================
 -- TRIGGER: Update updated_at timestamp
@@ -84,6 +131,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_extracted_rental_info_timestamp ON extracted_rental_info;
 CREATE TRIGGER update_extracted_rental_info_timestamp
   BEFORE UPDATE ON extracted_rental_info
   FOR EACH ROW
@@ -95,43 +143,60 @@ CREATE TRIGGER update_extracted_rental_info_timestamp
 
 ALTER TABLE extracted_rental_info ENABLE ROW LEVEL SECURITY;
 
--- Users can view their own extracted info
-CREATE POLICY extracted_rental_info_select ON extracted_rental_info
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY extracted_rental_info_select ON extracted_rental_info
+    FOR SELECT TO authenticated USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Users can insert their own extracted info
-CREATE POLICY extracted_rental_info_insert ON extracted_rental_info
-  FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY extracted_rental_info_insert ON extracted_rental_info
+    FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Users can update their own extracted info (for verification)
-CREATE POLICY extracted_rental_info_update ON extracted_rental_info
-  FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY extracted_rental_info_update ON extracted_rental_info
+    FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Service role has full access
-CREATE POLICY extracted_rental_info_service_all ON extracted_rental_info
-  FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY extracted_rental_info_service_all ON extracted_rental_info
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ==============================================
 -- COMMENTS
 -- ==============================================
 
 COMMENT ON TABLE extracted_rental_info IS 'Stores rental information extracted from uploaded documents via AI/OCR';
-COMMENT ON COLUMN extracted_rental_info.extraction_confidence IS 'AI confidence score for the extraction (0.0 to 1.0)';
-COMMENT ON COLUMN extracted_rental_info.raw_extraction_response IS 'Full JSON response from extraction service for debugging';
-COMMENT ON COLUMN extracted_rental_info.corrections_made IS 'JSON tracking any manual corrections made by user';
+DO $$ BEGIN
+  COMMENT ON COLUMN extracted_rental_info.extraction_confidence IS 'AI confidence score for the extraction (0.0 to 1.0)';
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  COMMENT ON COLUMN extracted_rental_info.raw_extraction_response IS 'Full JSON response from extraction service for debugging';
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
+DO $$ BEGIN
+  COMMENT ON COLUMN extracted_rental_info.corrections_made IS 'JSON tracking any manual corrections made by user';
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
 
 -- ==============================================
 -- ADD FK CONSTRAINT TO TENANCIES TABLE
 -- ==============================================
 -- This was deferred from migration 000003 to avoid circular dependency
 
-ALTER TABLE tenancies
-  ADD CONSTRAINT fk_tenancies_extracted_rental_info
-  FOREIGN KEY (extracted_rental_info_id)
-  REFERENCES extracted_rental_info(id)
-  ON DELETE SET NULL;
+DO $$ BEGIN
+  ALTER TABLE tenancies
+    ADD CONSTRAINT fk_tenancies_extracted_rental_info
+    FOREIGN KEY (extracted_rental_info_id)
+    REFERENCES extracted_rental_info(id)
+    ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN NULL;
+  WHEN undefined_column THEN NULL;
+  WHEN undefined_table THEN NULL;
+END $$;

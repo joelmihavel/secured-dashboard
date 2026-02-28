@@ -1,0 +1,65 @@
+{
+  "description": "Test phone number allocation for Flent Secured QA",
+  "phone_pattern": "+91999990XXXX",
+  "otp_format": "6 digits",
+  "notes": [
+    "All phones use +91 country code (India)",
+    "Backend DEMO_PHONES secret uses 10-digit format (no +91 prefix)",
+    "auth-otp edge function calls sanitizePhone() which strips +91",
+    "Each tester gets 4 phones for simultaneous state testing"
+  ],
+  "demo_phones_secret_value": "9999900001:123456,9999900002:654321,9999900003:111111,9999900004:222222,9999900005:333333,9999900006:444444,9999900007:555555,9999900008:666666,9999900009:777777,9999900010:888888,9999900011:999999,9999900012:112233,9999900013:445566,9999900014:778899,9999900015:101010,9999900016:202020,9999900017:303030,9999900018:404040,9999900019:505050,9999900020:606060",
+  "testers": {
+    "tester_1": {
+      "name": "Primary QA",
+      "phones": [
+        { "number": "+919999900001", "otp": "123456", "role": "Active/Home", "usage": "Happy path, home dashboard, payments, cashback" },
+        { "number": "+919999900002", "otp": "654321", "role": "Setup/Waitlist", "usage": "Waitlist, approval, setup flows, pending steps" },
+        { "number": "+919999900003", "otp": "111111", "role": "Edge Cases", "usage": "Error scenarios, expired OTP, corrupt uploads" },
+        { "number": "+919999900004", "otp": "222222", "role": "Cleanup", "usage": "Account deletion, re-create tests" }
+      ]
+    },
+    "tester_2": {
+      "name": "Tester 2",
+      "phones": [
+        { "number": "+919999900005", "otp": "333333", "role": "Active/Home", "usage": "Happy path variants, skip landlord/utility" },
+        { "number": "+919999900006", "otp": "444444", "role": "Setup/Waitlist", "usage": "Setup with different skip combos" },
+        { "number": "+919999900007", "otp": "555555", "role": "Edge Cases", "usage": "Network failures, concurrent login" },
+        { "number": "+919999900008", "otp": "666666", "role": "Cleanup", "usage": "Deletion + re-seed cycles" }
+      ]
+    },
+    "tester_3": {
+      "name": "Tester 3",
+      "phones": [
+        { "number": "+919999900009", "otp": "777777", "role": "Active/Home", "usage": "Payment flows, overdue states" },
+        { "number": "+919999900010", "otp": "888888", "role": "Setup/Waitlist", "usage": "Bank/utility/landlord verification" },
+        { "number": "+919999900011", "otp": "999999", "role": "Edge Cases", "usage": "App kill/resume, state recovery" },
+        { "number": "+919999900012", "otp": "112233", "role": "Cleanup", "usage": "Profile edit, agreement re-upload" }
+      ]
+    },
+    "tester_4": {
+      "name": "Tester 4",
+      "phones": [
+        { "number": "+919999900013", "otp": "445566", "role": "Active/Home", "usage": "Cashback, notifications, transactions" },
+        { "number": "+919999900014", "otp": "778899", "role": "Setup/Waitlist", "usage": "Invite landlord, add utility" },
+        { "number": "+919999900015", "otp": "101010", "role": "Edge Cases", "usage": "Security testing, RLS verification" },
+        { "number": "+919999900016", "otp": "202020", "role": "Cleanup", "usage": "Full journey regression" }
+      ]
+    },
+    "apple_review": {
+      "name": "Apple Review",
+      "note": "Dedicated phone, never reset during review period",
+      "phones": [
+        { "number": "+919999900017", "otp": "303030", "role": "Apple Review", "usage": "Pre-seeded active user for App Store review" }
+      ]
+    },
+    "ci_automation": {
+      "name": "CI / Automation",
+      "phones": [
+        { "number": "+919999900018", "otp": "404040", "role": "CI Active", "usage": "Automated smoke tests — active state" },
+        { "number": "+919999900019", "otp": "505050", "role": "CI Setup", "usage": "Automated smoke tests — setup state" },
+        { "number": "+919999900020", "otp": "606060", "role": "CI Cleanup", "usage": "Automated cleanup/reset cycles" }
+      ]
+    }
+  }
+}

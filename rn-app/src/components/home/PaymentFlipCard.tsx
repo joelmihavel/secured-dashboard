@@ -14,7 +14,7 @@ import Animated, {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Text as SvgText, TextPath, Defs, Path } from 'react-native-svg';
-import { Text } from '@/src/components';
+import { Text } from '@/src/components/ui/Typography';
 import { colors } from '@/src/theme';
 import { s, sf, sv, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
 import { PaymentBadge } from './PaymentBadge';

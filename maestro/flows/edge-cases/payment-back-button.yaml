@@ -1,0 +1,70 @@
+# =============================================================================
+# EC-017: Payment Back Button Edge Case
+# Route: /(payment)/confirm -> processing
+# testIDs: confirm-payment-screen, pay-now-button
+# =============================================================================
+#
+# Validates:
+#   - User is on confirm payment screen
+#   - Pressing back during/after payment initiation
+#   - App handles back navigation gracefully (warning dialog or back disabled)
+#   - Payment state is not corrupted by premature back navigation
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Navigate to confirm payment screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/confirm"
+- waitForAnimationToEnd
+
+# Verify confirm screen is rendered
+- assertVisible:
+    id: "confirm-payment-screen"
+
+# Verify Pay Now button is present
+- scrollUntilVisible:
+    element:
+      id: "pay-now-button"
+    direction: DOWN
+    timeout: 5000
+
+# Tap Pay Now to initiate payment
+- tapOn:
+    id: "pay-now-button"
+- waitForAnimationToEnd
+
+# Immediately try pressing back
+- back
+- waitForAnimationToEnd
+
+# Verify the app did NOT crash -- should either:
+# 1. Stay on status/processing screen (back disabled)
+# 2. Show a warning dialog
+# 3. Navigate back gracefully
+# The key assertion is that the app is still alive
+
+# Check if we see a warning dialog
+- assertVisible:
+    text: "Are you sure"
+    optional: true
+
+# Check if we're on status screen (back was ignored)
+- assertVisible:
+    id: "status-screen"
+    optional: true
+
+# Check if we're back on confirm screen (back was allowed)
+- assertVisible:
+    id: "confirm-payment-screen"
+    optional: true
+
+# Final stability: verify app responds to navigation
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "splash-screen"
+    optional: true
+
+- takeScreenshot: "payment-back-button-result"

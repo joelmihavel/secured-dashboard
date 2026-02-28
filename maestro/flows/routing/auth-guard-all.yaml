@@ -1,0 +1,134 @@
+# =============================================================================
+# NM Expanded: Auth Guard All Protected Routes
+# Verifies that ALL protected routes redirect unauthenticated users
+# =============================================================================
+#
+# Extends the original auth-guard.yaml with additional protected routes
+# that were not previously covered. Tests every major protected route in
+# the app to ensure comprehensive auth guard coverage.
+#
+# Protected route groups:
+#   - (main): home dashboard
+#   - (payment): enter-rent, confirm, status
+#   - (profile): index, edit, payment-methods, agreement, edit-bank-details
+#   - (setup): index, add-bank, add-utility, invite-landlord, pending-steps
+#   - (agreement): upload, review
+#
+# Validates:
+#   - 15+ protected routes are NOT accessible without authentication
+#   - Auth guard consistently blocks unauthenticated deep link access
+#   - App remains stable through all guard redirections
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Launch fresh (unauthenticated)
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+
+# =============================================
+# GROUP: (main) -- Dashboard
+# =============================================
+- openLink: "flentsecured:///main/index"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "home-screen"
+
+# =============================================
+# GROUP: (payment) -- All payment screens
+# =============================================
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "enter-rent-screen"
+
+- openLink: "flentsecured:///payment/confirm"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "confirm-payment-screen"
+
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "enter-rent-screen"
+
+- openLink: "flentsecured:///payment/status?initialStatus=success"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "status-screen"
+
+# =============================================
+# GROUP: (profile) -- All profile screens
+# =============================================
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "profile-screen"
+
+- openLink: "flentsecured:///profile/edit"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "edit-profile-screen"
+
+- openLink: "flentsecured:///profile/payment-methods"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "payment-methods-screen"
+
+- openLink: "flentsecured:///profile/agreement"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "profile-agreement-screen"
+
+- openLink: "flentsecured:///profile/edit-bank-details"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "edit-bank-details-screen"
+
+# =============================================
+# GROUP: (setup) -- All setup screens
+# =============================================
+- openLink: "flentsecured:///setup/index"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "setup-index-screen"
+
+- openLink: "flentsecured:///setup/add-utility"
+- waitForAnimationToEnd
+- assertNotVisible:
+    text: "Verify"
+    optional: true
+
+- openLink: "flentsecured:///setup/invite-landlord"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "invite-landlord-screen"
+
+- openLink: "flentsecured:///setup/pending-steps"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "pending-steps-screen"
+
+# =============================================
+# GROUP: (agreement) -- Agreement screens
+# =============================================
+- openLink: "flentsecured:///agreement/upload"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "upload-screen"
+
+- openLink: "flentsecured:///agreement/review"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "review-screen"
+
+# =============================================
+# STABILITY: Verify app is still alive
+# =============================================
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "splash-screen"
+
+- takeScreenshot: "auth-guard-all-routes-verified"

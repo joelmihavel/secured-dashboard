@@ -4,8 +4,7 @@
  * Processes landlord payouts for successfully collected payments.
  * Flent collects from user via PayU, then separately transfers to landlord.
  *
- * MVP: Logs payout details for manual processing.
- * V2: Integrates with payout API (Cashfree/RazorpayX).
+ * Logs payout details for manual processing via PayU dashboard.
  *
  * Endpoint: POST /functions/v1/settle-to-landlord
  * Auth: Service role only (called by cron or admin)
@@ -16,7 +15,7 @@ import { createServiceClient, verifyServiceRole } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { createBeneficiary, createTransfer, getTransferStatus, createSettlementAdjustment } from "../_shared/cashfree-payouts.ts";
+import { getSystemTransferFlag } from "../_shared/transfer-flags.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -50,10 +49,31 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
+    // System flag early return
+    const systemFlag = await getSystemTransferFlag(supabase);
+    if (!systemFlag.enabled) {
+      await audit.logSuccess(
+        "LANDLORD_SETTLEMENT_SKIPPED",
+        "system",
+        undefined,
+        undefined,
+        { reason: systemFlag.reason ?? "System transfers disabled" },
+      );
+      return jsonResponse({
+        success: true,
+        data: {
+          processed: 0,
+          message: "Landlord transfers disabled",
+          reason: systemFlag.reason,
+        },
+      });
+    }
+
     // Query payments ready for landlord payout:
     // - Payment successful (user paid via PayU)
     // - PayU settlement confirmed (money reached Flent's account)
-    // - Landlord payout still pending
+    // - Landlord payout status is 'ready' (not 'pending' — that transition belongs to Tier 1)
+    // - Not individually held (transfer_hold = false)
     const { data: payments, error: queryError } = await supabase
       .from("payments")
       .select(`
@@ -61,6 +81,7 @@ serve(async (req: Request) => {
         total_amount_paise, flent_subsidy_paise,
         landlord_payout_status, payu_settlement_status, payu_txn_id,
         payment_gateway, gateway_order_id, gateway_settlement_status,
+        transfer_hold, transfer_hold_reason,
         payment_month, paid_at,
         tenancy:tenancies(
           id, landlord_name, landlord_phone, property_address,
@@ -68,7 +89,8 @@ serve(async (req: Request) => {
         )
       `)
       .eq("status", "success")
-      .in("landlord_payout_status", ["pending", "ready"])
+      .eq("landlord_payout_status", "ready")
+      .eq("transfer_hold", false)
       .or("payu_settlement_status.eq.settled,gateway_settlement_status.eq.settled")
       .order("paid_at", { ascending: true })
       .limit(BATCH_SIZE);
@@ -116,12 +138,27 @@ serve(async (req: Request) => {
         continue;
       }
 
+      // Defense-in-depth: per-payment hold check (catches TOCTOU race)
+      if (payment.transfer_hold) {
+        await audit.logSuccess(
+          "LANDLORD_TRANSFER_HELD",
+          "payment",
+          "payment",
+          payment.id,
+          {
+            reason: payment.transfer_hold_reason ?? "Payment held",
+            source: "settle-to-landlord-loop",
+          },
+        );
+        continue;
+      }
+
       // Fetch landlord bank details
       let bankAccount = null;
       if (tenancy.landlord_bank_account_id) {
         const { data: bank } = await supabase
           .from("bank_accounts")
-          .select("id, account_holder_name, account_number_masked, ifsc_code, verified, cf_beneficiary_id")
+          .select("id, account_holder_name, account_number_masked, ifsc_code, verified")
           .eq("id", tenancy.landlord_bank_account_id)
           .single();
         bankAccount = bank;
@@ -190,105 +227,7 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // Route to appropriate payout method based on gateway
-      if (payment.payment_gateway === 'cashfree') {
-        // Cashfree Payouts API
-        try {
-          // Check/create beneficiary
-          const beneficiaryId = bankAccount.cf_beneficiary_id;
-          if (!beneficiaryId) {
-            // Beneficiary must be pre-created during bank verification (verify-bank function).
-            // We cannot create one here because we only have the masked account number.
-            throw new Error(
-              `No Cashfree beneficiary found for bank account ${tenancy.landlord_bank_account_id}. ` +
-              `Re-verify the bank account to create the beneficiary.`
-            );
-          }
-
-          // Create transfer
-          const transferId = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
-          const transfer = await createTransfer({
-            transferId,
-            amount: payoutAmountPaise / 100, // Cashfree expects rupees
-            transferMode: "IMPS",
-            beneficiaryId,
-            remarks: `Rent payout for ${payment.payment_month}`,
-          });
-
-          // If there's a Flent subsidy (1% instant discount), create a settlement
-          // adjustment to cover the gap from merchant balance so landlord gets full rent.
-          const subsidyPaise = payment.flent_subsidy_paise ?? 0;
-          if (subsidyPaise > 0 && payment.gateway_order_id) {
-            try {
-              await createSettlementAdjustment(
-                payment.gateway_order_id,
-                subsidyPaise,
-                `Flent 1% instant discount subsidy for payment ${payment.id}`,
-              );
-              console.log(
-                `[CASHFREE_ADJUSTMENT] Created ${subsidyPaise} paise adjustment for payment ${payment.id}`
-              );
-            } catch (adjError) {
-              // Log but don't block the payout — adjustment can be retried or handled manually
-              console.error(
-                `[CASHFREE_ADJUSTMENT] Failed for payment ${payment.id}:`,
-                adjError,
-              );
-              await audit.logFailure(
-                "SETTLEMENT_ADJUSTMENT_FAILED",
-                "payment",
-                "CASHFREE_ADJUSTMENT_ERROR",
-                adjError instanceof Error ? adjError.message : "Adjustment API error",
-                "payment",
-                payment.id,
-                { subsidy_paise: subsidyPaise, order_id: payment.gateway_order_id },
-              );
-            }
-          }
-
-          // Update payment with payout details
-          await supabase
-            .from("payments")
-            .update({
-              landlord_payout_status: "processing",
-              landlord_payout_ref: transferId,
-              landlord_payout_initiated_at: new Date().toISOString(),
-              gateway_payout_id: transfer.transfer_id,
-              gateway_payout_status: transfer.status,
-            })
-            .eq("id", payment.id);
-
-          results.push({
-            payment_id: payment.id,
-            status: "processing",
-            amount_paise: payoutAmountPaise,
-            landlord_name: tenancy.landlord_name,
-          });
-          continue;
-        } catch (payoutError) {
-          console.error(`Cashfree payout failed for payment ${payment.id}:`, payoutError);
-
-          // Persist failure status to DB so it is not retried blindly
-          await supabase
-            .from("payments")
-            .update({
-              landlord_payout_status: "failed",
-              landlord_payout_error: payoutError instanceof Error ? payoutError.message : "Payout API error",
-            })
-            .eq("id", payment.id);
-
-          results.push({
-            payment_id: payment.id,
-            status: "failed",
-            amount_paise: payoutAmountPaise,
-            landlord_name: tenancy.landlord_name,
-            error: payoutError instanceof Error ? payoutError.message : "Payout API error",
-          });
-          continue;
-        }
-      }
-
-      // PayU path: existing manual logging (unchanged)
+      // PayU manual-logging payout path
       const payoutRef = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
 
       console.log("[LANDLORD_PAYOUT] Ready for manual processing:", {

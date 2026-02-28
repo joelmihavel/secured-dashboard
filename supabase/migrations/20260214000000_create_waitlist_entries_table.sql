@@ -35,6 +35,14 @@ CREATE TABLE IF NOT EXISTS public.waitlist_entries (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add columns that may not exist on a pre-existing table
+ALTER TABLE waitlist_entries ADD COLUMN IF NOT EXISTS position INTEGER;
+ALTER TABLE waitlist_entries ADD COLUMN IF NOT EXISTS admin_review TEXT DEFAULT 'due';
+ALTER TABLE waitlist_entries ADD COLUMN IF NOT EXISTS rejection_reasons TEXT[];
+ALTER TABLE waitlist_entries ADD COLUMN IF NOT EXISTS next_application_at TIMESTAMPTZ;
+ALTER TABLE waitlist_entries ADD COLUMN IF NOT EXISTS priority_boost INTEGER DEFAULT 0;
+ALTER TABLE waitlist_entries ADD COLUMN IF NOT EXISTS extraction_id UUID;
+
 -- ==============================================
 -- INDEXES
 -- ==============================================
@@ -56,6 +64,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_waitlist_entries_updated_at ON waitlist_entries;
 CREATE TRIGGER trigger_waitlist_entries_updated_at
   BEFORE UPDATE ON waitlist_entries
   FOR EACH ROW
@@ -175,15 +184,21 @@ $$ LANGUAGE plpgsql STABLE;
 
 ALTER TABLE waitlist_entries ENABLE ROW LEVEL SECURITY;
 
--- Users can view their own waitlist entry
-CREATE POLICY waitlist_entries_select_own ON waitlist_entries
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
+-- Users can view their own waitlist entry (guarded)
+DO $$ BEGIN
+  DROP POLICY IF EXISTS waitlist_entries_select_own ON waitlist_entries;
+  CREATE POLICY waitlist_entries_select_own ON waitlist_entries
+    FOR SELECT TO authenticated USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
--- Only service role can insert/update/delete (via edge functions)
-CREATE POLICY waitlist_entries_service_all ON waitlist_entries
-  FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+-- Only service role can insert/update/delete (guarded)
+DO $$ BEGIN
+  DROP POLICY IF EXISTS waitlist_entries_service_all ON waitlist_entries;
+  CREATE POLICY waitlist_entries_service_all ON waitlist_entries
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- ==============================================
 -- TRIGGER: Auto-create waitlist entry on user signup

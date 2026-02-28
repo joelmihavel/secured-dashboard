@@ -297,7 +297,7 @@ function UpiContent({
           onPress={handleDelete}
           testID="delete-method-button"
         >
-          <Text style={styles.deleteButtonText}>Delete UPI Method</Text>
+          <Text style={styles.deleteButtonText}>Delete UPI</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -411,18 +411,12 @@ function CardContent({
         <PaymentCardVisual
           methodType="card"
           network={savedMethod.card_network}
-        >
-          <InfoRow label="Card Number" value={`**** **** **** ${savedMethod.last_four ?? '----'}`} />
-          <InfoRow label="Network" value={savedMethod.card_network?.toUpperCase() ?? 'Unknown'} />
-          {savedMethod.card_expiry_month && savedMethod.card_expiry_year && (
-            <InfoRow
-              label="Expiry"
-              value={`${String(savedMethod.card_expiry_month).padStart(2, '0')}/${String(savedMethod.card_expiry_year).slice(-2)}`}
-            />
-          )}
-        </PaymentCardVisual>
+          lastFour={savedMethod.last_four}
+          isDefault={savedMethod.is_default}
+          cardType={cardType}
+        />
 
-        <View style={styles.buttonContainer}>
+        <View style={styles.cardButtonContainer}>
           <PrimaryButton
             title="Replace Card"
             onPress={() => {
@@ -435,7 +429,7 @@ function CardContent({
         </View>
 
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={styles.cardDeleteButton}
           onPress={handleDelete}
           testID="delete-method-button"
         >
@@ -643,18 +637,18 @@ export default function EditPaymentMethodScreen() {
   const { data: methods, isLoading } = useSavedPaymentMethods();
   const savedMethod = useMemo(() => {
     if (!methods) return undefined;
-    if (params.id) return methods.find((m) => m.id === params.id);
+    if (params.id) return methods.find((m: SavedPaymentMethod) => m.id === params.id);
     // For cards, filter by card_type (credit/debit) when specified
     if (methodType === 'card' && cardType) {
       return (
-        methods.find((m) => m.type === 'card' && m.card_type === cardType && m.is_default) ??
-        methods.find((m) => m.type === 'card' && m.card_type === cardType)
+        methods.find((m: SavedPaymentMethod) => m.type === 'card' && m.card_type === cardType && m.is_default) ??
+        methods.find((m: SavedPaymentMethod) => m.type === 'card' && m.card_type === cardType)
       );
     }
     // Fallback: find the default or first match for the type
     return (
-      methods.find((m) => m.type === methodType && m.is_default) ??
-      methods.find((m) => m.type === methodType)
+      methods.find((m: SavedPaymentMethod) => m.type === methodType && m.is_default) ??
+      methods.find((m: SavedPaymentMethod) => m.type === methodType)
     );
   }, [methods, methodType, params.id, cardType]);
 
@@ -675,7 +669,7 @@ export default function EditPaymentMethodScreen() {
 
   return (
     <Screen testID="edit-payment-method-screen" padded={false}>
-      <DottedGridPattern animated={true} />
+      <DottedGridPattern />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -762,6 +756,10 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   buttonContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  cardButtonContainer: {
     alignItems: 'center',
     marginTop: 16,
   },
@@ -873,10 +871,16 @@ const styles = StyleSheet.create({
 
   // Delete button
   deleteButton: {
-    alignSelf: 'center',
+    width: '100%',
     paddingVertical: 12,
-    paddingHorizontal: 24,
     marginTop: 8,
+    alignItems: 'center',
+  },
+  cardDeleteButton: {
+    width: '100%',
+    paddingVertical: 12,
+    marginTop: -4,
+    alignItems: 'center',
   },
   deleteButtonText: {
     fontFamily: 'PlusJakartaSans-Regular',

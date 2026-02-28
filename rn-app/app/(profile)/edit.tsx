@@ -62,15 +62,15 @@ export default function EditProfileScreen() {
   const pixelateAvatar = usePixelateAvatar();
 
   const fullName = user ? `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : '';
-  const [name, setName] = useState(fullName || 'John Smith');
-  const [email, setEmail] = useState(user?.email ?? 'john@email.com');
+  const [name, setName] = useState(fullName || '');
+  const [email, setEmail] = useState(user?.email ?? '');
   const [city, setCity] = useState('Bangalore');
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatar_url ?? null);
 
   // Extract phone parts
-  const phone = user?.phone ?? '+91 98765 43210';
+  const phone = user?.phone ?? '';
   const countryCode = '+91';
-  const phoneNumber = phone.replace('+91', '').trim() || '98765 43210';
+  const phoneNumber = phone.replace('+91', '').trim();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -164,7 +164,7 @@ export default function EditProfileScreen() {
 
   return (
     <Screen testID="edit-profile-screen" padded={false}>
-      <DottedGridPattern animated={false} />
+      <DottedGridPattern />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

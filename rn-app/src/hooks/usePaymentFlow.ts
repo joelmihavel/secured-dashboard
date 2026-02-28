@@ -22,6 +22,7 @@ import {
   type InstrumentParams,
 } from '@/src/services/payment/payuCoreService';
 import { addCardToken, addUpiVpa } from '@/src/services/api/payments';
+import { captureError } from '@/src/config/sentry';
 
 export type PaymentFlowOutcome =
   | { status: 'success' | 'navigating' }
@@ -107,6 +108,10 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                 }
               } catch (saveErr) {
                 console.warn('Client-side payment method save failed (webhook will retry):', saveErr);
+                captureError(
+                  saveErr instanceof Error ? saveErr : new Error(String(saveErr)),
+                  { flow: 'payment_method_save', paymentMode }
+                );
               }
               queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
               queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -151,6 +156,10 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
             return { status: 'failure', error: 'Unexpected payment outcome' };
         }
       } catch (err) {
+        captureError(
+          err instanceof Error ? err : new Error(String(err)),
+          { flow: 'payment_execution', paymentMode, paymentId }
+        );
         return {
           status: 'failure',
           error: err instanceof Error ? err.message : 'Payment error',

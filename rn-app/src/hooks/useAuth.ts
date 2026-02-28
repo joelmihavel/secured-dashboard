@@ -18,6 +18,7 @@ import { useProfileStore } from '../stores/profile';
 import { useRecordConsent, useIdentityFetch } from './useIdentityVerification';
 import { supabase } from '../services/supabase/client';
 import { queryClient as globalQueryClient } from '../providers/QueryProvider';
+import { setUserContext, clearUserContext } from '../config/sentry';
 
 // ==============================================
 // ERROR NORMALIZATION
@@ -110,6 +111,7 @@ export function useVerifyOtp() {
     onSuccess: (data) => {
       // Session is already established (by GoTrue SDK or token_hash exchange)
       setAuthenticated(data.user_id, data.is_new_user, data.identity_status ?? null);
+      setUserContext(data.user_id);
       queryClient.invalidateQueries({ queryKey: authKeys.session() });
     },
     onError: (error: unknown) => {
@@ -175,6 +177,8 @@ export function useAuth() {
       supabase.auth.getSession().then(({ data: { session } }) => {
         const name = session?.user?.user_metadata?.name;
         if (name) authStore.setUserName(name);
+      }).catch(() => {
+        // Non-critical — session hydration can fail transiently
       });
     }
   }, [authStore.status]);
@@ -251,6 +255,7 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     await apiSignOut();
+    clearUserContext();
     // Reset ALL stores so the next user starts completely fresh.
     // Critical for persisted stores (upload, payment) which survive app kills.
     authStore.reset();

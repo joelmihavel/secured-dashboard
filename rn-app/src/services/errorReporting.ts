@@ -88,11 +88,15 @@ let pendingError: ErrorReport | null = null;
 export function setErrorListener(fn: ErrorListener): () => void {
   listener = fn;
 
-  // Flush any error that fired before the listener attached
+  // Flush any error that fired before the listener attached.
+  // Defer to next tick — synchronous flush during React commit phase
+  // can fire router.replace before the navigation container is ready.
   if (pendingError) {
     const queued = pendingError;
     pendingError = null;
-    fn(queued);
+    setTimeout(() => {
+      if (listener === fn) fn(queued);
+    }, 0);
   }
 
   return () => {
@@ -116,19 +120,17 @@ export function reportFatalError(report: Omit<ErrorReport, 'id' | 'timestamp' | 
     isLooping,
   };
 
-  // Single Sentry capture point
-  if (!__DEV__) {
-    const error =
-      report.originalError instanceof Error
-        ? report.originalError
-        : new Error(report.technicalMessage || report.message);
+  // Single Sentry capture point — always capture (environment tag differentiates dev/prod)
+  const error =
+    report.originalError instanceof Error
+      ? report.originalError
+      : new Error(report.technicalMessage || report.message);
 
-    captureError(error, {
-      errorId: fullReport.id,
-      source: fullReport.source,
-      isLooping,
-    });
-  }
+  captureError(error, {
+    errorId: fullReport.id,
+    source: fullReport.source,
+    isLooping,
+  });
 
   if (__DEV__) {
     console.error(`[ErrorReporting] ${fullReport.source}:`, fullReport.message, report.originalError);

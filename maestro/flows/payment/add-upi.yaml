@@ -1,0 +1,95 @@
+# =============================================================================
+# UI-039: Add UPI Payment Method Flow
+# Route: Modal overlay (AddUpiContent in PaymentMethodModal)
+# Figma: 41-8369 (Add UPI Payment)
+# testIDs: modal-account-name-input, modal-upi-id-input,
+#          modal-verify-upi-button, modal-pay-upi-button,
+#          modal-verify-upi-disabled-button
+# =============================================================================
+#
+# Validates:
+#   - UPI form renders with "Add your UPI Method" title
+#   - Account holder name input is visible and accepts input
+#   - UPI ID input is visible and accepts input
+#   - Proceed button is disabled until form is valid
+#   - UPI ID validation (must contain @)
+#   - Verify button triggers UPI verification
+#   - Error messages display for invalid UPI IDs
+#   - Footer text about cashback is visible
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Navigate to enter-rent, enter amount, open modal, select UPI setup
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+
+# Enter amount
+- inputText: ${TEST_PAYMENT_AMOUNT}
+- waitForAnimationToEnd
+
+# Open method selector
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# Wait for modal
+- extendedWaitUntil:
+    visible: "Payment Method"
+    timeout: 5000
+
+# Select UPI and tap proceed (setup path)
+- tapOn: "UPI"
+- waitForAnimationToEnd
+- tapOn:
+    id: "modal-method-proceed-button"
+- waitForAnimationToEnd
+
+# -- Verify UPI form rendered --
+- extendedWaitUntil:
+    visible: "UPI Method"
+    timeout: 5000
+
+- assertVisible: "Add your"
+- assertVisible: "UPI Method"
+
+# -- Verify input fields --
+- assertVisible:
+    id: "modal-account-name-input"
+- assertVisible:
+    id: "modal-upi-id-input"
+
+# -- Enter account holder name --
+- tapOn:
+    id: "modal-account-name-input"
+- inputText: ${TEST_NAME}
+- hideKeyboard
+
+# -- Enter UPI ID --
+- tapOn:
+    id: "modal-upi-id-input"
+- inputText: ${TEST_UPI_VPA}
+- hideKeyboard
+
+# -- Verify the Proceed/Verify button is now active --
+- assertVisible:
+    id: "modal-verify-upi-button"
+
+# -- Verify footer text --
+- assertVisible: "rent payments and earn cashback"
+
+# -- Tap Verify to submit UPI for verification --
+- tapOn:
+    id: "modal-verify-upi-button"
+- waitForAnimationToEnd
+
+# Wait for verification result
+- extendedWaitUntil:
+    visible:
+      id: "modal-pay-upi-button"
+    timeout: 10000
+    optional: true
+
+- takeScreenshot: "add-upi-completed"

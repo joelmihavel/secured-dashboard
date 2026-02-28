@@ -1,0 +1,231 @@
+{
+  "auth": {
+    "backend": [
+      "auth-otp.test.ts"
+    ],
+    "frontend": [
+      "src/hooks/__tests__/useAuth.test.ts",
+      "src/hooks/__tests__/useRequireAuth.test.ts",
+      "src/hooks/__tests__/useSessionMonitor.test.ts",
+      "src/services/__tests__/auth.test.ts",
+      "src/stores/__tests__/auth.test.ts",
+      "app/(auth)/__tests__/sign-up.test.tsx",
+      "app/(auth)/__tests__/otp.test.tsx",
+      "app/(auth)/__tests__/splash.test.tsx",
+      "app/(auth)/__tests__/beta-splash.test.tsx",
+      "app/(auth)/__tests__/carousel.test.tsx",
+      "app/(auth)/__tests__/auth-integration.test.tsx",
+      "src/__tests__/screens/sign-up.test.tsx",
+      "src/__tests__/screens/otp.test.tsx",
+      "src/__tests__/screens/splash.test.tsx",
+      "src/__tests__/screens/beta-splash.test.tsx",
+      "src/__tests__/screens/carousel.test.tsx",
+      "src/__tests__/integration/auth-flow.integration.test.ts"
+    ],
+    "e2e": [
+      "flows/auth/sign-up.yaml",
+      "flows/auth/otp.yaml",
+      "flows/auth/otp-error.yaml",
+      "flows/auth/splash.yaml",
+      "flows/auth/beta-splash.yaml",
+      "flows/auth/carousel.yaml"
+    ]
+  },
+  "payment": {
+    "backend": [
+      "initiate-payment.test.ts",
+      "payment-webhook.test.ts",
+      "payment-flow.test.ts",
+      "payment-methods-refunds.test.ts"
+    ],
+    "frontend": [
+      "src/hooks/__tests__/usePaymentFlow.test.ts",
+      "src/hooks/__tests__/usePayments.test.ts",
+      "src/hooks/__tests__/usePaymentRecovery.test.ts",
+      "src/services/__tests__/payments.test.ts",
+      "src/services/__tests__/payuCoreService.test.ts",
+      "src/stores/__tests__/payment.test.ts",
+      "app/(payment)/__tests__/confirm.test.tsx",
+      "app/(payment)/__tests__/status.test.tsx",
+      "src/__tests__/integration/payment-flow.integration.test.ts"
+    ],
+    "e2e": [
+      "flows/payment/first-rent.yaml",
+      "flows/payment/confirm.yaml",
+      "flows/payment/status-success.yaml",
+      "flows/payment/status-failed.yaml",
+      "flows/payment/status-pending.yaml",
+      "flows/payment/status-refunded.yaml",
+      "journeys/make-payment.yaml"
+    ]
+  },
+  "agreement": {
+    "backend": [
+      "upload-document.test.ts",
+      "confirm-extraction.test.ts"
+    ],
+    "frontend": [
+      "src/services/__tests__/agreement.test.ts",
+      "app/(agreement)/__tests__/upload.test.tsx",
+      "app/(agreement)/__tests__/review.test.tsx",
+      "src/stores/__tests__/upload.test.ts"
+    ],
+    "e2e": [
+      "flows/agreement/upload.yaml",
+      "flows/agreement/review.yaml"
+    ]
+  },
+  "setup": {
+    "backend": [],
+    "frontend": [
+      "src/services/__tests__/setup.test.ts",
+      "src/hooks/__tests__/useSetupGuard.test.ts",
+      "src/stores/__tests__/setup.test.ts",
+      "app/(setup)/__tests__/index.test.tsx",
+      "app/(setup)/__tests__/add-bank.test.tsx",
+      "app/(setup)/__tests__/invite-landlord.test.tsx"
+    ],
+    "e2e": [
+      "flows/setup/index.yaml",
+      "flows/setup/add-bank.yaml",
+      "flows/setup/invite-landlord.yaml",
+      "flows/setup/pending-steps.yaml"
+    ]
+  },
+  "waitlist": {
+    "backend": [
+      "get-waitlist-status.test.ts"
+    ],
+    "frontend": [
+      "src/services/__tests__/waitlist.test.ts",
+      "src/stores/__tests__/waitlist.test.ts",
+      "app/(waitlist)/__tests__/index.test.tsx",
+      "src/__tests__/screens/waitlist.test.tsx"
+    ],
+    "e2e": [
+      "flows/waitlist/index.yaml"
+    ]
+  },
+  "profile": {
+    "backend": [
+      "delete-account.test.ts"
+    ],
+    "frontend": [
+      "src/services/__tests__/profile.test.ts",
+      "src/stores/__tests__/profile.test.ts",
+      "app/(profile)/__tests__/index.test.tsx",
+      "app/(profile)/__tests__/edit.test.tsx",
+      "app/(profile)/__tests__/agreement.test.tsx",
+      "app/(profile)/__tests__/payment-methods.test.tsx"
+    ],
+    "e2e": [
+      "flows/profile/index.yaml",
+      "journeys/manage-profile.yaml"
+    ]
+  },
+  "dashboard": {
+    "backend": [],
+    "frontend": [
+      "src/hooks/__tests__/useDashboard.test.ts",
+      "src/services/__tests__/dashboard.test.ts",
+      "app/(main)/__tests__/index.test.tsx"
+    ],
+    "e2e": [
+      "flows/main/home.yaml"
+    ]
+  },
+  "onboarding": {
+    "backend": [
+      "user-onboarding-flow.test.ts"
+    ],
+    "frontend": [],
+    "e2e": [
+      "journeys/new-user-onboarding.yaml"
+    ]
+  },
+  "verification": {
+    "backend": [
+      "verification-flow.test.ts",
+      "verify-bank.test.ts",
+      "verify-identity.test.ts"
+    ],
+    "frontend": [
+      "src/services/__tests__/identity.test.ts"
+    ],
+    "e2e": []
+  },
+  "referral": {
+    "backend": [
+      "referral-codes.test.ts"
+    ],
+    "frontend": [],
+    "e2e": []
+  },
+  "security": {
+    "backend": [
+      "security-tests.test.ts"
+    ],
+    "frontend": [],
+    "e2e": []
+  },
+  "utility": {
+    "backend": [
+      "utility-bill-flow.test.ts",
+      "verify-utility.test.ts"
+    ],
+    "frontend": [],
+    "e2e": []
+  },
+  "routing": {
+    "backend": [],
+    "frontend": [
+      "src/hooks/__tests__/useDeepLink.test.ts",
+      "app/__tests__/index.test.tsx"
+    ],
+    "e2e": [
+      "flows/routing/auth-guard.yaml",
+      "flows/routing/deep-links.yaml"
+    ]
+  },
+  "components": {
+    "backend": [],
+    "frontend": [
+      "src/components/__tests__/CarouselDots.test.tsx",
+      "src/components/__tests__/ConsentToggle.test.tsx",
+      "src/components/__tests__/DocumentUploadCard.test.tsx",
+      "src/components/__tests__/ErrorBoundary.test.tsx",
+      "src/components/__tests__/FileUploadZone.test.tsx",
+      "src/components/__tests__/Logo.test.tsx",
+      "src/components/__tests__/OTPInput.test.tsx",
+      "src/components/__tests__/PhoneInput.test.tsx",
+      "src/components/__tests__/PrimaryButton.test.tsx",
+      "src/components/__tests__/Screen.test.tsx",
+      "src/components/__tests__/Text.test.tsx",
+      "src/components/__tests__/TextButton.test.tsx",
+      "src/components/__tests__/TextInput.test.tsx",
+      "src/components/home/__tests__/StatusNotificationBanner.test.tsx"
+    ],
+    "e2e": []
+  },
+  "services": {
+    "backend": [],
+    "frontend": [
+      "src/services/__tests__/analytics.test.ts",
+      "src/services/__tests__/callEdgeFunction.test.ts",
+      "src/services/__tests__/edge-functions.test.ts",
+      "src/services/__tests__/errorReporting.test.ts",
+      "src/services/__tests__/notifications.test.ts",
+      "src/services/__tests__/performance.test.ts",
+      "src/services/__tests__/storageService.test.ts"
+    ],
+    "e2e": []
+  },
+  "hooks": {
+    "backend": [],
+    "frontend": [
+      "src/hooks/__tests__/useAnalytics.test.ts",
+      "src/hooks/__tests__/useNetworkStatus.test.ts"
+    ],
+    "e2e": []
+  }
+}

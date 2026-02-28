@@ -1233,6 +1233,44 @@ export async function verifyCard(): Promise<{
 }
 
 // ==============================================
+// CARD BIN INFO
+// ==============================================
+
+export interface BinInfo {
+  bin: string;
+  is_domestic: boolean;
+  issuing_bank: string | null;
+  card_type: 'credit' | 'debit' | null;
+  card_brand: string | null;
+}
+
+/**
+ * Look up card BIN info (first 6 digits) via PayU.
+ *
+ * Calls POST /functions/v1/get-bin-info
+ * Returns card type, issuing bank, and domesticity.
+ * Informational only — not a blocking validation.
+ */
+export async function getBinInfo(
+  bin: string
+): Promise<{ data: BinInfo | null; error: string | null }> {
+  const { data, error } = await callEdgeFunction<{
+    success: boolean;
+    data: BinInfo;
+    error?: string;
+  }>(
+    'get-bin-info',
+    { bin },
+    true
+  );
+
+  if (error) return { data: null, error };
+  if (!data?.success) return { data: null, error: data?.error ?? 'BIN lookup failed' };
+
+  return { data: data.data, error: null };
+}
+
+// ==============================================
 // NETBANKING BANK LIST
 // ==============================================
 

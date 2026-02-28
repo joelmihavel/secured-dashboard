@@ -22,7 +22,8 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Text, PrimaryButton, BackButton } from '@/src/components';
+import { Text } from '@/src/components/ui/Typography';
+import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Text as RNText } from 'react-native';
 import { SecureCardInput, type SecureCardInputRef } from '@/src/components/payment/SecureCardInput';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
@@ -44,9 +45,10 @@ const FIGMA_COLORS = {
 // ADD CARD CONTENT
 // ==============================================
 
-export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMethodContentProps) {
+export function AddCardContent({ paymentId, onBack, cardType = 'credit', onInitiatePayment }: AddMethodContentProps) {
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
-  const amount = sessionParams?.amount ?? '0';
+  const storedAmount = usePaymentStore((s) => s.amount);
+  const amount = sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0');
 
   const cardInputRef = useRef<SecureCardInputRef>(null);
   const [isCardValid, setIsCardValid] = useState(false);
@@ -66,13 +68,29 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMe
       return;
     }
 
-    if (!sessionParams) {
-      Alert.alert('Session Expired', 'Please go back and try again.');
-      return;
-    }
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsSubmitting(true);
+
+    let currentPaymentId = paymentId;
+
+    // Setup flow: initiate payment first if no paymentId yet
+    if (!currentPaymentId && onInitiatePayment) {
+      const methodType = cardType === 'credit' ? 'card' as const : 'debit_card' as const;
+      const result = await onInitiatePayment(methodType);
+      if (!result) {
+        setIsSubmitting(false);
+        return;
+      }
+      currentPaymentId = result.paymentId;
+    }
+
+    // Re-read sessionParams after potential initiatePayment call
+    const currentSessionParams = usePaymentStore.getState().payuSessionParams;
+    if (!currentSessionParams) {
+      Alert.alert('Session Error', 'Please go back and try again.');
+      setIsSubmitting(false);
+      return;
+    }
 
     const cardData = cardInputRef.current.getCardData();
     const bankcode = cardType === 'credit' ? 'CC' : 'DC';
@@ -88,7 +106,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMe
         name_on_card: cardData.nameOnCard,
         store_card: '1',
       },
-      paymentId,
+      currentPaymentId,
       () => cardInputRef.current?.clearCardData(),
     );
 
@@ -96,7 +114,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit' }: AddMe
       setIsSubmitting(false);
     }
     // Other outcomes (navigating, failure) handle their own navigation
-  }, [sessionParams, paymentId, isSubmitting, executePayment]);
+  }, [sessionParams, paymentId, isSubmitting, executePayment, onInitiatePayment, cardType]);
 
   const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
@@ -164,7 +182,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: 30,
   },
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -173,14 +191,14 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.white,
     textAlign: 'left',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   titleAccent: {
     color: colors.brand[500],
   },
   formSection: {
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   buttonFooterSection: {
     gap: 16,

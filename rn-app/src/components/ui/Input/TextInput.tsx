@@ -3,7 +3,7 @@
  * Figma: Form input with label
  *
  * EXACT Figma Values (Dark theme) — verified from blueprint data:
- * - Label: Plus Jakarta Sans Regular (400), 12px, line-height 20px, #A9A9A9
+ * - Label: Plus Jakarta Sans Medium (500), 12px, line-height 20px, #A9A9A9
  * - Label to input gap: 6px
  * - Input text: Plus Jakarta Sans Regular (400), 20px, line-height 32px
  * - Placeholder color: #444444 (neutral/800) — confirmed from Figma text node fills
@@ -194,6 +194,10 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
             {...props}
           />
         </View>
+
+        {hasError && error ? (
+          <Text style={styles.belowError}>{error}</Text>
+        ) : null}
       </View>
     );
   }
@@ -212,10 +216,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: INPUT_SPACING.labelInputGap,
   },
-  // Figma REST API: fontWeight 400 (Regular), 12px, lineHeight:20
-  // Verified from Figma: sign-up input labels use PlusJakartaSans-Regular
+  // Figma REST API: fontWeight 500 (Medium), 12px, lineHeight:20
+  // Verified from Figma MCP (nodes 769:304279, 759:299926): labels use PlusJakartaSans-Medium
   label: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 20,
     // Color applied dynamically via dynamicStyles
@@ -266,6 +270,14 @@ const styles = StyleSheet.create({
   },
   inputDisabled: {
     opacity: 0.5,
+  },
+  belowError: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#E5484D',
+    marginTop: 6,
+    paddingHorizontal: 12,
   },
 });
 

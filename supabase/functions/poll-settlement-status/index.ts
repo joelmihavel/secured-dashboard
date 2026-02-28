@@ -3,7 +3,7 @@
  *
  * Cron job (every 30 min) that handles:
  * TIER 1: PayU -> Flent settlement tracking (checks if PayU has settled to Flent)
- * TIER 2: Flent -> Landlord payout tracking (queues ready payouts + Cashfree payout status)
+ * TIER 2: Flent -> Landlord payout tracking (queues ready payouts)
  * RECONCILIATION: Resolves stuck payments by verifying with PayU
  *
  * Endpoint: POST /functions/v1/poll-settlement-status
@@ -16,7 +16,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { sha512 } from "../_shared/crypto.ts";
-import { getTransferStatus } from "../_shared/cashfree-payouts.ts";
+import { getSystemTransferFlag, checkTransferEligibility, type SystemTransferFlag } from "../_shared/transfer-flags.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -81,12 +81,18 @@ serve(async (req: Request) => {
 
     const startTime = Date.now();
 
+    // Fetch system transfer flag once (shared across all tiers)
+    const systemConfig = await getSystemTransferFlag(supabase);
+
+    // Release held payments if system flag is now enabled
+    const releaseResult = await releaseHeldPayments(supabase, audit, systemConfig);
+
     // Tier 1: PayU settlement tracking
-    const tier1Result = await pollPayUSettlement(supabase, audit);
+    const tier1Result = await pollPayUSettlement(supabase, audit, systemConfig);
 
     // Tier 2 + Reconciliation: depend on Tier 1 marking payments as ready
     const [tier2Result, reconciliationResult] = await Promise.all([
-      pollLandlordPayoutReadiness(supabase, audit),
+      pollLandlordPayoutReadiness(supabase, audit, systemConfig),
       reconcileStuckPayments(supabase, audit),
     ]);
 
@@ -99,6 +105,8 @@ serve(async (req: Request) => {
       undefined,
       {
         duration_ms: durationMs,
+        system_transfers_enabled: systemConfig.enabled,
+        released: releaseResult,
         tier1: tier1Result,
         tier2: tier2Result,
         reconciliation: reconciliationResult,
@@ -109,6 +117,8 @@ serve(async (req: Request) => {
       success: true,
       data: {
         duration_ms: durationMs,
+        system_transfers_enabled: systemConfig.enabled,
+        released_held_payments: releaseResult,
         tier1_payu_settlement: tier1Result,
         tier2_landlord_payout: tier2Result,
         reconciliation: reconciliationResult,
@@ -121,7 +131,7 @@ serve(async (req: Request) => {
 });
 
 // ==============================================
-// TIER 1: PayU -> Flent Settlement
+// RELEASE: Convert system-held payments back to 'ready'
 // ==============================================
 
 interface TierResult {
@@ -131,12 +141,85 @@ interface TierResult {
 }
 
 /**
+ * When system transfers are re-enabled, release payments that were held
+ * due to system flag only (transfer_hold = false). Manually-held payments
+ * (transfer_hold = true) remain held until explicitly released.
+ */
+async function releaseHeldPayments(
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger,
+  systemConfig: SystemTransferFlag,
+): Promise<TierResult> {
+  const result: TierResult = { checked: 0, updated: 0, errors: 0 };
+
+  // Only release when system is enabled
+  if (!systemConfig.enabled) {
+    return result;
+  }
+
+  try {
+    // Find system-held payments (held status but no manual hold)
+    const { data: heldPayments } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("landlord_payout_status", "held")
+      .eq("transfer_hold", false)
+      .limit(BATCH_SIZE);
+
+    if (!heldPayments || heldPayments.length === 0) {
+      return result;
+    }
+
+    result.checked = heldPayments.length;
+
+    for (const payment of heldPayments) {
+      try {
+        await supabase
+          .from("payments")
+          .update({ landlord_payout_status: "ready" })
+          .eq("id", payment.id)
+          .eq("landlord_payout_status", "held"); // optimistic lock
+
+        result.updated++;
+      } catch (err) {
+        console.error(`Failed to release held payment ${payment.id}:`, err);
+        result.errors++;
+      }
+    }
+
+    if (result.updated > 0) {
+      await audit.logSuccess(
+        "HELD_PAYMENTS_RELEASED",
+        "payment",
+        undefined,
+        undefined,
+        {
+          released_count: result.updated,
+          payment_ids: heldPayments.map((p) => p.id),
+        },
+      );
+      console.log(`[RELEASE] Released ${result.updated} system-held payments to 'ready'`);
+    }
+  } catch (err) {
+    console.error("Release held payments error:", err);
+    result.errors++;
+  }
+
+  return result;
+}
+
+// ==============================================
+// TIER 1: PayU -> Flent Settlement
+// ==============================================
+
+/**
  * Checks if PayU has settled successful payments to Flent's account.
  * Calls PayU get_settlement_details API.
  */
 async function pollPayUSettlement(
   supabase: ReturnType<typeof createServiceClient>,
   audit: AuditLogger,
+  systemConfig: SystemTransferFlag,
 ): Promise<TierResult> {
   const result: TierResult = { checked: 0, updated: 0, errors: 0 };
 
@@ -196,8 +279,25 @@ async function pollPayUSettlement(
               if (settlementStatus === "settled") {
                 updateData.payu_settlement_utr = utr;
                 updateData.payu_settled_at = paymentSettlement.settlement_date ?? new Date().toISOString();
-                // Mark landlord payout as ready (settlement confirmed = money in Flent's account)
-                updateData.landlord_payout_status = "ready";
+
+                // Check transfer eligibility before marking as 'ready'
+                const eligibility = await checkTransferEligibility(supabase, payment.id, systemConfig);
+                if (eligibility.allowed) {
+                  updateData.landlord_payout_status = "ready";
+                } else {
+                  updateData.landlord_payout_status = "held";
+                  await audit.logSuccess(
+                    "LANDLORD_TRANSFER_HELD",
+                    "payment",
+                    "payment",
+                    payment.id,
+                    {
+                      reason: eligibility.reason,
+                      system_enabled: eligibility.system_enabled,
+                      transaction_held: eligibility.transaction_held,
+                    },
+                  );
+                }
               }
 
               await supabase
@@ -239,10 +339,17 @@ async function pollPayUSettlement(
 async function pollLandlordPayoutReadiness(
   supabase: ReturnType<typeof createServiceClient>,
   audit: AuditLogger,
+  systemConfig: SystemTransferFlag,
 ): Promise<TierResult> {
   const result: TierResult = { checked: 0, updated: 0, errors: 0 };
 
   try {
+    // Short-circuit: if system transfers are disabled, skip Tier 2 entirely.
+    if (!systemConfig.enabled) {
+      console.log("[TIER2] System transfers disabled — skipping ready→processing transition");
+      return result;
+    }
+
     // Find payments where landlord_payout_status = 'ready'
     // (set by TIER 1 when PayU settlement is confirmed)
     const { data: readyPayments } = await supabase
@@ -281,50 +388,6 @@ async function pollLandlordPayoutReadiness(
       }
     }
 
-    // Also poll Cashfree payout transfer status for payments in "processing" state
-    const { data: processingPayouts } = await supabase
-      .from("payments")
-      .select("id, gateway_payout_id, gateway_payout_status, landlord_payout_paise, rent_amount_paise")
-      .eq("status", "success")
-      .eq("payment_gateway", "cashfree")
-      .eq("landlord_payout_status", "processing")
-      .not("gateway_payout_id", "is", null)
-      .order("paid_at", { ascending: true })
-      .limit(BATCH_SIZE);
-
-    for (const payout of processingPayouts ?? []) {
-      try {
-        const transferStatus = await getTransferStatus(payout.gateway_payout_id);
-        const status = String(transferStatus.status ?? "").toUpperCase();
-        const utr = String(transferStatus.utr ?? transferStatus.bank_reference_no ?? "");
-
-        if (status === "SUCCESS") {
-          await supabase
-            .from("payments")
-            .update({
-              landlord_payout_status: "settled",
-              gateway_payout_status: "SUCCESS",
-              gateway_payout_utr: utr || null,
-            })
-            .eq("id", payout.id);
-          result.updated++;
-        } else if (status === "FAILED" || status === "REVERSED") {
-          await supabase
-            .from("payments")
-            .update({
-              landlord_payout_status: "failed",
-              gateway_payout_status: status,
-            })
-            .eq("id", payout.id);
-          result.updated++;
-        }
-        // PENDING/PROCESSING — no update needed
-      } catch (err) {
-        console.error(`Failed to poll payout status for payment ${payout.id}:`, err);
-        result.errors++;
-      }
-    }
-
     // Log summary for ops
     if (readyPayments.length > 0) {
       const totalPaise = readyPayments.reduce(
@@ -358,7 +421,7 @@ async function pollLandlordPayoutReadiness(
 
 /**
  * Reconciles payments stuck in initiated/processing state for > 15 minutes.
- * Calls PayU verify_payment or Cashfree order/payment APIs based on gateway.
+ * Calls PayU verify_payment API to resolve status.
  */
 async function reconcileStuckPayments(
   supabase: ReturnType<typeof createServiceClient>,

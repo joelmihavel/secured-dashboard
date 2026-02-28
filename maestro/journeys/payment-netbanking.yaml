@@ -1,0 +1,139 @@
+# =============================================================================
+# Journey: Payment via Netbanking
+# HJ-019
+#
+# Full journey: enter-rent -> enter amount -> method selector -> select
+#               netbanking -> search/select bank -> proceed -> payment status
+#
+# This journey validates the complete netbanking payment flow from entering
+# the rent amount through bank selection and payment execution.
+#
+# Prerequisites:
+#   - User is authenticated with active tenancy
+#   - PayU sandbox configured for netbanking test processing
+#   - Bank list loaded from API or static fallback
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STEP 1: Enter Rent Amount
+# =============================================
+- launchApp:
+    clearState: true
+
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "enter-rent-screen"
+
+# Enter rent amount
+- inputText: ${TEST_PAYMENT_AMOUNT}
+- waitForAnimationToEnd
+
+# Tap Continue
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 2: Method Selector -- Choose Netbanking
+# =============================================
+- extendedWaitUntil:
+    visible: "Payment Method"
+    timeout: 5000
+
+# Select Net Banking
+- tapOn: "Net Banking"
+- waitForAnimationToEnd
+
+# Tap Proceed/Setup
+- tapOn:
+    id: "modal-method-proceed-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 3: Select Bank
+# =============================================
+- extendedWaitUntil:
+    visible: "Net Banking"
+    timeout: 5000
+
+- assertVisible: "Add your"
+- assertVisible: "Net Banking"
+
+# Verify search input
+- assertVisible:
+    id: "modal-bank-search-input"
+
+# Search for a specific bank
+- tapOn:
+    id: "modal-bank-search-input"
+- inputText: "HDFC"
+- waitForAnimationToEnd
+
+# Tap on HDFC bank from filtered results
+- tapOn:
+    text: "HDFC"
+    optional: true
+- hideKeyboard
+- waitForAnimationToEnd
+
+# If HDFC not found, clear search and select first bank
+# clearText does not support optional
+- clearText
+- hideKeyboard
+
+# =============================================
+# STEP 4: Proceed with Selected Bank
+# =============================================
+# Scroll to Proceed button
+- scrollUntilVisible:
+    element:
+      id: "modal-proceed-netbanking-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "modal-proceed-netbanking-button"
+
+# Tap Proceed to initiate netbanking payment
+- tapOn:
+    id: "modal-proceed-netbanking-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 5: Payment Processing
+# =============================================
+# Wait for PayU SDK or bank redirect
+- extendedWaitUntil:
+    visible:
+      id: "status-screen"
+    timeout: 30000
+    optional: true
+
+# If status screen appeared, verify it
+- assertVisible:
+    id: "status-screen"
+    optional: true
+
+# Check for processing state
+- assertVisible:
+    text: "Verifying"
+    optional: true
+
+# =============================================
+# STEP 6: Verify Final Status
+# =============================================
+- wait: 5000
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Succesful"
+    optional: true
+- assertVisible:
+    text: "Failed"
+    optional: true
+
+- takeScreenshot: "payment-netbanking-journey-result"

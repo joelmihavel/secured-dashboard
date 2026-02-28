@@ -505,8 +505,15 @@ export default function HomeScreen() {
         const handleVerificationFinishSetup = useCallback(() => {
           setShowVerificationSheet(false);
           setPendingPaymentReturn(true);
-          router.push('/(setup)/pending-steps' as never);
-        }, [router, setPendingPaymentReturn]);
+          // Route to first incomplete step (bank is always done at this point)
+          if (!verificationStatus?.utility_verified) {
+            router.push({ pathname: '/(setup)/add-utility', params: { reentry: '1' } } as never);
+          } else if (!verificationStatus?.landlord_approved) {
+            router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
+          } else {
+            router.push('/(setup)/pending-steps' as never);
+          }
+        }, [router, setPendingPaymentReturn, verificationStatus]);
 
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
@@ -580,8 +587,8 @@ export default function HomeScreen() {
   const handlePaymentMethodEdit = useCallback((method: PaymentMethod) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
-      pathname: '/(profile)/payment-methods' as never,
-      params: { methodType: method.type, methodAccount: method.accountMasked },
+      pathname: '/(profile)' as never,
+      params: { editMethod: method.type, editMethodAccount: method.accountMasked },
     });
   }, [router]);
 

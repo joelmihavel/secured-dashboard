@@ -1,0 +1,120 @@
+{
+  "version": "1.0.0",
+  "project": "flent-secured",
+  "description": "Test schedule configuration for CI/CD pipelines and cron triggers",
+  "schedules": {
+    "on_push": {
+      "description": "Triggered on every push to main. Fast feedback on critical paths.",
+      "trigger": "push",
+      "branches": ["main"],
+      "layers": ["frontend"],
+      "categories": ["changed_files"],
+      "profile": "smoke",
+      "timeout_minutes": 10,
+      "notify": []
+    },
+    "on_pr": {
+      "description": "Triggered on pull requests to main. Validates backend + frontend.",
+      "trigger": "pull_request",
+      "branches": ["main"],
+      "layers": ["backend", "frontend"],
+      "profile": "smoke",
+      "timeout_minutes": 20,
+      "notify": [],
+      "post_comment": true
+    },
+    "nightly": {
+      "description": "Full regression every night at 2 AM IST (8:30 PM UTC previous day).",
+      "trigger": "schedule",
+      "cron": "30 20 * * *",
+      "layers": ["backend", "frontend", "e2e"],
+      "profile": "nightly",
+      "timeout_minutes": 45,
+      "notify": ["slack"],
+      "artifact_retention_days": 14,
+      "e2e_config": {
+        "cloud": true,
+        "shard": true,
+        "video": true
+      }
+    },
+    "weekly_full": {
+      "description": "Full regression with all devices every Sunday at 2 AM IST.",
+      "trigger": "schedule",
+      "cron": "30 20 * * 0",
+      "layers": ["backend", "frontend", "e2e"],
+      "profile": "regression",
+      "timeout_minutes": 60,
+      "notify": ["slack", "email"],
+      "artifact_retention_days": 30,
+      "e2e_config": {
+        "cloud": true,
+        "shard": true,
+        "video": false
+      }
+    },
+    "manual_smoke": {
+      "description": "Manual dispatch for quick smoke test validation.",
+      "trigger": "workflow_dispatch",
+      "layers": ["frontend", "e2e"],
+      "profile": "smoke",
+      "timeout_minutes": 15,
+      "notify": ["stdout"]
+    },
+    "manual_regression": {
+      "description": "Manual dispatch for full regression suite.",
+      "trigger": "workflow_dispatch",
+      "layers": ["backend", "frontend", "e2e"],
+      "profile": "regression",
+      "timeout_minutes": 45,
+      "notify": ["slack"]
+    }
+  },
+  "profiles": {
+    "smoke": {
+      "description": "P0 critical path only",
+      "e2e_profile": "smoke",
+      "jest_args": "--testPathPattern='(auth|payment)' --bail",
+      "deno_args": "--filter 'auth|payment'",
+      "max_parallel": 1
+    },
+    "regression": {
+      "description": "All tests with standard retries",
+      "e2e_profile": "regression",
+      "jest_args": "--coverage --forceExit",
+      "deno_args": "",
+      "max_parallel": 3
+    },
+    "nightly": {
+      "description": "All tests + edge cases + extended retries",
+      "e2e_profile": "nightly",
+      "jest_args": "--coverage --forceExit --verbose",
+      "deno_args": "",
+      "max_parallel": 4
+    }
+  },
+  "notification_channels": {
+    "slack": {
+      "webhook_env_var": "SLACK_WEBHOOK_URL",
+      "channel": "#e2e-tests",
+      "on_failure": true,
+      "on_success": false,
+      "mention_on_failure": "@channel"
+    },
+    "email": {
+      "recipients_env_var": "NOTIFY_EMAIL",
+      "on_failure": true,
+      "on_success": false
+    }
+  },
+  "defaults": {
+    "runner_os": {
+      "backend": "ubuntu-latest",
+      "frontend": "ubuntu-latest",
+      "e2e": "macos-latest"
+    },
+    "node_version": 20,
+    "deno_version": "v1.x",
+    "artifact_retention_days": 7
+  }
+}

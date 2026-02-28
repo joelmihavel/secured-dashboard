@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flent Secured Test Report</title>
+<style>
+/* ==========================================================================
+   RESET & BASE
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #131313;
+  --bg-alt: #0a0a0a;
+  --card: #202020;
+  --card-border: #2a2a2a;
+  --card-hover: #282828;
+  --accent: #FF9A6D;
+  --accent-dim: rgba(255,154,109,0.15);
+  --success: #4CAF50;
+  --success-dim: rgba(76,175,80,0.15);
+  --failure: #FF5252;
+  --failure-dim: rgba(255,82,82,0.15);
+  --warning: #FFB74D;
+  --warning-dim: rgba(255,183,77,0.15);
+  --skip: #90A4AE;
+  --skip-dim: rgba(144,164,174,0.15);
+  --text-primary: #DDDDDD;
+  --text-secondary: #878787;
+  --text-muted: #555555;
+  --border: #333333;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-xs: 4px;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+.report-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 32px 0 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+
+.report-header .left h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.report-header .left h1 span { color: var(--accent); }
+
+.report-header .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.report-header .meta .sep { color: var(--text-muted); }
+
+.overall-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.overall-badge.pass {
+  background: var(--success-dim);
+  color: var(--success);
+  border: 1px solid rgba(76,175,80,0.3);
+}
+
+.overall-badge.fail {
+  background: var(--failure-dim);
+  color: var(--failure);
+  border: 1px solid rgba(255,82,82,0.3);
+}
+
+.overall-badge svg { width: 24px; height: 24px; }
+
+/* ==========================================================================
+   SUMMARY CARDS
+   ========================================================================== */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.summary-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: background 0.15s;
+}
+
+.summary-card:hover { background: var(--card-hover); }
+
+.ring-container {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.ring-container svg {
+  width: 56px;
+  height: 56px;
+  transform: rotate(-90deg);
+}
+
+.ring-container .ring-bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 4;
+}
+
+.ring-container .ring-fg {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+.ring-container .ring-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.summary-card .details { flex: 1; min-width: 0; }
+
+.summary-card .card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.summary-card .card-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.summary-card .card-breakdown {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.summary-card .card-breakdown .pass-count { color: var(--success); }
+.summary-card .card-breakdown .fail-count { color: var(--failure); }
+.summary-card .card-breakdown .skip-count { color: var(--skip); }
+
+.summary-card .card-duration {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   SECTION HEADERS
+   ========================================================================== */
+.section {
+  margin-bottom: 40px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.section-header .count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   CATEGORY HEATMAP
+   ========================================================================== */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.heatmap-cell {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+
+.heatmap-cell:hover {
+  background: var(--card-hover);
+  border-color: var(--text-muted);
+}
+
+.heatmap-cell.good { border-left: 3px solid var(--success); }
+.heatmap-cell.warning { border-left: 3px solid var(--warning); }
+.heatmap-cell.critical { border-left: 3px solid var(--failure); }
+.heatmap-cell.empty { border-left: 3px solid var(--text-muted); opacity: 0.5; }
+
+.heatmap-cell .cat-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+  margin-bottom: 4px;
+}
+
+.heatmap-cell .cat-rate {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.heatmap-cell .cat-rate.good { color: var(--success); }
+.heatmap-cell .cat-rate.warning { color: var(--warning); }
+.heatmap-cell .cat-rate.critical { color: var(--failure); }
+.heatmap-cell .cat-rate.empty { color: var(--text-muted); }
+
+.heatmap-cell .cat-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   FILTER BAR
+   ========================================================================== */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.filter-bar select,
+.filter-bar input[type="text"] {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.filter-bar select:focus,
+.filter-bar input[type="text"]:focus {
+  border-color: var(--accent);
+}
+
+.filter-bar input[type="text"] {
+  min-width: 200px;
+  flex: 1;
+  max-width: 320px;
+}
+
+.filter-bar input[type="text"]::placeholder {
+  color: var(--text-muted);
+}
+
+.filter-bar .result-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* ==========================================================================
+   RESULTS TABLE
+   ========================================================================== */
+.results-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.results-table thead th {
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--card-border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.results-table thead th:hover { color: var(--text-primary); }
+
+.results-table thead th .sort-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  opacity: 0.3;
+  font-size: 10px;
+}
+
+.results-table thead th.sorted-asc .sort-arrow,
+.results-table thead th.sorted-desc .sort-arrow {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.results-table tbody tr {
+  border-bottom: 1px solid var(--card-border);
+  transition: background 0.1s;
+}
+
+.results-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+.results-table tbody tr.hidden { display: none; }
+
+.results-table tbody td {
+  padding: 10px 14px;
+  vertical-align: top;
+}
+
+.results-table .test-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.status-badge.pass { background: var(--success-dim); color: var(--success); }
+.status-badge.fail { background: var(--failure-dim); color: var(--failure); }
+.status-badge.skip { background: var(--skip-dim); color: var(--skip); }
+.status-badge.flaky { background: var(--warning-dim); color: var(--warning); }
+
+.layer-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.layer-badge.backend { background: rgba(100,181,246,0.15); color: #64B5F6; }
+.layer-badge.frontend { background: rgba(186,104,200,0.15); color: #BA68C8; }
+.layer-badge.e2e { background: rgba(255,154,109,0.15); color: #FF9A6D; }
+
+.retry-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.retry-count.retried { color: var(--warning); }
+
+.error-toggle {
+  cursor: pointer;
+  color: var(--failure);
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.error-toggle:hover { color: var(--text-primary); }
+
+/* ==========================================================================
+   EXPANDABLE ERROR ROWS
+   ========================================================================== */
+.error-detail-row td {
+  padding: 0 14px 14px 14px;
+  background: rgba(255,82,82,0.03);
+}
+
+.error-detail-row.hidden { display: none; }
+
+.error-box {
+  background: var(--bg-alt);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-box .error-message { color: var(--failure); font-weight: 600; }
+.error-box .stack-trace { color: var(--text-muted); margin-top: 8px; }
+
+.retry-timeline {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.retry-timeline .attempt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.retry-timeline .attempt.pass { background: var(--success-dim); color: var(--success); }
+.retry-timeline .attempt.fail { background: var(--failure-dim); color: var(--failure); }
+
+.retry-timeline .arrow { color: var(--text-muted); font-size: 10px; }
+
+.quick-fix {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(255,154,109,0.2);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--accent);
+  line-height: 1.5;
+}
+
+.quick-fix strong { font-weight: 700; }
+
+.screenshot-thumb {
+  margin-top: 10px;
+  max-width: 320px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--card-border);
+}
+
+/* ==========================================================================
+   FAILURE DETAILS SECTION
+   ========================================================================== */
+.failure-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.failure-card .failure-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.failure-card .failure-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   FLAKY SECTION
+   ========================================================================== */
+.flaky-list {
+  display: grid;
+  gap: 8px;
+}
+
+.flaky-item {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flaky-item .flaky-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.flaky-item .flaky-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.flaky-rate-bar {
+  width: 60px;
+  height: 6px;
+  background: var(--card-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.flaky-rate-bar .fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--warning);
+}
+
+.quarantine-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--failure-dim);
+  color: var(--failure);
+}
+
+/* ==========================================================================
+   TREND CHARTS
+   ========================================================================== */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.chart-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+.chart-card svg {
+  width: 100%;
+  height: 160px;
+}
+
+/* ==========================================================================
+   COVERAGE SECTION
+   ========================================================================== */
+.coverage-bar-container {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.coverage-overall {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.coverage-overall .cov-pct {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.coverage-overall .cov-pct.good { color: var(--success); }
+.coverage-overall .cov-pct.warning { color: var(--warning); }
+.coverage-overall .cov-pct.critical { color: var(--failure); }
+
+.progress-bar {
+  flex: 1;
+  height: 10px;
+  background: var(--card-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar .fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s ease;
+}
+
+.progress-bar .fill.good { background: var(--success); }
+.progress-bar .fill.warning { background: var(--warning); }
+.progress-bar .fill.critical { background: var(--failure); }
+
+.coverage-delta {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.coverage-delta.up { color: var(--success); }
+.coverage-delta.down { color: var(--failure); }
+.coverage-delta.same { color: var(--text-muted); }
+
+.coverage-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.coverage-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+
+.coverage-item .cov-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 80px;
+  text-transform: capitalize;
+}
+
+.coverage-item .progress-bar { height: 6px; }
+
+.coverage-item .cov-value {
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.report-footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.report-footer .links {
+  display: flex;
+  gap: 16px;
+}
+
+.report-footer .links a { font-size: 12px; }
+
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .report-header { flex-direction: column; gap: 16px; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .heatmap-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  .filter-bar { flex-direction: column; }
+  .filter-bar input[type="text"] { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ====================================================================
+       HEADER
+       ==================================================================== -->
+  <div class="report-header">
+    <div class="left">
+      <h1><span>Flent Secured</span> Test Report</h1>
+      <div class="meta">
+        <span id="meta-session">Session: --</span>
+        <span class="sep">|</span>
+        <span id="meta-timestamp">--</span>
+        <span class="sep">|</span>
+        <span id="meta-duration">Duration: --</span>
+        <span class="sep">|</span>
+        <span id="meta-git">--</span>
+      </div>
+    </div>
+    <div id="overall-badge" class="overall-badge pass">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span id="overall-status-text">PASSED</span>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       SUMMARY CARDS
+       ==================================================================== -->
+  <div class="summary-grid" id="summary-grid">
+    <!-- Cards injected by JS -->
+  </div>
+
+  <!-- ====================================================================
+       CATEGORY HEATMAP
+       ==================================================================== -->
+  <div class="section" id="heatmap-section">
+    <div class="section-header">
+      <h2>Category Coverage</h2>
+      <span class="count" id="heatmap-count"></span>
+    </div>
+    <div class="heatmap-grid" id="heatmap-grid">
+      <!-- Cells injected by JS -->
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       TEST RESULTS TABLE
+       ==================================================================== -->
+  <div class="section" id="results-section">
+    <div class="section-header">
+      <h2>Test Results</h2>
+    </div>
+    <div class="filter-bar">
+      <select id="filter-layer">
+        <option value="all">All Layers</option>
+        <option value="backend">Backend</option>
+        <option value="frontend">Frontend</option>
+        <option value="e2e">E2E</option>
+      </select>
+      <select id="filter-status">
+        <option value="all">All Status</option>
+        <option value="pass">Pass</option>
+        <option value="fail">Fail</option>
+        <option value="skip">Skip</option>
+        <option value="flaky">Flaky</option>
+      </select>
+      <select id="filter-category">
+        <option value="all">All Categories</option>
+      </select>
+      <input type="text" id="filter-search" placeholder="Search test name...">
+      <span class="result-count" id="result-count"></span>
+    </div>
+    <div class="results-table-wrap">
+      <table class="results-table" id="results-table">
+        <thead>
+          <tr>
+            <th data-sort="name">Test Name <span class="sort-arrow">&#9650;</span></th>
+            <th data-sort="layer">Layer <span class="sort-arrow">&#9650;</span></th>
+            <th data-sort="category">Category <span class="sort-arrow">&#9650;</span></th>
+            <th data-sort="status">Status <span class="sort-arrow">&#9650;</span></th>
+            <th data-sort="duration">Duration <span class="sort-arrow">&#9650;</span></th>
+            <th data-sort="retries">Retries <span class="sort-arrow">&#9650;</span></th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody">
+          <!-- Rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       FAILURE DETAILS
+       ==================================================================== -->
+  <div class="section" id="failures-section" style="display:none;">
+    <div class="section-header">
+      <h2>Failure Details</h2>
+      <span class="count" id="failure-count"></span>
+    </div>
+    <div id="failure-list">
+      <!-- Cards injected by JS -->
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       FLAKY TESTS
+       ==================================================================== -->
+  <div class="section" id="flaky-section" style="display:none;">
+    <div class="section-header">
+      <h2>Flaky Tests</h2>
+      <span class="count" id="flaky-count"></span>
+    </div>
+    <div class="flaky-list" id="flaky-list">
+      <!-- Items injected by JS -->
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       TREND CHARTS
+       ==================================================================== -->
+  <div class="section" id="trend-section" style="display:none;">
+    <div class="section-header">
+      <h2>Trends</h2>
+      <span class="count" id="trend-count"></span>
+    </div>
+    <div class="chart-grid" id="chart-grid">
+      <!-- Charts injected by JS -->
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       COVERAGE
+       ==================================================================== -->
+  <div class="section" id="coverage-section" style="display:none;">
+    <div class="section-header">
+      <h2>Code Coverage</h2>
+    </div>
+    <div id="coverage-content">
+      <!-- Coverage injected by JS -->
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       FOOTER
+       ==================================================================== -->
+  <div class="report-footer">
+    <span>Generated by <strong>Flent Test Orchestrator</strong> v1.0.0</span>
+    <div class="links">
+      <a href="#" id="link-gap">gap-analysis.md</a>
+      <a href="#" id="link-matrix">coverage-matrix.json</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================================================================
+     DATA INJECTION POINT
+     The generate-report.sh script replaces this block with actual data.
+     ====================================================================== -->
+<script id="report-data">
+// %%REPORT_DATA_START%%
+var REPORT_DATA = {};
+// %%REPORT_DATA_END%%
+</script>
+
+<!-- ======================================================================
+     APPLICATION LOGIC
+     ====================================================================== -->
+<script>
+(function() {
+  'use strict';
+
+  // ========================================================================
+  // DATA ACCESS HELPERS
+  // ========================================================================
+
+  var D = REPORT_DATA || {};
+  var summary = D.summary || {};
+  var summaryData = summary.summary || {};
+  var layerResults = summary.layer_results || {};
+  var backendData = D.backend || null;
+  var frontendData = D.frontend || null;
+  var e2eData = D.e2e || null;
+  var trendData = D.trend || null;
+  var categoryMap = D.category_map || {};
+  var config = D.config || {};
+  var quickFixPatterns = (config.quick_fix_patterns) || {};
+
+  // ========================================================================
+  // UTILITY FUNCTIONS
+  // ========================================================================
+
+  function formatDuration(seconds) {
+    if (seconds == null || seconds === 0) return '--';
+    if (seconds < 60) return seconds + 's';
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return m + 'm ' + s + 's';
+  }
+
+  function pctClass(pct) {
+    if (pct >= 80) return 'good';
+    if (pct >= 60) return 'warning';
+    return 'critical';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function ringSvg(pct, color) {
+    var r = 22;
+    var circ = 2 * Math.PI * r;
+    var offset = circ - (pct / 100) * circ;
+    var colorVar = 'var(--' + color + ')';
+    return '<svg viewBox="0 0 56 56">' +
+      '<circle class="ring-bg" cx="28" cy="28" r="' + r + '"/>' +
+      '<circle class="ring-fg" cx="28" cy="28" r="' + r + '" ' +
+        'stroke="' + colorVar + '" ' +
+        'stroke-dasharray="' + circ + '" ' +
+        'stroke-dashoffset="' + offset + '"/>' +
+      '</svg>';
+  }
+
+  function getQuickFix(errorMsg) {
+    if (!errorMsg) return '';
+    var msg = errorMsg.toLowerCase();
+    var patterns = {
+      'timeout': /timeout|timed out|ETIMEDOUT/i,
+      'network': /ECONNREFUSED|fetch failed|network|supabase/i,
+      'render': /cannot read prop|undefined is not|provider|context/i,
+      'navigation': /navigation|navigate|router|route/i,
+      'permission': /rls|permission|policy|unauthorized|403/i,
+      'mock': /mock|jest\.fn|spy/i,
+      'snapshot': /snapshot|toMatchSnapshot/i,
+      'import': /cannot find module|import|require/i,
+      'act': /act\(\)|not wrapped in act/i,
+      'element': /unable to find|getBy|queryBy|findBy|testID/i,
+      'maestro': /flow|step|tap|assert|visible/i,
+      'assertion': /expect|toBe|toEqual|assert|received/i
+    };
+    for (var key in patterns) {
+      if (patterns[key].test(msg) && quickFixPatterns[key]) {
+        return quickFixPatterns[key];
+      }
+    }
+    return '';
+  }
+
+  function resolveCategory(testName, layer) {
+    if (!testName) return 'unknown';
+    var name = testName.toLowerCase();
+    for (var cat in categoryMap) {
+      var layerFiles = categoryMap[cat][layer] || [];
+      for (var i = 0; i < layerFiles.length; i++) {
+        if (name.indexOf(layerFiles[i].toLowerCase().replace(/\//g, '/')) !== -1 ||
+            layerFiles[i].toLowerCase().indexOf(name) !== -1) {
+          return cat;
+        }
+      }
+    }
+    // Fallback: try keyword matching
+    var keywords = ['auth', 'payment', 'agreement', 'setup', 'waitlist', 'profile',
+                    'dashboard', 'routing', 'security', 'referral', 'onboarding',
+                    'verification', 'utility', 'component', 'service', 'hook'];
+    for (var k = 0; k < keywords.length; k++) {
+      if (name.indexOf(keywords[k]) !== -1) return keywords[k] === 'component' ? 'components' :
+                                                     keywords[k] === 'service' ? 'services' :
+                                                     keywords[k] === 'hook' ? 'hooks' : keywords[k];
+    }
+    return 'other';
+  }
+
+  // ========================================================================
+  // BUILD UNIFIED TEST LIST
+  // ========================================================================
+
+  var allTests = [];
+
+  // Backend tests
+  if (backendData && backendData.files) {
+    backendData.files.forEach(function(f) {
+      allTests.push({
+        name: f.file || f.name || 'unknown',
+        layer: 'backend',
+        category: resolveCategory(f.file || f.name || '', 'backend'),
+        status: f.status || 'unknown',
+        duration: f.duration || 0,
+        attempts: f.attempts || 1,
+        passed: f.passed || 0,
+        failed: f.failed || 0,
+        error: f.error || '',
+        isFlaky: f.status === 'pass' && (f.attempts || 1) > 1
+      });
+    });
+  }
+
+  // Frontend tests — from raw Jest data or summary
+  if (frontendData) {
+    if (frontendData.jest_raw && frontendData.jest_raw.testResults) {
+      frontendData.jest_raw.testResults.forEach(function(suite) {
+        var suiteName = suite.name || '';
+        if (suiteName.indexOf('/rn-app/') !== -1) {
+          suiteName = suiteName.split('/rn-app/')[1];
+        }
+        if (suite.testResults) {
+          suite.testResults.forEach(function(t) {
+            var st = t.status === 'passed' ? 'pass' : t.status === 'failed' ? 'fail' : 'skip';
+            allTests.push({
+              name: t.fullName || t.title || suiteName,
+              layer: 'frontend',
+              category: resolveCategory(suiteName, 'frontend'),
+              status: st,
+              duration: Math.round((t.duration || 0) / 1000),
+              attempts: 1,
+              error: (t.failureMessages || []).join('\n'),
+              isFlaky: false
+            });
+          });
+        } else {
+          var st = suite.status === 'passed' ? 'pass' : suite.status === 'failed' ? 'fail' : 'skip';
+          allTests.push({
+            name: suiteName,
+            layer: 'frontend',
+            category: resolveCategory(suiteName, 'frontend'),
+            status: st,
+            duration: Math.round((suite.endTime - suite.startTime) / 1000) || 0,
+            attempts: frontendData.attempts || 1,
+            error: (suite.message || ''),
+            isFlaky: false
+          });
+        }
+      });
+    } else if (frontendData.failed_suites && frontendData.failed_suites.length > 0) {
+      frontendData.failed_suites.forEach(function(s) {
+        allTests.push({
+          name: s,
+          layer: 'frontend',
+          category: resolveCategory(s, 'frontend'),
+          status: 'fail',
+          duration: 0,
+          attempts: frontendData.attempts || 1,
+          error: '',
+          isFlaky: false
+        });
+      });
+    }
+    // If we have summary counts but no individual tests, add a synthetic entry
+    if (allTests.filter(function(t) { return t.layer === 'frontend'; }).length === 0 && frontendData.summary) {
+      var fs = frontendData.summary;
+      if (fs.total_tests > 0 || fs.total_suites > 0) {
+        for (var p = 0; p < (fs.total_passed || 0); p++) {
+          allTests.push({ name: 'Frontend test #' + (p + 1), layer: 'frontend', category: 'unknown', status: 'pass', duration: 0, attempts: 1, error: '', isFlaky: false });
+        }
+        for (var ff = 0; ff < (fs.total_failed || 0); ff++) {
+          allTests.push({ name: 'Frontend test (failed) #' + (ff + 1), layer: 'frontend', category: 'unknown', status: 'fail', duration: 0, attempts: 1, error: '', isFlaky: false });
+        }
+        for (var ss = 0; ss < (fs.total_skipped || 0); ss++) {
+          allTests.push({ name: 'Frontend test (skipped) #' + (ss + 1), layer: 'frontend', category: 'unknown', status: 'skip', duration: 0, attempts: 1, error: '', isFlaky: false });
+        }
+      }
+    }
+  }
+
+  // E2E tests
+  if (e2eData && e2eData.flows) {
+    e2eData.flows.forEach(function(f) {
+      allTests.push({
+        name: f.flow || f.name || 'unknown',
+        layer: 'e2e',
+        category: resolveCategory(f.flow || f.name || '', 'e2e'),
+        status: f.status || 'unknown',
+        duration: f.duration || 0,
+        attempts: f.attempts || 1,
+        error: f.error || '',
+        screenshot: f.screenshot || '',
+        isFlaky: f.status === 'pass' && (f.attempts || 1) > 1
+      });
+    });
+  }
+
+  // ========================================================================
+  // RENDER HEADER
+  // ========================================================================
+
+  document.getElementById('meta-session').textContent = 'Session: ' + (summary.session_id || '--');
+  document.getElementById('meta-timestamp').textContent = summary.timestamp || '--';
+  document.getElementById('meta-duration').textContent = 'Duration: ' + formatDuration(summary.duration_seconds);
+
+  var gitText = '';
+  if (summary.git_branch) gitText += summary.git_branch;
+  if (summary.git_commit) gitText += (gitText ? ' @ ' : '') + summary.git_commit.substring(0, 8);
+  document.getElementById('meta-git').textContent = gitText || 'No git info';
+
+  var overallBadge = document.getElementById('overall-badge');
+  var overallText = document.getElementById('overall-status-text');
+  if (summary.overall_status === 'pass') {
+    overallBadge.className = 'overall-badge pass';
+    overallText.textContent = 'PASSED';
+    overallBadge.querySelector('svg').innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+  } else {
+    overallBadge.className = 'overall-badge fail';
+    overallText.textContent = 'FAILED';
+    overallBadge.querySelector('svg').innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+  }
+
+  // ========================================================================
+  // RENDER SUMMARY CARDS
+  // ========================================================================
+
+  function buildSummaryCard(title, total, passed, failed, skipped, duration, color) {
+    var rate = total > 0 ? Math.round((passed / total) * 100) : 0;
+    var ring = ringSvg(rate, color || pctClass(rate));
+    return '<div class="summary-card">' +
+      '<div class="ring-container">' + ring +
+        '<div class="ring-label" style="color:var(--' + (color || pctClass(rate)) + ')">' + rate + '%</div>' +
+      '</div>' +
+      '<div class="details">' +
+        '<div class="card-title">' + escapeHtml(title) + '</div>' +
+        '<div class="card-value">' + total + '</div>' +
+        '<div class="card-breakdown">' +
+          '<span class="pass-count">' + passed + ' pass</span>' +
+          '<span class="fail-count">' + failed + ' fail</span>' +
+          (skipped > 0 ? '<span class="skip-count">' + skipped + ' skip</span>' : '') +
+        '</div>' +
+        (duration > 0 ? '<div class="card-duration">' + formatDuration(duration) + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  var gridHtml = '';
+
+  // Total card
+  var totalTests = summaryData.total_tests || allTests.length;
+  var totalPassed = summaryData.total_passed || allTests.filter(function(t) { return t.status === 'pass'; }).length;
+  var totalFailed = summaryData.total_failed || allTests.filter(function(t) { return t.status === 'fail'; }).length;
+  var totalSkipped = summaryData.total_skipped || allTests.filter(function(t) { return t.status === 'skip'; }).length;
+  gridHtml += buildSummaryCard('Total Tests', totalTests, totalPassed, totalFailed, totalSkipped, summary.duration_seconds, 'accent');
+
+  // Backend card
+  if (backendData) {
+    var bs = backendData.summary || {};
+    gridHtml += buildSummaryCard('Backend',
+      bs.total_files || bs.total_tests || 0,
+      bs.total_passed || bs.total_pass || 0,
+      bs.total_failed || bs.total_fail || 0,
+      bs.total_skipped || 0,
+      backendData.duration_seconds || 0
+    );
+  } else {
+    gridHtml += buildSummaryCard('Backend', 0, 0, 0, 0, 0, 'skip');
+  }
+
+  // Frontend card
+  if (frontendData) {
+    var frs = frontendData.summary || {};
+    var feTitle = 'Frontend';
+    if (frs.coverage_pct) feTitle += ' (' + frs.coverage_pct + '% cov)';
+    gridHtml += buildSummaryCard(feTitle,
+      frs.total_tests || frs.total_suites || 0,
+      frs.total_passed || 0,
+      frs.total_failed || 0,
+      frs.total_skipped || 0,
+      frontendData.duration_seconds || 0
+    );
+  } else {
+    gridHtml += buildSummaryCard('Frontend', 0, 0, 0, 0, 0, 'skip');
+  }
+
+  // E2E card
+  if (e2eData) {
+    var es = e2eData.summary || {};
+    gridHtml += buildSummaryCard('E2E',
+      es.total_flows || 0,
+      es.total_passed || 0,
+      es.total_failed || 0,
+      0,
+      e2eData.duration_seconds || 0
+    );
+  } else {
+    gridHtml += buildSummaryCard('E2E', 0, 0, 0, 0, 0, 'skip');
+  }
+
+  document.getElementById('summary-grid').innerHTML = gridHtml;
+
+  // ========================================================================
+  // RENDER CATEGORY HEATMAP
+  // ========================================================================
+
+  var categoryStats = {};
+  allTests.forEach(function(t) {
+    if (!categoryStats[t.category]) {
+      categoryStats[t.category] = { total: 0, passed: 0, failed: 0 };
+    }
+    categoryStats[t.category].total++;
+    if (t.status === 'pass') categoryStats[t.category].passed++;
+    if (t.status === 'fail') categoryStats[t.category].failed++;
+  });
+
+  // Also include categories from map that may have 0 results
+  var allCategories = Object.keys(categoryMap);
+  allCategories.forEach(function(cat) {
+    if (!categoryStats[cat]) {
+      categoryStats[cat] = { total: 0, passed: 0, failed: 0 };
+    }
+  });
+
+  var catKeys = Object.keys(categoryStats).sort();
+  var heatmapHtml = '';
+  catKeys.forEach(function(cat) {
+    var st = categoryStats[cat];
+    var rate = st.total > 0 ? Math.round((st.passed / st.total) * 100) : -1;
+    var cls = rate < 0 ? 'empty' : pctClass(rate);
+    heatmapHtml += '<div class="heatmap-cell ' + cls + '" data-category="' + escapeHtml(cat) + '">' +
+      '<div class="cat-name">' + escapeHtml(cat) + '</div>' +
+      '<div class="cat-rate ' + cls + '">' + (rate >= 0 ? rate + '%' : '--') + '</div>' +
+      '<div class="cat-count">' + st.passed + '/' + st.total + ' tests</div>' +
+    '</div>';
+  });
+  document.getElementById('heatmap-grid').innerHTML = heatmapHtml;
+  document.getElementById('heatmap-count').textContent = catKeys.length + ' categories';
+
+  // Click heatmap cell to filter table
+  document.getElementById('heatmap-grid').addEventListener('click', function(e) {
+    var cell = e.target.closest('.heatmap-cell');
+    if (cell) {
+      var cat = cell.getAttribute('data-category');
+      document.getElementById('filter-category').value = cat;
+      applyFilters();
+      document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
+  // ========================================================================
+  // POPULATE CATEGORY FILTER DROPDOWN
+  // ========================================================================
+
+  var categorySelect = document.getElementById('filter-category');
+  catKeys.forEach(function(cat) {
+    var opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    categorySelect.appendChild(opt);
+  });
+
+  // ========================================================================
+  // RENDER RESULTS TABLE
+  // ========================================================================
+
+  function buildTestRow(test, index) {
+    var statusCls = test.isFlaky ? 'flaky' : test.status;
+    var statusText = test.isFlaky ? 'FLAKY' : test.status.toUpperCase();
+    var retryText = test.attempts > 1 ? test.attempts + 'x' : '-';
+    var retryCls = test.attempts > 1 ? 'retried' : '';
+    var hasError = test.status === 'fail' && (test.error || test.screenshot);
+
+    var html = '<tr data-idx="' + index + '" data-layer="' + test.layer + '" ' +
+      'data-status="' + (test.isFlaky ? 'flaky' : test.status) + '" ' +
+      'data-category="' + escapeHtml(test.category) + '" ' +
+      'data-name="' + escapeHtml(test.name.toLowerCase()) + '" ' +
+      'data-duration="' + test.duration + '">' +
+      '<td class="test-name" title="' + escapeHtml(test.name) + '">' + escapeHtml(test.name) + '</td>' +
+      '<td><span class="layer-badge ' + test.layer + '">' + test.layer + '</span></td>' +
+      '<td style="color:var(--text-secondary);text-transform:capitalize">' + escapeHtml(test.category) + '</td>' +
+      '<td><span class="status-badge ' + statusCls + '">' + statusText + '</span></td>' +
+      '<td style="color:var(--text-secondary)">' + (test.duration > 0 ? test.duration + 's' : '--') + '</td>' +
+      '<td><span class="retry-count ' + retryCls + '">' + retryText + '</span></td>' +
+    '</tr>';
+
+    // Error detail row
+    if (hasError) {
+      var qf = getQuickFix(test.error);
+      html += '<tr class="error-detail-row hidden" data-error-for="' + index + '">' +
+        '<td colspan="6">' +
+        '<div class="error-box">' +
+          '<div class="error-message">' + escapeHtml(test.error ? test.error.split('\n')[0] : 'Test failed') + '</div>' +
+          (test.error && test.error.split('\n').length > 1 ?
+            '<div class="stack-trace">' + escapeHtml(test.error.split('\n').slice(1).join('\n')) + '</div>' : '') +
+        '</div>';
+
+      // Retry timeline
+      if (test.attempts > 1) {
+        html += '<div class="retry-timeline">';
+        for (var a = 1; a <= test.attempts; a++) {
+          var aCls = a < test.attempts ? 'fail' : (test.status === 'pass' ? 'pass' : 'fail');
+          html += '<span class="attempt ' + aCls + '">Attempt ' + a + ': ' + aCls.toUpperCase() + '</span>';
+          if (a < test.attempts) html += '<span class="arrow">&#8594;</span>';
+        }
+        html += '</div>';
+      }
+
+      if (qf) {
+        html += '<div class="quick-fix"><strong>Quick fix:</strong> ' + escapeHtml(qf) + '</div>';
+      }
+
+      if (test.screenshot) {
+        html += '<img class="screenshot-thumb" src="' + test.screenshot + '" alt="Failure screenshot">';
+      }
+
+      html += '</td></tr>';
+    }
+
+    return html;
+  }
+
+  var tbodyHtml = '';
+  allTests.forEach(function(t, i) {
+    tbodyHtml += buildTestRow(t, i);
+  });
+
+  document.getElementById('results-tbody').innerHTML = tbodyHtml;
+
+  // Toggle error detail rows
+  document.getElementById('results-tbody').addEventListener('click', function(e) {
+    var row = e.target.closest('tr[data-idx]');
+    if (!row) return;
+    var idx = row.getAttribute('data-idx');
+    var errorRow = document.querySelector('tr[data-error-for="' + idx + '"]');
+    if (errorRow) {
+      errorRow.classList.toggle('hidden');
+    }
+  });
+
+  // ========================================================================
+  // FILTERING
+  // ========================================================================
+
+  function applyFilters() {
+    var layerVal = document.getElementById('filter-layer').value;
+    var statusVal = document.getElementById('filter-status').value;
+    var categoryVal = document.getElementById('filter-category').value;
+    var searchVal = document.getElementById('filter-search').value.toLowerCase();
+
+    var rows = document.querySelectorAll('#results-tbody tr[data-idx]');
+    var shown = 0;
+
+    rows.forEach(function(row) {
+      var layer = row.getAttribute('data-layer');
+      var status = row.getAttribute('data-status');
+      var category = row.getAttribute('data-category');
+      var name = row.getAttribute('data-name');
+
+      var visible = true;
+      if (layerVal !== 'all' && layer !== layerVal) visible = false;
+      if (statusVal !== 'all' && status !== statusVal) visible = false;
+      if (categoryVal !== 'all' && category !== categoryVal) visible = false;
+      if (searchVal && name.indexOf(searchVal) === -1) visible = false;
+
+      row.classList.toggle('hidden', !visible);
+
+      // Also hide/show error detail row
+      var idx = row.getAttribute('data-idx');
+      var errorRow = document.querySelector('tr[data-error-for="' + idx + '"]');
+      if (errorRow && !visible) {
+        errorRow.classList.add('hidden');
+      }
+
+      if (visible) shown++;
+    });
+
+    document.getElementById('result-count').textContent = shown + ' of ' + rows.length + ' tests';
+  }
+
+  document.getElementById('filter-layer').addEventListener('change', applyFilters);
+  document.getElementById('filter-status').addEventListener('change', applyFilters);
+  document.getElementById('filter-category').addEventListener('change', applyFilters);
+  document.getElementById('filter-search').addEventListener('input', applyFilters);
+
+  applyFilters();
+
+  // ========================================================================
+  // SORTING
+  // ========================================================================
+
+  var currentSort = { column: '', direction: 'asc' };
+
+  document.querySelectorAll('#results-table thead th[data-sort]').forEach(function(th) {
+    th.addEventListener('click', function() {
+      var col = th.getAttribute('data-sort');
+
+      // Toggle direction
+      if (currentSort.column === col) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.column = col;
+        currentSort.direction = 'asc';
+      }
+
+      // Update arrow classes
+      document.querySelectorAll('#results-table thead th').forEach(function(h) {
+        h.classList.remove('sorted-asc', 'sorted-desc');
+      });
+      th.classList.add('sorted-' + currentSort.direction);
+
+      // Sort the allTests array
+      allTests.sort(function(a, b) {
+        var va, vb;
+        switch (col) {
+          case 'name': va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+          case 'layer': va = a.layer; vb = b.layer; break;
+          case 'category': va = a.category; vb = b.category; break;
+          case 'status':
+            var order = { fail: 0, flaky: 1, pass: 2, skip: 3 };
+            va = a.isFlaky ? order.flaky : (order[a.status] != null ? order[a.status] : 4);
+            vb = b.isFlaky ? order.flaky : (order[b.status] != null ? order[b.status] : 4);
+            break;
+          case 'duration': va = a.duration; vb = b.duration; break;
+          case 'retries': va = a.attempts; vb = b.attempts; break;
+          default: va = ''; vb = '';
+        }
+        var cmp = 0;
+        if (typeof va === 'number' && typeof vb === 'number') {
+          cmp = va - vb;
+        } else {
+          cmp = String(va).localeCompare(String(vb));
+        }
+        return currentSort.direction === 'desc' ? -cmp : cmp;
+      });
+
+      // Re-render tbody
+      var html = '';
+      allTests.forEach(function(t, i) { html += buildTestRow(t, i); });
+      document.getElementById('results-tbody').innerHTML = html;
+      applyFilters();
+    });
+  });
+
+  // ========================================================================
+  // RENDER FAILURE DETAILS
+  // ========================================================================
+
+  var failedTests = allTests.filter(function(t) { return t.status === 'fail'; });
+
+  if (failedTests.length > 0) {
+    document.getElementById('failures-section').style.display = '';
+    document.getElementById('failure-count').textContent = failedTests.length + ' failures';
+
+    var failHtml = '';
+    failedTests.forEach(function(t) {
+      var qf = getQuickFix(t.error);
+      failHtml += '<div class="failure-card">' +
+        '<div class="failure-header">' +
+          '<div class="failure-title">' + escapeHtml(t.name) + '</div>' +
+          '<div>' +
+            '<span class="layer-badge ' + t.layer + '">' + t.layer + '</span> ' +
+            '<span class="status-badge fail">FAIL</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="error-box">' +
+          '<div class="error-message">' + escapeHtml(t.error ? t.error.split('\n')[0] : 'Test failed') + '</div>' +
+          (t.error && t.error.split('\n').length > 1 ?
+            '<div class="stack-trace">' + escapeHtml(t.error.split('\n').slice(1).join('\n')) + '</div>' : '') +
+        '</div>';
+
+      if (t.attempts > 1) {
+        failHtml += '<div class="retry-timeline">';
+        for (var a = 1; a <= t.attempts; a++) {
+          failHtml += '<span class="attempt fail">Attempt ' + a + ': FAIL</span>';
+          if (a < t.attempts) failHtml += '<span class="arrow">&#8594;</span>';
+        }
+        failHtml += '</div>';
+      }
+
+      if (qf) {
+        failHtml += '<div class="quick-fix"><strong>Quick fix:</strong> ' + escapeHtml(qf) + '</div>';
+      }
+
+      if (t.screenshot) {
+        failHtml += '<img class="screenshot-thumb" src="' + t.screenshot + '" alt="Failure screenshot">';
+      }
+
+      failHtml += '</div>';
+    });
+
+    document.getElementById('failure-list').innerHTML = failHtml;
+  }
+
+  // ========================================================================
+  // RENDER FLAKY TESTS
+  // ========================================================================
+
+  var flakyTests = allTests.filter(function(t) { return t.isFlaky; });
+
+  if (flakyTests.length > 0) {
+    document.getElementById('flaky-section').style.display = '';
+    document.getElementById('flaky-count').textContent = flakyTests.length + ' flaky tests';
+
+    var flakyHtml = '';
+    flakyTests.forEach(function(t) {
+      var rate = Math.round(((t.attempts - 1) / t.attempts) * 100);
+      var shouldQuarantine = rate >= 30;
+      flakyHtml += '<div class="flaky-item">' +
+        '<div>' +
+          '<div class="flaky-name">' + escapeHtml(t.name) + '</div>' +
+          '<div style="margin-top:4px">' +
+            '<span class="layer-badge ' + t.layer + '">' + t.layer + '</span> ' +
+            '<span class="status-badge flaky">FLAKY</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flaky-meta">' +
+          '<span>' + t.attempts + ' attempts</span>' +
+          '<div class="flaky-rate-bar"><div class="fill" style="width:' + rate + '%"></div></div>' +
+          '<span>' + rate + '% failure rate</span>' +
+          (shouldQuarantine ? '<span class="quarantine-badge">Quarantine</span>' : '') +
+        '</div>' +
+      '</div>';
+    });
+
+    document.getElementById('flaky-list').innerHTML = flakyHtml;
+  }
+
+  // ========================================================================
+  // RENDER TREND CHARTS (SVG)
+  // ========================================================================
+
+  if (trendData && trendData.entries && trendData.entries.length > 1) {
+    document.getElementById('trend-section').style.display = '';
+    document.getElementById('trend-count').textContent = 'Last ' + trendData.entries.length + ' sessions';
+
+    var entries = trendData.entries;
+    var chartW = 360;
+    var chartH = 140;
+    var padX = 40;
+    var padY = 20;
+    var plotW = chartW - padX * 2;
+    var plotH = chartH - padY * 2;
+
+    function buildLineChart(values, label, color, unit, minVal, maxVal) {
+      if (values.length === 0) return '<div class="empty-state">No data</div>';
+
+      var mn = minVal != null ? minVal : Math.min.apply(null, values);
+      var mx = maxVal != null ? maxVal : Math.max.apply(null, values);
+      if (mx === mn) { mx = mn + 1; }
+      var range = mx - mn;
+
+      var points = values.map(function(v, i) {
+        var x = padX + (i / (values.length - 1 || 1)) * plotW;
+        var y = padY + plotH - ((v - mn) / range) * plotH;
+        return x + ',' + y;
+      });
+
+      var polyline = points.join(' ');
+      var lastVal = values[values.length - 1];
+
+      // Grid lines
+      var gridLines = '';
+      for (var g = 0; g <= 4; g++) {
+        var gy = padY + (g / 4) * plotH;
+        var gv = mx - (g / 4) * range;
+        gridLines += '<line x1="' + padX + '" y1="' + gy + '" x2="' + (chartW - padX) + '" y2="' + gy + '" stroke="var(--card-border)" stroke-width="0.5"/>';
+        gridLines += '<text x="' + (padX - 4) + '" y="' + (gy + 3) + '" text-anchor="end" fill="var(--text-muted)" font-size="9">' + Math.round(gv) + '</text>';
+      }
+
+      return '<svg viewBox="0 0 ' + chartW + ' ' + chartH + '" preserveAspectRatio="xMidYMid meet">' +
+        gridLines +
+        '<polyline fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' + polyline + '"/>' +
+        // Area fill
+        '<polygon fill="' + color + '" opacity="0.08" points="' + padX + ',' + (padY + plotH) + ' ' + polyline + ' ' + (padX + plotW) + ',' + (padY + plotH) + '"/>' +
+        // Last value dot
+        '<circle cx="' + (padX + plotW) + '" cy="' + (padY + plotH - ((lastVal - mn) / range) * plotH) + '" r="3" fill="' + color + '"/>' +
+        // Last value label
+        '<text x="' + (padX + plotW) + '" y="' + (padY + plotH - ((lastVal - mn) / range) * plotH - 8) + '" text-anchor="middle" fill="' + color + '" font-size="11" font-weight="700">' + Math.round(lastVal) + (unit || '') + '</text>' +
+      '</svg>';
+    }
+
+    function buildBarChart(entries) {
+      if (entries.length === 0) return '<div class="empty-state">No data</div>';
+
+      var barW = Math.min(12, plotW / entries.length - 2);
+      var maxTotal = Math.max.apply(null, entries.map(function(e) { return e.total_tests || 0; }));
+      if (maxTotal === 0) maxTotal = 1;
+
+      var bars = '';
+      var gridLines = '';
+
+      for (var g = 0; g <= 4; g++) {
+        var gy = padY + (g / 4) * plotH;
+        var gv = maxTotal - (g / 4) * maxTotal;
+        gridLines += '<line x1="' + padX + '" y1="' + gy + '" x2="' + (chartW - padX) + '" y2="' + gy + '" stroke="var(--card-border)" stroke-width="0.5"/>';
+        gridLines += '<text x="' + (padX - 4) + '" y="' + (gy + 3) + '" text-anchor="end" fill="var(--text-muted)" font-size="9">' + Math.round(gv) + '</text>';
+      }
+
+      entries.forEach(function(e, i) {
+        var x = padX + (i / (entries.length - 1 || 1)) * plotW - barW / 2;
+        var lm = e.layer_metrics || {};
+
+        var segments = [
+          { val: (lm.backend || {}).total || 0, color: '#64B5F6' },
+          { val: (lm.frontend || {}).total || 0, color: '#BA68C8' },
+          { val: (lm.e2e || {}).total || 0, color: '#FF9A6D' }
+        ];
+
+        var yOffset = padY + plotH;
+        segments.forEach(function(seg) {
+          var h = (seg.val / maxTotal) * plotH;
+          if (h > 0) {
+            yOffset -= h;
+            bars += '<rect x="' + x + '" y="' + yOffset + '" width="' + barW + '" height="' + h + '" fill="' + seg.color + '" rx="1"/>';
+          }
+        });
+      });
+
+      return '<svg viewBox="0 0 ' + chartW + ' ' + chartH + '" preserveAspectRatio="xMidYMid meet">' +
+        gridLines + bars + '</svg>';
+    }
+
+    var passRates = entries.map(function(e) { return e.pass_rate || 0; });
+    var durations = entries.map(function(e) { return e.duration_seconds || 0; });
+
+    var chartsHtml = '';
+    chartsHtml += '<div class="chart-card"><h3>Pass Rate Over Time</h3>' + buildLineChart(passRates, 'Pass Rate', 'var(--success)', '%', 0, 100) + '</div>';
+    chartsHtml += '<div class="chart-card"><h3>Test Count by Layer</h3>' + buildBarChart(entries) + '</div>';
+    chartsHtml += '<div class="chart-card"><h3>Suite Duration Over Time</h3>' + buildLineChart(durations, 'Duration', 'var(--accent)', 's') + '</div>';
+
+    document.getElementById('chart-grid').innerHTML = chartsHtml;
+  }
+
+  // ========================================================================
+  // RENDER COVERAGE SECTION
+  // ========================================================================
+
+  var coverageData = D.coverage || null;
+  if (!coverageData && frontendData && frontendData.coverage_enabled) {
+    coverageData = frontendData.coverage || null;
+  }
+
+  if (coverageData && coverageData.available) {
+    document.getElementById('coverage-section').style.display = '';
+
+    var overallPct = coverageData.lines ? coverageData.lines.pct : (coverageData.pct || 0);
+    var cls = pctClass(overallPct);
+
+    var covHtml = '<div class="coverage-bar-container">';
+    covHtml += '<div class="coverage-overall">';
+    covHtml += '<span class="cov-pct ' + cls + '">' + overallPct + '%</span>';
+    covHtml += '<div class="progress-bar"><div class="fill ' + cls + '" style="width:' + overallPct + '%"></div></div>';
+
+    if (coverageData.delta != null) {
+      var deltaCls = coverageData.delta > 0 ? 'up' : coverageData.delta < 0 ? 'down' : 'same';
+      var deltaSign = coverageData.delta > 0 ? '+' : '';
+      covHtml += '<span class="coverage-delta ' + deltaCls + '">' + deltaSign + coverageData.delta + '%</span>';
+    }
+
+    covHtml += '</div>';
+
+    // Category breakdown
+    if (coverageData.categories) {
+      covHtml += '<div class="coverage-breakdown">';
+      for (var catName in coverageData.categories) {
+        var catPct = coverageData.categories[catName];
+        var catCls = pctClass(catPct);
+        covHtml += '<div class="coverage-item">' +
+          '<span class="cov-label">' + escapeHtml(catName) + '</span>' +
+          '<div class="progress-bar"><div class="fill ' + catCls + '" style="width:' + catPct + '%"></div></div>' +
+          '<span class="cov-value" style="color:var(--' + catCls + ')">' + catPct + '%</span>' +
+        '</div>';
+      }
+      covHtml += '</div>';
+    }
+
+    covHtml += '</div>';
+    document.getElementById('coverage-content').innerHTML = covHtml;
+  }
+
+  // ========================================================================
+  // HANDLE EMPTY STATE
+  // ========================================================================
+
+  if (allTests.length === 0) {
+    document.getElementById('results-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">No test results available. Run the test orchestrator first.</td></tr>';
+  }
+
+})();
+</script>
+
+</body>
+</html>

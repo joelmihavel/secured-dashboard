@@ -92,27 +92,105 @@ export function PaymentMethodModal({
     onClose();
   }, [clearPayuSessionParams, onClose, initialView]);
 
-  // --- Back handler: from add-method -> selector; from selector -> close ---
+  // --- Back handler: enter-amount/selector -> close; add-method -> selector ---
   const handleBack = useCallback(() => {
-    if (modalView !== 'selector') {
+    if (modalView === 'enter-amount' || modalView === 'selector') {
+      handleClose();
+    } else {
       clearPayuSessionParams();
       setPaymentId('');
       setModalView('selector');
-    } else {
-      handleClose();
     }
   }, [modalView, clearPayuSessionParams, handleClose]);
 
   const handleAmountProceed = useCallback((amount: number) => {
-    usePaymentStore.getState().setAmount(amount);
+    const store = usePaymentStore.getState();
+    store.setAmount(amount);
+    store.setEnteredAmount(amount);
+    if (rentMonth) store.setRentMonth(rentMonth);
     setModalView('selector');
-  }, []);
+  }, [rentMonth]);
 
   const handleEdit = useCallback((methodType: PaymentMethodType, savedMethodId: string) => {
     setEditMethodType(methodType);
     setEditSavedMethodId(savedMethodId);
     setModalView('edit-method');
   }, []);
+
+  // --- Setup handler: navigate to add-method view WITHOUT initiating payment ---
+  const handleSetup = useCallback((methodType: PaymentMethodType) => {
+    const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
+    setCardType(resolvedCardType);
+    const viewMap: Record<PaymentMethodType, ModalView> = {
+      upi: 'add-upi',
+      card: 'add-card',
+      debit_card: 'add-debit-card',
+      netbanking: 'add-netbanking',
+    };
+    setModalView(viewMap[methodType]);
+  }, []);
+
+  // --- On-demand initiate payment (called by add-method children in setup flow) ---
+  const handleInitiateForChild = useCallback(
+    async (methodType: PaymentMethodType): Promise<{ paymentId: string } | null> => {
+      if (!isConnected) {
+        Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
+        return null;
+      }
+      setConfirming();
+      const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
+
+      try {
+        const { data, error } = await initiatePayment({
+          tenancyId,
+          paymentMethod: methodType,
+          cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
+          rentMonth,
+        });
+
+        if (error || !data) {
+          throw new Error(error ?? 'Failed to initiate payment');
+        }
+
+        if (data.payuParams) {
+          const p = data.payuParams as Record<string, string>;
+          setPayuSessionParams({
+            key: p.key,
+            txnid: p.txnid,
+            amount: p.amount,
+            productinfo: p.productinfo,
+            firstname: p.firstname,
+            email: p.email,
+            phone: p.phone,
+            surl: p.surl,
+            furl: p.furl,
+            hash: p.hash,
+            vas_hash: p.vas_for_mobile_sdk_hash,
+            prd_hash: p.payment_related_details_for_mobile_sdk_hash,
+            user_credential: p.user_credential ?? `${p.key}:${p.email}`,
+            udf1: p.udf1,
+            udf2: p.udf2,
+            udf3: p.udf3,
+            udf4: p.udf4,
+            udf5: p.udf5,
+            enforce_paymethod: p.enforce_paymethod,
+          });
+        }
+        setProcessing(data.paymentId);
+        setLastPayment(data.paymentId);
+        setPaymentId(data.paymentId);
+
+        return { paymentId: data.paymentId };
+      } catch (err) {
+        console.error('PaymentMethodModal initiate error:', err);
+        const rawMessage = err instanceof Error ? err.message : 'An error occurred';
+        const errorMessage = sanitizeErrorForUI(rawMessage);
+        Alert.alert('Payment Error', errorMessage);
+        return null;
+      }
+    },
+    [tenancyId, rentMonth, isConnected, setConfirming, setProcessing, setLastPayment, setPayuSessionParams],
+  );
 
   // --- Delete success handler: automatically route to setup after deletion ---
   const handleDeleteSuccess = useCallback((methodType: PaymentMethodType) => {
@@ -229,21 +307,22 @@ export function PaymentMethodModal({
         {modalView === 'selector' && (
           <MethodSelectorContent
             onProceed={handleProceed}
+            onSetup={handleSetup}
             onEdit={handleEdit}
             isInitiating={isInitiating}
           />
         )}
         {modalView === 'add-upi' && (
-          <AddUpiContent paymentId={paymentId} onBack={handleBack} />
+          <AddUpiContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} />
         )}
         {modalView === 'add-card' && (
-          <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" />
+          <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" onInitiatePayment={handleInitiateForChild} />
         )}
         {modalView === 'add-debit-card' && (
-          <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" />
+          <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" onInitiatePayment={handleInitiateForChild} />
         )}
         {modalView === 'add-netbanking' && (
-          <AddNetbankingContent paymentId={paymentId} onBack={handleBack} />
+          <AddNetbankingContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} />
         )}
         {modalView === 'edit-method' && editMethodType && (
           <EditMethodContent

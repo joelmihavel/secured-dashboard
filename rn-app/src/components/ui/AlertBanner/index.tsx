@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Text } from '@/src/components';
+import { Text } from '../Typography';
 import { colors } from '@/src/theme';
 
 export type AlertBannerType = 'error' | 'success';

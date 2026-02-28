@@ -1,0 +1,21 @@
+{
+  "layer": "frontend",
+  "timestamp": "2026-02-28T00:08:00Z",
+  "duration_seconds": 124,
+  "attempts": 1,
+  "summary": {
+    "total_suites": 28,
+    "total_tests": 156,
+    "total_passed": 149,
+    "total_failed": 3,
+    "total_skipped": 4,
+    "pass_rate": 95.51
+  },
+  "failed_suites": [
+    "src/hooks/__tests__/usePaymentFlow.test.ts",
+    "app/(payment)/__tests__/confirm.test.tsx",
+    "src/services/__tests__/payments.test.ts"
+  ],
+  "coverage_enabled": true,
+  "status": "fail"
+}

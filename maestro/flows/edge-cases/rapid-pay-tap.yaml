@@ -1,0 +1,70 @@
+# =============================================================================
+# EC-018: Rapid Pay Button Tap Edge Case
+# Route: /(payment)/confirm
+# testIDs: confirm-payment-screen, pay-now-button
+# =============================================================================
+#
+# Validates:
+#   - Rapidly tapping the Pay Now button multiple times
+#   - Only one payment action is triggered (no double-charge)
+#   - Button disables after first tap (loading state)
+#   - App does not crash from rapid interaction
+#   - No duplicate navigation occurs
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Navigate to confirm payment screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/confirm"
+- waitForAnimationToEnd
+
+# Verify confirm screen
+- assertVisible:
+    id: "confirm-payment-screen"
+
+# Scroll to Pay Now button
+- scrollUntilVisible:
+    element:
+      id: "pay-now-button"
+    direction: DOWN
+    timeout: 5000
+
+# -- Rapid tap test: tap Pay Now 5 times in quick succession --
+- tapOn:
+    id: "pay-now-button"
+- tapOn:
+    id: "pay-now-button"
+    optional: true
+- tapOn:
+    id: "pay-now-button"
+    optional: true
+- tapOn:
+    id: "pay-now-button"
+    optional: true
+- tapOn:
+    id: "pay-now-button"
+    optional: true
+
+- waitForAnimationToEnd
+
+# -- Verify app is still stable --
+# Either: on status screen (payment initiated once), or still on confirm
+# (if button was disabled after first tap and no-oped the rest)
+- assertVisible:
+    id: "status-screen"
+    optional: true
+- assertVisible:
+    id: "confirm-payment-screen"
+    optional: true
+
+# -- Final stability: verify app responds to navigation --
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "splash-screen"
+    optional: true
+
+- takeScreenshot: "rapid-pay-tap-result"

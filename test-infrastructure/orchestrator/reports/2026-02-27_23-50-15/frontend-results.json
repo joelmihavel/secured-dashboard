@@ -1,0 +1,14 @@
+{
+  "layer": "frontend",
+  "timestamp": "2026-02-27T18:20:16Z",
+  "duration_seconds": 0,
+  "attempts": 1,
+  "summary": {
+    "total_suites": 0,
+    "total_tests": 0,
+    "total_passed": 0,
+    "total_failed": 0,
+    "total_skipped": 0,
+    "pass_rate": 0
+  },
+  "failed_suites": [

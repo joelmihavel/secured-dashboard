@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Logo } from './Layout';
-import { DottedGridPattern } from '../patterns';
 import { colors, spacing, radius } from '@/src/theme';
 
 const ANIMATION_DURATION = 300;
@@ -33,7 +32,6 @@ export function SkeletonLoader({ backgroundShape = 'default', showCard = true }:
 
   return (
     <View style={styles.screen}>
-      <DottedGridPattern fadeMask={false} />
       <View style={styles.container}>
         {/* Skeleton header */}
         <Animated.View

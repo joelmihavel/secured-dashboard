@@ -143,9 +143,6 @@ verify_jwt = false
 [functions.landlord-approve]
 verify_jwt = false
 
-[functions.delete-auth-user]
-verify_jwt = false
-
 [functions.seed-test-data]
 verify_jwt = false
 

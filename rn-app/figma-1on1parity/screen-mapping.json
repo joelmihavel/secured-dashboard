@@ -448,6 +448,38 @@
       "tier": 1
     },
     {
+      "figmaNodeId": "769:304279",
+      "screenName": "Add UPI --input state",
+      "route": "(payment)/confirm",
+      "state": "add-upi-input",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "759:299926",
+      "screenName": "Add UPI --error state",
+      "route": "(payment)/confirm",
+      "state": "add-upi-error",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "769:304370",
+      "screenName": "Add Net Banking --input state",
+      "route": "(payment)/confirm",
+      "state": "add-netbanking-input",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
+      "figmaNodeId": "762:303288",
+      "screenName": "Add Net Banking --error state",
+      "route": "(payment)/confirm",
+      "state": "add-netbanking-error",
+      "category": "payment-selection",
+      "tier": 1
+    },
+    {
       "figmaNodeId": "41:9388",
       "screenName": "Payment Successful",
       "route": "(payment)/status",
@@ -838,6 +870,14 @@
       "state": "component-active",
       "category": "payment-method-components",
       "tier": 4
+    },
+    {
+      "figmaNodeId": "773:11937",
+      "screenName": "Edit Method / Delete Card",
+      "route": "(payment)/confirm",
+      "state": "edit-method",
+      "category": "payment-selection",
+      "tier": 1
     }
   ],
   "gaps": {

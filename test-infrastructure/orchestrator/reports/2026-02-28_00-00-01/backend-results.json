@@ -1,0 +1,28 @@
+{
+  "layer": "backend",
+  "timestamp": "2026-02-28T00:05:00Z",
+  "duration_seconds": 47,
+  "summary": {
+    "total_files": 12,
+    "total_passed": 38,
+    "total_failed": 2,
+    "total_skipped": 1,
+    "pass_rate": 92.68
+  },
+  "files": [
+    {"file": "auth-otp.test.ts", "status": "pass", "passed": 5, "failed": 0, "skipped": 0, "duration": 3, "attempts": 1},
+    {"file": "initiate-payment.test.ts", "status": "pass", "passed": 4, "failed": 0, "skipped": 0, "duration": 4, "attempts": 2},
+    {"file": "payment-webhook.test.ts", "status": "pass", "passed": 3, "failed": 0, "skipped": 0, "duration": 3, "attempts": 1},
+    {"file": "payment-flow.test.ts", "status": "fail", "passed": 2, "failed": 1, "skipped": 0, "duration": 5, "attempts": 3, "error": "AssertionError: Expected payment status to be 'captured' but received 'pending'\n    at Object.<anonymous> (payment-flow.test.ts:42:14)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)"},
+    {"file": "payment-methods-refunds.test.ts", "status": "pass", "passed": 3, "failed": 0, "skipped": 0, "duration": 4, "attempts": 1},
+    {"file": "upload-document.test.ts", "status": "pass", "passed": 3, "failed": 0, "skipped": 0, "duration": 3, "attempts": 1},
+    {"file": "confirm-extraction.test.ts", "status": "pass", "passed": 2, "failed": 0, "skipped": 0, "duration": 2, "attempts": 1},
+    {"file": "verify-bank.test.ts", "status": "pass", "passed": 3, "failed": 0, "skipped": 0, "duration": 4, "attempts": 1},
+    {"file": "verify-utility.test.ts", "status": "pass", "passed": 3, "failed": 0, "skipped": 0, "duration": 3, "attempts": 1},
+    {"file": "get-waitlist-status.test.ts", "status": "pass", "passed": 4, "failed": 0, "skipped": 1, "duration": 2, "attempts": 1},
+    {"file": "delete-account.test.ts", "status": "pass", "passed": 3, "failed": 0, "skipped": 0, "duration": 3, "attempts": 1},
+    {"file": "security-tests.test.ts", "status": "fail", "passed": 3, "failed": 1, "skipped": 0, "duration": 6, "attempts": 3, "error": "Error: RLS policy violation on profiles table: INSERT denied for anon role\n    at assertPolicy (security-tests.test.ts:18:5)\n    at runTest (security-tests.test.ts:31:9)"}
+  ],
+  "failed_files": ["payment-flow.test.ts", "security-tests.test.ts"],
+  "status": "fail"
+}

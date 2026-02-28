@@ -180,12 +180,23 @@ function sleep(ms: number): Promise<void> {
  */
 export const NOTIFICATION_ROUTES: Record<string, string> = {
   waitlist_approved: '/(waitlist)/approved',
+  waitlist_rejected: '/(waitlist)',
   agreement_reviewed: '/(waitlist)',
   payment_success: '/(payment)/status',
   payment_failed: '/(payment)/status',
+  rent_due: '/(payment)/enter-rent',
+  rent_due_tomorrow: '/(payment)/enter-rent',
+  rent_overdue: '/(payment)/enter-rent',
+  settlement_complete: '/(main)',
+  settlement_failed: '/(main)',
   landlord_approved: '/(setup)/pending-steps',
+  landlord_confirmed: '/(setup)/pending-steps',
+  landlord_rejected: '/(setup)/invite-landlord',
   new_cashback: '/(main)',
   rent_reminder: '/(payment)/confirm',
+  reminder_utility: '/(setup)/add-utility',
+  reminder_landlord_invite: '/(setup)/invite-landlord',
+  reminder_agreement: '/(agreement)/upload',
 };
 
 // ==============================================

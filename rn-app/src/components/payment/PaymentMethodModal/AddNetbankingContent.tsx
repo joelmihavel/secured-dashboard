@@ -4,7 +4,8 @@
  * Extracted from add-netbanking.tsx for use inside the PaymentMethodModal.
  * Renders inside the modal panel (no Screen wrapper, no safe area).
  *
- * Flow: search/select bank -> proceed (executes payment via SDK).
+ * Flow: popular chip / trigger → Modal picker → select bank → proceed.
+ * Bank picker uses country-picker-style pageSheet Modal (matching PhoneInput).
  */
 
 import React, { useCallback, useState, useMemo } from 'react';
@@ -13,14 +14,18 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  Pressable,
+  Modal,
+  SafeAreaView,
   Alert,
+  TextInput as RNTextInput,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { Text, PrimaryButton, TextInput, BackButton } from '@/src/components';
+import { Text } from '@/src/components/ui/Typography';
+import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Text as RNText } from 'react-native';
-import { RadioButton } from '@/src/components/payment/RadioButton';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
 import { useBankList } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
@@ -41,6 +46,14 @@ const FIGMA_COLORS = {
   popularBankBg: colors.black[500],
   selectedBorder: colors.brand[500],
   divider: colors.black[400],
+  placeholder: '#A9A9A9',
+  accent: '#FF9A6D',
+  triggerBg: '#202020',
+  triggerBorder: '#4D4D4D',
+  modalBg: '#131313',
+  searchBg: '#202020',
+  searchBorder: '#2A2A2A',
+  rowBorder: '#2A2A2A',
 };
 
 // ==============================================
@@ -78,27 +91,20 @@ function PopularBankChip({
 }
 
 // ==============================================
-// BANK ROW
+// CHEVRON DOWN ICON
 // ==============================================
 
-function BankRow({
-  bank,
-  isSelected,
-  onPress,
-}: {
-  bank: BankInfo;
-  isSelected: boolean;
-  onPress: () => void;
-}) {
+function ChevronDown({ color = FIGMA_COLORS.placeholder }: { color?: string }) {
   return (
-    <TouchableOpacity
-      style={styles.bankRow}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.bankRowText}>{bank.name}</Text>
-      <RadioButton isSelected={isSelected} />
-    </TouchableOpacity>
+    <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+      <Path
+        d="M4 6L8 10L12 6"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
   );
 }
 
@@ -111,13 +117,15 @@ function toBankInfo(b: NetbankingBank): BankInfo {
   return { code: b.bank_code, name: b.bank_name, shortName: b.short_name ?? undefined, isPopular: b.is_popular };
 }
 
-export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProps) {
+export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: AddMethodContentProps) {
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
-  const amount = sessionParams?.amount ?? '0';
+  const storedAmount = usePaymentStore((s) => s.amount);
+  const amount = sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0');
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedBankCode, setSelectedBankCode] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
 
   const { executePayment } = usePaymentFlow();
 
@@ -129,144 +137,135 @@ export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProp
   );
   const popularBanks = useMemo(() => banks.filter(b => b.isPopular), [banks]);
 
-  const filteredBanks = useMemo(() => {
-    if (!searchQuery.trim()) return banks;
-    const lower = searchQuery.toLowerCase().trim();
+  const selectedBank = useMemo(
+    () => banks.find(b => b.code === selectedBankCode),
+    [banks, selectedBankCode],
+  );
+
+  const pickerFilteredBanks = useMemo(() => {
+    if (!pickerSearch.trim()) return banks;
+    const lower = pickerSearch.toLowerCase().trim();
     return banks.filter(
       (b) =>
         b.name.toLowerCase().includes(lower) ||
         b.code.toLowerCase().includes(lower) ||
         (b.shortName && b.shortName.toLowerCase().includes(lower)),
     );
-  }, [searchQuery, banks]);
-  const isSearchActive = searchQuery.trim().length > 0;
+  }, [pickerSearch, banks]);
 
   const handleSelectBank = useCallback(
     (code: string) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setSelectedBankCode((prev) => (prev === code ? null : code));
+      setSelectedBankCode(code);
     },
     [],
   );
 
+  const handlePickerSelect = useCallback(
+    (code: string) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setSelectedBankCode(code);
+      setShowPicker(false);
+    },
+    [],
+  );
+
+  const handleOpenPicker = useCallback(() => {
+    setPickerSearch('');
+    setShowPicker(true);
+  }, []);
+
   const handleProceed = useCallback(async () => {
     if (!selectedBankCode || isSubmitting) return;
-
-    if (!sessionParams) {
-      Alert.alert('Session Expired', 'Please go back and try again.');
-      return;
-    }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsSubmitting(true);
 
+    let currentPaymentId = paymentId;
+
+    // Setup flow: initiate payment first if no paymentId yet
+    if (!currentPaymentId && onInitiatePayment) {
+      const result = await onInitiatePayment('netbanking');
+      if (!result) {
+        setIsSubmitting(false);
+        return;
+      }
+      currentPaymentId = result.paymentId;
+    }
+
+    // Re-read sessionParams after potential initiatePayment call
+    const currentSessionParams = usePaymentStore.getState().payuSessionParams;
+    if (!currentSessionParams) {
+      Alert.alert('Session Error', 'Please go back and try again.');
+      setIsSubmitting(false);
+      return;
+    }
+
     const outcome = await executePayment(
       'NB',
       { bankcode: selectedBankCode },
-      paymentId,
+      currentPaymentId,
       () => {},
     );
 
     if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
       setIsSubmitting(false);
     }
-  }, [selectedBankCode, sessionParams, paymentId, isSubmitting, executePayment]);
-
-  const renderBankItem = useCallback(
-    ({ item }: { item: BankInfo }) => (
-      <BankRow
-        bank={item}
-        isSelected={selectedBankCode === item.code}
-        onPress={() => handleSelectBank(item.code)}
-      />
-    ),
-    [selectedBankCode, handleSelectBank],
-  );
-
-  const keyExtractor = useCallback((item: BankInfo) => item.code, []);
-
-  const ListHeader = useMemo(
-    () => (
-      <View style={styles.listHeader}>
-        {/* Popular Banks (hidden during search) */}
-        {!isSearchActive && popularBanks.length > 0 && (
-          <>
-            <Text style={styles.sectionLabel}>Popular Banks</Text>
-            <View style={styles.popularBanksRow}>
-              {popularBanks.map((bank) => (
-                <PopularBankChip
-                  key={bank.code}
-                  bank={bank}
-                  isSelected={selectedBankCode === bank.code}
-                  onPress={() => handleSelectBank(bank.code)}
-                />
-              ))}
-            </View>
-            <View style={styles.sectionDivider} />
-            <Text style={styles.sectionLabel}>All Banks</Text>
-          </>
-        )}
-      </View>
-    ),
-    [isSearchActive, selectedBankCode, handleSelectBank],
-  );
-
-  const ListFooter = useMemo(
-    () => (
-      <View style={styles.listFooter}>
-        <Text style={styles.footerText}>
-          Don't see your bank? Try paying with UPI or Card instead.
-        </Text>
-      </View>
-    ),
-    [],
-  );
+  }, [selectedBankCode, sessionParams, paymentId, isSubmitting, executePayment, onInitiatePayment]);
 
   return (
     <View style={styles.container}>
-      {/* Header area (scrolls with content conceptually, but pinned above FlatList) */}
+      {/* Header */}
       <View style={styles.headerSection}>
-        {/* Back Button */}
         <BackButton
           onPress={onBack}
           style={styles.backButton}
           color={FIGMA_COLORS.white}
         />
 
-        {/* Title */}
         <RNText style={styles.title}>
           {'Add your\n'}
           <RNText style={styles.titleAccent}>Net Banking</RNText>
         </RNText>
-
-        {/* Search */}
-        <View style={styles.searchContainer}>
-          <TextInput
-            label=""
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search banks..."
-            testID="modal-bank-search-input"
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-          />
-        </View>
       </View>
 
-      {/* Bank List */}
-      <FlatList
-        data={filteredBanks}
-        renderItem={renderBankItem}
-        keyExtractor={keyExtractor}
-        ListHeaderComponent={ListHeader}
-        ListFooterComponent={ListFooter}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        keyboardShouldPersistTaps="handled"
-        ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
-        style={styles.flatList}
-      />
+      {/* Popular Banks */}
+      {popularBanks.length > 0 && (
+        <View style={styles.popularSection}>
+          <Text style={styles.sectionLabel}>Popular Banks</Text>
+          <View style={styles.popularBanksRow}>
+            {popularBanks.map((bank) => (
+              <PopularBankChip
+                key={bank.code}
+                bank={bank}
+                isSelected={selectedBankCode === bank.code}
+                onPress={() => handleSelectBank(bank.code)}
+              />
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Bank Selector Trigger */}
+      <View style={styles.triggerSection}>
+        <Text style={styles.sectionLabel}>Select Bank</Text>
+        <Pressable
+          style={styles.trigger}
+          onPress={handleOpenPicker}
+          testID="bank-picker-trigger"
+        >
+          <Text
+            style={[
+              styles.triggerText,
+              selectedBank && styles.triggerTextSelected,
+            ]}
+            numberOfLines={1}
+          >
+            {selectedBank ? selectedBank.name : 'Select your bank'}
+          </Text>
+          <ChevronDown color={selectedBank ? FIGMA_COLORS.white : FIGMA_COLORS.placeholder} />
+        </Pressable>
+      </View>
 
       {/* Proceed Button */}
       <View style={styles.buttonSection}>
@@ -281,6 +280,84 @@ export function AddNetbankingContent({ paymentId, onBack }: AddMethodContentProp
           You may receive a verification message to confirm your bank account and unlock benefits.
         </Text>
       </View>
+
+      {/* Bank Picker Modal — pageSheet style matching PhoneInput */}
+      <Modal
+        visible={showPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPicker(false)}
+      >
+        <SafeAreaView style={pickerStyles.container}>
+          {/* Header */}
+          <View style={pickerStyles.header}>
+            <Text style={pickerStyles.title}>Select Bank</Text>
+            <TouchableOpacity onPress={() => setShowPicker(false)}>
+              <Text style={pickerStyles.doneButton}>Done</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Search */}
+          <View style={pickerStyles.searchContainer}>
+            <RNTextInput
+              value={pickerSearch}
+              onChangeText={setPickerSearch}
+              placeholder="Search banks..."
+              placeholderTextColor={FIGMA_COLORS.placeholder}
+              style={pickerStyles.searchInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              testID="bank-picker-search"
+            />
+          </View>
+
+          {/* Bank List */}
+          <FlatList
+            data={pickerFilteredBanks}
+            keyExtractor={(item) => item.code}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => {
+              const isSelected = selectedBankCode === item.code;
+              return (
+                <TouchableOpacity
+                  style={[
+                    pickerStyles.row,
+                    isSelected && pickerStyles.rowSelected,
+                  ]}
+                  onPress={() => handlePickerSelect(item.code)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      pickerStyles.bankName,
+                      isSelected && pickerStyles.bankNameSelected,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                  {isSelected && (
+                    <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+                      <Path
+                        d="M3 8L6.5 11.5L13 5"
+                        stroke={FIGMA_COLORS.accent}
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </Svg>
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={pickerStyles.emptyState}>
+                <Text style={pickerStyles.emptyText}>No banks found</Text>
+              </View>
+            }
+          />
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -293,11 +370,9 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 48,
     paddingTop: 16,
-    // Let FlatList handle its own scroll; limit overall height
-    maxHeight: 600,
   },
   headerSection: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   backButton: {
     width: 40,
@@ -306,9 +381,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 24,
   },
-  searchContainer: {
-    marginTop: 8,
-  },
   title: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 28,
@@ -316,20 +388,13 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: colors.white,
     textAlign: 'left',
-    marginBottom: 32,
   },
   titleAccent: {
     color: colors.brand[500],
   },
-  flatList: {
-    flexGrow: 0,
-  },
-  listContent: {
-    paddingBottom: 16,
-  },
-  listHeader: {
+  popularSection: {
     gap: 12,
-    marginBottom: 8,
+    marginBottom: 24,
   },
   sectionLabel: {
     fontFamily: 'PlusJakartaSans-Medium',
@@ -364,33 +429,31 @@ const styles = StyleSheet.create({
   popularBankTextSelected: {
     color: FIGMA_COLORS.selectedBorder,
   },
-  sectionDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: FIGMA_COLORS.divider,
-    marginVertical: 8,
+  triggerSection: {
+    gap: 8,
+    marginBottom: 24,
   },
-  bankRow: {
+  trigger: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 4,
+    justifyContent: 'space-between',
+    backgroundColor: FIGMA_COLORS.triggerBg,
+    borderWidth: 1,
+    borderColor: FIGMA_COLORS.triggerBorder,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
-  bankRowText: {
+  triggerText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.neutral[300],
+    fontSize: 16,
+    lineHeight: 24,
+    color: FIGMA_COLORS.placeholder,
     flex: 1,
-    marginRight: 12,
+    marginRight: 8,
   },
-  rowDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: FIGMA_COLORS.divider,
-  },
-  listFooter: {
-    paddingTop: 16,
-    paddingBottom: 8,
+  triggerTextSelected: {
+    color: colors.white,
   },
   footerText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -400,7 +463,82 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   buttonSection: {
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 24,
+  },
+});
+
+// ==============================================
+// PICKER MODAL STYLES (matches PhoneInput pattern)
+// ==============================================
+
+const pickerStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: FIGMA_COLORS.modalBg,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: FIGMA_COLORS.rowBorder,
+  },
+  title: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 18,
+    color: '#DDDDDD',
+  },
+  doneButton: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 16,
+    color: FIGMA_COLORS.accent,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  searchInput: {
+    backgroundColor: FIGMA_COLORS.searchBg,
+    borderWidth: 1,
+    borderColor: FIGMA_COLORS.searchBorder,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 16,
+    color: colors.white,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: FIGMA_COLORS.rowBorder,
+  },
+  rowSelected: {
+    backgroundColor: '#1A1A1A',
+  },
+  bankName: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 16,
+    color: '#DDDDDD',
+    flex: 1,
+  },
+  bankNameSelected: {
+    color: FIGMA_COLORS.accent,
+  },
+  emptyState: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    color: FIGMA_COLORS.placeholder,
   },
 });

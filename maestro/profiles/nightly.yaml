@@ -1,0 +1,113 @@
+# =============================================================================
+# Maestro Profile: nightly
+# =============================================================================
+# Maximum coverage run. All flows + journeys + edge cases. Runs every night
+# at 2 AM IST (8:30 PM UTC). Collects full artifacts including video
+# recordings for debugging flaky tests.
+#
+# Target execution time: < 25 minutes
+# Retries: 3 per flow (aggressive retry for full stability picture)
+# =============================================================================
+
+name: "Nightly (Full + Edge Cases + Video)"
+profile: nightly
+
+# Everything: screens + journeys + edge cases
+flows:
+  # Auth flows
+  - "flows/auth/beta-splash.yaml"
+  - "flows/auth/splash.yaml"
+  - "flows/auth/carousel.yaml"
+  - "flows/auth/sign-up.yaml"
+  - "flows/auth/otp.yaml"
+  - "flows/auth/otp-error.yaml"
+  # Waitlist
+  - "flows/waitlist/index.yaml"
+  # Agreement
+  - "flows/agreement/upload.yaml"
+  - "flows/agreement/review.yaml"
+  # Setup
+  - "flows/setup/index.yaml"
+  - "flows/setup/add-bank.yaml"
+  - "flows/setup/add-utility.yaml"
+  - "flows/setup/add-utility-skip.yaml"
+  - "flows/setup/invite-landlord.yaml"
+  - "flows/setup/pending-steps.yaml"
+  # Main
+  - "flows/main/home.yaml"
+  - "flows/main/dashboard-states.yaml"
+  # Payment
+  - "flows/payment/first-rent.yaml"
+  - "flows/payment/enter-rent.yaml"
+  - "flows/payment/method-selector.yaml"
+  - "flows/payment/add-upi.yaml"
+  - "flows/payment/add-card.yaml"
+  - "flows/payment/add-netbanking.yaml"
+  - "flows/payment/confirm.yaml"
+  - "flows/payment/status-pending.yaml"
+  - "flows/payment/status-success.yaml"
+  - "flows/payment/status-failed.yaml"
+  - "flows/payment/status-refunded.yaml"
+  # Profile
+  - "flows/profile/index.yaml"
+  - "flows/profile/edit.yaml"
+  - "flows/profile/payment-methods.yaml"
+  - "flows/profile/agreement.yaml"
+  # Routing
+  - "flows/routing/auth-guard.yaml"
+  - "flows/routing/auth-guard-all.yaml"
+  - "flows/routing/deep-links.yaml"
+  # Edge cases
+  - "flows/edge-cases/deep-link-invalid.yaml"
+  - "flows/edge-cases/otp-error-states.yaml"
+  - "flows/edge-cases/payment-back-button.yaml"
+  - "flows/edge-cases/payment-zero-amount.yaml"
+  - "flows/edge-cases/rapid-pay-tap.yaml"
+  # Journey flows
+  - "journeys/new-user-onboarding.yaml"
+  - "journeys/make-payment.yaml"
+  - "journeys/payment-card.yaml"
+  - "journeys/payment-netbanking.yaml"
+  - "journeys/manage-profile.yaml"
+  - "journeys/profile-management-full.yaml"
+  - "journeys/sign-out-relogin.yaml"
+  - "journeys/skip-setup.yaml"
+  - "journeys/crash-recovery-payment.yaml"
+
+# Extended timeout for complex flows and edge cases
+timeout: 180
+
+# 3 retries -- aggressive to get true pass/fail signal
+retry:
+  maxRetries: 3
+  retryOnFailure: true
+
+# Full artifact collection including video
+artifacts:
+  screenshots:
+    enabled: true
+    onFailure: true
+    onSuccess: true
+  video:
+    enabled: true
+  logs:
+    enabled: true
+
+# All devices for maximum coverage
+devices:
+  - platform: iOS
+    model: "iPhone 16 Pro"
+    osVersion: "18"
+  - platform: iOS
+    model: "iPhone 15"
+    osVersion: "17"
+  - platform: Android
+    model: "Pixel 8"
+    osVersion: "34"
+  - platform: Android
+    model: "Pixel 7"
+    osVersion: "33"
+
+# Continue on failure to collect full results
+executionOrder:
+  continueOnFailure: true

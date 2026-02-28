@@ -1,0 +1,68 @@
+# =============================================================================
+# UI-048: Payment Methods Screen Functional Flow
+# Route: /(profile)/payment-methods
+# Figma: Payment Methods Management
+# testIDs: payment-methods-screen
+# =============================================================================
+#
+# Validates:
+#   - Payment methods screen renders with testID
+#   - "Payment Methods" header title is visible
+#   - Back button is functional
+#   - Empty state shows message when no methods saved
+#   - Saved methods list renders with method cards
+#   - Each card shows method type icon, type name, and details
+#   - Default badge displays on default method
+#   - "Set default" button visible on non-default methods
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to payment-methods screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///profile/payment-methods"
+- waitForAnimationToEnd
+
+# -- Verify screen rendered --
+- assertVisible:
+    id: "payment-methods-screen"
+
+# -- Verify header --
+- assertVisible: "Payment Methods"
+
+# -- Check for saved methods or empty state --
+# If no methods saved, empty state text should appear
+- assertVisible:
+    text: "No saved payment methods"
+    optional: true
+
+# If methods are saved, verify method card structure
+- assertVisible:
+    text: "UPI"
+    optional: true
+- assertVisible:
+    text: "Credit"
+    optional: true
+- assertVisible:
+    text: "Debit"
+    optional: true
+- assertVisible:
+    text: "Net Banking"
+    optional: true
+
+# Verify default badge if any method is default
+- assertVisible:
+    text: "Default"
+    optional: true
+
+# Verify "Set default" button on non-default method
+- assertVisible:
+    text: "Set default"
+    optional: true
+
+# -- Test back navigation --
+- back
+- waitForAnimationToEnd
+
+- takeScreenshot: "payment-methods-view"

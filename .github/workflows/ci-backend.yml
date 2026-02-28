@@ -18,7 +18,7 @@ on:
       - '.github/workflows/ci-backend.yml'
 
 env:
-  SUPABASE_PROJECT_ID: uowjtrzmszuaiokqxgir
+  SUPABASE_PROJECT_ID: zqlowjveyqiagnbmfwsb
   DENO_VERSION: v1.x
   # Use the existing v2-backend-dev Supabase branch for all tests
   SUPABASE_BRANCH_NAME: v2-backend-dev
@@ -30,6 +30,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -284,6 +285,7 @@ jobs:
     name: Claude Code Review
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
       pull-requests: write

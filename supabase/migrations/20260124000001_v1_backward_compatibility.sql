@@ -94,22 +94,30 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
 -- ==============================================
 
 -- Sync phone to phone_number for existing users
-UPDATE public.users
-SET phone_number = phone
-WHERE phone_number IS NULL AND phone IS NOT NULL;
+DO $$ BEGIN
+  UPDATE public.users SET phone_number = phone
+  WHERE phone_number IS NULL AND phone IS NOT NULL;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- Sync onboarding_completed to is_onboarded
-UPDATE public.users
-SET is_onboarded = onboarding_completed
-WHERE is_onboarded = false AND onboarding_completed = true;
+DO $$ BEGIN
+  UPDATE public.users SET is_onboarded = onboarding_completed
+  WHERE is_onboarded = false AND onboarding_completed = true;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- Sync kyc_status to user_status (approximate mapping)
-UPDATE public.users SET user_status = CASE
-  WHEN kyc_status = 'verified' THEN 'approved'::user_status_enum
-  WHEN kyc_status = 'failed' THEN 'not_eligible'::user_status_enum
-  ELSE 'signed_up'::user_status_enum
-END
-WHERE user_status = 'signed_up' AND kyc_status != 'pending';
+-- Guarded: main may already have correct types from v1
+DO $$ BEGIN
+  UPDATE public.users SET user_status = CASE
+    WHEN kyc_status = 'verified' THEN 'approved'::user_status_enum
+    WHEN kyc_status = 'failed' THEN 'not_eligible'::user_status_enum
+    ELSE 'signed_up'::user_status_enum
+  END
+  WHERE user_status = 'signed_up' AND kyc_status != 'pending';
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- ==============================================
 -- TRIGGER: Sync phone <-> phone_number bidirectionally
@@ -137,12 +145,13 @@ BEGIN
   END IF;
 
   -- Sync kyc_status -> user_status (one-way: V2 is source of truth)
+  -- Use text values to avoid type mismatch between user_status and user_status_enum
   IF NEW.kyc_status IS DISTINCT FROM OLD.kyc_status THEN
     NEW.user_status := CASE NEW.kyc_status
-      WHEN 'verified' THEN 'approved'::user_status_enum
-      WHEN 'failed' THEN 'not_eligible'::user_status_enum
-      WHEN 'in_progress' THEN 'waitlisted'::user_status_enum
-      ELSE 'signed_up'::user_status_enum
+      WHEN 'verified' THEN 'approved'
+      WHEN 'failed' THEN 'not_eligible'
+      WHEN 'in_progress' THEN 'waitlisted'
+      ELSE 'signed_up'
     END;
     NEW.status_updated_at := NOW();
   END IF;
@@ -209,7 +218,7 @@ BEGIN
     v_phone,
     -- V1: store normalized 10-digit phone
     v_normalized_phone,
-    'signed_up'::user_status_enum,
+    'signed_up',
     false,  -- is_onboarded
     false,  -- is_role_locked
     true,   -- is_active
@@ -247,6 +256,10 @@ GRANT EXECUTE ON FUNCTION handle_new_user() TO postgres, service_role;
 -- ==============================================
 -- Maps V2's extracted_rental_info to V1's waitlist table format
 -- iOS app queries this view instead of the old waitlist table
+
+-- Drop existing waitlist table/view if it exists (v1 had it as a table, v2 replaces with view)
+DROP TABLE IF EXISTS public.waitlist CASCADE;
+DROP VIEW IF EXISTS public.waitlist CASCADE;
 
 CREATE OR REPLACE VIEW public.waitlist AS
 SELECT
@@ -341,22 +354,30 @@ CREATE TABLE IF NOT EXISTS public.waitlist_entries (
 -- Enable RLS
 ALTER TABLE public.waitlist_entries ENABLE ROW LEVEL SECURITY;
 
--- RLS policies
-CREATE POLICY waitlist_entries_select_own ON public.waitlist_entries
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
+-- RLS policies (guarded for idempotency)
+DO $$ BEGIN
+  CREATE POLICY waitlist_entries_select_own ON public.waitlist_entries
+    FOR SELECT TO authenticated USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY waitlist_entries_insert_own ON public.waitlist_entries
-  FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY waitlist_entries_insert_own ON public.waitlist_entries
+    FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY waitlist_entries_update_own ON public.waitlist_entries
-  FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id AND status = 'pending_review');
+DO $$ BEGIN
+  CREATE POLICY waitlist_entries_update_own ON public.waitlist_entries
+    FOR UPDATE TO authenticated USING (auth.uid() = user_id AND status = 'pending_review');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY waitlist_entries_service_all ON public.waitlist_entries
-  FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY waitlist_entries_service_all ON public.waitlist_entries
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Trigger to sync waitlist_entries -> extracted_rental_info
 CREATE OR REPLACE FUNCTION sync_waitlist_to_extracted_rental_info()
@@ -385,6 +406,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS waitlist_entries_sync_trigger ON public.waitlist_entries;
 CREATE TRIGGER waitlist_entries_sync_trigger
   AFTER INSERT ON public.waitlist_entries
   FOR EACH ROW
@@ -395,6 +417,10 @@ CREATE TRIGGER waitlist_entries_sync_trigger
 -- ==============================================
 -- V1 stores party names in separate rental_parties table
 -- V2 stores them directly in extracted_rental_info columns
+
+-- Drop existing rental_parties table/view if it exists (v1 had it as a table, v2 replaces with view)
+DROP TABLE IF EXISTS public.rental_parties CASCADE;
+DROP VIEW IF EXISTS public.rental_parties CASCADE;
 
 CREATE OR REPLACE VIEW public.rental_parties AS
 SELECT
@@ -439,14 +465,23 @@ CREATE TABLE IF NOT EXISTS public.deleted_users_archive (
   auth_metadata JSONB NOT NULL DEFAULT '{}',
   deletion_reason TEXT DEFAULT 'user_requested',
   deletion_initiated_by TEXT DEFAULT 'user',
-
-  -- V2 additions: archive more data
   tenancies_data JSONB DEFAULT '[]',
   payments_data JSONB DEFAULT '[]',
-  bank_accounts_data JSONB DEFAULT '[]',
-
-  CONSTRAINT deleted_users_archive_original_user_id_key UNIQUE (original_user_id)
+  bank_accounts_data JSONB DEFAULT '[]'
 );
+
+-- Add unique constraint if not exists
+DO $$ BEGIN
+  ALTER TABLE public.deleted_users_archive
+    ADD CONSTRAINT deleted_users_archive_original_user_id_key UNIQUE (original_user_id);
+EXCEPTION WHEN duplicate_table THEN NULL;
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Add columns that may not exist on pre-existing table
+ALTER TABLE public.deleted_users_archive ADD COLUMN IF NOT EXISTS tenancies_data JSONB DEFAULT '[]';
+ALTER TABLE public.deleted_users_archive ADD COLUMN IF NOT EXISTS payments_data JSONB DEFAULT '[]';
+ALTER TABLE public.deleted_users_archive ADD COLUMN IF NOT EXISTS bank_accounts_data JSONB DEFAULT '[]';
 
 CREATE INDEX IF NOT EXISTS idx_deleted_users_archive_user_id
   ON public.deleted_users_archive(original_user_id);
@@ -454,9 +489,11 @@ CREATE INDEX IF NOT EXISTS idx_deleted_users_archive_user_id
 ALTER TABLE public.deleted_users_archive ENABLE ROW LEVEL SECURITY;
 
 -- Only service role can access archive
-CREATE POLICY deleted_users_archive_service_only ON public.deleted_users_archive
-  FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY deleted_users_archive_service_only ON public.deleted_users_archive
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ==============================================
 -- INDEXES FOR V1 COLUMNS

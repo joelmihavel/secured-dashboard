@@ -378,17 +378,8 @@ function formatPaymentMethod(method: string | null): string | null {
   return methodMap[method.toLowerCase()] ?? method;
 }
 
-/**
- * Resolves UTR (Unique Transaction Reference) from payment data.
- * For Cashfree: bank_reference from payment_method_details, fallback to gateway_payment_id.
- * For PayU: payu_bank_ref_num, fallback to payu_mihpayid.
- */
+/** Resolves UTR (Unique Transaction Reference) from PayU payment data. */
 function resolveUtr(payment: any): string | null {
-  if (payment.payment_gateway === 'cashfree') {
-    const bankRef = payment.payment_method_details?.bank_reference;
-    return bankRef || payment.gateway_payment_id || null;
-  }
-  // PayU
   return payment.payu_bank_ref_num || payment.payu_mihpayid || null;
 }
 

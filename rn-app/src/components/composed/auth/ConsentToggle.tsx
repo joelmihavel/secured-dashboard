@@ -14,7 +14,7 @@
  */
 
 import React, { memo, useCallback, useEffect } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Linking } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -79,7 +79,7 @@ function ConsentToggleComponent({
     const newValue = !value;
     progress.value = withSpring(newValue ? 1 : 0, springConfig.snappy);
     onValueChange(newValue);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }, [value, onValueChange, disabled]);
 
   const thumbAnimatedStyle = useAnimatedStyle(() => ({
@@ -125,11 +125,24 @@ function ConsentToggleComponent({
         </Animated.View>
       </Pressable>
 
-      {/* Consent text - Figma shows text with "Cashfree" underlined link */}
+      {/* Consent text with hyperlinked Terms & Privacy Policy */}
       <View style={styles.textContainer}>
         <Text style={styles.consentText}>
-          I consent to a one-time verification to confirm my profile details. Verification is securely handled via{' '}
-          <Text style={styles.link}>Cashfree</Text>
+          {'By continuing, you agree to the Flent Secured '}
+          <Text
+            style={styles.link}
+            onPress={() => Linking.openURL('https://www.flent.in/secured-tnc')}
+          >
+            Terms &amp; Conditions
+          </Text>
+          {' and acknowledge the '}
+          <Text
+            style={styles.link}
+            onPress={() => Linking.openURL('https://www.flent.in/secured-privacy-policy')}
+          >
+            Privacy Policy
+          </Text>
+          .
         </Text>
       </View>
     </View>

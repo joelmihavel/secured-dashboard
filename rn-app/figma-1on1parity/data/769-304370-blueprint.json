@@ -1,0 +1,67 @@
+{
+  "nodeId": "769:304370",
+  "screenName": "Netbanking Input State",
+  "extractedAt": "2026-02-28T00:00:00Z",
+  "source": "figma-mcp-get_design_context",
+  "fileKey": "HZaVuwWn6B6jOjrmxZ7Kzv",
+  "keyFindings": {
+    "title": {
+      "font": "Plus Jakarta Sans Regular (400)",
+      "fontSize": 28,
+      "lineHeight": 40,
+      "letterSpacing": -1,
+      "color": "#FFFFFF",
+      "accentColor": "#FF9A6D"
+    },
+    "inputLabel": {
+      "font": "Plus Jakarta Sans Medium (500)",
+      "fontSize": 12,
+      "lineHeight": 20,
+      "color": "#A9A9A9",
+      "nodeRef": "I769:304447;47:5565"
+    },
+    "inputHintText": {
+      "font": "Plus Jakarta Sans Regular (400)",
+      "fontSize": 14,
+      "lineHeight": 20,
+      "color": "#878787",
+      "textAlign": "right",
+      "nodeRef": "I769:304447;99:1459"
+    },
+    "inputText": {
+      "font": "Plus Jakarta Sans Regular (400)",
+      "fontSize": 20,
+      "lineHeight": 32,
+      "placeholderColor": "#444444",
+      "nodeRef": "I769:304447;47:5569"
+    },
+    "inputContainer": {
+      "paddingVertical": 16,
+      "paddingHorizontal": 0,
+      "borderRadius": 12,
+      "hasSearchIcon": true
+    },
+    "layout": {
+      "contentPaddingHorizontal": 48,
+      "formGap": 16,
+      "labelToInputGap": 6,
+      "formToButtonGap": 24,
+      "buttonToFooterGap": 16
+    },
+    "button": {
+      "font": "Plus Jakarta Sans Medium (500)",
+      "fontSize": 16,
+      "lineHeight": 24,
+      "padding": 16,
+      "borderRadius": 12,
+      "disabledTextColor": "#444444",
+      "disabledBgColor": "#202020"
+    },
+    "footerText": {
+      "font": "Plus Jakarta Sans Regular (400)",
+      "fontSize": 12,
+      "lineHeight": 20,
+      "color": "#A9A9A9"
+    }
+  }
+}

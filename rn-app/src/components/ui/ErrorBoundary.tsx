@@ -31,16 +31,17 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Route through reportFatalError — single Sentry capture point.
-    // If the router is still alive, useErrorNavigation will navigate to /error.
-    // If the router is broken, this fallback UI stays visible.
-    reportFatalError({
-      source: 'react_render',
-      title: 'Something went wrong',
-      message: 'The app encountered an unexpected error.',
-      technicalMessage: error.message,
-      originalError: error,
-    });
+    // DO NOT call reportFatalError here. getDerivedStateFromError already
+    // set hasError=true which unmounts the Stack (our children). If we call
+    // reportFatalError, it fires useErrorNavigation's listener which tries
+    // router.replace('/error') — but the Stack is gone, causing a fatal
+    // "navigate before mounting Root Layout" NSException that corrupts
+    // Hermes heap and leads to SIGSEGV on next JS execution.
+    // The fallback UI is already visible — no navigation needed.
+    if (__DEV__) {
+      console.error('[ErrorBoundary] Original error:', error.message);
+      console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
+    }
   }
 
   handleReset = () => {
@@ -68,7 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <Text variant="h4" align="center" style={styles.title}>Something went wrong</Text>
           <Text variant="bodyMd2" align="center" style={styles.message}>
-            {__DEV__ ? this.state.error?.message : 'Please try again'}
+            {this.state.error?.message || 'Please try again'}
           </Text>
 
           {this.state.errorId && (

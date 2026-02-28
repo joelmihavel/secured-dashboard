@@ -6,7 +6,7 @@ SELECT cron.schedule(
   'poll-settlement-and-reconcile',
   '*/30 * * * *',
   $$SELECT net.http_post(
-    url := 'https://zqlowjveyqiagnbmfwsb.supabase.co/functions/v1/poll-settlement-status',
+    url := 'https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/poll-settlement-status',
     headers := '{"Authorization": "Bearer SERVICE_ROLE_KEY"}'::jsonb
   )$$
 );

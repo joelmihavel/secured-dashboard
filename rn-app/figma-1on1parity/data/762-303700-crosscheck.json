@@ -2,11 +2,11 @@
   "screenId": "762-303700",
   "screenName": "Pay Rent / Payment Summary Page --Payment Successful --no cashback",
   "figmaUrl": "",
-  "generatedAt": "2026-02-26T19:00:36.895Z",
+  "generatedAt": "2026-02-27T17:37:29.300Z",
   "checks": {
-    "nodeCount": 134,
+    "nodeCount": 137,
     "textNodeCount": 23,
-    "componentInstanceCount": 4,
+    "componentInstanceCount": 5,
     "interactiveNodeCount": 1,
     "imageAssetCount": 1,
     "variableCount": 0,
@@ -20,6 +20,8 @@
       "Frame 2095586343",
       "Frame 2095586361",
       "Frame 2095586363",
+      "Home Indicator",
+      "HW Cutout Safezone",
       "Frame 2095586357"
     ],
     "textContents": [
@@ -178,7 +180,7 @@
       {
         "nodeId": "762:303785",
         "name": "Payment Succesful",
-        "content": "Payment Succesful",
+        "content": "Payment\nSuccesful",
         "fontSize": 20,
         "fontWeight": 400,
         "color": "#FFFFFF"
@@ -236,13 +238,16 @@
       "1:23982",
       "1:27996",
       "689:9072",
+      "1:25",
       "1:7"
     ],
     "interactionSummary": [
       {
         "sourceNode": "button",
         "trigger": "ON_PRESS",
-        "destination": "689:9076"
+        "destination": "689:9076",
+        "actionType": "NODE",
+        "transitionDuration": 0.30000001192092896
       }
     ]
   }

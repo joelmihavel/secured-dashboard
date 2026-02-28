@@ -233,7 +233,15 @@ export default function ProfileScreen() {
   }, [deleteAccount]);
 
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User';
-  const joinDate = '15th sept 9:40am'; // Blueprint placeholder text
+  const joinDate = (() => {
+    if (!user?.created_at) return '';
+    try {
+      const d = new Date(user.created_at);
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return '';
+    }
+  })();
   const userEmail = user?.email ?? '';
   const userPhone = user?.phone ?? '';
   const phoneCountryCode = '+91';
@@ -241,7 +249,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen testID="profile-screen" padded={false}>
-      <DottedGridPattern animated={true} />
+      <DottedGridPattern />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -386,6 +394,18 @@ export default function ProfileScreen() {
               App
             </Text>
             <View style={styles.cardContainer}>
+              <CardMenuItem
+                title="Terms & Conditions"
+                onPress={() => Linking.openURL('https://www.flent.in/secured-tnc')}
+                testID="terms-conditions-button"
+              />
+              <CardDivider />
+              <CardMenuItem
+                title="Privacy Policy"
+                onPress={() => Linking.openURL('https://www.flent.in/secured-privacy-policy')}
+                testID="privacy-policy-button"
+              />
+              <CardDivider />
               <CardMenuItem
                 title="Sign Out"
                 onPress={handleSignOut}

@@ -24,6 +24,7 @@ import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { computeRisk } from "../_shared/risk-utils.ts";
+import { isTestUser } from "../_shared/demo-helpers.ts";
 
 // ==============================================
 // TYPES
@@ -138,6 +139,43 @@ serve(async (req: Request) => {
         // risk_level stays 'PENDING' (column default)
       }
     }
+
+    // ── DEMO AUTO-APPROVAL ──────────────────────────────────────────
+    // Test users bypass admin review — instant approval for Apple Review flow.
+    if (result.is_new && await isTestUser(userId, supabase)) {
+      // Auto-approve the waitlist entry
+      await supabase
+        .from("waitlist_entries")
+        .update({ admin_review: "approved" })
+        .eq("id", result.entry_id);
+
+      // Advance user_status to "approved"
+      await supabase
+        .from("users")
+        .update({
+          user_status: "approved",
+          status_updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+      // Update tenancy status to pending_verification (setup phase)
+      await supabase
+        .from("tenancies")
+        .update({ status: "pending_verification" })
+        .eq("user_id", userId)
+        .eq("status", "pending");
+
+      console.log(`[join-waitlist] Demo auto-approval for test user ${userId}`);
+
+      await audit.logSuccess(
+        "WAITLIST_DEMO_AUTO_APPROVED",
+        "waitlist",
+        "waitlist_entries",
+        result.entry_id,
+        { demo: true, position: result.entry_position }
+      );
+    }
+    // ── END DEMO AUTO-APPROVAL ──────────────────────────────────────
 
     // Log audit event
     if (result.is_new) {

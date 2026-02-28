@@ -83,7 +83,7 @@ export function setupAutoUpdateCheck(): () => void {
 
   const subscription = AppState.addEventListener('change', handleAppStateChange);
 
-  // Check on initial load too
+  // Check immediately on setup
   checkForUpdates(true);
 
   return () => {

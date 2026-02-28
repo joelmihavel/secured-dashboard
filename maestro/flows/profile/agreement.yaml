@@ -1,0 +1,91 @@
+# =============================================================================
+# UI-052: Profile Agreement Screen Functional Flow
+# Route: /(profile)/agreement
+# Figma: 41-9811 (My Profile / Agreement)
+# testIDs: profile-agreement-screen
+# =============================================================================
+#
+# Validates:
+#   - Agreement screen renders with testID
+#   - "View your agreement" title with gray/accent styling
+#   - Agreement detail rows are visible:
+#     - Agreement ID (inline row)
+#     - Property Name (stacked row)
+#     - Tenant(s) (stacked row)
+#     - Landlord(s) (stacked row)
+#     - Monthly Rent (inline row)
+#     - One-Time Deposit (inline row)
+#     - Rent Duration (inline row)
+#     - Exit Date (inline row)
+#   - Back button navigates back to profile
+#   - All detail values display correctly
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to profile agreement screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///profile/agreement"
+- waitForAnimationToEnd
+
+# -- Verify screen rendered --
+- assertVisible:
+    id: "profile-agreement-screen"
+
+# -- Verify title --
+- assertVisible: "View your"
+- assertVisible: "agreement"
+
+# -- Verify agreement detail rows --
+- assertVisible: "Agreement ID"
+
+- assertVisible: "Property Name"
+
+- scrollUntilVisible:
+    element: "Tenant(s)"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Tenant(s)"
+
+- scrollUntilVisible:
+    element: "Landlord(s)"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Landlord(s)"
+
+- scrollUntilVisible:
+    element: "Monthly Rent"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Monthly Rent"
+
+- scrollUntilVisible:
+    element: "One-Time Deposit"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "One-Time Deposit"
+
+- scrollUntilVisible:
+    element: "Rent Duration"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Rent Duration"
+
+- scrollUntilVisible:
+    element: "Exit Date"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Exit Date"
+
+# -- Test back navigation --
+- back
+- waitForAnimationToEnd
+
+- takeScreenshot: "profile-agreement-view"

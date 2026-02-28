@@ -41,14 +41,29 @@ import * as Haptics from 'expo-haptics';
 
 import { PrimaryButton, BackButton, Pill } from '@/src/components';
 import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal';
-import { useDashboard } from '@/src/hooks';
+import { useDashboard, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { initiatePayment } from '@/src/services/payment';
+import { getGatewayFeeRates, initiatePayment } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import type { ModalView } from '@/src/components/payment/PaymentMethodModal/types';
-import type { PayUSessionParams } from '@/src/stores/payment';
+import type { PaymentMethodType, PayUSessionParams } from '@/src/stores/payment';
 
 const fmt = (n: number) => n.toLocaleString('en-IN');
+
+/** Map store method type → GatewayFeeRates key */
+function getFeeRate(
+  rates: { upi: number; credit_card: number; debit_card: number; netbanking: number },
+  methodType: PaymentMethodType | undefined,
+): number {
+  if (!methodType) return 0;
+  const map: Record<PaymentMethodType, number> = {
+    upi: rates.upi,
+    card: rates.credit_card,
+    debit_card: rates.debit_card,
+    netbanking: rates.netbanking,
+  };
+  return map[methodType] ?? 0;
+}
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -122,6 +137,8 @@ export default function ConfirmPaymentScreen() {
   const { modalView: modalViewParam } = useLocalSearchParams<{ modalView?: string }>();
   const insets = useSafeAreaInsets();
   const { tenancy, upcomingPayment, cashback } = useDashboard();
+  const { data: feeRates } = useFeeRates();
+  const selectedInstrument = usePaymentStore((s) => s.selectedInstrument);
 
   const validModalViews: ModalView[] = ['enter-amount', 'selector', 'add-upi', 'add-card', 'add-debit-card', 'add-netbanking', 'edit-method'];
   const parsedModalView = validModalViews.includes(modalViewParam as ModalView) ? (modalViewParam as ModalView) : undefined;
@@ -178,7 +195,9 @@ export default function ConfirmPaymentScreen() {
   const maintenance = tenancy?.maintenance ?? 0;
   const totalRent = baseRent + maintenance;
 
-  const convenienceFee = 100;
+  const rates = feeRates ?? getGatewayFeeRates();
+  const feeRate = getFeeRate(rates, selectedInstrument?.type);
+  const convenienceFee = Math.ceil(totalRent * feeRate);
 
   const cashbackPct = cashback?.discount_rate ?? 0.01;
   const cashbackAmount = Math.round(totalRent * cashbackPct);
@@ -214,8 +233,9 @@ export default function ConfirmPaymentScreen() {
 
   const prefetchedSessionRef = useRef<{
     paymentId: string;
-    payuParams: PayUSessionParams;
+    payuParams?: PayUSessionParams;
     methodType: string;
+    demoMode?: boolean;
   } | null>(null);
   const prefetchInFlightRef = useRef(false);
 
@@ -257,11 +277,12 @@ export default function ConfirmPaymentScreen() {
       cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
       rentMonth,
     }).then(({ data, error }) => {
-      if (!error && data?.payuParams) {
+      if (!error && (data?.payuParams || data?.demoMode)) {
         prefetchedSessionRef.current = {
           paymentId: data.paymentId,
-          payuParams: buildSessionParams(data.payuParams as Record<string, string>),
+          payuParams: data.payuParams ? buildSessionParams(data.payuParams as Record<string, string>) : undefined,
           methodType,
+          demoMode: data.demoMode,
         };
       }
     }).catch(() => {
@@ -275,6 +296,11 @@ export default function ConfirmPaymentScreen() {
 
   const handlePayNow = useCallback(async () => {
     if (isProcessing) return;
+
+    if (!tenancyId) {
+      Alert.alert('Error', 'Payment details are still loading. Please wait a moment.');
+      return;
+    }
 
     const instrument = usePaymentStore.getState().selectedInstrument;
     if (!instrument) {
@@ -296,8 +322,21 @@ export default function ConfirmPaymentScreen() {
       // Use pre-fetched session if available and method hasn't changed
       const prefetched = prefetchedSessionRef.current;
       if (prefetched && prefetched.methodType === methodType) {
+        if (prefetched.demoMode) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          router.replace({
+            pathname: '/(payment)/status',
+            params: {
+              paymentId: prefetched.paymentId,
+              amount: String(payableAmount),
+              method: methodType === 'debit_card' ? 'card' : methodType,
+              initialStatus: 'success',
+            },
+          } as never);
+          return;
+        }
         paymentId = prefetched.paymentId;
-        payuParams = prefetched.payuParams;
+        payuParams = prefetched.payuParams!;
         prefetchedSessionRef.current = null; // consume it
       } else {
         // Fallback: fetch now (if pre-fetch failed or method changed)
@@ -310,6 +349,21 @@ export default function ConfirmPaymentScreen() {
 
         if (error || !data) {
           throw new Error(error ?? 'Failed to initiate payment');
+        }
+
+        // Demo mode: skip PayU SDK entirely
+        if (data.demoMode) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          router.replace({
+            pathname: '/(payment)/status',
+            params: {
+              paymentId: data.paymentId,
+              amount: String(payableAmount),
+              method: methodType === 'debit_card' ? 'card' : methodType,
+              initialStatus: 'success',
+            },
+          } as never);
+          return;
         }
 
         paymentId = data.paymentId;
@@ -339,7 +393,7 @@ export default function ConfirmPaymentScreen() {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, tenancyId, rentMonth, buildSessionParams]);
+  }, [isProcessing, tenancyId, rentMonth, buildSessionParams, router, payableAmount]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -415,17 +469,21 @@ export default function ConfirmPaymentScreen() {
               />
               <BreakdownRow
                 label="Convenience Fee"
-                value={`₹ ${fmt(convenienceFee)}`}
+                value={convenienceFee === 0 ? 'Free' : `₹ ${fmt(convenienceFee)}`}
               />
-              <BreakdownRow
-                label="Cashback"
-                value={
-                  isVerified
-                    ? `- ₹ ${fmt(cashbackAmount)}`
-                    : `- ₹ ${fmt(cashbackAmount)}`
-                }
-                isCashback={true}
-              />
+              {isVerified ? (
+                <BreakdownRow
+                  label="Cashback"
+                  value={`- ₹ ${fmt(cashbackAmount)}`}
+                  isCashback={true}
+                />
+              ) : cashbackAmount > 0 ? (
+                <BreakdownRow
+                  label="Cashback"
+                  value={`Verify to unlock ₹${fmt(cashbackAmount)}`}
+                  isAccrued={true}
+                />
+              ) : null}
               <View style={s.dividerLine} />
               <BreakdownRow
                 label="Payable Amount"

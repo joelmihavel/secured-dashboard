@@ -15,12 +15,14 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useRootNavigationState } from 'expo-router';
 import { getWaitlistStatus } from '@/src/services/api/waitlist';
-import { DISABLE_SCREEN_PICKER, DEV_DIRECT_SCREEN } from './(dev)/screen-picker';
+const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
+const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
 import { SkeletonLoader } from '@/src/components';
 import { useAuthContext } from '@/src/providers';
 import { useUploadStore } from '@/src/stores/upload';
+import { addBreadcrumb } from '@/src/config/sentry';
 
 // Global screenshot params for dev pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
@@ -36,6 +38,7 @@ type JourneyTarget =
 
 export default function Index() {
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
   const { isAuthenticated, isLoading: authLoading } = useAuthContext();
   const [journeyResolved, setJourneyResolved] = useState(false);
   const [target, setTarget] = useState<JourneyTarget | string | null>(null);
@@ -99,11 +102,14 @@ export default function Index() {
           break;
       }
       setJourneyResolved(true);
-    } catch {
+    } catch (err) {
       if (retryCount < 1) {
         setTimeout(() => resolveAuthenticatedJourney(retryCount + 1), 1000);
         return;
       }
+      addBreadcrumb('resolveAuthenticatedJourney failed', 'navigation', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       setTarget('/(agreement)/upload');
       setJourneyResolved(true);
     }
@@ -136,12 +142,16 @@ export default function Index() {
     resolveAuthenticatedJourney();
   }, [authLoading, isAuthenticated, resolveAuthenticatedJourney]);
 
-  // Imperative one-shot navigation (replaces declarative <Redirect>)
+  // Imperative one-shot navigation — guarded by navigation readiness.
+  // In release mode, SecureStore resolves auth state faster than fonts load,
+  // so router.replace() can fire before _layout.tsx mounts the <Stack>.
+  // useRootNavigationState().key is undefined until the navigator is mounted.
   useEffect(() => {
     if (!journeyResolved || !target || hasNavigatedRef.current) return;
+    if (!rootNavigationState?.key) return;
     hasNavigatedRef.current = true;
     router.replace(target as never);
-  }, [journeyResolved, target, router]);
+  }, [journeyResolved, target, router, rootNavigationState?.key]);
 
   // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack
   return <SkeletonLoader />;

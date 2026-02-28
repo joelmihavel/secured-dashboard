@@ -1,0 +1,18 @@
+diff --git a/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm b/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+index 2a67797..e645493 100644
+--- a/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
++++ b/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+@@ -435,7 +435,12 @@ TraceSection s(
+     @try {
+       [inv invokeWithTarget:strongModule];
+     } @catch (NSException *exception) {
+-      throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);
++      // NEVER call convertNSExceptionToJSError here — this block runs on
++      // com.meta.react.turbomodulemanager.queue (background), NOT the JS thread.
++      // Accessing the Hermes runtime from the wrong thread corrupts the heap
++      // (ManagedChunkedList::add → EXC_BAD_ACCESS). (RN #53960 / #54859)
++      NSLog(@"[RCTTurboModule] Exception in void method [%s.%s]: %@",
++            moduleName, methodNameStr.c_str(), exception);
+     } @finally {
+       [retainedObjectsForInvocation removeAllObjects];
+     }

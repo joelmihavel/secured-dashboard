@@ -1,0 +1,105 @@
+# =============================================================================
+# UI-032, UI-033: Dashboard States Functional Flow
+# Route: /(main)/index
+# Figma: 243-2762 (bank-upi), 243-2967 (all-methods), 243-3170 (late),
+#         243-3378 (missed), 243-7185 (cashbacks)
+# testIDs: home-screen, home-screen-loading, home-screen-error
+# =============================================================================
+#
+# Validates:
+#   - Dashboard renders payment due card with amount
+#   - Due date badge shows days until due or overdue status
+#   - Tab switcher between Recent Payments and Cashbacks
+#   - Active state shows payment history
+#   - Late payment state shows warning
+#   - Missed payment state shows alert
+#   - Headline carousel is visible with payment method cards
+#   - Setup progress shows for incomplete setups
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STATE 1: All methods configured (active)
+# =============================================
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///main/index?state=all-methods"
+- waitForAnimationToEnd
+
+# Verify home screen
+- assertVisible:
+    id: "home-screen"
+
+# Verify core dashboard content
+- assertVisible: "Home"
+
+# =============================================
+# STATE 2: Empty / Setup Payment state
+# =============================================
+- openLink: "flentsecured:///main/index?state=setup-payment"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# =============================================
+# STATE 3: Bank/UPI only state
+# =============================================
+- openLink: "flentsecured:///main/index?state=bank-upi"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# =============================================
+# STATE 4: Late payment state (overdue warning)
+# =============================================
+- openLink: "flentsecured:///main/index?state=late-payment"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# Late payment should show overdue indicator
+- assertVisible: "late"
+
+# =============================================
+# STATE 5: Missed payment state
+# =============================================
+- openLink: "flentsecured:///main/index?state=missed-payment"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# Missed payment should show alert
+- assertVisible: "missed"
+
+# =============================================
+# STATE 6: Test tab switching (Recent Payments vs Cashbacks)
+# =============================================
+- openLink: "flentsecured:///main/index?state=all-methods"
+- waitForAnimationToEnd
+
+# Verify tabs are visible
+- assertVisible:
+    text: "Recent Payments"
+    optional: true
+- assertVisible:
+    text: "Cashbacks"
+    optional: true
+
+# Tap on Cashbacks tab
+- tapOn:
+    text: "Cashbacks"
+    optional: true
+- waitForAnimationToEnd
+
+# Tap back on Recent Payments tab
+- tapOn:
+    text: "Recent Payments"
+    optional: true
+- waitForAnimationToEnd
+
+- takeScreenshot: "dashboard-states-complete"

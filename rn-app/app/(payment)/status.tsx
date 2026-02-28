@@ -31,7 +31,6 @@ import {
   Image,
   Alert,
   BackHandler,
-  Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,7 +47,7 @@ import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { checkPaymentStatus, generateReceipt } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
-import { buildReceiptHtml } from '@/src/utils/receiptHtml';
+import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
 import { usePaymentStore } from '@/src/stores';
 import { PAYMENT_COLORS } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
@@ -139,84 +138,76 @@ function formatDisplayDate(isoString: string): string {
 }
 
 // ============================================
-// INFO ROW MESSAGES
+// INFO ROW DATA — Figma 768:303835 / 768:303928 / 768:304020
 // ============================================
+// All three states use the SAME card icon (rectangle-55 with bracket vectors).
+// Only text content and row count/alignment differ per state.
+// Row alignment from Figma: items-center for short text, items-start for long wrapping text.
 
-function getPendingInfoData(isUpi: boolean, sub: PendingSubState) {
-  const images = [
-    require('@/assets/images/status/processing_1.png'),
-    require('@/assets/images/status/processing_2.png'),
-    require('@/assets/images/status/processing_3.png'),
-  ];
+interface InfoRowData {
+  text: string;
+  /** Figma: items-center (true) or items-start (false) */
+  alignCenter: boolean;
+}
 
-  let texts: string[] = [];
+function getPendingInfoRows(isUpi: boolean, sub: PendingSubState): InfoRowData[] {
   if (isUpi) {
     switch (sub) {
       case 'verifying':
-        texts = [
-          'Open your UPI app to approve the payment.',
-          'You have 6 minutes to complete the approval.',
-          "Please don't close the app.",
+        return [
+          { text: 'Open your UPI app to approve the payment.', alignCenter: true },
+          { text: 'You have 6 minutes to complete the approval.', alignCenter: true },
+          { text: "Please don't close the app.", alignCenter: true },
         ];
-        break;
       case 'processing':
-        texts = [
-          'Waiting for approval on your UPI app.',
-          'This can take a few minutes. Please check your UPI app.',
-          "You'll see confirmation here once approved.",
+        return [
+          { text: 'Waiting for approval on your UPI app.', alignCenter: true },
+          { text: 'This can take a few minutes. Please check your UPI app.', alignCenter: false },
+          { text: "You'll see confirmation here once approved.", alignCenter: true },
         ];
-        break;
       case 'timed_out':
-        texts = [
-          'UPI payment request has expired.',
-          'The approval window has closed. Please try again.',
-          'You can retry with the same or a different payment method.',
+        return [
+          { text: 'UPI payment request has expired.', alignCenter: true },
+          { text: 'The approval window has closed. Please try again.', alignCenter: true },
+          { text: 'You can retry with the same or a different payment method.', alignCenter: false },
         ];
-        break;
-    }
-  } else {
-    switch (sub) {
-      case 'verifying':
-        texts = [
-          'Confirming your payment with the bank...',
-          'This usually takes a few seconds.',
-          "Please don't close the app.",
-        ];
-        break;
-      case 'processing':
-        texts = [
-          "We've received your payment request.",
-          'This can take a few minutes depending on your bank.',
-          "You'll see confirmation here once it's complete.",
-        ];
-        break;
-      case 'timed_out':
-        texts = [
-          'Your payment is still being processed by your bank.',
-          'This is taking longer than expected. Please check back later.',
-          "You'll receive a notification once the payment is confirmed.",
-        ];
-        break;
     }
   }
 
-  return texts.map((text, i) => ({
-    text,
-    image: images[i] || images[0],
-    imageRight: i > 0,
-    alignCenter: i > 0,
-  }));
+  // Non-UPI (card / netbanking) — Figma 768:303835 processing state
+  switch (sub) {
+    case 'verifying':
+      return [
+        { text: 'Confirming your payment with the bank...', alignCenter: true },
+        { text: 'This usually takes a few seconds.', alignCenter: true },
+        { text: "Please don't close the app.", alignCenter: true },
+      ];
+    case 'processing':
+      return [
+        { text: "We've received your payment request.", alignCenter: true },
+        { text: 'This can take a few minutes depending on your bank.', alignCenter: true },
+        { text: "You'll see confirmation here once it's complete.", alignCenter: true },
+      ];
+    case 'timed_out':
+      return [
+        { text: 'Your payment is still being processed by your bank.', alignCenter: false },
+        { text: 'This is taking longer than expected. Please check back later.', alignCenter: false },
+        { text: "You'll receive a notification once the payment is confirmed.", alignCenter: false },
+      ];
+  }
 }
 
-const FAILED_INFO_DATA = [
-  { text: "Something didn't go through this time.", image: require('@/assets/images/status/failed_1.png'), imageRight: false, alignCenter: false },
-  { text: "Your money is safe and hasn't been deducted.", image: require('@/assets/images/status/failed_2.png'), imageRight: false, alignCenter: false },
-  { text: "If money was debited, it will automatically be refunded within 3-5 business days", image: require('@/assets/images/status/failed_3.png'), imageRight: false, alignCenter: false }
+// Figma 768:303928 — Failed state (3 rows)
+const FAILED_INFO_ROWS: InfoRowData[] = [
+  { text: "Something didn't go through this time.", alignCenter: true },
+  { text: "Your money is safe and hasn't been deducted.", alignCenter: true },
+  { text: "If money was debited, it will automatically be refunded within 3-5 business days", alignCenter: false },
 ];
 
-const REFUNDED_INFO_DATA = [
-  { text: 'Your payment was not completed and the amount has been returned to your account.', image: require('@/assets/images/status/refunded_1.png'), imageRight: false, alignCenter: false },
-  { text: 'Refunds usually reflect within 3\u20135 business days.', image: require('@/assets/images/status/refunded_2.png'), imageRight: false, alignCenter: false },
+// Figma 768:304020 — Refunded state (2 rows)
+const REFUNDED_INFO_ROWS: InfoRowData[] = [
+  { text: 'Your payment was not completed and the amount has been returned to your account.', alignCenter: false },
+  { text: 'Refunds usually reflect within 3\u20135 business days.', alignCenter: false },
 ];
 
 // ============================================
@@ -237,18 +228,57 @@ const ReceiptIcon = memo(() => (
 ));
 ReceiptIcon.displayName = 'ReceiptIcon';
 
+/**
+ * Card Icon — Figma "Frame 2095586326"
+ * Left bracket (Vector 54) + card image (Rectangle 55) + right bracket (Vector 55 mirrored)
+ * Total: 52.52w × 40h — identical in every info row across all states.
+ */
+const CARD_ICON_IMAGE = require('@/assets/images/status/card_icon.png');
+
+/** Left bracket "[" — Figma Vector 54: 6.72×40, stroke #444444, weight 0.61 */
+const LeftBracket = memo(() => (
+  <Svg width={s(6.72)} height={sv(40)} viewBox="0 0 6.72 40" fill="none">
+    <Path
+      d="M6.72 0 L0 0 L0 40 L6.72 40"
+      stroke="#444444"
+      strokeWidth={0.61}
+      strokeLinecap="square"
+    />
+  </Svg>
+));
+LeftBracket.displayName = 'LeftBracket';
+
+/** Right bracket "]" — Figma Vector 55: 6.72×40 mirrored, stroke #444444, weight 0.61 */
+const RightBracket = memo(() => (
+  <Svg width={s(6.72)} height={sv(40)} viewBox="0 0 6.72 40" fill="none">
+    <Path
+      d="M0 0 L6.72 0 L6.72 40 L0 40"
+      stroke="#444444"
+      strokeWidth={0.61}
+      strokeLinecap="square"
+    />
+  </Svg>
+));
+RightBracket.displayName = 'RightBracket';
+
+const CardIcon = memo(() => (
+  <View style={styles.cardIconGroup}>
+    <LeftBracket />
+    <Image source={CARD_ICON_IMAGE} style={styles.cardIconImage} resizeMode="cover" />
+    <RightBracket />
+  </View>
+));
+CardIcon.displayName = 'CardIcon';
+
 interface InfoRowProps {
   text: string;
-  image: any;
-  imageRight?: boolean;
   alignCenter?: boolean;
 }
 
-const InfoRow = memo(({ text, image, imageRight, alignCenter }: InfoRowProps) => (
-  <View style={[styles.infoRow, alignCenter ? { alignItems: 'center' } : { alignItems: 'flex-start' }]}>
-    {!imageRight && <Image source={image} style={styles.infoImage} resizeMode="contain" />}
+const InfoRow = memo(({ text, alignCenter }: InfoRowProps) => (
+  <View style={[styles.infoRow, { alignItems: alignCenter ? 'center' : 'flex-start' }]}>
+    <CardIcon />
     <Text style={styles.infoText}>{text}</Text>
-    {imageRight && <Image source={image} style={styles.infoImage} resizeMode="contain" />}
   </View>
 ));
 InfoRow.displayName = 'InfoRow';
@@ -293,11 +323,11 @@ interface PendingContentProps {
 }
 
 const PendingContent = memo(({ isUpi, pendingSub }: PendingContentProps) => {
-  const rows = getPendingInfoData(isUpi, pendingSub);
+  const rows = getPendingInfoRows(isUpi, pendingSub);
   return (
     <View style={styles.infoSection}>
       {rows.map((row, i) => (
-        <InfoRow key={i} text={row.text} image={row.image} imageRight={row.imageRight} alignCenter={row.alignCenter} />
+        <InfoRow key={i} text={row.text} alignCenter={row.alignCenter} />
       ))}
     </View>
   );
@@ -357,8 +387,8 @@ SuccessContent.displayName = 'SuccessContent';
 
 const FailedContent = memo(() => (
   <View style={styles.infoSection}>
-    {FAILED_INFO_DATA.map((row, i) => (
-      <InfoRow key={i} text={row.text} image={row.image} imageRight={row.imageRight} alignCenter={row.alignCenter} />
+    {FAILED_INFO_ROWS.map((row, i) => (
+      <InfoRow key={i} text={row.text} alignCenter={row.alignCenter} />
     ))}
   </View>
 ));
@@ -366,8 +396,8 @@ FailedContent.displayName = 'FailedContent';
 
 const RefundedContent = memo(() => (
   <View style={styles.infoSection}>
-    {REFUNDED_INFO_DATA.map((row, i) => (
-      <InfoRow key={i} text={row.text} image={row.image} imageRight={row.imageRight} alignCenter={row.alignCenter} />
+    {REFUNDED_INFO_ROWS.map((row, i) => (
+      <InfoRow key={i} text={row.text} alignCenter={row.alignCenter} />
     ))}
   </View>
 ));
@@ -781,61 +811,65 @@ export default function PaymentStatusScreen() {
       }
     }
 
+    // Build HTML data from server receipt or fallback to route params
+    let htmlData;
     if (receipt) {
-      try {
-        const html = buildReceiptHtml({
-          receiptNumber: receipt.receiptNumber,
-          payment: {
-            amount: receipt.payment.amount,
-            netAmountPaid: receipt.payment.netAmountPaid,
-            pgFee: receipt.payment.pgFee,
-            cashbackApplied: receipt.payment.cashbackApplied,
-            cashbackEarned: receipt.payment.cashbackEarned,
-            paymentMethod: receipt.payment.paymentMethod,
-            paidAt: receipt.payment.paidAt,
-            rentMonthDisplay: receipt.payment.rentMonthDisplay,
-            utr: receipt.payment.utr ?? null,
-            timeliness: receipt.payment.timeliness ?? null,
-            transactionId: receipt.payment.transactionId,
-          },
-          tenant: receipt.tenant,
-          property: receipt.property,
-          landlord: {
-            name: receipt.landlord.name,
-            panMasked: receipt.landlord.panMasked ?? null,
-          },
-          agreement: {
-            certId: receipt.agreement?.certId ?? null,
-          },
-          company: receipt.company,
-        });
-
-        const { uri } = await Print.printToFileAsync({ html, base64: false });
-        await Sharing.shareAsync(uri, {
-          mimeType: 'application/pdf',
-          dialogTitle: 'Rent Receipt',
-          UTI: 'com.adobe.pdf',
-        });
-        return;
-      } catch (err) {
-        if (__DEV__) {
-          console.warn('PDF generation failed, falling back to text share:', err);
-        }
-      }
+      htmlData = {
+        receiptNumber: receipt.receiptNumber,
+        payment: {
+          amount: receipt.payment.amount,
+          netAmountPaid: receipt.payment.netAmountPaid,
+          pgFee: receipt.payment.pgFee,
+          cashbackApplied: receipt.payment.cashbackApplied,
+          cashbackEarned: receipt.payment.cashbackEarned,
+          paymentMethod: receipt.payment.paymentMethod,
+          paidAt: receipt.payment.paidAt,
+          rentMonthDisplay: receipt.payment.rentMonthDisplay,
+          utr: receipt.payment.utr ?? null,
+          timeliness: receipt.payment.timeliness ?? null,
+          transactionId: receipt.payment.transactionId,
+        },
+        tenant: receipt.tenant,
+        property: receipt.property,
+        landlord: {
+          name: receipt.landlord.name,
+          panMasked: receipt.landlord.panMasked ?? null,
+        },
+        agreement: {
+          certId: receipt.agreement?.certId ?? null,
+        },
+        company: receipt.company,
+      };
+    } else {
+      htmlData = buildFallbackReceiptData({
+        amount,
+        method,
+        cashback,
+        transactionId,
+        landlordName: params.landlordName,
+        agreementId: params.agreementId,
+        paymentId,
+      });
     }
 
-    // Fallback to basic text share
     try {
-      await Share.share({
-        message: `Rent Receipt\n\nAmount: \u20B9${amount}\nDate: ${new Date().toLocaleDateString()}\nTransaction ID: ${transactionId}\nMethod: ${method}`,
-        title: 'Rent Receipt',
+      const html = buildReceiptHtml(htmlData);
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Rent Receipt',
+        UTI: 'com.adobe.pdf',
       });
     } catch (err) {
       if (__DEV__) {
-        console.log('Share error:', err);
+        console.warn('PDF generation failed:', err);
       }
+      Alert.alert(
+        'Receipt Unavailable',
+        'Unable to generate the receipt PDF. Please try again later.',
+      );
     }
-  }, [receiptData, paymentId, amount, transactionId, method]);
+  }, [receiptData, paymentId, amount, method, cashback, transactionId, params.landlordName, params.agreementId]);
 
   // ============================================
   // DERIVED UI VALUES
@@ -1067,7 +1101,7 @@ export default function PaymentStatusScreen() {
       stampImage={stampConfig.image}
       titleLine1={titleConfig.line1}
       titleLine2={titleConfig.line2}
-      titleLine2Color={FIGMA_COLORS.titleWhite}
+      titleLine2Color={isSuccessState ? undefined : FIGMA_COLORS.titleWhite}
       contentPaddingTop={!isSuccessState ? sv(130) : undefined}
       titleMarginLeft={!isSuccessState ? s(10) : undefined}
     >
@@ -1135,22 +1169,32 @@ const styles = StyleSheet.create({
   },
 
   // -- Info section (pending/failed/refunded)
+  // Figma: info container at x=1 within 270px card, but PaymentReceiptCard content has padding s(24).
+  // Offset: -(24 - 1) = -23px each side so the info section spans the full card width.
   infoSection: {
     gap: sv(24),
+    marginHorizontal: -s(23),
+    alignItems: 'center' as const,
   },
   infoRow: {
     flexDirection: 'row',
+    alignSelf: 'stretch' as const,
     gap: s(16),
     paddingHorizontal: s(32),
-    width: s(269),
-    justifyContent: 'space-between',
   },
-  infoImage: {
-    width: s(53),
+  cardIconGroup: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    width: s(52.52),
     height: sv(40),
   },
+  cardIconImage: {
+    width: s(39.08),
+    height: s(39.08),
+    borderRadius: 4,
+  },
   infoText: {
-    width: s(136),
+    flex: 1,
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: sf(12),
     lineHeight: sf(20),

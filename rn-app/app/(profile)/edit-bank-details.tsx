@@ -195,7 +195,7 @@ export default function EditBankDetailsScreen() {
 
   return (
     <Screen testID="edit-bank-details-screen" padded={false}>
-      <DottedGridPattern animated={true} />
+      <DottedGridPattern />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

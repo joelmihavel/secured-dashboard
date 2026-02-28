@@ -34,24 +34,27 @@ serve(async (req: Request) => {
     results.signature = { generated: false, error: e instanceof Error ? e.message : String(e) };
   }
 
-  // Parse request body for custom test or use defaults
+  // Parse request body for custom test params
   let testType = "penny_drop";
+  let params: Record<string, string> = {};
   try {
     const body = await req.json();
     if (body.test) testType = body.test;
+    if (body.params) params = body.params;
   } catch (_) { /* default to penny_drop */ }
 
   if (testType === "penny_drop") {
-    // Test Penny Drop (Bank Account Verification)
-    // Using RBI's well-known test IFSC
+    const account = params.account_number ?? "026291800001191";
+    const ifsc = params.ifsc ?? "UTIB0002083";
+    const name = params.name ?? "Test User";
     try {
       const res = await fetch(`${baseUrl}/bank-account/sync`, {
         method: "POST",
         headers,
         body: JSON.stringify({
-          bank_account: "026291800001191",
-          ifsc: "UTIB0002083",
-          name: "Test User",
+          bank_account: account,
+          ifsc: ifsc,
+          name: name,
         }),
       });
       const data = await res.json();
@@ -60,7 +63,8 @@ serve(async (req: Request) => {
       results.penny_drop = { error: e instanceof Error ? e.message : String(e) };
     }
   } else if (testType === "m360") {
-    // Test M360 OTP send
+    const mobile = params.mobile_number ?? "9999999999";
+    const name = params.name ?? "Test";
     const vid = `DIAG_${Date.now()}`;
     try {
       const res = await fetch(`${baseUrl}/mobile360/otp/send`, {
@@ -68,8 +72,8 @@ serve(async (req: Request) => {
         headers: { ...headers, "x-api-version": "2024-12-01" },
         body: JSON.stringify({
           verification_id: vid,
-          mobile_number: "9999999999",
-          name: "Test",
+          mobile_number: mobile,
+          name: name,
           notification_modes: ["SMS"],
           user_consent: {
             obtained: true,
@@ -81,9 +85,40 @@ serve(async (req: Request) => {
         }),
       });
       const data = await res.json();
-      results.m360_send = { status: res.status, body: data };
+      results.m360_send = { status: res.status, body: data, verification_id: vid };
     } catch (e) {
       results.m360_send = { error: e instanceof Error ? e.message : String(e) };
+    }
+  } else if (testType === "m360_verify") {
+    const vid = params.verification_id ?? "";
+    const otp = params.otp ?? "";
+    if (!vid || !otp) {
+      results.m360_verify = { error: "verification_id and otp are required in params" };
+    } else {
+      try {
+        const res = await fetch(`${baseUrl}/mobile360/otp/verify`, {
+          method: "POST",
+          headers: { ...headers, "x-api-version": "2024-12-01" },
+          body: JSON.stringify({ verification_id: vid, otp }),
+        });
+        const data = await res.json();
+        results.m360_verify = { status: res.status, body: data };
+      } catch (e) {
+        results.m360_verify = { error: e instanceof Error ? e.message : String(e) };
+      }
+    }
+  } else if (testType === "pan") {
+    const pan = params.pan_number ?? "ABCDE1234F";
+    try {
+      const res = await fetch(`${baseUrl}/pan`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ pan }),
+      });
+      const data = await res.json();
+      results.pan_verify = { status: res.status, body: data };
+    } catch (e) {
+      results.pan_verify = { error: e instanceof Error ? e.message : String(e) };
     }
   }
 

@@ -1,0 +1,80 @@
+# =============================================================================
+# UI-038: Payment Method Selector Modal Functional Flow
+# Route: Overlay modal via /(payment)/enter-rent
+# Figma: 769:309407 (first visit), 684:6128 (all setup)
+# testIDs: modal-method-proceed-button
+# =============================================================================
+#
+# Validates:
+#   - Payment method modal renders after tapping Continue on enter-rent
+#   - "Choose a Payment Method" heading is visible
+#   - UPI option is visible with fee text
+#   - Net Banking option is visible with fee text
+#   - Debit Card option is visible with fee text
+#   - Credit Card option is visible (may be disabled)
+#   - Radio selection works (tapping selects a method)
+#   - Proceed/Setup button is visible and functional
+#   - Disclaimer text is shown at bottom
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Navigate to enter-rent first, then trigger modal
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+
+# Verify enter-rent screen
+- assertVisible:
+    id: "enter-rent-screen"
+
+# Enter amount to enable Continue
+- inputText: ${TEST_PAYMENT_AMOUNT}
+- waitForAnimationToEnd
+
+# Tap Continue to open method selector modal
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# -- Verify method selector modal content --
+- extendedWaitUntil:
+    visible: "Payment Method"
+    timeout: 5000
+
+# Verify heading
+- assertVisible: "Choose a"
+- assertVisible: "Payment Method"
+
+# Verify all payment method options are listed
+- assertVisible: "UPI"
+- assertVisible: "Net Banking"
+- assertVisible: "Debit Card"
+- assertVisible: "Credit Card"
+
+# Verify fee text is shown (at least one "fee" label)
+- assertVisible: "fee"
+
+# Verify proceed/setup button
+- assertVisible:
+    id: "modal-method-proceed-button"
+
+# -- Test: Select UPI option --
+- tapOn: "UPI"
+- waitForAnimationToEnd
+
+# -- Test: Select Net Banking option --
+- tapOn: "Net Banking"
+- waitForAnimationToEnd
+
+# -- Test: Select Debit Card option --
+- tapOn: "Debit Card"
+- waitForAnimationToEnd
+
+# -- Tap proceed with selected method --
+- tapOn:
+    id: "modal-method-proceed-button"
+- waitForAnimationToEnd
+
+- takeScreenshot: "method-selector-completed"

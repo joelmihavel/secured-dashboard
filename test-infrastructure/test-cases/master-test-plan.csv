@@ -1,0 +1,1149 @@
+Test ID,Category,Sub-Category,Test Case Title,Description,Prerequisites (Script to Run),Steps,Expected Result,Phone Number,Supabase Target State,Priority,Type,Status,Notes
+HJ-001,Happy Journey,Sign Up,Complete sign-up with valid phone,Enter a valid +91 phone number and submit the sign-up form,./scripts/seed-state.sh clean +919999900001,"1. Launch app
+2. Tap ""Get Started""
+3. Enter phone +919999900001
+4. Tap ""Continue""",OTP screen is displayed and OTP is sent via SMS,+919999900001,clean,P0,Automated,Covered,"Backend: auth-otp.test.ts | Frontend: sign-up.test.tsx, useAuth.test.ts | E2E: flows/auth/sign-up.yaml"
+HJ-002,Happy Journey,OTP,OTP entry and auto-submit,Enter 6-digit OTP; form auto-submits on last digit,./scripts/seed-state.sh otp-sent +919999900001,"1. On OTP screen enter 6 digits
+2. Wait for auto-submit",App verifies OTP and navigates to next screen,+919999900001,otp-sent,P0,Automated,Covered,"Backend: auth-otp.test.ts | Frontend: otp.test.tsx, OTPInput.test.tsx | E2E: flows/auth/otp.yaml"
+HJ-003,Happy Journey,Agreement,Agreement upload flow (camera/gallery),Upload rental agreement via camera capture or gallery pick,./scripts/seed-state.sh verified +919999900001,"1. Tap ""Upload Agreement""
+2. Choose camera or gallery
+3. Capture/select document
+4. Confirm upload",Document uploads successfully and processing begins,+919999900001,verified,P0,Automated,Covered,"Backend: upload-document.test.ts, user-onboarding-flow.test.ts | Frontend: agreement.test.ts | E2E: flows/agreement/upload.yaml"
+HJ-004,Happy Journey,Agreement,Agreement review and confirm extraction,Review extracted agreement data and confirm,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. View extracted fields (names, address, rent)
+2. Edit if needed
+3. Tap ""Confirm""",Extraction confirmed and agreement status updated,+919999900001,agreement-uploaded,P0,Automated,Covered,"Backend: confirm-extraction.test.ts, user-onboarding-flow.test.ts | Frontend: agreement.test.ts | E2E: flows/agreement/review.yaml"
+HJ-005,Happy Journey,Waitlist,Waitlist join after agreement,User joins waitlist after agreement confirmation,./scripts/seed-state.sh agreement-confirmed +919999900001,"1. After agreement confirm
+2. App navigates to waitlist
+3. Verify waitlist status shown",Waitlist screen shows pending status,+919999900001,agreement-confirmed,P1,Automated,Covered,"Backend: user-onboarding-flow.test.ts | Frontend: waitlist.test.ts, waitlist.test.tsx | E2E: flows/waitlist/index.yaml"
+HJ-006,Happy Journey,Waitlist,Waitlist approved transition,User transitions from pending to approved on waitlist,./scripts/seed-state.sh waitlisted +919999900001,"1. Admin approves user
+2. User opens app
+3. App detects approved status",App navigates to setup screen,+919999900001,waitlisted,P0,Automated,Covered,Backend: get-waitlist-status.test.ts | Frontend: waitlist.test.tsx | E2E: flows/waitlist/index.yaml
+HJ-007,Happy Journey,Setup,Add bank account (IFSC + account),Add bank account with valid IFSC and account number,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
+2. Tap ""Add Bank Account""
+3. Enter IFSC code
+4. Enter account number
+5. Tap ""Verify""",Bank account verified and step marked complete,+919999900001,approved,P0,Automated,Covered,"Backend: verify-bank.test.ts, verification-flow.test.ts | Frontend: setup.test.ts | E2E: flows/setup/add-bank.yaml"
+HJ-008,Happy Journey,Setup,Add utility (electricity provider + bill),Add electricity utility with provider selection and bill fetch,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
+2. Tap ""Add Utility""
+3. Select electricity provider
+4. Enter consumer number
+5. Tap ""Fetch Bill""",Utility bill fetched and step marked complete,+919999900001,approved,P1,Automated,Covered,"Backend: verify-utility.test.ts, utility-bill-flow.test.ts | Frontend: setup.test.ts | E2E (new): flows/setup/add-utility.yaml"
+HJ-009,Happy Journey,Setup,Invite landlord (phone + name),Invite landlord by entering their phone and name,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
+2. Tap ""Invite Landlord""
+3. Enter landlord name
+4. Enter landlord phone
+5. Tap ""Send Invite""",Landlord invite sent successfully,+919999900001,approved,P1,Semi-Auto,Partial,Frontend: setup.test.ts | E2E: flows/setup/invite-landlord.yaml
+HJ-010,Happy Journey,Setup,Landlord receives invite and approves,Landlord receives SMS invite and completes approval OTP flow,./scripts/seed-state.sh landlord-invited +919999900001,"1. Landlord receives SMS
+2. Landlord opens link
+3. Landlord enters OTP
+4. Landlord approves tenancy",Landlord approval recorded and tenant notified,+919999900001,landlord-invited,P1,Manual,Gap,
+HJ-011,Happy Journey,Setup,Setup complete to home dashboard,All setup steps done navigates to home dashboard,./scripts/seed-state.sh setup-complete +919999900001,"1. Complete all setup steps
+2. Tap ""Continue""
+3. Verify dashboard loads",Home dashboard displayed with payment due card,+919999900001,setup-complete,P0,Semi-Auto,Partial,"Frontend: useSetupGuard.test.ts, useDashboard.test.ts | E2E: journeys/new-user-onboarding.yaml"
+HJ-012,Happy Journey,Payment,First rent payment end-to-end,Enter amount select method pay and see success,./scripts/seed-state.sh active +919999900001,"1. Tap ""Pay Rent""
+2. Enter amount
+3. Select payment method
+4. Complete payment
+5. Wait for success",Payment success screen shown with receipt,+919999900001,active,P0,Automated,Covered,"Backend: payment-flow.test.ts, initiate-payment.test.ts | Frontend: payment-flow.integration.test.ts, usePaymentFlow.test.ts | E2E: journeys/make-payment.yaml"
+HJ-013,Happy Journey,Setup,Skip landlord invitation,Complete setup without inviting landlord,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
+2. Complete bank step
+3. Skip landlord step
+4. Complete or skip utility",Setup completes with landlord step skipped,+919999900001,approved,P1,Automated,Covered,Frontend: useSetupGuard.test.ts | E2E (new): journeys/skip-setup.yaml
+HJ-014,Happy Journey,Setup,Skip utility verification,Complete setup without adding utility,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
+2. Complete bank step
+3. Complete or skip landlord
+4. Skip utility step",Setup completes with utility step skipped,+919999900001,approved,P1,E2E,Partial,"E2E (new): flows/setup/add-utility-skip.yaml, journeys/skip-setup.yaml"
+HJ-015,Happy Journey,Setup,Skip both landlord and utility,Complete setup with only bank verification,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
+2. Complete bank step
+3. Skip landlord
+4. Skip utility",Setup completes with minimum steps,+919999900001,approved,P1,E2E,Partial,E2E (new): journeys/skip-setup.yaml
+HJ-016,Happy Journey,Payment,Payment via UPI,Complete rent payment using UPI VPA,./scripts/seed-state.sh active +919999900001,"1. Tap ""Pay Rent""
+2. Enter amount
+3. Select UPI
+4. Enter VPA
+5. Complete payment",Payment success via UPI,+919999900001,active,P0,Automated,Covered,Backend: payment-flow.test.ts | Frontend: usePaymentFlow.test.ts | E2E: journeys/make-payment.yaml
+HJ-017,Happy Journey,Payment,Payment via credit card,Complete rent payment using credit card,./scripts/seed-state.sh active +919999900001,"1. Tap ""Pay Rent""
+2. Enter amount
+3. Select Credit Card
+4. Enter card details
+5. Complete 3DS
+6. Verify success",Payment success via credit card,+919999900001,active,P0,Semi-Auto,Partial,Backend: payment-flow.test.ts | Frontend: usePaymentFlow.test.ts | E2E (new): journeys/payment-card.yaml
+HJ-018,Happy Journey,Payment,Payment via debit card,Complete rent payment using debit card,./scripts/seed-state.sh active +919999900001,"1. Tap ""Pay Rent""
+2. Enter amount
+3. Select Debit Card
+4. Enter card details
+5. Complete 3DS
+6. Verify success",Payment success via debit card,+919999900001,active,P0,Semi-Auto,Partial,Backend: payment-flow.test.ts | Frontend: usePaymentFlow.test.ts
+HJ-019,Happy Journey,Payment,Payment via netbanking,Complete rent payment using netbanking,./scripts/seed-state.sh active +919999900001,"1. Tap ""Pay Rent""
+2. Enter amount
+3. Select Netbanking
+4. Choose bank
+5. Complete bank auth
+6. Verify success",Payment success via netbanking,+919999900001,active,P0,Semi-Auto,Partial,Frontend: usePaymentFlow.test.ts | E2E (new): journeys/payment-netbanking.yaml
+HJ-020,Happy Journey,Transactions,View transaction history,View list of past transactions,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Navigate to Transactions tab
+2. Verify list loads
+3. Check transaction details shown",Transaction list displays with correct data,+919999900001,active,P1,Manual,Gap,"Frontend: usePayments.test.ts, payments.test.ts"
+HJ-021,Happy Journey,Transactions,View payment receipt,View and optionally download payment receipt,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Navigate to Transactions
+2. Tap a completed transaction
+3. Tap ""View Receipt""",Receipt displays with payment details,+919999900001,active,P1,Manual,Gap,"Frontend: usePayments.test.ts, edge-functions.test.ts"
+HJ-022,Happy Journey,Referral,Apply referral code during setup,Enter and apply a valid referral code,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Setup
+2. Find referral code input
+3. Enter valid code
+4. Tap ""Apply""",Referral code applied successfully,+919999900001,approved,P2,Manual,Gap,Backend: referral-codes.test.ts | Frontend: waitlist.test.ts
+HJ-023,Happy Journey,Cashback,View cashback earned after payment,Check cashback credited after successful payment,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Complete a payment
+2. Return to dashboard
+3. Check cashback section",Cashback amount displayed correctly,+919999900001,active,P2,Manual,Gap,Backend: payment-flow.test.ts | Frontend: edge-functions.test.ts
+HJ-024,Happy Journey,Profile,Edit profile (name and avatar),Update display name and profile avatar,./scripts/seed-state.sh active +919999900001,"1. Navigate to Profile
+2. Tap ""Edit""
+3. Change name
+4. Change avatar
+5. Save",Profile updated and changes reflected,+919999900001,active,P2,Semi-Auto,Partial,Frontend: profile.test.ts | E2E: journeys/manage-profile.yaml
+HJ-025,Happy Journey,Auth,Sign out and re-login,Sign out then sign back in with same phone,./scripts/seed-state.sh active +919999900001,"1. Navigate to Profile
+2. Tap ""Sign Out""
+3. Confirm sign out
+4. Sign in again with same phone
+5. Enter OTP",User logged back in with data preserved,+919999900001,active,P1,Semi-Auto,Partial,"Frontend: auth-flow.integration.test.ts, useAuth.test.ts | E2E (new): journeys/sign-out-relogin.yaml"
+UI-001,UI Level,Splash,Splash screen renders correctly,Verify splash screen displays logo and brand elements,none,"1. Cold launch app
+2. Observe splash screen",Splash screen shows logo and brand gradient,+919999900001,clean,P1,Automated,Covered,Frontend: splash.test.tsx | E2E: flows/auth/splash.yaml
+UI-002,UI Level,Splash,Beta splash screen renders,Verify beta splash variant displays beta badge,none,"1. Launch app in beta mode
+2. Observe splash",Beta badge visible on splash,+919999900001,clean,P2,Automated,Covered,Frontend: beta-splash.test.tsx | E2E: flows/auth/beta-splash.yaml
+UI-003,UI Level,Carousel,Carousel slide 1 renders,Verify first carousel slide content and illustration,none,"1. Launch app
+2. After splash view carousel
+3. Verify slide 1 content",Slide 1 shows correct heading illustration and CTA,+919999900001,clean,P1,Automated,Covered,Frontend: carousel.test.tsx | E2E: flows/auth/carousel.yaml
+UI-004,UI Level,Carousel,Carousel slide 2 renders,Verify second carousel slide content,none,"1. Swipe to slide 2
+2. Verify content",Slide 2 shows correct heading and illustration,+919999900001,clean,P1,Automated,Covered,Frontend: carousel.test.tsx | E2E: flows/auth/carousel.yaml
+UI-005,UI Level,Carousel,Carousel slide 3 renders,Verify third carousel slide and Get Started CTA,none,"1. Swipe to slide 3
+2. Verify CTA button",Slide 3 shows Get Started button,+919999900001,clean,P1,Automated,Covered,Frontend: carousel.test.tsx | E2E: flows/auth/carousel.yaml
+UI-006,UI Level,Carousel,Carousel swipe gestures,Verify swipe left/right navigates between slides,none,"1. Swipe left through all slides
+2. Swipe right back",Slides transition smoothly with pagination dots updating,+919999900001,clean,P1,Automated,Covered,Frontend: carousel.test.tsx | E2E: flows/auth/carousel.yaml
+UI-007,UI Level,Sign Up,Sign-up screen empty state,Verify sign-up screen initial empty state,none,"1. Tap Get Started
+2. View sign-up screen",Phone input empty with placeholder and country code +91,+919999900001,clean,P1,Automated,Covered,Frontend: sign-up.test.tsx | E2E: flows/auth/sign-up.yaml
+UI-008,UI Level,Sign Up,Sign-up screen phone entered,Verify phone number entered state,none,"1. On sign-up screen
+2. Enter phone number",Continue button becomes enabled and phone formatted,+919999900001,clean,P1,Automated,Covered,Frontend: sign-up.test.tsx | E2E: flows/auth/sign-up.yaml
+UI-009,UI Level,Sign Up,Sign-up screen invalid phone,Verify error shown for invalid phone,none,"1. Enter invalid phone (less than 10 digits)
+2. Tap Continue",Error message shown for invalid phone format,+919999900001,clean,P1,Semi-Auto,Partial,Frontend: sign-up.test.tsx
+UI-010,UI Level,Sign Up,Country picker with 15 countries,Verify country picker modal with supported countries,none,"1. Tap country code selector
+2. View country list",Modal shows 15 countries with flags and dial codes,+919999900001,clean,P2,Semi-Auto,Partial,Frontend: sign-up.test.tsx
+UI-011,UI Level,OTP,OTP screen empty state,Verify OTP screen initial state with 6 input boxes,none,"1. Submit valid phone
+2. View OTP screen",6 empty OTP boxes shown with resend timer,+919999900001,otp-sent,P1,Automated,Covered,Frontend: otp.test.tsx | E2E: flows/auth/otp.yaml
+UI-012,UI Level,OTP,OTP screen partial entry,Verify partial OTP entry state,none,"1. Enter 3 of 6 digits
+2. Observe state",First 3 boxes filled cursor on 4th box,+919999900001,otp-sent,P1,Semi-Auto,Partial,Frontend: OTPInput.test.tsx
+UI-013,UI Level,OTP,OTP screen complete entry,Verify all 6 digits entered triggers auto-submit,none,"1. Enter all 6 digits
+2. Observe auto-submit",Auto-submits after 6th digit with loading indicator,+919999900001,otp-sent,P1,Automated,Covered,"Frontend: OTPInput.test.tsx, otp.test.tsx | E2E: flows/auth/otp.yaml"
+UI-014,UI Level,OTP,OTP screen error state,Verify error state for wrong OTP,none,"1. Enter wrong OTP
+2. View error",Error message shown boxes cleared or highlighted red,+919999900001,otp-sent,P1,Automated,Covered,Frontend: otp.test.tsx | E2E: flows/auth/otp-error.yaml
+UI-015,UI Level,OTP,OTP resend timer,Verify resend timer countdown and resend button,none,"1. View OTP screen
+2. Wait for timer
+3. Tap Resend",Timer counts down then Resend becomes tappable,+919999900001,otp-sent,P2,Semi-Auto,Partial,Frontend: otp.test.tsx
+UI-016,UI Level,Agreement,Agreement upload empty state,Verify agreement upload screen initial state,./scripts/seed-state.sh verified +919999900001,"1. Navigate to agreement upload
+2. View initial state",Upload prompt shown with camera and gallery options,+919999900001,verified,P1,Manual,Gap,E2E: flows/agreement/upload.yaml
+UI-017,UI Level,Agreement,Agreement camera preview,Verify camera preview when capturing agreement,./scripts/seed-state.sh verified +919999900001,"1. Tap camera option
+2. Grant permission
+3. View preview",Camera preview shows with capture button,+919999900001,verified,P1,Manual,Gap,
+UI-018,UI Level,Agreement,Agreement gallery selected,Verify selected gallery image preview,./scripts/seed-state.sh verified +919999900001,"1. Tap gallery option
+2. Select image",Selected image previewed with confirm/retake options,+919999900001,verified,P1,Manual,Gap,
+UI-019,UI Level,Agreement,Agreement uploading state,Verify uploading progress indicator,./scripts/seed-state.sh verified +919999900001,"1. Select document
+2. Tap upload
+3. Observe progress",Upload progress indicator shown,+919999900001,verified,P1,Manual,Gap,
+UI-020,UI Level,Agreement,Agreement uploaded state,Verify uploaded confirmation state,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. After upload completes
+2. View confirmation",Upload success message and processing status shown,+919999900001,agreement-uploaded,P1,Manual,Gap,
+UI-021,UI Level,Agreement,Agreement review extracted data,Verify extracted data display on review screen,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. Navigate to agreement review
+2. View extracted fields",All extracted fields displayed (names address rent amount dates),+919999900001,agreement-uploaded,P1,Manual,Gap,
+UI-022,UI Level,Agreement,Agreement review edit mode,Verify ability to edit extracted data,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. On review screen
+2. Tap edit on a field
+3. Modify value",Field becomes editable and saves changes,+919999900001,agreement-uploaded,P2,Manual,Gap,
+UI-023,UI Level,Waitlist,Waitlist pending state,Verify waitlist screen in pending state,./scripts/seed-state.sh waitlisted +919999900001,"1. Navigate to waitlist screen
+2. View pending state",Pending status with position and estimated time,+919999900001,waitlisted,P1,Automated,Covered,Frontend: waitlist.test.tsx | E2E: flows/waitlist/index.yaml
+UI-024,UI Level,Waitlist,Waitlist approved badge,Verify approved state with badge,./scripts/seed-state.sh approved +919999900001,"1. Open app as approved user
+2. View waitlist transition",Approved badge/animation shown before setup navigation,+919999900001,approved,P1,Automated,Covered,Frontend: waitlist.test.tsx | E2E: flows/waitlist/index.yaml
+UI-025,UI Level,Waitlist,Waitlist rejected state,Verify rejected state display,./scripts/seed-state.sh waitlist-rejected +919999900001,"1. Open app as rejected user
+2. View waitlist screen",Rejected message with contact support option,+919999900001,waitlist-rejected,P2,Semi-Auto,Partial,Frontend: waitlist.test.tsx
+UI-026,UI Level,Setup,Setup 0/3 steps state,Verify setup screen with no steps complete,./scripts/seed-state.sh approved +919999900001,"1. Navigate to setup
+2. View initial state",All 3 steps shown as incomplete with progress 0/3,+919999900001,approved,P1,Automated,Covered,Frontend: useSetupGuard.test.ts | E2E: flows/setup/index.yaml
+UI-027,UI Level,Setup,Setup 1/3 steps state,Verify setup with one step complete,./scripts/seed-state.sh approved +919999900001 --bank-verified,"1. Navigate to setup
+2. View after bank verified",Bank step checked progress 1/3,+919999900001,approved,P1,Semi-Auto,Partial,Frontend: useSetupGuard.test.ts
+UI-028,UI Level,Setup,Setup 2/3 steps state,Verify setup with two steps complete,./scripts/seed-state.sh approved +919999900001 --bank-verified --utility-verified,"1. Navigate to setup
+2. View after bank + utility",Two steps checked progress 2/3,+919999900001,approved,P1,Semi-Auto,Partial,Frontend: useSetupGuard.test.ts
+UI-029,UI Level,Setup,Setup 3/3 steps state,Verify setup with all steps complete,./scripts/seed-state.sh setup-complete +919999900001,"1. Navigate to setup
+2. View all complete",All steps checked with Continue to dashboard CTA,+919999900001,setup-complete,P1,Semi-Auto,Partial,Frontend: useSetupGuard.test.ts
+UI-030,UI Level,Setup,Setup skip states UI,Verify skip button and skipped step appearance,./scripts/seed-state.sh approved +919999900001,"1. Navigate to setup
+2. Tap Skip on a step
+3. View skipped state",Skipped step shown as dimmed/skipped label,+919999900001,approved,P2,Semi-Auto,Partial,
+UI-031,UI Level,Dashboard,Home dashboard zero state no tenancy,Verify dashboard when no tenancy exists,./scripts/seed-state.sh active +919999900001 --no-tenancy,"1. Navigate to home
+2. View zero state",Empty state prompting user to complete setup,+919999900001,active,P1,Manual,Gap,
+UI-032,UI Level,Dashboard,Home dashboard payment due,Verify dashboard with payment due card,./scripts/seed-state.sh active +919999900001,"1. Navigate to home
+2. View payment due state",Payment due card with amount and due date,+919999900001,active,P1,E2E,Partial,E2E (new): flows/main/dashboard-states.yaml
+UI-033,UI Level,Dashboard,Home dashboard overdue payment,Verify dashboard with overdue payment indicator,./scripts/seed-state.sh active +919999900001 --overdue,"1. Navigate to home
+2. View overdue state",Overdue badge with penalty amount shown,+919999900001,active,P1,E2E,Partial,E2E (new): flows/main/dashboard-states.yaml
+UI-034,UI Level,Dashboard,Home dashboard pending verification,Verify dashboard during pending bank/utility verification,./scripts/seed-state.sh active +919999900001 --pending-verify,"1. Navigate to home
+2. View pending state",Pending verification banner shown,+919999900001,active,P2,Manual,Gap,
+UI-035,UI Level,Dashboard,Home dashboard loaded cashback,Verify cashback section on dashboard,./scripts/seed-state.sh active +919999900001 --with-cashback,"1. Navigate to home
+2. Scroll to cashback section",Cashback amount and history summary displayed,+919999900001,active,P2,Manual,Gap,
+UI-036,UI Level,Dashboard,Home dashboard multiple tenancies,Verify dashboard with multiple tenancy selector,./scripts/seed-state.sh active +919999900001 --multi-tenancy,"1. Navigate to home
+2. View tenancy selector",Tenancy selector visible with switch capability,+919999900001,active,P2,Manual,Gap,
+UI-037,UI Level,Payment Modal,PaymentMethodModal enter-amount view,Verify enter amount step in payment modal,./scripts/seed-state.sh active +919999900001,"1. Tap Pay Rent
+2. View enter-amount step",Amount input with keypad and Continue CTA,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/first-rent.yaml | E2E (new): flows/payment/enter-rent.yaml
+UI-038,UI Level,Payment Modal,PaymentMethodModal method-selector view,Verify method selection step,./scripts/seed-state.sh active +919999900001,"1. Enter amount
+2. Tap Continue
+3. View method selector",List of payment methods (UPI Card Netbanking),+919999900001,active,P0,Semi-Auto,Partial,E2E: journeys/make-payment.yaml | E2E (new): flows/payment/method-selector.yaml
+UI-039,UI Level,Payment Modal,PaymentMethodModal add-upi view,Verify UPI VPA entry view,./scripts/seed-state.sh active +919999900001,"1. In method selector tap UPI
+2. View add-upi form",UPI VPA input field with @ domain suggestions,+919999900001,active,P0,Semi-Auto,Partial,E2E (new): flows/payment/add-upi.yaml
+UI-040,UI Level,Payment Modal,PaymentMethodModal add-card view,Verify card entry view,./scripts/seed-state.sh active +919999900001,"1. In method selector tap Card
+2. View add-card form",Card number expiry CVV fields with card preview,+919999900001,active,P0,Semi-Auto,Partial,E2E (new): flows/payment/add-card.yaml
+UI-041,UI Level,Payment Modal,PaymentMethodModal add-netbanking view,Verify netbanking bank selection view,./scripts/seed-state.sh active +919999900001,"1. In method selector tap Netbanking
+2. View bank list",Bank list with search and popular banks section,+919999900001,active,P0,Semi-Auto,Partial,E2E (new): flows/payment/add-netbanking.yaml
+UI-042,UI Level,Payment Modal,PaymentMethodModal edit-method view,Verify edit/manage saved methods view,./scripts/seed-state.sh active +919999900001 --with-methods,"1. In method selector tap Edit
+2. View saved methods",List of saved methods with delete and default options,+919999900001,active,P1,Manual,Gap,
+UI-043,UI Level,Payment,Payment processing screen,Verify processing screen with animation,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
+2. View processing screen",Loading animation with do not close warning,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/status-pending.yaml
+UI-044,UI Level,Payment,Payment success screen,Verify success screen with details,./scripts/seed-state.sh active +919999900001,"1. Complete payment
+2. View success screen",Success animation amount reference number and receipt CTA,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/status-success.yaml
+UI-045,UI Level,Payment,Payment failed screen,Verify failed screen with retry option,./scripts/seed-state.sh active +919999900001,"1. Trigger failed payment
+2. View failed screen",Failure message with retry and support options,+919999900001,active,P0,Semi-Auto,Partial,E2E: flows/payment/status-failed.yaml
+UI-046,UI Level,Profile,Profile view screen,Verify profile display with user data,./scripts/seed-state.sh active +919999900001,"1. Navigate to Profile tab
+2. View profile",Name phone avatar and menu items displayed,+919999900001,active,P1,Manual,Gap,
+UI-047,UI Level,Profile,Profile edit screen,Verify profile edit form,./scripts/seed-state.sh active +919999900001,"1. Tap Edit Profile
+2. View edit form",Editable name field and avatar picker,+919999900001,active,P2,E2E,Partial,E2E (new): flows/profile/edit.yaml
+UI-048,UI Level,Profile,Payment methods list screen,Verify saved payment methods list,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Navigate to Payment Methods in profile
+2. View list",Saved methods listed with type icons and default indicator,+919999900001,active,P1,E2E,Partial,E2E (new): flows/profile/payment-methods.yaml
+UI-049,UI Level,Profile,Notifications settings screen,Verify notification preferences screen,./scripts/seed-state.sh active +919999900001,"1. Navigate to Notifications in profile
+2. View settings",Toggle switches for push SMS WhatsApp email,+919999900001,active,P2,Manual,Gap,
+UI-050,UI Level,Profile,Help screen,Verify help/support screen,./scripts/seed-state.sh active +919999900001,"1. Navigate to Help in profile
+2. View help screen",FAQ list and contact support options,+919999900001,active,P2,Manual,Gap,
+UI-051,UI Level,Profile,About screen,Verify about screen with app version,./scripts/seed-state.sh active +919999900001,"1. Navigate to About in profile
+2. View about screen",App version build number and legal links,+919999900001,active,P2,Manual,Gap,
+UI-052,UI Level,Profile,Agreement view screen,Verify uploaded agreement view in profile,./scripts/seed-state.sh active +919999900001,"1. Navigate to Agreement in profile
+2. View agreement",Agreement details and document preview shown,+919999900001,active,P2,E2E,Partial,E2E (new): flows/profile/agreement.yaml
+UI-053,UI Level,Transactions,Transaction list empty state,Verify empty transaction list,./scripts/seed-state.sh active +919999900001 --no-payments,"1. Navigate to Transactions
+2. View empty state",Empty state illustration with message,+919999900001,active,P1,Manual,Gap,
+UI-054,UI Level,Transactions,Transaction list populated,Verify populated transaction list,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Navigate to Transactions
+2. View list",Transactions listed with date amount status,+919999900001,active,P1,Manual,Gap,
+UI-055,UI Level,Transactions,Transaction list pull-to-refresh,Verify pull-to-refresh on transaction list,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Navigate to Transactions
+2. Pull down to refresh",Refresh indicator shown and list updates,+919999900001,active,P2,Automated,Covered,Frontend: Jest tests
+UI-056,UI Level,Transactions,Transaction detail screen,Verify individual transaction detail,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Tap a transaction
+2. View detail screen",Full transaction details (amount method status timestamp reference),+919999900001,active,P1,Automated,Covered,Frontend: Jest tests
+UI-057,UI Level,BottomSheet,BottomSheet drag-dismiss,Verify bottom sheet dismisses on drag down,./scripts/seed-state.sh active +919999900001,"1. Open any bottom sheet
+2. Drag handle down past threshold",Bottom sheet dismisses with animation,+919999900001,active,P1,Automated,Covered,Frontend: Jest tests
+UI-058,UI Level,BottomSheet,BottomSheet snap points,Verify bottom sheet snap points behavior,./scripts/seed-state.sh active +919999900001,"1. Open bottom sheet
+2. Drag to various positions",Sheet snaps to defined points (half and full),+919999900001,active,P2,Automated,Covered,Frontend: Jest tests
+UI-059,UI Level,Animation,Card flip animation,Verify payment card flip animation (front/back),./scripts/seed-state.sh active +919999900001,"1. Navigate to add card
+2. Enter CVV to trigger flip",Card flips smoothly showing back with CVV field,+919999900001,active,P2,Automated,Covered,Frontend: Jest tests
+UI-060,UI Level,States,All error/empty/loading states,Verify error empty and loading states render for each screen,./scripts/seed-state.sh active +919999900001,"1. Trigger loading state (slow network)
+2. Trigger error state (network off)
+3. Trigger empty state (no data)",Each state renders appropriate UI without crashes,+919999900001,active,P1,Automated,Covered,Frontend: Jest tests
+EC-001,Edge Cases,OTP,Double OTP submission,Submit OTP twice rapidly to test idempotency,./scripts/seed-state.sh otp-sent +919999900001,"1. Enter valid OTP
+2. Rapidly tap submit twice",Only one verification processed no duplicate errors,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: otp.test.tsx
+EC-002,Edge Cases,OTP,Expired OTP after 5 minutes,Enter OTP after expiry window,./scripts/seed-state.sh otp-sent +919999900001,"1. Request OTP
+2. Wait 5+ minutes
+3. Enter OTP",Error message indicating OTP expired with resend option,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: useAuth.test.ts | E2E (new): flows/edge-cases/otp-error-states.yaml
+EC-003,Edge Cases,OTP,Wrong OTP 3 times,Enter incorrect OTP three consecutive times,./scripts/seed-state.sh otp-sent +919999900001,"1. Enter wrong OTP
+2. Repeat 2 more times",Account temporarily locked with cooldown message,+919999900001,otp-sent,P0,Semi-Auto,Partial,Frontend: otp.test.tsx | E2E (new): flows/edge-cases/otp-error-states.yaml
+EC-004,Edge Cases,Payment,Network disconnect during payment initiation,Lose network after tapping pay but before server response,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
+2. Disable network immediately
+3. Observe behavior",Error shown with retry option no duplicate payment created,+919999900001,active,P0,Manual,Gap,
+EC-005,Edge Cases,Payment,App kill during payment processing,Force kill app while payment is processing,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
+2. Force kill app
+3. Reopen app",App checks pending payment status and shows correct result,+919999900001,active,P0,Automated,Covered,Frontend: usePaymentRecovery.test.ts | E2E (new): journeys/crash-recovery-payment.yaml
+EC-006,Edge Cases,Agreement,App kill during agreement upload,Force kill app while document is uploading,./scripts/seed-state.sh verified +919999900001,"1. Start agreement upload
+2. Force kill app
+3. Reopen app",Upload state recovered or user prompted to re-upload,+919999900001,verified,P1,Manual,Gap,
+EC-007,Edge Cases,Agreement,Corrupt file upload non-PDF,Attempt to upload non-PDF/image file,./scripts/seed-state.sh verified +919999900001,"1. Attempt to upload a .txt or .zip file
+2. Observe response",Error message indicating unsupported file format,+919999900001,verified,P1,Semi-Auto,Covered,Multi-layer coverage
+EC-008,Edge Cases,Agreement,Oversized file upload,Upload file exceeding size limit,./scripts/seed-state.sh verified +919999900001,"1. Select file > 10MB
+2. Attempt upload",Error message indicating file too large with size limit,+919999900001,verified,P1,Semi-Auto,Covered,Multi-layer coverage
+EC-009,Edge Cases,Auth,Concurrent login from two devices,Login from second device while first is active,./scripts/seed-state.sh active +919999900001,"1. Login on device A
+2. Login on device B with same phone
+3. Check device A",Device A session invalidated or notification shown,+919999900001,active,P1,Manual,Gap,
+EC-010,Edge Cases,Network,Offline to online transition queue replay,Perform actions offline then reconnect,./scripts/seed-state.sh active +919999900001,"1. Go offline
+2. Attempt various actions
+3. Reconnect",Queued actions replay and data syncs,+919999900001,active,P1,E2E,Partial,E2E (new): journeys/network-offline.yaml
+EC-011,Edge Cases,Error,ErrorBoundary fallback rendering,Trigger JS error to test error boundary,./scripts/seed-state.sh active +919999900001,"1. Trigger a component crash (dev tools)
+2. Observe fallback UI",Error boundary fallback screen renders with retry,+919999900001,active,P1,Semi-Auto,Partial,Frontend: ErrorBoundary.test.tsx
+EC-012,Edge Cases,Payment,Amount mismatch webhook vs initiated,Webhook reports different amount than initiated,./scripts/seed-state.sh active +919999900001,"1. Initiate payment for 10000
+2. Simulate webhook with 9000
+3. Check validation",Payment flagged as suspicious amount mismatch logged,+919999900001,active,P0,Semi-Auto,Partial,"Backend: security-tests.test.ts, bug-fixes.test.ts"
+EC-013,Edge Cases,Payment,Idempotency key collision,Send same idempotency key for two different payments,./scripts/seed-state.sh active +919999900001,"1. Call initiate-payment with key X
+2. Call again with same key X different amount",Second request rejected or returns original result,+919999900001,active,P0,Automated,Covered,"Backend: security-tests.test.ts, payment-flow.test.ts | Frontend: payment-flow.integration.test.ts"
+EC-014,Edge Cases,Payment,Stale payment polling timeout,Payment status never resolves within 5 minutes,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
+2. Block webhook delivery
+3. Wait 5+ minutes",Timeout message shown with check-status CTA,+919999900001,active,P1,Manual,Gap,
+EC-015,Edge Cases,Auth,Session token expiry mid-flow,Token expires during multi-step flow,./scripts/seed-state.sh active +919999900001,"1. Start payment flow
+2. Expire token on server
+3. Continue flow",Auth redirect triggered with state preserved,+919999900001,active,P1,Manual,Gap,
+EC-016,Edge Cases,Navigation,Deep link to invalid route,Open deep link with non-existent route,none,"1. Open flentsecured://invalid-route
+2. Observe behavior",App handles gracefully with redirect to home or error,+919999900001,active,P2,E2E,Partial,E2E (new): flows/edge-cases/deep-link-invalid.yaml
+EC-017,Edge Cases,Payment,Back button during payment,Press back/swipe back during payment processing,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
+2. Press back during processing",Warning dialog shown or back disabled during processing,+919999900001,active,P0,E2E,Partial,E2E (new): flows/edge-cases/payment-back-button.yaml
+EC-018,Edge Cases,Payment,Rapid multi-tap on pay button,Tap pay button multiple times rapidly,./scripts/seed-state.sh active +919999900001,"1. Enter amount and select method
+2. Rapidly tap Pay 5 times",Only one payment initiated button disabled after first tap,+919999900001,active,P0,Semi-Auto,Partial,Frontend: usePaymentFlow.test.ts | E2E (new): flows/edge-cases/rapid-pay-tap.yaml
+EC-019,Edge Cases,API,Empty/null responses from edge functions,Edge function returns empty or null body,./scripts/seed-state.sh active +919999900001,"1. Mock edge function to return null
+2. Trigger the call
+3. Observe app behavior",App shows appropriate error without crashing,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+EC-020,Edge Cases,Auth,Malformed phone number formats,Enter various malformed phone formats,none,"1. Try phone with spaces
+2. Try phone with dashes
+3. Try phone with letters
+4. Try phone with special chars",All rejected with clear validation messages,+919999900001,clean,P1,Automated,Covered,Backend: auth-otp.test.ts | Frontend: PhoneInput.test.tsx
+EC-021,Edge Cases,Profile,Unicode in name fields,Enter Unicode characters in name field,./scripts/seed-state.sh active +919999900001,"1. Edit profile
+2. Enter name with emojis/CJK/Arabic chars
+3. Save",Name saved and displayed correctly or validated,+919999900001,active,P2,Manual,Gap,
+EC-022,Edge Cases,Agreement,Very long address in extraction,Agreement with extremely long address field,./scripts/seed-state.sh verified +919999900001,"1. Upload agreement with 500+ char address
+2. View extraction review",Address displayed with truncation or scrollable field,+919999900001,verified,P2,Semi-Auto,Covered,Multi-layer coverage
+EC-023,Edge Cases,Permissions,Camera permission denied,Deny camera permission when requested,./scripts/seed-state.sh verified +919999900001,"1. Tap camera for agreement
+2. Deny permission",Graceful message with link to settings,+919999900001,verified,P1,Manual,Gap,
+EC-024,Edge Cases,Permissions,Photo library permission denied,Deny photo library permission when requested,./scripts/seed-state.sh verified +919999900001,"1. Tap gallery for agreement
+2. Deny permission",Graceful message with link to settings,+919999900001,verified,P1,Manual,Gap,
+EC-025,Edge Cases,Device,Low disk space during download,Attempt download with minimal storage,./scripts/seed-state.sh active +919999900001,"1. Fill device storage
+2. Attempt receipt download",Error message about insufficient storage,+919999900001,active,P3,Semi-Auto,Covered,Multi-layer coverage
+EC-026,Edge Cases,Network,Slow network 3G simulation,Use network conditioner to simulate 3G,./scripts/seed-state.sh active +919999900001,"1. Enable 3G network profile
+2. Navigate through app
+3. Attempt payment",App remains functional with loading indicators and timeouts,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+EC-027,Edge Cases,Payment,Payment with zero amount,Enter 0 as payment amount,./scripts/seed-state.sh active +919999900001,"1. Open payment modal
+2. Enter 0 as amount
+3. Try to proceed",Validation error prevents zero amount payment,+919999900001,active,P1,Semi-Auto,Partial,Backend: initiate-payment.test.ts | E2E (new): flows/edge-cases/payment-zero-amount.yaml
+EC-028,Edge Cases,Payment,Payment with negative amount,Attempt negative amount via API manipulation,./scripts/seed-state.sh active +919999900001,"1. Call initiate-payment with negative amount
+2. Check response",Server rejects with validation error,+919999900001,active,P1,Semi-Auto,Partial,Backend: initiate-payment.test.ts
+EC-029,Edge Cases,Payment,Duplicate payment within 1 minute,Attempt second payment within 1 minute of first,./scripts/seed-state.sh active +919999900001,"1. Complete payment
+2. Immediately initiate another
+3. Check response",Warning about recent payment or cooldown enforced,+919999900001,active,P1,Manual,Gap,
+EC-030,Edge Cases,Agreement,Re-upload agreement while previous pending,Upload new agreement while one is processing,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. While agreement is processing
+2. Attempt to upload new one",Either blocked with message or previous cancelled,+919999900001,agreement-uploaded,P2,Manual,Gap,
+EC-031,Edge Cases,Account,Delete account mid-payment,Attempt account deletion during active payment,./scripts/seed-state.sh active +919999900001,"1. Initiate payment
+2. In another session delete account
+3. Check payment outcome",Payment completes or refunds gracefully,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+EC-032,Edge Cases,Auth,Sign up with already registered phone,Register with phone that already has account,./scripts/seed-state.sh active +919999900001,"1. Sign up with existing phone
+2. Enter OTP",Logs into existing account instead of creating duplicate,+919999900001,active,P1,Semi-Auto,Partial,Frontend: useAuth.test.ts
+EC-033,Edge Cases,OTP,OTP resend rate limiting,Rapidly request OTP resend multiple times,./scripts/seed-state.sh otp-sent +919999900001,"1. Request OTP
+2. Tap Resend 5 times rapidly",Rate limiting enforced after threshold,+919999900001,otp-sent,P1,Automated,Covered,Backend: security-tests.test.ts | Frontend: useAuth.test.ts
+EC-034,Edge Cases,Setup,Invalid IFSC code,Enter invalid IFSC code in bank setup,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Add Bank
+2. Enter invalid IFSC
+3. Submit",Validation error with correct IFSC format hint,+919999900001,approved,P1,Semi-Auto,Partial,Backend: verify-bank.test.ts
+EC-035,Edge Cases,Setup,Invalid account number format,Enter invalid account number in bank setup,./scripts/seed-state.sh approved +919999900001,"1. Navigate to Add Bank
+2. Enter valid IFSC
+3. Enter invalid account number",Validation error for account number,+919999900001,approved,P1,Semi-Auto,Partial,Backend: verify-bank.test.ts
+EC-036,Edge Cases,Setup,Bank verification timeout,Bank verification API takes too long,./scripts/seed-state.sh approved +919999900001,"1. Enter valid bank details
+2. Simulate API timeout
+3. Observe behavior",Timeout message with retry option,+919999900001,approved,P1,Semi-Auto,Covered,Multi-layer coverage
+EC-037,Edge Cases,Setup,Utility provider API timeout,Utility bill fetch API times out,./scripts/seed-state.sh approved +919999900001,"1. Enter utility details
+2. Simulate API timeout
+3. Observe behavior",Timeout message with retry option,+919999900001,approved,P2,Semi-Auto,Covered,Multi-layer coverage
+EC-038,Edge Cases,Setup,Landlord invite to non-mobile number,Invite landlord with landline number,./scripts/seed-state.sh approved +919999900001,"1. Enter landlord name
+2. Enter landline number
+3. Submit",Validation error for non-mobile number,+919999900001,approved,P2,Semi-Auto,Covered,Multi-layer coverage
+EC-039,Edge Cases,Payment,Switch payment method during processing,Change method after payment initiated,./scripts/seed-state.sh active +919999900001,"1. Select UPI and initiate
+2. Try to switch to Card during processing",Method switch blocked during active processing,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+EC-040,Edge Cases,Device,Memory pressure low memory,App behavior under low memory conditions,./scripts/seed-state.sh active +919999900001,"1. Simulate memory warning
+2. Navigate through app
+3. Check for crashes",App handles memory pressure without data loss,+919999900001,active,P2,Manual,Gap,
+SM-001,State Management,Auth Store,Auth store persistence across app kill,Verify auth state survives app force kill,./scripts/seed-state.sh active +919999900001,"1. Login successfully
+2. Force kill app
+3. Reopen app",User remains authenticated without re-login,+919999900001,active,P0,Semi-Auto,Partial,"Frontend: auth.test.ts, auth-flow.integration.test.ts"
+SM-002,State Management,Payment Store,Payment store recovery after crash,Verify payment state recovery after crash,./scripts/seed-state.sh active +919999900001,"1. Start payment flow
+2. Simulate crash
+3. Reopen app",Payment state recovered or clean restart,+919999900001,active,P0,Automated,Covered,"Frontend: payment-flow.integration.test.ts, usePaymentRecovery.test.ts"
+SM-003,State Management,Upload Store,Upload store hydration race condition,Verify no race condition on upload store hydration,./scripts/seed-state.sh verified +919999900001,"1. Start agreement upload
+2. Rapidly switch screens
+3. Return to upload",Upload state consistent no duplicate uploads,+919999900001,verified,P1,Manual,Gap,
+SM-004,State Management,Waitlist Store,Waitlist store sync on app resume,Verify waitlist status syncs when app resumes from background,./scripts/seed-state.sh waitlisted +919999900001,"1. Open app (waitlisted)
+2. Admin approves user
+3. Resume app from background",Waitlist status updates to approved,+919999900001,waitlisted,P1,Semi-Auto,Partial,Frontend: waitlist.test.ts
+SM-005,State Management,Setup Store,Setup store progress persistence,Verify setup progress persists across sessions,./scripts/seed-state.sh approved +919999900001,"1. Complete bank step
+2. Kill app
+3. Reopen app",Bank step still marked complete,+919999900001,approved,P1,Semi-Auto,Partial,"Frontend: setup.test.ts, useSetupGuard.test.ts"
+SM-006,State Management,Profile Store,Profile store cache invalidation,Verify profile cache invalidates on update,./scripts/seed-state.sh active +919999900001,"1. View profile
+2. Update profile via API
+3. Pull to refresh",Profile shows updated data,+919999900001,active,P1,Semi-Auto,Partial,Frontend: profile.test.ts
+SM-007,State Management,Auth Store,Sign-out clears all stores,Verify all stores cleared on sign out,./scripts/seed-state.sh active +919999900001,"1. Login and navigate app
+2. Sign out
+3. Check all store states",All stores reset to initial state,+919999900001,active,P0,Automated,Covered,Frontend: auth-flow.integration.test.ts
+SM-008,State Management,Auth Store,Session expiry triggers auth redirect,Verify expired session redirects to login,./scripts/seed-state.sh active +919999900001,"1. Login
+2. Expire session on server
+3. Make authenticated request",App redirects to login screen,+919999900001,active,P0,Automated,Covered,"Frontend: useSessionMonitor.test.ts, useRequireAuth.test.ts"
+SM-009,State Management,General,Multiple store updates in single render,Verify multiple simultaneous store updates don't cause flickering,./scripts/seed-state.sh active +919999900001,"1. Trigger dashboard load (updates multiple stores)
+2. Observe rendering",Single smooth render without flicker,+919999900001,active,P2,Manual,Gap,
+SM-010,State Management,General,Zustand devtools state inspection,Verify Zustand state visible in dev tools,./scripts/seed-state.sh active +919999900001,"1. Open React Native debugger
+2. Inspect Zustand stores",All store states visible and correct,+919999900001,active,P3,Semi-Auto,Partial,Dev only
+SM-011,State Management,React Query,React Query cache invalidation,Verify cache invalidation after mutations,./scripts/seed-state.sh active +919999900001,"1. Fetch dashboard data
+2. Complete a payment
+3. Check dashboard cache",Dashboard data refetched with new payment,+919999900001,active,P1,Automated,Covered,"Frontend: usePayments.test.ts, useRefreshDashboard.test"
+SM-012,State Management,React Query,React Query retry on network recovery,Verify failed queries retry when network recovers,./scripts/seed-state.sh active +919999900001,"1. Disable network
+2. Trigger query (fails)
+3. Re-enable network",Query retries and succeeds,+919999900001,active,P1,Semi-Auto,Partial,Frontend: useNetworkStatus.test.ts
+SM-013,State Management,React Query,Stale-while-revalidate behavior,Verify stale data shown while revalidating,./scripts/seed-state.sh active +919999900001,"1. Load dashboard (data cached)
+2. Navigate away and back
+3. Observe stale then fresh data",Stale data shown immediately then updates on revalidation,+919999900001,active,P2,Automated,Covered,Frontend: Jest tests
+SM-014,State Management,React Query,Optimistic update rollback,Verify optimistic update rolls back on failure,./scripts/seed-state.sh active +919999900001,"1. Trigger optimistic mutation
+2. Force server error
+3. Observe rollback",UI reverts to previous state on error,+919999900001,active,P1,Semi-Auto,Partial,Frontend: usePayments.test.ts
+SM-015,State Management,React Query,Background fetch on app resume,Verify data refetches when app comes to foreground,./scripts/seed-state.sh active +919999900001,"1. Load dashboard
+2. Background app for 30s
+3. Resume app",Data refetches automatically,+919999900001,active,P2,Automated,Covered,Frontend: Jest tests
+SM-016,State Management,General,Store migration version upgrade,Verify store migration on app update,./scripts/seed-state.sh active +919999900001,"1. Install old version
+2. Login and create state
+3. Install new version
+4. Verify migration",State migrated correctly to new schema,+919999900001,active,P1,Manual,Gap,
+SM-017,State Management,General,Concurrent store writes,Verify concurrent writes don't corrupt state,./scripts/seed-state.sh active +919999900001,"1. Trigger multiple simultaneous mutations
+2. Verify final state",State consistent without corruption,+919999900001,active,P2,Manual,Gap,
+SM-018,State Management,General,Store size limits,Verify store handles large datasets,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Load 100+ transactions
+2. Check memory usage
+3. Verify pagination",Store handles large data with pagination,+919999900001,active,P2,Manual,Gap,
+SM-019,State Management,General,Hydration before first render,Verify stores hydrate before first meaningful render,./scripts/seed-state.sh active +919999900001,"1. Cold start app
+2. Measure time to hydration
+3. Check for flash of empty state",No flash of unauthenticated/empty state,+919999900001,active,P1,Automated,Covered,Frontend: Jest tests
+SM-020,State Management,Auth Store,Auth token refresh cycle,Verify token refresh happens before expiry,./scripts/seed-state.sh active +919999900001,"1. Login
+2. Monitor token refresh requests
+3. Verify refresh happens proactively",Token refreshed before expiry without interruption,+919999900001,active,P1,Semi-Auto,Partial,Frontend: useSessionMonitor.test.ts
+BA-001,Backend API,auth-otp,auth-otp send OTP success,Send OTP to valid phone number,./scripts/seed-state.sh clean +919999900001,"1. POST /auth-otp {action:send phone:+919999900001}
+2. Check response",200 with {success:true message_id:...},+919999900001,clean,P0,Automated,Covered,Backend: auth-otp.test.ts | Frontend: auth.test.ts | E2E: flows/auth/sign-up.yaml
+BA-002,Backend API,auth-otp,auth-otp send OTP invalid phone,Send OTP to invalid phone number,none,"1. POST /auth-otp {action:send phone:invalid}
+2. Check response",400 with validation error,+919999900001,clean,P0,Automated,Covered,Backend: auth-otp.test.ts | Frontend: auth.test.ts
+BA-003,Backend API,auth-otp,auth-otp verify OTP success,Verify correct OTP code,./scripts/seed-state.sh otp-sent +919999900001,"1. POST /auth-otp {action:verify phone:+919999900001 otp:123456}
+2. Check response",200 with {access_token refresh_token user},+919999900001,otp-sent,P0,Automated,Covered,Backend: auth-otp.test.ts | Frontend: auth.test.ts | E2E: flows/auth/otp.yaml
+BA-004,Backend API,auth-otp,auth-otp verify OTP wrong code,Verify incorrect OTP code,./scripts/seed-state.sh otp-sent +919999900001,"1. POST /auth-otp {action:verify phone:+919999900001 otp:000000}
+2. Check response",401 with invalid OTP error,+919999900001,otp-sent,P0,Automated,Covered,Backend: auth-otp.test.ts | Frontend: auth.test.ts | E2E: flows/auth/otp-error.yaml
+BA-005,Backend API,auth-otp,auth-otp resend OTP success,Resend OTP to valid phone,./scripts/seed-state.sh otp-sent +919999900001,"1. POST /auth-otp {action:resend phone:+919999900001}
+2. Check response",200 with new message_id,+919999900001,otp-sent,P0,Automated,Covered,Backend: Deno tests
+BA-006,Backend API,auth-otp,auth-otp resend rate limited,Resend OTP exceeding rate limit,./scripts/seed-state.sh otp-sent +919999900001,"1. POST /auth-otp {action:resend} 5 times rapidly
+2. Check response",429 rate limit error,+919999900001,otp-sent,P1,Automated,Covered,Backend: Deno tests
+BA-007,Backend API,verify-identity,verify-identity PAN success,Verify valid PAN number,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:verify_pan pan:ABCDE1234F}
+2. Check response",200 with PAN holder details,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-008,Backend API,verify-identity,verify-identity PAN invalid,Verify invalid PAN number,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:verify_pan pan:INVALID}
+2. Check response",400 with validation error,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-009,Backend API,verify-identity,verify-identity Aadhaar OTP send,Send Aadhaar verification OTP,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:aadhaar_otp aadhaar:123412341234}
+2. Check response",200 with reference_id for OTP verification,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-010,Backend API,verify-identity,verify-identity Aadhaar OTP invalid,Send invalid Aadhaar number,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:aadhaar_otp aadhaar:invalid}
+2. Check response",400 with validation error,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-011,Backend API,verify-identity,verify-identity Aadhaar verify success,Verify Aadhaar OTP successfully,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:aadhaar_verify ref_id:X otp:123456}
+2. Check response",200 with identity details,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-012,Backend API,verify-identity,verify-identity Aadhaar verify wrong OTP,Verify Aadhaar with wrong OTP,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:aadhaar_verify ref_id:X otp:000000}
+2. Check response",401 with invalid OTP,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-013,Backend API,verify-identity,verify-identity consent flow,Verify consent recording with IP,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:record_consent consent:true ip:1.2.3.4}
+2. Check response",200 with consent recorded,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-014,Backend API,verify-identity,verify-identity consent missing,Verify identity without consent,./scripts/seed-state.sh active +919999900001,"1. POST /verify-identity {action:verify_pan consent:false}
+2. Check response",403 consent required error,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-015,Backend API,verify-bank,verify-bank success,Verify valid bank account,./scripts/seed-state.sh approved +919999900001,"1. POST /verify-bank {ifsc:SBIN0001234 account:12345678901}
+2. Check response",200 with bank details and verification status,+919999900001,approved,P0,Automated,Covered,"Backend: verify-bank.test.ts, verification-flow.test.ts | Frontend: setup.test.ts | E2E: flows/setup/add-bank.yaml"
+BA-016,Backend API,verify-bank,verify-bank invalid IFSC,Verify bank with invalid IFSC,./scripts/seed-state.sh approved +919999900001,"1. POST /verify-bank {ifsc:INVALID account:12345678901}
+2. Check response",400 with invalid IFSC error,+919999900001,approved,P0,Automated,Covered,Backend: Deno tests
+BA-017,Backend API,verify-utility,verify-utility get operators,Fetch list of electricity operators,./scripts/seed-state.sh approved +919999900001,"1. GET /verify-utility?action=operators
+2. Check response",200 with list of operators,+919999900001,approved,P1,Automated,Covered,Backend: Deno tests
+BA-018,Backend API,verify-utility,verify-utility get operators error,Fetch operators with invalid params,./scripts/seed-state.sh approved +919999900001,"1. GET /verify-utility?action=invalid
+2. Check response",400 with invalid action error,+919999900001,approved,P1,Automated,Covered,Backend: Deno tests
+BA-019,Backend API,verify-utility,verify-utility verify bill success,Verify utility bill fetch,./scripts/seed-state.sh approved +919999900001,"1. POST /verify-utility {action:verify operator:X consumer_no:Y}
+2. Check response",200 with bill details,+919999900001,approved,P1,Automated,Covered,Backend: Deno tests
+BA-020,Backend API,verify-utility,verify-utility verify bill invalid,Verify utility with invalid consumer number,./scripts/seed-state.sh approved +919999900001,"1. POST /verify-utility {action:verify operator:X consumer_no:invalid}
+2. Check response",400 with invalid consumer number,+919999900001,approved,P1,Automated,Covered,Backend: Deno tests
+BA-021,Backend API,verify-card,verify-card success,Verify valid card via PayU tokenization,./scripts/seed-state.sh active +919999900001,"1. POST /verify-card {card_number:4111... expiry:12/28 cvv:123}
+2. Check response",200 with token and card_type,+919999900001,active,P0,Automated,Covered,Backend: Deno tests
+BA-022,Backend API,verify-card,verify-card invalid number,Verify invalid card number,./scripts/seed-state.sh active +919999900001,"1. POST /verify-card {card_number:0000... expiry:12/28 cvv:123}
+2. Check response",400 with invalid card error,+919999900001,active,P0,Automated,Covered,Backend: Deno tests
+BA-023,Backend API,verify-pan,verify-pan success,Verify valid PAN,./scripts/seed-state.sh active +919999900001,"1. POST /verify-pan {pan:ABCDE1234F}
+2. Check response",200 with PAN holder name,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-024,Backend API,verify-pan,verify-pan invalid,Verify invalid PAN format,./scripts/seed-state.sh active +919999900001,"1. POST /verify-pan {pan:12345}
+2. Check response",400 with invalid PAN format,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-025,Backend API,initiate-payment,initiate-payment success,Initiate valid payment,./scripts/seed-state.sh active +919999900001,"1. POST /initiate-payment {amount:15000 method:upi vpa:test@upi}
+2. Check response",200 with payment_id and redirect_url,+919999900001,active,P0,Automated,Covered,"Backend: initiate-payment.test.ts, payment-flow.test.ts | Frontend: payments.test.ts, payment-flow.integration.test.ts | E2E: journeys/make-payment.yaml"
+BA-026,Backend API,initiate-payment,initiate-payment invalid amount,Initiate payment with zero amount,./scripts/seed-state.sh active +919999900001,"1. POST /initiate-payment {amount:0 method:upi}
+2. Check response",400 with invalid amount error,+919999900001,active,P0,Automated,Covered,Backend: Deno tests
+BA-027,Backend API,payment-webhook,payment-webhook success,Process valid PayU webhook,./scripts/seed-state.sh active +919999900001,"1. POST /payment-webhook with valid PayU payload and hash
+2. Check response",200 payment status updated to success,+919999900001,active,P0,Automated,Covered,"Backend: payment-webhook.test.ts, payment-flow.test.ts"
+BA-028,Backend API,payment-webhook,payment-webhook invalid hash,Process webhook with tampered hash,./scripts/seed-state.sh active +919999900001,"1. POST /payment-webhook with invalid hash
+2. Check response",403 hash validation failed,+919999900001,active,P0,Automated,Covered,Backend: payment-webhook.test.ts
+BA-029,Backend API,check-payment-status,check-payment-status success,Check status of existing payment,./scripts/seed-state.sh active +919999900001 --with-payments,"1. GET /check-payment-status?payment_id=X
+2. Check response",200 with current payment status,+919999900001,active,P0,Automated,Covered,Backend: Deno tests
+BA-030,Backend API,check-payment-status,check-payment-status not found,Check status of non-existent payment,./scripts/seed-state.sh active +919999900001,"1. GET /check-payment-status?payment_id=nonexistent
+2. Check response",404 payment not found,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-031,Backend API,initiate-refund,initiate-refund success,Initiate refund for completed payment,./scripts/seed-state.sh active +919999900001 --with-payments,"1. POST /initiate-refund {payment_id:X reason:duplicate}
+2. Check response",200 with refund_id and status pending,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-032,Backend API,initiate-refund,initiate-refund already refunded,Refund already refunded payment,./scripts/seed-state.sh active +919999900001 --with-refund,"1. POST /initiate-refund {payment_id:X}
+2. Check response",400 already refunded error,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-033,Backend API,schedule-payment,schedule-payment success,Schedule future payment,./scripts/seed-state.sh active +919999900001,"1. POST /schedule-payment {amount:15000 date:2026-03-15}
+2. Check response",200 with schedule_id,+919999900001,active,P1,Manual,Gap,
+BA-034,Backend API,schedule-payment,schedule-payment past date,Schedule payment with past date,./scripts/seed-state.sh active +919999900001,"1. POST /schedule-payment {amount:15000 date:2025-01-01}
+2. Check response",400 invalid date error,+919999900001,active,P1,Manual,Gap,
+BA-035,Backend API,generate-payu-hash,generate-payu-hash success,Generate valid PayU payment hash,./scripts/seed-state.sh active +919999900001,"1. POST /generate-payu-hash {txnid:X amount:15000 productinfo:rent}
+2. Check response",200 with hash value,+919999900001,active,P0,Automated,Covered,Backend: Deno tests
+BA-036,Backend API,generate-payu-hash,generate-payu-hash missing params,Generate hash with missing parameters,./scripts/seed-state.sh active +919999900001,"1. POST /generate-payu-hash {txnid:X}
+2. Check response",400 missing required parameters,+919999900001,active,P0,Automated,Covered,Backend: Deno tests
+BA-037,Backend API,settle-to-landlord,settle-to-landlord success,Initiate settlement to landlord,./scripts/seed-state.sh active +919999900001 --with-payments,"1. POST /settle-to-landlord {payment_id:X}
+2. Check response",200 with settlement_id and status,+919999900001,active,P1,Manual,Gap,
+BA-038,Backend API,settle-to-landlord,settle-to-landlord no landlord,Settle when no landlord approved,./scripts/seed-state.sh active +919999900001 --no-landlord,"1. POST /settle-to-landlord {payment_id:X}
+2. Check response",400 no approved landlord error,+919999900001,active,P1,Manual,Gap,
+BA-039,Backend API,poll-settlement-status,poll-settlement-status success,Poll settlement status,./scripts/seed-state.sh active +919999900001 --with-settlement,"1. GET /poll-settlement-status?settlement_id=X
+2. Check response",200 with settlement status,+919999900001,active,P1,Manual,Gap,
+BA-040,Backend API,poll-settlement-status,poll-settlement-status not found,Poll non-existent settlement,./scripts/seed-state.sh active +919999900001,"1. GET /poll-settlement-status?settlement_id=nonexistent
+2. Check response",404 settlement not found,+919999900001,active,P1,Manual,Gap,
+BA-041,Backend API,send-landlord-invite,send-landlord-invite success,Send invite to landlord,./scripts/seed-state.sh approved +919999900001,"1. POST /send-landlord-invite {landlord_phone:+919999900002 landlord_name:Test}
+2. Check response",200 with invite_id sent status,+919999900001,approved,P1,Manual,Gap,
+BA-042,Backend API,send-landlord-invite,send-landlord-invite duplicate,Send duplicate invite to same landlord,./scripts/seed-state.sh landlord-invited +919999900001,"1. POST /send-landlord-invite {landlord_phone:+919999900002}
+2. Check response",400 invite already sent,+919999900001,landlord-invited,P1,Manual,Gap,
+BA-043,Backend API,landlord-approve,landlord-approve success,Landlord approves tenancy,./scripts/seed-state.sh landlord-invited +919999900001,"1. POST /landlord-approve {invite_id:X otp:123456}
+2. Check response",200 with approval confirmation,+919999900001,landlord-invited,P1,Manual,Gap,
+BA-044,Backend API,landlord-approve,landlord-approve wrong OTP,Landlord enters wrong OTP,./scripts/seed-state.sh landlord-invited +919999900001,"1. POST /landlord-approve {invite_id:X otp:000000}
+2. Check response",401 invalid OTP,+919999900001,landlord-invited,P1,Manual,Gap,
+BA-045,Backend API,manage-landlord,manage-landlord get details,Get landlord details for tenancy,./scripts/seed-state.sh active +919999900001,"1. GET /manage-landlord?tenancy_id=X
+2. Check response",200 with landlord details,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-046,Backend API,manage-landlord,manage-landlord no tenancy,Get landlord for non-existent tenancy,./scripts/seed-state.sh active +919999900001,"1. GET /manage-landlord?tenancy_id=nonexistent
+2. Check response",404 tenancy not found,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-047,Backend API,upload-document,upload-document success,Upload rental agreement document,./scripts/seed-state.sh verified +919999900001,"1. POST /upload-document with multipart file
+2. Check response",200 with document_id and upload URL,+919999900001,verified,P0,Automated,Covered,Backend: upload-document.test.ts | Frontend: agreement.test.ts
+BA-048,Backend API,upload-document,upload-document oversized,Upload file exceeding limit,./scripts/seed-state.sh verified +919999900001,"1. POST /upload-document with 20MB file
+2. Check response",413 file too large,+919999900001,verified,P1,Automated,Covered,Backend: Deno tests
+BA-049,Backend API,process-document,process-document success,Process uploaded document via Document AI,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. POST /process-document {document_id:X}
+2. Check response",200 with extraction_id and status processing,+919999900001,agreement-uploaded,P0,Automated,Covered,Backend: Deno tests
+BA-050,Backend API,process-document,process-document invalid doc,Process non-existent document,./scripts/seed-state.sh verified +919999900001,"1. POST /process-document {document_id:nonexistent}
+2. Check response",404 document not found,+919999900001,verified,P1,Automated,Covered,Backend: Deno tests
+BA-051,Backend API,confirm-extraction,confirm-extraction success,Confirm extracted agreement data,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. POST /confirm-extraction {extraction_id:X}
+2. Check response",200 with confirmation status,+919999900001,agreement-uploaded,P0,Automated,Covered,"Backend: confirm-extraction.test.ts, user-onboarding-flow.test.ts | Frontend: agreement.test.ts"
+BA-052,Backend API,confirm-extraction,confirm-extraction already confirmed,Confirm already confirmed extraction,./scripts/seed-state.sh agreement-confirmed +919999900001,"1. POST /confirm-extraction {extraction_id:X}
+2. Check response",400 already confirmed,+919999900001,agreement-confirmed,P1,Automated,Covered,Backend: Deno tests
+BA-053,Backend API,update-extraction,update-extraction success,Update extracted field values,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. POST /update-extraction {extraction_id:X field:rent value:15000}
+2. Check response",200 with updated extraction,+919999900001,agreement-uploaded,P1,Manual,Gap,
+BA-054,Backend API,update-extraction,update-extraction invalid field,Update non-existent field,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. POST /update-extraction {extraction_id:X field:invalid value:X}
+2. Check response",400 invalid field error,+919999900001,agreement-uploaded,P1,Manual,Gap,
+BA-055,Backend API,update-profile,update-profile success,Update user profile name,./scripts/seed-state.sh active +919999900001,"1. POST /update-profile {name:New Name}
+2. Check response",200 with updated profile,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-056,Backend API,update-profile,update-profile unauthenticated,Update profile without auth token,none,"1. POST /update-profile {name:Test} without auth header
+2. Check response",401 unauthorized,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-057,Backend API,delete-account,delete-account success,Delete user account,./scripts/seed-state.sh active +919999900001,"1. POST /delete-account {confirm:true}
+2. Check response",200 account marked for deletion,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-058,Backend API,delete-account,delete-account without confirm,Delete without confirmation flag,./scripts/seed-state.sh active +919999900001,"1. POST /delete-account {confirm:false}
+2. Check response",400 confirmation required,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-059,Backend API,upload-avatar,upload-avatar success,Upload profile avatar image,./scripts/seed-state.sh active +919999900001,"1. POST /upload-avatar with image file
+2. Check response",200 with avatar_url,+919999900001,active,P2,Manual,Gap,
+BA-060,Backend API,upload-avatar,upload-avatar invalid format,Upload non-image as avatar,./scripts/seed-state.sh active +919999900001,"1. POST /upload-avatar with .pdf file
+2. Check response",400 invalid image format,+919999900001,active,P2,Manual,Gap,
+BA-061,Backend API,pixelate-avatar,pixelate-avatar success,Generate pixelated avatar variant,./scripts/seed-state.sh active +919999900001,"1. POST /pixelate-avatar {avatar_url:X}
+2. Check response",200 with pixelated_url,+919999900001,active,P2,Manual,Gap,
+BA-062,Backend API,pixelate-avatar,pixelate-avatar no avatar,Pixelate when no avatar uploaded,./scripts/seed-state.sh active +919999900001 --no-avatar,"1. POST /pixelate-avatar {}
+2. Check response",400 no avatar to process,+919999900001,active,P2,Manual,Gap,
+BA-063,Backend API,join-waitlist,join-waitlist success,Join waitlist after agreement,./scripts/seed-state.sh agreement-confirmed +919999900001,"1. POST /join-waitlist {}
+2. Check response",200 with waitlist position,+919999900001,agreement-confirmed,P0,Automated,Covered,Backend: user-onboarding-flow.test.ts | Frontend: waitlist.test.ts
+BA-064,Backend API,join-waitlist,join-waitlist already joined,Join waitlist when already on it,./scripts/seed-state.sh waitlisted +919999900001,"1. POST /join-waitlist {}
+2. Check response",400 already on waitlist,+919999900001,waitlisted,P1,Automated,Covered,Backend: Deno tests
+BA-065,Backend API,get-waitlist-status,get-waitlist-status success,Get current waitlist status,./scripts/seed-state.sh waitlisted +919999900001,"1. GET /get-waitlist-status
+2. Check response",200 with status and position,+919999900001,waitlisted,P0,Automated,Covered,Backend: get-waitlist-status.test.ts | Frontend: waitlist.test.ts
+BA-066,Backend API,get-waitlist-status,get-waitlist-status not on list,Get status when not on waitlist,./scripts/seed-state.sh verified +919999900001,"1. GET /get-waitlist-status
+2. Check response",404 not on waitlist,+919999900001,verified,P1,Automated,Covered,Backend: Deno tests
+BA-067,Backend API,agreement-lifecycle,agreement-lifecycle get status,Get agreement lifecycle status,./scripts/seed-state.sh active +919999900001,"1. GET /agreement-lifecycle
+2. Check response",200 with agreement status and dates,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-068,Backend API,agreement-lifecycle,agreement-lifecycle no agreement,Get lifecycle with no agreement,./scripts/seed-state.sh verified +919999900001,"1. GET /agreement-lifecycle
+2. Check response",404 no agreement found,+919999900001,verified,P1,Automated,Covered,Backend: Deno tests
+BA-069,Backend API,get-my-referral-code,get-my-referral-code success,Get or generate referral code,./scripts/seed-state.sh active +919999900001,"1. GET /get-my-referral-code
+2. Check response",200 with referral code,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-070,Backend API,get-my-referral-code,get-my-referral-code unauthenticated,Get referral code without auth,none,"1. GET /get-my-referral-code without auth
+2. Check response",401 unauthorized,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-071,Backend API,validate-referral-code,validate-referral-code valid,Validate a valid referral code,./scripts/seed-state.sh approved +919999900001,"1. POST /validate-referral-code {code:VALID123}
+2. Check response",200 with valid:true and referrer info,+919999900001,approved,P2,Automated,Covered,Backend: Deno tests
+BA-072,Backend API,validate-referral-code,validate-referral-code invalid,Validate an invalid referral code,./scripts/seed-state.sh approved +919999900001,"1. POST /validate-referral-code {code:INVALID}
+2. Check response",400 invalid code,+919999900001,approved,P2,Automated,Covered,Backend: Deno tests
+BA-073,Backend API,apply-referral-code,apply-referral-code success,Apply valid referral code,./scripts/seed-state.sh approved +919999900001,"1. POST /apply-referral-code {code:VALID123}
+2. Check response",200 with referral applied,+919999900001,approved,P2,Automated,Covered,Backend: Deno tests
+BA-074,Backend API,apply-referral-code,apply-referral-code already applied,Apply code when one already applied,./scripts/seed-state.sh active +919999900001 --with-referral,"1. POST /apply-referral-code {code:ANOTHER}
+2. Check response",400 referral already applied,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-075,Backend API,calculate-cashback,calculate-cashback all gates pass,Calculate cashback with all verifications complete,./scripts/seed-state.sh active +919999900001 --all-verified,"1. POST /calculate-cashback {payment_id:X}
+2. Check response",200 with cashback amount > 0,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-076,Backend API,calculate-cashback,calculate-cashback missing gate,Calculate cashback with bank not verified,./scripts/seed-state.sh active +919999900001 --no-bank,"1. POST /calculate-cashback {payment_id:X}
+2. Check response",200 with cashback 0 and reason,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-077,Backend API,get-cashback-history,get-cashback-history success,Get cashback transaction history,./scripts/seed-state.sh active +919999900001 --with-cashback,"1. GET /get-cashback-history
+2. Check response",200 with list of cashback entries,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-078,Backend API,get-cashback-history,get-cashback-history empty,Get cashback history with no entries,./scripts/seed-state.sh active +919999900001,"1. GET /get-cashback-history
+2. Check response",200 with empty list,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-079,Backend API,get-payment-history,get-payment-history success,Get payment transaction history,./scripts/seed-state.sh active +919999900001 --with-payments,"1. GET /get-payment-history
+2. Check response",200 with payment list,+919999900001,active,P1,Manual,Gap,
+BA-080,Backend API,get-payment-history,get-payment-history empty,Get history with no payments,./scripts/seed-state.sh active +919999900001 --no-payments,"1. GET /get-payment-history
+2. Check response",200 with empty list,+919999900001,active,P1,Manual,Gap,
+BA-081,Backend API,get-payment-stamps,get-payment-stamps success,Get payment stamps/milestones,./scripts/seed-state.sh active +919999900001 --with-payments,"1. GET /get-payment-stamps
+2. Check response",200 with stamp data,+919999900001,active,P2,Manual,Gap,
+BA-082,Backend API,get-payment-stamps,get-payment-stamps no payments,Get stamps with no payment history,./scripts/seed-state.sh active +919999900001,"1. GET /get-payment-stamps
+2. Check response",200 with empty stamps,+919999900001,active,P2,Manual,Gap,
+BA-083,Backend API,generate-receipt,generate-receipt success,Generate receipt for completed payment,./scripts/seed-state.sh active +919999900001 --with-payments,"1. POST /generate-receipt {payment_id:X}
+2. Check response",200 with receipt_url,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-084,Backend API,generate-receipt,generate-receipt pending payment,Generate receipt for pending payment,./scripts/seed-state.sh active +919999900001,"1. POST /generate-receipt {payment_id:pending_id}
+2. Check response",400 payment not completed,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-085,Backend API,get-payment-schedule,get-payment-schedule success,Get upcoming payment schedule,./scripts/seed-state.sh active +919999900001,"1. GET /get-payment-schedule
+2. Check response",200 with schedule list,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-086,Backend API,get-payment-schedule,get-payment-schedule no tenancy,Get schedule without active tenancy,./scripts/seed-state.sh approved +919999900001,"1. GET /get-payment-schedule
+2. Check response",404 no active tenancy,+919999900001,approved,P1,Automated,Covered,Backend: Deno tests
+BA-087,Backend API,get-saved-payment-methods,get-saved-payment-methods success,Get list of saved payment methods,./scripts/seed-state.sh active +919999900001 --with-methods,"1. GET /get-saved-payment-methods
+2. Check response",200 with methods list,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-088,Backend API,get-saved-payment-methods,get-saved-payment-methods empty,Get methods when none saved,./scripts/seed-state.sh active +919999900001,"1. GET /get-saved-payment-methods
+2. Check response",200 with empty list,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-089,Backend API,set-default-payment-method,set-default-payment-method success,Set a payment method as default,./scripts/seed-state.sh active +919999900001 --with-methods,"1. POST /set-default-payment-method {method_id:X}
+2. Check response",200 with default updated,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-090,Backend API,set-default-payment-method,set-default-payment-method invalid,Set non-existent method as default,./scripts/seed-state.sh active +919999900001,"1. POST /set-default-payment-method {method_id:nonexistent}
+2. Check response",404 method not found,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-091,Backend API,delete-payment-method,delete-payment-method success,Delete a saved payment method,./scripts/seed-state.sh active +919999900001 --with-methods,"1. DELETE /delete-payment-method {method_id:X}
+2. Check response",200 method deleted,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-092,Backend API,delete-payment-method,delete-payment-method not found,Delete non-existent method,./scripts/seed-state.sh active +919999900001,"1. DELETE /delete-payment-method {method_id:nonexistent}
+2. Check response",404 method not found,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-093,Backend API,add-card-token,add-card-token success,Save tokenized card,./scripts/seed-state.sh active +919999900001,"1. POST /add-card-token {token:X card_type:credit last4:1234}
+2. Check response",200 with method_id,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-094,Backend API,add-card-token,add-card-token duplicate,Add duplicate card token,./scripts/seed-state.sh active +919999900001 --with-methods,"1. POST /add-card-token with existing card token
+2. Check response",400 card already saved,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-095,Backend API,add-upi-vpa,add-upi-vpa success,Save UPI VPA,./scripts/seed-state.sh active +919999900001,"1. POST /add-upi-vpa {vpa:test@upi}
+2. Check response",200 with method_id,+919999900001,active,P1,Automated,Covered,Backend: payment-methods-refunds.test.ts | Frontend: payments.test.ts
+BA-096,Backend API,add-upi-vpa,add-upi-vpa invalid format,Save invalid UPI VPA,./scripts/seed-state.sh active +919999900001,"1. POST /add-upi-vpa {vpa:invalid}
+2. Check response",400 invalid VPA format,+919999900001,active,P1,Automated,Covered,Backend: payment-methods-refunds.test.ts
+BA-097,Backend API,save-bank-preference,save-bank-preference success,Save netbanking bank preference,./scripts/seed-state.sh active +919999900001,"1. POST /save-bank-preference {bank_code:SBI}
+2. Check response",200 with preference saved,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-098,Backend API,save-bank-preference,save-bank-preference invalid bank,Save invalid bank code,./scripts/seed-state.sh active +919999900001,"1. POST /save-bank-preference {bank_code:INVALID}
+2. Check response",400 invalid bank code,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-099,Backend API,get-netbanking-banks,get-netbanking-banks success,Get list of supported netbanking banks,./scripts/seed-state.sh active +919999900001,"1. GET /get-netbanking-banks
+2. Check response",200 with banks list,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-100,Backend API,get-netbanking-banks,get-netbanking-banks cached,Verify cached response for banks list,./scripts/seed-state.sh active +919999900001,"1. GET /get-netbanking-banks twice
+2. Compare response times",Second request returns cached data faster,+919999900001,active,P2,Automated,Covered,Backend: Deno tests
+BA-101,Backend API,get-fee-config,get-fee-config success,Get payment fee configuration,./scripts/seed-state.sh active +919999900001,"1. GET /get-fee-config
+2. Check response",200 with fee config per method,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-102,Backend API,get-fee-config,get-fee-config unauthenticated,Get fee config without auth,none,"1. GET /get-fee-config without auth header
+2. Check response",401 unauthorized,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-103,Backend API,register-device-token,register-device-token success,Register APNs device token,./scripts/seed-state.sh active +919999900001,"1. POST /register-device-token {token:X platform:ios}
+2. Check response",200 token registered,+919999900001,active,P1,Manual,Gap,
+BA-104,Backend API,register-device-token,register-device-token invalid,Register empty device token,./scripts/seed-state.sh active +919999900001,"1. POST /register-device-token {token:'' platform:ios}
+2. Check response",400 invalid token,+919999900001,active,P1,Manual,Gap,
+BA-105,Backend API,send-push-notification,send-push-notification success,Send push notification to user,./scripts/seed-state.sh active +919999900001,"1. POST /send-push-notification {user_id:X title:Test body:Message}
+2. Check response",200 notification queued,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-106,Backend API,send-push-notification,send-push-notification no token,Send push to user without device token,./scripts/seed-state.sh active +919999900001 --no-device-token,"1. POST /send-push-notification {user_id:X title:Test}
+2. Check response",400 no device token registered,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-107,Backend API,send-sms,send-sms success,Send SMS via Twilio,./scripts/seed-state.sh active +919999900001,"1. POST /send-sms {phone:+919999900001 message:Test}
+2. Check response",200 with message_sid,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-108,Backend API,send-whatsapp,send-whatsapp success,Send WhatsApp message via Twilio,./scripts/seed-state.sh active +919999900001,"1. POST /send-whatsapp {phone:+919999900001 template:payment_reminder}
+2. Check response",200 with message_sid,+919999900001,active,P1,Automated,Covered,Backend: Deno tests
+BA-109,Backend API,dashboard-data,dashboard-data success,Fetch complete dashboard data,./scripts/seed-state.sh active +919999900001,"1. GET /dashboard-data
+2. Check response",200 with tenancy payment and cashback data,+919999900001,active,P0,Automated,Covered,"Frontend: dashboard.test.ts, useDashboard.test.ts | E2E: flows/main/home.yaml"
+BA-110,Backend API,dashboard-data,dashboard-data new user,Fetch dashboard for new user,./scripts/seed-state.sh approved +919999900001,"1. GET /dashboard-data
+2. Check response",200 with minimal/empty dashboard,+919999900001,approved,P1,Automated,Covered,Backend: Deno tests
+BA-111,Backend API,cleanup-stale-payments,cleanup-stale-payments success,Run stale payment cleanup job,./scripts/seed-state.sh active +919999900001 --with-stale-payments,"1. POST /cleanup-stale-payments
+2. Check response",200 with count of cleaned payments,+919999900001,active,P2,Automated,Covered,Backend: Deno tests | Service role only
+BA-112,Backend API,admin-waitlist,admin-waitlist approve user,Admin approves waitlist user,./scripts/seed-state.sh waitlisted +919999900001,"1. POST /admin-waitlist {action:approve user_id:X}
+2. Check response",200 user approved,+919999900001,waitlisted,P1,Automated,Covered,Backend: Deno tests | Service role only
+EA-001,External API,PayU,PayU initiate payment sandbox success,Initiate payment via PayU sandbox,./scripts/seed-state.sh active +919999900001,"1. Call PayU sandbox API with test credentials
+2. Submit payment request
+3. Verify redirect URL",PayU returns valid redirect URL with txn_id,+919999900001,active,P0,Automated,Covered,Backend: initiate-payment.test.ts | Frontend: payuCoreService.test.ts
+EA-002,External API,PayU,PayU initiate payment sandbox error,PayU sandbox rejects invalid request,./scripts/seed-state.sh active +919999900001,"1. Call PayU sandbox with invalid merchant key
+2. Check response",PayU returns authentication error,+919999900001,active,P0,Semi-Auto,Partial,Frontend: payuCoreService.test.ts
+EA-003,External API,PayU,PayU verify payment hash,Verify PayU response hash matches SHA-512 computation,./scripts/seed-state.sh active +919999900001,"1. Receive PayU callback
+2. Compute SHA-512 hash with salt
+3. Compare with received hash",Hash matches confirming payment authenticity,+919999900001,active,P0,Automated,Covered,"Backend: payment-webhook.test.ts, security-tests.test.ts"
+EA-004,External API,PayU,PayU refund sandbox,Initiate refund via PayU sandbox,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Call PayU refund API
+2. Pass original txn_id and amount
+3. Check response",Refund initiated with refund reference,+919999900001,active,P1,Manual,Gap,
+EA-005,External API,PayU,PayU webhook hash with additional_charges,Validate webhook hash including additional_charges field,./scripts/seed-state.sh active +919999900001,"1. Receive webhook with additional_charges
+2. Compute hash including additional_charges
+3. Validate",Hash validates correctly with additional_charges in formula,+919999900001,active,P0,Automated,Covered,Backend: security-tests.test.ts
+EA-006,External API,PayU,PayU timeout handling,Handle PayU API timeout gracefully,./scripts/seed-state.sh active +919999900001,"1. Simulate PayU API timeout
+2. Observe retry behavior
+3. Check error handling",Timeout detected with retry or fallback error,+919999900001,active,P1,Manual,Gap,
+EA-007,External API,Cashfree M360,M360 send OTP success,Send OTP via Cashfree M360 for identity verification,./scripts/seed-state.sh active +919999900001,"1. Call M360 API to send OTP
+2. Pass Aadhaar/phone
+3. Check response",OTP sent with reference_id,+919999900001,active,P1,Manual,Gap,
+EA-008,External API,Cashfree M360,M360 send OTP invalid,M360 OTP with invalid Aadhaar,./scripts/seed-state.sh active +919999900001,"1. Call M360 with invalid Aadhaar
+2. Check response",Validation error from M360,+919999900001,active,P1,Manual,Gap,
+EA-009,External API,Cashfree M360,M360 verify OTP success,Verify OTP via M360 and fetch identity,./scripts/seed-state.sh active +919999900001,"1. Call M360 verify with valid OTP
+2. Check response",Identity data returned (name DOB address),+919999900001,active,P1,Manual,Gap,
+EA-010,External API,Cashfree M360,M360 fetch identity PAN,Fetch PAN identity details via M360,./scripts/seed-state.sh active +919999900001,"1. Call M360 PAN verification
+2. Pass valid PAN
+3. Check response",PAN holder name and status returned,+919999900001,active,P1,Manual,Gap,
+EA-011,External API,Cashfree M360,M360 timeout handling,Handle M360 API timeout,./scripts/seed-state.sh active +919999900001,"1. Simulate M360 timeout
+2. Check error handling",Timeout handled with appropriate error message,+919999900001,active,P1,Manual,Gap,
+EA-012,External API,Cashfree Payouts,Payouts add beneficiary success,Add landlord as Cashfree beneficiary,./scripts/seed-state.sh active +919999900001,"1. Call Cashfree add beneficiary
+2. Pass landlord bank details
+3. Check response",Beneficiary created with bene_id,+919999900001,active,P1,Manual,Gap,
+EA-013,External API,Cashfree Payouts,Payouts add beneficiary duplicate,Add duplicate beneficiary,./scripts/seed-state.sh active +919999900001,"1. Call add beneficiary with existing details
+2. Check response",Duplicate error or existing bene_id returned,+919999900001,active,P1,Manual,Gap,
+EA-014,External API,Cashfree Payouts,Payouts create transfer success,Create payout transfer to landlord,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Call create transfer
+2. Pass bene_id and amount
+3. Check response",Transfer initiated with transfer_id,+919999900001,active,P1,Manual,Gap,
+EA-015,External API,Cashfree Payouts,Payouts check settlement status,Check payout settlement status,./scripts/seed-state.sh active +919999900001 --with-settlement,"1. Call get transfer status
+2. Pass transfer_id
+3. Check response",Settlement status returned (SUCCESS/PENDING/FAILED),+919999900001,active,P1,Manual,Gap,
+EA-016,External API,Cashfree Payouts,Payouts timeout handling,Handle Cashfree Payouts timeout,./scripts/seed-state.sh active +919999900001,"1. Simulate Payouts API timeout
+2. Check error handling",Timeout handled gracefully,+919999900001,active,P1,Manual,Gap,
+EA-017,External API,Cashfree PAN,PAN verification success,Verify PAN via Cashfree PAN API,./scripts/seed-state.sh active +919999900001,"1. Call PAN verification API
+2. Pass valid PAN
+3. Check response",PAN verified with holder name,+919999900001,active,P1,Manual,Gap,
+EA-018,External API,Cashfree PAN,PAN verification invalid,Verify invalid PAN,./scripts/seed-state.sh active +919999900001,"1. Call PAN verification with invalid PAN
+2. Check response",PAN verification failed,+919999900001,active,P1,Manual,Gap,
+EA-019,External API,API Club,API Club get electricity operators,Fetch electricity operators list,./scripts/seed-state.sh approved +919999900001,"1. Call API Club operators endpoint
+2. Check response",List of electricity operators returned,+919999900001,approved,P1,Semi-Auto,Covered,Multi-layer coverage
+EA-020,External API,API Club,API Club fetch electricity bill,Fetch electricity bill details,./scripts/seed-state.sh approved +919999900001,"1. Call API Club bill fetch
+2. Pass operator and consumer number
+3. Check response",Bill details returned with amount and due date,+919999900001,approved,P1,Semi-Auto,Covered,Multi-layer coverage
+EA-021,External API,API Club,API Club invalid consumer number,Fetch bill with invalid consumer number,./scripts/seed-state.sh approved +919999900001,"1. Call bill fetch with invalid consumer number
+2. Check response",Error indicating invalid consumer number,+919999900001,approved,P1,Manual,Gap,
+EA-022,External API,API Club,API Club timeout handling,Handle API Club timeout,./scripts/seed-state.sh approved +919999900001,"1. Simulate API Club timeout
+2. Check error handling",Timeout handled with retry suggestion,+919999900001,approved,P2,Manual,Gap,
+EA-023,External API,GCP Document AI,Document AI extract agreement success,Extract text from rental agreement PDF,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. Send PDF to Document AI
+2. Wait for processing
+3. Check extracted data",Extracted text with entities (names amounts dates),+919999900001,agreement-uploaded,P0,Semi-Auto,Partial,"Backend: gemini.test.ts, user-onboarding-flow.test.ts"
+EA-024,External API,GCP Document AI,Document AI extract corrupt PDF,Send corrupt file to Document AI,./scripts/seed-state.sh verified +919999900001,"1. Send corrupt file to Document AI
+2. Check response",Processing error with descriptive message,+919999900001,verified,P1,Semi-Auto,Partial,Backend: upload-document.test.ts
+EA-025,External API,GCP Document AI,Document AI timeout handling,Handle Document AI processing timeout,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. Submit large document
+2. Simulate timeout
+3. Check handling",Timeout handled with retry or async polling,+919999900001,agreement-uploaded,P1,Semi-Auto,Covered,Multi-layer coverage
+EA-026,External API,GCP Gemini,Gemini name matching success,Match tenant name from agreement vs identity,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. Call Gemini with two name variants
+2. Check match confidence",Confidence score returned (0-1),+919999900001,agreement-uploaded,P1,Automated,Covered,"Backend: gemini.test.ts, matching-algorithms.test.ts"
+EA-027,External API,GCP Gemini,Gemini name matching mismatch,Test name matching with clearly different names,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. Call Gemini with unrelated names
+2. Check confidence",Low confidence score indicating mismatch,+919999900001,agreement-uploaded,P1,Automated,Covered,"Backend: gemini.test.ts, matching-algorithms.test.ts"
+EA-028,External API,GCP Gemini,Gemini address semantic matching,Match addresses semantically,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. Call Gemini with two address variants
+2. Check match result",Semantic match result with confidence,+919999900001,agreement-uploaded,P1,Automated,Covered,"Backend: gemini.test.ts, matching-algorithms.test.ts"
+EA-029,External API,GCP Gemini,Gemini timeout handling,Handle Gemini API timeout,./scripts/seed-state.sh agreement-uploaded +919999900001,"1. Simulate Gemini timeout
+2. Check handling",Timeout handled gracefully,+919999900001,agreement-uploaded,P2,Manual,Gap,
+EA-030,External API,Twilio,Twilio send SMS success,Send SMS via Twilio API,./scripts/seed-state.sh active +919999900001,"1. Call Twilio SMS API
+2. Pass phone and message
+3. Check response",SMS sent with message SID,+919999900001,active,P1,Semi-Auto,Partial,
+EA-031,External API,Twilio,Twilio send SMS invalid phone,Send SMS to invalid phone,./scripts/seed-state.sh active +919999900001,"1. Call Twilio with invalid phone
+2. Check response",Twilio error for undeliverable number,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+EA-032,External API,Twilio,Twilio send WhatsApp success,Send WhatsApp message via Twilio,./scripts/seed-state.sh active +919999900001,"1. Call Twilio WhatsApp API
+2. Pass phone and template
+3. Check response",WhatsApp message sent with SID,+919999900001,active,P1,Semi-Auto,Partial,
+EA-033,External API,Twilio,Twilio verify service,Verify Twilio Verify service integration,./scripts/seed-state.sh clean +919999900001,"1. Call Twilio Verify to send code
+2. Check response",Verification SID returned,+919999900001,clean,P1,Semi-Auto,Partial,
+EA-034,External API,Twilio,Twilio timeout handling,Handle Twilio API timeout,./scripts/seed-state.sh active +919999900001,"1. Simulate Twilio timeout
+2. Check handling",Timeout handled with queue for retry,+919999900001,active,P2,Manual,Gap,
+EA-035,External API,Resend,Resend send email success,Send email notification via Resend,./scripts/seed-state.sh active +919999900001,"1. Call Resend API
+2. Pass email and template
+3. Check response",Email sent with message ID,+919999900001,active,P2,Manual,Gap,
+EA-036,External API,Resend,Resend send email invalid,Send to invalid email address,./scripts/seed-state.sh active +919999900001,"1. Call Resend with invalid email
+2. Check response",Error for invalid email,+919999900001,active,P2,Manual,Gap,
+EA-037,External API,Apple APNs,APNs push delivery success,Deliver push notification via APNs,./scripts/seed-state.sh active +919999900001,"1. Send push via APNs
+2. Pass device token and payload
+3. Check delivery",Push delivered to device,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+EA-038,External API,Apple APNs,APNs push invalid token,Push to invalid device token,./scripts/seed-state.sh active +919999900001,"1. Send push with invalid token
+2. Check response",APNs returns BadDeviceToken error,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+EA-039,External API,Apple APNs,APNs timeout handling,Handle APNs timeout,./scripts/seed-state.sh active +919999900001,"1. Simulate APNs timeout
+2. Check handling",Timeout handled with retry queue,+919999900001,active,P2,Manual,Gap,
+EA-040,External API,General,All external API circuit breakers,Verify circuit breaker pattern for all external APIs,./scripts/seed-state.sh active +919999900001,"1. Simulate 5 consecutive failures per API
+2. Verify circuit breaker opens
+3. Check fallback behavior",Circuit breaker opens after threshold and provides fallback,+919999900001,active,P1,Manual,Gap,
+AR-001,Apple Review,Account,Pre-seed Apple review account,Create and seed Apple review test account,./scripts/seed-state.sh apple-review +919999900099,"1. Run seed script for Apple review account
+2. Verify account state
+3. Confirm all demo data populated",Review account seeded with complete data,+919999900099,active,P0,Semi-Auto,Covered,Multi-layer coverage | Apple review phone
+AR-002,Apple Review,Auth,Login with review credentials,Login using Apple review test credentials,./scripts/seed-state.sh apple-review +919999900099,"1. Enter review phone number
+2. Enter demo OTP
+3. Verify login success",Successfully logged in as review user,+919999900099,active,P0,Semi-Auto,Covered,Multi-layer coverage
+AR-003,Apple Review,Navigation,Navigate all tabs,Verify all main tabs are accessible,./scripts/seed-state.sh apple-review +919999900099,"1. Tap Home tab
+2. Tap Transactions tab
+3. Tap Profile tab",All tabs render without errors,+919999900099,active,P0,Semi-Auto,Covered,Multi-layer coverage
+AR-004,Apple Review,Dashboard,View home dashboard,Verify dashboard renders with sample data,./scripts/seed-state.sh apple-review +919999900099,"1. Navigate to Home
+2. Verify all cards render
+3. Check payment due section",Dashboard shows populated data,+919999900099,active,P0,Semi-Auto,Covered,Multi-layer coverage
+AR-005,Apple Review,Transactions,View transaction history,Verify transaction list with demo data,./scripts/seed-state.sh apple-review +919999900099,"1. Navigate to Transactions
+2. Scroll through list
+3. Tap a transaction",Transactions display with demo payment data,+919999900099,active,P0,Semi-Auto,Covered,Multi-layer coverage
+AR-006,Apple Review,Profile,View profile,Verify profile screen renders,./scripts/seed-state.sh apple-review +919999900099,"1. Navigate to Profile
+2. Verify name phone avatar
+3. Check all menu items",Profile displays correctly,+919999900099,active,P0,Semi-Auto,Covered,Multi-layer coverage
+AR-007,Apple Review,Account,Delete account,Test account deletion flow,./scripts/seed-state.sh apple-review +919999900099,"1. Navigate to Profile
+2. Tap Delete Account
+3. Confirm deletion",Account deletion initiated and confirmed,+919999900099,active,P0,Manual,Gap,
+AR-008,Apple Review,Account,Re-create account after deletion,Create new account after deletion,none,"1. After deletion complete
+2. Sign up with same phone
+3. Complete onboarding",New account created successfully,+919999900099,clean,P0,Manual,Gap,
+AR-009,Apple Review,Agreement,Agreement upload mock,Test agreement upload in review mode,./scripts/seed-state.sh apple-review +919999900099 --pre-agreement,"1. Navigate to agreement upload
+2. Upload sample document
+3. Verify processing",Mock agreement processed with sample data,+919999900099,verified,P0,Semi-Auto,Covered,Multi-layer coverage
+AR-010,Apple Review,Payment,Payment flow sandbox,Test payment flow in sandbox mode,./scripts/seed-state.sh apple-review +919999900099,"1. Tap Pay Rent
+2. Enter amount
+3. Select method
+4. Complete sandbox payment",Sandbox payment completes successfully,+919999900099,active,P0,Semi-Auto,Covered,Multi-layer coverage
+AR-011,Apple Review,Navigation,All screens accessible,Verify every screen is reachable from review account,./scripts/seed-state.sh apple-review +919999900099,"1. Navigate to every screen systematically
+2. Check for crashes or errors
+3. Verify all content loads",All screens render without issues,+919999900099,active,P0,Manual,Gap,
+AR-012,Apple Review,Production,No debug/dev UI visible,Verify no developer tools or debug UI shown,./scripts/seed-state.sh apple-review +919999900099,"1. Check for DevNavigator
+2. Check for debug buttons
+3. Check for test banners",No development UI elements visible,+919999900099,active,P0,Manual,Gap,
+PR-001,Production Release,Build,DevNavigator stripped from production build,Verify DevNavigator component not in production bundle,none,"1. Build production bundle
+2. Search bundle for DevNavigator
+3. Verify absence",DevNavigator not found in production JS bundle,+919999900001,active,P0,Manual,Gap,
+PR-002,Production Release,Build,No seed-test strings in bundle,Verify seed-test references removed from production,none,"1. Build production bundle
+2. Search for ""seed-test"" string
+3. Verify absence","No ""seed-test"" strings in bundle",+919999900001,active,P0,Manual,Gap,
+PR-003,Production Release,Build,No jumpToScreen in bundle,Verify dev navigation shortcuts removed,none,"1. Build production bundle
+2. Search for ""jumpToScreen""
+3. Verify absence","No ""jumpToScreen"" in bundle",+919999900001,active,P0,Manual,Gap,
+PR-004,Production Release,Data,Test data cleaned from DB,Verify no test data in production database,none,"1. Query production DB for is_test_user
+2. Query for demo phone numbers
+3. Verify no results",No test records in production,+919999900001,active,P0,Manual,Gap,
+PR-005,Production Release,Config,Production PayU keys configured,Verify production PayU merchant key is set,none,"1. Check EAS secrets for EXPO_PUBLIC_PAYU_KEY
+2. Verify it is production key not sandbox",Production PayU key configured,+919999900001,active,P0,Manual,Gap,
+PR-006,Production Release,Config,Production Cashfree keys configured,Verify production Cashfree keys are set,none,"1. Check Supabase secrets for Cashfree keys
+2. Verify production environment",Production Cashfree keys configured,+919999900001,active,P0,Manual,Gap,
+PR-007,Production Release,Config,Sentry auto-upload enabled,Verify Sentry source map upload enabled for production,none,"1. Check eas.json production profile
+2. Verify SENTRY_DISABLE_AUTO_UPLOAD is not set or false",Sentry auto-upload enabled for production,+919999900001,active,P0,Manual,Gap,
+PR-008,Production Release,Config,expo-updates channel is production,Verify OTA update channel is production,none,"1. Check eas.json production profile
+2. Verify channel is ""production""",Update channel set to production,+919999900001,active,P0,Manual,Gap,
+PR-009,Production Release,Compliance,Privacy manifest complete,Verify iOS privacy manifest includes all required APIs,none,"1. Check ios/PrivacyInfo.xcprivacy
+2. Verify all API usage declarations
+3. Cross-reference with Apple requirements",Privacy manifest complete and valid,+919999900001,active,P0,Manual,Gap,
+PR-010,Production Release,Security,No hardcoded API keys in source,Scan source for hardcoded API keys or secrets,none,"1. Run secret scanner on codebase
+2. Check for hardcoded keys
+3. Verify all use env vars",No hardcoded secrets found,+919999900001,active,P0,Manual,Gap,
+PR-011,Production Release,Config,ALLOW_DEMO_AUTH is false,Verify demo auth is disabled in production,none,"1. Check production environment config
+2. Verify ALLOW_DEMO_AUTH=false or unset",Demo auth disabled,+919999900001,active,P0,Manual,Gap,
+PR-012,Production Release,Config,DEMO_PHONES empty,Verify demo phones list is empty in production,none,"1. Check production environment config
+2. Verify DEMO_PHONES is empty",No demo phone numbers configured,+919999900001,active,P0,Manual,Gap,
+PR-013,Production Release,Security,Service role key not in client bundle,Verify Supabase service role key is not in client code,none,"1. Search production bundle for service role key
+2. Search source for service_role
+3. Verify only anon key present",Service role key not found in client,+919999900001,active,P0,Manual,Gap,
+PR-014,Production Release,Performance,Bundle size within limits,Verify production bundle size is acceptable,none,"1. Build production bundle
+2. Measure JS bundle size
+3. Compare against 5MB limit",Bundle size under threshold,+919999900001,active,P1,Automated,Covered,CI/build checks
+PR-015,Production Release,Build,No console.log in production,Verify console.log calls stripped from production,none,"1. Build production bundle
+2. Check babel config for console removal
+3. Verify no console output",No console.log in production bundle,+919999900001,active,P1,Automated,Covered,CI/build checks
+OTA-001,OTA Updates,Launch,expo-updates launch check,Verify app checks for updates on launch,./scripts/seed-state.sh active +919999900001,"1. Launch app
+2. Monitor network for update check
+3. Verify check completes",App checks expo-updates endpoint on launch,+919999900001,active,P1,Manual,Gap,
+OTA-002,OTA Updates,Channel,Channel routing dev/preview/production,Verify correct channel routing per build profile,none,"1. Build with dev profile verify dev channel
+2. Build with preview profile verify preview channel
+3. Build with production profile verify production channel",Each profile routes to correct update channel,+919999900001,active,P0,Manual,Gap,
+OTA-003,OTA Updates,Download,Update download and apply,Verify OTA update downloads and applies on next launch,./scripts/seed-state.sh active +919999900001,"1. Publish update via eas update
+2. Launch app
+3. Close and relaunch",Update applied on second launch,+919999900001,active,P0,Manual,Gap,
+OTA-004,OTA Updates,Rollback,Rollback on crash,Verify app rolls back to previous version if update crashes,./scripts/seed-state.sh active +919999900001,"1. Publish update with crash bug
+2. Launch app (crashes)
+3. Relaunch app",App rolls back to previous working version,+919999900001,active,P0,Manual,Gap,
+OTA-005,OTA Updates,No Update,No-update-available handling,Verify app handles no available updates gracefully,./scripts/seed-state.sh active +919999900001,"1. Launch app with latest version
+2. Check for updates
+3. Verify no disruption",App continues normally when already up to date,+919999900001,active,P1,Manual,Gap,
+OTA-006,OTA Updates,Force Update,Force update prompt,Verify force update prompt for critical updates,./scripts/seed-state.sh active +919999900001,"1. Set minimum version higher than current
+2. Launch app
+3. Verify force update modal",Force update modal prevents app usage until updated,+919999900001,active,P1,Manual,Gap,
+OTA-007,OTA Updates,Background,Background update download,Verify update downloads in background,./scripts/seed-state.sh active +919999900001,"1. Publish update
+2. Launch app and use normally
+3. Verify download happens in background",Update downloaded without interrupting user,+919999900001,active,P2,Manual,Gap,
+OTA-008,OTA Updates,Native,Update with native module change requires rebuild,Verify native change detection prevents OTA,./scripts/seed-state.sh active +919999900001,"1. Publish update with native dependency change
+2. Launch app
+3. Verify update skipped",OTA skipped with message to update from store,+919999900001,active,P1,Manual,Gap,
+NF-001,Notifications,Push,Push token registration,Verify APNs token registration on app launch,./scripts/seed-state.sh active +919999900001,"1. Launch app (fresh install)
+2. Grant notification permission
+3. Verify token stored in DB",Device token registered in Supabase,+919999900001,active,P0,Manual,Gap,
+NF-002,Notifications,Push,Foreground notification,Verify in-app notification display when app is in foreground,./scripts/seed-state.sh active +919999900001,"1. App in foreground
+2. Send push notification
+3. Observe in-app banner",In-app notification banner displayed,+919999900001,active,P1,Manual,Gap,
+NF-003,Notifications,Push,Background notification,Verify notification appears in system tray when app is backgrounded,./scripts/seed-state.sh active +919999900001,"1. Background the app
+2. Send push notification
+3. Check notification center",Notification appears in iOS notification center,+919999900001,active,P1,Manual,Gap,
+NF-004,Notifications,Push,Killed state notification,Verify notification received when app is killed,./scripts/seed-state.sh active +919999900001,"1. Force kill app
+2. Send push notification
+3. Check notification center",Notification appears despite app being killed,+919999900001,active,P1,Manual,Gap,
+NF-005,Notifications,Push,Deep link from notification,Verify tapping notification navigates to correct screen,./scripts/seed-state.sh active +919999900001,"1. Receive notification with deep link
+2. Tap notification
+3. Verify navigation",App opens to correct screen from notification payload,+919999900001,active,P1,Manual,Gap,
+NF-006,Notifications,Queue,Notification queue async delivery,Verify queued notifications deliver in order,./scripts/seed-state.sh active +919999900001,"1. Queue 5 notifications
+2. Verify all delivered
+3. Check order",All notifications delivered in correct order,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage
+NF-007,Notifications,Read,Mark notification as read,Verify notification marked as read in database,./scripts/seed-state.sh active +919999900001,"1. Receive notification
+2. Tap/view notification
+3. Check DB status",Notification marked as read,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage
+NF-008,Notifications,SMS,SMS via Twilio,Verify SMS delivery for critical alerts,./scripts/seed-state.sh active +919999900001,"1. Trigger SMS-worthy event (payment success)
+2. Check Twilio logs
+3. Verify SMS received",SMS delivered successfully,+919999900001,active,P1,Manual,Gap,
+NF-009,Notifications,WhatsApp,WhatsApp via Twilio,Verify WhatsApp message delivery,./scripts/seed-state.sh active +919999900001,"1. Trigger WhatsApp notification
+2. Check Twilio logs
+3. Verify message received",WhatsApp message delivered,+919999900001,active,P1,Manual,Gap,
+NF-010,Notifications,Email,Email via Resend,Verify email notification delivery,./scripts/seed-state.sh active +919999900001,"1. Trigger email-worthy event
+2. Check Resend logs
+3. Verify email received",Email delivered successfully,+919999900001,active,P2,Manual,Gap,
+NF-011,Notifications,Permission,Notification permission denied,Verify app handles denied notification permission,./scripts/seed-state.sh active +919999900001,"1. Deny notification permission
+2. Navigate app
+3. Check for degradation",App works without push with settings prompt available,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+NF-012,Notifications,Badge,Badge count update,Verify app badge count updates with unread notifications,./scripts/seed-state.sh active +919999900001,"1. Send 3 notifications
+2. Check app badge
+3. Read notifications
+4. Check badge updated",Badge shows unread count and clears on read,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage
+NF-013,Notifications,Grouping,Notification grouping,Verify multiple notifications group in notification center,./scripts/seed-state.sh active +919999900001,"1. Send 5 notifications rapidly
+2. Check notification center",Notifications grouped under app name,+919999900001,active,P3,Semi-Auto,Covered,Multi-layer coverage
+NF-014,Notifications,Silent,Silent push notification,Verify silent push triggers background fetch,./scripts/seed-state.sh active +919999900001,"1. Send silent push with content-available
+2. Check app data refresh",App data refreshed in background,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage
+NF-015,Notifications,Rate Limit,Rate limiting on notifications,Verify notification rate limiting prevents spam,./scripts/seed-state.sh active +919999900001,"1. Trigger 20 notifications rapidly
+2. Check delivery count
+3. Verify throttling",Notifications throttled after threshold,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage
+NM-001,Native Modules,PayU,PayU SDK initialization,Verify PayU SDK initializes correctly,./scripts/seed-state.sh active +919999900001,"1. Launch app
+2. Navigate to payment flow
+3. Verify PayU SDK loaded",PayU SDK initialized without errors,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+NM-002,Native Modules,Cashfree,Cashfree SDK initialization,Verify Cashfree SDK initializes for payouts,./scripts/seed-state.sh active +919999900001,"1. Launch app
+2. Trigger Cashfree flow
+3. Verify SDK loaded",Cashfree SDK initialized without errors,+919999900001,active,P1,Manual,Gap,
+NM-003,Native Modules,Camera,Camera capture via expo-camera,Verify camera captures photo for agreement,./scripts/seed-state.sh verified +919999900001,"1. Navigate to agreement upload
+2. Select camera
+3. Capture photo
+4. Verify image quality",Photo captured with adequate resolution,+919999900001,verified,P0,Semi-Auto,Covered,Multi-layer coverage
+NM-004,Native Modules,Image Picker,Photo library access via expo-image-picker,Verify gallery image selection,./scripts/seed-state.sh verified +919999900001,"1. Navigate to agreement upload
+2. Select gallery
+3. Pick image
+4. Verify selection",Image selected and returned to app,+919999900001,verified,P0,Semi-Auto,Covered,Multi-layer coverage
+NM-005,Native Modules,SecureStore,SecureStore read/write,Verify secure storage for auth tokens,./scripts/seed-state.sh active +919999900001,"1. Login (stores token)
+2. Kill app
+3. Relaunch
+4. Verify token retrieved",Token persisted and retrieved from SecureStore,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+NM-006,Native Modules,Haptics,Haptic feedback,Verify haptic feedback on key interactions,./scripts/seed-state.sh active +919999900001,"1. Complete payment
+2. Feel for haptic
+3. Check error states for haptic",Haptic feedback fires on success and error events,+919999900001,active,P3,Manual,Gap,
+NM-007,Native Modules,Image,expo-image disk cache,Verify image caching for avatars and assets,./scripts/seed-state.sh active +919999900001,"1. Load dashboard with images
+2. Go offline
+3. Revisit same screens",Cached images display while offline,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage
+NM-008,Native Modules,Document Picker,expo-document-picker,Verify document picker for agreement upload,./scripts/seed-state.sh verified +919999900001,"1. Tap upload agreement
+2. Select document via picker
+3. Verify file returned",Document selected and file accessible to app,+919999900001,verified,P1,Manual,Gap,
+NM-009,Native Modules,File System,expo-file-system operations,Verify file read/write for downloaded receipts,./scripts/seed-state.sh active +919999900001 --with-payments,"1. Download receipt
+2. Verify file saved
+3. Open saved file",File saved to document directory and openable,+919999900001,active,P2,Manual,Gap,
+NM-010,Native Modules,Splash,Native splash screen dismissal,Verify native splash screen auto-dismisses,none,"1. Cold launch app
+2. Time splash screen duration
+3. Verify transition to app",Splash dismisses within 2 seconds and transitions smoothly,+919999900001,clean,P1,Semi-Auto,Covered,Multi-layer coverage
+SC-001,Security,RLS,RLS tenant A cannot see tenant B payments,Verify row-level security on payments table,./scripts/seed-state.sh active +919999900001,"1. Login as user A
+2. Query payments table
+3. Verify only user A payments returned",No cross-tenant payment data leaked,+919999900001,active,P0,Semi-Auto,Partial,Backend: security-tests.test.ts
+SC-002,Security,RLS,RLS tenant A cannot see tenant B bank accounts,Verify RLS on bank_accounts table,./scripts/seed-state.sh active +919999900001,"1. Login as user A
+2. Query bank_accounts table
+3. Verify only user A accounts",No cross-tenant bank data leaked,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+SC-003,Security,RLS,RLS service role can access all data,Verify service role bypasses RLS,./scripts/seed-state.sh active +919999900001,"1. Use service role key
+2. Query all tables
+3. Verify full access",Service role sees all data,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+SC-004,Security,RLS,RLS anonymous cannot access protected tables,Verify anon role blocked from sensitive tables,none,"1. Make unauthenticated request
+2. Query payments table
+3. Verify access denied",Anonymous access denied on protected tables,+919999900001,clean,P0,Semi-Auto,Covered,Multi-layer coverage
+SC-005,Security,Webhook,Webhook hash validation SHA-512 with additional_charges,Verify PayU webhook hash computation includes additional_charges,./scripts/seed-state.sh active +919999900001,"1. Receive webhook payload
+2. Compute SHA-512 with additional_charges
+3. Compare hashes",Hash validates correctly including additional_charges,+919999900001,active,P0,Automated,Covered,"Backend: security-tests.test.ts, payment-webhook.test.ts, bug-fixes.test.ts"
+SC-006,Security,Auth,JWT expiry handling,Verify expired JWT is rejected,./scripts/seed-state.sh active +919999900001,"1. Create expired JWT
+2. Make API call with expired token
+3. Verify rejection",401 returned for expired JWT,+919999900001,active,P0,Automated,Covered,Backend: security-tests.test.ts | Frontend: callEdgeFunction.test.ts
+SC-007,Security,PCI,No card numbers in logs,Verify card numbers never appear in application logs,./scripts/seed-state.sh active +919999900001,"1. Complete card payment
+2. Search all logs for card patterns
+3. Verify no matches",No PAN or full card numbers in any log output,+919999900001,active,P0,Manual,Gap,
+SC-008,Security,PCI,No card numbers in error reports,Verify card numbers not in Sentry error reports,./scripts/seed-state.sh active +919999900001,"1. Trigger error during card payment
+2. Check Sentry report
+3. Verify no card data",No card numbers in error reports,+919999900001,active,P0,Manual,Gap,
+SC-009,Security,Payment,Amount tampering webhook vs initiated,Detect amount mismatch between initiated and webhook,./scripts/seed-state.sh active +919999900001,"1. Initiate payment for 15000
+2. Send webhook with 10000
+3. Check validation",Amount mismatch detected and payment flagged,+919999900001,active,P0,Automated,Covered,"Backend: security-tests.test.ts, payment-webhook.test.ts"
+SC-010,Security,Payment,UDF cross-validation,Verify user-defined fields match across payment lifecycle,./scripts/seed-state.sh active +919999900001,"1. Set UDF fields on initiation
+2. Receive webhook with UDF
+3. Cross-validate",UDF values match between initiation and webhook,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+SC-011,Security,Payment,Idempotency key replay attack,Attempt to replay idempotency key for new payment,./scripts/seed-state.sh active +919999900001,"1. Complete payment with key X
+2. Reuse key X for different amount
+3. Verify rejection",Replay attempt rejected or returns original result,+919999900001,active,P0,Automated,Covered,Backend: security-tests.test.ts
+SC-012,Security,Config,Service role key isolation from client,Verify service role key not accessible from client,none,"1. Search client source for service_role
+2. Search JS bundle for service key value
+3. Check network requests",Service role key not exposed in client,+919999900001,active,P0,Semi-Auto,Partial,
+SC-013,Security,Identity,Consent IP recording M360,Verify consent with IP address recorded for identity checks,./scripts/seed-state.sh active +919999900001,"1. Trigger identity verification
+2. Check consent record in DB
+3. Verify IP address stored",Consent recorded with IP timestamp and scope,+919999900001,active,P1,Manual,Gap,
+SC-014,Security,Auth,Rate limiting on auth-otp,Verify OTP request rate limiting,none,"1. Send 10 OTP requests rapidly
+2. Check for rate limit response
+3. Verify cooldown period",Rate limit enforced after threshold,+919999900001,clean,P0,Semi-Auto,Partial,Backend: security-tests.test.ts
+SC-015,Security,Payment,Rate limiting on payment initiation,Verify payment initiation rate limiting,./scripts/seed-state.sh active +919999900001,"1. Initiate 5 payments rapidly
+2. Check for rate limit
+3. Verify cooldown",Rate limit enforced on payment initiation,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+SC-016,Security,Input,SQL injection attempt on search fields,Test SQL injection resistance,./scripts/seed-state.sh active +919999900001,"1. Enter SQL injection payload in search
+2. Check for DB errors
+3. Verify input sanitized",Input sanitized and no SQL execution,+919999900001,active,P1,Automated,Covered,Backend: security-tests.test.ts | Frontend: payment-flow.integration.test.ts
+SC-017,Security,Input,XSS in user-provided name fields,Test XSS resistance in name fields,./scripts/seed-state.sh active +919999900001,"1. Enter <script>alert(1)</script> as name
+2. View profile
+3. Verify no script execution",XSS payload escaped or rejected,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+SC-018,Security,CSRF,CSRF protection on mutations,Verify mutations protected against CSRF,./scripts/seed-state.sh active +919999900001,"1. Attempt mutation from external origin
+2. Check CORS headers
+3. Verify rejection",Cross-origin mutation requests rejected,+919999900001,active,P1,Manual,Gap,
+SC-019,Security,Storage,Secure storage for tokens,Verify tokens stored in secure storage not AsyncStorage,./scripts/seed-state.sh active +919999900001,"1. Login
+2. Check AsyncStorage for tokens
+3. Check SecureStore for tokens",Tokens only in SecureStore not AsyncStorage,+919999900001,active,P0,Manual,Gap,
+SC-020,Security,Network,Certificate pinning verification,Verify certificate pinning for API calls,./scripts/seed-state.sh active +919999900001,"1. Intercept API call with proxy
+2. Use self-signed cert
+3. Verify connection rejected",Connection rejected with certificate mismatch,+919999900001,active,P1,Manual,Gap,
+AC-001,Accessibility,VoiceOver,VoiceOver navigation 187 testIDs,Verify VoiceOver can navigate all 187 testID elements,./scripts/seed-state.sh active +919999900001,"1. Enable VoiceOver
+2. Navigate through all screens
+3. Verify all 187 testIDs are focusable",All interactive elements reachable via VoiceOver,+919999900001,active,P1,Automated,Covered,
+AC-002,Accessibility,VoiceOver,VoiceOver labels 50+ accessibilityLabels,Verify all 50+ accessibility labels read correctly,./scripts/seed-state.sh active +919999900001,"1. Enable VoiceOver
+2. Focus each labeled element
+3. Verify labels read correctly",All labels read with meaningful descriptions,+919999900001,active,P1,Automated,Covered,
+AC-003,Accessibility,Touch,Touch target size minimum 44x44,Verify all interactive elements meet 44x44pt minimum,./scripts/seed-state.sh active +919999900001,"1. Use accessibility inspector
+2. Check all button/link sizes
+3. Flag any below 44x44",All touch targets at least 44x44 points,+919999900001,active,P1,Manual,Gap,
+AC-004,Accessibility,Touch,hitSlop verification 8-12px,Verify hitSlop extends touch areas appropriately,./scripts/seed-state.sh active +919999900001,"1. Tap near edges of small elements
+2. Verify hitSlop extends touch area
+3. Check 8-12px extension",Touch area extended by hitSlop values,+919999900001,active,P2,Manual,Gap,
+AC-005,Accessibility,Visual,Color contrast ratios,Verify text/background contrast meets WCAG AA,./scripts/seed-state.sh active +919999900001,"1. Capture screenshots of all screens
+2. Run contrast analyzer
+3. Check against WCAG AA (4.5:1 text 3:1 large)",All text meets WCAG AA contrast ratios,+919999900001,active,P1,Manual,Gap,
+AC-006,Accessibility,Visual,Font scaling Dynamic Type,Verify app respects iOS Dynamic Type settings,./scripts/seed-state.sh active +919999900001,"1. Set iOS to largest text size
+2. Navigate all screens
+3. Check for text truncation/overlap",Text scales without breaking layout,+919999900001,active,P1,Manual,Gap,
+AC-007,Accessibility,Focus,Modal focus trapping,Verify focus trapped within modals when open,./scripts/seed-state.sh active +919999900001,"1. Open payment modal
+2. Navigate with VoiceOver
+3. Verify focus stays within modal",Focus does not escape modal boundary,+919999900001,active,P1,Manual,Gap,
+AC-008,Accessibility,Visual,Color-only indicator gaps,Verify status indicators not color-only,./scripts/seed-state.sh active +919999900001,"1. View payment statuses
+2. Check for text/icon alongside color
+3. Verify in grayscale mode",Status conveyed by text/icon not just color,+919999900001,active,P1,Manual,Gap,
+AC-009,Accessibility,Keyboard,Keyboard navigation,Verify external keyboard can navigate the app,./scripts/seed-state.sh active +919999900001,"1. Connect external keyboard
+2. Tab through all elements
+3. Verify focus order",All elements navigable via keyboard,+919999900001,active,P2,Manual,Gap,
+AC-010,Accessibility,VoiceOver,Screen reader announcement order,Verify logical reading order on each screen,./scripts/seed-state.sh active +919999900001,"1. Enable VoiceOver
+2. Swipe through each screen
+3. Verify order matches visual hierarchy",Reading order matches visual layout top-to-bottom,+919999900001,active,P2,Manual,Gap,
+AC-011,Accessibility,Motion,Reduce motion support,Verify animations respect Reduce Motion setting,./scripts/seed-state.sh active +919999900001,"1. Enable Reduce Motion in iOS settings
+2. Navigate app
+3. Check for reduced/eliminated animations",Animations reduced or removed with setting enabled,+919999900001,active,P2,Manual,Gap,
+AC-012,Accessibility,Layout,RTL layout support,Verify right-to-left layout for RTL languages,./scripts/seed-state.sh active +919999900001,"1. Set device language to Arabic
+2. Navigate all screens
+3. Check layout mirroring",Layout correctly mirrors for RTL,+919999900001,active,P3,Automated,Covered,
+PF-001,Performance,Startup,Cold start time under 3 seconds,Measure cold start to first meaningful paint,none,"1. Force kill app
+2. Launch app with timer
+3. Measure time to first screen render",Cold start under 3 seconds,+919999900001,active,P0,Manual,Gap,
+PF-002,Performance,Startup,Hot start time under 1 second,Measure hot start time,./scripts/seed-state.sh active +919999900001,"1. Background app
+2. Resume app with timer
+3. Measure time to interactive",Hot start under 1 second,+919999900001,active,P1,Manual,Gap,
+PF-003,Performance,Payment,Payment initiation latency under 2 seconds,Measure time from pay tap to redirect,./scripts/seed-state.sh active +919999900001,"1. Enter amount and select method
+2. Tap Pay with timer
+3. Measure time to PayU redirect",Payment initiation under 2 seconds,+919999900001,active,P0,Manual,Gap,
+PF-004,Performance,Dashboard,Dashboard load time,Measure dashboard data load and render time,./scripts/seed-state.sh active +919999900001,"1. Navigate to dashboard with timer
+2. Measure time to full render
+3. Check all cards loaded",Dashboard loads within 2 seconds,+919999900001,active,P1,Automated,Covered,CI/build checks
+PF-005,Performance,Network,Slow network 3G degradation,Measure app performance on 3G network,./scripts/seed-state.sh active +919999900001,"1. Enable 3G network conditioner
+2. Navigate all major flows
+3. Measure response times",App functional with degraded but usable performance,+919999900001,active,P1,Manual,Gap,
+PF-006,Performance,Build,Bundle size check,Verify JS bundle size within limits,none,"1. Build production bundle
+2. Measure JS bundle size
+3. Compare against 5MB threshold",JS bundle under 5MB,+919999900001,active,P1,Automated,Covered,CI/build checks
+PF-007,Performance,Memory,Memory usage during payment flow,Monitor memory during complete payment flow,./scripts/seed-state.sh active +919999900001,"1. Start Instruments memory profiler
+2. Complete full payment flow
+3. Check for memory leaks",No memory leaks and usage within 200MB,+919999900001,active,P1,Manual,Gap,
+PF-008,Performance,Animation,Frame rate during animations,Monitor FPS during key animations,./scripts/seed-state.sh active +919999900001,"1. Enable FPS overlay
+2. Trigger card flip animation
+3. Trigger carousel swipe
+4. Check for frame drops",Animations maintain 60fps without drops,+919999900001,active,P2,Automated,Covered,CI/build checks
+CL-001,Cleanup,Data,Test data audit find is_test_user,Find all test user records in database,none,"1. Query profiles where is_test_user=true
+2. List all found records
+3. Document for cleanup",All test users identified,+919999900001,active,P1,Manual,Gap,
+CL-002,Cleanup,Data,Orphaned payment records,Find payments with no matching user,none,"1. Query payments with LEFT JOIN profiles
+2. Find null user references
+3. Document orphans",Orphaned payments identified and cleaned,+919999900001,active,P1,Manual,Gap,
+CL-003,Cleanup,Data,Orphaned bank account records,Find bank accounts with no matching user,none,"1. Query bank_accounts with LEFT JOIN profiles
+2. Find null user references
+3. Document orphans",Orphaned bank accounts identified,+919999900001,active,P1,Manual,Gap,
+CL-004,Cleanup,Data,Stale OTP requests,Find expired unverified OTP requests,none,"1. Query OTP requests older than 24h
+2. List unverified entries
+3. Clean up",Stale OTP requests cleaned,+919999900001,active,P2,Manual,Gap,
+CL-005,Cleanup,Data,Migration health check,Verify all DB migrations applied cleanly,none,"1. Run supabase db diff
+2. Check migration history
+3. Verify no pending migrations",All migrations applied successfully,+919999900001,active,P1,Manual,Gap,
+CL-006,Cleanup,Data,Referential integrity check,Verify foreign key constraints hold,none,"1. Run integrity check queries
+2. Find broken references
+3. Document violations",No referential integrity violations,+919999900001,active,P1,Manual,Gap,
+CL-007,Cleanup,Data,Stale waitlist entries,Find waitlist entries in limbo state,none,"1. Query waitlist entries older than 30 days pending
+2. List stale entries
+3. Clean up or notify",Stale waitlist entries resolved,+919999900001,active,P2,Manual,Gap,
+CL-008,Cleanup,Data,Expired idempotency keys,Find and clean expired idempotency keys,none,"1. Query idempotency keys older than 24h
+2. Count expired entries
+3. Clean up",Expired idempotency keys removed,+919999900001,active,P2,Manual,Gap,
+CL-009,Cleanup,Data,Unused device tokens,Find device tokens for deleted users,none,"1. Query device_tokens with LEFT JOIN profiles
+2. Find orphaned tokens
+3. Clean up",Unused device tokens removed,+919999900001,active,P2,Manual,Gap,
+CL-010,Cleanup,Storage,Storage cleanup uploaded documents,Find orphaned documents in storage bucket,none,"1. List storage bucket objects
+2. Cross-reference with documents table
+3. Find orphaned files",Orphaned storage objects identified and cleaned,+919999900001,active,P2,Manual,Gap,
+PM-001,Payment Methods,UPI,Add UPI VPA,Add UPI VPA as payment method,./scripts/seed-state.sh active +919999900001,"1. Navigate to payment flow
+2. Select UPI
+3. Enter VPA (test@upi)
+4. Save",UPI VPA saved as payment method,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-002,Payment Methods,Card,Add credit card tokenization,Add credit card via tokenization flow,./scripts/seed-state.sh active +919999900001,"1. Navigate to payment flow
+2. Select Credit Card
+3. Enter card details
+4. Tokenize and save",Credit card tokenized and saved,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-003,Payment Methods,Card,Add debit card,Add debit card as payment method,./scripts/seed-state.sh active +919999900001,"1. Navigate to payment flow
+2. Select Debit Card
+3. Enter card details
+4. Save",Debit card saved as payment method,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-004,Payment Methods,Netbanking,Add netbanking bank,Add netbanking bank as payment method,./scripts/seed-state.sh active +919999900001,"1. Navigate to payment flow
+2. Select Netbanking
+3. Choose bank from list
+4. Save",Netbanking bank saved as preference,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-005,Payment Methods,Default,Set default payment method,Set a saved method as default,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Navigate to payment methods
+2. Tap on a saved method
+3. Set as default",Method marked as default with indicator,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+PM-006,Payment Methods,Delete,Delete payment method,Delete a saved payment method,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Navigate to payment methods
+2. Swipe or tap delete on a method
+3. Confirm deletion",Method removed from saved list,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+PM-007,Payment Methods,UPI,Edit UPI VPA,Edit an existing UPI VPA,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Navigate to payment methods
+2. Tap edit on UPI method
+3. Change VPA
+4. Save",UPI VPA updated,+919999900001,active,P2,Manual,Gap,
+PM-008,Payment Methods,Card,Verify card via PayU,Verify card details via PayU validation,./scripts/seed-state.sh active +919999900001,"1. Enter card number
+2. Card type auto-detected
+3. BIN check validates card",Card verified with correct type and issuer,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+PM-009,Payment Methods,Modal,PaymentMethodModal enter-amount view test,Test amount entry in payment modal,./scripts/seed-state.sh active +919999900001,"1. Open payment modal
+2. Enter various amounts
+3. Verify validation and formatting",Amount formatted correctly with validation,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-010,Payment Methods,Modal,PaymentMethodModal method-selector view test,Test method selection flow,./scripts/seed-state.sh active +919999900001,"1. Enter valid amount
+2. Proceed to method selector
+3. Verify all methods shown",All payment method types shown with icons,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-011,Payment Methods,Modal,PaymentMethodModal add-upi view test,Test UPI entry within modal,./scripts/seed-state.sh active +919999900001,"1. Select UPI method
+2. Verify VPA input field
+3. Test domain suggestions",UPI form renders with suggestions,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-012,Payment Methods,Modal,PaymentMethodModal add-card view test,Test card entry within modal,./scripts/seed-state.sh active +919999900001,"1. Select Card method
+2. Verify all card fields
+3. Test card number formatting",Card form renders with auto-formatting,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-013,Payment Methods,Modal,PaymentMethodModal add-netbanking view test,Test netbanking selection within modal,./scripts/seed-state.sh active +919999900001,"1. Select Netbanking method
+2. Verify bank list loads
+3. Test search functionality",Bank list renders with search working,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+PM-014,Payment Methods,Modal,PaymentMethodModal edit view test,Test edit/manage view within modal,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Tap edit in method selector
+2. Verify saved methods listed
+3. Test delete and default actions",Edit view shows all saved methods with actions,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+PM-015,Payment Methods,Persistence,Saved methods persistence across restart,Verify saved methods survive app restart,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Save a payment method
+2. Kill app
+3. Reopen and check saved methods",Saved methods persist after restart,+919999900001,active,P0,Manual,Gap,
+PM-016,Payment Methods,Order,Multiple saved methods ordering,Verify methods ordered correctly (default first),./scripts/seed-state.sh active +919999900001 --with-methods,"1. Save 3 different methods
+2. Set one as default
+3. View method list",Default method shown first then others by type,+919999900001,active,P2,Manual,Gap,
+PM-017,Payment Methods,Default,Default method indicator,Verify default method has visual indicator,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Set a method as default
+2. View method list
+3. Check visual indicator",Default method has distinct visual indicator (badge/check),+919999900001,active,P2,Manual,Gap,
+PM-018,Payment Methods,Delete,Method deletion confirmation,Verify deletion requires confirmation,./scripts/seed-state.sh active +919999900001 --with-methods,"1. Tap delete on a method
+2. Verify confirmation dialog
+3. Cancel then retry and confirm",Confirmation dialog shown before actual deletion,+919999900001,active,P1,Manual,Gap,
+RC-001,Referral & Cashback,Referral,Get/generate referral code,Get or generate unique referral code,./scripts/seed-state.sh active +919999900001,"1. Navigate to referral section
+2. View or generate code
+3. Verify code format",Unique referral code displayed,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+RC-002,Referral & Cashback,Referral,Share referral code,Share referral code via system share sheet,./scripts/seed-state.sh active +919999900001,"1. Navigate to referral section
+2. Tap Share
+3. Verify share sheet",System share sheet opens with referral code/link,+919999900001,active,P2,Manual,Gap,
+RC-003,Referral & Cashback,Referral,Validate valid referral code,Enter and validate a valid referral code,./scripts/seed-state.sh approved +919999900001,"1. Enter valid referral code
+2. Tap Validate
+3. Check response",Code validated with referrer info shown,+919999900001,approved,P1,Semi-Auto,Covered,Multi-layer coverage
+RC-004,Referral & Cashback,Referral,Validate invalid/expired code,Enter invalid or expired referral code,./scripts/seed-state.sh approved +919999900001,"1. Enter invalid code
+2. Tap Validate
+3. Check error",Error message for invalid code,+919999900001,approved,P1,Semi-Auto,Covered,Multi-layer coverage
+RC-005,Referral & Cashback,Referral,Apply referral code,Apply validated referral code to account,./scripts/seed-state.sh approved +919999900001,"1. Enter valid code
+2. Validate
+3. Tap Apply",Referral code applied successfully,+919999900001,approved,P1,Semi-Auto,Covered,Multi-layer coverage
+RC-006,Referral & Cashback,Cashback,Calculate cashback all gates passed,Calculate cashback when bank+utility+landlord verified,./scripts/seed-state.sh active +919999900001 --all-verified,"1. Complete payment
+2. Trigger cashback calculation
+3. Verify amount",Cashback calculated with full amount,+919999900001,active,P0,Semi-Auto,Covered,Multi-layer coverage
+RC-007,Referral & Cashback,Cashback,Calculate cashback bank not verified,Calculate cashback without bank verification,./scripts/seed-state.sh active +919999900001 --no-bank,"1. Complete payment
+2. Trigger cashback calculation
+3. Verify zero cashback",Cashback is zero with reason: bank not verified,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+RC-008,Referral & Cashback,Cashback,Calculate cashback utility not verified,Calculate cashback without utility verification,./scripts/seed-state.sh active +919999900001 --no-utility,"1. Complete payment
+2. Trigger cashback calculation
+3. Verify zero cashback",Cashback is zero with reason: utility not verified,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+RC-009,Referral & Cashback,Cashback,Calculate cashback landlord not approved,Calculate cashback without landlord approval,./scripts/seed-state.sh active +919999900001 --no-landlord,"1. Complete payment
+2. Trigger cashback calculation
+3. Verify zero cashback",Cashback is zero with reason: landlord not approved,+919999900001,active,P1,Semi-Auto,Covered,Multi-layer coverage
+RC-010,Referral & Cashback,Cashback,Calculate cashback after cutoff day,Calculate cashback for payment after monthly cutoff,./scripts/seed-state.sh active +919999900001 --past-cutoff,"1. Complete payment after cutoff date
+2. Trigger cashback calculation
+3. Verify zero cashback",Cashback is zero with reason: past cutoff date,+919999900001,active,P1,Manual,Gap,
+RC-011,Referral & Cashback,Cashback,Cashback history view,View cashback transaction history,./scripts/seed-state.sh active +919999900001 --with-cashback,"1. Navigate to cashback section
+2. View history
+3. Verify entries",Cashback history shows all entries with dates and amounts,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage
+RC-012,Referral & Cashback,Cashback,Cashback ledger entry on payment success,Verify cashback ledger entry created after payment,./scripts/seed-state.sh active +919999900001 --all-verified,"1. Complete payment
+2. Check cashback ledger in DB
+3. Verify entry created",Ledger entry with correct amount and payment reference,+919999900001,active,P1,Manual,Gap,
+RC-013,Referral & Cashback,Cashback,Cashback amount display on dashboard,Verify cashback amount shown on home dashboard,./scripts/seed-state.sh active +919999900001 --with-cashback,"1. Navigate to home dashboard
+2. Find cashback section
+3. Verify amount displayed",Cashback total displayed correctly on dashboard,+919999900001,active,P2,Manual,Gap,
+RC-014,Referral & Cashback,Referral,Multiple referral redemptions,Verify multiple users can use same referral code,./scripts/seed-state.sh approved +919999900002,"1. Apply referral code from user A to user B
+2. Apply same code from user A to user C
+3. Verify both applied",Both users successfully use the same referral code,+919999900002,approved,P2,Manual,Gap,Uses second test phone
+RC-015,Referral & Cashback,Cashback,Cashback expiry handling,Verify cashback expires after defined period,./scripts/seed-state.sh active +919999900001 --with-expired-cashback,"1. Check cashback entries past expiry
+2. Verify expired entries marked
+3. Verify not redeemable",Expired cashback marked and excluded from balance,+919999900001,active,P2,Semi-Auto,Covered,Multi-layer coverage

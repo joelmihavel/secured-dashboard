@@ -344,8 +344,8 @@ describe('errorReporting', () => {
       (global as Record<string, unknown>).__DEV__ = originalDev;
     });
 
-    it('does NOT call captureError in __DEV__ mode', () => {
-      // __DEV__ is true by default in test environment
+    it('calls captureError in __DEV__ mode (environment tag differentiates)', () => {
+      // __DEV__ is true by default in test environment — Sentry should still capture
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const listener = jest.fn();
@@ -353,7 +353,7 @@ describe('errorReporting', () => {
 
       reportFatalError(baseErrorInput);
 
-      expect(mockCaptureError).not.toHaveBeenCalled();
+      expect(mockCaptureError).toHaveBeenCalledTimes(1);
       expect(consoleErrorSpy).toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();

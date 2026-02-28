@@ -1,10 +1,10 @@
 # =============================================================================
 # Journey: Make Payment E2E
 #
-# Full payment journey: first-rent -> Pay Now -> (method modal) -> confirm ->
+# Full payment journey: enter-rent -> Pay Now -> (method modal) -> confirm ->
 #                       Pay Now -> status (pending -> success)
 #
-# This journey validates the complete rent payment flow from the first-rent
+# This journey validates the complete rent payment flow from the enter-rent
 # breakdown screen through method selection, payment confirmation, and the
 # status result screen.
 #
@@ -22,13 +22,13 @@ appId: com.flent.secured
 - launchApp:
     clearState: true
 
-# Deep link to first-rent screen
-- openLink: "flentsecured:///payment/first-rent"
+# Deep link to enter-rent screen
+- openLink: "flentsecured:///payment/enter-rent"
 - waitForAnimationToEnd
 
-# Verify first-rent screen loaded
+# Verify enter-rent screen loaded
 - assertVisible:
-    id: "first-rent-payment-screen"
+    id: "enter-rent-screen"
     optional: true
 
 # Verify key breakdown elements
@@ -64,7 +64,7 @@ appId: com.flent.secured
 
 # Verify confirm screen loaded
 - assertVisible:
-    id: "confirm-screen"
+    id: "confirm-payment-screen"
     optional: true
 
 # Verify breakdown elements

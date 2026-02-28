@@ -4,17 +4,15 @@
  */
 
 import React, { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useNavigationContainerRef } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { Text as RNText, TextInput } from 'react-native';
 
-import '../global.css';
 import { colors } from '@/src/theme';
 import { QueryProvider, AuthProvider } from '@/src/providers';
 // Conditional require: tree-shaken in production (DevNavigator is dev-only)
@@ -22,7 +20,7 @@ const DevNavigator = __DEV__
   ? require('@/src/components/dev/DevNavigator').DevNavigator
   : null;
 import { ErrorBoundary } from '@/src/components/ui';
-import { initSentry, wrapWithSentry } from '@/src/config/sentry';
+import { initSentry, wrapWithSentry, registerNavigationContainer } from '@/src/config/sentry';
 import { setupNotificationHandlers } from '@/src/services/notifications';
 import { setupAutoUpdateCheck } from '@/src/config/updates';
 import { OfflineBanner } from '@/src/components/ui';
@@ -32,14 +30,20 @@ import { usePaymentRecovery } from '@/src/hooks/usePaymentRecovery';
 import { markAppReady } from '@/src/services/performance';
 import { installGlobalErrorHandlers } from '@/src/services/globalErrorHandlers';
 
-// Initialize Sentry before app renders
-initSentry();
-
-// Install global error handlers (chains with Sentry's handlers)
-installGlobalErrorHandlers();
+// Defer Sentry init and error handlers to avoid TurboModule contention at module scope.
+// Previously ran synchronously at module scope — moved to a microtask so the JS thread
+// can finish bundle evaluation before touching native modules.
+Promise.resolve().then(() => {
+  try {
+    initSentry();
+    installGlobalErrorHandlers();
+  } catch (e) {
+    console.error('[Sentry] Init failed:', e);
+  }
+});
 
 // Keep splash screen visible while loading resources
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Safety net for raw RNText usage — caps Dynamic Type scaling
 if (!(RNText as any).defaultProps?.maxFontSizeMultiplier) {
@@ -48,6 +52,14 @@ if (!(RNText as any).defaultProps?.maxFontSizeMultiplier) {
 (TextInput as any).defaultProps = { ...(TextInput as any).defaultProps, maxFontSizeMultiplier: 1.2 };
 
 function RootLayoutInner() {
+  const navigationRef = useNavigationContainerRef();
+
+  useEffect(() => {
+    if (navigationRef) {
+      registerNavigationContainer(navigationRef);
+    }
+  }, [navigationRef]);
+
   const [fontsLoaded, fontError] = useFonts({
     // Plus Jakarta Sans
     'PlusJakartaSans-Regular': require('@/assets/fonts/PlusJakartaSans-Regular.ttf'),
@@ -60,7 +72,7 @@ function RootLayoutInner() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
 
@@ -92,16 +104,17 @@ function RootLayoutInner() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
+  // CRITICAL: Never return null — Expo Router requires the Root Layout to render
+  // a navigator (<Stack>) on every render including the first. Returning null here
+  // causes "Attempted to navigate before mounting the Root Layout component" crash.
+  // The native splash screen (SplashScreen.preventAutoHideAsync) stays visible
+  // until fonts load, so the user never sees unstyled content.
 
   return (
     <ErrorBoundary>
       <QueryProvider>
         <AuthProvider>
           <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
-            <BottomSheetModalProvider>
               <SafeAreaProvider>
                 <StatusBar style="light" backgroundColor={colors.black[700]} />
                 <OfflineBanner />
@@ -127,7 +140,6 @@ function RootLayoutInner() {
                 </Stack>
                 {DevNavigator && <DevNavigator />}
               </SafeAreaProvider>
-            </BottomSheetModalProvider>
           </GestureHandlerRootView>
         </AuthProvider>
       </QueryProvider>

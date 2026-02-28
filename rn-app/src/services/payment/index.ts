@@ -25,6 +25,7 @@ export interface UnifiedInitiateResult {
   payuParams?: Record<string, unknown>;
   totalAmountPaise: number;
   cashbackAppliedPaise: number;
+  demoMode?: boolean;
 }
 
 // ==============================================
@@ -98,6 +99,7 @@ export async function initiatePayment(params: {
       payuParams: d.payu,
       totalAmountPaise: d.total_amount_paise,
       cashbackAppliedPaise: d.cashback_applied_paise,
+      demoMode: (d as Record<string, unknown>).demo_mode === true,
     },
     error: null,
   };

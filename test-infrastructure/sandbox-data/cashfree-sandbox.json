@@ -1,0 +1,28 @@
+{
+  "description": "Cashfree sandbox test data (M360 + Payouts + PAN)",
+  "environment": "sandbox",
+  "m360_identity": {
+    "test_phone": "+919999900001",
+    "test_pan": "ABCDE1234F",
+    "test_aadhaar_last4": "1234",
+    "notes": "M360 sandbox accepts any well-formatted PAN/Aadhaar"
+  },
+  "payouts": {
+    "test_beneficiary": {
+      "name": "Test Landlord",
+      "account_number": "026291800001191",
+      "ifsc": "YESB0000262",
+      "bank": "Yes Bank"
+    },
+    "test_transfer": {
+      "amount": 1.00,
+      "currency": "INR",
+      "notes": "Sandbox transfers always succeed"
+    }
+  },
+  "pan_verification": {
+    "valid_pan": "ABCDE1234F",
+    "invalid_pan": "XXXXX0000X",
+    "notes": "Sandbox validates format only"
+  }
+}

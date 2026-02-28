@@ -1,0 +1,52 @@
+# =============================================================================
+# Maestro Profile: smoke
+# =============================================================================
+# P0 critical path flows only. Used for push-to-main and PR gate checks.
+# Executes the minimum set of flows to validate core functionality:
+#   - Auth sign-up + OTP
+#   - Home dashboard render
+#   - Payment happy path (enter rent -> confirm -> success)
+#
+# Target execution time: < 3 minutes
+# Max flows: 5
+# =============================================================================
+
+name: "Smoke (P0 Critical Path)"
+profile: smoke
+
+# Only P0 critical flows
+flows:
+  - "flows/auth/sign-up.yaml"
+  - "flows/auth/otp.yaml"
+  - "flows/main/home.yaml"
+  - "flows/payment/enter-rent.yaml"
+  - "flows/payment/confirm.yaml"
+
+# Short timeout -- these are happy-path only
+timeout: 60
+
+# No retries -- smoke must pass cleanly
+retry:
+  maxRetries: 0
+  retryOnFailure: false
+
+# Minimal artifact collection
+artifacts:
+  screenshots:
+    enabled: true
+    onFailure: true
+    onSuccess: false
+  video:
+    enabled: false
+  logs:
+    enabled: true
+
+# Single device for speed
+devices:
+  - platform: iOS
+    model: "iPhone 16 Pro"
+    osVersion: "18"
+
+# Stop on first failure -- no point continuing smoke if core is broken
+executionOrder:
+  continueOnFailure: false

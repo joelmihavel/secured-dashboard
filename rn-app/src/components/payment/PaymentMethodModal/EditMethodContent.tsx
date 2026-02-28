@@ -6,10 +6,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 
-import { PrimaryButton, Text, BackButton } from '@/src/components';
+import { Text } from '@/src/components/ui/Typography';
+import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { PaymentCard } from '@/src/components/payment/PaymentCard';
 import { useSavedPaymentMethods, useDeletePaymentMethod } from '@/src/hooks';
 import { colors } from '@/src/theme';
@@ -26,14 +26,14 @@ const FIGMA_COLORS = {
   cardBorder: '#4D4D4D',
 };
 
-/** Get the replace CTA text */
-function getReplaceCta(methodType: string): string {
+/** Get the delete CTA text */
+function getDeleteCta(methodType: string): string {
   switch (methodType) {
-    case 'upi': return 'Replace UPI ID';
-    case 'card': return 'Replace Card';
-    case 'debit_card': return 'Replace Card';
-    case 'netbanking': return 'Replace Netbanking';
-    default: return 'Replace Method';
+    case 'upi': return 'Delete UPI';
+    case 'card': return 'Delete Card';
+    case 'debit_card': return 'Delete Card';
+    case 'netbanking': return 'Delete Bank';
+    default: return 'Delete Method';
   }
 }
 
@@ -65,13 +65,13 @@ export function EditMethodContent({
     }
   }, [deletePaymentMethod, savedMethodId, methodType, onDeleteSuccess]);
 
-  const confirmReplace = useCallback(() => {
+  const confirmDelete = useCallback(() => {
     Alert.alert(
-      'Replace Payment Method',
-      `This will remove your current ${methodType === 'upi' ? 'UPI ID' : (methodType === 'card' || methodType === 'debit_card') ? 'card' : 'bank account'} and let you add a new one.`,
+      'Delete Payment Method',
+      `This will remove your current ${methodType === 'upi' ? 'UPI ID' : (methodType === 'card' || methodType === 'debit_card') ? 'card' : 'bank account'}.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Replace', style: 'destructive', onPress: handleReplace },
+        { text: 'Delete', style: 'destructive', onPress: handleReplace },
       ]
     );
   }, [handleReplace, methodType]);
@@ -111,7 +111,6 @@ export function EditMethodContent({
           style={styles.backButton}
           color={FIGMA_COLORS.white}
         />
-        <Text style={styles.title}>Edit Method</Text>
       </View>
 
       {/* Card UI — Figma 773:11937 */}
@@ -122,7 +121,7 @@ export function EditMethodContent({
               <PaymentCard 
                 {...cardProps} 
                 variant="profile" 
-                selected={true}
+                selected={false}
               />
             </View>
           ) : (
@@ -147,15 +146,16 @@ export function EditMethodContent({
         />
 
         <TouchableOpacity
-          onPress={confirmReplace}
+          onPress={confirmDelete}
           disabled={isInitiating || isDeleting}
-          style={styles.replaceButton}
+          style={styles.deleteButton}
+          hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
         >
           {isDeleting ? (
             <ActivityIndicator size="small" color={FIGMA_COLORS.muted} />
           ) : (
-            <Text style={styles.replaceText}>
-              {getReplaceCta(methodType)}
+            <Text style={styles.deleteText}>
+              {getDeleteCta(methodType)}
             </Text>
           )}
         </TouchableOpacity>
@@ -166,7 +166,7 @@ export function EditMethodContent({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 40,
+    paddingHorizontal: 48,
     paddingTop: 16,
     paddingBottom: 48,
     gap: 32,
@@ -177,12 +177,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 32,
-  },
-  title: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 18,
-    color: colors.white,
-    marginLeft: 12,
   },
   backButton: {
     width: 32,
@@ -222,11 +216,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  replaceButton: {
-    paddingVertical: 8,
+  deleteButton: {
     width: '100%',
   },
-  replaceText: {
+  deleteText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,

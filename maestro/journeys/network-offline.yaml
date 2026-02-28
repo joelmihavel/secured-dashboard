@@ -1,0 +1,127 @@
+# =============================================================================
+# Journey: Network Offline Behavior
+# EC-010
+#
+# Journey: go online -> navigate to screens -> verify error handling
+#          for network-dependent operations
+#
+# This journey tests the app's behavior when network requests fail or time out.
+# Maestro has limited network control, so this test focuses on:
+#   - Verifying error state displays on network-dependent screens
+#   - Checking retry buttons are accessible
+#   - Ensuring the app does not crash on API failures
+#   - Testing the app's offline-aware UI elements
+#
+# Note: Actual network toggling is not supported in Maestro.
+# This flow tests the error/empty states that would appear on failure.
+#
+# Prerequisites:
+#   - User is authenticated
+#   - Screens with API calls are reachable
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STEP 1: Launch and Verify Online State
+# =============================================
+- launchApp:
+    clearState: true
+
+# Navigate to home screen (requires API call for dashboard data)
+- openLink: "flentsecured:///main/index"
+- waitForAnimationToEnd
+
+# Verify home screen loaded (online state)
+- assertVisible:
+    id: "home-screen"
+
+# Check for loading state (API in progress)
+- assertVisible:
+    id: "home-screen-loading"
+    optional: true
+
+# Check for error state (API failed -- simulates offline)
+- assertVisible:
+    id: "home-screen-error"
+    optional: true
+
+# =============================================
+# STEP 2: Test Payment Screen (Network-Dependent)
+# =============================================
+# Payment screens require API calls for fee rates and payment initiation
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "enter-rent-screen"
+
+# Enter amount and try to continue
+- inputText: ${TEST_PAYMENT_AMOUNT}
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "enter-rent-continue-button"
+    optional: true
+- waitForAnimationToEnd
+
+# If network fails, an error alert or state should appear
+# Verify the app handles gracefully
+- assertVisible:
+    text: "Payment Method"
+    optional: true
+- assertVisible:
+    text: "error"
+    optional: true
+- assertVisible:
+    text: "try again"
+    optional: true
+
+# =============================================
+# STEP 3: Test Profile Screen (Network-Dependent)
+# =============================================
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "profile-screen"
+
+# =============================================
+# STEP 4: Test Payment Methods (Network-Dependent)
+# =============================================
+- openLink: "flentsecured:///profile/payment-methods"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "payment-methods-screen"
+
+# Check for loading indicator (API call in progress)
+- assertVisible:
+    text: "No saved payment methods"
+    optional: true
+
+# =============================================
+# STEP 5: Test Agreement Screen (Offline-Capable?)
+# =============================================
+- openLink: "flentsecured:///profile/agreement"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "profile-agreement-screen"
+
+# Agreement data may be cached -- verify it shows something
+- assertVisible:
+    text: "Agreement ID"
+    optional: true
+
+# =============================================
+# STEP 6: Verify App Stability After Network Issues
+# =============================================
+# Navigate to a simple, low-network screen
+- openLink: "flentsecured:///splash"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "splash-screen"
+
+- takeScreenshot: "network-offline-behavior-tested"

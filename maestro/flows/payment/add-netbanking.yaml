@@ -1,0 +1,104 @@
+# =============================================================================
+# UI-041: Add Netbanking Payment Method Flow
+# Route: Modal overlay (AddNetbankingContent in PaymentMethodModal)
+# Figma: Add Netbanking
+# testIDs: modal-bank-search-input, modal-proceed-netbanking-button
+# =============================================================================
+#
+# Validates:
+#   - Netbanking form renders with "Add your Net Banking" title
+#   - Bank search input is visible and functional
+#   - Popular Banks section is visible (when not searching)
+#   - All Banks section is visible
+#   - Bank list renders with selectable rows
+#   - Selecting a bank enables the Proceed button
+#   - Search filters bank list correctly
+#   - Footer text about alternative methods is visible
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Navigate to enter-rent, enter amount, open modal, select Netbanking
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+
+# Enter amount
+- inputText: ${TEST_PAYMENT_AMOUNT}
+- waitForAnimationToEnd
+
+# Open method selector
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# Wait for modal
+- extendedWaitUntil:
+    visible: "Payment Method"
+    timeout: 5000
+
+# Select Net Banking
+- tapOn: "Net Banking"
+- waitForAnimationToEnd
+- tapOn:
+    id: "modal-method-proceed-button"
+- waitForAnimationToEnd
+
+# -- Verify netbanking form rendered --
+- extendedWaitUntil:
+    visible: "Net Banking"
+    timeout: 5000
+
+- assertVisible: "Add your"
+- assertVisible: "Net Banking"
+
+# -- Verify search input --
+- assertVisible:
+    id: "modal-bank-search-input"
+
+# -- Verify Popular Banks section --
+- assertVisible:
+    text: "Popular Banks"
+    optional: true
+
+# -- Verify All Banks section --
+- assertVisible:
+    text: "All Banks"
+    optional: true
+
+# -- Test search functionality --
+- tapOn:
+    id: "modal-bank-search-input"
+- inputText: "HDFC"
+- waitForAnimationToEnd
+
+# Verify HDFC appears in filtered list
+- assertVisible:
+    text: "HDFC"
+    optional: true
+
+# Clear search
+- clearText
+- hideKeyboard
+
+# -- Select a bank from the list --
+# Scroll down to find a bank and tap it
+- scrollUntilVisible:
+    element: "Popular Banks"
+    direction: UP
+    timeout: 3000
+    optional: true
+
+# -- Verify proceed button --
+- assertVisible:
+    id: "modal-proceed-netbanking-button"
+
+# -- Verify footer text --
+- scrollUntilVisible:
+    element: "Don't see your bank"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+
+- takeScreenshot: "add-netbanking-completed"

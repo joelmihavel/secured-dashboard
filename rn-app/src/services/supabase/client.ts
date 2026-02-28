@@ -7,6 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+import { addBreadcrumb } from '@/src/config/sentry';
 
 // Environment configuration - fail fast if not set
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -155,6 +156,7 @@ export async function callEdgeFunction<T = unknown>(
   // AbortController for timeout enforcement
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const startTime = Date.now();
 
   try {
     const headers: Record<string, string> = {
@@ -217,6 +219,8 @@ export async function callEdgeFunction<T = unknown>(
       fetchOptions.body = JSON.stringify(body);
     }
 
+    addBreadcrumb(`API call: ${method} ${functionName}`, 'api', { method, requireAuth });
+
     let response = await fetch(url, fetchOptions);
     let data = await response.json();
 
@@ -241,6 +245,11 @@ export async function callEdgeFunction<T = unknown>(
       // Parse error from backend structured error responses
       // Backend may return: { error: true, message: "...", code: "...", fields?: Record<string, string> }
       const errorMessage = data.message ?? data.error?.message ?? `HTTP ${response.status}`;
+      addBreadcrumb(`API error: ${functionName} ${response.status}`, 'api', {
+        status: response.status,
+        error: errorMessage,
+        duration_ms: Date.now() - startTime,
+      });
       return {
         data: null,
         error: errorMessage,
@@ -252,11 +261,19 @@ export async function callEdgeFunction<T = unknown>(
   } catch (error) {
     // Distinguish abort/timeout from other network errors
     if (error instanceof DOMException && error.name === 'AbortError') {
+      addBreadcrumb(`API timeout: ${functionName}`, 'api', {
+        duration_ms: Date.now() - startTime,
+        timeout_ms: timeoutMs,
+      });
       return {
         data: null,
         error: `Request timed out after ${Math.round(timeoutMs / 1000)}s`,
       };
     }
+    addBreadcrumb(`API network error: ${functionName}`, 'api', {
+      error: error instanceof Error ? error.message : 'Unknown',
+      duration_ms: Date.now() - startTime,
+    });
     return {
       data: null,
       error: error instanceof Error ? error.message : 'Network error',

@@ -47,6 +47,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { AlertBanner,  Text, TextInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
+import { DottedGridPattern } from '@/src/components/patterns/DottedGridPattern';
 import { useVerifyUtility, useUtilityOperators, useDashboard, validateConsumerNumber } from '@/src/hooks';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import type { UtilityOperator, SetupError } from '@/src/types/setup';
@@ -95,12 +96,14 @@ export default function AddUtilityScreen() {
     };
   });
 
-  // Set default operator to BESSCOM/BESCOM when operators are loaded
+  // Set default operator to BESCOM / Bangalore Electricity when operators are loaded
   React.useEffect(() => {
     if (operators && !selectedOperator) {
-      const defaultOp = operators.find(op => 
-        op.operatorName.toUpperCase().includes('BESCOM') || 
-        op.operatorName.toUpperCase().includes('BESSCOM')
+      const name = (n: string) => n.toUpperCase();
+      const defaultOp = operators.find(op =>
+        name(op.operatorName).includes('BESCOM') ||
+        name(op.operatorName).includes('BESSCOM') ||
+        name(op.operatorName).includes('BANGALORE ELECTRICITY')
       );
       if (defaultOp) {
         setSelectedOperator(defaultOp);
@@ -202,6 +205,7 @@ export default function AddUtilityScreen() {
 
   return (
     <View style={styles.container}>
+      <DottedGridPattern fadeMask={false} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -225,7 +229,7 @@ export default function AddUtilityScreen() {
 
           {/* Title - Figma: gray="Verify" accent="your address" */}
           <View style={styles.titleContainer}>
-            <ScreenTitle gray="Verify\n" accent="utility bill" />
+            <ScreenTitle gray="Verify" accent="utility bill" />
           </View>
 
           {/* Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9 */}
@@ -279,9 +283,9 @@ export default function AddUtilityScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Consumer Number Input */}
+            {/* Consumer Number Input — Figma: "Enter BESCOM Account Number" */}
             <TextInput
-              label={`Enter ${selectedOperator?.operatorName ?? 'Account'} Number`}
+              label="Enter Account Number"
               value={consumerNumber}
               onChangeText={handleConsumerNumberChange}
               placeholder="e.g. 1234567890"

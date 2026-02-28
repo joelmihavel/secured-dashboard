@@ -37,13 +37,14 @@ import {
   matchAgainstAgreementNames,
   calculateNameMatchScore,
 } from "../_shared/name-match-service.ts";
-import { createBeneficiary } from "../_shared/cashfree-payouts.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
+import { isTestUser } from "../_shared/demo-helpers.ts";
 
 // ==============================================
 // CONFIGURATION
 // ==============================================
 
+// Cashfree Penny Drop credentials (used by callCashfreePennyDrop below)
 const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
 const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
 const CASHFREE_BASE_URL =
@@ -211,6 +212,61 @@ serve(async (req: Request) => {
       throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
     }
 
+    // ── DEMO BYPASS ──────────────────────────────────────────────────
+    if (await isTestUser(userId, supabase)) {
+      const maskedAccount = maskAccountNumber(account_number);
+      const encryptedAccount = await encrypt(account_number);
+
+      const { data: demoBankAccount, error: demoErr } = await supabase
+        .from("bank_accounts")
+        .insert({
+          user_id: userId,
+          party_type,
+          account_holder_name,
+          account_number_encrypted: encryptedAccount,
+          account_number_masked: maskedAccount,
+          ifsc_code: sanitizedIfsc,
+          verified: true,
+          penny_drop_status: "SUCCESS",
+          penny_drop_name_match_score: 100,
+          verified_account_holder_name: account_holder_name,
+          verified_at: new Date().toISOString(),
+          is_primary: true,
+          agreement_name_matched: true,
+          agreement_name_match_score: 100,
+        })
+        .select()
+        .single();
+
+      if (demoErr || !demoBankAccount) {
+        throw new AppError("Failed to save demo bank account", "DB_ERROR", 500);
+      }
+
+      if (party_type === "landlord") {
+        await supabase.from("tenancies").update({ bank_verified: true }).eq("id", tenancy_id);
+      }
+
+      await audit!.logSuccess("BANK_VERIFICATION_DEMO_BYPASS", "verification", "bank_account", demoBankAccount.id, {
+        demo: true, party_type,
+      });
+
+      return jsonResponse({
+        success: true,
+        data: {
+          bank_account_id: demoBankAccount.id,
+          verified: true,
+          account_number_masked: maskedAccount,
+          ifsc_code: sanitizedIfsc,
+          verified_name: account_holder_name,
+          name_match_score: 100,
+          verification_status: "SUCCESS",
+          agreement_name_matched: true,
+          message: "Bank account verified successfully",
+        },
+      });
+    }
+    // ── END DEMO BYPASS ──────────────────────────────────────────────
+
     // Resolve landlord names from agreement (shared service)
     const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
     const allLandlordNames = resolved.names;
@@ -343,35 +399,6 @@ serve(async (req: Request) => {
       } catch (panCopyError) {
         // Non-fatal — PAN can be re-verified separately
         console.warn("[verify-bank] Failed to copy PAN data (non-fatal):", panCopyError);
-      }
-    }
-
-    // Create Cashfree Payout beneficiary for verified bank accounts
-    // This is non-blocking — failure does NOT fail bank verification
-    if (bankAccount.verified) {
-      try {
-        const beneId = `BENE_${bankAccount.id.slice(0, 8)}_${Date.now().toString(36)}`;
-        const beneResult = await createBeneficiary({
-          beneficiaryId: beneId,
-          name: account_holder_name,
-          email: `landlord_${tenancy_id.slice(0, 8)}@flent.app`,
-          phone: "",
-          bankAccount: account_number,
-          ifsc: sanitizedIfsc,
-        });
-
-        await supabase
-          .from("bank_accounts")
-          .update({
-            cf_beneficiary_id: beneResult.beneficiary_id ?? beneId,
-            cf_beneficiary_status: "active",
-          })
-          .eq("id", bankAccount.id);
-
-        console.log(`[verify-bank] Created Cashfree beneficiary ${beneId} for bank account ${bankAccount.id}`);
-      } catch (beneError) {
-        // Non-fatal — beneficiary can be created later during payout
-        console.warn("[verify-bank] Failed to create Cashfree beneficiary (non-fatal):", beneError);
       }
     }
 

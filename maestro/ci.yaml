@@ -5,13 +5,22 @@
 # integration. It specifies which flows to run, in what order, and with
 # what settings when triggered from the CI pipeline.
 #
+# Coverage: 39 screen flows + 10 journey flows = 49 E2E tests
+#   Screen flows: auth(6), waitlist(1), agreement(2), setup(5),
+#                 main(2), payment(10), profile(4), edge-cases(5),
+#                 routing(3)
+#   Journeys: new-user-onboarding, make-payment, manage-profile,
+#             skip-setup, sign-out-relogin, payment-card,
+#             payment-netbanking, profile-management-full,
+#             crash-recovery-payment, network-offline
+#
 # Maestro Cloud docs: https://cloud.mobile.dev/
 #
 # Usage:
 #   maestro cloud --config maestro/ci.yaml <app-binary>
 #
-# The run-cloud.sh script wraps this with environment setup and
-# app binary resolution.
+# The run-cloud.sh script wraps this with environment setup, profile
+# selection, sharding, artifact collection, and app binary resolution.
 # =============================================================================
 
 appId: com.flent.secured
@@ -41,12 +50,82 @@ env:
 executionOrder:
   continueOnFailure: true
 
-# Device configuration for Maestro Cloud
-# Uncomment the platform you want to target
-# devices:
-#   - platform: iOS
-#     model: iPhone 16 Pro
-#     osVersion: "18"
-#   - platform: Android
-#     model: Pixel 7
-#     osVersion: "34"
+# ---------------------------------------------------------------------------
+# Device Configuration for Maestro Cloud
+# ---------------------------------------------------------------------------
+# Maestro Cloud will provision these devices for test execution.
+# Multiple devices enable test sharding for faster feedback.
+# ---------------------------------------------------------------------------
+devices:
+  - platform: iOS
+    model: "iPhone 16 Pro"
+    osVersion: "18"
+  - platform: iOS
+    model: "iPhone 15"
+    osVersion: "17"
+  - platform: Android
+    model: "Pixel 8"
+    osVersion: "34"
+  - platform: Android
+    model: "Pixel 7"
+    osVersion: "33"
+
+# ---------------------------------------------------------------------------
+# Test Sharding
+# ---------------------------------------------------------------------------
+# When sharding is enabled via run-cloud.sh --shard, flows are distributed
+# across available devices. The CI script handles shard assignment.
+# ---------------------------------------------------------------------------
+# sharding:
+#   strategy: "round-robin"    # round-robin | by-directory | by-tag
+#   maxParallel: 4             # Max concurrent device sessions
+
+# ---------------------------------------------------------------------------
+# Retry Configuration
+# ---------------------------------------------------------------------------
+# Retries are handled per-profile in maestro/profiles/*.yaml and by the
+# run-cloud.sh wrapper. These are default values when no profile is active.
+# ---------------------------------------------------------------------------
+retry:
+  maxRetries: 2
+  retryOnFailure: true
+
+# ---------------------------------------------------------------------------
+# Artifact Collection
+# ---------------------------------------------------------------------------
+# Maestro Cloud collects these artifacts automatically. The run-cloud.sh
+# script downloads them after the run completes.
+# ---------------------------------------------------------------------------
+artifacts:
+  screenshots:
+    enabled: true
+    onFailure: true
+    onSuccess: false
+  video:
+    enabled: false
+  logs:
+    enabled: true
+
+# ---------------------------------------------------------------------------
+# Notification Webhooks (configured via run-cloud.sh --notify)
+# ---------------------------------------------------------------------------
+# notifications:
+#   slack:
+#     webhookUrl: "${SLACK_WEBHOOK_URL}"
+#     onFailure: true
+#     onSuccess: false
+#   webhook:
+#     url: "${WEBHOOK_NOTIFY_URL}"
+#     onComplete: true
+
+# ---------------------------------------------------------------------------
+# Profile Overrides
+# ---------------------------------------------------------------------------
+# Profiles are loaded from maestro/profiles/*.yaml by run-cloud.sh.
+# Each profile can override: flows, timeout, retries, artifacts, devices.
+#
+# Available profiles:
+#   smoke      - P0 flows only, no retries, fast feedback (~3 min)
+#   regression - All flows + journeys, 2 retries, screenshots on fail (~15 min)
+#   nightly    - All flows + edge cases, 3 retries, video recording (~25 min)
+# ---------------------------------------------------------------------------

@@ -1,0 +1,30 @@
+{
+  "description": "Test bank data for penny drop verification",
+  "test_accounts": [
+    {
+      "bank": "Yes Bank",
+      "ifsc": "YESB0000262",
+      "account_number": "026291800001191",
+      "holder_name": "Test Landlord",
+      "result": "VERIFIED"
+    },
+    {
+      "bank": "HDFC Bank",
+      "ifsc": "HDFC0000001",
+      "account_number": "00011040000123",
+      "holder_name": "Test User",
+      "result": "VERIFIED"
+    },
+    {
+      "bank": "Invalid",
+      "ifsc": "XXXX0000000",
+      "account_number": "000000000000",
+      "holder_name": "Invalid",
+      "result": "FAILED"
+    }
+  ],
+  "test_upi_vpa": [
+    { "vpa": "test@ybl", "result": "VALID" },
+    { "vpa": "invalid@invalid", "result": "INVALID" }
+  ]
+}

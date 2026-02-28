@@ -23,8 +23,10 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated';
 
-import { PrimaryButton, Pill } from '@/src/components';
+import { PrimaryButton } from '@/src/components/ui/Button';
+import { Pill } from '@/src/components/ui/Pill';
 import { useDashboard, useSavedPaymentMethods, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import { getGatewayFeeRates } from '@/src/services/payment';
@@ -75,16 +77,27 @@ interface PaymentMethod {
 // Unselected: #A6A6A6 outline, Selected: #FF9A6D filled
 // ==============================================
 
-const RadioCircle = memo(({ isSelected }: { isSelected: boolean }) => (
-  <View style={styles.radioFrame}>
-    <View
-      style={[
-        styles.radioCircle,
-        isSelected ? styles.radioCircleSelected : styles.radioCircleUnselected,
-      ]}
-    />
-  </View>
-));
+const RadioCircle = memo(({ isSelected }: { isSelected: boolean }) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: withTiming(isSelected ? FIGMA.radioSelected : 'transparent', { duration: 150 }),
+      borderColor: withTiming(isSelected ? FIGMA.radioSelected : FIGMA.radioUnselected, { duration: 150 }),
+      borderWidth: withTiming(isSelected ? 0 : 1.5, { duration: 150 }),
+      transform: [{ scale: withSpring(isSelected ? 1.05 : 1, { damping: 15, stiffness: 300 }) }]
+    };
+  });
+
+  return (
+    <View style={styles.radioFrame}>
+      <Animated.View
+        style={[
+          styles.radioCircle,
+          animatedStyle,
+        ]}
+      />
+    </View>
+  );
+});
 
 // ==============================================
 // EDIT PENCIL — Figma: 16x16, stroke #656565
@@ -150,15 +163,21 @@ const PaymentMethodRow = memo(({
   method: PaymentMethod;
   isSelected: boolean;
   allSetUp: boolean;
-  onSelect: () => void;
-  onEdit: () => void;
+  onSelect: (id: string) => void;
+  onEdit: (type: PaymentMethodType, savedMethodId?: string) => void;
 }) => {
   const isDisabled = method.isDisabled ?? false;
-  const labelColor = isDisabled
-    ? FIGMA.unselectedLabel
-    : isSelected
-      ? FIGMA.selectedLabel
-      : FIGMA.unselectedLabel;
+  
+  // Smoothly animate the label color instead of snapping
+  const animatedLabelStyle = useAnimatedStyle(() => {
+    return {
+      color: withTiming(
+        isDisabled ? FIGMA.unselectedLabel : isSelected ? FIGMA.selectedLabel : FIGMA.unselectedLabel,
+        { duration: 200 }
+      ),
+    };
+  });
+
   const feeColor = allSetUp ? FIGMA.feeTextAllSetup : FIGMA.feeTextNotSetup;
 
   return (
@@ -167,36 +186,37 @@ const PaymentMethodRow = memo(({
         onPress={() => {
           if (isDisabled) return;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onSelect();
+          onSelect(method.id);
         }}
         accessibilityRole="radio"
         accessibilityState={{ selected: isSelected, disabled: isDisabled }}
         accessibilityLabel={`${method.title}, ${isDisabled ? method.disabledReason : method.fee}`}
-        style={styles.methodRow}
+        style={({ pressed }) => [
+          styles.methodRow,
+          pressed && !isDisabled && { opacity: 0.6, transform: [{ scale: 0.98 }] } // Fast touch feedback
+        ]}
       >
         {/* Left: Radio + Label group + Edit pencil */}
         <View style={styles.methodRowLeft}>
           <View style={styles.radioLabelGroup}>
             <RadioCircle isSelected={isSelected && !isDisabled} />
-            <RNText style={[styles.methodLabel, { color: labelColor }]}>
+            <Animated.Text style={[styles.methodLabel, animatedLabelStyle]}>
               {method.title}
-            </RNText>
+            </Animated.Text>
           </View>
           {method.isSetUp && !isDisabled && (
-            <EditPencil onPress={onEdit} />
+            <EditPencil onPress={() => { if (method.savedMethodId) onEdit(method.type as PaymentMethodType, method.savedMethodId); }} />
           )}
         </View>
 
-        {/* Right: Fee text, "Set it up" pill, or "Unavailable now" pill */}
+        {/* Right: Fee text or "Unavailable now" pill */}
         <View style={styles.methodRowRight}>
           {isDisabled ? (
             <UnavailablePill />
-          ) : method.isSetUp ? (
+          ) : (
             <RNText style={[styles.feeText, { color: feeColor }]}>
               {method.fee}
             </RNText>
-          ) : (
-            <SetItUpPill />
           )}
         </View>
       </Pressable>
@@ -227,6 +247,7 @@ const PaymentMethodRow = memo(({
 
 export function MethodSelectorContent({
   onProceed,
+  onSetup,
   onEdit,
   isInitiating,
 }: MethodSelectorContentProps) {
@@ -345,9 +366,9 @@ export function MethodSelectorContent({
 
   const selectedPaymentMethod = paymentMethods.find((m) => m.id === selectedMethod);
   const isSelectedDisabled = selectedPaymentMethod?.isDisabled ?? false;
-  const ctaText = allSetUp
-    ? `Pay Rs.${rentAmount.toLocaleString('en-IN')}`
-    : `Set up ${selectedPaymentMethod?.title ?? 'Credit Card'}`;
+  const ctaText = selectedPaymentMethod?.isSetUp
+    ? 'Proceed'
+    : `Setup ${selectedPaymentMethod?.title ?? 'Payment Method'}`;
 
   const handleSelectMethod = useCallback((methodId: string) => {
     setSelectedMethod(methodId);
@@ -357,8 +378,12 @@ export function MethodSelectorContent({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const method = paymentMethods.find((m) => m.id === selectedMethod);
     const methodType: PaymentMethodType = method?.type ?? 'upi';
-    onProceed(methodType);
-  }, [paymentMethods, selectedMethod, onProceed]);
+    if (method?.isSetUp) {
+      onProceed(methodType);
+    } else {
+      onSetup(methodType);
+    }
+  }, [paymentMethods, selectedMethod, onProceed, onSetup]);
 
   return (
     <View style={styles.sheetContent}>
@@ -390,12 +415,8 @@ export function MethodSelectorContent({
               method={method}
               isSelected={selectedMethod === method.id}
               allSetUp={allSetUp}
-              onSelect={() => handleSelectMethod(method.id)}
-              onEdit={() => {
-                if (method.savedMethodId) {
-                  onEdit(method.type, method.savedMethodId);
-                }
-              }}
+              onSelect={handleSelectMethod}
+              onEdit={(type, id) => onEdit(type, id as string)}
             />
             {index < paymentMethods.length - 1 && <SolidDivider />}
           </React.Fragment>
@@ -414,7 +435,15 @@ export function MethodSelectorContent({
         <RNText style={styles.disclaimerText}>
           {allSetUp
             ? "You'll see the final amount before payment"
-            : 'By proceeding, you agree to the payment terms'}
+            : <>
+                {'By proceeding, you agree to the '}
+                <RNText
+                  style={{ textDecorationLine: 'underline' }}
+                  onPress={() => Linking.openURL('https://www.flent.in/secured-tnc')}
+                >
+                  payment terms
+                </RNText>
+              </>}
         </RNText>
       </View>
     </View>

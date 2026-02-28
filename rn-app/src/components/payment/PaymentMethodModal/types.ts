@@ -26,11 +26,14 @@ export interface AddMethodContentProps {
   paymentId: string;
   onBack: () => void;
   cardType?: 'credit' | 'debit';
+  /** Called when child needs to initiate payment (setup flow without pre-existing paymentId) */
+  onInitiatePayment?: (methodType: PaymentMethodType) => Promise<{ paymentId: string } | null>;
 }
 
 /** Props for the method selector content */
 export interface MethodSelectorContentProps {
   onProceed: (methodType: PaymentMethodType) => void;
+  onSetup: (methodType: PaymentMethodType) => void;
   onEdit: (methodType: PaymentMethodType, savedMethodId: string) => void;
   isInitiating: boolean;
 }

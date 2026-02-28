@@ -23,6 +23,9 @@
         "NSFaceIDUsageDescription": "Flent Secured uses Face ID for secure authentication.",
         "ITSAppUsesNonExemptEncryption": false
       },
+      "entitlements": {
+        "aps-environment": "development"
+      },
       "associatedDomains": [
         "applinks:app.flent.in"
       ],
@@ -38,6 +41,12 @@
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
             "NSPrivacyAccessedAPITypeReasons": [
               "C617.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
             ]
           }
         ],
@@ -73,6 +82,38 @@
             "NSPrivacyCollectedDataTypePurposes": [
               "NSPrivacyCollectedDataTypePurposeAppFunctionality"
             ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCrashData",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePerformanceData",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
           }
         ],
         "NSPrivacyTracking": false
@@ -102,9 +143,7 @@
           ]
         }
       ],
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": []
     },
     "web": {
       "bundler": "metro",
@@ -128,18 +167,18 @@
           "username": "flent"
         }
       ],
-      "./plugins/withCashfree",
       "expo-image-picker",
       ["expo-build-properties", {
         "ios": {
           "deploymentTarget": "15.1"
         }
       }],
-      "./plugins/withPayU"
+      "./plugins/withPayU",
+      "./plugins/withExceptionLogger"
     ],
     "updates": {
       "url": "https://u.expo.dev/76348d87-1f03-489a-a606-9d7bab4acd66",
-      "enabled": true,
+      "enabled": false,
       "fallbackToCacheTimeout": 0,
       "checkAutomatically": "ON_LOAD"
     },

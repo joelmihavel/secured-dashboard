@@ -1,0 +1,43 @@
+{
+  "session_id": "20260228_000001_sample",
+  "timestamp": "2026-02-28T00:15:00Z",
+  "duration_seconds": 483,
+  "overall_status": "fail",
+  "summary": {
+    "layers_run": 3,
+    "layers_passed": 0,
+    "total_tests": 186,
+    "total_passed": 203,
+    "total_failed": 7,
+    "total_skipped": 5,
+    "pass_rate": 93.49
+  },
+  "config": {
+    "layers": "all",
+    "category": "",
+    "priority": "",
+    "parallel": true,
+    "cloud_e2e": false,
+    "smoke": false,
+    "nightly": true,
+    "coverage": true
+  },
+  "layer_results": {
+    "backend": {
+      "ran": true,
+      "exit_code": 1,
+      "status": "fail"
+    },
+    "frontend": {
+      "ran": true,
+      "exit_code": 1,
+      "status": "fail"
+    },
+    "e2e": {
+      "ran": true,
+      "exit_code": 1,
+      "status": "fail"
+    }
+  },
+  "report_dir": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/test-infrastructure/orchestrator/reports/2026-02-28_00-00-01"
+}

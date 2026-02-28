@@ -1,0 +1,272 @@
+# =============================================================================
+# Flent Secured v2 - Frontend Tests (Lightweight)
+# =============================================================================
+# Lightweight pipeline that runs on every push affecting React Native app code.
+# Complements the full ci-frontend.yml (which includes lint, typecheck, and
+# matrix testing) by running Jest with coverage and enforcing regression gates.
+#
+# For the full frontend CI with linting and multi-node testing, see ci-frontend.yml.
+#
+# IMPORTANT: This pipeline runs checks only. Merging is always manual.
+# =============================================================================
+
+name: Frontend Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rn-app/src/**'
+      - 'rn-app/app/**'
+      - 'rn-app/jest.config.*'
+      - 'rn-app/tsconfig.json'
+      - '.github/workflows/frontend-tests.yml'
+
+  pull_request:
+    branches: [main]
+    paths:
+      - 'rn-app/src/**'
+      - 'rn-app/app/**'
+      - 'rn-app/jest.config.*'
+      - 'rn-app/tsconfig.json'
+      - '.github/workflows/frontend-tests.yml'
+
+# Cancel in-progress runs for the same branch/PR
+concurrency:
+  group: frontend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  # ===========================================================================
+  # Job 1: Jest Tests with Coverage
+  # ===========================================================================
+  test:
+    name: Jest Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: rn-app
+    outputs:
+      status: ${{ steps.run-tests.outputs.status }}
+      lines: ${{ steps.coverage.outputs.lines }}
+      branches: ${{ steps.coverage.outputs.branches }}
+      functions: ${{ steps.coverage.outputs.functions }}
+      statements: ${{ steps.coverage.outputs.statements }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: rn-app/package-lock.json
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: rn-app/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('rn-app/package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run Jest with coverage
+        id: run-tests
+        run: |
+          set +e
+          npx jest --coverage --ci --forceExit --json --outputFile=jest-results.json 2>&1 | tee jest-output.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "status=fail" >> $GITHUB_OUTPUT
+          fi
+
+          exit $EXIT_CODE
+        env:
+          CI: true
+
+      - name: Parse coverage
+        id: coverage
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            LINES=$(node -e "const c=require('./coverage/coverage-summary.json');console.log(c.total.lines.pct)")
+            BRANCHES=$(node -e "const c=require('./coverage/coverage-summary.json');console.log(c.total.branches.pct)")
+            FUNCTIONS=$(node -e "const c=require('./coverage/coverage-summary.json');console.log(c.total.functions.pct)")
+            STATEMENTS=$(node -e "const c=require('./coverage/coverage-summary.json');console.log(c.total.statements.pct)")
+
+            echo "lines=$LINES" >> $GITHUB_OUTPUT
+            echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+            echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+            echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
+
+            # Write job summary
+            echo "## Frontend Coverage Report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Coverage | Min Threshold |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|---------------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Lines | ${LINES}% | 50% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Branches | ${BRANCHES}% | 40% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Functions | ${FUNCTIONS}% | 50% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Statements | ${STATEMENTS}% | 50% |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::warning::coverage-summary.json not found"
+            echo "lines=0" >> $GITHUB_OUTPUT
+            echo "branches=0" >> $GITHUB_OUTPUT
+            echo "functions=0" >> $GITHUB_OUTPUT
+            echo "statements=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: rn-app/coverage/
+          retention-days: 14
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          directory: rn-app/coverage
+          flags: frontend
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  # ===========================================================================
+  # Job 2: Coverage Regression Gate
+  # ===========================================================================
+  coverage-gate:
+    name: Coverage Gate
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check coverage thresholds
+        run: |
+          LINES="${{ needs.test.outputs.lines }}"
+          BRANCHES="${{ needs.test.outputs.branches }}"
+          FUNCTIONS="${{ needs.test.outputs.functions }}"
+          STATEMENTS="${{ needs.test.outputs.statements }}"
+
+          FAILED=false
+
+          # Minimum thresholds (should match jest.config.js coverageThreshold)
+          check_threshold() {
+            local metric=$1
+            local value=$2
+            local min=$3
+
+            if [ -z "$value" ] || [ "$value" = "0" ]; then
+              echo "::warning::$metric coverage data not available"
+              return
+            fi
+
+            PASS=$(python3 -c "print('yes' if float('$value') >= float('$min') else 'no')" 2>/dev/null || echo "no")
+            if [ "$PASS" = "no" ]; then
+              echo "::error::$metric coverage ($value%) is below threshold ($min%)"
+              FAILED=true
+            else
+              echo "$metric coverage: $value% (threshold: $min%) - OK"
+            fi
+          }
+
+          check_threshold "Lines" "$LINES" "50"
+          check_threshold "Branches" "$BRANCHES" "40"
+          check_threshold "Functions" "$FUNCTIONS" "50"
+          check_threshold "Statements" "$STATEMENTS" "50"
+
+          if [ "$FAILED" = "true" ]; then
+            echo ""
+            echo "::error::Coverage regression detected. Please add tests to maintain coverage."
+            exit 1
+          fi
+
+          echo ""
+          echo "All coverage thresholds met."
+
+  # ===========================================================================
+  # Job 3: Post Coverage Comment on PR
+  # ===========================================================================
+  coverage-comment:
+    name: Coverage PR Comment
+    needs: test
+    if: github.event_name == 'pull_request' && always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post coverage comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const status = '${{ needs.test.outputs.status }}' || 'unknown';
+            const lines = '${{ needs.test.outputs.lines }}' || 'N/A';
+            const branches = '${{ needs.test.outputs.branches }}' || 'N/A';
+            const functions = '${{ needs.test.outputs.functions }}' || 'N/A';
+            const statements = '${{ needs.test.outputs.statements }}' || 'N/A';
+
+            const statusIcon = status === 'pass' ? 'white_check_mark' : 'x';
+
+            const badge = (val, min) => {
+              if (val === 'N/A') return 'N/A';
+              return parseFloat(val) >= min ? 'Pass' : 'FAIL';
+            };
+
+            const body = [
+              `## :${statusIcon}: Frontend Test Coverage`,
+              '',
+              '| Metric | Coverage | Threshold | Gate |',
+              '|--------|----------|-----------|------|',
+              `| Lines | ${lines}% | 50% | ${badge(lines, 50)} |`,
+              `| Branches | ${branches}% | 40% | ${badge(branches, 40)} |`,
+              `| Functions | ${functions}% | 50% | ${badge(functions, 50)} |`,
+              `| Statements | ${statements}% | 50% | ${badge(statements, 50)} |`,
+              '',
+              `> Coverage thresholds are configured in \`rn-app/jest.config.js\``,
+              '',
+              `_Generated by [Frontend Tests](.github/workflows/frontend-tests.yml)_`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const markers = [
+              '## :white_check_mark: Frontend Test Coverage',
+              '## :x: Frontend Test Coverage',
+            ];
+            const existing = comments.find(c =>
+              c.body && markers.some(m => c.body.startsWith(m))
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }

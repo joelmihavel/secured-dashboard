@@ -18,20 +18,25 @@ export function useErrorNavigation(): void {
 
   useEffect(() => {
     const unsubscribe = setErrorListener((report: ErrorReport) => {
-      router.replace({
-        pathname: '/error',
-        params: {
-          title: report.title,
-          message: report.message,
-          errorId: report.id,
-          timestamp: String(report.timestamp),
-          source: report.source,
-          technicalMessage: report.technicalMessage || '',
-          action: report.action || 'back',
-          actionLabel: report.actionLabel || 'Try Again',
-          isLooping: report.isLooping ? 'true' : 'false',
-        },
-      } as never);
+      try {
+        router.replace({
+          pathname: '/error',
+          params: {
+            title: report.title,
+            message: report.message,
+            errorId: report.id,
+            timestamp: String(report.timestamp),
+            source: report.source,
+            technicalMessage: report.technicalMessage || '',
+            action: report.action || 'back',
+            actionLabel: report.actionLabel || 'Try Again',
+            isLooping: report.isLooping ? 'true' : 'false',
+          },
+        } as never);
+      } catch {
+        // Navigation not ready — ErrorBoundary fallback UI handles this case.
+        // Swallow to prevent the fatal NSException cascade.
+      }
     });
 
     return unsubscribe;

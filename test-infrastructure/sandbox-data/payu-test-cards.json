@@ -1,0 +1,29 @@
+{
+  "description": "PayU sandbox test payment instruments",
+  "environment": "sandbox",
+  "cards": {
+    "success": [
+      { "type": "Visa", "number": "4012001037141112", "expiry": "12/2030", "cvv": "123", "name": "Test User", "result": "SUCCESS" },
+      { "type": "Mastercard", "number": "5123456789012346", "expiry": "12/2030", "cvv": "123", "name": "Test User", "result": "SUCCESS" }
+    ],
+    "decline": [
+      { "type": "Visa", "number": "4111111111111111", "expiry": "12/2030", "cvv": "123", "name": "Test User", "result": "DECLINED" }
+    ]
+  },
+  "upi": {
+    "success": { "vpa": "success@upi", "result": "SUCCESS" },
+    "failure": { "vpa": "failure@upi", "result": "FAILURE" }
+  },
+  "netbanking": {
+    "banks": [
+      { "code": "ICIC", "name": "ICICI Bank", "result": "SUCCESS" },
+      { "code": "HDFC", "name": "HDFC Bank", "result": "SUCCESS" },
+      { "code": "SBIN", "name": "State Bank of India", "result": "SUCCESS" }
+    ]
+  },
+  "webhook_hash": {
+    "algorithm": "SHA-512",
+    "includes_additional_charges": true,
+    "hash_string_format": "salt|status||||||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key"
+  }
+}

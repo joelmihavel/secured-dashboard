@@ -1,0 +1,92 @@
+# =============================================================================
+# UI-047: Edit Profile Screen Functional Flow
+# Route: /(profile)/edit
+# Figma: 41-8880 (My Profile / Edit)
+# testIDs: edit-profile-screen, save-changes-button
+# =============================================================================
+#
+# Validates:
+#   - Edit profile screen renders with testID
+#   - "My Profile" title is visible
+#   - Avatar section with Edit Picture button is visible
+#   - User name input field is present and editable
+#   - Email input field is present and editable
+#   - City input field is present (disabled)
+#   - Phone number input is present (disabled)
+#   - "Save Changes" button is visible
+#   - Editing name and saving triggers update
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link to edit profile screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///profile/edit"
+- waitForAnimationToEnd
+
+# -- Verify screen rendered --
+- assertVisible:
+    id: "edit-profile-screen"
+
+# -- Verify title --
+- assertVisible: "My"
+- assertVisible: "Profile"
+
+# -- Verify Edit Picture button --
+- assertVisible: "Edit Picture"
+
+# -- Verify form fields --
+- assertVisible: "User name"
+- assertVisible: "Email"
+
+# -- Scroll to see all fields --
+- scrollUntilVisible:
+    element: "City"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "City"
+
+# -- Scroll to Phone Number --
+- scrollUntilVisible:
+    element: "Phone Number"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible: "Phone Number"
+
+# -- Edit user name --
+- scrollUntilVisible:
+    element: "User name"
+    direction: UP
+    timeout: 5000
+
+- tapOn: "User name"
+- clearText
+- inputText: "Updated Test User"
+- hideKeyboard
+
+# -- Scroll to and verify Save Changes button --
+- scrollUntilVisible:
+    element:
+      id: "save-changes-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "save-changes-button"
+
+# -- Tap Save Changes --
+- tapOn:
+    id: "save-changes-button"
+- waitForAnimationToEnd
+
+# -- Wait for save response --
+- extendedWaitUntil:
+    notVisible:
+      id: "edit-profile-screen"
+    timeout: 10000
+    optional: true
+
+- takeScreenshot: "edit-profile-completed"

@@ -1,0 +1,78 @@
+# =============================================================================
+# HJ-008: Add Utility Screen Functional Flow
+# Route: /(setup)/add-utility
+# Figma: 1-34343 (onboarding / Add BESCOM Number)
+# testIDs: None on screen (uses text-based selectors)
+# =============================================================================
+#
+# Validates:
+#   - Add utility screen renders with title "Verify" and "utility bill"
+#   - Description text is visible
+#   - Operator selector is visible and tappable
+#   - Consumer number input is visible and accepts input
+#   - "Proceed" button is visible (disabled until form valid)
+#   - "Skip" button is visible
+#   - Operator picker modal opens on tap
+#   - Form validates consumer number (5-30 digits)
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Deep link directly to the add-utility screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///setup/add-utility"
+- waitForAnimationToEnd
+
+# -- Verify screen rendered with title text --
+- assertVisible: "Verify"
+- assertVisible: "utility bill"
+
+# -- Verify description text --
+- assertVisible: "electricity bill helps us verify"
+
+# -- Verify operator selector is present --
+- assertVisible: "Select Operator"
+
+# -- Verify consumer number input --
+- assertVisible: "Enter Account Number"
+
+# -- Verify Proceed button (should be disabled initially) --
+- assertVisible: "Proceed"
+
+# -- Verify Skip button --
+- assertVisible: "Skip"
+
+# -- Open operator selector modal --
+- tapOn: "Select Operator"
+- waitForAnimationToEnd
+
+# Verify modal appeared with title
+- assertVisible: "Select Operator"
+
+# Close the modal
+- tapOn:
+    point: "50%,20%"
+- waitForAnimationToEnd
+
+# -- Enter consumer number --
+- tapOn: "Enter Account Number"
+- inputText: "1234567890"
+- hideKeyboard
+
+# -- Verify Proceed button is now active --
+# (Form should be valid: operator auto-selected BESCOM + valid consumer number)
+- assertVisible: "Proceed"
+
+# -- Tap Proceed to submit --
+- tapOn: "Proceed"
+- waitForAnimationToEnd
+
+# -- Wait for API response (verify utility call) --
+- extendedWaitUntil:
+    visible: "Invite"
+    timeout: 10000
+    optional: true
+
+# Take screenshot of final state
+- takeScreenshot: "add-utility-completed"

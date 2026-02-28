@@ -8,7 +8,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.5";
+import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 
@@ -22,10 +22,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Use service role client (public read, no user auth needed)
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createServiceClient();
 
     const { data: banks, error } = await supabase
       .from("netbanking_banks")

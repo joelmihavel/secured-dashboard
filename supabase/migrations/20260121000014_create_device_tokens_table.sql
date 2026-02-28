@@ -1,54 +1,54 @@
 -- Flent Secured v2 - Migration: Device Tokens Table
 -- Stores push notification tokens for mobile devices
+-- Made idempotent for v2→main merge (table may already exist)
 
 -- ==============================================
 -- TABLE: device_tokens
 -- ==============================================
 
-CREATE TABLE device_tokens (
+CREATE TABLE IF NOT EXISTS device_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- References
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-
-  -- Device info
-  token TEXT NOT NULL, -- FCM/APNs token
+  token TEXT NOT NULL,
   platform TEXT NOT NULL CHECK (platform IN ('ios', 'android', 'web')),
-  device_id TEXT, -- Unique device identifier (optional)
-  device_name TEXT, -- User-friendly device name
-
-  -- Token status
+  device_id TEXT,
+  device_name TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
   last_used_at TIMESTAMPTZ,
-
-  -- FCM/APNs specific
-  bundle_id TEXT, -- iOS bundle ID or Android package name
-  sandbox BOOLEAN NOT NULL DEFAULT false, -- iOS sandbox vs production
-
-  -- Timestamps
+  bundle_id TEXT,
+  sandbox BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add columns that may not exist on a pre-existing table
+ALTER TABLE device_tokens ADD COLUMN IF NOT EXISTS device_id TEXT;
+ALTER TABLE device_tokens ADD COLUMN IF NOT EXISTS device_name TEXT;
+ALTER TABLE device_tokens ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+ALTER TABLE device_tokens ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ;
+ALTER TABLE device_tokens ADD COLUMN IF NOT EXISTS bundle_id TEXT;
+ALTER TABLE device_tokens ADD COLUMN IF NOT EXISTS sandbox BOOLEAN DEFAULT false;
 
 -- ==============================================
 -- INDEXES
 -- ==============================================
 
--- Fast lookup by user for sending notifications
-CREATE INDEX idx_device_tokens_user_active ON device_tokens(user_id)
+CREATE INDEX IF NOT EXISTS idx_device_tokens_user_active ON device_tokens(user_id)
   WHERE is_active = true;
 
--- Unique token per platform (prevent duplicate registrations)
-CREATE UNIQUE INDEX idx_device_tokens_unique ON device_tokens(token, platform);
+DO $$ BEGIN
+  CREATE UNIQUE INDEX idx_device_tokens_unique ON device_tokens(token, platform);
+EXCEPTION WHEN duplicate_table THEN NULL;
+END $$;
 
--- Find stale tokens
-CREATE INDEX idx_device_tokens_last_used ON device_tokens(last_used_at)
+CREATE INDEX IF NOT EXISTS idx_device_tokens_last_used ON device_tokens(last_used_at)
   WHERE is_active = true;
 
 -- ==============================================
 -- TRIGGER: Update updated_at timestamp
 -- ==============================================
 
+DROP TRIGGER IF EXISTS update_device_tokens_timestamp ON device_tokens;
 CREATE TRIGGER update_device_tokens_timestamp
   BEFORE UPDATE ON device_tokens
   FOR EACH ROW
@@ -71,7 +71,6 @@ RETURNS UUID AS $$
 DECLARE
   v_token_id UUID;
 BEGIN
-  -- Upsert: update if token exists, insert if new
   INSERT INTO device_tokens (
     user_id, token, platform, device_id, device_name, bundle_id, sandbox, last_used_at
   ) VALUES (
@@ -135,31 +134,35 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER TABLE device_tokens ENABLE ROW LEVEL SECURITY;
 
--- Users can view their own device tokens
-CREATE POLICY device_tokens_select ON device_tokens
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY device_tokens_select ON device_tokens
+    FOR SELECT TO authenticated USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Users can insert their own device tokens
-CREATE POLICY device_tokens_insert ON device_tokens
-  FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY device_tokens_insert ON device_tokens
+    FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Users can update their own device tokens
-CREATE POLICY device_tokens_update ON device_tokens
-  FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY device_tokens_update ON device_tokens
+    FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Users can delete their own device tokens
-CREATE POLICY device_tokens_delete ON device_tokens
-  FOR DELETE TO authenticated
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY device_tokens_delete ON device_tokens
+    FOR DELETE TO authenticated USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- Service role has full access
-CREATE POLICY device_tokens_service_all ON device_tokens
-  FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY device_tokens_service_all ON device_tokens
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ==============================================
 -- COMMENTS

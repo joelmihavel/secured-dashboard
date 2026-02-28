@@ -25,6 +25,7 @@ import { validateSchema, isValidAmountPaise, isValidUuid } from "../_shared/vali
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generatePayUHash, generateTransactionId, sha512 } from "../_shared/crypto.ts";
+import { isTestUser } from "../_shared/demo-helpers.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -285,6 +286,72 @@ serve(async (req: Request) => {
       }
       throw new PaymentError("Payment already in progress for this month", "PAYMENT_IN_PROGRESS");
     }
+
+    // ── DEMO BYPASS ──────────────────────────────────────────────────
+    // Test users get instant mock success without hitting PayU.
+    if (await isTestUser(userId, supabase)) {
+      const demoTxnId = `DEMO-${crypto.randomUUID()}`;
+      const demoRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
+      const demoDueDate = calculateDueDate(rent_month);
+
+      const { data: demoPayment, error: demoError } = await supabase
+        .from("payments")
+        .insert({
+          tenancy_id,
+          user_id: userId,
+          rent_amount_paise: demoRentPaise,
+          pg_fee_paise: 0,
+          cashback_applied_paise: 0,
+          intended_cashback_paise: 0,
+          total_amount_paise: demoRentPaise,
+          landlord_payout_paise: demoRentPaise,
+          net_rent_paise: demoRentPaise,
+          flent_subsidy_paise: 0,
+          status: "success",
+          payment_gateway: "demo",
+          gateway_order_id: demoTxnId,
+          payu_txn_id: demoTxnId,
+          payment_method,
+          idempotency_key: idempotencyKey,
+          payment_month: rentMonthDate,
+          due_date: demoDueDate,
+          paid_at: new Date().toISOString(),
+          landlord_payout_status: "demo",
+        })
+        .select()
+        .single();
+
+      if (demoError || !demoPayment) {
+        throw new PaymentError("Failed to create demo payment", "DB_ERROR");
+      }
+
+      await audit!.logSuccess("PAYMENT_DEMO_BYPASS", "payment", "payment", demoPayment.id, {
+        demo: true, rent_paise: demoRentPaise, payment_method, rent_month,
+      });
+
+      await idempotencyManager.complete(idempotencyKey, 200, {
+        payment_id: demoPayment.id, demo_mode: true, status: "success",
+      });
+
+      return jsonResponse({
+        success: true,
+        data: {
+          payment_id: demoPayment.id,
+          txn_id: demoTxnId,
+          gateway: "demo",
+          demo_mode: true,
+          status: "success",
+          original_rent_paise: demoRentPaise,
+          cashback_applied_paise: 0,
+          net_rent_paise: demoRentPaise,
+          pg_fee_paise: 0,
+          total_amount_paise: demoRentPaise,
+          landlord_payout_paise: demoRentPaise,
+          payment_method,
+        },
+      });
+    }
+    // ── END DEMO BYPASS ──────────────────────────────────────────────
 
     // Calculate amounts
     const originalRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;

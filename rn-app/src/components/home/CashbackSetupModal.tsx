@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   // Actions — Figma 791:6713: px-48, gap-32
   actions: {
     paddingHorizontal: 48,
-    gap: 32,
+    gap: 16,
     alignItems: 'center',
   },
   skipButton: {

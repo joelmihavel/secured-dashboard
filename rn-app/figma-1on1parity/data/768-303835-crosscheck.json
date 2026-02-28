@@ -2,11 +2,11 @@
   "screenId": "768-303835",
   "screenName": "Pay Rent / Payment Summary Page --Payment Processing",
   "figmaUrl": "",
-  "generatedAt": "2026-02-26T18:59:13.249Z",
+  "generatedAt": "2026-02-27T16:49:52.375Z",
   "checks": {
-    "nodeCount": 87,
+    "nodeCount": 90,
     "textNodeCount": 7,
-    "componentInstanceCount": 4,
+    "componentInstanceCount": 5,
     "interactiveNodeCount": 1,
     "imageAssetCount": 4,
     "variableCount": 0,
@@ -20,6 +20,8 @@
       "Frame 2095586343",
       "Frame 2095586361",
       "Frame 2095586363",
+      "Home Indicator",
+      "HW Cutout Safezone",
       "Frame 2095586357"
     ],
     "textContents": [
@@ -34,7 +36,7 @@
       {
         "nodeId": "768:303860",
         "name": "Payment Processing",
-        "content": "Payment Processing",
+        "content": "Payment\nProcessing",
         "fontSize": 20,
         "fontWeight": 400,
         "color": "#FFFFFF"
@@ -102,18 +104,23 @@
       "1:23982",
       "1:28034",
       "597:3220",
+      "1:25",
       "1:7"
     ],
     "interactionSummary": [
       {
         "sourceNode": "button",
         "trigger": "ON_PRESS",
-        "destination": "597:3222"
+        "destination": "597:3222",
+        "actionType": "NODE",
+        "transitionDuration": 0.30000001192092896
       },
       {
         "sourceNode": "button",
         "trigger": "ON_HOVER",
-        "destination": "597:3221"
+        "destination": "597:3221",
+        "actionType": "NODE",
+        "transitionDuration": 0.30000001192092896
       }
     ]
   }

@@ -14,6 +14,9 @@ jest.mock('@sentry/react-native', () => ({
   Scope: jest.fn(),
   ReactNativeTracing: jest.fn(),
   ReactNavigationInstrumentation: jest.fn(),
+  reactNavigationIntegration: jest.fn(() => ({
+    registerNavigationContainer: jest.fn(),
+  })),
 }));
 
 // Mock react-native-reanimated
@@ -128,10 +131,7 @@ jest.mock('@/src/hooks/useIdentityVerification', () => ({
   }),
 }));
 
-// Mock react-native-safe-area-context — NativeWind's css-interop calls
-// maybeHijackSafeAreaProvider on every JSX element and crashes with
-// "Cannot read properties of undefined (reading 'displayName')" when
-// safe-area-context components are not properly defined in the test env.
+// Mock react-native-safe-area-context for test environment
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
   return {

@@ -1,0 +1,36 @@
+{
+  "layer": "e2e",
+  "mode": "local",
+  "timestamp": "2026-02-28T00:12:00Z",
+  "duration_seconds": 312,
+  "summary": {
+    "total_flows": 18,
+    "total_passed": 16,
+    "total_failed": 2,
+    "pass_rate": 88.89
+  },
+  "flows": [
+    {"flow": "flows/auth/sign-up.yaml", "status": "pass", "duration": 18, "attempts": 1},
+    {"flow": "flows/auth/otp.yaml", "status": "pass", "duration": 12, "attempts": 2},
+    {"flow": "flows/auth/otp-error.yaml", "status": "pass", "duration": 10, "attempts": 1},
+    {"flow": "flows/auth/splash.yaml", "status": "pass", "duration": 5, "attempts": 1},
+    {"flow": "flows/auth/carousel.yaml", "status": "pass", "duration": 8, "attempts": 1},
+    {"flow": "flows/payment/first-rent.yaml", "status": "fail", "duration": 35, "attempts": 3, "error": "Flow step failed: tap on 'Pay Now' button - element not visible after 10s timeout\n    at step 7 of flows/payment/first-rent.yaml"},
+    {"flow": "flows/payment/confirm.yaml", "status": "pass", "duration": 22, "attempts": 1},
+    {"flow": "flows/payment/status-success.yaml", "status": "pass", "duration": 15, "attempts": 1},
+    {"flow": "flows/payment/status-failed.yaml", "status": "pass", "duration": 14, "attempts": 1},
+    {"flow": "flows/agreement/upload.yaml", "status": "pass", "duration": 20, "attempts": 1},
+    {"flow": "flows/agreement/review.yaml", "status": "pass", "duration": 18, "attempts": 1},
+    {"flow": "flows/setup/add-bank.yaml", "status": "pass", "duration": 16, "attempts": 1},
+    {"flow": "flows/setup/invite-landlord.yaml", "status": "pass", "duration": 14, "attempts": 2},
+    {"flow": "flows/profile/index.yaml", "status": "pass", "duration": 10, "attempts": 1},
+    {"flow": "flows/waitlist/index.yaml", "status": "pass", "duration": 8, "attempts": 1},
+    {"flow": "flows/main/home.yaml", "status": "pass", "duration": 12, "attempts": 1},
+    {"flow": "flows/routing/auth-guard.yaml", "status": "fail", "duration": 25, "attempts": 3, "error": "Assertion failed: Expected screen 'sign-up' but found 'home' - auth guard did not redirect unauthenticated user\n    at step 3 of flows/routing/auth-guard.yaml"},
+    {"flow": "flows/routing/deep-links.yaml", "status": "pass", "duration": 11, "attempts": 1}
+  ],
+  "failed_flows": ["flows/payment/first-rent.yaml", "flows/routing/auth-guard.yaml"],
+  "screenshot_dir": "/Users/atrishabh/Documents/Dev/Secured v2-react-native project/test-infrastructure/orchestrator/.session/e2e-screenshots",
+  "screenshot_count": 0,
+  "status": "fail"
+}

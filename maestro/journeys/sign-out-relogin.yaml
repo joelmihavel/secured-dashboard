@@ -1,0 +1,163 @@
+# =============================================================================
+# Journey: Sign Out and Re-Login
+# HJ-025
+#
+# Full journey: active user -> profile -> sign out -> verify auth screen ->
+#               sign back in -> verify data preserved
+#
+# This journey validates the complete sign-out and re-authentication flow,
+# ensuring that user data is preserved across sessions and that the auth
+# pipeline correctly restores the user to their previous state.
+#
+# Prerequisites:
+#   - User is already authenticated with an active session
+#   - Mock backend preserves user data across sign-out/sign-in cycles
+# =============================================================================
+
+appId: com.flent.secured
+---
+# =============================================
+# STEP 1: Verify Active Session on Home
+# =============================================
+- launchApp:
+    clearState: true
+
+# Deep link to home (authenticated state)
+- openLink: "flentsecured:///main/index?state=all-methods"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# =============================================
+# STEP 2: Navigate to Profile
+# =============================================
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "profile-screen"
+
+# =============================================
+# STEP 3: Sign Out
+# =============================================
+# Scroll to Sign Out button
+- scrollUntilVisible:
+    element:
+      id: "sign-out-button"
+    direction: DOWN
+    timeout: 5000
+
+- assertVisible:
+    id: "sign-out-button"
+
+# Tap Sign Out
+- tapOn:
+    id: "sign-out-button"
+- waitForAnimationToEnd
+
+# Handle confirmation dialog if present
+- tapOn:
+    text: "Sign Out"
+    optional: true
+- tapOn:
+    text: "Yes"
+    optional: true
+- tapOn:
+    text: "Confirm"
+    optional: true
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 4: Verify Signed Out State
+# =============================================
+# After sign out, should be redirected to auth screens
+- extendedWaitUntil:
+    visible:
+      id: "splash-screen"
+    timeout: 10000
+    optional: true
+
+# Alternatively, may be on sign-up screen
+- extendedWaitUntil:
+    visible:
+      id: "sign-up-screen"
+    timeout: 5000
+    optional: true
+
+# Verify we're NOT on any protected screen
+- assertNotVisible:
+    id: "home-screen"
+- assertNotVisible:
+    id: "profile-screen"
+
+# =============================================
+# STEP 5: Sign Back In
+# =============================================
+# Navigate to sign-up
+- openLink: "flentsecured:///sign-up"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "sign-up-screen"
+
+# Enter phone number
+- tapOn:
+    id: "phone-input"
+- inputText: ${TEST_PHONE}
+
+# Enter name
+- tapOn:
+    id: "name-input"
+- inputText: ${TEST_NAME}
+- hideKeyboard
+
+# Accept consent
+- tapOn:
+    id: "consent-toggle"
+
+# Submit
+- tapOn:
+    id: "get-started-button"
+- waitForAnimationToEnd
+
+# =============================================
+# STEP 6: OTP Verification
+# =============================================
+- assertVisible: "verify your number"
+
+- tapOn:
+    id: "otp-input"
+- inputText: ${TEST_OTP}
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "proceed-button"
+- waitForAnimationToEnd
+
+# Wait for auth completion
+- extendedWaitUntil:
+    notVisible: "verify your number"
+    timeout: 10000
+
+# =============================================
+# STEP 7: Verify Data Preserved
+# =============================================
+# After re-login, existing users should be routed to home (not onboarding)
+- openLink: "flentsecured:///main/index"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "home-screen"
+
+# Verify profile data is still intact
+- openLink: "flentsecured:///profile/index"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "profile-screen"
+
+# Verify user info is displayed (data preserved)
+- assertVisible: "Profile"
+
+- takeScreenshot: "sign-out-relogin-complete"

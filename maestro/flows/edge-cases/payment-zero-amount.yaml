@@ -1,0 +1,70 @@
+# =============================================================================
+# EC-027: Payment Zero Amount Edge Case
+# Route: /(payment)/enter-rent
+# testIDs: enter-rent-screen, enter-rent-continue-button
+# =============================================================================
+#
+# Validates:
+#   - Entering 0 as payment amount keeps Continue disabled
+#   - Entering an empty string keeps Continue disabled
+#   - Entering negative-like values (not possible with numeric keyboard,
+#     but tests empty/zero states)
+#   - Amount input does not allow proceeding with zero
+#   - Validation prevents payment with invalid amounts
+# =============================================================================
+
+appId: com.flent.secured
+---
+# Navigate to enter-rent screen
+- launchApp:
+    clearState: true
+- openLink: "flentsecured:///payment/enter-rent"
+- waitForAnimationToEnd
+
+# Verify screen rendered
+- assertVisible:
+    id: "enter-rent-screen"
+
+# -- Test 1: Enter zero --
+- inputText: "0"
+- waitForAnimationToEnd
+
+# Try tapping Continue (should be disabled or no-op)
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# Verify we're still on the enter-rent screen (did not navigate)
+- assertVisible:
+    id: "enter-rent-screen"
+
+# -- Test 2: Clear and leave empty --
+- clearText
+- waitForAnimationToEnd
+
+# Try tapping Continue again
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# Still on enter-rent screen
+- assertVisible:
+    id: "enter-rent-screen"
+
+# -- Test 3: Enter very small amount --
+- clearText
+- inputText: "1"
+- waitForAnimationToEnd
+
+# This should enable Continue (amount > 0 and <= monthly rent)
+- tapOn:
+    id: "enter-rent-continue-button"
+- waitForAnimationToEnd
+
+# Should have opened the method modal or navigated
+# Verify we left the static enter-rent state
+- assertVisible:
+    text: "Payment Method"
+    optional: true
+
+- takeScreenshot: "payment-zero-amount-tested"

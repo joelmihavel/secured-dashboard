@@ -2,7 +2,7 @@
 # Payment: Confirm (Transaction) Screen Functional Flow
 # Route: /(payment)/confirm
 # Figma: 684:13115 (verified), 684:13148 (unverified)
-# testIDs: confirm-screen, pay-now-button, confirm-back-button
+# testIDs: confirm-payment-screen, pay-now-button, confirm-back-button
 # =============================================================================
 #
 # Validates:
@@ -26,7 +26,7 @@ appId: com.flent.secured
 
 # Verify screen rendered via testID
 - assertVisible:
-    id: "confirm-screen"
+    id: "confirm-payment-screen"
 
 # Verify top card title
 - assertVisible: "Rent due in"

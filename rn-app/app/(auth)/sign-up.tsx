@@ -22,8 +22,8 @@
  * - Consent text: Plus Jakarta Sans Regular, 12px, line-height 20px, #A9A9A9 (neutral.500)
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput as RNTextInput, Keyboard } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput as RNTextInput, Keyboard, useWindowDimensions, findNodeHandle } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput, SkeletonLoader } from '@/src/components';
@@ -88,14 +88,15 @@ const FIGMA_LAYOUT = {
   contentTopOffset: sv(101),            // Figma: 101px total from top of screen
 };
 
-// Extra padding at bottom of scroll content so that when we scroll-to-end on keyboard show,
-// the focused input (e.g. name) stays well above the keyboard. Reusable for any form screen.
-const KEYBOARD_AVOID_EXTRA_PADDING = sv(300);
+// Bottom padding when keyboard is visible — just enough room for the button + consent below the inputs
+const KEYBOARD_EXTRA_PADDING = sv(120);
 
 export default function SignUpScreen({ background }: { background?: boolean } = {}) {
   const router = useRouter();
   const nameInputRef = useRef<RNTextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const nameWrapperRef = useRef<View>(null);
+  const scrollContentRef = useRef<View>(null);
   const { sendCode, status, error, isSendingOtp, clearError } = useAuth();
   const setUserName = useAuthStore((s) => s.setUserName);
   const setConsentForMobile360 = useAuthStore((s) => s.setConsentForMobile360);
@@ -119,16 +120,36 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
     wasSendingOtpRef.current = isSendingOtp;
   }, [isSendingOtp, status, background]);
 
-  // Auto-scroll so focused input stays above keyboard (scrollToEnd + extra padding in content)
+  // Track keyboard visibility to only allow scroll when keyboard is open
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
   useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidShow', () => {
-      if (nameInputRef.current?.isFocused()) {
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 150);
+    const showSub = Keyboard.addListener('keyboardDidShow', () => {
+      setIsKeyboardVisible(true);
+      if (nameInputRef.current?.isFocused() && nameWrapperRef.current && scrollContentRef.current) {
+        try {
+          const scrollContentHandle = findNodeHandle(scrollContentRef.current);
+          if (scrollContentHandle) {
+            nameWrapperRef.current.measureLayout(
+              scrollContentHandle as any,
+              (_x, y) => {
+                scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 40), animated: true });
+              },
+              () => {},
+            );
+          }
+        } catch {
+          // measureLayout can fail if refs aren't native — gracefully ignore
+        }
       }
     });
-    return () => sub.remove();
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setIsKeyboardVisible(false);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
   }, []);
 
   // Error message mapping - only show phone-related errors, not OTP errors
@@ -212,12 +233,16 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
       >
         <ScrollView
           ref={scrollViewRef}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: isKeyboardVisible ? KEYBOARD_EXTRA_PADDING : 0 },
+          ]}
+          scrollEnabled={isKeyboardVisible}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Main Container - Figma Frame 1686557268 */}
-          <View style={styles.container}>
+          <View ref={scrollContentRef} style={styles.container}>
             {/* Inner Stack - Figma Frame 1686557318 with gap: 48 */}
             <View style={styles.innerStack}>
               {/* Logo - Figma: 32.04x38.4 (Frame 1686557264) */}
@@ -245,16 +270,18 @@ export default function SignUpScreen({ background }: { background?: boolean } = 
 
                 {/* Name Input - Figma placeholder: "e.g. John Appleseed" */}
                 {/* Figma 1:29108: Hint Text = hidden in empty state; show only when filled */}
-                <TextInput
-                  ref={nameInputRef}
-                  label="Name"
-                  value={name}
-                  onChangeText={handleNameChange}
-                  placeholder="e.g. John Appleseed"
-                  keyboardType="default"
-                  autoCapitalize="words"
-                  testID="name-input"
-                />
+                <View ref={nameWrapperRef}>
+                  <TextInput
+                    ref={nameInputRef}
+                    label="Name"
+                    value={name}
+                    onChangeText={handleNameChange}
+                    placeholder="e.g. John Appleseed"
+                    keyboardType="default"
+                    autoCapitalize="words"
+                    testID="name-input"
+                  />
+                </View>
               </View>
 
               {/* Button + Consent - Figma Frame 1:29185 with gap: 16 */}
@@ -290,7 +317,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: KEYBOARD_AVOID_EXTRA_PADDING,
   },
   container: {
     flex: 1,

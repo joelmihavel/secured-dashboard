@@ -1,15 +1,39 @@
-import React, { useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { StyleSheet, View, ViewStyle, StyleProp } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  BottomSheetModal,
-  BottomSheetBackdropProps,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
+  StyleSheet,
+  View,
+  ViewStyle,
+  StyleProp,
+  Dimensions,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  BackHandler,
+  InteractionManager,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { colors } from '@/src/theme';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const SPRING_CONFIG = {
+  damping: 28,
+  stiffness: 300,
+  mass: 0.8,
+};
+
+const DISMISS_THRESHOLD = 100;
 
 export interface CustomBottomSheetProps {
   visible: boolean;
@@ -22,113 +46,186 @@ export interface CustomBottomSheetProps {
   useSafeArea?: boolean;
 }
 
-const CustomBackdrop = ({ animatedIndex, style }: BottomSheetBackdropProps) => {
-  // Use reanimated to animate blur intensity and overlay opacity based on sheet index
-  const containerAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      animatedIndex.value,
-      [-1, 0],
-      [0, 1],
-      Extrapolation.CLAMP
-    ),
+export function BottomSheet({
+  visible,
+  onClose,
+  children,
+  containerStyle,
+  paddingHorizontal = 24,
+  useSafeArea = true,
+}: CustomBottomSheetProps) {
+  const insets = useSafeAreaInsets();
+  const [mounted, setMounted] = useState(false);
+  const isMountedRef = useRef(true);
+  const isDismissingRef = useRef(false);
+
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+  const dragY = useSharedValue(0);
+
+  // Track component lifecycle
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // JS-thread dismiss — NO 'worklet' directive.
+  // withSpring/withTiming schedule on UI thread automatically.
+  const dismiss = useCallback(() => {
+    if (isDismissingRef.current) return;
+    isDismissingRef.current = true;
+
+    translateY.value = withSpring(SCREEN_HEIGHT, { ...SPRING_CONFIG, damping: 20 });
+    backdropOpacity.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (finished) => {
+      'worklet';
+      if (finished) {
+        runOnJS(setMounted)(false);
+        runOnJS(onClose)();
+      }
+    });
+  }, [translateY, backdropOpacity, onClose]);
+
+  const present = useCallback(() => {
+    isDismissingRef.current = false;
+    translateY.value = SCREEN_HEIGHT;
+    backdropOpacity.value = 0;
+    setMounted(true);
+    InteractionManager.runAfterInteractions(() => {
+      if (!isMountedRef.current) return;
+      translateY.value = withSpring(0, SPRING_CONFIG);
+      backdropOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+    });
+  }, [translateY, backdropOpacity]);
+
+  useEffect(() => {
+    if (visible) {
+      present();
+    } else if (mounted) {
+      dismiss();
+    }
+  }, [visible, present, dismiss, mounted]);
+
+  // Handle Android back button
+  useEffect(() => {
+    if (!mounted) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      dismiss();
+      return true;
+    });
+    return () => sub.remove();
+  }, [mounted, dismiss]);
+
+  // Pan gesture — onUpdate/onEnd run on UI thread (worklet context).
+  // dismiss is a JS function, so call it via runOnJS from the gesture handler.
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      'worklet';
+      dragY.value = 0;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      dragY.value = Math.max(0, event.translationY);
+      translateY.value = Math.max(0, event.translationY);
+      const progress = Math.max(0, 1 - event.translationY / (SCREEN_HEIGHT * 0.4));
+      backdropOpacity.value = progress;
+    })
+    .onEnd((event) => {
+      'worklet';
+      if (event.translationY > DISMISS_THRESHOLD || event.velocityY > 500) {
+        // Animate on UI thread, then call JS dismiss for cleanup
+        translateY.value = withSpring(SCREEN_HEIGHT, { ...SPRING_CONFIG, damping: 20 });
+        backdropOpacity.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (finished) => {
+          'worklet';
+          if (finished) {
+            runOnJS(setMounted)(false);
+            runOnJS(onClose)();
+          }
+        });
+      } else {
+        translateY.value = withSpring(0, SPRING_CONFIG);
+        backdropOpacity.value = withTiming(1, { duration: 200 });
+      }
+    });
+
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
   }));
 
-  const containerStyle = useMemo(
-    () => [
-      style,
-      styles.backdropContainer,
-      containerAnimatedStyle,
-    ],
-    [style, containerAnimatedStyle]
-  );
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  const handleBackdropPress = useCallback(() => {
+    dismiss();
+  }, [dismiss]);
+
+  if (!mounted && !visible) return null;
 
   return (
-    <Animated.View style={containerStyle} pointerEvents="auto">
-      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]} />
-    </Animated.View>
-  );
-};
-
-export const BottomSheet = forwardRef<BottomSheetModal, CustomBottomSheetProps>(
-  (
-    {
-      visible,
-      onClose,
-      children,
-      enableDynamicSizing = true,
-      snapPoints: providedSnapPoints,
-      containerStyle,
-      paddingHorizontal = 24,
-      useSafeArea = true,
-    },
-    ref
-  ) => {
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
-    const insets = useSafeAreaInsets();
-
-    // Forward the ref so parent can control if needed, but primarily controlled by `visible`
-    useImperativeHandle(ref, () => bottomSheetRef.current as BottomSheetModal);
-
-    useEffect(() => {
-      if (visible) {
-        bottomSheetRef.current?.present();
-      } else {
-        bottomSheetRef.current?.dismiss();
-      }
-    }, [visible]);
-
-    const handleSheetChanges = useCallback(
-      (index: number) => {
-        if (index === -1) {
-          onClose();
-        }
-      },
-      [onClose]
-    );
-
-    const renderBackdrop = useCallback(
-      (props: BottomSheetBackdropProps) => <CustomBackdrop {...props} />,
-      []
-    );
-
-    const defaultSnapPoints = useMemo(() => providedSnapPoints || ['25%', '50%'], [providedSnapPoints]);
-
-    return (
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        index={0}
-        snapPoints={enableDynamicSizing ? undefined : defaultSnapPoints}
-        onChange={handleSheetChanges}
-        backdropComponent={renderBackdrop}
-        enablePanDownToClose
-        enableDynamicSizing={enableDynamicSizing}
-        enableContentPanningGesture={false}
-        keyboardBehavior="extend"
-        keyboardBlurBehavior="restore"
-        handleIndicatorStyle={styles.handleIndicator}
-        backgroundStyle={styles.backgroundStyle}
+    <View style={styles.overlay} pointerEvents="box-none">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+        pointerEvents="box-none"
       >
-        <BottomSheetView
-          style={[
-            styles.contentContainer,
-            {
-              paddingHorizontal,
-              paddingBottom: useSafeArea ? Math.max(insets.bottom, 24) : 24,
-            },
-            containerStyle,
-          ]}
-        >
-          {children}
-        </BottomSheetView>
-      </BottomSheetModal>
-    );
-  }
-);
+        {/* Backdrop — BlurView at full opacity, parent opacity not animated */}
+        <Animated.View style={[StyleSheet.absoluteFill, backdropAnimatedStyle]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleBackdropPress}>
+            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, styles.backdropOverlay]} />
+          </Pressable>
+        </Animated.View>
+
+        {/* Sheet */}
+        <Animated.View style={[styles.sheetContainer, sheetAnimatedStyle]}>
+          {/* Drag handle */}
+          <GestureDetector gesture={panGesture}>
+            <Animated.View style={styles.handleArea}>
+              <View style={styles.handleIndicator} />
+            </Animated.View>
+          </GestureDetector>
+
+          {/* Content */}
+          <View
+            style={[
+              styles.contentContainer,
+              {
+                paddingHorizontal,
+                paddingBottom: useSafeArea ? Math.max(insets.bottom, 24) : 24,
+              },
+              containerStyle,
+            ]}
+          >
+            {children}
+          </View>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  contentContainer: {
-    width: '100%',
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 9999,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdropOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  sheetContainer: {
+    backgroundColor: colors.black[600], // #1A1A1A
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: SCREEN_HEIGHT * 0.9,
+  },
+  handleArea: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   handleIndicator: {
     width: 48,
@@ -136,11 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[400], // #4D4D4D
     borderRadius: 200,
   },
-  backgroundStyle: {
-    backgroundColor: colors.black[600], // #1A1A1A
-    borderRadius: 24,
-  },
-  backdropContainer: {
-    ...StyleSheet.absoluteFillObject,
+  contentContainer: {
+    width: '100%',
   },
 });
