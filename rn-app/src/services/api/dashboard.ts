@@ -83,10 +83,11 @@ export interface CashbackBalance {
 export interface RawRecentPayment {
   id: string;
   amount: number; // In rupees
-  status: 'pending' | 'processing' | 'success' | 'failed' | 'refunded';
+  status: 'pending' | 'processing' | 'success' | 'failed' | 'refunded' | 'initiated';
   rent_month: string; // ISO date string "YYYY-MM-DD" from edge function
   paid_at: string | null;
   cashback_earned: number;
+  cashback_applied: number;
 }
 
 export interface Notification {
@@ -224,7 +225,7 @@ function formatPaidAtDate(paidAt: string | null): string {
 
 /**
  * Map edge function payment status to UI-ready status.
- * Edge function: 'pending' | 'processing' | 'success' | 'failed' | 'refunded'
+ * Edge function: 'pending' | 'processing' | 'success' | 'failed' | 'refunded' | 'initiated'
  * UI component: 'paid' | 'pending' | 'failed' | 'processing'
  */
 function mapPaymentStatusToUI(
@@ -238,6 +239,7 @@ function mapPaymentStatusToUI(
     case 'failed':
       return 'failed';
     case 'refunded':
+    case 'initiated':
       return 'pending';
     case 'pending':
     default:
@@ -282,17 +284,21 @@ export function deriveCashbackEntries(
     let statusLabel: string;
     let amount: number | null;
 
+    // cashback_applied = instant discount deducted at checkout (verified users)
+    // cashback_earned = 1% earned into balance (unverified users)
+    const cashbackAmount = p.cashback_applied > 0 ? p.cashback_applied : p.cashback_earned;
+
     switch (p.status) {
       case 'success':
-        if (p.cashback_earned > 0) {
+        if (cashbackAmount > 0) {
           status = 'paid';
           statusLabel = 'Paid - On Time';
-          amount = p.cashback_earned;
+          amount = cashbackAmount;
         } else {
-          // Paid but no cashback (e.g., late payment)
+          // Paid but no cashback (e.g., verification incomplete at time of payment)
           status = 'delayed';
-          statusLabel = 'Paid - Delayed';
-          amount = p.cashback_earned > 0 ? p.cashback_earned : null;
+          statusLabel = 'Paid - No Cashback';
+          amount = null;
         }
         break;
       case 'failed':
@@ -339,14 +345,14 @@ async function fetchDashboardReal(): Promise<{
   data: DashboardData | null;
   error: string | null;
 }> {
-  const { data, error } = await callEdgeFunction<DashboardResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<DashboardResponse>(
     'dashboard-data',
     {},
     true // Requires authentication
   );
 
   if (error) {
-    return { data: null, error };
+    return { data: null, error: mapDashboardError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -354,6 +360,42 @@ async function fetchDashboardReal(): Promise<{
   }
 
   return { data: data.data, error: null };
+}
+
+/**
+ * Map dashboard errors to user-friendly messages.
+ * Checks structured errorBody.code first, then falls back to string matching.
+ */
+function mapDashboardError(errorMessage: string, errorBody?: Record<string, unknown>): string {
+  const structuredCode = errorBody?.code as string | undefined;
+  if (structuredCode) {
+    switch (structuredCode) {
+      case 'AUTH_ERROR':
+        return 'Please sign in to continue';
+      case 'NOT_FOUND':
+        return 'Dashboard data not found';
+      case 'RATE_LIMITED':
+        return 'Too many requests. Please wait a moment.';
+    }
+  }
+
+  const lower = errorMessage.toLowerCase();
+  if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('invalid jwt') || lower.includes('jwt expired')) {
+    return 'Please sign in to continue';
+  }
+  if (lower.includes('network') || lower.includes('fetch') || lower.includes('timed out')) {
+    return 'Please check your internet connection';
+  }
+
+  // Sanitize DB internals that shouldn't leak to UI
+  if (/column\s+"?\w+"?\s+(?:does not exist|of relation)/i.test(errorMessage) ||
+      /relation\s+"?\w+"?\s+does not exist/i.test(errorMessage) ||
+      /\bSELECT\b.*\bFROM\b/i.test(errorMessage) ||
+      /violates\s+(?:unique|check|foreign key)\s+constraint/i.test(errorMessage)) {
+    return 'Something went wrong. Please try again.';
+  }
+
+  return errorMessage;
 }
 
 async function fetchDashboardMock(): Promise<{

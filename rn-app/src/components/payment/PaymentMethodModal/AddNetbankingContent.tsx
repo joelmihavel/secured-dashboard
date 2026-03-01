@@ -118,7 +118,7 @@ function toBankInfo(b: NetbankingBank): BankInfo {
   return { code: b.bank_code, name: b.bank_name, shortName: b.short_name ?? undefined, isPopular: b.is_popular };
 }
 
-export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, context = 'payment', onSaveComplete }: AddMethodContentProps) {
+export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, context = 'payment', onSaveComplete, onReadyForConfirm }: AddMethodContentProps) {
   const isProfile = context === 'profile';
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const storedAmount = usePaymentStore((s) => s.amount);
@@ -195,6 +195,14 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, con
           return;
         }
         onSaveComplete();
+        return;
+      }
+
+      // Payment context with confirm step: save bank then hand off to confirm
+      if (onReadyForConfirm) {
+        const bankName = banks.find(b => b.code === selectedBankCode)?.name ?? selectedBankCode;
+        saveBankPreference(selectedBankCode, bankName).catch(() => {});
+        onReadyForConfirm('netbanking', 'NB', { bankcode: selectedBankCode }, `Netbanking \u2022 ${bankName}`);
         return;
       }
 

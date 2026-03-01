@@ -159,7 +159,11 @@ function RootLayoutInner() {
                   <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
                   <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(payment)" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="(payment)" options={{
+                    presentation: 'transparentModal',
+                    animation: 'fade',
+                    contentStyle: { backgroundColor: 'transparent' },
+                  }} />
                   <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
                   <Stack.Screen name="(profile)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />

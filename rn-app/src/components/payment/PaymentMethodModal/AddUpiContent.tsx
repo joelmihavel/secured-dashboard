@@ -45,7 +45,7 @@ const FIGMA_COLORS = {
 // ADD UPI CONTENT
 // ==============================================
 
-export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 'payment', onSaveComplete }: AddMethodContentProps) {
+export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 'payment', onSaveComplete, onReadyForConfirm }: AddMethodContentProps) {
   const isProfile = context === 'profile';
   const verifyUpi = useVerifyUpi();
   const { executePayment } = usePaymentFlow();
@@ -122,6 +122,67 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 
     );
   }, [verifyUpi, upiId, accountName]);
 
+  // --- Profile context: verify VPA + save in one click ---
+  const handleVerifyAndSave = useCallback(async () => {
+    if (isPayingRef.current) return;
+
+    const validationError = validateUpiId(upiId);
+    if (validationError) {
+      setError(validationError);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    setError('');
+    isPayingRef.current = true;
+    setIsPayingUpi(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    verifyUpi.mutate(
+      { upiId: upiId.trim() },
+      {
+        onSuccess: async (data) => {
+          if (data.verified) {
+            const { error: saveError } = await addUpiVpa(upiId.trim());
+            if (saveError) {
+              Alert.alert('Save Failed', saveError || 'Could not save UPI ID.');
+            } else {
+              onSaveComplete?.();
+            }
+          } else {
+            setError('This UPI ID does not exist. Please check and try again.');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          }
+          isPayingRef.current = false;
+          setIsPayingUpi(false);
+        },
+        onError: (err) => {
+          if (__DEV__) {
+            addUpiVpa(upiId.trim()).then(({ error: saveError }: { error: string | null }) => {
+              if (saveError) {
+                Alert.alert('Save Failed', saveError || 'Could not save UPI ID.');
+              } else {
+                onSaveComplete?.();
+              }
+            }).finally(() => {
+              isPayingRef.current = false;
+              setIsPayingUpi(false);
+            });
+            return; // Don't fall through to immediate loading reset
+          }
+          const message = err instanceof Error ? err.message : '';
+          if (message.toLowerCase().includes('network') || message.toLowerCase().includes('timeout')) {
+            setError('Could not verify UPI ID. Check your connection.');
+          } else {
+            setError('Could not verify this UPI ID.');
+          }
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          isPayingRef.current = false;
+          setIsPayingUpi(false);
+        },
+      },
+    );
+  }, [verifyUpi, upiId, onSaveComplete]);
+
   // --- Pay via UPI ---
   const handlePayUpi = useCallback(async () => {
     if (isPayingRef.current) return;
@@ -139,6 +200,13 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 
           return;
         }
         onSaveComplete();
+        return;
+      }
+
+      // Payment context with confirm step: save VPA then hand off to confirm
+      if (onReadyForConfirm) {
+        addUpiVpa(upiId.trim()).catch(() => {});
+        onReadyForConfirm('upi', 'upi', { vpa: upiId.trim() }, `UPI \u2022 ${upiId.trim()}`);
         return;
       }
 
@@ -236,7 +304,15 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 
 
         {/* Button + Footer Section */}
         <View style={styles.buttonFooterSection}>
-          {!isVerified && isFormValid ? (
+          {isProfile ? (
+            <PrimaryButton
+              title="Save UPI"
+              onPress={handleVerifyAndSave}
+              disabled={!isFormValid || isPayingUpi}
+              loading={isLoading}
+              testID="modal-save-upi-button"
+            />
+          ) : !isVerified && isFormValid ? (
             <PrimaryButton
               title={verifyUpi.isPending ? 'Verifying...' : 'Proceed'}
               onPress={handleVerify}
@@ -246,7 +322,7 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 
             />
           ) : isVerified ? (
             <PrimaryButton
-              title={isProfile ? 'Save UPI' : (parseFloat(amount) > 0 ? `Save & Pay \u20B9${formattedAmount}` : 'Proceed')}
+              title={parseFloat(amount) > 0 ? `Save & Pay \u20B9${formattedAmount}` : 'Proceed'}
               onPress={handlePayUpi}
               disabled={!isFormValid || isPayingUpi}
               loading={isPayingUpi}
@@ -278,12 +354,13 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 
 const styles = StyleSheet.create({
   outerContainer: {
     paddingTop: 16,
+    flexShrink: 1,
   },
   stickyHeader: {
     paddingHorizontal: 48,
   },
   scrollView: {
-    flexGrow: 1,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingHorizontal: 48,

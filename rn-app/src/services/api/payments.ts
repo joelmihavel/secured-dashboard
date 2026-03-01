@@ -519,7 +519,7 @@ function mapRawReceiptData(raw: RawReceiptData): ReceiptData {
 export async function initiatePayment(
   request: InitiatePaymentRequest
 ): Promise<{ data: InitiatePaymentData | null; error: PaymentErrorCode | null }> {
-  const { data, error } = await callEdgeFunction<InitiatePaymentResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<InitiatePaymentResponse>(
     'initiate-payment',
     request,
     true // Requires authentication
@@ -528,7 +528,7 @@ export async function initiatePayment(
   if (error) {
     return {
       data: null,
-      error: mapPaymentError(error),
+      error: mapPaymentError(error, errorBody),
     };
   }
 
@@ -574,7 +574,7 @@ export async function fetchPaymentHistory(
   if (filters?.from_date) queryParams.set('from_date', filters.from_date);
   if (filters?.to_date) queryParams.set('to_date', filters.to_date);
 
-  const { data, error } = await callEdgeFunction<RawPaymentHistoryResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawPaymentHistoryResponse>(
     `get-payment-history?${queryParams.toString()}`,
     {},
     true, // requireAuth
@@ -582,7 +582,7 @@ export async function fetchPaymentHistory(
   );
 
   if (error) {
-    return { data: null, pagination: null, summary: null, error };
+    return { data: null, pagination: null, summary: null, error: mapPaymentError(error, errorBody).message };
   }
 
   if (!data?.success) {
@@ -613,7 +613,7 @@ export async function fetchPaymentHistory(
 export async function generateReceipt(
   paymentId: string
 ): Promise<{ data: ReceiptData | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<RawGenerateReceiptResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawGenerateReceiptResponse>(
     `generate-receipt?payment_id=${encodeURIComponent(paymentId)}`,
     {},
     true, // requireAuth
@@ -621,7 +621,7 @@ export async function generateReceipt(
   );
 
   if (error) {
-    return { data: null, error };
+    return { data: null, error: mapPaymentError(error, errorBody).message };
   }
 
   if (!data?.success || !data.data) {
@@ -645,7 +645,7 @@ async function getSavedPaymentMethodsReal(): Promise<{
   primaryMethodId: string | null;
   error: string | null;
 }> {
-  const { data, error } = await callEdgeFunction<RawGetPaymentMethodsResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawGetPaymentMethodsResponse>(
     'get-saved-payment-methods',
     {},
     true, // requireAuth
@@ -653,7 +653,7 @@ async function getSavedPaymentMethodsReal(): Promise<{
   );
 
   if (error) {
-    return { data: null, primaryMethodId: null, error };
+    return { data: null, primaryMethodId: null, error: mapPaymentError(error, errorBody).message };
   }
 
   if (!data?.success) {
@@ -704,7 +704,7 @@ async function addUpiVpaReal(
   nickname?: string,
   setPrimary = false
 ): Promise<{ data: SavedPaymentMethod | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<RawAddUpiVpaResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawAddUpiVpaResponse>(
     'add-upi-vpa',
     {
       upi_vpa: vpa, // Edge function expects upi_vpa, not vpa
@@ -715,7 +715,7 @@ async function addUpiVpaReal(
   );
 
   if (error) {
-    return { data: null, error };
+    return { data: null, error: mapPaymentError(error, errorBody).message };
   }
 
   if (!data?.success || !data.data) {
@@ -790,14 +790,14 @@ export interface AddCardTokenRequest {
 async function addCardTokenReal(
   request: AddCardTokenRequest
 ): Promise<{ data: SavedPaymentMethod | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<RawAddCardTokenResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawAddCardTokenResponse>(
     'add-card-token',
     request,
     true // requireAuth
   );
 
   if (error) {
-    return { data: null, error };
+    return { data: null, error: mapPaymentError(error, errorBody).message };
   }
 
   if (!data?.success || !data.data) {
@@ -869,7 +869,7 @@ async function deletePaymentMethodReal(
   newPrimaryId: string | null;
   error: string | null;
 }> {
-  const { data, error } = await callEdgeFunction<RawDeletePaymentMethodResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawDeletePaymentMethodResponse>(
     'delete-payment-method',
     {
       payment_method_id: methodId, // Edge function expects payment_method_id, not method_id
@@ -879,7 +879,7 @@ async function deletePaymentMethodReal(
   );
 
   if (error) {
-    return { success: false, newPrimaryId: null, error };
+    return { success: false, newPrimaryId: null, error: mapPaymentError(error, errorBody).message };
   }
 
   if (!data?.success) {
@@ -925,8 +925,8 @@ export const deletePaymentMethod = _deletePaymentMethod;
  */
 export async function verifyUpiVpa(
   vpa: string
-): Promise<{ valid: boolean; name?: string; vpa: string }> {
-  const { data, error } = await callEdgeFunction<{
+): Promise<{ valid: boolean; name?: string; vpa: string; error?: string }> {
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: { is_valid: boolean; account_holder_name?: string; upi_vpa: string };
   }>(
@@ -935,8 +935,12 @@ export async function verifyUpiVpa(
     true
   );
 
-  if (error) throw new Error(error);
-  if (!data?.success) throw new Error('VPA verification failed');
+  if (error) {
+    return { valid: false, vpa, error: sanitizeErrorForUI(error) };
+  }
+  if (!data?.success) {
+    return { valid: false, vpa, error: 'VPA verification failed' };
+  }
 
   return {
     valid: data.data.is_valid,
@@ -949,7 +953,30 @@ export async function verifyUpiVpa(
 // ERROR MAPPING
 // ==============================================
 
-function mapPaymentError(errorMessage: string): PaymentErrorCode {
+function mapPaymentError(errorMessage: string, errorBody?: Record<string, unknown>): PaymentErrorCode {
+  // Prefer structured error code from errorBody when available
+  const structuredCode = errorBody?.code as string | undefined;
+  if (structuredCode) {
+    switch (structuredCode) {
+      case 'ALREADY_PAID':
+      case 'PAYMENT_ALREADY_COMPLETED':
+        return { code: 'ALREADY_PAID', message: 'Payment already completed for this month' };
+      case 'PAYMENT_IN_PROGRESS':
+        return { code: 'PAYMENT_IN_PROGRESS', message: 'A payment is already being processed' };
+      case 'BANK_NOT_VERIFIED':
+        return { code: 'BANK_NOT_VERIFIED', message: 'Landlord bank account not verified yet' };
+      case 'VALIDATION_ERROR':
+        return { code: 'VALIDATION_ERROR', message: (errorBody?.message as string) ?? errorMessage };
+      case 'AUTH_ERROR':
+        return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+      case 'RATE_LIMITED':
+        return { code: 'RATE_LIMITED', message: 'Too many requests. Please wait a moment.' };
+      case 'IDEMPOTENCY_CONFLICT':
+        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Request in progress, retrying...' };
+      // Fall through for unknown structured codes — use string matching below
+    }
+  }
+
   const lowerMessage = errorMessage.toLowerCase();
 
   if (lowerMessage.includes('already paid')) {
@@ -976,7 +1003,7 @@ function mapPaymentError(errorMessage: string): PaymentErrorCode {
     return { code: 'NETWORK_ERROR', message: 'Please check your internet connection' };
   }
 
-  return { code: 'UNKNOWN_ERROR', message: errorMessage };
+  return { code: 'UNKNOWN_ERROR', message: sanitizeErrorForUI(errorMessage) };
 }
 
 // ==============================================
@@ -992,14 +1019,14 @@ function mapPaymentError(errorMessage: string): PaymentErrorCode {
 export async function setDefaultPaymentMethod(
   paymentMethodId: string
 ): Promise<{ success: boolean; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{ success: boolean }>(
+  const { data, error, errorBody } = await callEdgeFunction<{ success: boolean }>(
     'set-default-payment-method',
     { payment_method_id: paymentMethodId },
     true
   );
 
   if (error) {
-    return { success: false, error };
+    return { success: false, error: mapPaymentError(error, errorBody).message };
   }
 
   if (!data?.success) {
@@ -1072,26 +1099,26 @@ export interface ManageScheduleRequest {
 export async function createPaymentSchedule(
   request: CreateScheduleRequest
 ): Promise<{ data: PaymentSchedule | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{ data: PaymentSchedule }>(
+  const { data, error, errorBody } = await callEdgeFunction<{ data: PaymentSchedule }>(
     'schedule-payment',
     request as unknown as Record<string, unknown>,
     true,
     'POST'
   );
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   return { data: data?.data ?? null, error: null };
 }
 
 export async function managePaymentSchedule(
   request: ManageScheduleRequest
 ): Promise<{ data: { schedule_id: string; new_status: string } | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{ data: { schedule_id: string; new_status: string } }>(
+  const { data, error, errorBody } = await callEdgeFunction<{ data: { schedule_id: string; new_status: string } }>(
     'schedule-payment',
     request as unknown as Record<string, unknown>,
     true,
     'POST'
   );
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   return { data: data?.data ?? null, error: null };
 }
 
@@ -1103,13 +1130,13 @@ export async function getPaymentSchedules(
   if (tenancyId) queryParams.tenancy_id = tenancyId;
   if (status) queryParams.status = status;
 
-  const { data, error } = await callEdgeFunction<{ data: { schedules: PaymentSchedule[] } }>(
+  const { data, error, errorBody } = await callEdgeFunction<{ data: { schedules: PaymentSchedule[] } }>(
     'get-payment-schedule',
     queryParams,
     true,
     'GET'
   );
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   return { data: data?.data?.schedules ?? [], error: null };
 }
 
@@ -1138,13 +1165,13 @@ export interface SavingsHistoryData {
 }
 
 export async function getSavingsHistory(): Promise<{ data: SavingsHistoryData | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{ data: SavingsHistoryData }>(
+  const { data, error, errorBody } = await callEdgeFunction<{ data: SavingsHistoryData }>(
     'calculate-cashback',
     {},
     true,
     'GET'
   );
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   return { data: data?.data ?? null, error: null };
 }
 
@@ -1171,14 +1198,14 @@ export interface CheckPaymentStatusResponse {
 export async function checkPaymentStatus(
   paymentId: string
 ): Promise<{ data: CheckPaymentStatusResponse | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{ data: CheckPaymentStatusResponse }>(
+  const { data, error, errorBody } = await callEdgeFunction<{ data: CheckPaymentStatusResponse }>(
     `check-payment-status?payment_id=${encodeURIComponent(paymentId)}`,
     {},
     true,
     'GET'  // S19: Changed from POST to GET - server expects GET
   );
 
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   return { data: data?.data ?? null, error: null };
 }
 
@@ -1217,8 +1244,9 @@ export interface PaymentStampEntry {
   due_date: string;
   days_late: number | null;
   amount_paise: number | null;
-  /** Cashback earned in rupees for this month's payment. 0 for late/missed. */
-  // TODO: Backend — add cashback_earned to get-payment-stamps SELECT query
+  /** Cashback applied (instant discount) in paise for this month's payment. null if no payment. */
+  cashback_applied_paise: number | null;
+  /** @deprecated Always 0 in instant-discount model. Use cashback_applied_paise instead. */
   cashback_earned: number;
 }
 
@@ -1241,13 +1269,13 @@ export interface PaymentStampsResponse {
 async function fetchPaymentStampsReal(
   tenancyId: string
 ): Promise<{ data: PaymentStampsResponse | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{ success: boolean; data: PaymentStampsResponse }>(
+  const { data, error, errorBody } = await callEdgeFunction<{ success: boolean; data: PaymentStampsResponse }>(
     `get-payment-stamps?tenancy_id=${encodeURIComponent(tenancyId)}`,
     {},
     true,
     'GET'
   );
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   if (!data?.success) return { data: null, error: 'Failed to fetch payment stamps' };
   return { data: data.data, error: null };
 }
@@ -1282,7 +1310,7 @@ async function saveBankPreferenceReal(
   bankCode: string,
   bankName: string,
 ): Promise<{ data: { payment_method_id: string } | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: { payment_method_id: string; bank_code: string; bank_name: string };
   }>(
@@ -1291,7 +1319,7 @@ async function saveBankPreferenceReal(
     true
   );
 
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   if (!data?.success) return { data: null, error: 'Failed to save bank preference' };
 
   return { data: { payment_method_id: data.data.payment_method_id }, error: null };
@@ -1327,7 +1355,7 @@ async function verifyCardReal(): Promise<{
   data: { payment_id: string; txn_id: string; payu: PayUParams & Record<string, string> } | null;
   error: string | null;
 }> {
-  const { data, error } = await callEdgeFunction<{
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: { payment_id: string; txn_id: string; payu: PayUParams & Record<string, string> };
   }>(
@@ -1336,7 +1364,7 @@ async function verifyCardReal(): Promise<{
     true
   );
 
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   if (!data?.success) return { data: null, error: 'Failed to initiate card verification' };
 
   return { data: data.data, error: null };
@@ -1406,7 +1434,7 @@ export interface BinInfo {
 export async function getBinInfo(
   bin: string
 ): Promise<{ data: BinInfo | null; error: string | null }> {
-  const { data, error } = await callEdgeFunction<{
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: BinInfo;
     error?: string;
@@ -1416,7 +1444,7 @@ export async function getBinInfo(
     true
   );
 
-  if (error) return { data: null, error };
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
   if (!data?.success) return { data: null, error: data?.error ?? 'BIN lookup failed' };
 
   return { data: data.data, error: null };
@@ -1441,13 +1469,13 @@ export async function fetchBankList(): Promise<{
   data: NetbankingBank[] | null;
   error: string | null;
 }> {
-  const { data, error } = await callEdgeFunction<{
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: { banks: NetbankingBank[]; total_count: number };
   }>('get-netbanking-banks', {}, false, 'GET');
 
   if (error) {
-    return { data: null, error };
+    return { data: null, error: sanitizeErrorForUI(error) };
   }
 
   if (!data?.success) {
@@ -1480,7 +1508,7 @@ async function getPayuStoredCardsReal(): Promise<{
   data: PayuStoredCard[] | null;
   error: string | null;
 }> {
-  const { data, error } = await callEdgeFunction<{
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: { cards: PayuStoredCard[] };
   }>('get-payu-stored-cards', {}, true, 'GET');

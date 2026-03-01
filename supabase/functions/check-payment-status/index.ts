@@ -143,11 +143,21 @@ serve(async (req: Request) => {
 
             if (mappedStatus === "success") {
               updateData.paid_at = new Date().toISOString();
-              updateData.cashback_earned_paise = 0; // Deprecated in instant-discount model
+              // cashback_earned_paise already set at initiation (>0 for unverified, 0 for verified)
               updateData.landlord_payout_status = "pending";
               updateData.landlord_payout_paise = payment.rent_amount_paise;
+            }
 
-              // Log discount audit entry if applicable
+            const { data: lockResult } = await supabase
+              .from("payments")
+              .update(updateData)
+              .eq("id", payment.id)
+              .eq("status", payment.status)
+              .select("id")
+              .maybeSingle();
+
+            if (lockResult && mappedStatus === "success") {
+              // PATH A: Verified — log instant discount + debit accumulated
               if (payment.cashback_applied_paise > 0) {
                 try {
                   await supabase.from("cashback_ledger").insert({
@@ -159,25 +169,59 @@ serve(async (req: Request) => {
                     tenancy_id: payment.tenancy_id,
                     reference_type: "payment",
                     reference_id: payment.id,
-                    description: "1% instant discount on rent payment (status check reconciliation)",
+                    description: "1% instant discount on rent payment (reconciliation)",
+                  });
+                  const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
+                  if (accumulatedUsed > 0) {
+                    await supabase.from("cashback_ledger").insert({
+                      user_id: userId,
+                      transaction_type: "applied",
+                      amount_paise: accumulatedUsed,
+                      balance_after_paise: 0,
+                      payment_id: payment.id,
+                      tenancy_id: payment.tenancy_id,
+                      reference_type: "payment",
+                      reference_id: payment.id,
+                      description: "Accumulated cashback redeemed (reconciliation)",
+                    });
+                    await supabase.rpc("decrement_cashback_balance", {
+                      p_user_id: userId,
+                      p_amount: accumulatedUsed,
+                    });
+                  }
+                } catch (e) {
+                  console.error("Failed to log cashback discount on reconciliation:", e);
+                }
+              }
+
+              // PATH B: Unverified — credit earned cashback to balance
+              if (payment.cashback_earned_paise > 0) {
+                try {
+                  await supabase.from("cashback_ledger").insert({
+                    user_id: userId,
+                    transaction_type: "earned",
+                    amount_paise: payment.cashback_earned_paise,
+                    balance_after_paise: 0,
+                    payment_id: payment.id,
+                    tenancy_id: payment.tenancy_id,
+                    reference_type: "payment",
+                    reference_id: payment.id,
+                    description: "1% cashback earned (reconciliation)",
+                  });
+                  await supabase.rpc("increment_cashback_balance", {
+                    p_user_id: userId,
+                    p_amount: payment.cashback_earned_paise,
                   });
                 } catch (e) {
-                  console.error("Failed to log discount audit on PayU status check success:", e);
+                  console.error("Failed to credit earned cashback on reconciliation:", e);
                 }
               }
             }
-
-            await supabase
-              .from("payments")
-              .update(updateData)
-              .eq("id", payment.id)
-              .eq("status", payment.status);
 
             // Update local payment object for response
             payment.status = mappedStatus;
             payment.payu_status = String(payuVerifyResult.status);
             if (mappedStatus === "success") {
-              payment.cashback_earned_paise = 0;
               payment.landlord_payout_status = "pending";
             }
 

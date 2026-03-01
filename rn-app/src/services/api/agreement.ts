@@ -259,7 +259,7 @@ export async function requestUploadUrl(
   fileType: string,
   fileSize: number
 ): Promise<{ data: UploadDocumentResult | null; error: AgreementError | null }> {
-  const { data, error } = await callEdgeFunction<RawUploadDocumentResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawUploadDocumentResponse>(
     'upload-document',
     {
       file_name: fileName,
@@ -272,7 +272,7 @@ export async function requestUploadUrl(
   );
 
   if (error) {
-    return { data: null, error: mapAgreementError(error) };
+    return { data: null, error: mapAgreementError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -415,7 +415,7 @@ export async function processDocument(
     body.document_path = documentPath;
   }
 
-  const { data, error } = await callEdgeFunction<RawProcessDocumentResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawProcessDocumentResponse>(
     'process-document',
     body,
     true, // requireAuth
@@ -424,7 +424,7 @@ export async function processDocument(
   );
 
   if (error) {
-    return { data: null, error: mapAgreementError(error) };
+    return { data: null, error: mapAgreementError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -566,7 +566,7 @@ export async function confirmExtraction(
   if (request.landlordPhone) body.landlord_phone = request.landlordPhone;
   if (request.landlordEmail) body.landlord_email = request.landlordEmail;
 
-  const { data, error } = await callEdgeFunction<RawConfirmExtractionResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawConfirmExtractionResponse>(
     'confirm-extraction',
     body,
     true, // requireAuth
@@ -574,7 +574,7 @@ export async function confirmExtraction(
   );
 
   if (error) {
-    return { data: null, error: mapAgreementError(error) };
+    return { data: null, error: mapAgreementError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -604,7 +604,7 @@ export async function updateExtraction(
     modifications: request.modifications,
   };
 
-  const { data, error } = await callEdgeFunction<RawUpdateExtractionResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawUpdateExtractionResponse>(
     'update-extraction',
     body,
     true, // requireAuth
@@ -612,7 +612,7 @@ export async function updateExtraction(
   );
 
   if (error) {
-    return { data: null, error: mapAgreementError(error) };
+    return { data: null, error: mapAgreementError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -695,7 +695,31 @@ export async function fetchExtractionStatus(
 // ERROR MAPPING
 // ==============================================
 
-function mapAgreementError(errorMessage: string): AgreementError {
+function mapAgreementError(errorMessage: string, errorBody?: Record<string, unknown>): AgreementError {
+  // Prefer structured error code from errorBody when available
+  const structuredCode = errorBody?.code as string | undefined;
+  if (structuredCode) {
+    switch (structuredCode) {
+      case 'VALIDATION_ERROR':
+        return { code: 'UNKNOWN_ERROR', message: (errorBody?.message as string) ?? errorMessage };
+      case 'NOT_FOUND':
+        return { code: 'EXTRACTION_NOT_FOUND', message: (errorBody?.message as string) ?? 'Extraction record not found' };
+      case 'AUTH_ERROR':
+        return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+      case 'OCR_FAILED':
+        return { code: 'OCR_FAILED', message: (errorBody?.message as string) ?? 'Failed to read the document. Please try again.' };
+      case 'ALREADY_CONFIRMED':
+        return { code: 'ALREADY_CONFIRMED', message: (errorBody?.message as string) ?? 'This extraction has already been confirmed' };
+      case 'PROCESSING_IN_PROGRESS':
+        return { code: 'PROCESSING_IN_PROGRESS', message: (errorBody?.message as string) ?? 'A document is already being processed. Please wait.' };
+      case 'INVALID_FILE_TYPE':
+        return { code: 'INVALID_FILE_TYPE', message: 'Please upload a PDF file' };
+      case 'FILE_TOO_LARGE':
+        return { code: 'FILE_TOO_LARGE', message: 'File is too large. Maximum size is 50MB.' };
+      // Fall through for unknown structured codes — use string matching below
+    }
+  }
+
   const lower = errorMessage.toLowerCase();
 
   if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('missing authorization')) {

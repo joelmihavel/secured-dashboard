@@ -43,8 +43,8 @@ import * as StoreReview from 'expo-store-review';
 
 import { Screen, Text, Avatar, TextInput, PhoneInput, BackButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
-import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal';
-import type { ModalView } from '@/src/components/payment/PaymentMethodModal/types';
+import { EditPaymentMethodModal } from '@/src/components/payment/PaymentMethodModal/EditPaymentMethodModal';
+import type { PaymentMethodType } from '@/src/components/payment/PaymentMethodModal/types';
 import { useDashboard, useAuth, useDeleteAccount, useSavedPaymentMethods } from '@/src/hooks';
 import { colors } from '@/src/theme';
 import { s } from '@/src/theme/scale';
@@ -130,6 +130,7 @@ export default function ProfileScreen() {
 
   // Payment method edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const handleEditModalClose = useCallback(() => setEditModalVisible(false), []);
   const [editModalMethodType, setEditModalMethodType] = useState<string>('upi');
   const [editModalMethodId, setEditModalMethodId] = useState<string>('');
 
@@ -334,7 +335,7 @@ export default function ProfileScreen() {
                 {tenancy?.verification_status?.bank_verified && (
                   <>
                     <CardMenuItem
-                      title="Edit Bank Details"
+                      title="Edit Landlord Bank Details"
                       onPress={handleEditBankDetails}
                       testID="edit-bank-details-button"
                     />
@@ -410,15 +411,12 @@ export default function ProfileScreen() {
       </ScrollView>
 
       {/* Payment Method Edit Modal — opens Card UI bottom sheet */}
-      <PaymentMethodModal
+      <EditPaymentMethodModal
         visible={editModalVisible}
-        onClose={() => setEditModalVisible(false)}
+        onClose={handleEditModalClose}
         tenancyId={tenancy?.id ?? ''}
-        rentMonth={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-        initialView={'edit-method' as ModalView}
-        initialMethodType={editModalMethodType}
-        initialSavedMethodId={editModalMethodId}
-        context="profile"
+        methodType={editModalMethodType as PaymentMethodType}
+        savedMethodId={editModalMethodId}
       />
     </Screen>
   );

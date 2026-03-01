@@ -24,10 +24,12 @@ export * from './AddMoreCard';
 // Secure Card Input (Core SDK flow)
 export * from './SecureCardInput';
 
-// Payment Method Modal (inline overlay for initiate.tsx)
+// Payment Method Modals
 export { PaymentMethodModal } from './PaymentMethodModal';
+export { EditPaymentMethodModal } from './PaymentMethodModal/EditPaymentMethodModal';
 export type {
   ModalView,
   PaymentMethodModalProps,
+  PaymentMethodType,
   AddMethodContentProps,
 } from './PaymentMethodModal/types';

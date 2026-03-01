@@ -90,7 +90,7 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   '/setup/landlord': '/(setup)/invite-landlord',
 
   // Payment
-  '/payment': '/(payment)/confirm',
+  '/payment': '/(payment)/enter-rent',
   '/payment/success': '/(payment)/status',
   '/payment/failed': '/(payment)/status',
   '/payment/status': '/(payment)/status',

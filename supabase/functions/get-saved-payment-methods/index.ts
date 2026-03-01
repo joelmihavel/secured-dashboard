@@ -13,7 +13,7 @@ import {
   createServiceClient,
   createAuthenticatedClient,
 } from "../_shared/supabase.ts";
-import { handleCors, jsonResponse } from "../_shared/cors.ts";
+import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 
 // ==============================================
@@ -71,7 +71,7 @@ serve(async (req: Request) => {
   if (corsResponse) return corsResponse;
 
   if (req.method !== "GET") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return errorResponse("Method not allowed", 405, "METHOD_NOT_ALLOWED");
   }
 
   const supabase = createServiceClient();

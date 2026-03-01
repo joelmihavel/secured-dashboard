@@ -119,9 +119,14 @@ function getCashfreeConfig() {
 
 /**
  * Generates Cashfree x-cf-signature header using RSA public key encryption.
- * Encrypts "{clientId}.{unixTimestamp}" with the public key (RSA-OAEP + SHA-256).
+ * Encrypts "{clientId}.{unixTimestamp}" with the public key (RSA-OAEP + SHA-1).
  * Returns { signature, timestamp } for use in request headers.
+ *
+ * The RSA CryptoKey is cached at module scope — importKey (~10ms) only runs once
+ * per isolate lifetime. Encrypt runs every time (timestamp changes).
  */
+let _cachedCryptoKey: CryptoKey | null = null;
+
 export async function generateCfSignature(
   clientId: string
 ): Promise<{ signature: string; timestamp: string }> {
@@ -133,27 +138,28 @@ export async function generateCfSignature(
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const payload = `${clientId}.${timestamp}`;
 
-  // Parse PEM → DER
-  const pemBody = publicKeyPem
-    .replace(/-----BEGIN PUBLIC KEY-----/, "")
-    .replace(/-----END PUBLIC KEY-----/, "")
-    .replace(/\s+/g, "");
-  const binaryDer = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+  // Import RSA key once, reuse for all subsequent calls in this isolate
+  if (!_cachedCryptoKey) {
+    const pemBody = publicKeyPem
+      .replace(/-----BEGIN PUBLIC KEY-----/, "")
+      .replace(/-----END PUBLIC KEY-----/, "")
+      .replace(/\s+/g, "");
+    const binaryDer = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
 
-  // Import RSA public key (Cashfree uses OAEPWithSHA-1AndMGF1Padding)
-  const cryptoKey = await crypto.subtle.importKey(
-    "spki",
-    binaryDer.buffer,
-    { name: "RSA-OAEP", hash: "SHA-1" },
-    false,
-    ["encrypt"]
-  );
+    _cachedCryptoKey = await crypto.subtle.importKey(
+      "spki",
+      binaryDer.buffer,
+      { name: "RSA-OAEP", hash: "SHA-1" },
+      false,
+      ["encrypt"]
+    );
+  }
 
-  // Encrypt payload
+  // Encrypt payload (must run each time — timestamp changes)
   const encoded = new TextEncoder().encode(payload);
   const encrypted = await crypto.subtle.encrypt(
     { name: "RSA-OAEP" },
-    cryptoKey,
+    _cachedCryptoKey,
     encoded
   );
 

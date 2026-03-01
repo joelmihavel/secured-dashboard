@@ -850,26 +850,26 @@ describe('Payments API Service', () => {
       expect(body.verify_only).toBe(true);
     });
 
-    it('throws when edge function returns an error', async () => {
+    it('returns error when edge function returns an error', async () => {
       mockCallEdgeFunction.mockResolvedValue({
         data: null,
         error: 'VPA not found',
       });
 
-      await expect(verifyUpiVpa('invalid@nowhere')).rejects.toThrow(
-        'VPA not found'
-      );
+      const result = await verifyUpiVpa('invalid@nowhere');
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('VPA not found');
     });
 
-    it('throws when success is false', async () => {
+    it('returns error when success is false', async () => {
       mockCallEdgeFunction.mockResolvedValue({
         data: { success: false },
         error: null,
       });
 
-      await expect(verifyUpiVpa('bad@vpa')).rejects.toThrow(
-        'VPA verification failed'
-      );
+      const result = await verifyUpiVpa('bad@vpa');
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('VPA verification failed');
     });
   });
 

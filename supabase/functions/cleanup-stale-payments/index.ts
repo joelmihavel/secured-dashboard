@@ -1,15 +1,22 @@
 /**
  * Flent Secured v2 - Cleanup Stale Payments Edge Function
  *
- * Expires stale initiated payments that have no PayU response after 30 minutes.
- * Verifies with PayU before expiring to avoid killing in-flight transactions.
+ * Reconciles payments that reached PayU but never received a webhook.
+ * Calls PayU verify_payment API to get the real status, then updates
+ * our DB accordingly (same logic as check-payment-status reconciliation).
+ *
+ * The SQL cron `expire_stale_payments()` handles abandoned payments
+ * (payu_mihpayid IS NULL) every minute. This function handles the
+ * other case: payments that DID reach PayU but are stuck in
+ * initiated/processing because the webhook was lost.
  *
  * Endpoint: POST /functions/v1/cleanup-stale-payments
- * Auth: Admin API key (x-admin-key header)
+ * Auth: Service role JWT or x-admin-key header
+ * Schedule: Every 30 minutes via pg_cron
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createServiceClient } from "../_shared/supabase.ts";
+import { createServiceClient, hasServiceRoleAuth } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 import { sha512 } from "../_shared/crypto.ts";
@@ -20,7 +27,32 @@ import { sha512 } from "../_shared/crypto.ts";
 
 const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY")!;
 const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
-const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+
+// Only reconcile payments older than 10 minutes (give webhook time to arrive)
+const STALE_THRESHOLD_MINUTES = 10;
+
+// PayU status mapping (same as payment-webhook and check-payment-status)
+const PAYU_STATUS_MAP: Record<string, string> = {
+  success: "success",
+  captured: "success",
+  pending: "processing",
+  initiated: "processing",
+  inprogress: "processing",
+  in_progress: "processing",
+  on_hold: "processing",
+  authorized: "processing",
+  failure: "failed",
+  failed: "failed",
+  usercancelled: "failed",
+  user_cancelled: "failed",
+  dropped: "failed",
+  bounced: "failed",
+  timeout: "failed",
+  not_initiated: "failed",
+  expired: "failed",
+  rejected: "failed",
+  cancelled: "failed",
+};
 
 // ==============================================
 // MAIN HANDLER
@@ -33,68 +65,119 @@ serve(async (req: Request) => {
   const supabase = createServiceClient();
 
   try {
-    // Verify this is called by a scheduled function or admin
+    // Verify caller: accept either admin key or service_role JWT (for pg_cron)
     const adminKey = req.headers.get("x-admin-key");
     const expectedKey = Deno.env.get("ADMIN_API_KEY");
-    if (adminKey !== expectedKey) {
+    const authHeader = req.headers.get("Authorization");
+
+    const isAdminKey = expectedKey && adminKey === expectedKey;
+    const isServiceRole = hasServiceRoleAuth(authHeader);
+
+    if (!isAdminKey && !isServiceRole) {
       return errorResponse("Unauthorized", 401);
     }
 
-    const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS).toISOString();
+    const cutoff = new Date(
+      Date.now() - STALE_THRESHOLD_MINUTES * 60 * 1000,
+    ).toISOString();
 
-    // Find stale initiated payments with no PayU confirmation
+    // Find payments that reached PayU (have payu_txn_id) but are stuck
+    // in initiated/processing without a webhook response
     const { data: stalePayments, error } = await supabase
       .from("payments")
-      .select("id, payu_txn_id, status, created_at")
-      .eq("status", "initiated")
+      .select(
+        "id, user_id, tenancy_id, payu_txn_id, status, " +
+        "rent_amount_paise, cashback_applied_paise, cashback_earned_paise, " +
+        "accumulated_redeemed_paise, created_at",
+      )
+      .in("status", ["initiated", "processing"])
       .lt("created_at", cutoff)
-      .is("payu_mihpayid", null)
-      .limit(50);
+      .not("payu_txn_id", "is", null)
+      .neq("payment_gateway", "demo")
+      .limit(20);
 
     if (error) {
       throw error;
     }
 
-    let expired = 0;
+    let reconciled = 0;
     let stillProcessing = 0;
+    let verifyFailed = 0;
 
     for (const payment of stalePayments ?? []) {
-      // Verify with PayU before expiring
-      if (payment.payu_txn_id) {
-        // Verify with PayU before expiring
-        try {
-          const result = await verifyWithPayU(payment.payu_txn_id);
-          if (
-            result.status &&
-            !["not_found", "not_initiated"].includes(String(result.status).toLowerCase())
-          ) {
-            stillProcessing++;
-            continue; // Payment may still be processing at bank
-          }
-        } catch {
-          // PayU verification failed - safe to expire
+      if (!payment.payu_txn_id) continue;
+
+      try {
+        const payuResult = await verifyWithPayU(payment.payu_txn_id);
+
+        if (!payuResult.status) {
+          // PayU has no record — will be caught by SQL cron if mihpayid is null
+          verifyFailed++;
+          continue;
         }
-      }
 
-      // Expire the payment with optimistic lock
-      const { data: updated } = await supabase
-        .from("payments")
-        .update({ status: "expired" })
-        .eq("id", payment.id)
-        .eq("status", "initiated")
-        .select("id")
-        .maybeSingle();
+        const payuStatus = String(payuResult.status).toLowerCase();
+        const mappedStatus = PAYU_STATUS_MAP[payuStatus] ?? "failed";
 
-      if (updated) {
-        expired++;
+        // Only act on terminal states
+        if (!["success", "failed"].includes(mappedStatus)) {
+          stillProcessing++;
+          continue;
+        }
+
+        // Skip if already in the target status
+        if (mappedStatus === payment.status) continue;
+
+        // Build update
+        const updateData: Record<string, unknown> = {
+          status: mappedStatus,
+          payu_status: payuResult.status,
+          payu_mihpayid: payuResult.mihpayid ?? null,
+        };
+
+        if (mappedStatus === "success") {
+          updateData.paid_at = new Date().toISOString();
+          updateData.landlord_payout_status = "pending";
+          updateData.landlord_payout_paise = payment.rent_amount_paise;
+        }
+
+        // Optimistic lock: only update if status hasn't changed
+        const { data: lockResult } = await supabase
+          .from("payments")
+          .update(updateData)
+          .eq("id", payment.id)
+          .eq("status", payment.status)
+          .select("id")
+          .maybeSingle();
+
+        if (lockResult) {
+          reconciled++;
+
+          // Handle cashback ledger entries on success (same as webhook/check-payment-status)
+          if (mappedStatus === "success" && payment.user_id) {
+            await handleCashbackOnSuccess(supabase, payment);
+          }
+        }
+      } catch (e) {
+        console.error(
+          `Failed to verify payment ${payment.id}:`,
+          e instanceof Error ? e.message : e,
+        );
+        verifyFailed++;
       }
     }
+
+    console.log(
+      `cleanup-stale-payments: checked=${stalePayments?.length ?? 0} ` +
+      `reconciled=${reconciled} processing=${stillProcessing} failed=${verifyFailed}`,
+    );
 
     return jsonResponse({
       success: true,
       data: {
-        expired,
+        reconciled,
         still_processing: stillProcessing,
+        verify_failed: verifyFailed,
         total_checked: stalePayments?.length ?? 0,
       },
     });
@@ -104,10 +187,93 @@ serve(async (req: Request) => {
 });
 
 // ==============================================
+// CASHBACK HANDLING
+// ==============================================
+
+interface PaymentRecord {
+  id: string;
+  user_id: string;
+  tenancy_id: string;
+  cashback_applied_paise: number;
+  cashback_earned_paise: number;
+  accumulated_redeemed_paise: number;
+}
+
+async function handleCashbackOnSuccess(
+  supabase: ReturnType<typeof createServiceClient>,
+  payment: PaymentRecord,
+): Promise<void> {
+  const userId = payment.user_id;
+
+  // PATH A: Verified — log instant discount + debit accumulated
+  if (payment.cashback_applied_paise > 0) {
+    try {
+      await supabase.from("cashback_ledger").insert({
+        user_id: userId,
+        transaction_type: "discount",
+        amount_paise: payment.cashback_applied_paise,
+        balance_after_paise: 0,
+        payment_id: payment.id,
+        tenancy_id: payment.tenancy_id,
+        reference_type: "payment",
+        reference_id: payment.id,
+        description: "1% instant discount on rent payment (reconciliation)",
+      });
+
+      const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
+      if (accumulatedUsed > 0) {
+        await supabase.from("cashback_ledger").insert({
+          user_id: userId,
+          transaction_type: "applied",
+          amount_paise: accumulatedUsed,
+          balance_after_paise: 0,
+          payment_id: payment.id,
+          tenancy_id: payment.tenancy_id,
+          reference_type: "payment",
+          reference_id: payment.id,
+          description: "Accumulated cashback redeemed (reconciliation)",
+        });
+        await supabase.rpc("decrement_cashback_balance", {
+          p_user_id: userId,
+          p_amount: accumulatedUsed,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to log cashback discount on reconciliation:", e);
+    }
+  }
+
+  // PATH B: Unverified — credit earned cashback to balance
+  if (payment.cashback_earned_paise > 0) {
+    try {
+      await supabase.from("cashback_ledger").insert({
+        user_id: userId,
+        transaction_type: "earned",
+        amount_paise: payment.cashback_earned_paise,
+        balance_after_paise: 0,
+        payment_id: payment.id,
+        tenancy_id: payment.tenancy_id,
+        reference_type: "payment",
+        reference_id: payment.id,
+        description: "1% cashback earned (reconciliation)",
+      });
+      await supabase.rpc("increment_cashback_balance", {
+        p_user_id: userId,
+        p_amount: payment.cashback_earned_paise,
+      });
+    } catch (e) {
+      console.error("Failed to credit earned cashback on reconciliation:", e);
+    }
+  }
+}
+
+// ==============================================
 // PAYU VERIFY
 // ==============================================
 
-async function verifyWithPayU(txnId: string): Promise<Record<string, unknown>> {
+async function verifyWithPayU(
+  txnId: string,
+): Promise<Record<string, unknown>> {
   const command = "verify_payment";
   const hashString = `${PAYU_MERCHANT_KEY}|${command}|${txnId}|${PAYU_MERCHANT_SALT}`;
   const hash = await sha512(hashString);

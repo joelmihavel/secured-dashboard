@@ -369,6 +369,7 @@ export function createMockPaymentStampEntry(
     due_date: '2026-02-10',
     days_late: null,
     amount_paise: 2500000,
+    cashback_applied_paise: 20000,
     cashback_earned: 200,
     ...overrides,
   };
@@ -601,6 +602,7 @@ export function createMockDashboardData(
         rent_month: '2026-02-01',
         paid_at: '2026-02-05T10:30:00Z',
         cashback_earned: 200,
+        cashback_applied: 200,
       },
     ],
     landlord_bank: null,

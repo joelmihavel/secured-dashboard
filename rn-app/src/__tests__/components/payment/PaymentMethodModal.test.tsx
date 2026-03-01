@@ -879,12 +879,10 @@ describe('PaymentMethodModal - payment initiation', () => {
       isLoading: false,
     });
 
-    const onProceed = jest.fn();
     const { getByTestId } = render(
       <PaymentMethodModal
         {...defaultModalProps}
         initialView="selector"
-        onProceed={onProceed}
       />
     );
 
@@ -896,17 +894,15 @@ describe('PaymentMethodModal - payment initiation', () => {
       'No Connection',
       expect.stringContaining('offline'),
     );
-    expect(onProceed).not.toHaveBeenCalled();
 
     alertSpy.mockRestore();
   });
 
-  it('initiates payment and calls onProceed callback with saved method', async () => {
+  it('initiates payment with saved method', async () => {
     mockedUseSavedPaymentMethods.mockReturnValue({
       data: savedUpiMethod,
       isLoading: false,
     });
-    const onProceed = jest.fn();
     mockInitiatePayment.mockResolvedValueOnce({
       data: { paymentId: 'pay-abc', payuParams: null },
       error: null,
@@ -916,7 +912,6 @@ describe('PaymentMethodModal - payment initiation', () => {
       <PaymentMethodModal
         {...defaultModalProps}
         initialView="selector"
-        onProceed={onProceed}
       />
     );
 
@@ -926,10 +921,6 @@ describe('PaymentMethodModal - payment initiation', () => {
 
     await waitFor(() => {
       expect(mockInitiatePayment).toHaveBeenCalled();
-    });
-
-    await waitFor(() => {
-      expect(onProceed).toHaveBeenCalledWith('upi');
     });
   });
 

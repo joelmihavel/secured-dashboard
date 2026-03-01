@@ -81,9 +81,9 @@ const MOCK_DASHBOARD: DashboardData = {
     legacy_wallet_balance: 0,
   },
   recent_payments: [
-    { id: 'pay_001', amount: 25000, status: 'success', rent_month: '2026-01-01', paid_at: '2026-01-05T10:30:00Z', cashback_earned: 200 },
-    { id: 'pay_002', amount: 25000, status: 'failed', rent_month: '2025-12-01', paid_at: null, cashback_earned: 0 },
-    { id: 'pay_003', amount: 25000, status: 'processing', rent_month: '2025-11-01', paid_at: null, cashback_earned: 0 },
+    { id: 'pay_001', amount: 25000, status: 'success', rent_month: '2026-01-01', paid_at: '2026-01-05T10:30:00Z', cashback_earned: 200, cashback_applied: 200 },
+    { id: 'pay_002', amount: 25000, status: 'failed', rent_month: '2025-12-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
+    { id: 'pay_003', amount: 25000, status: 'processing', rent_month: '2025-11-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
   ],
   notifications: [],
   unread_notification_count: 2,

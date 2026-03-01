@@ -83,10 +83,12 @@ export function EnterAmountContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthlyRent, initialAmount]);
 
-  // Auto-focus
+  // Auto-focus — trigger immediately on mount so the keyboard animates in
+  // parallel with the bottom sheet spring. The BottomSheet's keyboardOffset
+  // handles layout adjustment, so no delay is needed.
   useEffect(() => {
-    const timeout = setTimeout(() => inputRef.current?.focus(), 320);
-    return () => clearTimeout(timeout);
+    // Single rAF ensures the TextInput is laid out before focusing
+    requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
   // Parsed amount
@@ -238,6 +240,7 @@ export function EnterAmountContent({
 const styles = StyleSheet.create({
   scrollView: {
     width: '100%',
+    flexShrink: 1,
   },
   scrollContent: {
     flexGrow: 1,

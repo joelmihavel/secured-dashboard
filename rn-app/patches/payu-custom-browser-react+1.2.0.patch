@@ -1,0 +1,101 @@
+diff --git a/node_modules/payu-custom-browser-react/ios/PUCBWrapper.swift b/node_modules/payu-custom-browser-react/ios/PUCBWrapper.swift
+index d5a08c1..46c3405 100644
+--- a/node_modules/payu-custom-browser-react/ios/PUCBWrapper.swift
++++ b/node_modules/payu-custom-browser-react/ios/PUCBWrapper.swift
+@@ -45,6 +45,20 @@ class CBWrapper: RCTEventEmitter {
+         webVC?.cbWebVCDelegate = nil
+     }
+ 
++    /// Dismiss the Custom Browser webview after a terminal event (success/failure/cancel).
++    /// Handles both modal presentation and navigation controller push.
++    private func dismissWebVC() {
++        DispatchQueue.main.async { [weak self] in
++            guard let webVC = self?.webVC else { return }
++            if let nav = webVC.navigationController {
++                nav.popViewController(animated: true)
++            } else {
++                webVC.dismiss(animated: true)
++            }
++            self?.webVC = nil
++        }
++    }
++
+     // MARK: - Public Methods -
+ 
+     @objc(openCB:errorCallback:successCallback:)
+@@ -59,9 +73,41 @@ class CBWrapper: RCTEventEmitter {
+                 errorCallback([PUCBConstants.invalidPaymentParams])
+                 return
+             }
+-            // Open CB
++            // Open CB using initWithNSURLRequest for complete control over the HTTP request.
++            // Both initWithPostParam and initWithJSON modify the POST body internally
++            // (JS form reconstruction / field mapping), which breaks the server-computed hash.
++            // NSURLRequest sends our POST body byte-for-byte — PayU receives exactly what we hashed.
+             do {
+-                self.webVC = try PUCBWebVC(json: payuPaymentParam)
++                if let cbConfig = payuPaymentParam["cb_config"] as? [String: Any],
++                   let postData = cbConfig["post_data"] as? String,
++                   let urlString = cbConfig["url"] as? String,
++                   let url = URL(string: urlString),
++                   let merchantKey = payuPaymentParam["key"] as? String {
++                    // Build NSURLRequest with our exact POST body
++                    var request = URLRequest(url: url)
++                    request.httpMethod = "POST"
++                    request.httpBody = postData.data(using: .utf8)
++                    request.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
++
++                    // Use initWithNSURLRequest — sends the request as-is, no JS form, no reparsing
++                    self.webVC = try PUCBWebVC(nsurlRequest: request, merchantKey: merchantKey)
++
++                    // Apply cb_config settings to PUCBConfiguration singleton
++                    let config = PUCBConfiguration.getSingletonInstance()
++                    if let autoSelectOTP = cbConfig["auto_select_otp"] as? String, autoSelectOTP == "true" {
++                        config?.isAutoOTPSelect = true
++                    }
++                    if let timeout = cbConfig["merchant_response_timeout"] as? String,
++                       let timeoutVal = TimeInterval(timeout) {
++                        config?.merchantResponseTimeout = timeoutVal
++                    }
++                    if let txnId = payuPaymentParam["transaction_id"] as? String {
++                        config?.transactionId = txnId
++                    }
++                } else {
++                    // Fallback: use JSON initializer (original behavior)
++                    self.webVC = try PUCBWebVC(json: payuPaymentParam)
++                }
+                 guard let webVC = self.webVC
+                 else {
+                     errorCallback([PUCBConstants.somethingWentWrong])
+@@ -108,6 +154,7 @@ extension CBWrapper: PUCBWebVCDelegate {
+         ]
+         sendEventToReact(body: body as Any)
+         resetCBDelegate()
++        dismissWebVC()
+     }
+ 
+     func payUFailureResponse(_ payUResponse: Any!, furlResponse: Any!) {
+@@ -118,6 +165,7 @@ extension CBWrapper: PUCBWebVCDelegate {
+         ]
+         sendEventToReact(body: body as Any)
+         resetCBDelegate()
++        dismissWebVC()
+     }
+ 
+     func payUConnectionError(_ notification: [AnyHashable : Any]!) {
+@@ -128,6 +176,7 @@ extension CBWrapper: PUCBWebVCDelegate {
+         ]
+         sendEventToReact(body: body as Any)
+         resetCBDelegate()
++        dismissWebVC()
+     }
+ 
+     func payUTransactionCancel() {
+@@ -136,6 +185,7 @@ extension CBWrapper: PUCBWebVCDelegate {
+         ]
+         sendEventToReact(body: body as Any)
+         resetCBDelegate()
++        dismissWebVC()
+     }
+ 
+ }

@@ -81,6 +81,13 @@ export function EditMethodContent({
 
   const handleReplace = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (isProfile) {
+      // Profile: defer deletion until new method is saved successfully.
+      // This prevents data loss if the user kills the app or the new method fails.
+      onDeleteSuccess(methodType);
+      return;
+    }
+    // Payment context: delete immediately
     setIsDeleting(true);
     try {
       await deletePaymentMethod(savedMethodId);
@@ -89,17 +96,17 @@ export function EditMethodContent({
       Alert.alert('Error', 'Failed to remove payment method.');
       setIsDeleting(false);
     }
-  }, [deletePaymentMethod, savedMethodId, methodType, onDeleteSuccess]);
+  }, [deletePaymentMethod, savedMethodId, methodType, onDeleteSuccess, isProfile]);
 
   const confirmDelete = useCallback(() => {
     const name = getMethodName(methodType);
     if (isProfile) {
       Alert.alert(
         `Replace ${name.charAt(0).toUpperCase() + name.slice(1)}`,
-        `This will remove your current ${name} and let you set up a new one.`,
+        `Your current ${name} will be replaced once the new one is saved.`,
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Replace', style: 'destructive', onPress: handleReplace },
+          { text: 'Replace', onPress: handleReplace },
         ]
       );
     } else {

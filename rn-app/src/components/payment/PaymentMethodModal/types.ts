@@ -8,7 +8,7 @@
 
 import type { PaymentFlowOutcome } from '@/src/hooks/usePaymentFlow';
 
-/** Which view is displayed inside the payment method modal */
+/** Which view is displayed inside the rent payment modal */
 export type ModalView =
   | 'enter-amount'
   | 'selector'
@@ -16,8 +16,8 @@ export type ModalView =
   | 'add-card'
   | 'add-debit-card'
   | 'add-netbanking'
-  | 'edit-method'
-  | 'enter-cvv';
+  | 'enter-cvv'
+  | 'confirm-payment';
 
 /** Method type passed from selector to orchestrator */
 export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';
@@ -51,6 +51,15 @@ export interface AddMethodContentProps {
   context?: 'payment' | 'profile';
   /** Called when method is saved successfully in profile context (close modal) */
   onSaveComplete?: () => void;
+  /** Called when instrument is ready for confirm step (payment context only).
+   *  Transitions to confirm-payment view instead of executing payment directly. */
+  onReadyForConfirm?: (
+    methodType: PaymentMethodType,
+    corePaymentMode: string,
+    instrumentParams: Record<string, string>,
+    methodLabel: string,
+    clearSensitiveData?: () => void,
+  ) => void;
 }
 
 /** Props for the method selector content */
@@ -64,7 +73,7 @@ export interface MethodSelectorContentProps {
   showEdit?: boolean;
 }
 
-/** Props for the modal shell / orchestrator */
+/** Props for the rent payment modal shell / orchestrator */
 export interface PaymentMethodModalProps {
   visible: boolean;
   onClose: () => void;
@@ -74,12 +83,6 @@ export interface PaymentMethodModalProps {
   initialView?: ModalView;
   /** Pre-seeded payment ID for opening directly at add-method views. */
   initialPaymentId?: string;
-  /** Method type to pre-populate when opening at edit-method view (from profile). */
-  initialMethodType?: string;
-  /** Saved method ID to pre-populate when opening at edit-method view (from profile). */
-  initialSavedMethodId?: string;
-  /** Context: 'payment' for rent flow (default), 'profile' for profile management */
-  context?: 'payment' | 'profile';
 }
 
 /** Props for the edit method view */
@@ -102,4 +105,21 @@ export interface EnterCvvContentProps {
   cardType: 'CC' | 'DC';
   lastFour: string;
   cardNetwork: string;
+  /** Called when CVV is ready for confirm step (payment context only) */
+  onReadyForConfirm?: (
+    methodType: PaymentMethodType,
+    corePaymentMode: string,
+    instrumentParams: Record<string, string>,
+    methodLabel: string,
+    clearSensitiveData?: () => void,
+  ) => void;
+}
+
+/** Props for the confirm-payment view */
+export interface ConfirmPaymentContentProps {
+  onBack: () => void;
+  onPay: () => void;
+  isPaying: boolean;
+  methodType: PaymentMethodType;
+  methodLabel: string;
 }

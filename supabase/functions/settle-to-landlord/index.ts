@@ -264,24 +264,27 @@ serve(async (req: Request) => {
         payment_month: payment.payment_month,
       });
 
-      // Update payment status to processing
-      const { error: updateError } = await supabase
+      // Update payment status to processing (optimistic lock on 'ready' prevents double-processing)
+      const { data: updatedRow, error: updateError } = await supabase
         .from("payments")
         .update({
           landlord_payout_status: "processing",
           landlord_payout_ref: payoutRef,
           landlord_payout_initiated_at: new Date().toISOString(),
         })
-        .eq("id", payment.id);
+        .eq("id", payment.id)
+        .eq("landlord_payout_status", "ready")
+        .select("id")
+        .maybeSingle();
 
-      if (updateError) {
-        console.error(`Failed to update payment ${payment.id} to processing:`, updateError);
+      if (updateError || !updatedRow) {
+        console.error(`Failed to update payment ${payment.id} to processing:`, updateError ?? "optimistic lock failed (no longer ready)");
         results.push({
           payment_id: payment.id,
           status: "failed",
           amount_paise: payoutAmountPaise,
           landlord_name: tenancy.landlord_name,
-          error: "Failed to update status",
+          error: updateError ? "Failed to update status" : "Payment already picked up by another process",
         });
         continue;
       }

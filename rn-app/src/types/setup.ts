@@ -212,6 +212,7 @@ export type SetupErrorCode =
   | 'NETWORK_ERROR'
   | 'IDEMPOTENCY_CONFLICT'
   | 'SERVICE_UNAVAILABLE'
+  | 'EMPTY_RESPONSE'
   | 'UNKNOWN_ERROR';
 
 /** Field keys for add-bank form; backend may use snake_case (e.g. account_number). */

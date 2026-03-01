@@ -45,7 +45,7 @@ const FIGMA_COLORS = {
 // ADD CARD CONTENT
 // ==============================================
 
-export function AddCardContent({ paymentId, onBack, cardType = 'credit', onInitiatePayment, context = 'payment', onSaveComplete }: AddMethodContentProps) {
+export function AddCardContent({ paymentId, onBack, cardType = 'credit', onInitiatePayment, context = 'payment', onSaveComplete, onReadyForConfirm }: AddMethodContentProps) {
   const isProfile = context === 'profile';
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const storedAmount = usePaymentStore((s) => s.amount);
@@ -73,6 +73,35 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
+      // Payment context with confirm step: extract card data, skip initiation.
+      // handleConfirmPay in the orchestrator handles initiation after user confirms.
+      if (onReadyForConfirm) {
+        if (!cardInputRef.current) {
+          Alert.alert('Error', 'Card form was reset. Please try again.');
+          return;
+        }
+        const cardData = cardInputRef.current.getCardData();
+        const bankcode = cardType === 'credit' ? 'CC' : 'DC';
+        const methodTypeForConfirm = cardType === 'credit' ? 'card' as const : 'debit_card' as const;
+        const label = cardType === 'credit' ? 'Credit Card' : 'Debit Card';
+        onReadyForConfirm(
+          methodTypeForConfirm,
+          bankcode,
+          {
+            bankcode,
+            card_number: cardData.cardNumber,
+            cvv: cardData.cvv,
+            expiry_year: cardData.expiryYear,
+            expiry_month: cardData.expiryMonth,
+            name_on_card: cardData.nameOnCard,
+            store_card: '1',
+          },
+          label,
+          () => cardInputRef.current?.clearCardData(),
+        );
+        return;
+      }
+
       let currentPaymentId = paymentId;
 
       // Setup flow: initiate payment first if no paymentId yet
@@ -136,7 +165,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
         return;
       }
 
-      // Payment context: full rent payment via executePayment (navigates to status)
+      // Fallback: direct payment via executePayment (navigates to status)
       const outcome = await executePayment(
         bankcode,
         instrumentParams,
@@ -153,7 +182,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [paymentId, executePayment, onInitiatePayment, cardType, isProfile, onSaveComplete, clearPayuSessionParams]);
+  }, [paymentId, executePayment, onInitiatePayment, cardType, isProfile, onSaveComplete, clearPayuSessionParams, onReadyForConfirm]);
 
   const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
@@ -175,7 +204,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
       >
         {/* Title */}
         <RNText style={styles.title}>
-          {'Add your \n'}
+          {'Add your\n'}
           <RNText style={styles.titleAccent}>{cardType === 'credit' ? 'Credit Card' : 'Debit Card'}</RNText>
         </RNText>
 
@@ -213,12 +242,13 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
 const styles = StyleSheet.create({
   outerContainer: {
     paddingTop: 16,
+    flexShrink: 1,
   },
   stickyHeader: {
     paddingHorizontal: 48,
   },
   scrollView: {
-    flexGrow: 1,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingHorizontal: 48,

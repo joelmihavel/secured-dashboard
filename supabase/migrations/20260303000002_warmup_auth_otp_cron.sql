@@ -1,0 +1,17 @@
+-- OPT-10: Keep auth-otp edge function isolate warm to avoid cold starts (100-500ms)
+-- Pings the health endpoint every 4 minutes via pg_cron + pg_net
+
+DO $$ BEGIN
+  PERFORM cron.unschedule('warmup-auth-otp');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+SELECT cron.schedule(
+  'warmup-auth-otp',
+  '*/4 * * * *',
+  $$SELECT net.http_post(
+    url := 'https://zqlowjveyqiagnbmfwsb.supabase.co/functions/v1/auth-otp',
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbG93anZleXFpYWduYm1md3NiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODk5NjU1NSwiZXhwIjoyMDg0NTcyNTU1fQ.2eeohYeOPhcN1mAkoNmhU3FBAKcmDEnEQ9sx8LnapSU"}'::jsonb,
+    body := '{"action":"health"}'::jsonb
+  )$$
+);

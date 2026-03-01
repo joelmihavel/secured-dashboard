@@ -255,6 +255,7 @@ serve(async (req: Request) => {
       .insert({
         user_id: userId,
         type: "upi",
+        display_name: normalizedVpa,
         upi_vpa: normalizedVpa,
         upi_provider: provider,
         is_verified: validation.valid,

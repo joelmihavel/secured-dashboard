@@ -195,7 +195,7 @@ export const NOTIFICATION_ROUTES: Record<string, string> = {
   landlord_confirmed: '/(setup)/pending-steps',
   landlord_rejected: '/(setup)/invite-landlord',
   new_cashback: '/(main)',
-  rent_reminder: '/(payment)/confirm',
+  rent_reminder: '/(payment)/enter-rent',
   app_update: '/(main)',
   reminder_utility: '/(setup)/add-utility',
   reminder_landlord_invite: '/(setup)/invite-landlord',

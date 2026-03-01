@@ -398,7 +398,7 @@ async function getWaitlistStatusReal(): Promise<{
   data: WaitlistStatusData | null;
   error: WaitlistError | null;
 }> {
-  const { data, error } = await callEdgeFunction<RawWaitlistStatusResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawWaitlistStatusResponse>(
     'get-waitlist-status',
     {},
     true, // requireAuth
@@ -408,7 +408,7 @@ async function getWaitlistStatusReal(): Promise<{
   if (error) {
     return {
       data: null,
-      error: mapWaitlistError(error),
+      error: mapWaitlistError(error, errorBody),
     };
   }
 
@@ -467,7 +467,7 @@ export async function applyReferralCode(
     };
   }
 
-  const { data, error } = await callEdgeFunction<RawApplyReferralResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawApplyReferralResponse>(
     'apply-referral-code',
     { code: trimmed },
     true // requireAuth
@@ -476,7 +476,7 @@ export async function applyReferralCode(
   if (error) {
     return {
       data: null,
-      error: mapWaitlistError(error),
+      error: mapWaitlistError(error, errorBody),
     };
   }
 
@@ -541,7 +541,7 @@ export async function validateReferralCode(
     };
   }
 
-  const { data, error } = await callEdgeFunction<RawValidateReferralResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawValidateReferralResponse>(
     'validate-referral-code',
     { code: trimmed },
     true // requireAuth — edge function requires it
@@ -550,7 +550,7 @@ export async function validateReferralCode(
   if (error) {
     return {
       data: null,
-      error: mapWaitlistError(error),
+      error: mapWaitlistError(error, errorBody),
     };
   }
 
@@ -603,14 +603,14 @@ export async function joinWaitlist(): Promise<{
   data: JoinWaitlistData | null;
   error: WaitlistError | null;
 }> {
-  const { data, error } = await callEdgeFunction<RawJoinWaitlistResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawJoinWaitlistResponse>(
     'join-waitlist',
     {},
     true
   );
 
   if (error) {
-    return { data: null, error: mapWaitlistError(error) };
+    return { data: null, error: mapWaitlistError(error, errorBody) };
   }
 
   if (!data?.success || !data.data) {
@@ -656,7 +656,7 @@ export async function getMyReferralCode(): Promise<{
   data: MyReferralCodeData | null;
   error: WaitlistError | null;
 }> {
-  const { data, error } = await callEdgeFunction<RawGetMyReferralCodeResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawGetMyReferralCodeResponse>(
     'get-my-referral-code',
     {},
     true,
@@ -664,7 +664,7 @@ export async function getMyReferralCode(): Promise<{
   );
 
   if (error) {
-    return { data: null, error: mapWaitlistError(error) };
+    return { data: null, error: mapWaitlistError(error, errorBody) };
   }
 
   if (!data?.success || !data.data) {
@@ -806,7 +806,30 @@ function mapInviteCodeErrorFromCode(code: string | undefined, message: string): 
 // ERROR MAPPING
 // ==============================================
 
-function mapWaitlistError(errorMessage: string): WaitlistError {
+function mapWaitlistError(errorMessage: string, errorBody?: Record<string, unknown>): WaitlistError {
+  // Prefer structured error code from errorBody when available
+  const structuredCode = errorBody?.code as string | undefined;
+  if (structuredCode) {
+    switch (structuredCode) {
+      case 'AUTH_ERROR':
+        return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+      case 'ALREADY_APPLIED':
+        return { code: 'ALREADY_APPLIED', message: (errorBody?.message as string) ?? 'You have already applied a referral code' };
+      case 'INVALID_CODE':
+      case 'INVALID_REFERRAL':
+        return { code: 'INVALID_REFERRAL', message: (errorBody?.message as string) ?? 'This referral code is not valid' };
+      case 'REFERRAL_EXPIRED':
+        return { code: 'REFERRAL_EXPIRED', message: (errorBody?.message as string) ?? 'This referral code has expired' };
+      case 'REFERRAL_ALREADY_USED':
+        return { code: 'REFERRAL_ALREADY_USED', message: (errorBody?.message as string) ?? 'This referral code has already been used' };
+      case 'AGREEMENT_NOT_CONFIRMED':
+        return { code: 'AGREEMENT_NOT_CONFIRMED', message: (errorBody?.message as string) ?? 'Agreement not confirmed' };
+      case 'RATE_LIMITED':
+        return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment.' };
+      // Fall through for unknown structured codes — use string matching below
+    }
+  }
+
   const lowerMessage = errorMessage.toLowerCase();
 
   if (lowerMessage.includes('not authenticated') || lowerMessage.includes('unauthorized') || lowerMessage.includes('missing authorization') || lowerMessage.includes('invalid jwt') || lowerMessage.includes('jwt expired')) {

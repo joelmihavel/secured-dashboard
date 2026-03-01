@@ -114,7 +114,8 @@ export function usePaymentStamps(tenancyId: string | undefined) {
       if (!tenancyId) throw new Error('No tenancy ID');
       const { data, error } = await fetchPaymentStamps(tenancyId);
       if (error) throw new Error(error);
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     enabled: !!tenancyId,
     staleTime: 1000 * 60 * 60, // 1 hour — payment stamps rarely change within a session
@@ -217,9 +218,12 @@ export function useInitiatePayment(callbacks: UseInitiatePaymentCallbacks = {}) 
     mutationFn: async (request: InitiatePaymentRequest) => {
       const { data, error } = await initiatePayment(request);
       if (error) {
-        throw error;
+        const err = new Error(error.message);
+        (err as any).code = error.code;
+        throw err;
       }
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     onSuccess: (data) => {
       // Invalidate payment history and dashboard
@@ -282,7 +286,8 @@ export function useAddUpiVpa() {
       if (error) {
         throw new Error(error);
       }
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
@@ -323,7 +328,8 @@ export function useAddCardToken() {
       if (error) {
         throw new Error(error);
       }
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
@@ -427,7 +433,8 @@ export function useGenerateReceipt() {
       if (error) {
         throw new Error(error);
       }
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
   });
 }
@@ -481,8 +488,9 @@ export function useAddPaymentMethod() {
         if (error) {
           throw new Error(error);
         }
+        if (!data) throw new Error('Unexpected empty response');
         return {
-          id: data!.id ?? `upi_${Date.now()}`,
+          id: data.id ?? `upi_${Date.now()}`,
           type: 'upi',
           details: request.details,
           is_default: request.isDefault ?? false,
@@ -531,6 +539,9 @@ export function useVerifyUpi() {
     meta: { suppressGlobalError: true },
     mutationFn: async ({ upiId }: { upiId: string }): Promise<VerifyUpiResult> => {
       const result = await verifyUpiVpa(upiId);
+      if (result.error) {
+        throw new Error(result.error);
+      }
       return {
         verified: result.valid,
         name: result.name ?? upiId.split('@')[0],
@@ -562,7 +573,8 @@ export function useCreateSchedule() {
     mutationFn: async (request: CreateScheduleRequest) => {
       const { data, error } = await createPaymentSchedule(request);
       if (error) throw new Error(error);
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.schedules() });
@@ -576,7 +588,8 @@ export function useManageSchedule() {
     mutationFn: async (request: ManageScheduleRequest) => {
       const { data, error } = await managePaymentSchedule(request);
       if (error) throw new Error(error);
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.schedules() });
@@ -618,7 +631,8 @@ export function useSaveBankPreference() {
     mutationFn: async ({ bankCode, bankName }: { bankCode: string; bankName: string }) => {
       const { data, error } = await saveBankPreference(bankCode, bankName);
       if (error) throw new Error(error);
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
@@ -640,7 +654,8 @@ export function useVerifyCard() {
     mutationFn: async () => {
       const { data, error } = await verifyCard();
       if (error) throw new Error(error);
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
   });
 }
@@ -655,7 +670,8 @@ export function useSavingsHistory() {
     queryFn: async () => {
       const { data, error } = await getSavingsHistory();
       if (error) throw new Error(error);
-      return data!;
+      if (!data) throw new Error('Unexpected empty response');
+      return data;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -673,7 +689,9 @@ export function useSavingsHistory() {
 export function usePayments() {
   const historyQuery = usePaymentHistory();
   const methodsQuery = useSavedPaymentMethods();
-  const initiatePaymentMutation = useInitiatePayment();
+  // NOTE: useInitiatePayment is NOT included here — consumers that need it should
+  // call useInitiatePayment() directly with their own onSuccess/onError callbacks.
+  // Including it here with no callbacks + suppressGlobalError silently swallows errors.
   const addMethodMutation = useAddPaymentMethod();
   const deleteMethodMutation = useDeletePaymentMethod();
   const queryClient = useQueryClient();
@@ -699,14 +717,6 @@ export function usePayments() {
     isLoadingMethods: methodsQuery.isLoading,
     methodsError: methodsQuery.error,
     refetchMethods: methodsQuery.refetch,
-
-    // Initiate payment mutation
-    initiatePayment: initiatePaymentMutation.mutate,
-    initiatePaymentAsync: initiatePaymentMutation.mutateAsync,
-    isInitiating: initiatePaymentMutation.isPending,
-    initiateError: initiatePaymentMutation.error as PaymentErrorCode | null,
-    initiateSuccess: initiatePaymentMutation.isSuccess,
-    resetInitiate: initiatePaymentMutation.reset,
 
     // Add payment method mutation
     addMethod: addMethodMutation.mutate,

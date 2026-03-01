@@ -9,7 +9,7 @@
  * - Sensitive data clearing callback
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,8 @@ import {
   type InstrumentParams,
 } from '@/src/services/payment/payuCoreService';
 import { addCardToken, addUpiVpa, saveBankPreference } from '@/src/services/api/payments';
+import { paymentKeys } from '@/src/hooks/usePayments';
+import { dashboardKeys } from '@/src/hooks/useDashboard';
 import { captureError } from '@/src/config/sentry';
 
 export type PaymentFlowOutcome =
@@ -43,6 +45,8 @@ interface UsePaymentFlowReturn {
 export function usePaymentFlow(): UsePaymentFlowReturn {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [isExecuting, setIsExecuting] = useState(false);
+  // Ref mirrors state for synchronous guard checks inside the async callback
   const isExecutingRef = useRef(false);
   const { setLastPayment, clearPayuSessionParams } = usePaymentStore();
 
@@ -58,69 +62,17 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         return { status: 'blocked' };
       }
       isExecutingRef.current = true;
-      // Flag prevents outer finally from double-clearing sensitive data for UPI background flow
-      let upiBackgroundLaunched = false;
-
+      setIsExecuting(true);
       try {
         const sessionParams = usePaymentStore.getState().payuSessionParams;
         if (!sessionParams) {
           return { status: 'failure', error: 'Payment session expired. Please try again.' };
         }
 
-        // UPI Collect: navigate immediately — SDK waits up to 6 min with no webview
-        if (paymentMode === 'upi') {
-          upiBackgroundLaunched = true;
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          setLastPayment(paymentId);
-
-          router.replace({
-            pathname: '/(payment)/status',
-            params: {
-              paymentId,
-              amount: sessionParams.amount,
-              method: 'upi',
-              initialStatus: 'pending',
-            },
-          } as never);
-
-          // Fire SDK in background — don't await
-          // Cleanup (onClearSensitiveData, clearPayuSessionParams, isExecutingRef)
-          // is handled in .finally() below, NOT the outer finally block.
-          launchCorePayment(paymentMode, sessionParams, instrumentParams)
-            .then((outcome) => {
-              if (__DEV__) {
-                console.log('[usePaymentFlow] UPI background SDK outcome:', outcome.status);
-              }
-              if (outcome.status === 'success') {
-                // Save UPI VPA — prefer PayU's field7, fallback to known VPA from instrument params
-                const vpa = outcome.payuResponse?.field7
-                  ? String(outcome.payuResponse.field7)
-                  : ('vpa' in instrumentParams ? String((instrumentParams as { vpa: string }).vpa) : null);
-                if (vpa) {
-                  addUpiVpa(vpa).catch((e) => {
-                    console.warn('[usePaymentFlow] UPI VPA save failed:', e);
-                  });
-                }
-              }
-              queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
-              queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-            })
-            .catch((err) => {
-              captureError(
-                err instanceof Error ? err : new Error(String(err)),
-                { flow: 'upi_background_sdk', paymentId },
-              );
-            })
-            .finally(() => {
-              onClearSensitiveData();
-              clearPayuSessionParams();
-              isExecutingRef.current = false;
-            });
-
-          return { status: 'navigating' };
-        }
-
-        // Card / NB flows: await SDK outcome before navigating
+        // All flows (Card / NB / UPI): await SDK outcome before navigating.
+        // PayU Custom Browser handles UPI waiting UX (shows "waiting for approval"
+        // screen for Collect mode). No need to pre-navigate — user can press back
+        // in the browser to cancel and try another payment method.
         const outcome: CorePaymentOutcome = await launchCorePayment(
           paymentMode,
           sessionParams,
@@ -145,8 +97,15 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
             } as never);
 
             // Fire-and-forget: save payment method + invalidate cache in background
-            // Server-side webhook also saves, so this is a fallback for faster UX
+            // Server-side webhook is the primary save path; client save adds token for faster UX
             const payuResponse = outcome.payuResponse ?? {};
+            console.log('[PaymentFlow] PayU response keys:', Object.keys(payuResponse).join(', '));
+            if (paymentMode === 'CC' || paymentMode === 'DC') {
+              console.log('[PaymentFlow] Card response: store_card_token=', payuResponse.store_card_token ? 'present' : 'MISSING',
+                'card_no=', payuResponse.card_no ? 'present' : 'MISSING',
+                'card_last4=', payuResponse.card_last4 ?? 'MISSING',
+                'bankcode=', payuResponse.bankcode);
+            }
             (async () => {
               try {
                 if ((paymentMode === 'CC' || paymentMode === 'DC') && payuResponse.store_card_token) {
@@ -154,7 +113,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                   const bankcodeToNetwork: Record<string, 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro'> = {
                     visa: 'visa', mast: 'mastercard', mastercard: 'mastercard',
                     rupay: 'rupay', amex: 'amex', maes: 'maestro', maestro: 'maestro',
-                    dinr: 'mastercard', jcb: 'visa', // fallbacks for rare networks
+                    dinr: 'mastercard', jcb: 'mastercard', // fallbacks — JCB/Diners processed via Mastercard in India
                   };
                   const rawBankcode = String(payuResponse.bankcode ?? '').toLowerCase();
                   const cardNetwork = bankcodeToNetwork[rawBankcode] ?? 'visa';
@@ -168,9 +127,10 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                     ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
                   });
                 } else if (paymentMode === 'upi') {
-                  const vpa = payuResponse.field7
-                    ? String(payuResponse.field7)
-                    : ('vpa' in instrumentParams ? String((instrumentParams as { vpa: string }).vpa) : null);
+                  const pf3 = payuResponse.field3 && String(payuResponse.field3).includes('@') ? String(payuResponse.field3) : null;
+                  const pf7 = payuResponse.field7 && String(payuResponse.field7).includes('@') ? String(payuResponse.field7) : null;
+                  const vpa = pf3 ?? pf7
+                    ?? ('vpa' in instrumentParams ? String((instrumentParams as { vpa: string }).vpa) : null);
                   if (vpa) await addUpiVpa(vpa);
                 } else if (paymentMode === 'NB') {
                   const bankcode = payuResponse.bankcode
@@ -187,8 +147,8 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                   { flow: 'payment_method_save', paymentMode }
                 );
               }
-              queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
-              queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+              queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
+              queryClient.invalidateQueries({ queryKey: dashboardKeys.data() });
             })();
 
             return { status: 'navigating' };
@@ -240,12 +200,10 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         };
       } finally {
         // S2: Zero sensitive data immediately
-        // Skip for UPI background flow — its .finally() handles cleanup after SDK completes
-        if (!upiBackgroundLaunched) {
-          onClearSensitiveData();
-          clearPayuSessionParams();
-          isExecutingRef.current = false;
-        }
+        onClearSensitiveData();
+        clearPayuSessionParams();
+        isExecutingRef.current = false;
+        setIsExecuting(false);
       }
     },
     [router, setLastPayment, clearPayuSessionParams, queryClient],
@@ -253,8 +211,6 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
 
   return {
     executePayment,
-    get isExecuting() {
-      return isExecutingRef.current;
-    },
+    isExecuting,
   };
 }

@@ -263,14 +263,14 @@ export async function updateProfile(
   if (request.email !== undefined) body.email = request.email;
   if (request.avatarUrl !== undefined) body.avatar_url = request.avatarUrl;
 
-  const { data, error } = await callEdgeFunction<RawUpdateProfileResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawUpdateProfileResponse>(
     'update-profile',
     body,
     true // requireAuth
   );
 
   if (error) {
-    return { data: null, error: mapProfileError(error) };
+    return { data: null, error: mapProfileError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -294,14 +294,14 @@ export async function updateProfile(
 export async function requestAvatarUpload(
   contentType: string
 ): Promise<{ data: AvatarUploadData | null; error: ProfileError | null }> {
-  const { data, error } = await callEdgeFunction<RawUploadAvatarResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawUploadAvatarResponse>(
     'upload-avatar',
     { content_type: contentType },
     true // requireAuth
   );
 
   if (error) {
-    return { data: null, error: mapProfileError(error) };
+    return { data: null, error: mapProfileError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -425,6 +425,7 @@ export async function pixelateAvatar(
         headers: {
           Authorization: `Bearer ${token}`,
           apikey: anonKey ?? '',
+          'x-region': 'ap-south-1',
         },
         body: formData,
       }
@@ -468,7 +469,7 @@ export async function getSavedPaymentMethods(): Promise<{
   data: PaymentMethodsData | null;
   error: ProfileError | null;
 }> {
-  const { data, error } = await callEdgeFunction<RawGetPaymentMethodsResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawGetPaymentMethodsResponse>(
     'get-saved-payment-methods',
     {},
     true, // requireAuth
@@ -476,7 +477,7 @@ export async function getSavedPaymentMethods(): Promise<{
   );
 
   if (error) {
-    return { data: null, error: mapProfileError(error) };
+    return { data: null, error: mapProfileError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -498,14 +499,14 @@ export async function getSavedPaymentMethods(): Promise<{
 export async function requestAccountDeletion(
   reason?: string
 ): Promise<{ data: { archivedAt: string } | null; error: ProfileError | null }> {
-  const { data, error } = await callEdgeFunction<RawDeleteAccountResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawDeleteAccountResponse>(
     'delete-account',
     reason ? { reason } : {},
     true
   );
 
   if (error) {
-    return { data: null, error: mapProfileError(error) };
+    return { data: null, error: mapProfileError(error, errorBody) };
   }
 
   if (!data?.success) {
@@ -522,7 +523,27 @@ export async function requestAccountDeletion(
 // ERROR MAPPING
 // ==============================================
 
-function mapProfileError(errorMessage: string): ProfileError {
+function mapProfileError(errorMessage: string, errorBody?: Record<string, unknown>): ProfileError {
+  // Prefer structured error code from errorBody when available
+  const structuredCode = errorBody?.code as string | undefined;
+  if (structuredCode) {
+    switch (structuredCode) {
+      case 'VALIDATION_ERROR':
+        return { code: 'VALIDATION_ERROR', message: (errorBody?.message as string) ?? errorMessage };
+      case 'AUTH_ERROR':
+        return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+      case 'UPLOAD_FAILED':
+        return { code: 'UPLOAD_FAILED', message: (errorBody?.message as string) ?? 'Failed to upload file' };
+      case 'DELETE_FAILED':
+        return { code: 'DELETE_FAILED', message: (errorBody?.message as string) ?? 'Failed to delete account' };
+      case 'ARCHIVE_ERROR':
+        return { code: 'ARCHIVE_ERROR', message: (errorBody?.message as string) ?? 'Failed to archive account data' };
+      case 'RATE_LIMITED':
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment.' };
+      // Fall through for unknown structured codes — use string matching below
+    }
+  }
+
   const lower = errorMessage.toLowerCase();
 
   if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('missing authorization') || lower.includes('invalid jwt') || lower.includes('jwt expired')) {

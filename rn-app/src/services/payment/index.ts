@@ -108,7 +108,7 @@ function normalizeFeeRate(value: unknown): FeeRateConfig {
 }
 
 export async function fetchFeeConfig(): Promise<GatewayFeeRates> {
-  const { data, error } = await callEdgeFunction<{
+  const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: {
       fee_rates: Record<string, unknown>;
@@ -161,6 +161,36 @@ export async function initiatePayment(params: {
   }>('initiate-payment', body, true);
 
   if (error) {
+    console.error('[initiatePayment] Edge function error:', error, 'code:', errorBody?.code, 'body:', JSON.stringify(errorBody));
+    // Check structured error code first for precise error handling
+    const structuredCode = errorBody?.code as string | undefined;
+    if (structuredCode) {
+      switch (structuredCode) {
+        case 'ALREADY_PAID':
+        case 'PAYMENT_ALREADY_COMPLETED':
+          return { data: null, error: 'Payment already completed for this month' };
+        case 'PAYMENT_IN_PROGRESS':
+          return { data: null, error: 'A payment is already being processed' };
+        case 'BANK_NOT_VERIFIED':
+          return { data: null, error: 'Landlord bank account not verified yet' };
+        case 'AUTH_ERROR':
+          return { data: null, error: 'Please sign in to continue' };
+        case 'RATE_LIMITED':
+          return { data: null, error: 'Too many requests. Please wait a moment.' };
+        case 'IDEMPOTENCY_CONFLICT':
+          return { data: null, error: 'Request in progress, retrying...' };
+        case 'DB_ERROR':
+          return { data: null, error: 'Server error creating payment. Please try again.' };
+        case 'AMOUNT_TOO_LOW':
+        case 'AMOUNT_EXCEEDS_RENT':
+        case 'INVALID_AMOUNT':
+        case 'LANDLORD_NOT_APPROVED':
+        case 'UTILITY_NOT_VERIFIED':
+        case 'TENANCY_INACTIVE':
+          return { data: null, error };
+      }
+    }
+
     // Surface field-level validation details for debugging
     const details = errorBody?.details as Record<string, unknown> | undefined;
     const fieldErrors = (details?.fields ?? details) as Record<string, string> | undefined;
@@ -173,6 +203,7 @@ export async function initiatePayment(params: {
   }
 
   if (!data?.success || !data.data) {
+    console.error('[initiatePayment] Unexpected response format:', JSON.stringify(data));
     return { data: null, error: 'Failed to initiate payment' };
   }
 

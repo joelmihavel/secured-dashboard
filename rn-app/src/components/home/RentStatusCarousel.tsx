@@ -48,13 +48,14 @@ function RentStatusCarouselComponent({
 
   const totalCards = items.length;
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  // Fire only on scroll settle — replaces 60fps onScroll handler that was
+  // triggering setActiveIndex on every frame during carousel swipes.
+  const handleScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / (CARD_WIDTH + CARD_GAP));
-    setActiveIndex((prev) => {
-      if (index !== prev && index >= 0 && index < items.length) return index;
-      return prev;
-    });
+    if (index >= 0 && index < items.length) {
+      setActiveIndex(index);
+    }
   }, [items.length]);
 
   const renderItem = useCallback(({ item }: ListRenderItemInfo<CarouselCardItem>) => {
@@ -117,8 +118,7 @@ function RentStatusCarouselComponent({
         decelerationRate="fast"
         snapToInterval={CARD_WIDTH + CARD_GAP}
         snapToAlignment={isSingleCard ? 'center' : 'start'}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
+        onMomentumScrollEnd={handleScrollEnd}
         windowSize={3}
         initialNumToRender={2}
         maxToRenderPerBatch={1}

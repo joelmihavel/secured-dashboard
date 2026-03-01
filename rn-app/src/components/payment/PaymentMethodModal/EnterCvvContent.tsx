@@ -73,6 +73,7 @@ export function EnterCvvContent({
   cardType,
   lastFour,
   cardNetwork,
+  onReadyForConfirm,
 }: EnterCvvContentProps) {
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const storedAmount = usePaymentStore((s) => s.amount);
@@ -95,6 +96,25 @@ export function EnterCvvContent({
     if (cvv.length < maxCvvLength) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Invalid CVV', `Please enter your ${maxCvvLength}-digit CVV.`);
+      return;
+    }
+
+    // Confirm step: store CVV details then hand off to confirm
+    if (onReadyForConfirm) {
+      const methodType = cardType === 'CC' ? 'card' as const : 'debit_card' as const;
+      const label = `${getNetworkLabel(cardNetwork)} \u2022\u2022\u2022\u2022 ${lastFour}`;
+      onReadyForConfirm(
+        methodType,
+        cardType,
+        {
+          bankcode: cardType,
+          store_card_token: cardToken,
+          storecard_token_type: '0',
+          cvv,
+        },
+        label,
+        () => { cvvRef.current = ''; setCvvDisplay(''); },
+      );
       return;
     }
 
@@ -132,7 +152,7 @@ export function EnterCvvContent({
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [paymentId, executePayment, cardToken, cardType, maxCvvLength]);
+  }, [paymentId, executePayment, cardToken, cardType, maxCvvLength, onReadyForConfirm, lastFour, cardNetwork]);
 
   const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
@@ -196,7 +216,7 @@ export function EnterCvvContent({
         {/* Pay Button + Footer */}
         <View style={styles.buttonFooterSection}>
           <PrimaryButton
-            title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Pay'}
+            title={onReadyForConfirm ? 'Review Payment' : (parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Pay')}
             onPress={handlePay}
             disabled={cvvDisplay.length < maxCvvLength || isSubmitting}
             loading={isSubmitting}
@@ -219,12 +239,13 @@ export function EnterCvvContent({
 const styles = StyleSheet.create({
   outerContainer: {
     paddingTop: 16,
+    flexShrink: 1,
   },
   stickyHeader: {
     paddingHorizontal: 48,
   },
   scrollView: {
-    flexGrow: 1,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingHorizontal: 48,

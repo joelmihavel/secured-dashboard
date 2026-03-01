@@ -224,7 +224,27 @@ function mapInviteResponse(raw: RawSendInviteResponse): LandlordInviteResponse {
 // ERROR MAPPING
 // ==============================================
 
-function mapSetupError(errorMessage: string): SetupError {
+function mapSetupError(errorMessage: string, errorBody?: Record<string, unknown>): SetupError {
+  // Prefer structured error code from errorBody when available
+  const structuredCode = errorBody?.code as string | undefined;
+  if (structuredCode) {
+    switch (structuredCode) {
+      case 'VALIDATION_ERROR':
+        return { code: 'VALIDATION_ERROR', message: (errorBody?.message as string) ?? errorMessage };
+      case 'AUTH_ERROR':
+        return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+      case 'NOT_FOUND':
+        return { code: 'NOT_FOUND', message: (errorBody?.message as string) ?? errorMessage };
+      case 'EMAIL_FAILED':
+        return { code: 'EMAIL_FAILED', message: (errorBody?.message as string) ?? errorMessage };
+      case 'IDEMPOTENCY_CONFLICT':
+        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Request in progress, retrying...' };
+      case 'RATE_LIMITED':
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment.' };
+      // Fall through for unknown structured codes — use string matching below
+    }
+  }
+
   const lower = errorMessage.toLowerCase();
 
   if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('missing authorization') || lower.includes('invalid jwt') || lower.includes('jwt expired')) {
@@ -311,7 +331,7 @@ export async function verifyBank(
   );
 
   if (error) {
-    const base = mapSetupError(error);
+    const base = mapSetupError(error, errorBody);
     // Backend ValidationError nests fields under details: { error, message, code, details: { fields } }
     const details = errorBody?.details as Record<string, unknown> | undefined;
     const fields = (details?.fields ?? errorBody?.fields) as Record<string, string> | undefined;
@@ -369,7 +389,7 @@ export async function verifyPan(
   );
 
   if (error) {
-    const base = mapSetupError(error);
+    const base = mapSetupError(error, errorBody);
     const details = errorBody?.details as Record<string, unknown> | undefined;
     const fields = (details?.fields ?? errorBody?.fields) as Record<string, string> | undefined;
     if (fields && typeof fields === 'object') {
@@ -409,7 +429,7 @@ export async function getUtilityOperators(): Promise<{
   data: UtilityOperator[] | null;
   error: SetupError | null;
 }> {
-  const { data, error } = await callEdgeFunction<RawOperatorsResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawOperatorsResponse>(
     'verify-utility?action=operators',
     {},
     false, // no auth required for operator list
@@ -417,7 +437,7 @@ export async function getUtilityOperators(): Promise<{
   );
 
   if (error) {
-    return { data: null, error: mapSetupError(error) };
+    return { data: null, error: mapSetupError(error, errorBody) };
   }
 
   if (!data?.success || !data.data?.operators) {
@@ -459,7 +479,7 @@ export async function verifyUtility(
   );
 
   if (error) {
-    const base = mapSetupError(error);
+    const base = mapSetupError(error, errorBody);
     // Extract field-level errors (backend nests under details.fields)
     const details = errorBody?.details as Record<string, unknown> | undefined;
     const fields = (details?.fields ?? errorBody?.fields) as Record<string, string> | undefined;
@@ -513,14 +533,14 @@ export async function sendLandlordInvite(
   if (request.countryCode) body.country_code = request.countryCode;
   if (request.resend) body.resend = true;
 
-  const { data, error } = await callEdgeFunction<RawSendInviteResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawSendInviteResponse>(
     'send-landlord-invite',
     body,
     true // requireAuth
   );
 
   if (error) {
-    return { data: null, error: mapSetupError(error) };
+    return { data: null, error: mapSetupError(error, errorBody) };
   }
 
   if (!data?.success || !data.data) {

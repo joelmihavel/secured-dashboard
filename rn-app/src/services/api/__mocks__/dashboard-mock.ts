@@ -101,7 +101,8 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
       status: 'success' as const,
       rent_month: '2026-01-01',
       paid_at: '2026-01-03T14:15:00Z',
-      cashback_earned: 440,
+      cashback_earned: 0,
+      cashback_applied: 440,
     },
     {
       id: '39676df1-59ec-4fa8-b80d-7244dae0384e',
@@ -109,7 +110,8 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
       status: 'success' as const,
       rent_month: '2025-12-01',
       paid_at: '2025-12-04T10:30:00Z',
-      cashback_earned: 440,
+      cashback_earned: 0,
+      cashback_applied: 440,
     },
   ],
 

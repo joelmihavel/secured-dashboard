@@ -104,6 +104,7 @@ function makeDashboardData(overrides: Partial<DashboardData> = {}): DashboardDat
         rent_month: '2026-01-01',
         paid_at: '2026-01-05T10:30:00Z',
         cashback_earned: 200,
+        cashback_applied: 200,
       },
     ],
     notifications: [],
@@ -181,6 +182,7 @@ describe('Dashboard API Service', () => {
           rent_month: '2026-02-01',
           paid_at: '2026-02-05T10:30:00Z',
           cashback_earned: 200,
+          cashback_applied: 200,
         },
       ];
 
@@ -202,7 +204,7 @@ describe('Dashboard API Service', () => {
 
       for (const { input, expected } of statuses) {
         const mapped = mapRecentPayments([
-          { id: '1', amount: 100, status: input, rent_month: '2026-01-01', paid_at: null, cashback_earned: 0 },
+          { id: '1', amount: 100, status: input, rent_month: '2026-01-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
         ]);
         expect(mapped[0].status).toBe(expected);
       }
@@ -217,6 +219,7 @@ describe('Dashboard API Service', () => {
           rent_month: '2026-03-01',
           paid_at: '2026-03-05T10:30:00Z',
           cashback_earned: 0,
+          cashback_applied: 0,
         },
       ]);
 
@@ -225,7 +228,7 @@ describe('Dashboard API Service', () => {
 
     it('returns empty date for null paid_at', () => {
       const mapped = mapRecentPayments([
-        { id: 'p1', amount: 100, status: 'pending', rent_month: '2026-01-01', paid_at: null, cashback_earned: 0 },
+        { id: 'p1', amount: 100, status: 'pending', rent_month: '2026-01-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
       ]);
 
       expect(mapped[0].date).toBe('');
@@ -233,7 +236,7 @@ describe('Dashboard API Service', () => {
 
     it('handles human-readable rent_month format', () => {
       const mapped = mapRecentPayments([
-        { id: 'p1', amount: 100, status: 'success', rent_month: 'January 2026', paid_at: null, cashback_earned: 0 },
+        { id: 'p1', amount: 100, status: 'success', rent_month: 'January 2026', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
       ]);
 
       expect(mapped[0].title).toBe('January rent');
@@ -246,7 +249,7 @@ describe('Dashboard API Service', () => {
   describe('deriveCashbackEntries', () => {
     it('maps successful payments with cashback as "paid"', () => {
       const entries = deriveCashbackEntries([
-        { id: 'p1', amount: 25000, status: 'success', rent_month: '2026-01-01', paid_at: null, cashback_earned: 200 },
+        { id: 'p1', amount: 25000, status: 'success', rent_month: '2026-01-01', paid_at: null, cashback_earned: 200, cashback_applied: 200 },
       ]);
 
       expect(entries[0]).toEqual({
@@ -260,7 +263,7 @@ describe('Dashboard API Service', () => {
 
     it('maps successful payments without cashback as "delayed"', () => {
       const entries = deriveCashbackEntries([
-        { id: 'p1', amount: 25000, status: 'success', rent_month: '2026-02-01', paid_at: null, cashback_earned: 0 },
+        { id: 'p1', amount: 25000, status: 'success', rent_month: '2026-02-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
       ]);
 
       expect(entries[0].status).toBe('delayed');
@@ -269,7 +272,7 @@ describe('Dashboard API Service', () => {
 
     it('maps failed payments as "missed"', () => {
       const entries = deriveCashbackEntries([
-        { id: 'p1', amount: 25000, status: 'failed', rent_month: '2026-03-01', paid_at: null, cashback_earned: 0 },
+        { id: 'p1', amount: 25000, status: 'failed', rent_month: '2026-03-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
       ]);
 
       expect(entries[0].status).toBe('missed');
@@ -278,7 +281,7 @@ describe('Dashboard API Service', () => {
 
     it('maps refunded payments as "pending" (awaiting re-payment)', () => {
       const entries = deriveCashbackEntries([
-        { id: 'p2', amount: 25000, status: 'refunded', rent_month: '2026-04-01', paid_at: null, cashback_earned: 0 },
+        { id: 'p2', amount: 25000, status: 'refunded', rent_month: '2026-04-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
       ]);
 
       expect(entries[0].status).toBe('pending');
@@ -288,8 +291,8 @@ describe('Dashboard API Service', () => {
 
     it('maps pending/processing payments as "pending"', () => {
       const entries = deriveCashbackEntries([
-        { id: 'p1', amount: 25000, status: 'pending', rent_month: '2026-05-01', paid_at: null, cashback_earned: 0 },
-        { id: 'p2', amount: 25000, status: 'processing', rent_month: '2026-06-01', paid_at: null, cashback_earned: 0 },
+        { id: 'p1', amount: 25000, status: 'pending', rent_month: '2026-05-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
+        { id: 'p2', amount: 25000, status: 'processing', rent_month: '2026-06-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
       ]);
 
       expect(entries[0].status).toBe('pending');
@@ -371,7 +374,7 @@ describe('Dashboard API Service', () => {
       const data = makeDashboardData({
         upcoming_payment: null,
         recent_payments: [
-          { id: 'p1', amount: 25000, status: 'processing', rent_month: '2026-01-01', paid_at: null, cashback_earned: 0 },
+          { id: 'p1', amount: 25000, status: 'processing', rent_month: '2026-01-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
         ],
       });
       expect(getDashboardState(data)).toBe('payment_processing');
@@ -381,7 +384,7 @@ describe('Dashboard API Service', () => {
       const data = makeDashboardData({
         upcoming_payment: null,
         recent_payments: [
-          { id: 'p1', amount: 25000, status: 'pending', rent_month: '2026-01-01', paid_at: null, cashback_earned: 0 },
+          { id: 'p1', amount: 25000, status: 'pending', rent_month: '2026-01-01', paid_at: null, cashback_earned: 0, cashback_applied: 0 },
         ],
       });
       expect(getDashboardState(data)).toBe('payment_processing');
@@ -391,7 +394,7 @@ describe('Dashboard API Service', () => {
       const data = makeDashboardData({
         upcoming_payment: null,
         recent_payments: [
-          { id: 'p1', amount: 25000, status: 'success', rent_month: '2026-01-01', paid_at: '2026-01-05T10:30:00Z', cashback_earned: 200 },
+          { id: 'p1', amount: 25000, status: 'success', rent_month: '2026-01-01', paid_at: '2026-01-05T10:30:00Z', cashback_earned: 200, cashback_applied: 200 },
         ],
       });
       expect(getDashboardState(data)).toBe('payment_success');

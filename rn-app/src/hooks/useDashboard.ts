@@ -151,31 +151,35 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     enabled: !!userId,
   });
 
+  // When the query is in error state, return null values instead of stale cached data
+  // to prevent the UI from showing outdated information after a failed refresh.
+  const hasError = query.isError;
+
   return {
     ...query,
-    dashboardState,
+    dashboardState: hasError ? ('no_tenancy' as DashboardState) : dashboardState,
 
-    // Raw data accessors (edge function shape)
-    user: query.data?.user ?? null,
-    tenancy: query.data?.tenancy ?? null,
-    upcomingPayment: query.data?.upcoming_payment ?? null,
-    cashback: query.data?.cashback ?? null,
-    rawRecentPayments: query.data?.recent_payments ?? [],
-    notifications: query.data?.notifications ?? [],
-    unreadCount: query.data?.unread_notification_count ?? 0,
+    // Raw data accessors (edge function shape) — nulled on error to avoid stale display
+    user: hasError ? null : (query.data?.user ?? null),
+    tenancy: hasError ? null : (query.data?.tenancy ?? null),
+    upcomingPayment: hasError ? null : (query.data?.upcoming_payment ?? null),
+    cashback: hasError ? null : (query.data?.cashback ?? null),
+    rawRecentPayments: hasError ? [] : (query.data?.recent_payments ?? []),
+    notifications: hasError ? [] : (query.data?.notifications ?? []),
+    unreadCount: hasError ? 0 : (query.data?.unread_notification_count ?? 0),
 
     // Landlord bank account (for edit bank details)
-    landlordBank: query.data?.landlord_bank ?? null,
+    landlordBank: hasError ? null : (query.data?.landlord_bank ?? null),
 
     // Payment stamps
-    paymentStamps: query.data?.payment_stamps ?? null,
+    paymentStamps: hasError ? null : (query.data?.payment_stamps ?? null),
 
     // Status notification (derived from tenancy + payment state)
-    statusNotification,
+    statusNotification: hasError ? null : statusNotification,
 
     // UI-mapped data for home screen components
-    recentPayments: mappedRecentPayments,
-    cashbackEntries: mappedCashbackEntries,
+    recentPayments: hasError ? [] : mappedRecentPayments,
+    cashbackEntries: hasError ? [] : mappedCashbackEntries,
   };
 }
 

@@ -1,12 +1,15 @@
 /**
- * PaymentMethodModal — Modal Shell / Orchestrator
+ * PaymentMethodModal — Rent Payment Orchestrator
  *
- * Inline overlay (NOT React Native Modal) for payment method selection
+ * Inline overlay (NOT React Native Modal) for rent payment method selection
  * and payment execution. Renders as an absolutely-positioned bottom sheet
- * within the initiate.tsx screen.
+ * within the enter-rent.tsx screen.
  *
  * State machine:
- *   selector -> add-upi | add-card | add-netbanking -> (back) -> selector
+ *   enter-amount → selector → add-method / enter-cvv → confirm-payment → PayU SDK
+ *
+ * NOTE: Profile payment method editing uses EditPaymentMethodModal (separate component).
+ * This modal handles ONLY rent payment context.
  *
  * Critical behaviors:
  * - Conditional rendering (NOT display:none) ensures SecureCardInput refs
@@ -21,6 +24,7 @@ import {
   View,
   StyleSheet,
   Alert,
+  Keyboard,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
@@ -29,19 +33,20 @@ import * as Haptics from 'expo-haptics';
 import { usePaymentStore } from '@/src/stores';
 import { useDashboard } from '@/src/hooks';
 import { initiatePayment, buildSessionParams } from '@/src/services/payment';
-import { sanitizeErrorForUI, addUpiVpa, verifyCard } from '@/src/services/api/payments';
+import { sanitizeErrorForUI, addUpiVpa } from '@/src/services/api/payments';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { BottomSheet } from '@/src/components/ui';
 
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
+import type { CorePaymentMode, InstrumentParams } from '@/src/services/payment/payuCoreService';
 import type { ModalView, PaymentMethodType, SavedMethodDetails, PaymentMethodModalProps } from './types';
 import { EnterAmountContent } from './EnterAmountContent';
 import { MethodSelectorContent } from './MethodSelectorContent';
 import { AddUpiContent } from './AddUpiContent';
 import { AddCardContent } from './AddCardContent';
 import { AddNetbankingContent } from './AddNetbankingContent';
-import { EditMethodContent } from './EditMethodContent';
 import { EnterCvvContent } from './EnterCvvContent';
+import { ConfirmPaymentContent } from './ConfirmPaymentContent';
 
 export function PaymentMethodModal({
   visible,
@@ -50,20 +55,23 @@ export function PaymentMethodModal({
   rentMonth,
   initialView = 'enter-amount',
   initialPaymentId,
-  initialMethodType,
-  initialSavedMethodId,
-  context = 'payment',
 }: PaymentMethodModalProps) {
   const [modalView, setModalView] = useState<ModalView>(initialView);
   const { tenancy } = useDashboard();
   const [paymentId, setPaymentId] = useState(initialPaymentId ?? '');
   const [isInitiating, setIsInitiating] = useState(false);
   const [cardType, setCardType] = useState<'credit' | 'debit'>('credit');
-  const [editMethodType, setEditMethodType] = useState<PaymentMethodType | null>(
-    initialMethodType as PaymentMethodType ?? null
-  );
-  const [editSavedMethodId, setEditSavedMethodId] = useState<string>(initialSavedMethodId ?? '');
   const isProceedingRef = useRef(false);
+
+  // Pending instrument details: stored between add-method/CVV and confirm-payment
+  const pendingInstrumentRef = useRef<{
+    methodType: PaymentMethodType;
+    corePaymentMode: string;
+    params: Record<string, string>;
+    methodLabel: string;
+    clearSensitiveData?: () => void;
+  } | null>(null);
+  const [isConfirmPaying, setIsConfirmPaying] = useState(false);
 
   // CVV-only flow state
   const [cvvCardToken, setCvvCardToken] = useState('');
@@ -71,19 +79,17 @@ export function PaymentMethodModal({
   const [cvvLastFour, setCvvLastFour] = useState('');
   const [cvvCardNetwork, setCvvCardNetwork] = useState('');
 
-  // Sync paymentId when parent provides a new one (e.g. confirm screen)
+  // Sync paymentId when parent provides a new one
   useEffect(() => {
     if (initialPaymentId) setPaymentId(initialPaymentId);
   }, [initialPaymentId]);
 
-  // Sync modalView and edit state when visibility changes
+  // Sync modalView when visibility changes
   useEffect(() => {
     if (visible) {
       setModalView(initialView);
-      if (initialMethodType) setEditMethodType(initialMethodType as PaymentMethodType);
-      if (initialSavedMethodId) setEditSavedMethodId(initialSavedMethodId);
     }
-  }, [visible, initialView, initialMethodType, initialSavedMethodId]);
+  }, [visible, initialView]);
 
   const { isConnected } = useNetworkStatus();
   const { executePayment } = usePaymentFlow();
@@ -105,14 +111,21 @@ export function PaymentMethodModal({
     setIsInitiating(false);
     isProceedingRef.current = false;
     setCvvCardToken('');
+    pendingInstrumentRef.current = null;
     onClose();
   }, [clearPayuSessionParams, onClose, initialView]);
 
-  // --- Back handler: enter-amount/selector -> close; add-method -> selector ---
+  // --- Back handler: enter-amount/selector -> close; others -> selector ---
   const handleBack = useCallback(() => {
     if (modalView === 'enter-amount' || modalView === 'selector') {
       handleClose();
+    } else if (modalView === 'confirm-payment') {
+      pendingInstrumentRef.current = null;
+      clearPayuSessionParams();
+      setPaymentId('');
+      setModalView('selector');
     } else {
+      // All add-method views and enter-cvv go back to selector
       clearPayuSessionParams();
       setPaymentId('');
       setModalView('selector');
@@ -127,12 +140,6 @@ export function PaymentMethodModal({
     setModalView('selector');
   }, [rentMonth]);
 
-  const handleEdit = useCallback((methodType: PaymentMethodType, savedMethodId: string) => {
-    setEditMethodType(methodType);
-    setEditSavedMethodId(savedMethodId);
-    setModalView('edit-method');
-  }, []);
-
   // --- Setup handler: navigate to add-method view WITHOUT initiating payment ---
   const handleSetup = useCallback((methodType: PaymentMethodType) => {
     const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
@@ -146,36 +153,12 @@ export function PaymentMethodModal({
     setModalView(viewMap[methodType]);
   }, []);
 
-  // --- Profile save complete: method saved without rent payment, close modal ---
-  const handleSaveComplete = useCallback(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    handleClose();
-  }, [handleClose]);
-
   // --- On-demand initiate payment (called by add-method children in setup flow) ---
   const handleInitiateForChild = useCallback(
     async (methodType: PaymentMethodType, instrumentDetails?: { vpa?: string }): Promise<{ paymentId: string } | null> => {
       if (!isConnected) {
         Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
         return null;
-      }
-
-      // Profile + Card: Rs.1 verification instead of full rent payment
-      if (context === 'profile' && (methodType === 'card' || methodType === 'debit_card')) {
-        try {
-          const { data, error } = await verifyCard();
-          if (error || !data) {
-            throw new Error(error ?? 'Failed to initiate card verification');
-          }
-          setPayuSessionParams(buildSessionParams(data.payu as Record<string, string>));
-          setPaymentId(data.payment_id);
-          return { paymentId: data.payment_id };
-        } catch (err) {
-          console.error('PaymentMethodModal verify-card error:', err);
-          const rawMessage = err instanceof Error ? err.message : 'An error occurred';
-          Alert.alert('Verification Error', sanitizeErrorForUI(rawMessage));
-          return null;
-        }
       }
 
       setConfirming();
@@ -199,7 +182,6 @@ export function PaymentMethodModal({
         }
 
         // Demo mode: skip PayU SDK — navigate directly to success
-        // Do NOT call handleClose() — same reason as handleProceed.
         if (data.demoMode) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setProcessing(data.paymentId);
@@ -238,19 +220,75 @@ export function PaymentMethodModal({
         return null;
       }
     },
-    [tenancyId, rentMonth, isConnected, context, router, setConfirming, setProcessing, setLastPayment, setPayuSessionParams],
+    [tenancyId, rentMonth, isConnected, router, setConfirming, setProcessing, setLastPayment, setPayuSessionParams],
   );
 
-  // --- Delete success handler: automatically route to setup after deletion ---
-  const handleDeleteSuccess = useCallback((methodType: PaymentMethodType) => {
-    const viewMap: Record<PaymentMethodType, ModalView> = {
-      upi: 'add-upi',
-      card: 'add-card',
-      debit_card: 'add-debit-card',
-      netbanking: 'add-netbanking',
+  // --- Ready for confirm: instrument details collected, transition to confirm ---
+  const handleReadyForConfirm = useCallback((
+    methodType: PaymentMethodType,
+    corePaymentMode: string,
+    params: Record<string, string>,
+    methodLabel: string,
+    clearFn?: () => void,
+  ) => {
+    pendingInstrumentRef.current = {
+      methodType,
+      corePaymentMode,
+      params,
+      methodLabel,
+      clearSensitiveData: clearFn,
     };
-    setModalView(viewMap[methodType]);
+    Keyboard.dismiss();
+    setModalView('confirm-payment');
   }, []);
+
+  // --- Confirm pay: execute payment from confirm screen ---
+  const handleConfirmPay = useCallback(async () => {
+    const pending = pendingInstrumentRef.current;
+    if (!pending || isConfirmPaying) return;
+    setIsConfirmPaying(true);
+
+    try {
+      let currentPaymentId = paymentId;
+
+      // New method flow: payment not yet initiated
+      if (!currentPaymentId) {
+        const result = await handleInitiateForChild(pending.methodType);
+        if (!result) return; // demo mode already navigated to success
+        currentPaymentId = result.paymentId;
+      }
+
+      // Demo mode guard: if session params were cleared, demo already handled navigation
+      if (!usePaymentStore.getState().payuSessionParams) {
+        Alert.alert('Session Error', 'Payment session expired. Please go back and try again.');
+        return;
+      }
+
+      const outcome = await executePayment(
+        pending.corePaymentMode as CorePaymentMode,
+        pending.params as unknown as InstrumentParams,
+        currentPaymentId,
+        () => {
+          pending.clearSensitiveData?.();
+          pendingInstrumentRef.current = null;
+        },
+      );
+
+      if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
+        pendingInstrumentRef.current = null;
+        setPaymentId('');
+        setModalView('selector');
+      } else if (outcome.status === 'failure') {
+        pendingInstrumentRef.current = null;
+        setPaymentId('');
+        Alert.alert('Payment Error', outcome.error || 'Unable to process payment.');
+        setModalView('selector');
+      }
+      // success/navigating: executePayment navigates to status screen
+    } finally {
+      setIsConfirmPaying(false);
+    }
+  }, [paymentId, executePayment, handleInitiateForChild, isConfirmPaying]);
 
   // --- Proceed from method selector: initiate payment + execute or navigate ---
   const handleProceed = useCallback(
@@ -290,9 +328,6 @@ export function PaymentMethodModal({
         }
 
         // Demo mode: skip PayU SDK — navigate directly to success
-        // Do NOT call handleClose() — it triggers parent's onClose which calls
-        // router.back() after 200ms, racing with and overriding this navigation.
-        // The router.replace unmounts the parent screen (and this modal) naturally.
         if (data.demoMode) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setProcessing(data.paymentId);
@@ -327,37 +362,27 @@ export function PaymentMethodModal({
           return;
         }
 
-        // Saved UPI → execute directly with saved VPA
+        // Saved UPI → store instrument, go to confirm
         if (savedDetails?.vpa && methodType === 'upi') {
-          const outcome = await executePayment(
-            'upi',
-            { vpa: savedDetails.vpa },
-            data.paymentId,
-            () => {},
-          );
-          if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
-            setModalView('selector');
-          } else if (outcome.status === 'failure') {
-            Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
-            setModalView('selector');
-          }
+          pendingInstrumentRef.current = {
+            methodType: 'upi',
+            corePaymentMode: 'upi',
+            params: { vpa: savedDetails.vpa },
+            methodLabel: `UPI \u2022 ${savedDetails.vpa}`,
+          };
+          setModalView('confirm-payment');
           return;
         }
 
-        // Saved Netbanking → execute directly with saved bank code
+        // Saved Netbanking → store instrument, go to confirm
         if (savedDetails?.bankCode && methodType === 'netbanking') {
-          const outcome = await executePayment(
-            'NB',
-            { bankcode: savedDetails.bankCode },
-            data.paymentId,
-            () => {},
-          );
-          if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
-            setModalView('selector');
-          } else if (outcome.status === 'failure') {
-            Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
-            setModalView('selector');
-          }
+          pendingInstrumentRef.current = {
+            methodType: 'netbanking',
+            corePaymentMode: 'NB',
+            params: { bankcode: savedDetails.bankCode },
+            methodLabel: `Netbanking`,
+          };
+          setModalView('confirm-payment');
           return;
         }
 
@@ -395,10 +420,10 @@ export function PaymentMethodModal({
   );
 
   return (
-    <BottomSheet visible={visible} onClose={handleClose} paddingHorizontal={8}>
+    <BottomSheet visible={visible} onClose={handleClose} paddingHorizontal={8} onBackPress={handleBack}>
       <View style={styles.sheetPanel}>
         {modalView === 'enter-amount' && (
-          <Animated.View entering={FadeIn.duration(200)} key="enter-amount">
+          <Animated.View entering={FadeIn.duration(200)} key="enter-amount" style={styles.viewContent}>
             <EnterAmountContent
               initialAmount={tenancy?.monthly_rent ?? 0}
               onProceed={handleAmountProceed}
@@ -407,52 +432,38 @@ export function PaymentMethodModal({
           </Animated.View>
         )}
         {modalView === 'selector' && (
-          <Animated.View entering={FadeIn.duration(200)} key="selector">
+          <Animated.View entering={FadeIn.duration(200)} key="selector" style={styles.viewContent}>
             <MethodSelectorContent
               onBack={handleBack}
               onProceed={handleProceed}
               onSetup={handleSetup}
-              onEdit={handleEdit}
+              onEdit={() => {}}
               isInitiating={isInitiating}
-              showEdit={context === 'profile'}
             />
           </Animated.View>
         )}
         {modalView === 'add-upi' && (
-          <Animated.View entering={FadeIn.duration(200)} key="add-upi">
-            <AddUpiContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} context={context} onSaveComplete={handleSaveComplete} />
+          <Animated.View entering={FadeIn.duration(200)} key="add-upi" style={styles.viewContent}>
+            <AddUpiContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} onReadyForConfirm={handleReadyForConfirm} />
           </Animated.View>
         )}
         {modalView === 'add-card' && (
-          <Animated.View entering={FadeIn.duration(200)} key="add-card">
-            <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" onInitiatePayment={handleInitiateForChild} context={context} onSaveComplete={handleSaveComplete} />
+          <Animated.View entering={FadeIn.duration(200)} key="add-card" style={styles.viewContent}>
+            <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="credit" onInitiatePayment={handleInitiateForChild} onReadyForConfirm={handleReadyForConfirm} />
           </Animated.View>
         )}
         {modalView === 'add-debit-card' && (
-          <Animated.View entering={FadeIn.duration(200)} key="add-debit">
-            <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" onInitiatePayment={handleInitiateForChild} context={context} onSaveComplete={handleSaveComplete} />
+          <Animated.View entering={FadeIn.duration(200)} key="add-debit" style={styles.viewContent}>
+            <AddCardContent paymentId={paymentId} onBack={handleBack} cardType="debit" onInitiatePayment={handleInitiateForChild} onReadyForConfirm={handleReadyForConfirm} />
           </Animated.View>
         )}
         {modalView === 'add-netbanking' && (
-          <Animated.View entering={FadeIn.duration(200)} key="add-nb">
-            <AddNetbankingContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} context={context} onSaveComplete={handleSaveComplete} />
-          </Animated.View>
-        )}
-        {modalView === 'edit-method' && editMethodType && (
-          <Animated.View entering={FadeIn.duration(200)} key="edit">
-            <EditMethodContent
-              methodType={editMethodType}
-              savedMethodId={editSavedMethodId}
-              onBack={handleBack}
-              onProceed={handleProceed}
-              onDeleteSuccess={handleDeleteSuccess}
-              isInitiating={isInitiating}
-              context={context}
-            />
+          <Animated.View entering={FadeIn.duration(200)} key="add-nb" style={styles.viewContent}>
+            <AddNetbankingContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} onReadyForConfirm={handleReadyForConfirm} />
           </Animated.View>
         )}
         {modalView === 'enter-cvv' && (
-          <Animated.View entering={FadeIn.duration(200)} key="enter-cvv">
+          <Animated.View entering={FadeIn.duration(200)} key="enter-cvv" style={styles.viewContent}>
             <EnterCvvContent
               paymentId={paymentId}
               onBack={handleBack}
@@ -460,6 +471,18 @@ export function PaymentMethodModal({
               cardType={cvvCardType}
               lastFour={cvvLastFour}
               cardNetwork={cvvCardNetwork}
+              onReadyForConfirm={handleReadyForConfirm}
+            />
+          </Animated.View>
+        )}
+        {modalView === 'confirm-payment' && (
+          <Animated.View entering={FadeIn.duration(200)} key="confirm-payment" style={styles.viewContent}>
+            <ConfirmPaymentContent
+              onBack={handleBack}
+              onPay={handleConfirmPay}
+              isPaying={isConfirmPaying}
+              methodType={pendingInstrumentRef.current?.methodType ?? 'upi'}
+              methodLabel={pendingInstrumentRef.current?.methodLabel ?? ''}
             />
           </Animated.View>
         )}
@@ -471,5 +494,9 @@ export function PaymentMethodModal({
 const styles = StyleSheet.create({
   sheetPanel: {
     width: '100%',
+    flexShrink: 1,
+  },
+  viewContent: {
+    flexShrink: 1,
   },
 });

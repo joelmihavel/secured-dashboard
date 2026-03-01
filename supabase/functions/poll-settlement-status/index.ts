@@ -457,31 +457,40 @@ async function reconcileStuckPayments(
           // Deprecated in instant-discount model — no cashback earning
           updateData.cashback_earned_paise = 0;
 
-          // Log discount audit entry if applicable
-          if (payment.cashback_applied_paise > 0 && payment.user_id) {
-            try {
-              await supabase.from("cashback_ledger").insert({
-                user_id: payment.user_id,
-                transaction_type: "discount",
-                amount_paise: payment.cashback_applied_paise,
-                balance_after_paise: 0,
-                payment_id: payment.id,
-                tenancy_id: payment.tenancy_id,
-                reference_type: "payment",
-                reference_id: payment.id,
-                description: "1% instant discount on rent payment (reconciliation)",
-              });
-            } catch (e) {
-              console.error("Failed to log discount audit on reconciliation:", e);
-            }
-          }
         }
 
-        await supabase
+        const { data: lockResult } = await supabase
           .from("payments")
           .update(updateData)
           .eq("id", payment.id)
-          .eq("status", payment.status);
+          .eq("status", payment.status)
+          .select("id")
+          .maybeSingle();
+
+        if (!lockResult) {
+          // Optimistic lock failed — another process already updated this payment
+          console.warn(`[RECONCILIATION] Optimistic lock failed for payment ${payment.id}, skipping`);
+          continue;
+        }
+
+        // Log discount audit entry only AFTER optimistic lock succeeds
+        if (mappedStatus === "success" && payment.cashback_applied_paise > 0 && payment.user_id) {
+          try {
+            await supabase.from("cashback_ledger").insert({
+              user_id: payment.user_id,
+              transaction_type: "discount",
+              amount_paise: payment.cashback_applied_paise,
+              balance_after_paise: 0,
+              payment_id: payment.id,
+              tenancy_id: payment.tenancy_id,
+              reference_type: "payment",
+              reference_id: payment.id,
+              description: "1% instant discount on rent payment (reconciliation)",
+            });
+          } catch (e) {
+            console.error("Failed to log discount audit on reconciliation:", e);
+          }
+        }
 
         result.updated++;
 

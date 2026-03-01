@@ -2,10 +2,10 @@
  * Auth API Service
  *
  * Dual-path OTP authentication:
- *   1. Supabase Auth (existing users): Uses supabase.auth.signInWithOtp / verifyOtp
- *      directly. Supabase handles Twilio Programmable Messaging, OTP codes, and sessions.
- *   2. Cashfree M360 (new users): Calls auth-otp edge function for identity-enriched OTP.
- *      Edge function returns token_hash which is exchanged for a session via verifyOtp.
+ *   1. Supabase Auth (existing users): Edge function triggers OTP server-side via GoTrue,
+ *      client only calls verifyOtp. If server-side trigger fails, falls back to signInWithOtp.
+ *   2. Cashfree M360 (new users): Edge function sends OTP + exchanges session server-side.
+ *      Returns {session} for setSession, or {token_hash} fallback for client-side exchange.
  *
  * The route_otp action determines which path to use based on user existence.
  * Resend stays on M360 if an otp_request_id exists (fresh verification_id each time)
@@ -92,6 +92,7 @@ export async function sendOtp(
         phone_number: request.phone_number,
         name: request.name,
       },
+      region: 'ap-south-1',
     });
 
     if (routeError) {
@@ -105,13 +106,15 @@ export async function sendOtp(
     const method = routeData.data.method as OtpMethod;
 
     if (method === 'supabase') {
-      // 2a. Existing user — Supabase Auth sends OTP directly
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        phone: request.phone_number,
-      });
+      // OPT-1: If server already triggered OTP, skip client-side signInWithOtp
+      if (!routeData.data.otp_triggered) {
+        const { error: signInError } = await supabase.auth.signInWithOtp({
+          phone: request.phone_number,
+        });
 
-      if (signInError) {
-        return { data: null, error: mapAuthError(signInError.message) };
+        if (signInError) {
+          return { data: null, error: mapAuthError(signInError.message) };
+        }
       }
 
       return {
@@ -186,6 +189,7 @@ export async function resendOtp(
             action: 'resend_otp',
             otp_request_id: otpRequestId,
           },
+          region: 'ap-south-1',
         });
 
         if (!resendError && resendData?.success) {
@@ -215,7 +219,7 @@ export async function resendOtp(
       return { data: null, error: mapAuthError(error.message) };
     }
 
-    return { data: { method: 'supabase' }, error: null };
+    return { data: { method: 'supabase', otp_request_id: undefined }, error: null };
   } catch (err) {
     return {
       data: null,
@@ -328,6 +332,7 @@ async function verifyOtpViaCashfree(
         phone_number: request.phone_number,
         name: request.name,
       },
+      region: 'ap-south-1',
     });
 
     if (error) {
@@ -338,8 +343,18 @@ async function verifyOtpViaCashfree(
       return { data: null, error: await mapEdgeFunctionError(data) };
     }
 
-    // Exchange token_hash for a real Supabase session
-    if (data.data.token_hash) {
+    // OPT-2: If server exchanged token, use setSession (saves 200-400ms round-trip)
+    if (data.data.session?.access_token) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.data.session.access_token,
+        refresh_token: data.data.session.refresh_token,
+      });
+
+      if (sessionError) {
+        return { data: null, error: mapAuthError(sessionError.message) };
+      }
+    } else if (data.data.token_hash) {
+      // Fallback: client-side token exchange
       const { error: sessionError } = await supabase.auth.verifyOtp({
         token_hash: data.data.token_hash,
         type: 'magiclink',

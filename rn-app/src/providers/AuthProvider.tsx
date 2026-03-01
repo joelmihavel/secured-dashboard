@@ -79,9 +79,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       (event, newSession) => {
         if (event === 'SIGNED_OUT') {
           handleSignOut();
-        } else if (event === 'TOKEN_REFRESHED' && newSession) {
-          // Token refresh with valid session — update silently
-          setSession(newSession);
+        } else if (event === 'TOKEN_REFRESHED') {
+          if (newSession) {
+            // Token refresh with valid session — update silently
+            setSession(newSession);
+          } else {
+            // Token refresh failed (null session) — clear stale JWT
+            // This triggers isAuthenticated = false and redirects to login
+            setSession(null);
+          }
         } else if (event === 'SIGNED_IN' && newSession) {
           setSession(newSession);
           hasRedirectedRef.current = false;

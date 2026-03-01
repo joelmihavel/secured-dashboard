@@ -259,6 +259,9 @@ serve(async (req) => {
       await adminClient.from("payments").delete().in("tenancy_id", tenancyIds);
     }
 
+    // 3d-2. Delete payments with no tenancy (e.g. card verification payments)
+    await adminClient.from("payments").delete().is("tenancy_id", null).eq("user_id", userId);
+
     // 3e. Delete bank_accounts
     await adminClient.from("bank_accounts").delete().eq("user_id", userId);
 

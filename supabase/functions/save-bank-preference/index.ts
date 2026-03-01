@@ -129,6 +129,7 @@ serve(async (req: Request) => {
         .insert({
           user_id: userId,
           type: "netbanking",
+          display_name: `Net Banking - ${normalizedName}`,
           bank_code: normalizedCode,
           bank_name: normalizedName,
           is_verified: true,

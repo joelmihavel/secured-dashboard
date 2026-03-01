@@ -1,4 +1,4 @@
-import React, { memo, useRef } from 'react';
+import React, { memo, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, Dimensions, Text as RNText } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -7,14 +7,11 @@ import Animated, {
   withDelay,
   withSequence,
   interpolate,
-  interpolateColor,
   Extrapolation,
   Easing,
-  FadeIn,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Text as SvgText, TextPath, Defs, Path } from 'react-native-svg';
 import { Text } from '@/src/components/ui/Typography';
 import { colors } from '@/src/theme';
 import { s, sf, sv, isSmallDevice, isLargeDevice } from '@/src/theme/scale';
@@ -37,6 +34,16 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Exact dimensions from Figma (Node 3203-17686 & 3143-15921) — breakpoint-scaled
 const CARD_WIDTH = isSmallDevice ? 270 : isLargeDevice ? 320 : 300;
 const CARD_HEIGHT = sv(440);
+
+// Static shadow — eliminates 36+ GPU offscreen rasterization passes per flip.
+// Animated shadow (radius 4→16→4) is imperceptible during a 600ms rotation.
+const STATIC_SHADOW = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowRadius: 8,
+  shadowOpacity: 0.2,
+  elevation: 6,
+};
 
 export type PaymentStampStatus = 'paid' | 'pending' | 'missed' | 'late' | 'future';
 export type PaymentStatusType = 'paid' | 'late' | 'missed' | 'upcoming';
@@ -67,9 +74,10 @@ interface PaymentFlipCardProps {
 export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFlipCardProps) {
   const flippedRef = useRef(false);
   const flipAnim = useSharedValue(0);
+  const [hasFlipped, setHasFlipped] = useState(false);
 
   // Cycle through furniture sequentially: Sofa Yellow -> Chair Green -> Chair Red -> repeat
-  const furnitureType = React.useMemo(() => {
+  const furnitureType = useMemo(() => {
     const cycle = (data.cardIndex ?? 0) % 3;
     if (cycle === 0) return 'sofa-yellow';
     if (cycle === 1) return 'chair-green';
@@ -82,6 +90,9 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
   const handlePress = () => {
     const toFlipped = !flippedRef.current;
     flippedRef.current = toFlipped;
+
+    // Mount back face on first flip (lazy-render saves ~15 native views per card)
+    if (!hasFlipped) setHasFlipped(true);
 
     // Smooth card flip (600ms ease-in-out)
     flipAnim.value = withTiming(toFlipped ? 1 : 0, {
@@ -156,13 +167,7 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
     };
   });
 
-  const backBgAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      backgroundColor: interpolateColor(flipAnim.value, [0.5, 1], ['#1A1A1A', '#131313']),
-    };
-  });
-
-  const getStatusConfig = () => {
+  const config = useMemo(() => {
     switch (data.status) {
       case 'late':
         return { badgeVariant: 'late' as BadgeVariant, badgeCount: data.lateCount ?? 1, label: 'Cashback\nEarned', showReceipt: true };
@@ -174,9 +179,7 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
       default:
         return { badgeVariant: 'paid' as BadgeVariant, badgeCount: 0, label: 'Cashback\nEarned', showReceipt: true };
     }
-  };
-
-  const config = getStatusConfig();
+  }, [data.status, data.lateCount, data.missedCount]);
 
   const renderFront = () => (
     <Animated.View style={[styles.cardContainer, frontAnimatedStyle]}>
@@ -247,8 +250,8 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
             end={{ x: 1, y: 0.5 }}
             style={styles.cashbackBox}
           >
-            <Pressable 
-              onPress={data.onAddPaymentMethod} 
+            <Pressable
+              onPress={data.onAddPaymentMethod}
               style={styles.addPaymentContainer}
             >
               <Text style={styles.addPaymentText}>+ add new payment method</Text>
@@ -279,8 +282,9 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
 
   const renderBack = () => (
     <Animated.View style={[styles.cardContainer, backAnimatedStyle]}>
-      {/* Solid background matching figma node 696:8140 */}
-      <Animated.View style={[styles.backSolidBackground, backBgAnimatedStyle]} />
+      {/* Solid background — static #131313, replaces animated interpolateColor
+          (the 7-unit RGB difference is imperceptible during a 600ms flip) */}
+      <View style={styles.backSolidBackground} />
       <View style={styles.textureOverlay} />
 
       {/* 4 Corner Cross Marks */}
@@ -333,36 +337,28 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
     </Animated.View>
   );
 
-  // Shadow animation during flip: grows at midpoint, shrinks on land
-  const shadowStyle = useAnimatedStyle(() => {
-    const shadowRadius = interpolate(
-      flipAnim.value,
-      [0, 0.5, 1],
-      [4, 16, 4],
-      Extrapolation.CLAMP,
-    );
-    const shadowOpacity = interpolate(
-      flipAnim.value,
-      [0, 0.5, 1],
-      [0.15, 0.4, 0.15],
-      Extrapolation.CLAMP,
-    );
-    return {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius,
-      shadowOpacity,
-      elevation: interpolate(flipAnim.value, [0, 0.5, 1], [4, 12, 4], Extrapolation.CLAMP),
-    };
-  });
-
   return (
-    <Animated.View entering={FadeIn.duration(400)} style={shadowStyle}>
+    <View style={STATIC_SHADOW}>
       <Pressable onPress={handlePress} style={styles.wrapper}>
         {renderFront()}
-        {renderBack()}
+        {hasFlipped && renderBack()}
       </Pressable>
-    </Animated.View>
+    </View>
+  );
+}, (prev, next) => {
+  const p = prev.data;
+  const n = next.data;
+  return (
+    p.monthName === n.monthName &&
+    p.cashbackEarned === n.cashbackEarned &&
+    p.status === n.status &&
+    p.isInsider === n.isInsider &&
+    p.cardIndex === n.cardIndex &&
+    p.lateCount === n.lateCount &&
+    p.missedCount === n.missedCount &&
+    p.rentDueDay === n.rentDueDay &&
+    p.onViewReceipt === n.onViewReceipt &&
+    p.onAddPaymentMethod === n.onAddPaymentMethod
   );
 });
 
@@ -547,7 +543,7 @@ const styles = StyleSheet.create({
   // BACK CARD
   backSolidBackground: {
     ...StyleSheet.absoluteFillObject,
-    // Base color overridden by animated style
+    backgroundColor: '#131313',
   },
   flentLogo: {
     position: 'absolute',

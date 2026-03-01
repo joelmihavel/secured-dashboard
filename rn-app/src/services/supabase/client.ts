@@ -177,6 +177,7 @@ export async function callEdgeFunction<T = unknown>(
       'Content-Type': 'application/json',
       'apikey': SUPABASE_ANON_KEY!,
       'x-request-id': `rn-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      'x-region': 'ap-south-1', // Pin to Mumbai — co-locate with DB for lowest latency
     };
 
     // Add auth token if required and available

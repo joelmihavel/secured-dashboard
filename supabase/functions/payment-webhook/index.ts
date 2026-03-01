@@ -63,8 +63,19 @@ const PAYU_STATUS_MAP: Record<string, string> = {
   partial_refund: "partially_refunded",
 };
 
-// Terminal states - cannot be changed once reached
-const TERMINAL_STATES = ["success", "failed", "refunded", "partially_refunded"];
+// State transition matrix — PayU webhook is source of truth.
+// Defines which transitions are valid when a webhook arrives.
+// Cron may mark a payment "failed" (expired_no_webhook), but a late
+// PayU webhook can still override it to success/refunded.
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  initiated: ["processing", "success", "failed", "refunded", "partially_refunded"],
+  processing: ["success", "failed", "refunded", "partially_refunded"],
+  failed: ["success", "refunded", "partially_refunded"], // Late webhook overrides cron expiry
+  expired: ["success", "failed"],                          // Late webhook after cleanup-stale-payments expiry
+  success: ["refunded", "partially_refunded"],            // Post-success refund/dispute
+  partially_refunded: ["refunded"],                       // Full refund completed
+  refunded: [],                                           // Truly terminal
+};
 
 // ==============================================
 // TYPES
@@ -84,7 +95,10 @@ interface PayUWebhookPayload {
   bank_ref_no?: string;
   bankcode?: string;
   card_no?: string;
+  card_last4?: string; // PayU sometimes returns last4 directly instead of card_no
+  card_type?: string; // card network from PayU (VISA, MAST, etc.)
   name_on_card?: string;
+  store_card_token?: string; // PayU vault token (if store_card=1 was sent)
   mode?: string;
   PG_TYPE?: string;
   addedon?: string;
@@ -105,6 +119,7 @@ interface PayUWebhookPayload {
   net_amount_debit?: string;
   unmappedstatus?: string;
   additional_charges?: string;
+  [key: string]: string | undefined; // PayU may send additional fields
 }
 
 // ==============================================
@@ -234,12 +249,17 @@ serve(async (req: Request) => {
       );
     }
 
-    // Idempotency check 1: Skip if payment is already in terminal state
-    if (TERMINAL_STATES.includes(payment.status)) {
-      console.log(`Payment ${payment.id} already in terminal state: ${payment.status}. Skipping update.`);
+    // Map PayU status early so we can validate the transition
+    const newStatus = PAYU_STATUS_MAP[payload.status.toLowerCase()] ?? "failed";
+
+    // Validate state transition — PayU webhook is source of truth
+    const allowedNext = ALLOWED_TRANSITIONS[payment.status] ?? [];
+    if (!allowedNext.includes(newStatus)) {
+      // Same status or disallowed transition — idempotent no-op
+      console.log(`Payment ${payment.id}: ${payment.status} → ${newStatus} not allowed. Skipping.`);
       return jsonResponse({
         status: "success",
-        message: "Payment already processed (idempotent)",
+        message: `Transition ${payment.status} → ${newStatus} not allowed (idempotent)`,
         payment_id: payment.id,
         current_status: payment.status,
       });
@@ -308,8 +328,7 @@ serve(async (req: Request) => {
     } | null;
     const userId = payment.user_id ?? tenancyData?.user_id;
 
-    // Map PayU status to our status
-    const newStatus = PAYU_STATUS_MAP[payload.status.toLowerCase()] ?? "failed";
+    // newStatus already computed above (pre-transition validation)
     const isSuccess = newStatus === "success";
 
     // S6: Sanitize webhook payload — only store allowlisted fields
@@ -350,9 +369,8 @@ serve(async (req: Request) => {
 
     if (isSuccess) {
       updateData.paid_at = new Date().toISOString();
-
-      // In instant-discount model, cashback_earned_paise is deprecated (set to 0)
-      updateData.cashback_earned_paise = 0;
+      // cashback_earned_paise is already set correctly at initiation time
+      // (0 for verified instant-discount, >0 for unverified earning)
 
       // Queue landlord payout on success
       updateData.landlord_payout_status = 'pending';
@@ -374,20 +392,39 @@ serve(async (req: Request) => {
     }
 
     if (!updatedRow) {
-      // Status was changed concurrently — re-fetch and check
+      // Status was changed concurrently (e.g. cron expired it while webhook was in-flight).
+      // Re-fetch and retry if the transition is still valid.
       const { data: freshPayment } = await supabase
         .from("payments")
         .select("id, status")
         .eq("id", payment.id)
         .single();
 
-      if (freshPayment && TERMINAL_STATES.includes(freshPayment.status)) {
-        return jsonResponse({ status: "success", message: "Payment already in terminal state" });
+      if (!freshPayment) {
+        throw new AppError("Payment not found on retry", "DB_ERROR", 500);
       }
-      throw new AppError("Failed to update payment - concurrent modification", "CONCURRENT_UPDATE", 409);
+
+      const retryAllowed = (ALLOWED_TRANSITIONS[freshPayment.status] ?? []).includes(newStatus);
+      if (retryAllowed) {
+        // Retry the update with the fresh status as the lock
+        const { error: retryError } = await supabase
+          .from("payments")
+          .update(updateData)
+          .eq("id", freshPayment.id)
+          .eq("status", freshPayment.status);
+
+        if (retryError) {
+          console.error("Retry update failed:", retryError);
+          throw new AppError("Failed to update payment on retry", "DB_ERROR", 500);
+        }
+        console.log(`Payment ${payment.id}: retried ${freshPayment.status} → ${newStatus} after concurrent change`);
+      } else {
+        console.log(`Payment ${payment.id}: concurrent change to ${freshPayment.status}, ${newStatus} no longer valid`);
+        return jsonResponse({ status: "success", message: `Payment now in ${freshPayment.status}, transition not allowed` });
+      }
     }
 
-    // Log instant discount as audit trail entry
+    // PATH A: Verified user — instant discount was applied at initiation
     if (isSuccess && payment.cashback_applied_paise > 0 && userId) {
       try {
         await supabase.from("cashback_ledger").insert({
@@ -401,8 +438,51 @@ serve(async (req: Request) => {
           reference_id: payment.id,
           description: `1% instant discount on rent payment`,
         });
+
+        // Debit accumulated balance if it was redeemed as part of this discount
+        const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
+        if (accumulatedUsed > 0) {
+          await supabase.from("cashback_ledger").insert({
+            user_id: userId,
+            transaction_type: "applied",
+            amount_paise: accumulatedUsed,
+            balance_after_paise: 0,
+            payment_id: payment.id,
+            tenancy_id: payment.tenancy_id,
+            reference_type: "payment",
+            reference_id: payment.id,
+            description: `Accumulated cashback redeemed`,
+          });
+          await supabase.rpc("decrement_cashback_balance", {
+            p_user_id: userId,
+            p_amount: accumulatedUsed,
+          });
+        }
       } catch (e) {
         console.error("Failed to log cashback discount:", e);
+      }
+    }
+
+    // PATH B: Unverified user — earn 1% into balance
+    if (isSuccess && payment.cashback_earned_paise > 0 && userId) {
+      try {
+        await supabase.from("cashback_ledger").insert({
+          user_id: userId,
+          transaction_type: "earned",
+          amount_paise: payment.cashback_earned_paise,
+          balance_after_paise: 0,
+          payment_id: payment.id,
+          tenancy_id: payment.tenancy_id,
+          reference_type: "payment",
+          reference_id: payment.id,
+          description: `1% cashback earned (pending verification)`,
+        });
+        await supabase.rpc("increment_cashback_balance", {
+          p_user_id: userId,
+          p_amount: payment.cashback_earned_paise,
+        });
+      } catch (e) {
+        console.error("Failed to credit earned cashback:", e);
       }
     }
 
@@ -426,14 +506,37 @@ serve(async (req: Request) => {
           };
 
           if (methodType === 'card') {
-            methodData.card_last4 = payload.card_no?.slice(-4) ?? null;
-            methodData.card_network = payload.bankcode ?? null;
+            // PayU returns card_no (masked) or card_last4 directly
+            const last4 = payload.card_no?.slice(-4) ?? payload.card_last4 ?? null;
+            // Map PayU bankcode to card network.
+            // PayU returns "CC" as bankcode for credit cards (not the network).
+            // For debit cards, bankcode IS the network (VISA, MAST, etc.).
+            // Also check card_type field which may have the network.
+            const bankcodeMap: Record<string, string> = {
+              visa: 'visa', mast: 'mastercard', mastercard: 'mastercard',
+              rupay: 'rupay', amex: 'amex', maes: 'maestro', maestro: 'maestro',
+              dinr: 'mastercard', jcb: 'mastercard',
+            };
+            const rawBankcode = (payload.bankcode ?? '').toLowerCase();
+            const rawCardType = (payload.card_type ?? '').toLowerCase();
+            const cardNetwork = bankcodeMap[rawBankcode] ?? bankcodeMap[rawCardType] ?? null;
+            methodData.card_last4 = last4;
+            methodData.card_network = cardNetwork;
             methodData.card_type = mode === 'CC' ? 'credit' : 'debit';
-            methodData.display_name = `${payload.bankcode ?? 'Card'} ****${payload.card_no?.slice(-4) ?? ''}`;
+            const networkDisplay = cardNetwork ? cardNetwork.charAt(0).toUpperCase() + cardNetwork.slice(1) : 'Card';
+            methodData.display_name = `${networkDisplay} ****${last4 ?? '????'}`;
+            // Save PayU vault token if returned (enables stored card payments)
+            if (payload.store_card_token) {
+              methodData.card_token = payload.store_card_token;
+            }
           } else if (methodType === 'upi') {
-            // PayU returns VPA in field7 for UPI; fallback to initiation data if missing
+            // PayU returns VPA in field3 for UPI INTENT (app-based) and field7 for UPI Collect.
+            // field7 sometimes contains status text like "APPROVED OR COMPLETED SUCCESSFULLY|00",
+            // so validate the value looks like a VPA (contains @) before using it.
             const pmd = payment.payment_method_details as Record<string, unknown> | null;
-            const vpa = payload.field7 ?? pmd?.upi_vpa ?? null;
+            const f3 = payload.field3 && String(payload.field3).includes('@') ? String(payload.field3) : null;
+            const f7 = payload.field7 && String(payload.field7).includes('@') ? String(payload.field7) : null;
+            const vpa = f3 ?? f7 ?? (pmd?.upi_vpa ? String(pmd.upi_vpa) : null);
             methodData.upi_vpa = vpa;
             methodData.display_name = `UPI - ${vpa ?? 'Unknown'}`;
           } else if (methodType === 'netbanking') {
@@ -445,14 +548,63 @@ serve(async (req: Request) => {
             methodData.display_name = `Net Banking - ${bankCode ?? 'Bank'}`;
           }
 
-          // Upsert: don't create duplicates for same user + type + identifier
-          const conflictKey = methodType === 'card' ? 'user_id,type,card_last4'
-            : methodType === 'upi' ? 'user_id,type,upi_vpa'
-            : 'user_id,type,bank_code';
-
-          await supabase
-            .from("payment_methods")
-            .upsert(methodData, { onConflict: conflictKey, ignoreDuplicates: true });
+          // Check for existing method to avoid duplicates.
+          // Cards: match on user_id + type + card_last4
+          // UPI: has a unique index on (user_id, upi_vpa)
+          // NB: match on user_id + type + bank_code
+          if (methodType === 'card') {
+            const last4 = methodData.card_last4 as string | null;
+            const cardTypeVal = methodData.card_type as string;
+            if (last4) {
+              const { data: existing } = await supabase
+                .from("payment_methods")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("type", "card")
+                .eq("card_last4", last4)
+                .eq("card_type", cardTypeVal)
+                .is("deleted_at", null)
+                .maybeSingle();
+              if (existing) {
+                // Update existing card record (may add token if we have it now)
+                const updateData: Record<string, unknown> = {
+                  is_verified: true,
+                  card_network: methodData.card_network,
+                  display_name: methodData.display_name,
+                };
+                if (methodData.card_token) updateData.card_token = methodData.card_token;
+                await supabase.from("payment_methods").update(updateData).eq("id", existing.id);
+                console.log("[webhook] Updated existing card method:", existing.id);
+              } else {
+                await supabase.from("payment_methods").insert(methodData);
+                console.log("[webhook] Inserted new card method for last4:", last4);
+              }
+            } else {
+              console.warn("[webhook] Skipping card save — no card_last4 available");
+            }
+          } else if (methodType === 'upi') {
+            // UPI has a unique index — use upsert
+            await supabase
+              .from("payment_methods")
+              .upsert(methodData, { onConflict: 'user_id,upi_vpa', ignoreDuplicates: true })
+              .eq("deleted_at", null);
+          } else {
+            // Netbanking: check-then-insert
+            const bankCode = methodData.bank_code as string | null;
+            if (bankCode) {
+              const { data: existing } = await supabase
+                .from("payment_methods")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("type", "netbanking")
+                .eq("bank_code", bankCode)
+                .is("deleted_at", null)
+                .maybeSingle();
+              if (!existing) {
+                await supabase.from("payment_methods").insert(methodData);
+              }
+            }
+          }
         }
       } catch (e) {
         // Non-blocking: payment success is more important than method save
@@ -463,24 +615,40 @@ serve(async (req: Request) => {
     // Auto-refund Rs.1 card verification payments
     if (isSuccess && payment.metadata?.purpose === "card_verification" && payload.mihpayid) {
       try {
-        const refundHash = await sha512(
-          `${PAYU_MERCHANT_KEY}|cancel_refund_transaction|${payload.mihpayid}|${PAYU_MERCHANT_SALT}`
-        );
-        const refundResponse = await fetchWithTimeout(PAYU_INFO_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            key: PAYU_MERCHANT_KEY!,
-            command: "cancel_refund_transaction",
-            var1: payload.mihpayid,
-            hash: refundHash,
-          }).toString(),
-        });
-        const refundResult = await refundResponse.json();
-        console.log(`[webhook] Card verification auto-refund for ${payment.id}:`, refundResult);
+        // Idempotency: skip if already refunded
+        const { data: currentPayment } = await supabase
+          .from("payments")
+          .select("status")
+          .eq("id", payment.id)
+          .single();
 
-        if (refundResult.status === 1) {
-          await supabase.from("payments").update({ status: "refunded" }).eq("id", payment.id);
+        if (currentPayment?.status === "refunded") {
+          console.log(`[webhook] Card verification ${payment.id} already refunded, skipping`);
+        } else {
+          const refundHash = await sha512(
+            `${PAYU_MERCHANT_KEY}|cancel_refund_transaction|${payload.mihpayid}|${PAYU_MERCHANT_SALT}`
+          );
+          const refundResponse = await fetchWithTimeout(PAYU_INFO_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              key: PAYU_MERCHANT_KEY!,
+              command: "cancel_refund_transaction",
+              var1: payload.mihpayid,
+              hash: refundHash,
+            }).toString(),
+          });
+          const refundResult = await refundResponse.json();
+          console.log(`[webhook] Card verification auto-refund for ${payment.id}:`, refundResult);
+
+          if (refundResult.status === 1) {
+            // Optimistic lock: only update to "refunded" if still "success"
+            await supabase
+              .from("payments")
+              .update({ status: "refunded" })
+              .eq("id", payment.id)
+              .eq("status", "success");
+          }
         }
       } catch (e) {
         // Non-blocking: verification succeeded, refund can be retried manually

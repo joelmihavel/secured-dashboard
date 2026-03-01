@@ -122,18 +122,11 @@ function OTPInputComponent({
     [value, onChangeText, onComplete]
   );
 
-  // Focus input on mount
+  // Focus input on mount — single rAF ensures the TextInput is laid out before
+  // focusing so the keyboard animates in parallel with the bottom sheet spring.
   useEffect(() => {
     if (autoFocus) {
-      // Multiple attempts to ensure focus succeeds across different transition timings
-      const t1 = setTimeout(() => inputRef.current?.focus(), 100);
-      const t2 = setTimeout(() => inputRef.current?.focus(), 400);
-      const t3 = setTimeout(() => inputRef.current?.focus(), 800);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [autoFocus]);
 

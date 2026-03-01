@@ -65,7 +65,7 @@ export async function recordConsent(params: {
   consent_timestamp: string;
   name?: string;
 }): Promise<{ data: RecordConsentResult | null; error: IdentityError | null }> {
-  const { data, error } = await callEdgeFunction<RecordConsentResult>(
+  const { data, error, errorBody } = await callEdgeFunction<RecordConsentResult>(
     'verify-identity',
     {
       action: 'record_consent',
@@ -76,7 +76,7 @@ export async function recordConsent(params: {
   );
 
   if (error) {
-    return { data: null, error: mapIdentityError(error) };
+    return { data: null, error: mapIdentityError(error, errorBody) };
   }
 
   return { data, error: null };
@@ -90,7 +90,7 @@ export async function fetchIdentityWithConsent(params: {
   consent_timestamp: string;
   name?: string;
 }): Promise<{ data: IdentityResult | null; error: IdentityError | null }> {
-  const { data, error } = await callEdgeFunction<IdentityResult>(
+  const { data, error, errorBody } = await callEdgeFunction<IdentityResult>(
     'verify-identity',
     {
       action: 'fetch_with_consent',
@@ -103,7 +103,7 @@ export async function fetchIdentityWithConsent(params: {
   if (error) {
     return {
       data: null,
-      error: mapIdentityError(error),
+      error: mapIdentityError(error, errorBody),
     };
   }
 
@@ -114,7 +114,21 @@ export async function fetchIdentityWithConsent(params: {
 // ERROR MAPPING
 // ==============================================
 
-function mapIdentityError(errorMessage: string): IdentityError {
+function mapIdentityError(errorMessage: string, errorBody?: Record<string, unknown>): IdentityError {
+  // Prefer structured error code from errorBody when available
+  const structuredCode = errorBody?.code as string | undefined;
+  if (structuredCode) {
+    switch (structuredCode) {
+      case 'AUTH_ERROR':
+        return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
+      case 'VALIDATION_ERROR':
+        return { code: 'VALIDATION_ERROR', message: (errorBody?.message as string) ?? errorMessage };
+      case 'RATE_LIMITED':
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment.' };
+      // Fall through for unknown structured codes — use string matching below
+    }
+  }
+
   const lower = errorMessage.toLowerCase();
 
   if (lower.includes('not authenticated') || lower.includes('unauthorized')) {

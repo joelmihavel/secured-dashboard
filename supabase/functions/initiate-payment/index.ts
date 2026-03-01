@@ -180,7 +180,7 @@ serve(async (req: Request) => {
     // Initialize audit logger
     audit = AuditLogger.fromRequest(supabase, req, userId, "initiate-payment");
 
-    // S15: Rate limit — max 5 payment initiations per user per hour
+    // S15: Rate limit — max 50 payment initiations per user per hour (relaxed for testing)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: recentPayments } = await supabase
       .from("payments")
@@ -188,7 +188,7 @@ serve(async (req: Request) => {
       .eq("user_id", userId)
       .gte("created_at", oneHourAgo);
 
-    if ((recentPayments ?? 0) >= 5) {
+    if ((recentPayments ?? 0) >= 50) {
       throw new RateLimitError(3600);
     }
 
@@ -305,15 +305,17 @@ serve(async (req: Request) => {
     // Check for in-progress payment this month (prevent simultaneous double-charge)
     const rentMonthDate = `${rent_month}-01`;
 
-    // Expire stale initiated payments (abandoned pre-fetch or user exit)
-    const TEN_MINUTES_AGO = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    // Expire abandoned initiated payments that never reached PayU SDK.
+    // Uses payu_mihpayid IS NULL instead of time-based expiry so that
+    // backing out of confirm-payment and re-proceeding works immediately.
+    // Payments that reached PayU (have mihpayid) are handled by the webhook.
     await supabase
       .from("payments")
       .update({ status: "failed", payu_status: "expired_stale" })
       .eq("tenancy_id", tenancy_id)
       .eq("payment_month", rentMonthDate)
       .eq("status", "initiated")
-      .lt("created_at", TEN_MINUTES_AGO);
+      .is("payu_mihpayid", null);
 
     // Block only if a payment is actively in progress (prevent double-charge).
     // Multiple successful payments per month are allowed.
@@ -426,27 +428,51 @@ serve(async (req: Request) => {
     const now = new Date();
     const isPastCutoff = now > cutoffDate;
 
-    // Instant 1% discount (no wallet, no earn/redeem)
-    // Requires: all verifications complete AND payment before cutoff AND no cashback yet this month
-    const cashbackDiscountPaise = (verificationComplete && !isPastCutoff && !cashbackAlreadyApplied)
-      ? Math.min(
-          Math.floor(originalRentPaise * 0.01),        // 1% of entered amount
-          Math.floor(tenancy.monthly_rent_paise * 0.01) // capped at 1% of agreement rent
-        )
-      : 0;
+    // Fetch user profile early — needed for cashback balance + PayU params
+    const { data: userProfile } = await supabase
+      .from("users")
+      .select("first_name, last_name, phone, cashback_balance_paise")
+      .eq("id", userId)
+      .single();
+
+    // 1% cashback (capped at 1% of agreement rent)
+    const cashbackOnePct = Math.min(
+      Math.floor(originalRentPaise * 0.01),
+      Math.floor(tenancy.monthly_rent_paise * 0.01)
+    );
+
+    let cashbackDiscountPaise = 0;
+    let cashbackEarnedPaise = 0;
+    let accumulatedRedeemed = 0;
+
+    if (!isPastCutoff && !cashbackAlreadyApplied) {
+      if (verificationComplete) {
+        // VERIFIED: instant 1% discount + redeem accumulated balance
+        const accumulatedBalance = userProfile?.cashback_balance_paise ?? 0;
+        cashbackDiscountPaise = cashbackOnePct + accumulatedBalance;
+        cashbackDiscountPaise = Math.min(cashbackDiscountPaise, originalRentPaise);
+        accumulatedRedeemed = Math.min(accumulatedBalance, cashbackDiscountPaise - cashbackOnePct);
+        accumulatedRedeemed = Math.max(0, accumulatedRedeemed);
+        cashbackEarnedPaise = 0;
+      } else {
+        // UNVERIFIED: earn 1% into balance (credited on payment success)
+        cashbackDiscountPaise = 0;
+        cashbackEarnedPaise = cashbackOnePct;
+      }
+    }
 
     const netRentPaise = originalRentPaise - cashbackDiscountPaise;
 
-    // PG fee on net payable (what the gateway actually charges)
-    // Use card_type-specific rate if available, otherwise fall back to payment_method
+    // Estimate PG fee for display/records — NOT added to PayU amount
+    // PayU charges their own fee directly to the user
     const feeRateKey = (payment_method === "card" && card_type) ? `${card_type}_card` : payment_method;
     const feeConfig = await getFeeConfigForMethod(feeRateKey, supabase);
-    const pgFeePaise = feeConfig.fee_type === 'flat_paise'
+    const estimatedPgFeePaise = feeConfig.fee_type === 'flat_paise'
       ? Math.round(feeConfig.rate)
       : Math.ceil(netRentPaise * feeConfig.rate);
 
-    // Total amount the gateway charges the user
-    const totalAmountPaise = netRentPaise + pgFeePaise;
+    // Total amount sent to PayU = net rent only (no fee — PayU handles fee collection)
+    const totalAmountPaise = netRentPaise;
     // Landlord always gets full rent
     const landlordPayoutPaise = originalRentPaise;
 
@@ -454,11 +480,11 @@ serve(async (req: Request) => {
     if (
       !Number.isFinite(originalRentPaise) || originalRentPaise <= 0 ||
       !Number.isFinite(netRentPaise) || netRentPaise < 0 ||
-      !Number.isFinite(pgFeePaise) || pgFeePaise < 0 ||
+      !Number.isFinite(estimatedPgFeePaise) || estimatedPgFeePaise < 0 ||
       !Number.isFinite(totalAmountPaise) || totalAmountPaise <= 0
     ) {
       console.error("[initiate-payment] Invalid amount calculation:", {
-        originalRentPaise, netRentPaise, pgFeePaise, totalAmountPaise,
+        originalRentPaise, netRentPaise, estimatedPgFeePaise, totalAmountPaise,
       });
       throw new PaymentError("Internal error: invalid payment amount", "INVALID_AMOUNT");
     }
@@ -466,17 +492,10 @@ serve(async (req: Request) => {
     // Generate transaction ID
     const txnId = generateTransactionId("FLENT");
 
-    // Get user details for PayU order creation
-    const { data: userProfile } = await supabase
-      .from("users")
-      .select("first_name, last_name, phone")
-      .eq("id", userId)
-      .single();
-
     const firstname = userProfile?.first_name ?? "User";
     const email = `${userId}@flent.app`; // PayU requires email
 
-    // Generate PayU hash — amount is what PayU charges (chargeableRent + pgFee)
+    // Generate PayU hash — amount is net rent only (PayU adds their own fee)
     const productinfo = `Rent payment for ${rent_month}`;
     const amountStr = (totalAmountPaise / 100).toFixed(2); // PayU expects amount in rupees
 
@@ -522,80 +541,6 @@ serve(async (req: Request) => {
       txnid: txnId,
     });
 
-    // ── SERVER-SIDE HASH VERIFICATION ─────────────────────────────────
-    // Call PayU's verify_payment API to test if our key+salt produce valid hashes.
-    // This bypasses the SDK entirely — if PayU rejects this, credentials are wrong.
-    try {
-      const verifyHash = await sha512(`${PAYU_MERCHANT_KEY}|verify_payment|${txnId}|${PAYU_MERCHANT_SALT}`);
-      const verifyBody = new URLSearchParams({
-        key: PAYU_MERCHANT_KEY,
-        command: "verify_payment",
-        var1: txnId,
-        hash: verifyHash,
-      });
-      const verifyResp = await fetch(PAYU_INFO_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: verifyBody.toString(),
-      });
-      const verifyText = await verifyResp.text();
-      // If hash is wrong, PayU returns error about hash. If correct but txn not found, it says "not found".
-      console.log("[initiate-payment] KEY+SALT VERIFY:", {
-        status: verifyResp.status,
-        response: verifyText.slice(0, 500),
-        hashUsed: verifyHash.slice(0, 16) + "...",
-      });
-    } catch (verifyErr) {
-      console.error("[initiate-payment] KEY+SALT VERIFY error:", verifyErr);
-    }
-    // ── END VERIFICATION ──────────────────────────────────────────────
-
-    // ── DIRECT POST TEST ──────────────────────────────────────────────
-    // POST directly to PayU's _payment endpoint with our hash.
-    // This completely bypasses the SDK. If PayU returns "incorrectly calculated hash",
-    // the credentials or hash formula are wrong. If not, the SDK is breaking the POST data.
-    try {
-      const webhookUrl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
-      const directPostBody = new URLSearchParams({
-        key: PAYU_MERCHANT_KEY,
-        txnid: txnId,
-        amount: amountStr,
-        productinfo,
-        firstname,
-        email,
-        phone: userProfile?.phone ?? "",
-        surl: webhookUrl,
-        furl: webhookUrl,
-        hash: payuHash,
-        udf1: tenancy_id,
-        udf2: rent_month,
-        udf3: userId,
-        udf4: "",
-        udf5: "",
-        pg: "UPI",
-        bankcode: "UPI",
-        vpa: "diagnose@payu",
-      });
-      const directResp = await fetch(`${PAYU_BASE_URL}/_payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: directPostBody.toString(),
-      });
-      const directHtml = await directResp.text();
-      const hasHashError = directHtml.toLowerCase().includes("incorrectly calculated hash")
-        || directHtml.toLowerCase().includes("hash");
-      console.log("[initiate-payment] DIRECT _payment POST:", {
-        status: directResp.status,
-        containsHashError: directHtml.toLowerCase().includes("incorrectly calculated hash"),
-        containsAnyHashRef: hasHashError,
-        // Log key parts of response — PayU returns HTML
-        snippet: directHtml.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 600),
-      });
-    } catch (directErr) {
-      console.error("[initiate-payment] DIRECT _payment POST error:", directErr);
-    }
-    // ── END DIRECT POST TEST ──────────────────────────────────────────
-
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);
 
@@ -606,9 +551,12 @@ serve(async (req: Request) => {
         tenancy_id,
         user_id: userId,
         rent_amount_paise: originalRentPaise,
-        pg_fee_paise: pgFeePaise,
+        pg_fee_paise: 0,
+        estimated_pg_fee_paise: estimatedPgFeePaise,
         cashback_applied_paise: cashbackDiscountPaise,
-        intended_cashback_paise: 0,
+        cashback_earned_paise: cashbackEarnedPaise,
+        accumulated_redeemed_paise: accumulatedRedeemed,
+        intended_cashback_paise: cashbackEarnedPaise,
         total_amount_paise: totalAmountPaise,
         landlord_payout_paise: landlordPayoutPaise,
         net_rent_paise: netRentPaise,
@@ -654,8 +602,10 @@ serve(async (req: Request) => {
     await audit.logSuccess(AuditActions.PAYMENT_INITIATED, "payment", "payment", payment.id, {
       original_rent_paise: originalRentPaise,
       net_rent_paise: netRentPaise,
-      pg_fee_paise: pgFeePaise,
+      estimated_pg_fee_paise: estimatedPgFeePaise,
       cashback_discount_paise: cashbackDiscountPaise,
+      cashback_earned_paise: cashbackEarnedPaise,
+      accumulated_redeemed_paise: accumulatedRedeemed,
       total_amount_paise: totalAmountPaise,
       landlord_payout_paise: landlordPayoutPaise,
       payment_method,
@@ -673,8 +623,11 @@ serve(async (req: Request) => {
       gateway: "payu" as const,
       original_rent_paise: originalRentPaise,
       cashback_applied_paise: cashbackDiscountPaise,
+      cashback_earned_paise: cashbackEarnedPaise,
+      accumulated_redeemed_paise: accumulatedRedeemed,
       net_rent_paise: netRentPaise,
-      pg_fee_paise: pgFeePaise,
+      pg_fee_paise: 0,
+      estimated_pg_fee_paise: estimatedPgFeePaise,
       total_amount_paise: totalAmountPaise,
       landlord_payout_paise: landlordPayoutPaise,
       payment_method,

@@ -18,7 +18,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createServiceClient, createAuthenticatedClient } from "../_shared/supabase.ts";
-import { handleCors, jsonResponse } from "../_shared/cors.ts";
+import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, ValidationError, NotFoundError, ExternalServiceError, PaymentError, handleError } from "../_shared/errors.ts";
 import { validateSchema, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
@@ -197,7 +197,7 @@ serve(async (req: Request) => {
   if (corsResponse) return corsResponse;
 
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return errorResponse("Method not allowed", 405, "METHOD_NOT_ALLOWED");
   }
 
   const supabase = createServiceClient();

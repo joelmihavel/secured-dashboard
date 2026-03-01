@@ -148,7 +148,11 @@ export function useUtilityOperators() {
       return data;
     },
     staleTime: 1000 * 60 * 60, // 1 hour - operators rarely change
-    retry: 3,
+    retry: (failureCount, error) => {
+      // EMPTY_RESPONSE means the operators list is genuinely empty — no point retrying
+      if ((error as SetupError)?.code === 'EMPTY_RESPONSE') return false;
+      return failureCount < 3;
+    },
   });
 }
 

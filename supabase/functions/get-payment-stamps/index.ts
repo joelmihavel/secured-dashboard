@@ -30,6 +30,7 @@ interface PaymentStampEntry {
   due_date: string; // "2026-01-07"
   days_late: number | null;
   amount_paise: number | null;
+  cashback_applied_paise: number | null;
 }
 
 interface PaymentStampSummary {
@@ -175,7 +176,7 @@ serve(async (req: Request) => {
     const { data: payments, error: paymentsError } = await supabase
       .from("payments")
       .select(
-        "id, payment_month, paid_at, rent_amount_paise, status"
+        "id, payment_month, paid_at, rent_amount_paise, status, cashback_applied_paise"
       )
       .eq("tenancy_id", tenancyId)
       .in("status", ["success", "processing", "initiated"])
@@ -195,7 +196,7 @@ serve(async (req: Request) => {
     // Index payments by month key (YYYY-MM) for O(1) lookup
     const paymentsByMonth = new Map<
       string,
-      { id: string; paid_at: string | null; rent_amount_paise: number; status: string }
+      { id: string; paid_at: string | null; rent_amount_paise: number; status: string; cashback_applied_paise: number }
     >();
 
     for (const p of paymentList) {
@@ -217,6 +218,7 @@ serve(async (req: Request) => {
           paid_at: p.paid_at,
           rent_amount_paise: p.rent_amount_paise,
           status: p.status,
+          cashback_applied_paise: p.cashback_applied_paise ?? 0,
         });
       }
     }
@@ -332,6 +334,7 @@ serve(async (req: Request) => {
         due_date: dueDateStr,
         days_late: daysLate,
         amount_paise: payment?.rent_amount_paise ?? null,
+        cashback_applied_paise: payment?.cashback_applied_paise ?? null,
       });
 
       summary.total_months++;

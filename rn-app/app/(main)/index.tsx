@@ -151,6 +151,13 @@ export default function HomeScreen() {
   const { showSheet } = useLocalSearchParams<{ showSheet?: string }>();
   const [showVerificationSheet, setShowVerificationSheet] = useState(showSheet === 'cashback-setup');
 
+  // Clear the URL param after consumption to prevent re-triggering on re-render
+  useEffect(() => {
+    if (showSheet) {
+      router.setParams({ showSheet: undefined });
+    }
+  }, [showSheet]);
+
 
   // Scroll tracking for scroll-down indicator
   const scrollViewRef = useRef<ScrollView>(null);
@@ -321,7 +328,7 @@ export default function HomeScreen() {
           id: `stamp-${stamp.month}`,
           data: {
             monthName: formatMonth(stamp.month),
-            cashbackEarned: stamp.cashback_earned ?? 0,
+            cashbackEarned: (stamp.cashback_applied_paise ?? 0) / 100,
             status: cardStatus,
             onViewReceipt: hasPayment ? () => {
               router.push({
@@ -476,29 +483,6 @@ export default function HomeScreen() {
 
                 const setPaymentAmount = usePaymentStore(state => state.setAmount);
         const setVerificationSkippedStore = usePaymentStore(state => state.setVerificationSkipped);
-        const setPendingPaymentReturn = usePaymentStore(state => state.setPendingPaymentReturn);
-
-        // Check for pending payment return (user completed setup and should resume payment flow)
-        // Uses Zustand subscribe to handle async hydration — avoids race condition
-        // where store may not be hydrated yet on mount
-        useEffect(() => {
-          // Check current state first (may already be hydrated)
-          const { pendingPaymentReturn } = usePaymentStore.getState();
-          if (pendingPaymentReturn) {
-            usePaymentStore.getState().setPendingPaymentReturn(false);
-            setTimeout(() => router.push('/(payment)/enter-rent' as never), 500);
-            return;
-          }
-          // Subscribe for deferred hydration
-          const unsubscribe = usePaymentStore.subscribe((state) => {
-            if (state.pendingPaymentReturn) {
-              state.setPendingPaymentReturn(false);
-              unsubscribe();
-              setTimeout(() => router.push('/(payment)/enter-rent' as never), 500);
-            }
-          });
-          return () => unsubscribe();
-        }, []);
 
         const handleVerificationFinishSetup = useCallback(() => {
           setShowVerificationSheet(false);
@@ -544,6 +528,8 @@ export default function HomeScreen() {
         const handlePayNow = useCallback(() => {
           console.log('[PAY] handlePayNow fired, isSetupComplete:', isSetupComplete);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          // Reset verification-skipped flag each time user starts a new payment attempt
+          setVerificationSkippedStore(false);
           if (!isSetupComplete) {
             console.log('[PAY] Setup incomplete — showing verification sheet');
             setShowVerificationSheet(true);
@@ -556,7 +542,7 @@ export default function HomeScreen() {
               console.error('[PAY] router.push FAILED:', e);
             }
           }
-        }, [isSetupComplete, router]);
+        }, [isSetupComplete, router, setVerificationSkippedStore]);
 
   const handleAddAgreement = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -605,7 +591,7 @@ export default function HomeScreen() {
         paymentId: payment.id,
         initialStatus: statusMap[payment.status] ?? 'pending',
         amount: String(payment.amount),
-        cashback: String(rawPayment?.cashback_earned ?? 0),
+        cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
         transactionId: payment.id,
         source: 'receipt_view',
         landlordName: tenancy?.landlord_name ?? '',
@@ -635,7 +621,7 @@ export default function HomeScreen() {
         paymentId: entry.paymentId,
         amount: String(rawPayment?.amount ?? 0),
         initialStatus: statusMap[entry.status] ?? 'pending',
-        cashback: String(rawPayment?.cashback_earned ?? 0),
+        cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
         source: 'receipt_view',
         landlordName: tenancy?.landlord_name ?? '',
         agreementId: tenancy?.agreement_cert_id ?? '',
