@@ -9,16 +9,20 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useRootNavigationState } from 'expo-router';
 import { usePaymentStore } from '@/src/stores/payment';
 
 const RECOVERY_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
 export function usePaymentRecovery() {
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
   const hasChecked = useRef(false);
 
   useEffect(() => {
+    // Guard: don't navigate until the Root Layout's Stack is mounted
+    if (!rootNavigationState?.key) return;
+
     const checkRecovery = () => {
       if (hasChecked.current) return;
       hasChecked.current = true;
@@ -48,5 +52,5 @@ export function usePaymentRecovery() {
       const unsub = usePaymentStore.persist.onFinishHydration(checkRecovery);
       return unsub;
     }
-  }, [router]);
+  }, [router, rootNavigationState?.key]);
 }
