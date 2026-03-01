@@ -498,11 +498,9 @@ serve(async (req: Request) => {
         if (methodType) {
           const methodData: Record<string, unknown> = {
             user_id: userId,
-            tenancy_id: payment.tenancy_id,
             type: methodType,
-            is_primary: false,
+            is_default: false,
             is_verified: true,
-            created_at: new Date().toISOString(),
           };
 
           if (methodType === 'card') {

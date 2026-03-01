@@ -617,6 +617,10 @@ serve(async (req: Request) => {
     const furl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
     const curl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
 
+    // UPI uses SDK Collect mode with enforce_paymethod=UPI + pre-filled VPA.
+    // S2S UPI Collect (txn_s2s_flow=4) requires PayU merchant enablement —
+    // when enabled in the future, add S2S block here before the SDK response.
+
     const responseData = {
       payment_id: payment.id,
       txn_id: txnId,
@@ -686,6 +690,7 @@ serve(async (req: Request) => {
           `udf4=`,
           `udf5=`,
           `user_credentials=${PAYU_MERCHANT_KEY}:${email}`,
+          `store_card=1`,
           `enforce_paymethod=${resolveEnforcePaymethod(payment_method, card_type)}`,
         ].join("&"),
         payment_url: `${PAYU_BASE_URL}/_payment`,

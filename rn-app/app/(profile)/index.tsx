@@ -143,12 +143,16 @@ export default function ProfileScreen() {
     if (savedMethods.some((m: any) => m.type === 'upi')) {
       items.push({ title: 'Edit UPI Method', type: 'upi', testID: 'edit-upi-button' });
     }
-    if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'credit')) {
-      items.push({ title: 'Edit Credit Card', type: 'card', cardType: 'credit', testID: 'edit-credit-card-button' });
-    }
-    if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'debit')) {
-      items.push({ title: 'Edit Debit Card', type: 'card', cardType: 'debit', testID: 'edit-debit-card-button' });
-    }
+    // TODO: Re-enable card edit options once PayU Token Requestor onboarding is complete.
+    // Cards are saved to our DB but PayU tokenization (store_card_token) is not yet enabled
+    // for merchant key PLycrf. Contact PayU KAM to enable Token Requestor, then uncomment:
+    //
+    // if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'credit')) {
+    //   items.push({ title: 'Edit Credit Card', type: 'card', cardType: 'credit', testID: 'edit-credit-card-button' });
+    // }
+    // if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'debit')) {
+    //   items.push({ title: 'Edit Debit Card', type: 'card', cardType: 'debit', testID: 'edit-debit-card-button' });
+    // }
     if (savedMethods.some((m: any) => m.type === 'netbanking')) {
       items.push({ title: 'Edit Bank Account', type: 'netbanking', testID: 'edit-bank-account-button' });
     }

@@ -106,10 +106,17 @@ serve(async (req: Request) => {
       return jsonResponse({ success: true, data: { cards: [] } });
     }
 
-    const payuData: PayUGetUserCardsResponse = await payuResponse.json();
+    const payuData = await payuResponse.json();
 
-    // PayU returns status 0 for success with user_cards array
-    if (payuData.status !== 0 || !payuData.user_cards?.length) {
+    // PayU returns status 0 for success.
+    // IMPORTANT: user_cards is an OBJECT keyed by card_token, not an array.
+    // Convert to array with Object.values().
+    const userCardsRaw = payuData.user_cards;
+    const userCardsArray: PayUCard[] = payuData.status === 0 && userCardsRaw
+      ? (Array.isArray(userCardsRaw) ? userCardsRaw : Object.values(userCardsRaw))
+      : [];
+
+    if (userCardsArray.length === 0) {
       // No stored cards or API error — return empty (graceful degradation)
       return jsonResponse({ success: true, data: { cards: [] } });
     }
@@ -128,7 +135,7 @@ serve(async (req: Request) => {
     }
 
     // Join PayU cards with our records on last4 + card_type
-    const matchedCards = payuData.user_cards
+    const matchedCards = userCardsArray
       .map((payuCard) => {
         // Extract last 4 from masked number (e.g. "XXXXXXXXXXXX1234" → "1234")
         const last4 = payuCard.card_no.slice(-4);
