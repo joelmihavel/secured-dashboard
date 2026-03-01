@@ -41,7 +41,6 @@ import { OfflineBanner } from '@/src/components/ui';
 import { UpdateBanner } from '@/src/components/ui/Layout/UpdateBanner';
 import { useDeepLink } from '@/src/hooks/useDeepLink';
 import { useErrorNavigation } from '@/src/hooks/useErrorNavigation';
-import { usePaymentRecovery } from '@/src/hooks/usePaymentRecovery';
 import { markAppReady } from '@/src/services/performance';
 import { installGlobalErrorHandlers } from '@/src/services/globalErrorHandlers';
 
@@ -121,9 +120,6 @@ function RootLayoutInner() {
 
   // Bridge error event bus to router navigation
   useErrorNavigation();
-
-  // Crash recovery: resume polling for in-progress payments
-  usePaymentRecovery();
 
   // Mark app as ready for performance tracking (PR-115)
   useEffect(() => {

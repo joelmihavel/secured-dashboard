@@ -91,7 +91,7 @@ export interface Mobile360IdentityData {
 export interface SendOtpParams {
   verification_id: string;
   mobile_number: string;
-  name: string;
+  name?: string;
   notification_modes: ("sms" | "whatsapp")[];
   consent_ip: string;
 }
@@ -220,7 +220,7 @@ export async function callCashfreeSendOtp(
       body: JSON.stringify({
         verification_id: params.verification_id,
         mobile_number: mobileNumber,
-        name: params.name,
+        ...(params.name ? { name: params.name } : {}),
         user_consent: {
           obtained: true,
           type: "EXPLICIT",
@@ -310,7 +310,10 @@ export async function callCashfreeVerifyOtp(
     if (!response.ok) {
       console.error("[cashfree-m360-otp] Verify OTP API error:", data);
 
-      if (data.code === "otp_invalid" || data.status === "OTP_INVALID") {
+      // Cashfree M360 error codes: https://www.cashfree.com/docs/api-reference/vrs/v2/mobile-360-otp-flow/mobile-360-verify-otp
+      const code = data.code ?? "";
+
+      if (code === "otp_value_invalid" || code === "otp_invalid" || data.status === "OTP_INVALID") {
         return {
           verification_id: params.verification_id,
           reference_id: data.reference_id ?? params.verification_id,
@@ -319,12 +322,21 @@ export async function callCashfreeVerifyOtp(
         };
       }
 
-      if (data.code === "otp_expired" || data.status === "OTP_EXPIRED") {
+      if (code === "otp_expired" || data.status === "OTP_EXPIRED") {
         return {
           verification_id: params.verification_id,
           reference_id: data.reference_id ?? params.verification_id,
           status: "OTP_EXPIRED",
           message: "OTP has expired. Please request a new one.",
+        };
+      }
+
+      if (code === "otp_retry_limit_exhaust") {
+        return {
+          verification_id: params.verification_id,
+          reference_id: data.reference_id ?? params.verification_id,
+          status: "VERIFICATION_FAILED",
+          message: "Too many incorrect attempts. Please request a new OTP.",
         };
       }
 
@@ -334,6 +346,31 @@ export async function callCashfreeVerifyOtp(
           reference_id: data.reference_id ?? params.verification_id,
           status: "DETAILS_NOT_FOUND",
           message: "No identity data found for this phone number",
+        };
+      }
+
+      if (code === "verification_failed" || data.status === "VERIFICATION_FAILED") {
+        return {
+          verification_id: params.verification_id,
+          reference_id: data.reference_id ?? params.verification_id,
+          status: "VERIFICATION_FAILED",
+          message: "Verification failed. Please try again.",
+        };
+      }
+
+      // Cashfree returns "already processed" when the verification_id was already consumed.
+      // This can happen legitimately (backend crash after success) OR after a wrong OTP
+      // if Cashfree consumed the verification_id. Treat as VERIFICATION_FAILED to be safe —
+      // we cannot distinguish "previously succeeded" from "previously failed" here.
+      // The user must resend to get a fresh verification_id.
+      const msg = (data.message ?? "").toLowerCase();
+      if (msg.includes("already processed") || msg.includes("already been processed")) {
+        console.log("[cashfree-m360-otp] Verify: already processed — treating as VERIFICATION_FAILED (ambiguous state)");
+        return {
+          verification_id: params.verification_id,
+          reference_id: data.reference_id ?? params.verification_id,
+          status: "VERIFICATION_FAILED",
+          message: "This verification has already been processed. Please request a new code.",
         };
       }
 

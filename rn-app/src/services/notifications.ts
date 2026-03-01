@@ -271,7 +271,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
         await callEdgeFunction('register-device-token', {
           token,
           platform: Platform.OS,
-          bundle_id: 'com.flent.secured',
+          bundle_id: 'in.flent.secured',
           sandbox: __DEV__,
         }, true);
       } catch (err) {

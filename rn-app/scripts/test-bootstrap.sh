@@ -31,7 +31,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SIMULATOR_NAME="iPhone 16 Pro"
 SIMULATOR_UDID="EA52887A-365C-495B-8618-16FBEE0E0990"
-BUNDLE_ID="com.flent.secured"
+BUNDLE_ID="in.flent.secured"
 
 BOOT_SIMULATOR=false
 INSTALL_APP=false

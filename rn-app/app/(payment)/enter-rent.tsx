@@ -2,20 +2,17 @@
  * Enter Rent Amount Screen
  *
  * Thin wrapper that opens the PaymentMethodModal with initialView="enter-amount"
- * as a bottom sheet overlay. The actual UI lives in EnterAmountContent.tsx.
+ * as a bottom sheet overlay. The modal handles the entire payment flow internally:
+ *   enter-amount → selector → add-method → "Save & Pay ₹X" → PayU SDK → status
  *
  * Route: /(payment)/enter-rent
- * Flow: enter-amount → selector → add-method → confirm
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 
 import { useDashboard } from '@/src/hooks';
-import { usePaymentStore } from '@/src/stores/payment';
-import { colors } from '@/src/theme';
 import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal';
 
 export default function EnterRentScreen() {
@@ -23,9 +20,6 @@ export default function EnterRentScreen() {
   const [showModal, setShowModal] = useState(false);
 
   const { tenancy, upcomingPayment } = useDashboard();
-  const setSelectedInstrument = usePaymentStore((s) => s.setSelectedInstrument);
-  const setEnteredAmount = usePaymentStore((s) => s.setEnteredAmount);
-  const setRentMonth = usePaymentStore((s) => s.setRentMonth);
 
   const rentMonth = upcomingPayment?.rent_month
     ?? `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
@@ -41,15 +35,6 @@ export default function EnterRentScreen() {
     setTimeout(() => router.back(), 200);
   }, [router]);
 
-  const handleMethodSelected = useCallback((methodType: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    setSelectedInstrument({ type: methodType as any });
-    // Don't close the modal — closing triggers clearPayuSessionParams() + router.back()
-    // which wipes session data the confirm screen needs and pops it off the stack.
-    // The confirm screen pushes on top and covers the modal naturally.
-    router.push('/(payment)/confirm' as never);
-  }, [setSelectedInstrument, router]);
-
   return (
     <View style={styles.container} testID="enter-rent-screen">
       <PaymentMethodModal
@@ -57,7 +42,6 @@ export default function EnterRentScreen() {
         onClose={handleClose}
         tenancyId={tenancy?.id ?? ''}
         rentMonth={rentMonth}
-        onProceed={handleMethodSelected}
         initialView="enter-amount"
       />
     </View>

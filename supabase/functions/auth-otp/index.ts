@@ -13,8 +13,8 @@
  *     └─ Cashfree path → verify_otp → identity data + generateLink → token_hash
  *
  *   Resend:
- *     └─ Client ALWAYS switches to Supabase Auth (signInWithOtp)
- *        M360 resend_otp provided only for edge cases (expires old request)
+ *     └─ resend_otp → fresh M360 OTP (new verification_id, preserves identity path)
+ *        Frontend falls back to Supabase Auth if M360 resend fails
  *
  * Supabase Auth handles: Twilio Programmable Messaging, OTP codes, sessions, demo phones.
  * This function handles: M360 identity OTP for new users only.
@@ -556,14 +556,20 @@ async function verifyCashfreePath(
   }
 
   // 1. Verify OTP with Cashfree → get identity data
+  //    No retry — Cashfree M360 consumes the verification_id on first attempt.
+  //    A second request returns "already processed" which would mask the real result.
   const m360Result = await callCashfreeVerifyOtp({
     verification_id: verificationId,
     otp,
   });
 
   // Handle M360 errors
+  // On OTP_INVALID: mark request as failed to force resend with a fresh verification_id.
+  // Cashfree may consume the verification_id even on invalid attempts — allowing retry
+  // with the same verification_id risks an "already processed" bypass.
   if (m360Result.status === "OTP_INVALID") {
-    throw new ValidationError("Invalid OTP. Please try again.", { otp: "Invalid" });
+    await supabase.from("otp_requests").update({ status: "failed" }).eq("id", otpRequestId);
+    throw new ValidationError("Incorrect code. Please request a new one.", { otp: "Invalid" });
   }
   if (m360Result.status === "OTP_EXPIRED") {
     await supabase.from("otp_requests").update({ status: "expired" }).eq("id", otpRequestId);
@@ -579,38 +585,10 @@ async function verifyCashfreePath(
     sanitizedPhone, phoneWithCountryCode, name, clientIp, supabase
   );
 
-  // 3. Process identity data + update m360_status
-  let identityStatus: "completed" | "not_available" | "pending" = "pending";
-
-  if (m360Result.status === "SUCCESS" || m360Result.status === "DETAILS_NOT_FOUND") {
-    const verificationData = buildVerificationData(
-      m360Result.status,
-      m360Result.reference_id,
-      m360Result.data,
-      m360Result
-    );
-
-    await supabase
-      .from("identity_verifications")
-      .insert({
-        verification_id: verificationId,
-        user_id: userId,
-        consent_phone: sanitizedPhone,
-        consent_ip: clientIp || null,
-        consent_timestamp: new Date().toISOString(),
-        m360_full_name: name,
-        ...verificationData,
-      });
-
-    identityStatus = await processM360IdentityResult(
-      userId, m360Result.status, m360Result.data, supabase
-    );
-  }
-
-  // 4. Generate session token
+  // 3. Generate session token (auth-critical — do this BEFORE identity processing)
   const tokenHash = await generateSessionToken(sanitizedPhone, supabase);
 
-  // 5. Mark otp_request as verified (atomic claim)
+  // 4. Mark otp_request as verified (atomic claim)
   const { data: claimed } = await supabase.from("otp_requests")
     .update({ status: "verified", verified_at: new Date().toISOString() })
     .eq("id", otpRequestId)
@@ -622,31 +600,75 @@ async function verifyCashfreePath(
     return jsonResponse({ error: { message: "OTP already used or expired", code: "OTP_ALREADY_USED" } }, 409);
   }
 
-  // 6. Log success
-  await audit.logSuccess(
-    AuditActions.AUTH_OTP_VERIFIED,
-    "auth",
-    "user",
-    userId,
-    {
-      phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
-      provider: "cashfree_m360",
-      identity_status: identityStatus,
-      is_new_user: isNewUser,
+  // 5. Process identity data in background — never blocks auth response.
+  //    Identity storage + profile update + risk recomputation run fire-and-forget.
+  //    If any step fails, auth still succeeds; identity can be retried via verify-identity.
+  const hasIdentityData = (m360Result.status === "SUCCESS" && m360Result.data != null) || m360Result.status === "DETAILS_NOT_FOUND";
+
+  // Background: identity processing + audit log.
+  // EdgeRuntime.waitUntil keeps the isolate alive after response is sent.
+  const backgroundWork = (async () => {
+    try {
+      if (hasIdentityData) {
+        const verificationData = buildVerificationData(
+          m360Result.status,
+          m360Result.reference_id,
+          m360Result.data,
+          m360Result
+        );
+
+        await supabase
+          .from("identity_verifications")
+          .insert({
+            verification_id: verificationId,
+            user_id: userId,
+            consent_phone: sanitizedPhone,
+            consent_ip: clientIp || null,
+            consent_timestamp: new Date().toISOString(),
+            m360_full_name: name,
+            ...verificationData,
+          });
+
+        await processM360IdentityResult(
+          userId, m360Result.status, m360Result.data, supabase
+        );
+
+        console.log(`[auth-otp] Identity processing completed for user ${userId}`);
+      }
+
+      await audit.logSuccess(
+        AuditActions.AUTH_OTP_VERIFIED,
+        "auth",
+        "user",
+        userId,
+        {
+          phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
+          provider: "cashfree_m360",
+          identity_data: hasIdentityData,
+          is_new_user: isNewUser,
+        }
+      );
+    } catch (bgError) {
+      console.error(`[auth-otp] Background processing failed (non-fatal) for user ${userId}:`, bgError);
     }
-  );
+  })();
+
+  // Keep isolate alive until background work completes
+  // @ts-ignore — EdgeRuntime is a Supabase global, not in Deno types
+  if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(backgroundWork);
+  }
 
   return jsonResponse({
     success: true,
     data: {
       user_id: userId,
       is_new_user: isNewUser,
-      identity_status: identityStatus,
+      identity_status: hasIdentityData ? "pending" : "not_available",
       token_hash: tokenHash,
       otp_request_id: otpRequestId,
-      message: identityStatus === "completed"
-        ? "Phone verified and identity data retrieved successfully."
-        : "Phone verified successfully. You are now signed in.",
+      message: "Phone verified successfully. You are now signed in.",
     },
   });
 }
@@ -664,7 +686,7 @@ async function handleResendOtp(
   const validatedBody = validateSchema<ResendOtpRequest>(body, resendOtpSchema, true);
   const { otp_request_id } = validatedBody;
 
-  // Look up original request
+  // Look up original request to get phone + name
   const { data: originalRequest, error: lookupError } = await supabase
     .from("otp_requests")
     .select("*")
@@ -675,17 +697,71 @@ async function handleResendOtp(
     throw new ValidationError("OTP request not found. Please start a new request.");
   }
 
-  // Expire the old request
+  // Expire the old request (its verification_id is consumed by Cashfree)
   await supabase.from("otp_requests")
     .update({ status: "expired" })
     .eq("id", otp_request_id);
 
-  // M360 has ~45s cooldown — tell client to use Supabase Auth instead
+  const phone = originalRequest.phone;
+  const sanitizedPhone = sanitizePhone(phone);
+
+  // Rate limit check
+  const rateLimit = await checkM360RateLimit(phone, clientIp, "send", supabase);
+  if (!rateLimit.allowed) {
+    return jsonResponse({
+      error: { message: "Too many attempts. Please wait before trying again.", code: "RATE_LIMITED" }
+    }, 429);
+  }
+
+  // Send fresh M360 OTP with new verification_id (old one is consumed)
+  const newVerificationId = `FLENT_AUTH_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+  const result = await callCashfreeSendOtp({
+    verification_id: newVerificationId,
+    mobile_number: sanitizedPhone,
+    notification_modes: ["sms"],
+    consent_ip: clientIp,
+  });
+
+  if (result.status !== "OTP_GENERATED") {
+    throw new ExternalServiceError("Cashfree", result.message ?? "Failed to resend OTP");
+  }
+
+  // Create new otp_request record with new verification_id
+  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
+  const { data: newOtpRequest, error: insertError } = await supabase
+    .from("otp_requests")
+    .insert({
+      phone,
+      provider: "cashfree_m360",
+      verification_id: result.verification_id,
+      status: "pending",
+      expires_at: expiresAt,
+      ip_address: clientIp || null,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !newOtpRequest) {
+    console.error("[auth-otp] Failed to insert resend otp_request:", insertError);
+    throw new AppError("Failed to track OTP request", "DB_ERROR", 500);
+  }
+
+  await audit.logSuccess(
+    AuditActions.AUTH_OTP_INITIATED,
+    "auth",
+    "phone",
+    undefined,
+    { phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`, method: "cashfree", resend: true }
+  );
+
   return jsonResponse({
     success: true,
     data: {
-      fallback: "supabase",
-      message: "Please use Supabase Auth for resend. M360 request expired.",
+      method: "cashfree",
+      otp_request_id: newOtpRequest.id,
+      expires_in: Math.floor(OTP_EXPIRY_MS / 1000),
+      message: "New OTP sent. Please verify to continue.",
     },
   });
 }

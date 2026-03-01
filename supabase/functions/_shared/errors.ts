@@ -91,7 +91,7 @@ export class ExternalServiceError extends AppError {
       userMessage,
       `${service.toUpperCase()}_ERROR`,
       502,
-      { service } // Never leak originalError or raw message to client
+      { service }
     );
     this.name = "ExternalServiceError";
     this.rawMessage = `${service}: ${message}`;

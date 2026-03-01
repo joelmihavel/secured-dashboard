@@ -1,4 +1,4 @@
-appId: com.flent.secured
+appId: in.flent.secured
 name: "Auth Flow - Onboarding (Beta Splash -> Carousel -> Sign Up)"
 tags:
   - flow-e2e

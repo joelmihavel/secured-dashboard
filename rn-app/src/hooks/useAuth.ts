@@ -125,15 +125,18 @@ export function useVerifyOtp() {
 // ==============================================
 
 export function useResendOtp() {
-  const { phoneNumber, setOtpSent, setOtpMethod, setError, clearError } = useAuthStore();
+  const { setOtpSent, setError, clearError } = useAuthStore();
 
   return useMutation({
     mutationFn: async () => {
+      // Read from store imperatively to avoid stale closure
+      const { phoneNumber, otpRequestId } = useAuthStore.getState();
       if (!phoneNumber) {
         throw { code: 'NO_PHONE', message: 'No phone number to resend to' };
       }
-      // Resend ALWAYS uses Supabase Auth
-      const result = await resendOtp(phoneNumber);
+      // Resend via M360 if we have an otp_request_id (preserves identity capture),
+      // otherwise fall back to Supabase Auth.
+      const result = await resendOtp(phoneNumber, otpRequestId);
       if (result.error) {
         throw result.error;
       }
@@ -143,11 +146,9 @@ export function useResendOtp() {
     onMutate: () => {
       clearError();
     },
-    onSuccess: () => {
-      // Switch to Supabase method permanently (M360 gets one shot)
-      setOtpMethod('supabase');
-      // Clear otp_request_id since we're now on Supabase path
-      setOtpSent(undefined, 'supabase');
+    onSuccess: (data) => {
+      // Update with new otp_request_id if M360 resend succeeded
+      setOtpSent(data.otp_request_id, data.method);
     },
     onError: (error: unknown) => {
       const normalized = normalizeError(error);

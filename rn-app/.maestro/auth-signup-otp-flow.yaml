@@ -1,4 +1,4 @@
-appId: com.flent.secured
+appId: in.flent.secured
 name: "Auth Flow - Sign Up to OTP (Phone Entry -> OTP Verification)"
 tags:
   - flow-e2e

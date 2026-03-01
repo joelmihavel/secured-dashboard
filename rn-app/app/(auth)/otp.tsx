@@ -285,7 +285,7 @@ export default function OTPScreen() {
     setOtpExpirySeconds(OTP_VALIDITY_SECONDS);
     setIsOtpExpired(false);
     if (error) clearError();
-    resendCode(); // Always Supabase Auth
+    resendCode(); // Tries M360 first (preserves identity path), falls back to Supabase Auth
   }, [resendCode, error, clearError, isVerifyingOtp, isResendingOtp, canResend]);
 
   // Figma: Button is ACTIVE (gradient) in error states -- only disabled when OTP incomplete,

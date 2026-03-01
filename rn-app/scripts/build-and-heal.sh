@@ -380,6 +380,6 @@ echo -e "${DIM}    Install to simulator:${RESET}"
 echo -e "${DIM}      xcrun simctl install EA52887A-365C-495B-8618-16FBEE0E0990 \\${RESET}"
 echo -e "${DIM}        ios/build/Build/Products/Debug-iphonesimulator/FlentSecured.app${RESET}"
 echo -e "${DIM}    Launch:${RESET}"
-echo -e "${DIM}      xcrun simctl launch EA52887A-365C-495B-8618-16FBEE0E0990 com.flent.secured${RESET}"
+echo -e "${DIM}      xcrun simctl launch EA52887A-365C-495B-8618-16FBEE0E0990 in.flent.secured${RESET}"
 echo ""
 exit 0

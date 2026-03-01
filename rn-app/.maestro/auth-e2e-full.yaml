@@ -1,4 +1,4 @@
-appId: com.flent.secured
+appId: in.flent.secured
 name: "Auth Flow E2E - Full Journey (Beta Splash -> Splash -> Carousel -> Sign Up -> OTP)"
 tags:
   - flow-e2e

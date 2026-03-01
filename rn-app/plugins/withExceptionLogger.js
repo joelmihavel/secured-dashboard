@@ -44,7 +44,7 @@ static void writeToLogFile(NSString *message) {
 static id flent_exception_preprocessor(id exception) {
     exceptionCount++;
     if (!exceptionLog) {
-        exceptionLog = os_log_create("com.flent.secured.exceptions", "throw");
+        exceptionLog = os_log_create("in.flent.secured.exceptions", "throw");
     }
     if ([exception isKindOfClass:[NSException class]]) {
         NSException *nsException = (NSException *)exception;
@@ -123,7 +123,7 @@ static void flent_uncaught_exception_handler(NSException *exception) {
 
 __attribute__((constructor))
 static void installExceptionLogger(void) {
-    exceptionLog = os_log_create("com.flent.secured.exceptions", "throw");
+    exceptionLog = os_log_create("in.flent.secured.exceptions", "throw");
     NSString *tmpDir = NSTemporaryDirectory();
     logFilePath = [tmpDir stringByAppendingPathComponent:@"FlentExceptionLog.txt"];
     [@"=== FlentExceptionLogger v4 (objc_setExceptionPreprocessor) started ===\\n"

@@ -48,7 +48,6 @@ export function PaymentMethodModal({
   onClose,
   tenancyId,
   rentMonth,
-  onProceed,
   initialView = 'enter-amount',
   initialPaymentId,
   initialMethodType,
@@ -182,12 +181,17 @@ export function PaymentMethodModal({
       setConfirming();
       const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
 
+      // Read the user-entered amount from the store (rupees → paise)
+      const storeEnteredAmount = usePaymentStore.getState().enteredAmount;
+      const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
+
       try {
         const { data, error } = await initiatePayment({
           tenancyId,
           paymentMethod: methodType,
           cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
           rentMonth,
+          amountPaise,
         });
 
         if (error || !data) {
@@ -261,15 +265,6 @@ export function PaymentMethodModal({
         return;
       }
 
-      // Enter-rent flow: delegate to parent immediately.
-      // The confirm screen handles its own initiatePayment + PayU session.
-      // Calling initiatePayment here would create a duplicate payment record
-      // AND add 1-3s of API delay before the user sees the confirm screen.
-      if (onProceed) {
-        onProceed(methodType);
-        return;
-      }
-
       setIsInitiating(true);
       setConfirming();
 
@@ -278,11 +273,16 @@ export function PaymentMethodModal({
       setCardType(resolvedCardType);
 
       try {
+        // Read the user-entered amount from the store (rupees → paise)
+        const storeEnteredAmount = usePaymentStore.getState().enteredAmount;
+        const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
+
         const { data, error } = await initiatePayment({
           tenancyId,
           paymentMethod: methodType,
           cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
           rentMonth,
+          amountPaise,
         });
 
         if (error || !data) {
@@ -387,8 +387,6 @@ export function PaymentMethodModal({
       isConnected,
       router,
       executePayment,
-      onProceed,
-      handleClose,
       setConfirming,
       setProcessing,
       setLastPayment,

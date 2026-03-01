@@ -1,4 +1,4 @@
-appId: com.flent.secured
+appId: in.flent.secured
 ---
 - launchApp:
     clearState: true

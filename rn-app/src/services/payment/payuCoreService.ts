@@ -274,6 +274,23 @@ async function getCorePgPostData(
     corePgParams.enforce_paymethod = sessionParams.enforce_paymethod;
   }
 
+  // CRITICAL: Apply iOS field name mappings.
+  // The JS SDK's ParseEsentials() normally does this, but we call the native
+  // module directly so we must map these ourselves.
+  // PayUModelPaymentParams.fromJSONObject() expects uppercase iOS keys.
+  if (Platform.OS === 'ios') {
+    corePgParams.SURL = corePgParams.surl;
+    corePgParams.FURL = corePgParams.furl;
+    corePgParams.transactionID = corePgParams.txnId;
+    if (corePgParams.cvv) {
+      corePgParams.CVV = corePgParams.cvv;
+    }
+  }
+
+  // Log the keys being sent (no sensitive values)
+  console.log('[PayU] Core PG params keys:', Object.keys(corePgParams).join(', '));
+  console.log('[PayU] Core PG paymentType:', corePgParams.paymentType, 'txnId:', corePgParams.txnId, 'transactionID:', corePgParams.transactionID);
+
   return new Promise((resolve) => {
     const timeoutId = setTimeout(() => {
       console.warn('[PayU] Core PG makePayment timed out (5s)');
@@ -289,7 +306,7 @@ async function getCorePgPostData(
             const result = JSON.parse(jsonString);
             if (result.data && result.url) {
               console.log('[PayU] Core PG generated POST data successfully, url:', result.url);
-              console.log('[PayU] Core PG postData (first 300):', String(result.data).slice(0, 300));
+              // NEVER log postData — it contains ccnum/ccvv (PCI DSS scope)
               resolve({ postData: result.data, paymentUrl: result.url });
             } else {
               console.warn('[PayU] Core PG returned unexpected format:', Object.keys(result));
@@ -381,9 +398,12 @@ function buildPostDataFallback(
     params.enforce_paymethod = sessionParams.enforce_paymethod;
   }
 
-  // Use standard form encoding: spaces as '+', not '%20'
+  // DO NOT URL-encode values. The PayU Custom Browser SDK splits by & and =,
+  // does NOT URL-decode, then creates a JS form whose submit() URL-encodes.
+  // Pre-encoding causes double-encoding → hash mismatch.
+  // Raw values are safe here because none contain & or = characters.
   return Object.entries(params)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v).replace(/%20/g, '+')}`)
+    .map(([k, v]) => `${k}=${v}`)
     .join('&');
 }
 
@@ -420,22 +440,52 @@ export async function launchCorePayment(
 
   const sdkEnvironment = sessionParams.environment ?? (__DEV__ ? '1' : '0');
 
-  // Step 1: Get POST data — prefer Core PG SDK (correct encoding), fall back to manual
-  let postData: string;
-  let paymentUrl: string;
+  // Use server-built POST data if available (exact encoding that passes PayU hash verification).
+  // Falls back to client-built POST data only if server didn't provide it.
+  const serverPostData = (sessionParams as Record<string, unknown>).post_data as string | undefined;
+  const serverPaymentUrl = (sessionParams as Record<string, unknown>).payment_url as string | undefined;
+  const paymentUrl = serverPaymentUrl ?? (sdkEnvironment === '1'
+    ? 'https://test.payu.in/_payment'
+    : 'https://secure.payu.in/_payment');
 
-  const corePgResult = await getCorePgPostData(mode, sessionParams, instrumentParams, sdkEnvironment);
-  if (corePgResult) {
-    postData = corePgResult.postData;
-    paymentUrl = corePgResult.paymentUrl;
-    console.log('[PayU] Using Core PG SDK-generated POST data');
+  let postData: string;
+  if (serverPostData) {
+    // Server-built POST body with RAW (un-encoded) values.
+    // Instrument params (card/UPI/NB details) must also be raw — no encoding.
+    // The SDK will URL-encode everything once when creating the JS form.
+    const instrumentParts: string[] = [];
+    if ('vpa' in instrumentParams) {
+      instrumentParts.push(`pg=UPI&bankcode=UPI&vpa=${instrumentParams.vpa}`);
+    } else if ('bankcode' in instrumentParams && mode === 'NB') {
+      instrumentParts.push(`pg=NB&bankcode=${instrumentParams.bankcode}`);
+    } else if ('card_number' in instrumentParams) {
+      const cp = instrumentParams as CardInstrumentParams;
+      instrumentParts.push(`pg=${mode}`);
+      instrumentParts.push(`bankcode=${cp.bankcode}`);
+      instrumentParts.push(`ccnum=${cp.card_number}`);
+      instrumentParts.push(`ccvv=${cp.cvv}`);
+      instrumentParts.push(`ccexpmon=${cp.expiry_month}`);
+      instrumentParts.push(`ccexpyr=${cp.expiry_year}`);
+      instrumentParts.push(`ccname=${cp.name_on_card}`);
+      if (cp.store_card) instrumentParts.push(`store_card=${cp.store_card}`);
+    } else if ('store_card_token' in instrumentParams) {
+      const sp = instrumentParams as StoredCardInstrumentParams;
+      instrumentParts.push(`pg=${mode}`);
+      instrumentParts.push(`bankcode=${sp.bankcode}`);
+      instrumentParts.push(`store_card_token=${sp.store_card_token}`);
+      instrumentParts.push(`storecard_token_type=${sp.storecard_token_type}`);
+      instrumentParts.push(`ccvv=${sp.cvv}`);
+    }
+    if (sessionParams.enforce_paymethod) {
+      instrumentParts.push(`enforce_paymethod=${sessionParams.enforce_paymethod}`);
+    }
+    postData = instrumentParts.length > 0
+      ? `${serverPostData}&${instrumentParts.join('&')}`
+      : serverPostData;
+    console.log('[PayU] Using SERVER-built POST data (verified encoding)');
   } else {
-    // Fallback: manually build POST data
-    paymentUrl = sdkEnvironment === '1'
-      ? 'https://test.payu.in/_payment'
-      : 'https://secure.payu.in/_payment';
     postData = buildPostDataFallback(mode, sessionParams, instrumentParams);
-    console.log('[PayU] Using fallback manual POST data (Core PG unavailable)');
+    console.log('[PayU] Using CLIENT-built POST data (server post_data not available)');
   }
 
   // 10-minute timeout

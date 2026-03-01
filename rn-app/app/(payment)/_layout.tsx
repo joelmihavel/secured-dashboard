@@ -27,7 +27,6 @@ export default function PaymentLayout() {
       }}
     >
       <Stack.Screen name="enter-rent" options={{ animation: 'none' }} />
-      <Stack.Screen name="confirm" options={{ animation: 'slide_from_bottom' }} />
       <Stack.Screen name="status" options={{
         presentation: 'card',
         animation: 'fade',

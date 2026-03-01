@@ -246,7 +246,7 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 
             />
           ) : isVerified ? (
             <PrimaryButton
-              title={isProfile ? 'Save UPI' : (parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Proceed')}
+              title={isProfile ? 'Save UPI' : (parseFloat(amount) > 0 ? `Save & Pay \u20B9${formattedAmount}` : 'Proceed')}
               onPress={handlePayUpi}
               disabled={!isFormValid || isPayingUpi}
               loading={isPayingUpi}

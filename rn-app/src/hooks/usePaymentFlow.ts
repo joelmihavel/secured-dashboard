@@ -91,8 +91,16 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
               if (__DEV__) {
                 console.log('[usePaymentFlow] UPI background SDK outcome:', outcome.status);
               }
-              if (outcome.status === 'success' && outcome.payuResponse?.field7) {
-                addUpiVpa(String(outcome.payuResponse.field7)).catch(() => {});
+              if (outcome.status === 'success') {
+                // Save UPI VPA — prefer PayU's field7, fallback to known VPA from instrument params
+                const vpa = outcome.payuResponse?.field7
+                  ? String(outcome.payuResponse.field7)
+                  : ('vpa' in instrumentParams ? String((instrumentParams as { vpa: string }).vpa) : null);
+                if (vpa) {
+                  addUpiVpa(vpa).catch((e) => {
+                    console.warn('[usePaymentFlow] UPI VPA save failed:', e);
+                  });
+                }
               }
               queryClient.invalidateQueries({ queryKey: ['saved-payment-methods'] });
               queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -159,13 +167,18 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                     ...(Number(payuResponse.card_expiry_month) ? { card_expiry_month: Number(payuResponse.card_expiry_month) } : {}),
                     ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
                   });
-                } else if (paymentMode === 'upi' && payuResponse.field7) {
-                  await addUpiVpa(String(payuResponse.field7));
-                } else if (paymentMode === 'NB' && payuResponse.bankcode) {
-                  await saveBankPreference(
-                    String(payuResponse.bankcode),
-                    String(payuResponse.bankcode), // PayU doesn't return bank name, use code
-                  );
+                } else if (paymentMode === 'upi') {
+                  const vpa = payuResponse.field7
+                    ? String(payuResponse.field7)
+                    : ('vpa' in instrumentParams ? String((instrumentParams as { vpa: string }).vpa) : null);
+                  if (vpa) await addUpiVpa(vpa);
+                } else if (paymentMode === 'NB') {
+                  const bankcode = payuResponse.bankcode
+                    ? String(payuResponse.bankcode)
+                    : ('bankcode' in instrumentParams ? String((instrumentParams as { bankcode: string }).bankcode) : null);
+                  if (bankcode) {
+                    await saveBankPreference(bankcode, bankcode);
+                  }
                 }
               } catch (saveErr) {
                 console.warn('Client-side payment method save failed (webhook will retry):', saveErr);

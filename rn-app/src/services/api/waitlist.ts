@@ -729,13 +729,24 @@ export async function claimInviteCode(
     };
   }
 
-  const { data, error } = await callEdgeFunction<RawClaimInviteCodeResponse>(
+  const { data, error, errorBody } = await callEdgeFunction<RawClaimInviteCodeResponse>(
     'claim-invite-code',
     { code: trimmed },
     true // requireAuth
   );
 
   if (error) {
+    // Backend returns structured error codes in the response body even on
+    // non-2xx responses. Prefer the structured code (e.g. "INVALID_CODE")
+    // over raw message string-matching so the UI shows the right state.
+    const structuredCode = errorBody?.code as string | undefined;
+    if (structuredCode) {
+      return {
+        success: false,
+        data: null,
+        error: mapInviteCodeErrorFromCode(structuredCode, (errorBody?.message as string) ?? error),
+      };
+    }
     return {
       success: false,
       data: null,
@@ -774,6 +785,7 @@ function mapInviteCodeError(errorMessage: string): WaitlistError {
 function mapInviteCodeErrorFromCode(code: string | undefined, message: string): WaitlistError {
   switch (code) {
     case 'INVALID_CODE':
+    case 'VALIDATION_ERROR':
       return { code: 'INVALID_INVITE_CODE', message };
     case 'ALREADY_USED':
       return { code: 'INVITE_CODE_USED', message };

@@ -732,6 +732,10 @@ export default function WaitlistScreen() {
                   disabled={referralApplied}
                 />
 
+                {referralError ? (
+                  <Text style={styles.referralErrorText}>{referralError}</Text>
+                ) : null}
+
                 <View style={styles.buttonGroup}>
                   {referralError ? (
                     // Error State - button instance (node 3099:27758)
@@ -950,6 +954,15 @@ const styles = StyleSheet.create({
     color: FIGMA.colors.textValue,
     textAlign: 'left',
     width: '100%',
+  },
+
+  referralErrorText: {
+    fontFamily: FIGMA.typography.value.fontFamily,
+    fontSize: FIGMA.typography.value.fontSize,
+    lineHeight: FIGMA.typography.value.lineHeight,
+    color: FIGMA.colors.errorRed,
+    textAlign: 'center',
+    marginTop: 8,
   },
 
   successBanner: {

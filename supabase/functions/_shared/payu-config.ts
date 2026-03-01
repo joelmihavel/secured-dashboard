@@ -7,12 +7,12 @@
 
 // ── Credentials ─────────────────────────────────────────────────────────────
 
-export const PAYU_MERCHANT_KEY = Deno.env.get("PAYU_MERCHANT_KEY") ?? "";
-export const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT") ?? "";
+export const PAYU_MERCHANT_KEY = (Deno.env.get("PAYU_MERCHANT_KEY") ?? "").trim();
+export const PAYU_MERCHANT_SALT = (Deno.env.get("PAYU_MERCHANT_SALT") ?? "").trim();
 
 // OAuth credentials for PayU REST API (refunds, settlements, etc.)
-export const PAYU_CLIENT_ID = Deno.env.get("PAYU_CLIENT_ID") ?? "";
-export const PAYU_CLIENT_SECRET = Deno.env.get("PAYU_CLIENT_SECRET") ?? "";
+export const PAYU_CLIENT_ID = (Deno.env.get("PAYU_CLIENT_ID") ?? "").trim();
+export const PAYU_CLIENT_SECRET = (Deno.env.get("PAYU_CLIENT_SECRET") ?? "").trim();
 
 // ── URLs ────────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ export const PAYU_CLIENT_SECRET = Deno.env.get("PAYU_CLIENT_SECRET") ?? "";
  * Production: https://secure.payu.in  |  Sandbox: https://test.payu.in
  */
 export const PAYU_BASE_URL =
-  Deno.env.get("PAYU_BASE_URL") ?? "https://secure.payu.in";
+  (Deno.env.get("PAYU_BASE_URL") ?? "https://secure.payu.in").trim();
 
 /**
  * Info/API URL for PayU server-to-server calls

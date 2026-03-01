@@ -2,13 +2,14 @@
  * Auth API Service
  *
  * Dual-path OTP authentication:
- *   1. Supabase Auth (existing users + resend): Uses supabase.auth.signInWithOtp / verifyOtp
+ *   1. Supabase Auth (existing users): Uses supabase.auth.signInWithOtp / verifyOtp
  *      directly. Supabase handles Twilio Programmable Messaging, OTP codes, and sessions.
  *   2. Cashfree M360 (new users): Calls auth-otp edge function for identity-enriched OTP.
  *      Edge function returns token_hash which is exchanged for a session via verifyOtp.
  *
  * The route_otp action determines which path to use based on user existence.
- * Resend ALWAYS uses Supabase Auth (M360 has ~45s cooldown, incompatible with 10s resend).
+ * Resend stays on M360 if an otp_request_id exists (fresh verification_id each time)
+ * to preserve identity data capture. Falls back to Supabase only if no M360 context.
  */
 
 import { supabase } from '../supabase';
@@ -168,13 +169,44 @@ export async function verifyOtp(
 }
 
 /**
- * Resend OTP — ALWAYS uses Supabase Auth.
- * M360 has ~45s cooldown, so resend switches to Supabase Auth permanently.
+ * Resend OTP — tries M360 first (if otp_request_id exists), falls back to Supabase Auth.
+ * M360 resend uses a fresh verification_id to preserve identity data capture.
  */
 export async function resendOtp(
-  phoneNumber: string
-): Promise<{ data: { method: 'supabase' } | null; error: AuthError | null }> {
+  phoneNumber: string,
+  otpRequestId?: string | null
+): Promise<{ data: SendOtpResult | null; error: AuthError | null }> {
   try {
+    // If we have an M360 otp_request_id, try resend via M360 (fresh verification_id)
+    // to preserve identity data capture on the same OTP flow.
+    if (otpRequestId) {
+      try {
+        const { data: resendData, error: resendError } = await supabase.functions.invoke('auth-otp', {
+          body: {
+            action: 'resend_otp',
+            otp_request_id: otpRequestId,
+          },
+        });
+
+        if (!resendError && resendData?.success) {
+          return {
+            data: {
+              method: 'cashfree',
+              otp_request_id: resendData.data.otp_request_id,
+              expires_in: resendData.data.expires_in,
+            },
+            error: null,
+          };
+        }
+
+        // M360 resend failed — fall through to Supabase
+        console.warn('[auth] M360 resend failed, falling back to Supabase Auth');
+      } catch {
+        console.warn('[auth] M360 resend threw, falling back to Supabase Auth');
+      }
+    }
+
+    // Supabase Auth fallback (also the primary path for existing users)
     const { error } = await supabase.auth.signInWithOtp({
       phone: phoneNumber,
     });

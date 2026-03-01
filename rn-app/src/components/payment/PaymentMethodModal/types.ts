@@ -70,7 +70,6 @@ export interface PaymentMethodModalProps {
   onClose: () => void;
   tenancyId: string;
   rentMonth: string;
-  onProceed?: (method: PaymentMethodType) => void;
   /** Which view to show initially. Defaults to 'enter-amount'. */
   initialView?: ModalView;
   /** Pre-seeded payment ID for opening directly at add-method views. */

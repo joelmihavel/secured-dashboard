@@ -190,7 +190,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
         {/* Pay Button + Footer */}
         <View style={styles.buttonFooterSection}>
           <PrimaryButton
-            title={isProfile ? 'Verify Card (\u20B91)' : (parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Save Card Details')}
+            title={isProfile ? 'Verify Card (\u20B91)' : (parseFloat(amount) > 0 ? `Save & Pay \u20B9${formattedAmount}` : 'Save Card Details')}
             onPress={handlePay}
             disabled={!isCardValid || isSubmitting}
             loading={isSubmitting}

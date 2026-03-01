@@ -2,7 +2,7 @@
   "expo": {
     "name": "Flent Secured",
     "slug": "flent-secured",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "flentsecured",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.flent.secured",
+      "bundleIdentifier": "in.flent.secured",
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Flent Secured needs camera access to scan documents and capture agreement photos.",
@@ -124,7 +124,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#131313"
       },
-      "package": "com.flent.secured",
+      "package": "in.flent.secured",
       "versionCode": 1,
       "intentFilters": [
         {

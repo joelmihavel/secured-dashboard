@@ -10,6 +10,7 @@ import {
   InteractionManager,
   Keyboard,
   Platform,
+  AppState,
 } from 'react-native';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -62,6 +63,7 @@ export function BottomSheet({
   const [mounted, setMounted] = useState(false);
   const isMountedRef = useRef(true);
   const isDismissingRef = useRef(false);
+  const [blurKey, setBlurKey] = useState(0);
 
   const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
 
@@ -121,6 +123,25 @@ export function BottomSheet({
     return () => sub.remove();
   }, [mounted, dismiss]);
 
+  // Dismiss keyboard when app backgrounds to prevent stale keyboardHeight
+  // shared value from useReanimatedKeyboardAnimation. Without this, returning
+  // from background with a focused TextInput leaves the keyboard animation
+  // mid-flight (Reanimated suspends animations in background), causing the
+  // sheet maxHeight to be permanently reduced and the layout to freeze.
+  // Also force BlurView re-render on resume (expo-blur UIVisualEffectView
+  // can freeze after backgrounding).
+  useEffect(() => {
+    if (!mounted) return;
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        setBlurKey((k) => k + 1);
+      } else {
+        Keyboard.dismiss();
+      }
+    });
+    return () => subscription.remove();
+  }, [mounted]);
+
   // Pan gesture — onUpdate/onEnd run on UI thread (worklet context).
   // dismiss is a JS function, so call it via runOnJS from the gesture handler.
   const panGesture = Gesture.Pan()
@@ -169,7 +190,7 @@ export function BottomSheet({
         {/* Backdrop — BlurView at full opacity, parent opacity not animated */}
         <Animated.View style={[StyleSheet.absoluteFill, backdropAnimatedStyle]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleBackdropPress}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+            <BlurView key={blurKey} intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, styles.backdropOverlay]} />
           </Pressable>
         </Animated.View>

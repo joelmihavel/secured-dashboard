@@ -26,6 +26,7 @@ const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_
 import { SkeletonLoader } from '@/src/components';
 import { useAuthContext } from '@/src/providers';
 import { useUploadStore } from '@/src/stores/upload';
+import { usePaymentStore } from '@/src/stores/payment';
 import { isReviewMode } from '@/src/review/reviewMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { supabase } from '@/src/services/supabase/client';
@@ -146,6 +147,25 @@ export default function Index() {
           });
           setTimeout(() => { unsub(); resolve(); }, 500);
         });
+      }
+
+      // ── PAYMENT RECOVERY: check for in-progress payments from app crash ──
+      // Moved here from usePaymentRecovery hook in _layout.tsx because
+      // navigating from _layout.tsx races with expo-router's assertIsReady.
+      // By the time index.tsx navigates, the Stack is fully mounted.
+      if (usePaymentStore.persist.hasHydrated()) {
+        const { lastPaymentId, lastPaymentTimestamp, clearLastPayment } =
+          usePaymentStore.getState();
+        if (lastPaymentId && lastPaymentTimestamp) {
+          const elapsed = Date.now() - lastPaymentTimestamp;
+          if (elapsed <= 30 * 60 * 1000) {
+            // Recent payment in progress — resume polling on status screen
+            setTarget(`/(payment)/status?paymentId=${lastPaymentId}&initialStatus=pending`);
+            setJourneyResolved(true);
+            return;
+          }
+          clearLastPayment();
+        }
       }
 
       // ── PRIMARY PATH: PostgREST (getUser validates session server-side) ──

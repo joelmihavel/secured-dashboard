@@ -1,4 +1,4 @@
-appId: com.flent.secured
+appId: in.flent.secured
 name: "Auth Flow - Splash Navigation (Beta Splash -> Splash)"
 tags:
   - flow-e2e

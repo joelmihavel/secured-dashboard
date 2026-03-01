@@ -24,7 +24,7 @@ import {
 import { validateSchema, isValidAmountPaise, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
-import { generatePayUHash, generateTransactionId, sha512 } from "../_shared/crypto.ts";
+import { generatePayUHash, generateTransactionId, sha512, hmacSha256 } from "../_shared/crypto.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
 import {
   PAYU_MERCHANT_KEY,
@@ -62,7 +62,14 @@ async function getFeeConfigForMethod(method: string, supabase: any) {
     .eq("method", method)
     .eq("is_active", true)
     .maybeSingle();
-  if (data) return { rate: Number(data.rate), fee_type: data.fee_type ?? 'percentage' };
+  if (data) {
+    const rate = Number(data.rate);
+    if (!Number.isFinite(rate) || rate < 0) {
+      console.error("[fee_config] Invalid rate for method:", method, data.rate);
+      throw new PaymentError("Invalid fee configuration", "INVALID_FEE_CONFIG");
+    }
+    return { rate, fee_type: data.fee_type ?? 'percentage' };
+  }
   // Fallback to env-based percentage rates
   const pgFeeRates = getPgFeeRates();
   return { rate: pgFeeRates[method] ?? 0, fee_type: 'percentage' as const };
@@ -264,10 +271,16 @@ serve(async (req: Request) => {
       throw new PaymentError("Landlord bank account not verified yet", "BANK_NOT_VERIFIED");
     }
 
-    // S1: Server-side amount validation — never trust client amount below canonical rent
-    const canonicalAmountPaise = tenancy.monthly_rent_paise;
-    if (validatedBody.amount_paise && validatedBody.amount_paise < canonicalAmountPaise) {
-      throw new PaymentError("Amount cannot be less than monthly rent", "AMOUNT_TOO_LOW");
+    // Amount guardrails: minimum INR 100, maximum = monthly rent
+    const MIN_AMOUNT_PAISE = 1000; // INR 10
+    if (validatedBody.amount_paise && validatedBody.amount_paise < MIN_AMOUNT_PAISE) {
+      throw new PaymentError("Minimum payment amount is \u20B910", "AMOUNT_TOO_LOW");
+    }
+    if (validatedBody.amount_paise && validatedBody.amount_paise > tenancy.monthly_rent_paise) {
+      throw new PaymentError(
+        "Amount cannot exceed monthly rent",
+        "AMOUNT_EXCEEDS_RENT"
+      );
     }
 
     // Credit card requires landlord approval + utility verification
@@ -289,7 +302,7 @@ serve(async (req: Request) => {
       }
     }
 
-    // Check for existing payment this month
+    // Check for in-progress payment this month (prevent simultaneous double-charge)
     const rentMonthDate = `${rent_month}-01`;
 
     // Expire stale initiated payments (abandoned pre-fetch or user exit)
@@ -302,20 +315,32 @@ serve(async (req: Request) => {
       .eq("status", "initiated")
       .lt("created_at", TEN_MINUTES_AGO);
 
-    const { data: existingPayment } = await supabase
+    // Block only if a payment is actively in progress (prevent double-charge).
+    // Multiple successful payments per month are allowed.
+    const { data: inProgressPayment } = await supabase
       .from("payments")
       .select("id, status")
       .eq("tenancy_id", tenancy_id)
       .eq("payment_month", rentMonthDate)
-      .in("status", ["initiated", "processing", "success"])
+      .in("status", ["initiated", "processing"])
       .maybeSingle();
 
-    if (existingPayment) {
-      if (existingPayment.status === "success") {
-        throw new PaymentError("Payment already completed for this month", "ALREADY_PAID");
-      }
+    if (inProgressPayment) {
       throw new PaymentError("Payment already in progress for this month", "PAYMENT_IN_PROGRESS");
     }
+
+    // Check if cashback was already given this month (cashback is one-time per month)
+    const { data: cashbackAlreadyGiven } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("tenancy_id", tenancy_id)
+      .eq("payment_month", rentMonthDate)
+      .eq("status", "success")
+      .gt("cashback_applied_paise", 0)
+      .limit(1)
+      .maybeSingle();
+
+    const cashbackAlreadyApplied = !!cashbackAlreadyGiven;
 
     // ── DEMO BYPASS ──────────────────────────────────────────────────
     // Test users get instant mock success without hitting PayU.
@@ -402,8 +427,8 @@ serve(async (req: Request) => {
     const isPastCutoff = now > cutoffDate;
 
     // Instant 1% discount (no wallet, no earn/redeem)
-    // Requires: all verifications complete AND payment before cutoff
-    const cashbackDiscountPaise = (verificationComplete && !isPastCutoff)
+    // Requires: all verifications complete AND payment before cutoff AND no cashback yet this month
+    const cashbackDiscountPaise = (verificationComplete && !isPastCutoff && !cashbackAlreadyApplied)
       ? Math.min(
           Math.floor(originalRentPaise * 0.01),        // 1% of entered amount
           Math.floor(tenancy.monthly_rent_paise * 0.01) // capped at 1% of agreement rent
@@ -424,6 +449,19 @@ serve(async (req: Request) => {
     const totalAmountPaise = netRentPaise + pgFeePaise;
     // Landlord always gets full rent
     const landlordPayoutPaise = originalRentPaise;
+
+    // Guard: catch NaN/Infinity from bad fee config or missing data
+    if (
+      !Number.isFinite(originalRentPaise) || originalRentPaise <= 0 ||
+      !Number.isFinite(netRentPaise) || netRentPaise < 0 ||
+      !Number.isFinite(pgFeePaise) || pgFeePaise < 0 ||
+      !Number.isFinite(totalAmountPaise) || totalAmountPaise <= 0
+    ) {
+      console.error("[initiate-payment] Invalid amount calculation:", {
+        originalRentPaise, netRentPaise, pgFeePaise, totalAmountPaise,
+      });
+      throw new PaymentError("Internal error: invalid payment amount", "INVALID_AMOUNT");
+    }
 
     // Generate transaction ID
     const txnId = generateTransactionId("FLENT");
@@ -455,25 +493,108 @@ serve(async (req: Request) => {
       udf3: userId,
     };
 
-    // PayU hash generation
+    // PayU hash generation — compute both v1 (SHA-512) and v2 (HMAC-SHA256) for diagnostics
     const userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
-    const payuHash = await generatePayUHash(payuParams);
+    const hashInputStr = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
+    // Salt v1 hash: sha512(hashString + salt)
+    const payuHashV1 = await sha512(hashInputStr + PAYU_MERCHANT_SALT);
+    // Salt v2 hash: hmac-sha256(hashString WITHOUT trailing salt, key=salt)
+    const hashInputStrV2 = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
+    const payuHashV2 = await hmacSha256(hashInputStrV2, PAYU_MERCHANT_SALT);
+    // Use v1 by default, log both for diagnostics
+    const payuHash = payuHashV1;
     const vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
     const paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
 
     // Diagnostic: log hash input for debugging (salt masked)
     const maskedSalt = PAYU_MERCHANT_SALT.slice(0, 4) + "****" + PAYU_MERCHANT_SALT.slice(-4);
-    const hashInputForLog = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|||||||${maskedSalt}`;
     console.log("[initiate-payment] Hash diagnostic:", {
-      hashInput: hashInputForLog,
-      hashOutput: payuHash.slice(0, 16) + "...",
+      hashInput: hashInputStr + maskedSalt,
+      hashV1_sha512: payuHashV1.slice(0, 16) + "...",
+      hashV2_hmac256: payuHashV2.slice(0, 16) + "...",
+      usingHash: "v1",
       environment: PAYU_SDK_ENVIRONMENT,
       baseUrl: PAYU_BASE_URL,
       isSandbox: IS_SANDBOX,
-      key: PAYU_MERCHANT_KEY,
+      keyLen: PAYU_MERCHANT_KEY.length,
+      saltLen: PAYU_MERCHANT_SALT.length,
       amount: amountStr,
       txnid: txnId,
     });
+
+    // ── SERVER-SIDE HASH VERIFICATION ─────────────────────────────────
+    // Call PayU's verify_payment API to test if our key+salt produce valid hashes.
+    // This bypasses the SDK entirely — if PayU rejects this, credentials are wrong.
+    try {
+      const verifyHash = await sha512(`${PAYU_MERCHANT_KEY}|verify_payment|${txnId}|${PAYU_MERCHANT_SALT}`);
+      const verifyBody = new URLSearchParams({
+        key: PAYU_MERCHANT_KEY,
+        command: "verify_payment",
+        var1: txnId,
+        hash: verifyHash,
+      });
+      const verifyResp = await fetch(PAYU_INFO_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: verifyBody.toString(),
+      });
+      const verifyText = await verifyResp.text();
+      // If hash is wrong, PayU returns error about hash. If correct but txn not found, it says "not found".
+      console.log("[initiate-payment] KEY+SALT VERIFY:", {
+        status: verifyResp.status,
+        response: verifyText.slice(0, 500),
+        hashUsed: verifyHash.slice(0, 16) + "...",
+      });
+    } catch (verifyErr) {
+      console.error("[initiate-payment] KEY+SALT VERIFY error:", verifyErr);
+    }
+    // ── END VERIFICATION ──────────────────────────────────────────────
+
+    // ── DIRECT POST TEST ──────────────────────────────────────────────
+    // POST directly to PayU's _payment endpoint with our hash.
+    // This completely bypasses the SDK. If PayU returns "incorrectly calculated hash",
+    // the credentials or hash formula are wrong. If not, the SDK is breaking the POST data.
+    try {
+      const webhookUrl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
+      const directPostBody = new URLSearchParams({
+        key: PAYU_MERCHANT_KEY,
+        txnid: txnId,
+        amount: amountStr,
+        productinfo,
+        firstname,
+        email,
+        phone: userProfile?.phone ?? "",
+        surl: webhookUrl,
+        furl: webhookUrl,
+        hash: payuHash,
+        udf1: tenancy_id,
+        udf2: rent_month,
+        udf3: userId,
+        udf4: "",
+        udf5: "",
+        pg: "UPI",
+        bankcode: "UPI",
+        vpa: "diagnose@payu",
+      });
+      const directResp = await fetch(`${PAYU_BASE_URL}/_payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: directPostBody.toString(),
+      });
+      const directHtml = await directResp.text();
+      const hasHashError = directHtml.toLowerCase().includes("incorrectly calculated hash")
+        || directHtml.toLowerCase().includes("hash");
+      console.log("[initiate-payment] DIRECT _payment POST:", {
+        status: directResp.status,
+        containsHashError: directHtml.toLowerCase().includes("incorrectly calculated hash"),
+        containsAnyHashRef: hasHashError,
+        // Log key parts of response — PayU returns HTML
+        snippet: directHtml.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 600),
+      });
+    } catch (directErr) {
+      console.error("[initiate-payment] DIRECT _payment POST error:", directErr);
+    }
+    // ── END DIRECT POST TEST ──────────────────────────────────────────
 
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);
@@ -564,7 +685,7 @@ serve(async (req: Request) => {
         verification_complete: verificationComplete,
         past_cutoff: isPastCutoff,
         cutoff_day: cutoffDay,
-        reason: getCashbackBlockerReason(tenancy, verificationComplete, isPastCutoff, cutoffDay),
+        reason: getCashbackBlockerReason(tenancy, verificationComplete, isPastCutoff, cutoffDay, cashbackAlreadyApplied),
       },
       verification_complete: verificationComplete,
 
@@ -590,6 +711,31 @@ serve(async (req: Request) => {
         enforce_paymethod: resolveEnforcePaymethod(payment_method, card_type),
         // SDK environment: '1' = sandbox, '0' = production — client uses this instead of __DEV__
         environment: PAYU_SDK_ENVIRONMENT,
+        // Server-built POST body — RAW values, NOT URL-encoded.
+        // The PayU Custom Browser SDK double-encodes if values are pre-encoded:
+        // it splits by & and =, does NOT URL-decode, then creates a JS form
+        // whose submit() URL-encodes everything → double encoding → hash mismatch.
+        // By passing raw values, the SDK's single encoding produces correct results.
+        post_data: [
+          `key=${PAYU_MERCHANT_KEY}`,
+          `txnid=${txnId}`,
+          `amount=${amountStr}`,
+          `productinfo=${productinfo}`,
+          `firstname=${firstname}`,
+          `email=${email}`,
+          `phone=${userProfile?.phone ?? ""}`,
+          `surl=${surl}`,
+          `furl=${furl}`,
+          `hash=${payuHash}`,
+          `udf1=${tenancy_id}`,
+          `udf2=${rent_month}`,
+          `udf3=${userId}`,
+          `udf4=`,
+          `udf5=`,
+          `user_credentials=${PAYU_MERCHANT_KEY}:${email}`,
+          `enforce_paymethod=${resolveEnforcePaymethod(payment_method, card_type)}`,
+        ].join("&"),
+        payment_url: `${PAYU_BASE_URL}/_payment`,
       },
 
       // Method-specific data (PayU UPI intent only)
@@ -661,9 +807,15 @@ function getCashbackBlockerReason(
   verificationComplete: boolean,
   isPastCutoff: boolean,
   cutoffDay: number,
+  cashbackAlreadyApplied?: boolean,
 ): string | null {
-  // If both gates pass, no blocker
-  if (verificationComplete && !isPastCutoff) return null;
+  // If all gates pass, no blocker
+  if (verificationComplete && !isPastCutoff && !cashbackAlreadyApplied) return null;
+
+  // Already-applied takes priority — nothing the user can do
+  if (cashbackAlreadyApplied) {
+    return "Cashback has already been applied to a payment this month.";
+  }
 
   // Cutoff takes priority — user can't fix verification in time if already past cutoff
   if (isPastCutoff) {

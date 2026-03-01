@@ -179,23 +179,6 @@ serve(async (req: Request) => {
       throw new ValidationError("Card has expired", { card_expiry: "Expired" });
     }
 
-    // Check for duplicate card (same last4 and network)
-    const { data: existing } = await supabase
-      .from("payment_methods")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("type", "card")
-      .eq("card_last4", card_last4)
-      .eq("card_network", card_network.toLowerCase())
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (existing) {
-      throw new ValidationError("A card with these details is already saved", {
-        card: "Duplicate",
-      });
-    }
-
     // Encrypt the card token before storage
     let encryptedToken: string;
     try {
@@ -219,29 +202,70 @@ serve(async (req: Request) => {
     const networkDisplay = formatNetworkName(card_network);
     const displayNickname = nickname ?? `${networkDisplay} ending in ${card_last4}`;
 
-    // Insert payment method
-    const { data: paymentMethod, error: insertError } = await supabase
+    // Check for existing card (same last4 and network) — webhook may have created a
+    // record without token. Upsert: update existing with token, or insert new.
+    const { data: existing } = await supabase
       .from("payment_methods")
-      .insert({
-        user_id: userId,
-        type: "card",
-        card_token: encryptedToken,
-        card_last4,
-        card_network: card_network.toLowerCase(),
-        card_type: card_type.toLowerCase(),
-        card_issuer,
-        card_expiry_month,
-        card_expiry_year,
-        is_verified: true, // PayU tokens are pre-verified
-        is_default: set_primary,
-        nickname: displayNickname,
-      })
-      .select()
-      .single();
+      .select("id")
+      .eq("user_id", userId)
+      .eq("type", "card")
+      .eq("card_last4", card_last4)
+      .eq("card_network", card_network.toLowerCase())
+      .is("deleted_at", null)
+      .maybeSingle();
 
-    if (insertError) {
-      console.error("[add-card-token] Insert error:", insertError);
-      throw new Error(`Failed to save payment method: ${insertError.message}`);
+    let paymentMethod: Record<string, unknown>;
+
+    if (existing) {
+      // Update existing record with the token (webhook may have created it without one)
+      const { data: updated, error: updateError } = await supabase
+        .from("payment_methods")
+        .update({
+          card_token: encryptedToken,
+          card_type: card_type.toLowerCase(),
+          card_issuer,
+          card_expiry_month,
+          card_expiry_year,
+          is_verified: true,
+          is_default: set_primary,
+          nickname: displayNickname,
+        })
+        .eq("id", existing.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("[add-card-token] Update error:", updateError);
+        throw new Error(`Failed to update payment method: ${updateError.message}`);
+      }
+      paymentMethod = updated;
+      console.log("[add-card-token] Updated existing card record with token:", existing.id);
+    } else {
+      // Insert new payment method
+      const { data: inserted, error: insertError } = await supabase
+        .from("payment_methods")
+        .insert({
+          user_id: userId,
+          type: "card",
+          card_token: encryptedToken,
+          card_last4,
+          card_network: card_network.toLowerCase(),
+          card_type: card_type.toLowerCase(),
+          card_issuer,
+          card_expiry_month,
+          card_expiry_year,
+          is_verified: true,
+          is_default: set_primary,
+          nickname: displayNickname,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("[add-card-token] Insert error:", insertError);
+        throw new Error(`Failed to save payment method: ${insertError.message}`);
+      }
+      paymentMethod = inserted;
     }
 
     // Log audit event (do not log actual token)

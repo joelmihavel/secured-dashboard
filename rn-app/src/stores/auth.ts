@@ -118,9 +118,8 @@ export const useAuthStore = create<AuthStore>()(
         state.otpSent = true;
         state.status = 'otp_sent';
         state.error = null;
-        if (otpRequestId !== undefined) {
-          state.otpRequestId = otpRequestId;
-        }
+        // Always overwrite — clears stale M360 otpRequestId on Supabase fallback
+        state.otpRequestId = otpRequestId ?? null;
         if (method !== undefined) {
           state.otpMethod = method;
         }

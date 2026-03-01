@@ -90,7 +90,10 @@ export function buildSessionParams(p: Record<string, string>): PayUSessionParams
     udf5: p.udf5,
     enforce_paymethod: p.enforce_paymethod,
     environment: (p.environment as '0' | '1') ?? undefined,
-  };
+    // Server-built POST body + URL — pass through to payuCoreService
+    post_data: p.post_data,
+    payment_url: p.payment_url,
+  } as PayUSessionParams;
 }
 
 /** Normalize a fee value — if the backend returns a plain number (old shape), wrap it as percentage */
@@ -134,7 +137,18 @@ export async function initiatePayment(params: {
   paymentMethod: 'upi' | 'card' | 'debit_card' | 'netbanking';
   rentMonth: string;
   cardType?: 'credit' | 'debit';
+  amountPaise?: number;
 }): Promise<{ data: UnifiedInitiateResult | null; error: string | null }> {
+  const body: Record<string, unknown> = {
+    tenancy_id: params.tenancyId,
+    payment_method: params.paymentMethod === 'debit_card' ? 'card' : params.paymentMethod,
+    card_type: params.cardType,
+    rent_month: params.rentMonth.slice(0, 7),
+    checkout_mode: 'sdk',
+  };
+  if (params.amountPaise) {
+    body.amount_paise = params.amountPaise;
+  }
   const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: {
@@ -144,13 +158,7 @@ export async function initiatePayment(params: {
       cashback_applied_paise: number;
       payu?: Record<string, unknown>;
     };
-  }>('initiate-payment', {
-    tenancy_id: params.tenancyId,
-    payment_method: params.paymentMethod === 'debit_card' ? 'card' : params.paymentMethod,
-    card_type: params.cardType,
-    rent_month: params.rentMonth.slice(0, 7),
-    checkout_mode: 'sdk',
-  }, true);
+  }>('initiate-payment', body, true);
 
   if (error) {
     // Surface field-level validation details for debugging

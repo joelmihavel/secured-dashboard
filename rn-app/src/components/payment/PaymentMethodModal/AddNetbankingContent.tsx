@@ -291,7 +291,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, con
       {/* Proceed Button */}
       <View style={styles.buttonSection}>
         <PrimaryButton
-          title={isProfile ? 'Save Bank' : (parseFloat(amount) > 0 ? `Pay \u20B9${parseFloat(amount).toLocaleString('en-IN')}` : 'Add bank account')}
+          title={isProfile ? 'Save Bank' : (parseFloat(amount) > 0 ? `Save & Pay \u20B9${parseFloat(amount).toLocaleString('en-IN')}` : 'Add bank account')}
           onPress={handleProceed}
           disabled={!selectedBankCode || isSubmitting}
           loading={isSubmitting}
