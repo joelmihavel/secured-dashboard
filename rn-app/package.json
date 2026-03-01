@@ -17,13 +17,11 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
-    "@lottiefiles/dotlottie-react": "^0.6.5",
     "@react-native-community/netinfo": "11.4.1",
     "@sentry/react-native": "~7.2.0",
     "@supabase/supabase-js": "~2.46.0",
     "@tanstack/react-query": "~5.60.0",
     "base64-arraybuffer": "^1.0.2",
-    "date-fns": "~4.1.0",
     "expo": "^54.0.0",
     "expo-asset": "~12.0.12",
     "expo-blur": "~15.0.8",

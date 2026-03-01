@@ -167,6 +167,9 @@ verify_jwt = false
 [functions.check-payment-status]
 verify_jwt = false
 
+[functions.confirm-payout]
+verify_jwt = false
+
 [functions.cleanup-stale-payments]
 verify_jwt = false
 

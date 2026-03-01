@@ -13,7 +13,8 @@ import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { verifyPayUWebhookHashWithCharges } from "../_shared/crypto.ts";
+import { verifyPayUWebhookHashWithCharges, sha512 } from "../_shared/crypto.ts";
+import { PAYU_INFO_URL, fetchWithTimeout } from "../_shared/payu-config.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -278,7 +279,8 @@ serve(async (req: Request) => {
       );
     }
 
-    // Extract user_id and tenancy details from the joined tenancy
+    // Extract user_id: prefer payment.user_id (always set), fallback to tenancy join
+    // (card verification payments have no tenancy, so tenancy join returns null)
     const tenancyData = payment.tenancy as {
       user_id: string;
       monthly_rent_paise: number;
@@ -286,7 +288,7 @@ serve(async (req: Request) => {
       utility_verified: boolean;
       landlord_approved: boolean;
     } | null;
-    const userId = tenancyData?.user_id;
+    const userId = payment.user_id ?? tenancyData?.user_id;
 
     // Map PayU status to our status
     const newStatus = PAYU_STATUS_MAP[payload.status.toLowerCase()] ?? "failed";
@@ -425,12 +427,40 @@ serve(async (req: Request) => {
             : 'user_id,type,bank_code';
 
           await supabase
-            .from("saved_payment_methods")
+            .from("payment_methods")
             .upsert(methodData, { onConflict: conflictKey, ignoreDuplicates: true });
         }
       } catch (e) {
         // Non-blocking: payment success is more important than method save
         console.error("Failed to auto-save payment method:", e);
+      }
+    }
+
+    // Auto-refund Rs.1 card verification payments
+    if (isSuccess && payment.metadata?.purpose === "card_verification" && payload.mihpayid) {
+      try {
+        const refundHash = await sha512(
+          `${PAYU_MERCHANT_KEY}|cancel_refund_transaction|${payload.mihpayid}|${PAYU_MERCHANT_SALT}`
+        );
+        const refundResponse = await fetchWithTimeout(PAYU_INFO_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            key: PAYU_MERCHANT_KEY!,
+            command: "cancel_refund_transaction",
+            var1: payload.mihpayid,
+            hash: refundHash,
+          }).toString(),
+        });
+        const refundResult = await refundResponse.json();
+        console.log(`[webhook] Card verification auto-refund for ${payment.id}:`, refundResult);
+
+        if (refundResult.status === 1) {
+          await supabase.from("payments").update({ status: "refunded" }).eq("id", payment.id);
+        }
+      } catch (e) {
+        // Non-blocking: verification succeeded, refund can be retried manually
+        console.error(`[webhook] Auto-refund failed for card verification ${payment.id}:`, e);
       }
     }
 

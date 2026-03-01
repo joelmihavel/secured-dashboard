@@ -85,11 +85,19 @@ function RootLayoutInner() {
     'Inter-Regular': require('@/assets/fonts/Inter-Regular.ttf'),
   });
 
+  // NOTE: SplashScreen.hideAsync() is NOT called here on font load.
+  // The native splash stays visible until index.tsx completes journey
+  // resolution and navigates — prevents black screen during auth/network checks.
+  // index.tsx calls SplashScreen.hideAsync() after router.replace().
+  //
+  // Safety net: force-hide after 8s to prevent stuck splash on edge cases
+  // (e.g. index.tsx fails to mount, font loading hangs).
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    const timeout = setTimeout(() => {
       SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [fontsLoaded, fontError]);
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Set up push notification handlers
   useEffect(() => {

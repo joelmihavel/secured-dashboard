@@ -8,7 +8,7 @@
  * Handles: sign-out navigation (single controlled redirect)
  */
 
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
@@ -99,11 +99,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => subscription.unsubscribe();
   }, [handleSignOut]);
 
-  const value: AuthContextValue = {
+  const value: AuthContextValue = useMemo(() => ({
     session,
     isLoading,
-    isAuthenticated: !!session,
-  };
+    isAuthenticated: !!session || isReviewMode(),
+  }), [session, isLoading]);
 
   return (
     <AuthContext.Provider value={value}>

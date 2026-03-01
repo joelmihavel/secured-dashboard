@@ -25,6 +25,7 @@ import { TextInput } from '@/src/components/ui/Input';
 import { Text as RNText } from 'react-native';
 import { useVerifyUpi } from '@/src/hooks';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
+import { addUpiVpa } from '@/src/services/api/payments';
 import { usePaymentStore } from '@/src/stores';
 import { colors } from '@/src/theme';
 
@@ -44,7 +45,8 @@ const FIGMA_COLORS = {
 // ADD UPI CONTENT
 // ==============================================
 
-export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMethodContentProps) {
+export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 'payment', onSaveComplete }: AddMethodContentProps) {
+  const isProfile = context === 'profile';
   const verifyUpi = useVerifyUpi();
   const { executePayment } = usePaymentFlow();
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
@@ -129,6 +131,17 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
+      // Profile context: save VPA directly without payment
+      if (isProfile && onSaveComplete) {
+        const { error: saveError } = await addUpiVpa(upiId.trim());
+        if (saveError) {
+          Alert.alert('Save Failed', saveError || 'Could not save UPI ID. Please try again.');
+          return;
+        }
+        onSaveComplete();
+        return;
+      }
+
       let currentPaymentId = paymentId;
 
       // Setup flow: initiate payment first if no paymentId yet
@@ -164,7 +177,7 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
       isPayingRef.current = false;
       setIsPayingUpi(false);
     }
-  }, [upiId, paymentId, executePayment, onInitiatePayment]);
+  }, [upiId, paymentId, executePayment, onInitiatePayment, isProfile, onSaveComplete]);
 
   const isFormValid = accountName.length > 0 && upiId.includes('@');
   const isLoading = verifyUpi.isPending || isPayingUpi;
@@ -233,7 +246,7 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment }: AddMetho
             />
           ) : isVerified ? (
             <PrimaryButton
-              title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Proceed'}
+              title={isProfile ? 'Save UPI' : (parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Proceed')}
               onPress={handlePayUpi}
               disabled={!isFormValid || isPayingUpi}
               loading={isPayingUpi}

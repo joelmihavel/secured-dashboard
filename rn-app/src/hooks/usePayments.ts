@@ -117,7 +117,7 @@ export function usePaymentStamps(tenancyId: string | undefined) {
       return data!;
     },
     enabled: !!tenancyId,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 1 hour — payment stamps rarely change within a session
   });
 }
 

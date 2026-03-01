@@ -74,6 +74,7 @@ interface BillFetchResponse {
   status: string;
   response?: {
     consumer_name?: string;
+    customer_name?: string; // API Club BESCOM uses customer_name instead of consumer_name
     bill_amount?: number;
     due_date?: string;
     address?: string;
@@ -364,7 +365,8 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
 
     // Determine if bill was fetched successfully
     const isBillFetched = billResult.status === "success" && billResult.response;
-    const consumerName = billResult.response?.consumer_name ?? "";
+    // API Club BESCOM returns customer_name instead of consumer_name — normalize
+    const consumerName = billResult.response?.consumer_name ?? billResult.response?.customer_name ?? "";
 
     // Calculate match scores - use Gemini AI if available, fallback to algorithmic
     let addressMatchScore = 0;
@@ -545,9 +547,16 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       });
     }
 
-    // Verification decision: skip bank check if no bank account added yet
+    // Verification decision:
+    // - Address: skip if bill API returned no address data (BESCOM, some operators)
+    // - Bank name: skip if no bank account added yet
     const hasBankAccount = landlordBankAccounts && landlordBankAccounts.length > 0;
-    const isFullyVerified = isNameVerified && isAddressVerified &&
+    const hasAddressData = !!(billResult.response?.address || billResult.response?.city || billResult.response?.state);
+    const addressPassed = hasAddressData ? isAddressVerified : true; // skip if no data
+    if (!hasAddressData && isBillFetched) {
+      console.log("[verify-utility] Bill API returned no address — skipping address match");
+    }
+    const isFullyVerified = isNameVerified && addressPassed &&
       (!hasBankAccount || isBankNameVerified);
 
     // Create utility verification record
@@ -558,7 +567,7 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       operator_code,
       operator_name: operator_code,
       consumer_number,
-      consumer_name: billResult.response?.consumer_name,
+      consumer_name: consumerName || null,
       status: isBillFetched ? "success" : "failed",
       bill_amount_paise: billResult.response?.bill_amount
         ? Math.round(billResult.response.bill_amount * 100)
@@ -619,7 +628,7 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
           address_match_score: addressMatchScore,
           name_match_score: nameMatchScore,
           bank_name_match_score: bankNameMatchScore,
-          consumer_name: billResult.response?.consumer_name,
+          consumer_name: consumerName,
           landlord_name: bestMatchLandlordName,
           bank_account_holder_name: bestBankAccountName,
         }
@@ -769,6 +778,11 @@ async function fetchElectricityBill(
 
     // Handle API Club's response wrapper
     const billData = data.response ?? data;
+
+    // Normalize: API Club BESCOM uses customer_name, our interface expects consumer_name
+    if (typeof billData === "object" && billData.customer_name && !billData.consumer_name) {
+      billData.consumer_name = billData.customer_name;
+    }
 
     return {
       code: data.code,

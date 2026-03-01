@@ -10,8 +10,8 @@
 export type ServiceName = 'dashboard' | 'payments' | 'waitlist' | 'agreement' | 'setup' | 'profile';
 
 export const devMockConfig: Record<ServiceName, boolean> = {
-  dashboard: true,
-  payments: true,
+  dashboard: false,
+  payments: false,
   waitlist: false,
   agreement: false,
   setup: false,

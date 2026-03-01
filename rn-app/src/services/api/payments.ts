@@ -699,7 +699,7 @@ export const getSavedPaymentMethods = _getSavedPaymentMethods;
  * Edge function expects: { upi_vpa, nickname?, set_primary? }
  * (NOT { vpa, display_name } which was the old incorrect mapping)
  */
-export async function addUpiVpa(
+async function addUpiVpaReal(
   vpa: string,
   nickname?: string,
   setPrimary = false
@@ -740,6 +740,35 @@ export async function addUpiVpa(
   };
 }
 
+async function addUpiVpaMock(
+  vpa: string,
+  _nickname?: string,
+  _setPrimary = false
+): Promise<{ data: SavedPaymentMethod | null; error: string | null }> {
+  return {
+    data: {
+      id: `pm-mock-upi-${Date.now()}`,
+      type: 'upi',
+      display_name: vpa,
+      vpa,
+      is_default: true,
+      is_verified: true,
+      nickname: null,
+      created_at: new Date().toISOString(),
+    },
+    error: null,
+  };
+}
+
+const _addUpiVpa = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', addUpiVpaReal, addUpiVpaMock, { delayMs: 300 });
+    })()
+  : addUpiVpaReal;
+
+export const addUpiVpa = _addUpiVpa;
+
 /**
  * Add card token.
  *
@@ -758,7 +787,7 @@ export interface AddCardTokenRequest {
   set_primary?: boolean;
 }
 
-export async function addCardToken(
+async function addCardTokenReal(
   request: AddCardTokenRequest
 ): Promise<{ data: SavedPaymentMethod | null; error: string | null }> {
   const { data, error } = await callEdgeFunction<RawAddCardTokenResponse>(
@@ -797,13 +826,42 @@ export async function addCardToken(
   };
 }
 
+async function addCardTokenMock(
+  request: AddCardTokenRequest
+): Promise<{ data: SavedPaymentMethod | null; error: string | null }> {
+  return {
+    data: {
+      id: `pm-mock-card-${Date.now()}`,
+      type: 'card',
+      display_name: `${request.card_network.toUpperCase()} ****${request.card_last4}`,
+      last_four: request.card_last4,
+      card_network: request.card_network,
+      card_type: request.card_type,
+      is_default: true,
+      is_verified: true,
+      nickname: null,
+      created_at: new Date().toISOString(),
+    },
+    error: null,
+  };
+}
+
+const _addCardToken = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', addCardTokenReal, addCardTokenMock, { delayMs: 200 });
+    })()
+  : addCardTokenReal;
+
+export const addCardToken = _addCardToken;
+
 /**
  * Delete a saved payment method.
  *
  * Calls POST /functions/v1/delete-payment-method
  * Edge function expects: { payment_method_id } (NOT { method_id })
  */
-export async function deletePaymentMethod(
+async function deletePaymentMethodReal(
   methodId: string,
   hardDelete = false
 ): Promise<{
@@ -834,6 +892,26 @@ export async function deletePaymentMethod(
     error: null,
   };
 }
+
+async function deletePaymentMethodMock(
+  _methodId: string,
+  _hardDelete = false
+): Promise<{
+  success: boolean;
+  newPrimaryId: string | null;
+  error: string | null;
+}> {
+  return { success: true, newPrimaryId: null, error: null };
+}
+
+const _deletePaymentMethod = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', deletePaymentMethodReal, deletePaymentMethodMock, { delayMs: 300 });
+    })()
+  : deletePaymentMethodReal;
+
+export const deletePaymentMethod = _deletePaymentMethod;
 
 // ==============================================
 // VERIFY UPI VPA
@@ -1200,7 +1278,7 @@ export const fetchPaymentStamps = _fetchPaymentStamps;
  * Calls POST /functions/v1/save-bank-preference
  * Edge function upserts the user's netbanking method.
  */
-export async function saveBankPreference(
+async function saveBankPreferenceReal(
   bankCode: string,
   bankName: string,
 ): Promise<{ data: { payment_method_id: string } | null; error: string | null }> {
@@ -1219,6 +1297,22 @@ export async function saveBankPreference(
   return { data: { payment_method_id: data.data.payment_method_id }, error: null };
 }
 
+async function saveBankPreferenceMock(
+  _bankCode: string,
+  _bankName: string,
+): Promise<{ data: { payment_method_id: string } | null; error: string | null }> {
+  return { data: { payment_method_id: `pm-mock-nb-${Date.now()}` }, error: null };
+}
+
+const _saveBankPreference = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', saveBankPreferenceReal, saveBankPreferenceMock, { delayMs: 300 });
+    })()
+  : saveBankPreferenceReal;
+
+export const saveBankPreference = _saveBankPreference;
+
 // ==============================================
 // VERIFY CARD (Rs.1 tokenization session)
 // ==============================================
@@ -1229,7 +1323,7 @@ export async function saveBankPreference(
  * Calls POST /functions/v1/verify-card
  * Returns PayU session params to launch the Core SDK.
  */
-export async function verifyCard(): Promise<{
+async function verifyCardReal(): Promise<{
   data: { payment_id: string; txn_id: string; payu: PayUParams & Record<string, string> } | null;
   error: string | null;
 }> {
@@ -1247,6 +1341,48 @@ export async function verifyCard(): Promise<{
 
   return { data: data.data, error: null };
 }
+
+async function verifyCardMock(): Promise<{
+  data: { payment_id: string; txn_id: string; payu: PayUParams & Record<string, string> } | null;
+  error: string | null;
+}> {
+  const mockTxnId = `CVFY-MOCK-${Date.now()}`;
+  return {
+    data: {
+      payment_id: `pay-mock-verify-${Date.now()}`,
+      txn_id: mockTxnId,
+      payu: {
+        key: 'mock_key',
+        txnid: mockTxnId,
+        amount: '1.00',
+        productinfo: 'card_verification',
+        firstname: 'Test',
+        email: 'test@flent.app',
+        phone: '9999999999',
+        hash: 'mock_hash',
+        surl: 'https://mock.flent.app/success',
+        furl: 'https://mock.flent.app/failure',
+        curl: 'https://mock.flent.app/failure',
+        udf1: '',
+        udf2: '',
+        udf3: 'mock-user-id',
+        user_credential: 'mock_key:test@flent.app',
+        vas_for_mobile_sdk_hash: 'mock_vas_hash',
+        payment_related_details_for_mobile_sdk_hash: 'mock_prd_hash',
+      },
+    },
+    error: null,
+  };
+}
+
+const _verifyCard = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', verifyCardReal, verifyCardMock, { delayMs: 300 });
+    })()
+  : verifyCardReal;
+
+export const verifyCard = _verifyCard;
 
 // ==============================================
 // CARD BIN INFO
@@ -1340,7 +1476,7 @@ export interface PayuStoredCard {
  * Returns matched cards with tokens for CVV-only payment flow.
  * Gracefully returns empty array on any error (client falls back to full card entry).
  */
-export async function getPayuStoredCards(): Promise<{
+async function getPayuStoredCardsReal(): Promise<{
   data: PayuStoredCard[] | null;
   error: string | null;
 }> {
@@ -1359,6 +1495,22 @@ export async function getPayuStoredCards(): Promise<{
 
   return { data: data.data.cards, error: null };
 }
+
+async function getPayuStoredCardsMock(): Promise<{
+  data: PayuStoredCard[] | null;
+  error: string | null;
+}> {
+  return { data: [], error: null };
+}
+
+const _getPayuStoredCards = __DEV__
+  ? (() => {
+      const { withMock } = require('@/src/__dev__/withMock');
+      return withMock('payments', getPayuStoredCardsReal, getPayuStoredCardsMock, { delayMs: 100 });
+    })()
+  : getPayuStoredCardsReal;
+
+export const getPayuStoredCards = _getPayuStoredCards;
 
 export function sanitizeErrorForUI(errorMessage: string): string {
   if (!errorMessage) return 'Something went wrong. Please try again.';

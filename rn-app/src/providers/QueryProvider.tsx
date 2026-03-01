@@ -80,7 +80,7 @@ const queryClient = new QueryClient({
       staleTime: __DEV__ ? 0 : 1000 * 60 * 5,          // Always fresh in dev
       gcTime: __DEV__ ? 0 : 1000 * 60 * 30,             // No cache in dev
       retry: __DEV__ ? 0 : 2,                           // Fail-fast in dev
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
       refetchOnWindowFocus: true,                        // Now works via focusManager
       refetchOnReconnect: !__DEV__,
     },

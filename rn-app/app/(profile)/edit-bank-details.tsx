@@ -50,8 +50,9 @@ export default function EditBankDetailsScreen() {
   const [accountHolderName, setAccountHolderName] = useState(
     landlordBank?.account_holder_name ?? ''
   );
-  const [accountNumber, setAccountNumber] = useState('');
-  const [confirmAccountNumber, setConfirmAccountNumber] = useState('');
+  const [accountNumber, setAccountNumber] = useState(
+    landlordBank?.account_number_masked ?? ''
+  );
   const [ifscCode, setIfscCode] = useState(landlordBank?.ifsc_code ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -76,12 +77,6 @@ export default function EditBankDetailsScreen() {
     setApiError(null);
   }, []);
 
-  const handleConfirmAccountNumberChange = useCallback((text: string) => {
-    setConfirmAccountNumber(text);
-    setErrors((prev) => { const { confirmAccountNumber: _, ...rest } = prev; return rest; });
-    setApiError(null);
-  }, []);
-
   const handleIfscCodeChange = useCallback((text: string) => {
     setIfscCode(text);
     setErrors((prev) => { const { ifscCode: _, ...rest } = prev; return rest; });
@@ -97,11 +92,6 @@ export default function EditBankDetailsScreen() {
     } else if (!validateAccountNumber(accountNumber)) {
       newErrors.accountNumber = '9-18 digits required';
     }
-    if (!confirmAccountNumber.trim()) {
-      newErrors.confirmAccountNumber = 'Required';
-    } else if (accountNumber !== confirmAccountNumber) {
-      newErrors.confirmAccountNumber = 'Account numbers do not match';
-    }
     if (!ifscCode.trim()) {
       newErrors.ifscCode = 'Required';
     } else if (!validateIfscCode(ifscCode)) {
@@ -110,13 +100,12 @@ export default function EditBankDetailsScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [accountHolderName, accountNumber, confirmAccountNumber, ifscCode]);
+  }, [accountHolderName, accountNumber, ifscCode]);
 
   // Can save: all fields filled and not already verified
   const canSave =
     accountHolderName.length > 0 &&
     accountNumber.length > 0 &&
-    confirmAccountNumber.length > 0 &&
     ifscCode.length > 0 &&
     !bankVerified;
 
@@ -182,11 +171,6 @@ export default function EditBankDetailsScreen() {
     router.back();
   }, [router]);
 
-  // Masked account number for hint
-  const maskedHint = landlordBank?.account_number_masked
-    ? `Current: ${landlordBank.account_number_masked}`
-    : undefined;
-
   // Field disabled states
   const fieldsDisabled = isLoading || bankVerified;
 
@@ -242,20 +226,8 @@ export default function EditBankDetailsScreen() {
               label="Account Number"
               value={accountNumber}
               onChangeText={handleAccountNumberChange}
-              placeholder="Enter new account number"
-              hintText={maskedHint}
+              placeholder="Enter account number"
               error={errors.accountNumber}
-              success={bankFieldSuccess}
-              disabled={fieldsDisabled}
-              keyboardType="number-pad"
-            />
-
-            <TextInput
-              label="Confirm Account Number"
-              value={confirmAccountNumber}
-              onChangeText={handleConfirmAccountNumberChange}
-              placeholder="Re-enter account number"
-              error={errors.confirmAccountNumber}
               success={bankFieldSuccess}
               disabled={fieldsDisabled}
               keyboardType="number-pad"
@@ -293,7 +265,7 @@ export default function EditBankDetailsScreen() {
             />
 
             <Text style={styles.footerText}>
-              You may get a verification message from Cashfree to verify your profile and unlock benefits.
+              Ensure these details are correct as rent payments will be credited to this account.
             </Text>
           </View>
         </ScrollView>

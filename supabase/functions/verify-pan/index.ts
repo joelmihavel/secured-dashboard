@@ -31,6 +31,7 @@ import {
   resolveAgreementNames,
   matchAgainstAgreementNames,
 } from "../_shared/name-match-service.ts";
+import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -357,13 +358,22 @@ async function callCashfreePanVerify(panNumber: string): Promise<CashfreePanResp
   }
 
   try {
+    // Build headers with x-cf-signature for non-whitelisted IPs
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-client-id": CASHFREE_APP_ID,
+      "x-client-secret": CASHFREE_SECRET_KEY,
+    };
+    try {
+      const { signature } = await generateCfSignature(CASHFREE_APP_ID);
+      headers["x-cf-signature"] = signature;
+    } catch (sigErr) {
+      console.warn("[verify-pan] x-cf-signature not added:", sigErr instanceof Error ? sigErr.message : String(sigErr));
+    }
+
     const response = await fetch(`${CASHFREE_BASE_URL}/pan`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-client-id": CASHFREE_APP_ID,
-        "x-client-secret": CASHFREE_SECRET_KEY,
-      },
+      headers,
       body: JSON.stringify({ pan: panNumber }),
     });
 

@@ -31,6 +31,7 @@ import {
   PAYU_MERCHANT_SALT,
   PAYU_BASE_URL,
   PAYU_SDK_ENVIRONMENT,
+  IS_SANDBOX,
 } from "../_shared/payu-config.ts";
 
 // ==============================================
@@ -459,6 +460,20 @@ serve(async (req: Request) => {
     const payuHash = await generatePayUHash(payuParams);
     const vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
     const paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
+
+    // Diagnostic: log hash input for debugging (salt masked)
+    const maskedSalt = PAYU_MERCHANT_SALT.slice(0, 4) + "****" + PAYU_MERCHANT_SALT.slice(-4);
+    const hashInputForLog = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|||||||${maskedSalt}`;
+    console.log("[initiate-payment] Hash diagnostic:", {
+      hashInput: hashInputForLog,
+      hashOutput: payuHash.slice(0, 16) + "...",
+      environment: PAYU_SDK_ENVIRONMENT,
+      baseUrl: PAYU_BASE_URL,
+      isSandbox: IS_SANDBOX,
+      key: PAYU_MERCHANT_KEY,
+      amount: amountStr,
+      txnid: txnId,
+    });
 
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);

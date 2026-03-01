@@ -245,6 +245,9 @@ function mapSetupError(errorMessage: string): SetupError {
   if (lower.includes('email') && lower.includes('fail')) {
     return { code: 'EMAIL_FAILED', message: errorMessage };
   }
+  if (lower.includes('currently being processed') || lower.includes('idempotency')) {
+    return { code: 'IDEMPOTENCY_CONFLICT', message: 'Request in progress, retrying...' };
+  }
   if (lower.includes('not found')) {
     return { code: 'NOT_FOUND', message: errorMessage };
   }
@@ -253,6 +256,21 @@ function mapSetupError(errorMessage: string): SetupError {
   }
   if (lower.includes('network') || lower.includes('fetch') || lower.includes('timed out')) {
     return { code: 'NETWORK_ERROR', message: 'Please check your internet connection' };
+  }
+
+  // Catch-all for raw third-party errors that shouldn't reach the UI
+  // Matches patterns like "Cashfree error:", "X-signature", "HTTP 502", etc.
+  if (
+    lower.includes('error:') && (lower.includes('cashfree') || lower.includes('api club') || lower.includes('twilio') || lower.includes('gemini')) ||
+    lower.includes('x-signature') || lower.includes('x-client') ||
+    lower.includes('http 5') || lower.includes('502') || lower.includes('503') || lower.includes('gateway')
+  ) {
+    return { code: 'SERVICE_UNAVAILABLE', message: 'Verification service is temporarily unavailable. Please try again.' };
+  }
+
+  // Mask any "unexpected error" responses from backend
+  if (lower.includes('unexpected error')) {
+    return { code: 'UNKNOWN_ERROR', message: 'Something went wrong. Please try again.' };
   }
 
   return { code: 'UNKNOWN_ERROR', message: errorMessage };

@@ -9,7 +9,7 @@
  * - Inert no-op state when native module is unavailable (dev builds)
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { trackEvent } from '../config/analytics';
 import { isCriticalUpdate, reloadApp } from '../config/updates';
 
@@ -54,12 +54,17 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
   const [bannerState, setBannerState] = useState<BannerState>('hidden');
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  const hasHandledRef = useRef(false);
 
   // Auto-download when an update becomes available
   useEffect(() => {
-    if (updates.isUpdateAvailable && !updates.isDownloading && bannerState === 'hidden' && !dismissed) {
+    if (updates.isUpdateAvailable && !updates.isDownloading && !hasHandledRef.current && !dismissed) {
+      hasHandledRef.current = true;
       setBannerState('downloading');
       setDownloadProgress(0);
+
+      // Safety timeout — hide banner after 30s regardless
+      const timeout = setTimeout(() => setBannerState('hidden'), 30000);
 
       fetchUpdateAsync!()
         .then((result: any) => {
@@ -69,22 +74,24 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
             if (critical) {
               setBannerState('critical');
               trackEvent('ota_critical_auto_apply');
-              // Auto-reload after short delay
               setTimeout(() => {
                 setBannerState('restarting');
                 reloadApp();
               }, 1500);
-            } else {
-              setBannerState('ready');
-              trackEvent('ota_downloaded', { critical: false });
+              return;
             }
+            trackEvent('ota_downloaded', { critical: false });
           }
+          // Always hide after fetch completes (new or not)
+          clearTimeout(timeout);
+          setBannerState('hidden');
         })
         .catch(() => {
+          clearTimeout(timeout);
           setBannerState('hidden');
         });
     }
-  }, [updates.isUpdateAvailable, updates.isDownloading, bannerState, dismissed]);
+  }, [updates.isUpdateAvailable, updates.isDownloading, dismissed]);
 
   // Track download progress
   useEffect(() => {

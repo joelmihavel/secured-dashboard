@@ -77,18 +77,26 @@ export class RateLimitError extends AppError {
  * External service errors (PayU, Cashfree, etc.).
  */
 export class ExternalServiceError extends AppError {
+  /** Raw technical message (logged server-side, never sent to client) */
+  public readonly rawMessage: string;
+
   constructor(
     service: string,
     message: string,
     originalError?: unknown
   ) {
+    // User-friendly message — raw third-party errors (X-signature, HTTP 502, etc.) must never reach UI
+    const userMessage = "Verification service is temporarily unavailable. Please try again in a moment.";
     super(
-      `${service} error: ${message}`,
+      userMessage,
       `${service.toUpperCase()}_ERROR`,
       502,
-      { service, originalError }
+      { service } // Never leak originalError or raw message to client
     );
     this.name = "ExternalServiceError";
+    this.rawMessage = `${service}: ${message}`;
+    // Log the raw error server-side for debugging
+    console.error(`[ExternalServiceError] ${this.rawMessage}`, originalError ?? "");
   }
 }
 

@@ -1,23 +1,19 @@
 /**
  * Agreement Flow Layout
  * Protected — requires authentication
+ *
+ * CRITICAL: Always render <Stack> on every render, even while auth is loading.
+ * Returning a plain <View> destroys the native screen container, causing
+ * "PropertyDOM doesn't exist" crash when the app resumes from background
+ * (same class of bug as lesson #28 — never unmount a navigator).
  */
 
 import React from 'react';
 import { Stack } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
 
 import { colors } from '@/src/theme';
-import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 export default function AgreementLayout() {
-  const { isReady } = useRequireAuth();
-
-  if (!isReady) {
-    // Return a black screen with no indicator to match stack transition aesthetics
-    return <View style={{ flex: 1, backgroundColor: colors.black[700] }} />;
-  }
-
   return (
     <Stack
       screenOptions={{

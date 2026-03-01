@@ -141,15 +141,14 @@ function statusPriority(status: string): number {
 }
 
 function computePaymentStamps(
-  tenancy: { lease_start_date: string; lease_end_date: string | null; rent_due_day: number },
+  tenancy: { created_at: string; rent_due_day: number },
   payments: Array<{ payment_month: string; paid_at: string | null; status: string }>
 ): DashboardData['payment_stamps'] {
   const now = new Date();
-  const leaseStart = new Date(tenancy.lease_start_date);
-  const leaseEnd = tenancy.lease_end_date ? new Date(tenancy.lease_end_date) : null;
-
-  // Determine range: lease_start to min(lease_end, current_month)
-  const endDate = leaseEnd && leaseEnd < now ? leaseEnd : now;
+  // Payment tracking starts from when the tenancy was created (user joined platform),
+  // NOT from agreement lease_start_date. Agreement dates are extraction metadata only.
+  // rent_due_day from the agreement is still the cutoff for on_time vs late vs missed.
+  const trackingStart = new Date(tenancy.created_at);
 
   const summary = { on_time: 0, late: 0, missed: 0, pending: 0, total_months: 0 };
   let currentMonthStatus: 'on_time' | 'late' | 'missed' | 'pending' = 'pending';
@@ -165,14 +164,23 @@ function computePaymentStamps(
     }
   }
 
-  // Iterate each month from lease start to end
-  let cursor = new Date(leaseStart.getFullYear(), leaseStart.getMonth(), 1);
-  const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  // First trackable month: if user joined AFTER this month's due date,
+  // that month doesn't count (can't miss a payment that wasn't due yet).
+  const dueDay = tenancy.rent_due_day;
+  let startYear = trackingStart.getFullYear();
+  let startMonth = trackingStart.getMonth();
+  if (trackingStart.getDate() > dueDay) {
+    // Joined after due day — first real month is next month
+    startMonth++;
+    if (startMonth > 11) { startMonth = 0; startYear++; }
+  }
+
+  let cursor = new Date(startYear, startMonth, 1);
+  const endMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   while (cursor <= endMonth) {
     summary.total_months++;
     const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-    const dueDay = tenancy.rent_due_day;
     const dueDate = new Date(cursor.getFullYear(), cursor.getMonth(), dueDay);
     // Due cutoff: end of due_date in IST (UTC+05:30) = 18:29:59.999 UTC
     const dueCutoff = new Date(dueDate);
@@ -182,22 +190,25 @@ function computePaymentStamps(
     const isCurrentMonth = cursor.getFullYear() === now.getFullYear() && cursor.getMonth() === now.getMonth();
     const isFutureMonth = cursor > now;
 
+    // Grey (pending) is the zero state. Stamps only change when:
+    // - Payment completed (success) → on_time or late
+    // - Due date passed with no success payment → missed
+    // failed/refunded/no-payment all remain grey until due date passes.
     let status: 'on_time' | 'late' | 'missed' | 'pending';
 
     if (isFutureMonth || (isCurrentMonth && now <= dueCutoff)) {
+      // Due date hasn't passed — grey unless already paid
       if (payment?.status === 'success') {
         status = new Date(payment.paid_at!) <= dueCutoff ? 'on_time' : 'late';
-      } else if (payment && ['processing', 'initiated'].includes(payment.status)) {
-        status = 'pending';
       } else {
-        status = 'pending';
+        status = 'pending'; // Grey: pending, processing, initiated, failed, refunded, or no payment
       }
     } else if (payment?.status === 'success') {
       status = new Date(payment.paid_at!) <= dueCutoff ? 'on_time' : 'late';
     } else if (payment && ['processing', 'initiated'].includes(payment.status)) {
-      status = 'pending';
+      status = 'pending'; // Still processing — keep grey even past due
     } else {
-      status = 'missed';
+      status = 'missed'; // Due date passed, no success/processing payment
     }
 
     summary[status]++;
@@ -258,7 +269,7 @@ serve(async (req: Request) => {
           monthly_rent_paise, maintenance_paise, rent_due_day, lease_start_date, lease_end_date,
           landlord_name, agreement_cert_id,
           bank_verified, utility_verified, landlord_approved, landlord_response,
-          cashback_cutoff_day
+          cashback_cutoff_day, created_at
         `)
         .eq("user_id", userId)
         .in("status", ["active", "pending_verification"])
@@ -349,14 +360,10 @@ serve(async (req: Request) => {
       }
 
       // Check up to 3 months ahead for the next unpaid month
+      // NOTE: lease_end_date does NOT gate payment tracking — agreements often expire
+      // while the tenancy continues. Payment lifecycle is forward-looking from creation.
       for (let offset = 0; offset < 3 && !upcomingPayment; offset++) {
         const dueDate = new Date(baseDueDate.getFullYear(), baseDueDate.getMonth() + offset, baseDueDate.getDate());
-
-        // Stop if beyond lease end
-        if (tenancy.lease_end_date) {
-          const leaseEnd = new Date(tenancy.lease_end_date);
-          if (dueDate > leaseEnd) break;
-        }
 
         const daysUntilDue = Math.ceil(
           (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
@@ -481,7 +488,7 @@ serve(async (req: Request) => {
       landlord_bank: landlordBank,
       notifications: formattedNotifications,
       unread_notification_count: unreadCount,
-      payment_stamps: tenancy?.lease_start_date
+      payment_stamps: tenancy?.created_at
         ? computePaymentStamps(tenancy, allTenancyPayments)
         : null,
     };

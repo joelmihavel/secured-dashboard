@@ -1,33 +1,21 @@
 /**
  * Payment Flow Layout
  * Protected — requires authentication
+ *
+ * CRITICAL: Always render <Stack> — never return a plain <View>.
+ * Swapping the navigator for a View destroys native screen containers
+ * and causes crashes on app resume from background.
+ *
+ * Auth redirect is handled by the root index.tsx router —
+ * unauthenticated users never reach this layout.
  */
 
-import React, { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { Stack } from 'expo-router';
 
 import { colors } from '@/src/theme';
-import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 export default function PaymentLayout() {
-  const { isReady, isAuthenticated } = useRequireAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isReady && !isAuthenticated) {
-      router.replace('/(auth)/sign-up');
-    }
-  }, [isReady, isAuthenticated, router]);
-
-  if (!isReady || !isAuthenticated) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.brand[500]} />
-      </View>
-    );
-  }
-
   return (
     <Stack
       screenOptions={{

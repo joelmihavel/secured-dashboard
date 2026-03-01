@@ -50,6 +50,7 @@ import { s, sf, sv } from '@/src/theme/scale';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/services/supabase/client';
+import { isReviewMode } from '@/src/review/reviewMode';
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
@@ -201,13 +202,11 @@ export default function OTPScreen() {
 
   const isClosingRef = useRef(false);
   const handleClose = useCallback(() => {
-    if (isClosingRef.current) return;
+    if (isClosingRef.current || isNavigating) return;
     isClosingRef.current = true;
     setIsVisible(false);
-    setTimeout(() => {
-      router.back();
-    }, 300);
-  }, [router]);
+    router.back();
+  }, [router, isNavigating]);
 
   // Handle back button - include handleClose in dependencies to prevent stale closure
   useEffect(() => {
@@ -239,6 +238,20 @@ export default function OTPScreen() {
     });
     return () => subscription.unsubscribe();
   }, [router, isNavigating]);
+
+  // Review mode: no real Supabase session, so SIGNED_IN never fires.
+  // Navigate when auth store confirms authenticated instead.
+  const authStatus = useAuthStore((s) => s.status);
+  useEffect(() => {
+    if (isReviewMode() && authStatus === 'authenticated' && !isNavigating) {
+      setIsNavigating(true);
+      Keyboard.dismiss();
+      setIsVisible(false);
+      setTimeout(() => {
+        router.replace('/');
+      }, 300);
+    }
+  }, [authStatus, router, isNavigating]);
 
   const handleProceed = useCallback((otpValue?: string | any) => {
     // Ref-based guard: prevents double-fire even before React Query isPending updates.

@@ -21,7 +21,7 @@ import {
   type CorePaymentOutcome,
   type InstrumentParams,
 } from '@/src/services/payment/payuCoreService';
-import { addCardToken, addUpiVpa } from '@/src/services/api/payments';
+import { addCardToken, addUpiVpa, saveBankPreference } from '@/src/services/api/payments';
 import { captureError } from '@/src/config/sentry';
 
 export type PaymentFlowOutcome =
@@ -142,16 +142,30 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
             (async () => {
               try {
                 if ((paymentMode === 'CC' || paymentMode === 'DC') && payuResponse.store_card_token) {
+                  // Map PayU bankcode to card network — PayU returns codes like VISA, MAST, RUPAY, AMEX, MAES
+                  const bankcodeToNetwork: Record<string, 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro'> = {
+                    visa: 'visa', mast: 'mastercard', mastercard: 'mastercard',
+                    rupay: 'rupay', amex: 'amex', maes: 'maestro', maestro: 'maestro',
+                    dinr: 'mastercard', jcb: 'visa', // fallbacks for rare networks
+                  };
+                  const rawBankcode = String(payuResponse.bankcode ?? '').toLowerCase();
+                  const cardNetwork = bankcodeToNetwork[rawBankcode] ?? 'visa';
+
                   await addCardToken({
                     card_token: String(payuResponse.store_card_token),
                     card_last4: String(payuResponse.card_no ?? '').slice(-4),
-                    card_network: (String(payuResponse.bankcode ?? '').toLowerCase()) as 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro',
+                    card_network: cardNetwork,
                     card_type: paymentMode === 'CC' ? 'credit' : 'debit',
                     ...(Number(payuResponse.card_expiry_month) ? { card_expiry_month: Number(payuResponse.card_expiry_month) } : {}),
                     ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
                   });
                 } else if (paymentMode === 'upi' && payuResponse.field7) {
                   await addUpiVpa(String(payuResponse.field7));
+                } else if (paymentMode === 'NB' && payuResponse.bankcode) {
+                  await saveBankPreference(
+                    String(payuResponse.bankcode),
+                    String(payuResponse.bankcode), // PayU doesn't return bank name, use code
+                  );
                 }
               } catch (saveErr) {
                 console.warn('Client-side payment method save failed (webhook will retry):', saveErr);

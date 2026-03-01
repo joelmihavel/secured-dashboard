@@ -3,7 +3,8 @@
  *
  * Creates a Rs.1 PayU session for card tokenization/verification.
  * The webhook handles token saving; this function only initiates.
- * After successful verification, the webhook auto-refunds the Rs.1.
+ * After successful verification, the webhook auto-refunds the Rs.1
+ * via PayU's cancel_refund_transaction API.
  *
  * Endpoint: POST /functions/v1/verify-card
  * Auth: Required (JWT)
@@ -117,10 +118,13 @@ serve(async (req: Request) => {
     const furl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
 
     // Create a lightweight payment record for tracking
+    // Note: tenancy_id, due_date, payment_month are NULL for card verifications
+    // (not tied to a rent payment or tenancy)
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .insert({
         user_id: userId,
+        idempotency_key: txnId,
         rent_amount_paise: 100, // Rs.1 = 100 paise
         pg_fee_paise: 0,
         cashback_applied_paise: 0,

@@ -294,7 +294,7 @@ export default function HomeScreen() {
         id: 'upcoming',
         data: {
           monthName: formatMonth(upcomingPayment.rent_month),
-          cashbackEarned: paymentMethods.length > 0 ? Math.round(rentAmount * (cashbackRate / 100)) : 0,
+          cashbackEarned: Math.round(rentAmount * (cashbackRate / 100)),
           status: earlyStatus,
           yearlyStamps,
           lateCount: summaryLate,
@@ -383,7 +383,7 @@ export default function HomeScreen() {
         id: 'zero-state',
         data: {
           monthName: formatMonth(new Date().toISOString()),
-          cashbackEarned: 0,
+          cashbackEarned: Math.round(rentAmount * (cashbackRate / 100)),
           status: 'upcoming',
           yearlyStamps: [],
           lateCount: 0,
@@ -502,7 +502,6 @@ export default function HomeScreen() {
 
         const handleVerificationFinishSetup = useCallback(() => {
           setShowVerificationSheet(false);
-          setPendingPaymentReturn(true);
           // Route to first incomplete step (bank is always done at this point)
           if (!verificationStatus?.utility_verified) {
             router.push({ pathname: '/(setup)/add-utility', params: { reentry: '1' } } as never);
@@ -511,7 +510,7 @@ export default function HomeScreen() {
           } else {
             router.push('/(setup)/pending-steps' as never);
           }
-        }, [router, setPendingPaymentReturn, verificationStatus]);
+        }, [router, verificationStatus]);
 
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);

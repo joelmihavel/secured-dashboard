@@ -261,6 +261,15 @@ export function PaymentMethodModal({
         return;
       }
 
+      // Enter-rent flow: delegate to parent immediately.
+      // The confirm screen handles its own initiatePayment + PayU session.
+      // Calling initiatePayment here would create a duplicate payment record
+      // AND add 1-3s of API delay before the user sees the confirm screen.
+      if (onProceed) {
+        onProceed(methodType);
+        return;
+      }
+
       setIsInitiating(true);
       setConfirming();
 
@@ -297,14 +306,6 @@ export function PaymentMethodModal({
               initialStatus: 'success',
             },
           } as never);
-          return;
-        }
-
-        if (onProceed) {
-          // enter-rent flow: delegate to parent (navigates to confirm screen)
-          setProcessing(data.paymentId);
-          setLastPayment(data.paymentId);
-          onProceed(methodType);
           return;
         }
 

@@ -107,11 +107,11 @@ export function isCriticalUpdate(manifest: any): boolean {
 // ==============================================
 
 /**
- * Check for OTA updates, download if available, auto-reload for critical.
+ * Check for OTA updates (check only — no download).
  *
- * In production: checks Expo's update server, downloads the bundle.
- * For critical updates: calls reloadAsync() after 500ms delay.
- * For normal updates: downloaded silently, applied via UI banner or next cold start.
+ * Triggers checkForUpdateAsync() which updates the native state.
+ * The useOTAUpdates hook reacts to isUpdateAvailable and handles
+ * downloading, banner UI, and critical update reloads.
  * In development: no-op (updates are disabled in dev client).
  */
 export async function checkForUpdates(): Promise<UpdateCheckResult> {
@@ -139,35 +139,9 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
       return { status: 'no_update', isCritical: false };
     }
 
-    addBreadcrumb('OTA update available, downloading', 'updates');
-    const critical = isCriticalUpdate(update.manifest);
-
-    const result = await Updates.fetchUpdateAsync();
-
-    if (result.isNew) {
-      trackEvent('ota_downloaded', { critical });
-
-      if (critical) {
-        addBreadcrumb('Critical OTA update — auto-reloading', 'updates');
-        trackEvent('ota_critical_auto_apply');
-
-        // Short delay to let analytics flush
-        setTimeout(() => {
-          try {
-            Updates!.reloadAsync();
-          } catch {
-            // reloadAsync may throw if called too quickly
-          }
-        }, 500);
-
-        return { status: 'downloaded_critical', isCritical: true };
-      }
-
-      addBreadcrumb('OTA update cached, banner will prompt user', 'updates');
-      return { status: 'downloaded', isCritical: false };
-    }
-
-    return { status: 'no_update', isCritical: false };
+    // Download and UI are handled by useOTAUpdates hook
+    addBreadcrumb('OTA update available, hook will handle download', 'updates');
+    return { status: 'downloading', isCritical: false };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown error';
     addBreadcrumb(`OTA check failed: ${errorMsg}`, 'updates');

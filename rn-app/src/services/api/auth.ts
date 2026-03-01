@@ -147,31 +147,13 @@ export async function sendOtp(
 export async function verifyOtp(
   request: VerifyOtpRequest
 ): Promise<{ data: VerifyOtpResult | null; error: AuthError | null }> {
-  // Review mode: validate OTP locally, then inject a fake Supabase session
-  // so onAuthStateChange(SIGNED_IN) fires and the OTP screen navigates naturally.
+  // Review mode: validate OTP locally, return mock success.
+  // Navigation is handled by otp.tsx watching auth store status (not Supabase events).
+  // AuthProvider treats isReviewMode() as authenticated (no real session needed).
   if (isReviewMode()) {
     if (request.otp !== REVIEW_OTP) {
       return { data: null, error: { code: 'INVALID_OTP', message: 'The code you entered is incorrect' } };
     }
-
-    // Build a structurally valid JWT (Supabase decodes payload but doesn't verify signature locally)
-    const header = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-    const payload = btoa(JSON.stringify({
-      sub: 'review-user-id',
-      phone: '+919999900001',
-      email: 'reviewer@flent.in',
-      role: 'authenticated',
-      aud: 'authenticated',
-      exp: Math.floor(Date.now() / 1000) + 86400,
-      user_metadata: { name: 'Alex Reviewer' },
-    }));
-    const fakeJwt = `${header}.${payload}.review-mode`;
-
-    // This fires onAuthStateChange(SIGNED_IN) → AuthProvider sets session → OTP screen navigates
-    await supabase.auth.setSession({
-      access_token: fakeJwt,
-      refresh_token: `review-refresh-${Date.now()}`,
-    });
 
     return {
       data: { user_id: 'review-user-id', is_new_user: false, identity_status: null },

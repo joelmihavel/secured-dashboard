@@ -341,7 +341,7 @@ export default function AddBankScreen() {
 
             {/* Footer */}
             <Text style={styles.footerText}>
-              You may get a verification message from Cashfree to verify your profile and unlock benefits.
+              Ensure these details are correct as rent payments will be credited to this account.
             </Text>
           </View>
         </ScrollView>

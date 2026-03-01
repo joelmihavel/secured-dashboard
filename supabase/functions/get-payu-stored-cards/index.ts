@@ -120,7 +120,7 @@ serve(async (req: Request) => {
       .select("id, card_last4, card_type, card_network")
       .eq("user_id", userId)
       .eq("type", "card")
-      .eq("is_active", true);
+      .is("deleted_at", null);
 
     if (dbError) {
       console.error("[get-payu-stored-cards] DB error:", dbError);

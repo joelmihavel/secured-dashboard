@@ -39,10 +39,17 @@
       "channel": "production",
       "env": {
         "APP_ENV": "production"
-      }
+      },
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6757275258",
+        "ascApiKeyId": "P8AM5FW523",
+        "ascApiKeyIssuerId": "f7aeb1fa-2e94-4ba5-a6c6-328010540b3f",
+        "ascApiKeyPath": "/Users/atrishabh/Documents/Dev/iOS APN Keys/App Store Connect Key/AuthKey_P8AM5FW523.p8"
+      }
+    }
   }
 }

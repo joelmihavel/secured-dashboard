@@ -1,26 +1,18 @@
 /**
  * Profile Flow Layout
  * Protected — requires authentication
+ *
+ * CRITICAL: Always render <Stack> — never return a plain <View>.
+ * Swapping the navigator for a View destroys native screen containers
+ * and causes crashes on app resume from background.
  */
 
 import React from 'react';
 import { Stack } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
 
 import { colors } from '@/src/theme';
-import { useRequireAuth } from '@/src/hooks/useRequireAuth';
 
 export default function ProfileLayout() {
-  const { isReady } = useRequireAuth();
-
-  if (!isReady) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.black[700], justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.brand[500]} />
-      </View>
-    );
-  }
-
   return (
     <Stack
       screenOptions={{

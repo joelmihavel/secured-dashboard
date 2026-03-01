@@ -333,31 +333,27 @@ async function pollPayUSettlement(
 // ==============================================
 
 /**
- * Checks for payments where PayU settlement is confirmed
- * and landlord payout is still pending. Marks them as ready.
- * MVP: Just logs. V2: Triggers actual payout via API.
+ * Monitors payments awaiting landlord payout (read-only).
+ *
+ * Does NOT mutate status — settle-to-landlord (hourly cron) owns the
+ * ready → processing transition. This avoids a race where Tier 2
+ * moved payments to 'processing' before settle-to-landlord could
+ * pick them up (it queries 'ready').
  */
 async function pollLandlordPayoutReadiness(
   supabase: ReturnType<typeof createServiceClient>,
   audit: AuditLogger,
-  systemConfig: SystemTransferFlag,
+  _systemConfig: SystemTransferFlag,
 ): Promise<TierResult> {
   const result: TierResult = { checked: 0, updated: 0, errors: 0 };
 
   try {
-    // Short-circuit: if system transfers are disabled, skip Tier 2 entirely.
-    if (!systemConfig.enabled) {
-      console.log("[TIER2] System transfers disabled — skipping ready→processing transition");
-      return result;
-    }
-
-    // Find payments where landlord_payout_status = 'ready'
-    // (set by TIER 1 when PayU settlement is confirmed)
+    // Count payments in each payout stage for monitoring
     const { data: readyPayments } = await supabase
       .from("payments")
-      .select("id, tenancy_id, rent_amount_paise, landlord_payout_paise, payment_month, paid_at")
+      .select("id, rent_amount_paise, landlord_payout_paise, payment_month")
       .eq("status", "success")
-      .eq("landlord_payout_status", "ready")
+      .in("landlord_payout_status", ["ready", "processing"])
       .order("paid_at", { ascending: true })
       .limit(BATCH_SIZE);
 
@@ -367,49 +363,27 @@ async function pollLandlordPayoutReadiness(
 
     result.checked = readyPayments.length;
 
-    // MVP: Log for manual payout processing, set status to 'processing'
-    for (const payment of readyPayments) {
-      try {
-        console.log("[TIER2] Payment ready for landlord payout:", {
-          payment_id: payment.id,
-          amount_paise: payment.landlord_payout_paise ?? payment.rent_amount_paise,
-          payment_month: payment.payment_month,
-        });
+    const totalPaise = readyPayments.reduce(
+      (sum, p) => sum + (p.landlord_payout_paise ?? p.rent_amount_paise),
+      0,
+    );
 
-        // Set to 'processing' so settle-to-landlord knows it's been acknowledged
-        await supabase
-          .from("payments")
-          .update({ landlord_payout_status: "processing" })
-          .eq("id", payment.id);
+    await audit.logSuccess(
+      "LANDLORD_PAYOUTS_MONITOR",
+      "payment",
+      undefined,
+      undefined,
+      {
+        count: readyPayments.length,
+        total_paise: totalPaise,
+        total_rupees: (totalPaise / 100).toFixed(2),
+        payment_ids: readyPayments.map((p) => p.id),
+      },
+    );
 
-        result.updated++;
-      } catch (err) {
-        console.error(`Failed to update landlord payout status for ${payment.id}:`, err);
-        result.errors++;
-      }
-    }
-
-    // Log summary for ops
-    if (readyPayments.length > 0) {
-      const totalPaise = readyPayments.reduce(
-        (sum, p) => sum + (p.landlord_payout_paise ?? p.rent_amount_paise),
-        0,
-      );
-
-      await audit.logSuccess(
-        "LANDLORD_PAYOUTS_READY",
-        "payment",
-        undefined,
-        undefined,
-        {
-          count: readyPayments.length,
-          total_paise: totalPaise,
-          total_rupees: (totalPaise / 100).toFixed(2),
-        },
-      );
-    }
+    console.log(`[TIER2] ${readyPayments.length} payments awaiting landlord payout (₹${(totalPaise / 100).toFixed(2)})`);
   } catch (err) {
-    console.error("TIER 2 landlord payout readiness error:", err);
+    console.error("TIER 2 landlord payout monitoring error:", err);
     result.errors++;
   }
 

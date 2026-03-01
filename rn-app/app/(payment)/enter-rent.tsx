@@ -44,7 +44,9 @@ export default function EnterRentScreen() {
   const handleMethodSelected = useCallback((methodType: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setSelectedInstrument({ type: methodType as any });
-    setShowModal(false);
+    // Don't close the modal — closing triggers clearPayuSessionParams() + router.back()
+    // which wipes session data the confirm screen needs and pops it off the stack.
+    // The confirm screen pushes on top and covers the modal naturally.
     router.push('/(payment)/confirm' as never);
   }, [setSelectedInstrument, router]);
 

@@ -42,11 +42,11 @@ const INPUT_COLORS_DARK = {
   hintText: '#878787',             // Figma: hint text color (neutral/600)
   textFilled: '#DDDDDD',           // Figma: neutral/200
   textError: '#E5484D',            // Figma: error text color
-  textSuccess: '#30A46C',          // Success/verified text color (green)
+  textSuccess: '#FF9A6D',          // Success/verified text color (brand orange)
   border: '#4D4D4D',              // Figma: stroke (visible:false in empty state, used on focus)
   borderFocus: '#FF9A6D',         // Figma: brand accent on focus
   borderError: '#E5484D',
-  borderSuccess: '#30A46C',       // Success/verified border color (green)
+  borderSuccess: '#FF9A6D',       // Success/verified border color (brand orange)
 } as const;
 
 // Light theme variant (for white backgrounds)
@@ -57,11 +57,11 @@ const INPUT_COLORS_LIGHT = {
   hintText: '#878787',
   textFilled: '#131313',
   textError: '#e5484d',
-  textSuccess: '#30A46C',
+  textSuccess: '#FF9A6D',
   border: '#cbcbcb',
   borderFocus: '#FF9A6D',         // Figma: #ff9a6d (brand accent) on focus
   borderError: '#E5484D',
-  borderSuccess: '#30A46C',
+  borderSuccess: '#FF9A6D',
 } as const;
 
 // Exact Figma spacing values
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'right' as const,
-    // Color applied inline (#30A46C)
+    // Color applied inline (#FF9A6D brand orange)
   },
   hintText: {
     fontFamily: 'PlusJakartaSans-Regular',

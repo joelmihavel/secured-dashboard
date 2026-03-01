@@ -1,16 +1,19 @@
 /**
- * PayU Core SDK Service (Mode B — CBWrapper)
+ * PayU Core SDK Service (Mode B — CBWrapper + Core PG)
  *
- * Wraps payu-custom-browser-react CBWrapper for secure payment execution.
+ * Uses PayU Core PG SDK (payu-core-pg-react) to generate correctly formatted
+ * POST body, then passes it to Custom Browser SDK (payu-custom-browser-react)
+ * for webview presentation.
+ *
  * Mode B only: takes pre-computed hashes from server, salt never on client.
  *
  * Three payment modes:
- * - Card: CBWrapper + Custom Browser for 3DS/OTP
- * - Net Banking: CBWrapper + Custom Browser for bank login
- * - UPI Collect: CBWrapper submit (no Custom Browser)
+ * - Card: Core PG → CBWrapper + Custom Browser for 3DS/OTP
+ * - Net Banking: Core PG → CBWrapper + Custom Browser for bank login
+ * - UPI Collect: Core PG → CBWrapper submit
  */
 
-import { DeviceEventEmitter, Platform } from 'react-native';
+import { NativeModules, NativeEventEmitter, DeviceEventEmitter, Platform } from 'react-native';
 import type { EmitterSubscription } from 'react-native';
 import type { PayUSessionParams } from '@/src/stores/payment';
 
@@ -55,7 +58,7 @@ interface UPIInstrumentParams {
 export type InstrumentParams = CardInstrumentParams | StoredCardInstrumentParams | NBInstrumentParams | UPIInstrumentParams;
 
 // ===================================================
-// SDK LOADING (Expo Go safe)
+// SDK LOADING — Safe for New Architecture
 // ===================================================
 
 interface CBWrapperModule {
@@ -64,15 +67,89 @@ interface CBWrapperModule {
     errorCallback: (error: string) => void,
     successCallback: (initMessage: string) => void,
   ): void;
+  addListener?: (eventName: string) => void;
+  removeListeners?: (count: number) => void;
 }
 
-let CBWrapper: CBWrapperModule | null = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  CBWrapper = require('payu-custom-browser-react').default;
-} catch {
-  CBWrapper = null;
+interface PayUSdkModule {
+  makePayment(
+    params: Record<string, unknown>,
+    successCallback: (jsonString: string) => void,
+    errorCallback: (error: unknown) => void,
+  ): void;
 }
+
+// Resolve native modules — all wrapped in try/catch to prevent crashes at import time.
+let CBWrapper: CBWrapperModule | null = null;
+let PayUSdkNative: PayUSdkModule | null = null;
+
+try {
+  const nativeModule = NativeModules.CBWrapper;
+  if (nativeModule != null && typeof nativeModule.openCB === 'function') {
+    CBWrapper = nativeModule as CBWrapperModule;
+  }
+} catch {
+  // NativeModules access failed
+}
+
+if (!CBWrapper) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pkg = require('payu-custom-browser-react');
+    const mod = pkg.default ?? pkg;
+    if (mod != null && typeof mod.openCB === 'function') {
+      CBWrapper = mod as CBWrapperModule;
+    }
+  } catch {
+    // Module not available (Expo Go, missing native binary)
+  }
+}
+
+// Load PayU Core PG SDK native module (for generating correctly formatted POST body)
+try {
+  const payuSdk = NativeModules.PayUSdk;
+  if (payuSdk != null && typeof payuSdk.makePayment === 'function') {
+    PayUSdkNative = payuSdk as PayUSdkModule;
+  }
+} catch {
+  // PayUSdk not available
+}
+
+// Build event emitter LAZILY — constructing NativeEventEmitter at module load
+// can crash in bridgeless mode if the native module doesn't have proper bindings.
+let _cachedEmitter: NativeEventEmitter | typeof DeviceEventEmitter | null = null;
+
+function getEventEmitter(): NativeEventEmitter | typeof DeviceEventEmitter {
+  if (_cachedEmitter) return _cachedEmitter;
+
+  if (CBWrapper) {
+    try {
+      _cachedEmitter = new NativeEventEmitter(CBWrapper as unknown as ConstructorParameters<typeof NativeEventEmitter>[0]);
+      return _cachedEmitter;
+    } catch (e) {
+      console.warn('[PayU] NativeEventEmitter construction failed, falling back to DeviceEventEmitter:', e);
+    }
+  }
+
+  _cachedEmitter = DeviceEventEmitter;
+  return _cachedEmitter;
+}
+
+// Diagnostic log
+if (CBWrapper) {
+  console.log('[PayU] CBWrapper loaded successfully');
+} else {
+  try {
+    const moduleNames = Object.keys(NativeModules);
+    console.warn(
+      '[PayU] CBWrapper NOT found. Module count: ' + moduleNames.length +
+      '. Sample: ' + moduleNames.slice(0, 15).join(', '),
+    );
+  } catch {
+    console.warn('[PayU] CBWrapper NOT found, could not enumerate NativeModules');
+  }
+}
+console.log('[PayU] PayUSdk native module:', PayUSdkNative ? 'available' : 'NOT available');
 
 // ===================================================
 // MOCK (Expo Go fallback)
@@ -103,17 +180,228 @@ async function mockCorePayment(
 }
 
 // ===================================================
+// CORE PG SDK — POST DATA GENERATION
+// ===================================================
+
+/**
+ * Map our CorePaymentMode to PayU Core PG SDK paymentType strings.
+ * These are the values PayU's native SDK expects for createRequestWithPaymentParam.
+ */
+function getPaymentType(mode: CorePaymentMode): string {
+  switch (mode) {
+    case 'CC':
+    case 'DC':
+      return 'Credit / Debit Cards';
+    case 'NB':
+      return 'Net Banking';
+    case 'upi':
+      return 'UPI';
+  }
+}
+
+/**
+ * Use PayU Core PG SDK's native makePayment() to generate the correctly
+ * formatted POST body. On iOS, makePayment returns {data: postParams, url}
+ * via successCallback WITHOUT opening any UI.
+ *
+ * This ensures the POST body format matches exactly what PayU's server expects
+ * for hash verification — eliminates encoding/formatting mismatches from manual
+ * construction.
+ *
+ * Returns null if Core PG SDK is unavailable or fails.
+ */
+async function getCorePgPostData(
+  mode: CorePaymentMode,
+  sessionParams: PayUSessionParams,
+  instrumentParams: InstrumentParams,
+  sdkEnvironment: string,
+): Promise<{ postData: string; paymentUrl: string } | null> {
+  // Core PG makePayment only returns {data, url} on iOS.
+  // On Android it opens the Custom Browser directly.
+  if (Platform.OS !== 'ios' || !PayUSdkNative) {
+    return null;
+  }
+
+  // Build params using Core PG SDK field names (camelCase)
+  const corePgParams: Record<string, unknown> = {
+    key: sessionParams.key,
+    environment: sdkEnvironment,
+    amount: sessionParams.amount,
+    txnId: sessionParams.txnid,
+    phone: sessionParams.phone || '9999999999',
+    email: sessionParams.email,
+    surl: sessionParams.surl,
+    furl: sessionParams.furl,
+    productInfo: sessionParams.productinfo,
+    firstname: sessionParams.firstname,
+    hash: sessionParams.hash,
+    userCredentials: sessionParams.user_credential,
+    udf1: sessionParams.udf1 ?? '',
+    udf2: sessionParams.udf2 ?? '',
+    udf3: sessionParams.udf3 ?? '',
+    udf4: sessionParams.udf4 ?? '',
+    udf5: sessionParams.udf5 ?? '',
+    paymentType: getPaymentType(mode),
+  };
+
+  // Instrument-specific params using Core PG SDK field names
+  if ('bankcode' in instrumentParams && (mode === 'NB' || mode === 'CC' || mode === 'DC')) {
+    corePgParams.bankCode = instrumentParams.bankcode;
+  }
+  if ('vpa' in instrumentParams) {
+    corePgParams.vpa = (instrumentParams as UPIInstrumentParams).vpa;
+  }
+  if ('card_number' in instrumentParams) {
+    const cardParams = instrumentParams as CardInstrumentParams;
+    corePgParams.cardNumber = cardParams.card_number;
+    corePgParams.cvv = cardParams.cvv;
+    corePgParams.expiryMonth = cardParams.expiry_month;
+    corePgParams.expiryYear = cardParams.expiry_year;
+    corePgParams.nameOnCard = cardParams.name_on_card;
+    if (cardParams.store_card) {
+      corePgParams.store_card = cardParams.store_card;
+    }
+  }
+  if ('store_card_token' in instrumentParams) {
+    const storedParams = instrumentParams as StoredCardInstrumentParams;
+    corePgParams.store_card_token = storedParams.store_card_token;
+    corePgParams.storecard_token_type = storedParams.storecard_token_type;
+    corePgParams.cvv = storedParams.cvv;
+  }
+
+  // Enforce paymethod
+  if (sessionParams.enforce_paymethod) {
+    corePgParams.enforce_paymethod = sessionParams.enforce_paymethod;
+  }
+
+  return new Promise((resolve) => {
+    const timeoutId = setTimeout(() => {
+      console.warn('[PayU] Core PG makePayment timed out (5s)');
+      resolve(null);
+    }, 5000);
+
+    try {
+      PayUSdkNative!.makePayment(
+        corePgParams,
+        (jsonString: string) => {
+          clearTimeout(timeoutId);
+          try {
+            const result = JSON.parse(jsonString);
+            if (result.data && result.url) {
+              console.log('[PayU] Core PG generated POST data successfully, url:', result.url);
+              console.log('[PayU] Core PG postData (first 300):', String(result.data).slice(0, 300));
+              resolve({ postData: result.data, paymentUrl: result.url });
+            } else {
+              console.warn('[PayU] Core PG returned unexpected format:', Object.keys(result));
+              resolve(null);
+            }
+          } catch (e) {
+            console.warn('[PayU] Core PG response parse failed:', e);
+            resolve(null);
+          }
+        },
+        (error: unknown) => {
+          clearTimeout(timeoutId);
+          console.warn('[PayU] Core PG makePayment error:', error);
+          resolve(null);
+        },
+      );
+    } catch (e) {
+      clearTimeout(timeoutId);
+      console.warn('[PayU] Core PG makePayment threw:', e);
+      resolve(null);
+    }
+  });
+}
+
+// ===================================================
+// FALLBACK POST DATA BUILDER
+// ===================================================
+
+/**
+ * Fallback: manually build the URL-encoded POST body.
+ * Used when Core PG SDK is unavailable (Android or missing native module).
+ */
+function buildPostDataFallback(
+  mode: CorePaymentMode,
+  sessionParams: PayUSessionParams,
+  instrumentParams: InstrumentParams,
+): string {
+  const params: Record<string, string> = {
+    key: sessionParams.key,
+    txnid: sessionParams.txnid,
+    amount: sessionParams.amount,
+    productinfo: sessionParams.productinfo,
+    firstname: sessionParams.firstname,
+    email: sessionParams.email,
+    phone: sessionParams.phone || '9999999999',
+    surl: sessionParams.surl,
+    furl: sessionParams.furl,
+    hash: sessionParams.hash,
+    udf1: sessionParams.udf1 ?? '',
+    udf2: sessionParams.udf2 ?? '',
+    udf3: sessionParams.udf3 ?? '',
+    udf4: sessionParams.udf4 ?? '',
+    udf5: sessionParams.udf5 ?? '',
+    user_credentials: sessionParams.user_credential,
+  };
+
+  if (mode === 'upi') {
+    params.pg = 'UPI';
+    params.bankcode = 'UPI';
+  } else if (mode === 'NB') {
+    params.pg = 'NB';
+  } else {
+    params.pg = mode;
+  }
+
+  if ('vpa' in instrumentParams) {
+    params.vpa = instrumentParams.vpa;
+  }
+  if ('bankcode' in instrumentParams) {
+    params.bankcode = instrumentParams.bankcode;
+  }
+  if ('card_number' in instrumentParams) {
+    params.ccnum = instrumentParams.card_number;
+    params.ccvv = instrumentParams.cvv;
+    params.ccexpmon = instrumentParams.expiry_month;
+    params.ccexpyr = instrumentParams.expiry_year;
+    params.ccname = instrumentParams.name_on_card;
+    if ('store_card' in instrumentParams && instrumentParams.store_card) {
+      params.store_card = instrumentParams.store_card;
+    }
+  }
+  if ('store_card_token' in instrumentParams) {
+    params.store_card_token = instrumentParams.store_card_token;
+    params.storecard_token_type = instrumentParams.storecard_token_type;
+    params.ccvv = instrumentParams.cvv;
+  }
+
+  if (sessionParams.enforce_paymethod) {
+    params.enforce_paymethod = sessionParams.enforce_paymethod;
+  }
+
+  // Use standard form encoding: spaces as '+', not '%20'
+  return Object.entries(params)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v).replace(/%20/g, '+')}`)
+    .join('&');
+}
+
+// ===================================================
 // CORE PAYMENT LAUNCHER
 // ===================================================
 
 /**
- * Launch a payment via PayU Core SDK (CBWrapper Mode B).
+ * Launch a payment via PayU SDKs.
  *
- * @param mode Payment mode: CC, DC, NB, or upi
- * @param sessionParams PayU session params from initiate-payment edge fn
- * @param instrumentParams Instrument-specific params (card details / bankcode / VPA)
+ * Flow (iOS):
+ * 1. Core PG SDK generates properly formatted POST body + payment URL
+ * 2. Custom Browser SDK (CBWrapper) loads the webview with that POST data
+ * 3. CBListener events report success/failure/cancel
+ *
+ * Falls back to manually constructed POST data if Core PG SDK unavailable.
  */
-export function launchCorePayment(
+export async function launchCorePayment(
   mode: CorePaymentMode,
   sessionParams: PayUSessionParams,
   instrumentParams: InstrumentParams,
@@ -123,16 +411,36 @@ export function launchCorePayment(
     if (__DEV__) {
       return mockCorePayment(mode, sessionParams);
     }
-    return Promise.resolve({
-      status: 'failure' as const,
+    console.error('[PayU] launchCorePayment: CBWrapper is null — native module not linked');
+    return {
+      status: 'failure',
       error: 'PayU Core SDK not available. Please update the app.',
-    });
+    };
   }
 
-  // 10-minute timeout — safety net for Card/NB if SDK crashes or app is backgrounded
+  const sdkEnvironment = sessionParams.environment ?? (__DEV__ ? '1' : '0');
+
+  // Step 1: Get POST data — prefer Core PG SDK (correct encoding), fall back to manual
+  let postData: string;
+  let paymentUrl: string;
+
+  const corePgResult = await getCorePgPostData(mode, sessionParams, instrumentParams, sdkEnvironment);
+  if (corePgResult) {
+    postData = corePgResult.postData;
+    paymentUrl = corePgResult.paymentUrl;
+    console.log('[PayU] Using Core PG SDK-generated POST data');
+  } else {
+    // Fallback: manually build POST data
+    paymentUrl = sdkEnvironment === '1'
+      ? 'https://test.payu.in/_payment'
+      : 'https://secure.payu.in/_payment';
+    postData = buildPostDataFallback(mode, sessionParams, instrumentParams);
+    console.log('[PayU] Using fallback manual POST data (Core PG unavailable)');
+  }
+
+  // 10-minute timeout
   const SDK_TIMEOUT_MS = 10 * 60 * 1000;
 
-  // Shared cleanup state — prevents memory leaks from CBListener and timeout timer
   let cbListenerSub: EmitterSubscription | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let resolved = false;
@@ -141,24 +449,25 @@ export function launchCorePayment(
     const finish = (outcome: CorePaymentOutcome) => {
       if (resolved) return;
       resolved = true;
-      // Clean up BOTH listener and timeout regardless of which path triggered finish
+      console.log('[PayU] Payment outcome:', outcome.status, outcome.error ?? '');
       if (cbListenerSub) { cbListenerSub.remove(); cbListenerSub = null; }
       if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
       resolve(outcome);
     };
 
-    // Start timeout
     timeoutId = setTimeout(() => {
+      console.warn('[PayU] SDK timeout reached (10 min)');
       finish({
         status: 'failure',
         error: 'Payment timed out. Check your payment status in the app.',
       });
     }, SDK_TIMEOUT_MS);
 
-    // Listen for CBListener events (success, failure, cancel, errors)
-    cbListenerSub = DeviceEventEmitter.addListener('CBListener', (event) => {
-      // Defensive: SDK has known typo "eveneType" on some events
+    // Listen for CBListener events
+    const emitter = getEventEmitter();
+    cbListenerSub = emitter.addListener('CBListener', (event) => {
       const eventType: string = event.eventType ?? event.eveneType ?? '';
+      console.log('[PayU] CBListener event:', eventType);
 
       switch (eventType) {
         case 'onPaymentSuccess': {
@@ -176,7 +485,6 @@ export function launchCorePayment(
           break;
         }
         case 'onPaymentTerminate': {
-          // User cancelled — check if txn was already initiated
           const isTxnInitiated = Boolean(
             event.isTxnInitiated ?? event.ixTxnInitiated ?? false,
           );
@@ -192,18 +500,17 @@ export function launchCorePayment(
         case 'onBackButton':
         case 'onBackApprove':
         case 'onBackDismiss':
-          // Back pressed without explicit cancel — treat as cancel
           finish({ status: 'cancelled', isTxnInitiated: false });
           break;
         default:
-          // Unknown event — ignore (don't resolve)
+          console.log('[PayU] Unknown CBListener event type:', eventType);
           break;
       }
     });
 
-    // Build CBWrapper params
-    // environment: '1' = sandbox, '0' = production — server decides based on PAYU_BASE_URL
-    const sdkEnvironment = sessionParams.environment ?? (__DEV__ ? '1' : '0');
+    // Step 2: Build CBWrapper params with cb_config
+    const pgValue = mode === 'upi' ? 'UPI' : mode;
+
     const payUPaymentParams: Record<string, unknown> = {
       key: sessionParams.key,
       transaction_id: sessionParams.txnid,
@@ -211,13 +518,14 @@ export function launchCorePayment(
       product_info: sessionParams.productinfo,
       first_name: sessionParams.firstname,
       email: sessionParams.email,
-      phone: sessionParams.phone,
+      phone: sessionParams.phone || '9999999999',
       ios_surl: sessionParams.surl,
       ios_furl: sessionParams.furl,
       android_surl: sessionParams.surl,
       android_furl: sessionParams.furl,
       environment: sdkEnvironment,
       user_credentials: sessionParams.user_credential,
+      pg: pgValue,
       hashes: {
         payment: sessionParams.hash,
         ...(sessionParams.vas_hash && { vas: sessionParams.vas_hash }),
@@ -230,28 +538,47 @@ export function launchCorePayment(
         udf4: sessionParams.udf4 ?? '',
         udf5: sessionParams.udf5 ?? '',
       },
-      // Server-enforced payment method restriction
+      cb_config: {
+        url: paymentUrl,
+        post_data: postData,
+        auto_approve: 'true',
+        auto_select_otp: 'true',
+        merchant_response_timeout: '5',
+      },
       ...(sessionParams.enforce_paymethod && {
         enforce_paymethod: sessionParams.enforce_paymethod,
       }),
-      // Merge instrument-specific params
       ...instrumentParams,
     };
+
+    // Diagnostic logging (no sensitive data — card numbers/CVV are NOT logged)
+    console.log('[PayU] Opening CBWrapper — mode:', mode, 'pg:', pgValue, 'env:', sdkEnvironment, 'url:', paymentUrl);
+    console.log('[PayU] Hash-relevant fields:', {
+      key: sessionParams.key,
+      txnid: sessionParams.txnid,
+      amount: sessionParams.amount,
+      productinfo: sessionParams.productinfo,
+      firstname: sessionParams.firstname,
+      email: sessionParams.email,
+      udf1: sessionParams.udf1 ?? '',
+      udf2: sessionParams.udf2 ?? '',
+      udf3: sessionParams.udf3 ?? '',
+      hash: sessionParams.hash?.slice(0, 16) + '...',
+    });
 
     try {
       CBWrapper!.openCB(
         { payu_payment_params: payUPaymentParams },
-        // Error callback — SDK failed to initialize
         (error: string) => {
+          console.error('[PayU] openCB errorCallback:', error);
           finish({ status: 'failure', error });
         },
-        // Success callback — webview presented (NOT payment success).
-        // Actual outcome arrives via CBListener events above.
         (_initMessage: string) => {
-          // no-op: wait for CBListener onPaymentSuccess/onPaymentFailure
+          console.log('[PayU] openCB successCallback — CB presented');
         },
       );
     } catch (err) {
+      console.error('[PayU] openCB threw:', err);
       finish({
         status: 'failure',
         error: err instanceof Error ? err.message : 'Failed to start payment',
@@ -278,5 +605,5 @@ function parseSDKResponse(raw: string | Record<string, unknown> | undefined | nu
  * Check if Core SDK is available (native module linked).
  */
 export function isCoreSdkAvailable(): boolean {
-  return CBWrapper !== null;
+  return CBWrapper != null;
 }

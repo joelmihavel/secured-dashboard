@@ -210,6 +210,8 @@ export type SetupErrorCode =
   | 'NOT_FOUND'
   | 'FORBIDDEN'
   | 'NETWORK_ERROR'
+  | 'IDEMPOTENCY_CONFLICT'
+  | 'SERVICE_UNAVAILABLE'
   | 'UNKNOWN_ERROR';
 
 /** Field keys for add-bank form; backend may use snake_case (e.g. account_number). */

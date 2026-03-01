@@ -19,6 +19,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useRootNavigationState } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { getWaitlistStatus } from '@/src/services/api/waitlist';
 const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
 const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
@@ -210,6 +211,15 @@ export default function Index() {
   useEffect(() => {
     if (authLoading) return;
 
+    // Review mode — no real Supabase session exists, so check this BEFORE isAuthenticated.
+    // isReviewMode() reads a module-level variable (not React state), so AuthProvider's
+    // context may still have isAuthenticated=false from a stale render.
+    if (isReviewMode()) {
+      setTarget('/(main)');
+      setJourneyResolved(true);
+      return;
+    }
+
     if (!isAuthenticated) {
       setTarget('/(auth)/beta-splash');
       setJourneyResolved(true);
@@ -229,13 +239,6 @@ export default function Index() {
       return;
     }
 
-    // Review mode — skip all backend checks, go straight to main
-    if (isReviewMode()) {
-      setTarget('/(main)');
-      setJourneyResolved(true);
-      return;
-    }
-
     // Authenticated, normal mode — resolve full journey
     resolveAuthenticatedJourney();
   }, [authLoading, isAuthenticated, resolveAuthenticatedJourney]);
@@ -249,6 +252,10 @@ export default function Index() {
     if (!rootNavigationState?.key) return;
     hasNavigatedRef.current = true;
     router.replace(target as never);
+    // Hide native splash AFTER navigation fires — keeps splash visible during
+    // font loading, auth checks, and journey resolution (prevents black screen).
+    // Small delay lets the target screen mount before the splash fades.
+    setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 150);
   }, [journeyResolved, target, router, rootNavigationState?.key]);
 
   // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack

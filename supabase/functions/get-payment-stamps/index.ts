@@ -151,7 +151,7 @@ serve(async (req: Request) => {
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
       .select(
-        "id, user_id, lease_start_date, lease_end_date, rent_due_day, status"
+        "id, user_id, rent_due_day, status, created_at"
       )
       .eq("id", tenancyId)
       .single();
@@ -225,40 +225,29 @@ serve(async (req: Request) => {
     // PHASE 3: Build month range
     // ============================================
 
-    const leaseStart = new Date(tenancy.lease_start_date);
-    const startYear = leaseStart.getFullYear();
-    const startMonth = leaseStart.getMonth();
+    // Payment tracking starts from tenancy creation (when user joined platform),
+    // NOT from agreement lease dates. Agreement dates are extraction metadata only.
+    // rent_due_day from the agreement is still the cutoff for on_time vs late vs missed.
+    const trackingStart = new Date(tenancy.created_at);
+    const dueDay = tenancy.rent_due_day;
 
     const ist = nowInIst();
     const currentYear = ist.year;
     const currentMonth = ist.month;
     const currentDay = ist.day;
 
-    // End month: min(lease_end_date, current month)
-    let endYear: number;
-    let endMonth: number;
-
-    if (tenancy.lease_end_date) {
-      const leaseEnd = new Date(tenancy.lease_end_date);
-      const leaseEndYear = leaseEnd.getFullYear();
-      const leaseEndMonth = leaseEnd.getMonth();
-
-      // Use the earlier of lease_end_date month or current month
-      if (
-        leaseEndYear < currentYear ||
-        (leaseEndYear === currentYear && leaseEndMonth < currentMonth)
-      ) {
-        endYear = leaseEndYear;
-        endMonth = leaseEndMonth;
-      } else {
-        endYear = currentYear;
-        endMonth = currentMonth;
-      }
-    } else {
-      // Ongoing tenancy - go up to current month
-      endYear = currentYear;
-      endMonth = currentMonth;
+    // First trackable month: if user joined AFTER this month's due date,
+    // that month doesn't count (can't miss a payment that wasn't due yet).
+    let startYear = trackingStart.getFullYear();
+    let startMonth = trackingStart.getMonth();
+    if (trackingStart.getDate() > dueDay) {
+      startMonth++;
+      if (startMonth > 11) { startMonth = 0; startYear++; }
     }
+
+    // End month: always current month (no lease_end_date cap)
+    const endYear = currentYear;
+    const endMonth = currentMonth;
 
     // ============================================
     // PHASE 4: Classify each month
@@ -278,7 +267,6 @@ serve(async (req: Request) => {
 
     while (y < endYear || (y === endYear && m <= endMonth)) {
       const monthKey = formatMonthIso(y, m);
-      const dueDay = tenancy.rent_due_day;
       const dueDateStr = formatDueDate(y, m, dueDay);
       const dueCutoffUtc = buildDueCutoffUtc(y, m, dueDay);
       const payment = paymentsByMonth.get(monthKey) ?? null;
@@ -294,9 +282,25 @@ serve(async (req: Request) => {
       const clampedDueDay = Math.min(dueDay, daysInMonth);
       const dueDateNotPassed = isCurrentMonth && currentDay <= clampedDueDay;
 
+      // Grey (pending) is the zero state. Stamps only change when:
+      // - Payment completed (success) → on_time or late
+      // - Due date passed with no success payment → missed
+      // failed/refunded/no-payment all remain grey until due date passes.
       if (isFutureMonth || dueDateNotPassed) {
-        // Future or current month with due date still ahead
-        status = "pending";
+        // Due date hasn't passed — grey unless already paid
+        if (payment && payment.status === "success" && payment.paid_at) {
+          const paidAtUtc = new Date(payment.paid_at);
+          if (paidAtUtc <= dueCutoffUtc) {
+            status = "on_time";
+          } else {
+            status = "late";
+            daysLate = Math.ceil(
+              (paidAtUtc.getTime() - dueCutoffUtc.getTime()) / 86400000
+            );
+          }
+        } else {
+          status = "pending"; // Grey: pending, processing, initiated, failed, refunded, or no payment
+        }
       } else if (payment && payment.status === "success" && payment.paid_at) {
         // Successful payment exists - check if on time
         const paidAtUtc = new Date(payment.paid_at);
@@ -312,10 +316,10 @@ serve(async (req: Request) => {
         payment &&
         (payment.status === "processing" || payment.status === "initiated")
       ) {
-        // Payment in progress
+        // Still processing — keep grey even past due
         status = "pending";
       } else {
-        // Past month, no qualifying payment
+        // Due date passed, no success/processing payment → missed
         status = "missed";
       }
 

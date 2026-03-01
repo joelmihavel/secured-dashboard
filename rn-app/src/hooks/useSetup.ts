@@ -69,6 +69,12 @@ export function useVerifyBank() {
       if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
       return data;
     },
+    retry: (failureCount, error) => {
+      // Auto-retry idempotency conflicts (stale lock) up to 2 times with backoff
+      if (error?.code === 'IDEMPOTENCY_CONFLICT' && failureCount < 2) return true;
+      return false;
+    },
+    retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 8000),
     onSuccess: (_data, _variables) => {
       // Optimistic update: mark bank as verified in cached dashboard data
       queryClient.setQueryData(
@@ -86,6 +92,7 @@ export function useVerifyBank() {
       );
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -113,6 +120,7 @@ export function useVerifyPan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -182,6 +190,7 @@ export function useVerifyUtility() {
       );
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -213,6 +222,7 @@ export function useSendLandlordInvite() {
       // Invalidate dashboard to refresh verification status
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -233,6 +243,7 @@ export function useResendLandlordInvite() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 

@@ -58,8 +58,8 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     staleTime: 1000 * 60 * 2, // 2 minutes
     // Re-fetch when app comes back to foreground (e.g., after PayU checkout or bank app)
     refetchOnWindowFocus: true,
-    // Always re-fetch on mount so dashboard is fresh after navigating back from payment flow
-    refetchOnMount: 'always',
+    // Re-fetch on mount only when data is stale (older than staleTime of 2 min)
+    refetchOnMount: true,
     // Retry transient network failures (useful when switching from bank app back to the app)
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),

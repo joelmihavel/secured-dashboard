@@ -1,195 +1,101 @@
 /**
  * Update Banner Component
  *
- * Displays an OTA update banner at the top of the screen.
- * Follows the OfflineBanner architectural pattern:
- * - Absolute positioned, spring-animated slide-in/out
- * - Downloading: Brand accent bg with progress indicator
- * - Ready: "Update ready" with Restart button + dismiss
- * - Critical: Red bg, auto-restarting, no dismiss
- * - Restarting: Transitional state before reload
+ * Ultra-slim OTA update bar at the very bottom of the screen.
+ * Only visible while actively downloading. Auto-hides when done.
+ * Critical updates show briefly before auto-restart.
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Text, StyleSheet, Animated, Easing } from 'react-native';
 import { colors } from '@/src/theme';
 import { useOTAUpdates } from '@/src/hooks/useOTAUpdates';
-import type { BannerState } from '@/src/hooks/useOTAUpdates';
 
 export function UpdateBanner() {
-  const { bannerState, downloadProgress, dismiss, applyUpdate } = useOTAUpdates();
-  const [slideAnim] = useState(new Animated.Value(-60));
+  const { bannerState } = useOTAUpdates();
+  const [slideAnim] = useState(new Animated.Value(20));
+  const shimmer = useRef(new Animated.Value(0)).current;
 
-  const shouldShow = bannerState !== 'hidden';
+  const shouldShow =
+    bannerState === 'downloading' ||
+    bannerState === 'critical' ||
+    bannerState === 'restarting';
 
   useEffect(() => {
     Animated.spring(slideAnim, {
-      toValue: shouldShow ? 0 : -60,
+      toValue: shouldShow ? 0 : 20,
       useNativeDriver: true,
       tension: 120,
       friction: 14,
     }).start();
   }, [shouldShow, slideAnim]);
 
+  // Indeterminate shimmer animation
+  useEffect(() => {
+    if (bannerState === 'downloading') {
+      const loop = Animated.loop(
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [bannerState, shimmer]);
+
   if (!shouldShow) return null;
 
-  const { backgroundColor, message, showRestart, showDismiss } = getBannerConfig(bannerState, downloadProgress);
+  const isCritical = bannerState === 'critical' || bannerState === 'restarting';
+
+  const shimmerWidth = shimmer.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['0%', '60%', '100%'],
+  });
 
   return (
     <Animated.View
-      style={[
-        styles.container,
-        { backgroundColor, transform: [{ translateY: slideAnim }] },
-      ]}
-      accessibilityRole="alert"
-      accessibilityLabel={message}
+      style={[styles.container, { transform: [{ translateY: slideAnim }] }]}
+      pointerEvents="none"
     >
-      <View style={styles.content}>
-        <View style={styles.iconCircle}>
-          <Text style={styles.iconText}>
-            {bannerState === 'critical' || bannerState === 'restarting' ? '!' : '\u2191'}
-          </Text>
-        </View>
-        <View style={styles.textContainer}>
-          <Text style={styles.message}>{message}</Text>
-          {bannerState === 'downloading' && (
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${Math.round(downloadProgress * 100)}%` }]} />
-            </View>
-          )}
-        </View>
-        {showRestart && (
-          <Pressable
-            onPress={applyUpdate}
-            style={styles.restartButton}
-            hitSlop={8}
-            accessibilityLabel="Restart to apply update"
-            accessibilityRole="button"
-          >
-            <Text style={styles.restartText}>Restart</Text>
-          </Pressable>
-        )}
-        {showDismiss && (
-          <Pressable
-            onPress={dismiss}
-            hitSlop={8}
-            accessibilityLabel="Dismiss update banner"
-            accessibilityRole="button"
-          >
-            <Text style={styles.dismissText}>x</Text>
-          </Pressable>
-        )}
-      </View>
+      {bannerState === 'downloading' && (
+        <Animated.View style={[styles.progressFill, { width: shimmerWidth }]} />
+      )}
+      <Text style={[styles.message, isCritical && styles.criticalMessage]}>
+        {isCritical ? 'Applying update...' : 'Updating...'}
+      </Text>
     </Animated.View>
   );
-}
-
-function getBannerConfig(state: BannerState, progress: number) {
-  switch (state) {
-    case 'downloading':
-      return {
-        backgroundColor: colors.brand[500],
-        message: `Downloading update... ${Math.round(progress * 100)}%`,
-        showRestart: false,
-        showDismiss: false,
-      };
-    case 'ready':
-      return {
-        backgroundColor: colors.brand[500],
-        message: 'Update ready. Restart to apply.',
-        showRestart: true,
-        showDismiss: true,
-      };
-    case 'critical':
-      return {
-        backgroundColor: '#DC3545',
-        message: 'Critical update. Restarting...',
-        showRestart: false,
-        showDismiss: false,
-      };
-    case 'restarting':
-      return {
-        backgroundColor: '#DC3545',
-        message: 'Restarting...',
-        showRestart: false,
-        showDismiss: false,
-      };
-    default:
-      return {
-        backgroundColor: colors.brand[500],
-        message: '',
-        showRestart: false,
-        showDismiss: false,
-      };
-  }
 }
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
     zIndex: 999,
-    paddingHorizontal: 16,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  iconCircle: {
-    width: 20,
     height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.black[700],
+    backgroundColor: 'rgba(32,32,32,0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
-  },
-  iconText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    lineHeight: 14,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  message: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.black[700],
-  },
-  progressBar: {
-    height: 3,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderRadius: 1.5,
-    marginTop: 4,
     overflow: 'hidden',
   },
   progressFill: {
-    height: '100%',
-    backgroundColor: colors.black[700],
-    borderRadius: 1.5,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255,154,109,0.3)',
   },
-  restartButton: {
-    backgroundColor: colors.black[700],
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 12,
-    marginLeft: 8,
+  message: {
+    fontSize: 10,
+    fontFamily: 'PlusJakartaSans-Regular',
+    color: colors.neutral[500],
   },
-  restartText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  dismissText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.black[700],
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  criticalMessage: {
+    color: '#DC3545',
   },
 });

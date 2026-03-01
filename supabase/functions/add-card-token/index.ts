@@ -73,9 +73,10 @@ const requestSchema = {
   },
   card_issuer: { required: false, type: "string" as const, maxLength: 100 },
   card_expiry_month: {
-    required: true,
+    required: false,
     type: "number" as const,
     custom: (v: unknown) => {
+      if (v == null) return true; // optional
       const month = v as number;
       if (!Number.isInteger(month) || month < 1 || month > 12) {
         return "card_expiry_month must be between 1 and 12";
@@ -84,9 +85,10 @@ const requestSchema = {
     },
   },
   card_expiry_year: {
-    required: true,
+    required: false,
     type: "number" as const,
     custom: (v: unknown) => {
+      if (v == null) return true; // optional
       const year = v as number;
       const currentYear = new Date().getFullYear();
       const maxYear = currentYear + 20;
@@ -172,8 +174,8 @@ serve(async (req: Request) => {
       set_primary = false,
     } = validateSchema<AddCardTokenRequest>(body, requestSchema, true);
 
-    // Validate card is not expired
-    if (!validateCardExpiry(card_expiry_month, card_expiry_year)) {
+    // Validate card is not expired (only when expiry is provided)
+    if (card_expiry_month && card_expiry_year && !validateCardExpiry(card_expiry_month, card_expiry_year)) {
       throw new ValidationError("Card has expired", { card_expiry: "Expired" });
     }
 

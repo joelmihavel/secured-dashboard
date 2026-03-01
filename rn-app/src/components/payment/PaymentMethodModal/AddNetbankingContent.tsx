@@ -28,6 +28,7 @@ import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Text as RNText } from 'react-native';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
 import { useBankList } from '@/src/hooks';
+import { saveBankPreference } from '@/src/services/api/payments';
 import { usePaymentStore } from '@/src/stores';
 import { BANK_LIST, type BankInfo } from '@/src/constants/bankList';
 import type { NetbankingBank } from '@/src/services/api/payments';
@@ -117,7 +118,8 @@ function toBankInfo(b: NetbankingBank): BankInfo {
   return { code: b.bank_code, name: b.bank_name, shortName: b.short_name ?? undefined, isPopular: b.is_popular };
 }
 
-export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: AddMethodContentProps) {
+export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, context = 'payment', onSaveComplete }: AddMethodContentProps) {
+  const isProfile = context === 'profile';
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const storedAmount = usePaymentStore((s) => s.amount);
   const amount = sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0');
@@ -184,6 +186,18 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: A
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
+      // Profile context: save bank preference directly without payment
+      if (isProfile && onSaveComplete) {
+        const bankName = banks.find(b => b.code === selectedBankCode)?.name ?? selectedBankCode;
+        const { error: saveError } = await saveBankPreference(selectedBankCode, bankName);
+        if (saveError) {
+          Alert.alert('Save Failed', saveError || 'Could not save bank. Please try again.');
+          return;
+        }
+        onSaveComplete();
+        return;
+      }
+
       let currentPaymentId = paymentId;
 
       // Setup flow: initiate payment first if no paymentId yet
@@ -218,7 +232,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: A
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [selectedBankCode, paymentId, executePayment, onInitiatePayment]);
+  }, [selectedBankCode, paymentId, executePayment, onInitiatePayment, isProfile, onSaveComplete, banks]);
 
   return (
     <View style={styles.container}>
@@ -277,7 +291,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment }: A
       {/* Proceed Button */}
       <View style={styles.buttonSection}>
         <PrimaryButton
-          title={parseFloat(amount) > 0 ? `Pay \u20B9${parseFloat(amount).toLocaleString('en-IN')}` : 'Add bank account'}
+          title={isProfile ? 'Save Bank' : (parseFloat(amount) > 0 ? `Pay \u20B9${parseFloat(amount).toLocaleString('en-IN')}` : 'Add bank account')}
           onPress={handleProceed}
           disabled={!selectedBankCode || isSubmitting}
           loading={isSubmitting}

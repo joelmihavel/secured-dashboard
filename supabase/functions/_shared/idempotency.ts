@@ -99,8 +99,22 @@ export class IdempotencyManager {
         };
       }
 
-      // If still processing, return conflict
+      // If still processing, check for stale lock (crashed request)
       if (existing.status === "processing") {
+        const lockedAt = existing.locked_at ? new Date(existing.locked_at).getTime() : 0;
+        const staleLockMs = 60_000; // 60 seconds — if still "processing" after this, assume crashed
+        if (Date.now() - lockedAt > staleLockMs) {
+          // Stale lock — reclaim it for this request
+          console.warn(`[idempotency] Reclaiming stale lock (locked ${Math.round((Date.now() - lockedAt) / 1000)}s ago)`);
+          await this.supabase
+            .from("idempotency_keys")
+            .update({
+              status: "processing",
+              locked_at: new Date().toISOString(),
+            })
+            .eq("key", key);
+          return { isNew: true };
+        }
         throw new IdempotencyError("Request is currently being processed");
       }
 
