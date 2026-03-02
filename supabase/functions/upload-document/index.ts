@@ -303,20 +303,20 @@ serve(async (req) => {
     }
 
     // ==============================================
-    // ALSO CREATE WAITLIST_ENTRIES RECORD (V1 compatibility)
+    // LINK WAITLIST_ENTRIES TO THIS EXTRACTION
     // ==============================================
-    // Some V1 iOS code may query waitlist_entries directly
+    // waitlist_entries row already exists (created by on_user_created_join_waitlist trigger).
+    // Just update it to point to our new extraction — do NOT upsert/insert, because that
+    // fires waitlist_entries_sync_trigger which creates a DUPLICATE extracted_rental_info row.
 
-    await adminClient.from("waitlist_entries").upsert(
+    await adminClient.from("waitlist_entries").update(
       {
-        user_id: user.id,
         document_url: storagePath,
-        status: "pending_review",
         extraction_status: "pending",
         contract_status: "uploading",
-      },
-      { onConflict: "user_id" }
-    );
+        extraction_id: extractionId,
+      }
+    ).eq("user_id", user.id);
 
     // ==============================================
     // GENERATE DOWNLOAD URL (for verification)

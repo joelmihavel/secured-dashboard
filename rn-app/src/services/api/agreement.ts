@@ -739,6 +739,26 @@ function mapAgreementErrorFromMessage(message: string): AgreementError {
 }
 
 /**
+ * Abandon an extraction record (soft-delete).
+ *
+ * Sets user_verified=true so all queries that filter on user_verified=false
+ * will skip this record. Used when the user clicks "Re-upload Agreement"
+ * to prevent the old completed extraction from causing routing loops.
+ *
+ * RLS allows UPDATE for authenticated users on their own records.
+ */
+export async function abandonExtraction(extractionId: string): Promise<void> {
+  try {
+    await supabase
+      .from('extracted_rental_info')
+      .update({ user_verified: true, extraction_error: 'Abandoned by user (re-upload)' })
+      .eq('id', extractionId);
+  } catch {
+    // Silent fail — the frontend guards (dismissedExtractionId) are the backup
+  }
+}
+
+/**
  * Helper: Format paise amount to rupee string with Indian number formatting.
  * @param paise - Amount in paise (1 rupee = 100 paise)
  * @returns Formatted string like "32,175"

@@ -718,6 +718,9 @@ export default function UploadScreen() {
       setErrorOverrideMessage(null);
       extractionStatus.reset();
       agreement.resetUpload();
+      // Cancel in-flight queries BEFORE removing — removeQueries alone doesn't
+      // cancel pending fetches, which can repopulate the cache with stale data.
+      queryClient.cancelQueries({ queryKey: ['agreement'] });
       queryClient.removeQueries({ queryKey: ['agreement'] });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

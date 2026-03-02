@@ -39,6 +39,7 @@ import { agreementKeys } from '@/src/hooks/useAgreement';
 import {
   formatPaiseToRupees,
   formatDateDisplay,
+  abandonExtraction,
   type ExtractedAgreementData,
 } from '@/src/services/api/agreement';
 import { colors } from '@/src/theme';
@@ -280,12 +281,20 @@ export default function ReviewScreen() {
   // trigger synchronous re-renders that cascade to parent layouts, deallocating
   // the native screen container → "PropertyDOM doesn't exist" crash (lesson #28).
   // All cleanup happens in upload.tsx's forceNew useEffect AFTER navigation.
+  //
+  // We DO fire-and-forget abandonExtraction() to soft-delete the old DB record
+  // (sets user_verified=true). This is the PRIMARY fix for the re-upload loop —
+  // all DB queries filter on user_verified=false, so the old record becomes invisible
+  // to the journey router, useMountDiscovery, and checkManualReviewExtraction.
   const handleReupload = useCallback(() => {
+    if (extractionId) {
+      abandonExtraction(extractionId);
+    }
     router.replace({
       pathname: '/(agreement)/upload',
       params: { forceNew: 'true' }
     });
-  }, [router]);
+  }, [router, extractionId]);
 
   // Confirm extraction and navigate to waitlist
   const handleProceed = useCallback(async () => {

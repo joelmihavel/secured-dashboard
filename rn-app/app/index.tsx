@@ -103,6 +103,10 @@ function statusToTarget(userStatus: string): JourneyTarget | '/(agreement)/revie
 /**
  * Check if the current user has a completed extraction awaiting manual review.
  * Used by the journey router to route signed_up users to waitlist instead of upload.
+ *
+ * Also checks dismissedExtractionId from the upload store — if the user clicked
+ * "Re-upload Agreement", the old extraction is dismissed and should NOT cause
+ * routing to waitlist/review (prevents the re-upload loop).
  */
 async function checkManualReviewExtraction(): Promise<boolean> {
   try {
@@ -121,6 +125,12 @@ async function checkManualReviewExtraction(): Promise<boolean> {
 
     if (!data) return false;
     const row = data as unknown as Record<string, unknown>;
+    const rowId = row.id as string;
+
+    // Skip if this extraction was dismissed (user clicked "Re-upload Agreement")
+    const dismissed = useUploadStore.getState().dismissedExtractionId;
+    if (dismissed && rowId === dismissed) return false;
+
     return (row.needs_manual_review as boolean) || !(row.is_city_supported as boolean);
   } catch {
     return false;
