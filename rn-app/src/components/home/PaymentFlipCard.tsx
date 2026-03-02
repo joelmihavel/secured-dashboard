@@ -45,7 +45,7 @@ const STATIC_SHADOW = {
   elevation: 6,
 };
 
-export type PaymentStampStatus = 'paid' | 'pending' | 'missed' | 'late' | 'future';
+export type PaymentStampStatus = 'paid' | 'pending' | 'missed' | 'late' | 'future' | 'upcoming';
 export type PaymentStatusType = 'paid' | 'late' | 'missed' | 'upcoming';
 
 export interface PaymentMonthData {

@@ -33,6 +33,8 @@ export interface UnifiedInitiateResult {
   totalAmountPaise: number;
   cashbackAppliedPaise: number;
   demoMode?: boolean;
+  /** True when backend sent a S2S UPI collect request — skip SDK, go to status polling */
+  upiS2sCollect?: boolean;
 }
 
 // ==============================================
@@ -138,6 +140,8 @@ export async function initiatePayment(params: {
   rentMonth: string;
   cardType?: 'credit' | 'debit';
   amountPaise?: number;
+  /** UPI VPA for S2S collect flow — when provided, backend sends collect request directly */
+  upiVpa?: string;
 }): Promise<{ data: UnifiedInitiateResult | null; error: string | null }> {
   const body: Record<string, unknown> = {
     tenancy_id: params.tenancyId,
@@ -148,6 +152,9 @@ export async function initiatePayment(params: {
   };
   if (params.amountPaise) {
     body.amount_paise = params.amountPaise;
+  }
+  if (params.upiVpa) {
+    body.upi_vpa = params.upiVpa;
   }
   const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
@@ -181,6 +188,12 @@ export async function initiatePayment(params: {
           return { data: null, error: 'Request in progress, retrying...' };
         case 'DB_ERROR':
           return { data: null, error: 'Server error creating payment. Please try again.' };
+        case 'UPI_S2S_FAILED':
+        case 'UPI_S2S_ERROR':
+          // Pass through the actual PayU error from backend for debugging
+          return { data: null, error: error ?? 'UPI collect request failed' };
+        case 'UPI_VPA_REQUIRED':
+          return { data: null, error: 'UPI ID is required for payment.' };
         case 'AMOUNT_TOO_LOW':
         case 'AMOUNT_EXCEEDS_RENT':
         case 'INVALID_AMOUNT':
@@ -208,13 +221,15 @@ export async function initiatePayment(params: {
   }
 
   const d = data.data;
+  const raw = d as Record<string, unknown>;
   return {
     data: {
       paymentId: d.payment_id,
       payuParams: d.payu,
       totalAmountPaise: d.total_amount_paise,
       cashbackAppliedPaise: d.cashback_applied_paise,
-      demoMode: (d as Record<string, unknown>).demo_mode === true,
+      demoMode: raw.demo_mode === true,
+      upiS2sCollect: raw.upi_s2s_collect === true,
     },
     error: null,
   };

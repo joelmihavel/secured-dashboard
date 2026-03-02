@@ -102,7 +102,7 @@ function statusReducer(state: ReducerState, action: StatusAction): ReducerState 
 
 const VERIFICATION_INTERVAL_MS = 5000; // Relaxed from 3s — realtime handles the fast path
 const VERIFICATION_TIMEOUT_MS_DEFAULT = 300000; // 5 min for card/netbanking
-const VERIFICATION_TIMEOUT_MS_UPI = 60000;      // 1 min for UPI (short approval window)
+const VERIFICATION_TIMEOUT_MS_UPI = 360000;     // 6 min for UPI S2S collect (NPCI mandates 5 min approval window)
 const VALID_INITIAL_STATUSES = new Set(['pending', 'success', 'failed', 'refunded']);
 const FIGMA_CARD_INNER_WIDTH = s(222);
 

@@ -20,6 +20,7 @@ export default function AgreementLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.black[700] },
         animation: 'slide_from_right',
+        freezeOnBlur: true, // Prevent PropertyDOM crash on background resume
       }}
     >
       <Stack.Screen name="upload" />

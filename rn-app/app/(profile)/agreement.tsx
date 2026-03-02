@@ -163,9 +163,9 @@ export default function ProfileAgreementScreen() {
       },
       {
         label: 'Tenant(s)',
-        value:
-          (t?.tenant_names as string) ??
-          'Not available',
+        value: Array.isArray(t?.tenant_names) && (t.tenant_names as string[]).length > 0
+          ? (t.tenant_names as string[]).join(', ')
+          : 'Not available',
       },
       {
         label: 'Landlord(s)',

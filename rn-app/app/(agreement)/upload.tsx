@@ -31,6 +31,7 @@ import {
   Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -49,6 +50,7 @@ import Svg, { Path } from 'react-native-svg';
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
+import { agreementKeys } from '@/src/hooks/useAgreement';
 import { useExtractionStatus } from '@/src/hooks/useExtractionStatus';
 import {
   getMimeType,
@@ -602,9 +604,13 @@ export default function UploadScreen() {
 
   // Persisted upload store — survives app kills
   const hasHydrated = useUploadStore((s) => s._hasHydrated);
+  const queryClient = useQueryClient();
 
-  // Use real API via useAgreement hook
-  const agreement = useAgreement();
+  // Use real API via useAgreement hook.
+  // fetchExtractedData: false — upload screen must NOT fetch extraction data.
+  // During processing, DB fields are NULL. Fetching caches empty data which
+  // the review screen then shows as "Not Found" (the parasitic cache bug).
+  const agreement = useAgreement({ fetchExtractedData: false });
   const { isConnected } = useNetworkStatus();
 
   // Extraction status tracking — polling + Realtime + AppState recovery
@@ -691,6 +697,32 @@ export default function UploadScreen() {
     );
   }
 
+  // ============================================
+  // FORCE-NEW RESET (re-upload from review screen)
+  // When returning with forceNew=true, we must reset ALL state and block
+  // the status effect from navigating with stale cached data.
+  //
+  // isForceNewActiveRef stays true until the user starts a NEW upload.
+  // This prevents: (a) status effect navigating with stale data, and
+  // (b) useMountDiscovery resurrecting the old extraction from DB.
+  // The ref is cleared in handleUpload when a new upload begins.
+  // ============================================
+  const isForceNewActiveRef = React.useRef(false);
+
+  useEffect(() => {
+    if (forceNew === 'true') {
+      isForceNewActiveRef.current = true; // Block ALL status navigation until new upload
+      setDocument(null);
+      setUploadState('idle');
+      setUploadProgress(0);
+      setErrorOverrideMessage(null);
+      extractionStatus.reset();
+      agreement.resetUpload();
+      queryClient.removeQueries({ queryKey: ['agreement'] });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forceNew]);
+
   // Sync real upload progress from hook — update whenever progress changes,
   // including reset to 0 on error (not just when isUploading)
   useEffect(() => {
@@ -739,6 +771,11 @@ export default function UploadScreen() {
   // ============================================
 
   useEffect(() => {
+    // Block ALL status-driven navigation while forceNew is active.
+    // This ref stays true until the user starts a new upload (handleUpload clears it).
+    // Prevents: stale cache navigation, useMountDiscovery resurrection, polling races.
+    if (isForceNewActiveRef.current) return;
+
     const status = extractionStatus.data;
     if (!status) return;
 
@@ -772,6 +809,13 @@ export default function UploadScreen() {
         // Happy path: completed and valid
         setUploadState('success');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // Remove any stale extraction data from React Query cache.
+        // useAgreement() fires useExtractedData during processing (when fields
+        // are still NULL in DB), caching empty data for 5 minutes. Removing
+        // the cache here forces the review screen to fetch fresh (completed) data.
+        queryClient.removeQueries({ queryKey: agreementKeys.extraction(eid) });
+
         setTimeout(() => {
           router.replace({
             pathname: '/(agreement)/review',
@@ -894,6 +938,7 @@ export default function UploadScreen() {
     setUploadState('uploading');
     setUploadProgress(0);
     setErrorOverrideMessage(null);
+    isForceNewActiveRef.current = false; // New upload starting — allow status navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {

@@ -16,6 +16,7 @@ import {
   claimInviteCode,
   WaitlistStatusData,
   WaitlistState,
+  type WaitlistErrorCode,
 } from '../services/api/waitlist';
 import {
   useWaitlistStore,
@@ -138,14 +139,16 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
     }
   }, [query.data]);
 
-  // Handle errors
+  // Handle errors — only show full-screen error for initial load failure.
+  // If we already have data (successful prior fetch), transient polling errors
+  // should NOT wipe the active UI. The user can still interact normally.
   useEffect(() => {
-    if (query.error) {
+    if (query.error && !query.data) {
       const err = query.error as Error;
       const code = (err as unknown as { code?: string }).code || 'UNKNOWN';
       store.setError(code, err.message || 'Failed to load status');
     }
-  }, [query.error]);
+  }, [query.error, query.data]);
 
   return query;
 }
@@ -163,15 +166,23 @@ export function useJoinWaitlist() {
 
   return useMutation({
     mutationFn: async () => {
-      const result = await joinWaitlist();
-      if (result.error) {
-        throw result.error;
+      try {
+        return await joinWaitlist();
+      } catch (e) {
+        return {
+          data: null,
+          error: {
+            code: 'UNKNOWN_ERROR' as WaitlistErrorCode,
+            message: e instanceof Error ? e.message : 'Something went wrong',
+          },
+        };
       }
-      return result.data!;
     },
-    onSuccess: () => {
-      // Refresh waitlist status after joining
-      queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
+    meta: { suppressGlobalError: true },
+    onSuccess: (result) => {
+      if (!result.error) {
+        queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
+      }
     },
   });
 }
@@ -211,29 +222,33 @@ export function useApplyReferral() {
 
   return useMutation({
     mutationFn: async (code: string) => {
-      const result = await applyReferralCode(code);
-      if (result.error) {
-        throw result.error;
+      try {
+        return await applyReferralCode(code);
+      } catch (e) {
+        return {
+          data: null,
+          error: {
+            code: 'UNKNOWN_ERROR' as WaitlistErrorCode,
+            message: e instanceof Error ? e.message : 'Something went wrong',
+          },
+        };
       }
-      return result.data!;
     },
+    meta: { suppressGlobalError: true },
     onMutate: () => {
       store.setApplyingReferral(true);
       store.setReferralError(null);
     },
-    onSuccess: (data) => {
+    onSuccess: (result) => {
       store.setApplyingReferral(false);
-      if (data.valid) {
+      if (result.error) {
+        store.setReferralError(result.error.message);
+      } else if (result.data?.valid) {
         store.setReferralApplied(true);
-        // Invalidate waitlist status to refetch with new priority
         queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
       } else {
-        store.setReferralError(data.message);
+        store.setReferralError(result.data?.message ?? 'Invalid referral code');
       }
-    },
-    onError: (error: { code: string; message: string }) => {
-      store.setApplyingReferral(false);
-      store.setReferralError(error.message);
     },
   });
 }
@@ -274,25 +289,33 @@ export function useClaimInviteCode() {
 
   return useMutation({
     mutationFn: async (code: string) => {
-      const result = await claimInviteCode(code);
-      if (result.error) {
-        throw result.error;
+      try {
+        return await claimInviteCode(code);
+      } catch (e) {
+        // Absolute safety net — NEVER throw from this mutation
+        return {
+          success: false as const,
+          data: null,
+          error: {
+            code: 'UNKNOWN_ERROR' as WaitlistErrorCode,
+            message: e instanceof Error ? e.message : 'Something went wrong',
+          },
+        };
       }
-      return result.data!;
     },
+    meta: { suppressGlobalError: true },
     onMutate: () => {
       store.setApplyingReferral(true);
       store.setReferralError(null);
     },
-    onSuccess: (data) => {
+    onSuccess: (result) => {
       store.setApplyingReferral(false);
-      store.setReferralApplied(true);
-      // Refresh waitlist status to get updated has_invite_code
-      queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
-    },
-    onError: (error: { code: string; message: string }) => {
-      store.setApplyingReferral(false);
-      store.setReferralError(error.message);
+      if (result.error) {
+        store.setReferralError(result.error.message);
+      } else {
+        store.setReferralApplied(true);
+        queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
+      }
     },
   });
 }

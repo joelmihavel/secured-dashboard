@@ -40,7 +40,9 @@ function handleAppStateChange(nextState: AppStateStatus) {
     const elapsed = Date.now() - backgroundTimestamp;
     backgroundTimestamp = null;
     if (elapsed >= BACKGROUND_RECONNECT_THRESHOLD_MS) {
-      reconnectAll();
+      // Delay reconnect to let old WebSocket finish transitioning to CLOSED.
+      // Without this, send() on the old CLOSING socket throws DOMException.
+      setTimeout(() => reconnectAll(), 500);
     }
   }
 }
@@ -146,7 +148,11 @@ export function subscribe(
  */
 export function reconnectAll(): void {
   for (const [key, entry] of channels) {
-    supabase.removeChannel(entry.channel);
+    try {
+      supabase.removeChannel(entry.channel);
+    } catch {
+      // WebSocket may be in a broken state after iOS background — safe to ignore.
+    }
   }
 
   // Re-subscribe all existing entries with fresh channels
@@ -212,7 +218,11 @@ export function removeAllChannels(): void {
     for (const timer of entry.debounceTimers.values()) {
       clearTimeout(timer);
     }
-    supabase.removeChannel(entry.channel);
+    try {
+      supabase.removeChannel(entry.channel);
+    } catch {
+      // Safe to ignore — channel may already be disposed after background
+    }
   }
   channels.clear();
 

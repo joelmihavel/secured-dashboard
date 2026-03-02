@@ -159,7 +159,7 @@ export default function ErrorScreen() {
               {params.source && (
                 <Text style={styles.detailLine}>Source: {params.source}</Text>
               )}
-              {__DEV__ && params.technicalMessage && (
+              {params.technicalMessage && (
                 <Text style={styles.detailLine}>
                   Detail: {params.technicalMessage}
                 </Text>

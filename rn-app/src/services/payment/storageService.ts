@@ -6,7 +6,7 @@
  */
 
 import { supabase } from '../supabase';
-import * as FileSystem from 'expo-file-system';
+import { readAsStringAsync } from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 
 // ==============================================
@@ -51,7 +51,7 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   try {
     // Read file as base64
-    const base64 = await FileSystem.readAsStringAsync(document.uri, {
+    const base64 = await readAsStringAsync(document.uri, {
       encoding: 'base64',
     });
 

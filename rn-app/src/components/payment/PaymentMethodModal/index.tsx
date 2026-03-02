@@ -62,6 +62,7 @@ export function PaymentMethodModal({
   const [isInitiating, setIsInitiating] = useState(false);
   const [cardType, setCardType] = useState<'credit' | 'debit'>('credit');
   const isProceedingRef = useRef(false);
+  const isDemoRef = useRef(false);
 
   // Pending instrument details: stored between add-method/CVV and confirm-payment
   const pendingInstrumentRef = useRef<{
@@ -110,6 +111,7 @@ export function PaymentMethodModal({
     setPaymentId('');
     setIsInitiating(false);
     isProceedingRef.current = false;
+    isDemoRef.current = false;
     setCvvCardToken('');
     pendingInstrumentRef.current = null;
     onClose();
@@ -251,14 +253,31 @@ export function PaymentMethodModal({
     try {
       let currentPaymentId = paymentId;
 
-      // New method flow: payment not yet initiated
+      // Initiate payment if not yet done (saved UPI, new methods via confirm)
       if (!currentPaymentId) {
         const result = await handleInitiateForChild(pending.methodType);
-        if (!result) return; // demo mode already navigated to success
+        if (!result) return; // demo mode handled navigation
         currentPaymentId = result.paymentId;
       }
 
-      // Demo mode guard: if session params were cleared, demo already handled navigation
+      // Demo mode: payment already recorded as success — navigate to status
+      if (isDemoRef.current && currentPaymentId) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        pendingInstrumentRef.current = null;
+        isDemoRef.current = false;
+        router.replace({
+          pathname: '/(payment)/status',
+          params: {
+            paymentId: currentPaymentId,
+            amount: String(usePaymentStore.getState().amount || 0),
+            method: pending.methodType === 'debit_card' ? 'card' : pending.methodType,
+            initialStatus: 'success',
+          },
+        } as never);
+        return;
+      }
+
+      // Session params required for PayU SDK
       if (!usePaymentStore.getState().payuSessionParams) {
         Alert.alert('Session Error', 'Payment session expired. Please go back and try again.');
         return;
@@ -315,6 +334,18 @@ export function PaymentMethodModal({
         const storeEnteredAmount = usePaymentStore.getState().enteredAmount;
         const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
 
+        // Saved UPI → store VPA and go to confirm (NO initiatePayment here — S2S triggers on Pay)
+        if (savedDetails?.vpa && methodType === 'upi') {
+          pendingInstrumentRef.current = {
+            methodType: 'upi',
+            corePaymentMode: 'upi',
+            params: { vpa: savedDetails.vpa },
+            methodLabel: `UPI \u2022 ${savedDetails.vpa}`,
+          };
+          setModalView('confirm-payment');
+          return;
+        }
+
         const { data, error } = await initiatePayment({
           tenancyId,
           paymentMethod: methodType,
@@ -327,20 +358,39 @@ export function PaymentMethodModal({
           throw new Error(error ?? 'Failed to initiate payment');
         }
 
-        // Demo mode: skip PayU SDK — navigate directly to success
+        // Demo mode: route through confirm screen so Apple reviewers see the full flow
         if (data.demoMode) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setProcessing(data.paymentId);
           setLastPayment(data.paymentId);
-          router.replace({
-            pathname: '/(payment)/status',
-            params: {
-              paymentId: data.paymentId,
-              amount: String(usePaymentStore.getState().amount || 0),
-              method: methodType === 'debit_card' ? 'card' : methodType,
-              initialStatus: 'success',
-            },
-          } as never);
+          setPaymentId(data.paymentId);
+          isDemoRef.current = true;
+
+          // Build instrument info for the confirm screen
+          let methodLabel = methodType === 'card' ? 'Credit Card' : methodType === 'debit_card' ? 'Debit Card' : methodType;
+          let coreMode: string = methodType;
+          let params: Record<string, string> = {};
+
+          if (savedDetails?.vpa) {
+            methodLabel = `UPI \u2022 ${savedDetails.vpa}`;
+            coreMode = 'upi';
+            params = { vpa: savedDetails.vpa };
+          } else if (savedDetails?.cardToken) {
+            methodLabel = `Card \u2022\u2022\u2022\u2022 ${savedDetails.lastFour ?? ''}`;
+            coreMode = savedDetails.cardType ?? 'CC';
+            params = { cardToken: savedDetails.cardToken };
+          } else if (savedDetails?.bankCode) {
+            methodLabel = 'Netbanking';
+            coreMode = 'NB';
+            params = { bankcode: savedDetails.bankCode };
+          }
+
+          pendingInstrumentRef.current = {
+            methodType,
+            corePaymentMode: coreMode,
+            params,
+            methodLabel,
+          };
+          setModalView('confirm-payment');
           return;
         }
 
@@ -359,18 +409,6 @@ export function PaymentMethodModal({
           setCvvLastFour(savedDetails.lastFour ?? '');
           setCvvCardNetwork(savedDetails.cardNetwork ?? '');
           setModalView('enter-cvv');
-          return;
-        }
-
-        // Saved UPI → store instrument, go to confirm
-        if (savedDetails?.vpa && methodType === 'upi') {
-          pendingInstrumentRef.current = {
-            methodType: 'upi',
-            corePaymentMode: 'upi',
-            params: { vpa: savedDetails.vpa },
-            methodLabel: `UPI \u2022 ${savedDetails.vpa}`,
-          };
-          setModalView('confirm-payment');
           return;
         }
 

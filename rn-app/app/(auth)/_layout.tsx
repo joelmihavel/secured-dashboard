@@ -16,6 +16,7 @@ export default function AuthLayout() {
         contentStyle: { backgroundColor: colors.black[700] },
         animation: 'slide_from_right',
         animationDuration: 250,
+        freezeOnBlur: true,
       }}
     >
       <Stack.Screen name="splash" options={{ gestureEnabled: false }} />

@@ -46,6 +46,7 @@ import { DottedGridPattern } from '@/src/components/patterns';
 import { EditPaymentMethodModal } from '@/src/components/payment/PaymentMethodModal/EditPaymentMethodModal';
 import type { PaymentMethodType } from '@/src/components/payment/PaymentMethodModal/types';
 import { useDashboard, useAuth, useDeleteAccount, useSavedPaymentMethods } from '@/src/hooks';
+import type { SavedPaymentMethod } from '@/src/services/api/payments';
 import { colors } from '@/src/theme';
 import { s } from '@/src/theme/scale';
 
@@ -183,7 +184,7 @@ export default function ProfileScreen() {
   const handleEditPaymentMethod = useCallback((type: string, cardType?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Find the saved method ID for this type
-    const method = savedMethods?.find((m) => {
+    const method = savedMethods?.find((m: SavedPaymentMethod) => {
       if (type === 'card' && cardType) return m.type === 'card' && m.card_type === cardType;
       return m.type === type;
     });

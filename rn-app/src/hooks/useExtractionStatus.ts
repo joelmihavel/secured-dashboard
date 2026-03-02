@@ -145,8 +145,9 @@ function useExtractionStatusQuery(extractionId: string | null) {
 
 /**
  * Supabase Realtime channel (ACCELERATOR).
- * Follows useDashboard.ts SYNCHRONOUS pattern.
- * Immediately refetches the query on DB change for instant UI update.
+ * Uses centralized realtimeManager (subscribe/unsubscribe) instead of raw
+ * supabase.channel() to benefit from iOS background recovery and coalescing.
+ * Raw channels throw DOMException when WebSocket is in CLOSING state on resume.
  */
 function useExtractionRealtime(extractionId: string | null) {
   const queryClient = useQueryClient();
@@ -154,28 +155,19 @@ function useExtractionRealtime(extractionId: string | null) {
   useEffect(() => {
     if (!extractionId) return;
 
-    const channel = supabase
-      .channel(`extraction:${extractionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'extracted_rental_info',
-          filter: `id=eq.${extractionId}`,
-        },
-        () => {
-          // Use refetchQueries for immediate fetch (not just invalidate + wait for next poll)
-          queryClient.refetchQueries({
-            queryKey: extractionStatusKey(extractionId),
-          });
-        }
-      )
-      .subscribe();
+    const { subscribe: rtSubscribe } = require('../services/supabase/realtimeManager');
+    const unsubscribe = rtSubscribe(
+      'extracted_rental_info',
+      'UPDATE',
+      () => {
+        queryClient.refetchQueries({
+          queryKey: extractionStatusKey(extractionId),
+        });
+      },
+      `id=eq.${extractionId}`,
+    );
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return unsubscribe;
   }, [extractionId, queryClient]);
 }
 
@@ -203,9 +195,14 @@ function useExtractionAppStateRecovery(extractionId: string | null) {
         const now = Date.now();
         if (now - lastRecoveryRef.current < APP_STATE_DEBOUNCE_MS) return;
         lastRecoveryRef.current = now;
-        queryClient.invalidateQueries({
-          queryKey: extractionStatusKey(extractionId),
-        });
+        // Delay refetch until AFTER ResumeOverlay fades (500ms + 250ms fade).
+        // This ensures the refetch-triggered re-render happens when native views
+        // are fully stable — preventing PropertyDOM errors.
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: extractionStatusKey(extractionId),
+          });
+        }, 1500);
       }
     });
 
@@ -254,6 +251,9 @@ function useMountDiscovery(enabled: boolean) {
           try {
             const status = await fetchExtractionStatus(store.extractionId!);
             const currentStore = useUploadStore.getState();
+
+            // Store was reset while we were fetching (forceNew / re-upload)
+            if (currentStore.dismissedExtractionId === store.extractionId) return;
 
             if (!status || status.userVerified) {
               // Record doesn't exist, belongs to another user, or was already
@@ -309,9 +309,14 @@ function useMountDiscovery(enabled: boolean) {
         if (!data) return;
 
         const row = data as unknown as Record<string, unknown>;
+        const rowId = row.id as string;
         const status = row.extraction_status as string;
         const updatedAt = row.updated_at as string;
         const ageMs = Date.now() - new Date(updatedAt).getTime();
+
+        // Skip extraction the user explicitly abandoned via "Re-upload"
+        const dismissed = useUploadStore.getState().dismissedExtractionId;
+        if (dismissed && rowId === dismissed) return;
 
         // Skip stale processing records (completed records are always resumable)
         if (status === 'processing' && ageMs > DISCOVERY_MAX_AGE_MS) return;
@@ -327,7 +332,7 @@ function useMountDiscovery(enabled: boolean) {
 
         // Found active extraction — set in store so query picks it up
         const currentStore = useUploadStore.getState();
-        currentStore.setExtractionId(row.id as string);
+        currentStore.setExtractionId(rowId);
         currentStore.setPhase('server_processing');
       } catch {
         // Silent fail — user can upload normally

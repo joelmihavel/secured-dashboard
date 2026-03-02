@@ -57,6 +57,7 @@ interface DashboardData {
     lease_start_date: string | null;
     lease_end_date: string | null;
     landlord_name: string;
+    tenant_names: string[];
     agreement_cert_id: string | null;
     verification_status: {
       bank_verified: boolean;
@@ -262,7 +263,7 @@ serve(async (req: Request) => {
         .eq("id", userId)
         .single(),
 
-      // 2. Active tenancy
+      // 2. Active tenancy (join extracted_rental_info for tenant_names)
       supabase
         .from("tenancies")
         .select(`
@@ -270,7 +271,8 @@ serve(async (req: Request) => {
           monthly_rent_paise, maintenance_paise, rent_due_day, lease_start_date, lease_end_date,
           landlord_name, agreement_cert_id,
           bank_verified, utility_verified, landlord_approved, landlord_response,
-          cashback_cutoff_day, created_at
+          cashback_cutoff_day, created_at,
+          extracted_rental_info:extracted_rental_info_id ( tenant_names )
         `)
         .eq("user_id", userId)
         .in("status", ["active", "pending_verification"])
@@ -455,6 +457,7 @@ serve(async (req: Request) => {
             lease_start_date: tenancy.lease_start_date ?? null,
             lease_end_date: tenancy.lease_end_date,
             landlord_name: tenancy.landlord_name,
+            tenant_names: (tenancy as any).extracted_rental_info?.tenant_names ?? [],
             agreement_cert_id: tenancy.agreement_cert_id ?? null,
             verification_status: {
               bank_verified: tenancy.bank_verified,

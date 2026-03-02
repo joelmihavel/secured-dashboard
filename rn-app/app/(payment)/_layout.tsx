@@ -24,6 +24,7 @@ export default function PaymentLayout() {
         animation: 'slide_from_bottom',
         animationDuration: 250,
         contentStyle: { backgroundColor: 'transparent' },
+        freezeOnBlur: true,
       }}
     >
       <Stack.Screen name="enter-rent" options={{ animation: 'none' }} />

@@ -18,6 +18,7 @@ export default function MainLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.black[700] },
+        freezeOnBlur: true,
       }}
     >
       <Stack.Screen name="index" />

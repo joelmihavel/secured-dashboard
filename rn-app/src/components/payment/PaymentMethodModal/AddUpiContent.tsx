@@ -210,37 +210,10 @@ export function AddUpiContent({ paymentId, onBack, onInitiatePayment, context = 
         return;
       }
 
-      let currentPaymentId = paymentId;
-
-      // Setup flow: initiate payment first if no paymentId yet
-      if (!currentPaymentId && onInitiatePayment) {
-        const result = await onInitiatePayment('upi', { vpa: upiId.trim() });
-        if (!result) {
-          return;
-        }
-        currentPaymentId = result.paymentId;
-      }
-
-      if (!currentPaymentId) {
-        Alert.alert('Error', 'Unable to start payment. Please try again.');
-        return;
-      }
-
-      const outcome = await executePayment(
-        'upi',
-        { vpa: upiId.trim() },
-        currentPaymentId,
-        () => {
-          setUpiId('');
-          setAccountName('');
-        },
-      );
-
-      if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
-        // Reset so user can retry
-      } else if (outcome.status === 'failure') {
-        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
-      }
+      // UPI must always use S2S — SDK path is not supported.
+      // This code path should never be reached since onReadyForConfirm is always provided.
+      console.error('[AddUpiContent] UPI SDK path should never be reached — onReadyForConfirm missing');
+      setError('UPI payment configuration error. Please try again.');
     } finally {
       isPayingRef.current = false;
       setIsPayingUpi(false);

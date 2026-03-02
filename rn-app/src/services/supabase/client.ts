@@ -237,7 +237,19 @@ export async function callEdgeFunction<T = unknown>(
     addBreadcrumb(`API call: ${method} ${functionName}`, 'api', { method, requireAuth });
 
     let response = await fetch(url, fetchOptions);
-    let data = await response.json();
+
+    // Safe JSON parse — edge functions may return non-JSON on crash/502/timeout
+    const safeJson = async (res: Response): Promise<Record<string, unknown>> => {
+      try {
+        return await res.json();
+      } catch {
+        // response.json() throws DOMException/SyntaxError on non-JSON bodies
+        const text = await res.text().catch(() => '');
+        return { error: true, message: `Server error (HTTP ${res.status})`, _raw: text.slice(0, 200) };
+      }
+    };
+
+    let data = await safeJson(response);
 
     // Retry once on 401 with a refreshed token (handles stale JWT edge cases)
     if (response.status === 401 && requireAuth) {
@@ -249,7 +261,7 @@ export async function callEdgeFunction<T = unknown>(
         const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
         try {
           response = await fetch(url, { ...fetchOptions, signal: retryController.signal });
-          data = await response.json();
+          data = await safeJson(response);
         } finally {
           clearTimeout(retryTimeoutId);
         }
@@ -259,7 +271,7 @@ export async function callEdgeFunction<T = unknown>(
     if (!response.ok) {
       // Parse error from backend structured error responses
       // Backend may return: { error: true, message: "...", code: "...", fields?: Record<string, string> }
-      const errorMessage = data.message ?? data.error?.message ?? `HTTP ${response.status}`;
+      const errorMessage = String(data.message ?? (typeof data.error === 'string' ? data.error : (data.error as Record<string, unknown>)?.message) ?? `HTTP ${response.status}`);
       addBreadcrumb(`API error: ${functionName} ${response.status}`, 'api', {
         status: response.status,
         error: errorMessage,
@@ -285,13 +297,22 @@ export async function callEdgeFunction<T = unknown>(
         error: `Request timed out after ${Math.round(timeoutMs / 1000)}s`,
       };
     }
+    const rawMessage = error instanceof Error ? error.message : 'Unknown';
+    const isDomException = error instanceof DOMException;
     addBreadcrumb(`API network error: ${functionName}`, 'api', {
-      error: error instanceof Error ? error.message : 'Unknown',
+      error: rawMessage,
+      errorName: isDomException ? (error as DOMException).name : undefined,
       duration_ms: Date.now() - startTime,
     });
+    // Surface a user-friendly message instead of raw DOMException/TypeError
+    const userMessage =
+      rawMessage.toLowerCase().includes('network') ? 'Network error. Please check your connection.' :
+      rawMessage.toLowerCase().includes('abort') ? 'Request was cancelled. Please try again.' :
+      isDomException ? `Something went wrong. Please try again. (${(error as DOMException).name})` :
+      rawMessage;
     return {
       data: null,
-      error: error instanceof Error ? error.message : 'Network error',
+      error: userMessage,
     };
   } finally {
     clearTimeout(timeoutId);

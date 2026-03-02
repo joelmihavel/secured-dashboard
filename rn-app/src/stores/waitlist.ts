@@ -191,7 +191,11 @@ export const useWaitlistStore = create<WaitlistStore>()(
     setError: (code, message) =>
       set((state) => {
         state.error = { code, message };
-        state.viewState = 'error';
+        // Only switch to error view if we're still loading (no prior state established).
+        // A transient polling failure should NOT wipe the active pending/approved UI.
+        if (state.viewState === 'loading') {
+          state.viewState = 'error';
+        }
       }),
 
     clearError: () =>

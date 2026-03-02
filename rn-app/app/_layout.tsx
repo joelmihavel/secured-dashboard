@@ -3,6 +3,27 @@
  * App-wide providers and configuration
  */
 
+// ==============================================
+// POLYFILL: DOMException for React Native (Hermes)
+// Must run BEFORE any Supabase/WebSocket code.
+// Hermes doesn't have DOMException (it's a Web API). Supabase Realtime's
+// WebSocket reconnection code references DOMException on iOS background resume,
+// causing "Property 'DOMException' doesn't exist" crash.
+// ==============================================
+if (typeof globalThis.DOMException === 'undefined') {
+  (globalThis as any).DOMException = class DOMException extends Error {
+    static readonly ABORT_ERR = 20;
+    static readonly INVALID_STATE_ERR = 11;
+    static readonly NETWORK_ERR = 19;
+    readonly code: number;
+    constructor(message?: string, name?: string) {
+      super(message);
+      this.name = name || 'DOMException';
+      this.code = 0;
+    }
+  };
+}
+
 import React, { useEffect } from 'react';
 import { Stack, useNavigationContainerRef } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -136,46 +157,47 @@ function RootLayoutInner() {
 
   return (
     <KeyboardProvider>
-    <ErrorBoundary>
-      <QueryProvider>
-        <AuthProvider>
-          <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
-            <ThemeProvider value={AppDarkTheme}>
-              <SafeAreaProvider>
-                <StatusBar style="light" backgroundColor={colors.black[700]} />
-                <OfflineBanner />
-                <UpdateBanner />
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: colors.black[700] },
-                    animation: 'fade',
-                    animationDuration: 200, // Snappier cross-fade
-                    gestureEnabled: false,
-                  }}
-                >
-                  <Stack.Screen name="index" />
-                  <Stack.Screen name="error" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
-                  <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(payment)" options={{
-                    presentation: 'transparentModal',
-                    animation: 'fade',
-                    contentStyle: { backgroundColor: 'transparent' },
-                  }} />
-                  <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
-                  <Stack.Screen name="(profile)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
-                  {__DEV__ && <Stack.Screen name="(dev)" />}
-                </Stack>
-                {DevNavigator && <DevNavigator />}
-              </SafeAreaProvider>
-            </ThemeProvider>
-          </GestureHandlerRootView>
-        </AuthProvider>
-      </QueryProvider>
-    </ErrorBoundary>
+      <ErrorBoundary>
+        <QueryProvider>
+          <AuthProvider>
+            <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
+              <ThemeProvider value={AppDarkTheme}>
+                <SafeAreaProvider>
+                  <StatusBar style="light" backgroundColor={colors.black[700]} />
+                  <OfflineBanner />
+                  <UpdateBanner />
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: colors.black[700] },
+                      animation: 'fade',
+                      animationDuration: 200,
+                      gestureEnabled: false,
+                      freezeOnBlur: true,
+                    }}
+                  >
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="error" options={{ animation: 'fade' }} />
+                    <Stack.Screen name="(auth)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
+                    <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
+                    <Stack.Screen name="(setup)" options={{ animation: 'fade' }} />
+                    <Stack.Screen name="(payment)" options={{
+                      presentation: 'transparentModal',
+                      animation: 'fade',
+                      contentStyle: { backgroundColor: 'transparent' },
+                    }} />
+                    <Stack.Screen name="(waitlist)" options={{ animation: 'fade' }} />
+                    <Stack.Screen name="(agreement)" options={{ animation: 'fade' }} />
+                    <Stack.Screen name="(profile)" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
+                    {__DEV__ && <Stack.Screen name="(dev)" />}
+                  </Stack>
+                  {DevNavigator && <DevNavigator />}
+                </SafeAreaProvider>
+              </ThemeProvider>
+            </GestureHandlerRootView>
+          </AuthProvider>
+        </QueryProvider>
+      </ErrorBoundary>
     </KeyboardProvider>
   );
 }

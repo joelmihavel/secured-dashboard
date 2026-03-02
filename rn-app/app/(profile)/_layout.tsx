@@ -19,6 +19,7 @@ export default function ProfileLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.black[700] },
         animation: 'slide_from_right',
+        freezeOnBlur: true,
       }}
     >
       <Stack.Screen name="index" />

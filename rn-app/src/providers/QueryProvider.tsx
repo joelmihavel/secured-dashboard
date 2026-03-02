@@ -17,7 +17,6 @@ import {
 } from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import { reportFatalError } from '@/src/services/errorReporting';
 import { addBreadcrumb } from '@/src/config/sentry';
 
 // ==============================================
@@ -28,7 +27,14 @@ import { addBreadcrumb } from '@/src/config/sentry';
 
 if (Platform.OS !== 'web') {
   AppState.addEventListener('change', (status) => {
-    focusManager.setFocused(status === 'active');
+    if (status === 'active') {
+      // Delay focus notification until AFTER ResumeOverlay fades (500ms show + 250ms fade).
+      // This prevents React Query refetches from triggering re-renders while native views
+      // are still restoring — the root cause of PropertyDOM crashes on bg→fg.
+      setTimeout(() => focusManager.setFocused(true), 1500);
+    } else {
+      focusManager.setFocused(false);
+    }
   });
 }
 
@@ -50,13 +56,13 @@ onlineManager.setEventListener((setOnline) => {
 
 const mutationCache = new MutationCache({
   onError: (error, _variables, _context, mutation) => {
-    if (mutation.meta?.suppressGlobalError) return;
-    reportFatalError({
-      source: 'mutation_error',
-      title: 'Something went wrong',
-      message: 'An operation failed unexpectedly.',
-      technicalMessage: error instanceof Error ? error.message : String(error),
-      originalError: error,
+    // Mutation errors are always user-triggered operations — log a breadcrumb
+    // for diagnostics but NEVER navigate to the error screen. Individual
+    // mutations handle their own errors inline via onError / onSuccess callbacks.
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    addBreadcrumb(`Mutation error`, 'mutation', {
+      error: errorMsg,
+      suppressedGlobal: String(!!mutation.meta?.suppressGlobalError),
     });
   },
 });

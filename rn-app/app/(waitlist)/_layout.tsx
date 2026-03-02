@@ -19,6 +19,7 @@ export default function WaitlistLayout() {
         headerShown: false,
         animation: 'slide_from_right',
         contentStyle: { backgroundColor: colors.black[700] },
+        freezeOnBlur: true,
       }}
     >
       <Stack.Screen name="index" />

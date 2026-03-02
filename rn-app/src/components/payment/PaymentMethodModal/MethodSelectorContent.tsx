@@ -164,10 +164,6 @@ const UnavailablePill = memo(() => (
   <Pill text="Unavailable now" variant="tagDisabled" />
 ));
 
-const CashbackPillInline = memo(() => (
-  <Pill text="Cashback applies to your next on-time payment" variant="tag" />
-));
-
 // ==============================================
 // SOLID DIVIDER — Figma: 0.25px #4D4D4D (not dashed)
 // ==============================================
@@ -473,13 +469,6 @@ export function MethodSelectorContent({
         </RNText>
       </View>
 
-      {/* Cashback pill — only visible in all-setup state */}
-      {allSetUp && (
-        <View style={styles.cashbackPillContainer}>
-          <CashbackPillInline />
-        </View>
-      )}
-
       {/* Payment Method Rows — cascading reveal */}
       <View style={styles.methodsContainer}>
         {paymentMethods.map((method, index) => (
@@ -563,11 +552,6 @@ const styles = StyleSheet.create({
   },
   headingAccent: {
     color: FIGMA.headingAccent,
-  },
-
-  // Cashback pill container
-  cashbackPillContainer: {
-    paddingHorizontal: 48,
   },
 
   // Methods container — Figma: px 48, gap 16

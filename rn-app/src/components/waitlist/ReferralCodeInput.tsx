@@ -176,6 +176,12 @@ function ReferralCodeInputComponent({
     if (cleaned.length > valueString.length) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+
+    // Dismiss keyboard when all 4 characters are entered — prevents
+    // a 5th keystroke from overriding the last character.
+    if (cleaned.length >= CODE_LENGTH) {
+      inputRef.current?.blur();
+    }
   }, [disabled, onCharacterChange, valueString]);
 
   const handlePress = useCallback(() => {

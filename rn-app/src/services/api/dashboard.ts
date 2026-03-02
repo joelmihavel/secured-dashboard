@@ -47,6 +47,7 @@ export interface DashboardTenancy {
   lease_start_date: string | null;
   agreement_cert_id: string | null;
   landlord_name: string;
+  tenant_names: string[];
   verification_status: TenancyVerificationStatus;
 }
 

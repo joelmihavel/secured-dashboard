@@ -26,7 +26,7 @@ try {
   // Native module not available — notifications will be no-ops
 }
 import Constants from 'expo-constants';
-import { Platform, Linking } from 'react-native';
+import { Platform, Linking, AppState } from 'react-native';
 import { router } from 'expo-router';
 import { addBreadcrumb } from '../config/sentry';
 
@@ -386,11 +386,22 @@ export function setupNotificationHandlers(): () => void {
     }
   );
 
+  // Clear badge on app open
+  Notifications.setBadgeCountAsync(0).catch(() => {});
+
+  // Clear badge when app returns to foreground
+  const appStateSubscription = AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      Notifications?.setBadgeCountAsync(0).catch(() => {});
+    }
+  });
+
   // Periodic cleanup of dedup cache (every 10 minutes)
   const cleanupInterval = setInterval(cleanupDedup, 10 * 60 * 1000);
 
   return () => {
     responseSubscription.remove();
+    appStateSubscription.remove();
     clearInterval(cleanupInterval);
   };
 }

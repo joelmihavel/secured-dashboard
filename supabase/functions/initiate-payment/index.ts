@@ -79,9 +79,9 @@ async function getFeeConfigForMethod(method: string, supabase: any) {
 // Controls which payment option PayU's Custom Browser allows —
 // even if someone tampers with the client, PayU will reject disallowed methods.
 const PAYU_ENFORCE_PAYMETHOD: Record<string, string> = {
-  upi: "UPI",
-  upi_intent: "UPI",
-  upi_collect: "UPI",
+  upi: "upi",
+  upi_intent: "upi",
+  upi_collect: "upi",
   card: "creditcard|debitcard",
   credit_card: "creditcard",
   debit_card: "debitcard",

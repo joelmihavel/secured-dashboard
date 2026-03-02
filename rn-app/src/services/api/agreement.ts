@@ -16,6 +16,11 @@
  * 4. Call confirm-extraction after user reviews extracted data
  */
 
+import {
+  uploadAsync,
+  FileSystemUploadType,
+  FileSystemSessionType,
+} from 'expo-file-system/legacy';
 import { callEdgeFunction, supabase } from '../supabase';
 
 // ==============================================
@@ -288,17 +293,15 @@ export async function requestUploadUrl(
 /**
  * Step 2: Upload the actual file bytes to the signed URL.
  *
- * Uses expo-file-system to upload directly to the Supabase Storage signed URL.
- * This is separate from the edge function call.
+ * Uses expo-file-system's uploadAsync with BACKGROUND session type.
+ * iOS continues the transfer via NSURLSession even when the app is
+ * suspended — the promise resolves when the user returns to the app.
  *
  * @param signedUrl - The signed upload URL from step 1
  * @param fileUri - Local file URI (from document picker)
  * @param mimeType - MIME type of the file
  * @param onProgress - Optional progress callback (0-100)
  */
-/** Upload timeout: 60 seconds for file transfer to signed URL */
-const UPLOAD_TIMEOUT_MS = 60_000;
-
 export async function uploadFileToSignedUrl(
   signedUrl: string,
   fileUri: string,
@@ -306,42 +309,11 @@ export async function uploadFileToSignedUrl(
   onProgress?: (progress: number) => void
 ): Promise<{ success: boolean; error: AgreementError | null }> {
   try {
-    // Use XMLHttpRequest to upload the file directly from its URI.
-    // RN's XHR natively resolves file:// and content:// URIs via the
-    // blob module — no need to read into memory as base64.
-    const result = await new Promise<{ status: number }>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', signedUrl);
-      xhr.setRequestHeader('Content-Type', mimeType);
-
-      const timer = setTimeout(() => {
-        xhr.abort();
-        reject(new Error('UPLOAD_TIMEOUT'));
-      }, UPLOAD_TIMEOUT_MS);
-
-      xhr.onload = () => {
-        clearTimeout(timer);
-        resolve({ status: xhr.status });
-      };
-
-      xhr.onerror = () => {
-        clearTimeout(timer);
-        reject(new Error('Network request failed'));
-      };
-
-      xhr.onabort = () => {
-        clearTimeout(timer);
-        reject(new Error('UPLOAD_TIMEOUT'));
-      };
-
-      // RN's fetch/XHR can send a Blob created from a file URI.
-      // This streams the file without loading it fully into JS memory.
-      const fileBody = {
-        uri: fileUri,
-        type: mimeType,
-        name: 'upload',
-      };
-      xhr.send(fileBody as unknown as Blob);
+    const result = await uploadAsync(signedUrl, fileUri, {
+      httpMethod: 'PUT',
+      uploadType: FileSystemUploadType.BINARY_CONTENT,
+      headers: { 'Content-Type': mimeType },
+      sessionType: FileSystemSessionType.BACKGROUND,
     });
 
     onProgress?.(100);
@@ -370,12 +342,12 @@ export async function uploadFileToSignedUrl(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'File upload failed';
 
-    if (message === 'UPLOAD_TIMEOUT') {
+    if (message.includes('cancelled') || message.includes('aborted')) {
       return {
         success: false,
         error: {
           code: 'UPLOAD_FAILED',
-          message: 'Upload timed out. Please try with a smaller file or better connection.',
+          message: 'Upload was interrupted. Please try again.',
         },
       };
     }
@@ -384,7 +356,9 @@ export async function uploadFileToSignedUrl(
       success: false,
       error: {
         code: 'NETWORK_ERROR',
-        message,
+        message: message.toLowerCase().includes('network')
+          ? 'Network error. Please check your connection and try again.'
+          : message,
       },
     };
   }
@@ -468,6 +442,8 @@ const EXTRACTION_SELECT_COLUMNS = [
   'certificate_no',
   'extraction_status',
   'is_city_supported',
+  'needs_manual_review',
+  'contract_status',
 ].join(',');
 
 export async function getExtractedAgreementData(
@@ -521,9 +497,9 @@ export async function getExtractedAgreementData(
     landlordNames: extractNames(data.landlord_names, data.landlord_name),
     confidenceScore: (data.confidence_score as number) ?? 0,
     certificateNo: (data.certificate_no as string) ?? undefined,
-    contractStatus: data.extraction_status === 'completed' ? 'user_review' : 'uploading',
+    contractStatus: (data.contract_status as string as ContractStatus) ?? (data.extraction_status === 'completed' ? 'user_review' : 'uploading'),
     isCitySupported: (data.is_city_supported as boolean) ?? false,
-    needsManualReview: false,
+    needsManualReview: (data.needs_manual_review as boolean) ?? false,
     reviewReason: undefined,
   };
 

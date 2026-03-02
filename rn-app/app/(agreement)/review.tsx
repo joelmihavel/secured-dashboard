@@ -9,7 +9,7 @@
  * All values sourced from Figma REST API -- no AI guesswork.
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -19,6 +19,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut, withRepeat, withTiming, useSharedValue, useAnimatedStyle, Easing } from 'react-native-reanimated';
@@ -34,6 +35,7 @@ import {
   LandlordIcon,
 } from '@/src/components/icons/AgreementIcons';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
+import { agreementKeys } from '@/src/hooks/useAgreement';
 import {
   formatPaiseToRupees,
   formatDateDisplay,
@@ -224,16 +226,45 @@ export default function ReviewScreen() {
   const extractionId = paramExtractionId ?? persistedExtractionId;
 
   const { isConnected } = useNetworkStatus();
+  const queryClient = useQueryClient();
 
   const {
     extractedData,
     isLoadingExtraction,
     confirm,
     isConfirming,
-    resetUpload,
   } = useAgreement({
     extractionId: extractionId ?? null,
   });
+
+  // Detect stale cache: if extractedData exists but ALL fields are empty,
+  // the data was cached during processing (when DB fields were still NULL).
+  // Force a refetch to get the completed data.
+  // Retries up to 3 times with 2s delays to handle DB replication lag.
+  const refetchCountRef = React.useRef(0);
+  const MAX_REFETCH_ATTEMPTS = 3;
+
+  React.useEffect(() => {
+    if (!extractedData || isLoadingExtraction) return;
+    if (refetchCountRef.current >= MAX_REFETCH_ATTEMPTS) return;
+
+    const allEmpty = FIELDS.every((field) => {
+      const val = field.getValue(extractedData);
+      return !val;
+    });
+
+    if (allEmpty && extractionId) {
+      refetchCountRef.current++;
+      // Delay before clearing cache to allow DB write to propagate
+      const delay = refetchCountRef.current * 2000; // 2s, 4s, 6s
+      setTimeout(() => {
+        queryClient.removeQueries({ queryKey: agreementKeys.extraction(extractionId) });
+      }, delay);
+    } else {
+      // Data loaded successfully — reset counter
+      refetchCountRef.current = 0;
+    }
+  }, [extractedData, extractionId, isLoadingExtraction, queryClient]);
 
   // Get current value from extracted data
   const getFieldValue = useCallback(
@@ -244,14 +275,17 @@ export default function ReviewScreen() {
     [extractedData]
   );
 
-  // Return to upload screen and reset extraction data
+  // Return to upload screen for a fresh re-upload.
+  // IMPORTANT: Do NOT reset state here — state changes before router.replace()
+  // trigger synchronous re-renders that cascade to parent layouts, deallocating
+  // the native screen container → "PropertyDOM doesn't exist" crash (lesson #28).
+  // All cleanup happens in upload.tsx's forceNew useEffect AFTER navigation.
   const handleReupload = useCallback(() => {
-    resetUpload();
     router.replace({
       pathname: '/(agreement)/upload',
       params: { forceNew: 'true' }
     });
-  }, [resetUpload, router]);
+  }, [router]);
 
   // Confirm extraction and navigate to waitlist
   const handleProceed = useCallback(async () => {
@@ -382,8 +416,8 @@ export default function ReviewScreen() {
             <PrimaryButton
               title="Proceed"
               onPress={handleProceed}
-              disabled={isConfirming}
-              loading={isConfirming}
+              disabled={isConfirming || isLoadingExtraction}
+              loading={isConfirming || isLoadingExtraction}
               showDivider
             />
 

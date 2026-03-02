@@ -85,12 +85,12 @@ import type { CashbackEntry } from '@/src/components/home/CashbacksList';
 import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
 
 // Import DashboardState type and mapped types from dashboard service
-import type { DashboardState, MappedRecentPayment, MappedCashbackEntry } from '@/src/services/api/dashboard';
+import type { DashboardState, MappedRecentPayment, MappedCashbackEntry, RawRecentPayment } from '@/src/services/api/dashboard';
 
 // Import saved payment methods hook and stamps
 import { useSavedPaymentMethods, usePaymentStamps } from '@/src/hooks/usePayments';
 import { usePaymentStore } from '@/src/stores/payment';
-import type { PaymentStampEntry } from '@/src/services/api/payments';
+import type { PaymentStampEntry, SavedPaymentMethod } from '@/src/services/api/payments';
 
 // Import colors from theme
 import { colors, spacing, radius } from '@/src/theme';
@@ -176,7 +176,7 @@ export default function HomeScreen() {
   // Convert saved methods to PaymentMethod type for carousel
   const paymentMethods: PaymentMethod[] = useMemo(() => {
     if (!savedMethods) return [];
-    return savedMethods.map((method) => {
+    return savedMethods.map((method: SavedPaymentMethod) => {
       // Derive a human-readable bank name from display_name
       // UPI: "UPI - ICICI" -> "ICICI"; Card: "Visa ****2341" -> "Visa"
       const bankName =
@@ -278,6 +278,19 @@ export default function HomeScreen() {
     if (!stampsData?.stamps) return [];
     return stampsData.stamps.map(s => mapStampStatus(s.status));
   }, [stampsData, mapStampStatus]);
+
+  // Setup completion check — use backend-computed flag as single source of truth
+  const verificationStatus = tenancy?.verification_status;
+  const isSetupComplete = cashback?.verification_complete ?? false;
+
+  const handleAddPayment = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (!isSetupComplete) {
+      setShowVerificationSheet(true);
+    } else {
+      router.push('/(payment)/enter-rent' as never);
+    }
+  }, [isSetupComplete, router]);
 
   // Generate carousel items based on state
   const carouselItems = useMemo((): CarouselCardItem[] => {
@@ -423,8 +436,6 @@ export default function HomeScreen() {
 
   // Determine empty state variant based on dashboard state
   const emptyStateVariant: EmptyStateVariant = useMemo(() => {
-    const verificationStatus = tenancy?.verification_status;
-
     // No payment methods at all — base empty state
     if (paymentMethods.length === 0) {
       // If setup is in progress (tenancy exists but no payment methods)
@@ -458,22 +469,9 @@ export default function HomeScreen() {
     return 'empty_with_upi_payments';
   }, [paymentMethods.length, tenancy, cashback]);
 
-  // Setup completion check — use backend-computed flag as single source of truth
-  const verificationStatus = tenancy?.verification_status;
-  const isSetupComplete = cashback?.verification_complete ?? false;
-
   // ==============================================
   // HANDLERS
   // ==============================================
-
-  const handleAddPayment = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (!isSetupComplete) {
-      setShowVerificationSheet(true);
-    } else {
-      router.push('/(payment)/enter-rent' as never);
-    }
-  }, [isSetupComplete, router]);
 
   const handleRefresh = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -584,7 +582,7 @@ export default function HomeScreen() {
       processing: 'pending',
     };
     // Look up raw payment data for additional fields
-    const rawPayment = resolvedData?.recent_payments?.find(p => p.id === payment.id);
+    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === payment.id);
     router.push({
       pathname: '/(payment)/status' as never,
       params: {
@@ -605,7 +603,7 @@ export default function HomeScreen() {
     if (!entry.paymentId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const rawPayment = resolvedData?.recent_payments?.find(p => p.id === entry.paymentId);
+    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === entry.paymentId);
 
     // Map cashback status → payment status screen
     const statusMap: Record<string, string> = {

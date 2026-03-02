@@ -209,9 +209,21 @@ export default function Index() {
         } else {
           // Check upload store for review vs upload
           const uploadState = useUploadStore.getState();
-          if (uploadState.uploadPhase === 'completed' && uploadState.extractionId) {
+          if (
+            uploadState.uploadPhase === 'completed' &&
+            uploadState.extractionId &&
+            // Don't route to review if this extraction was dismissed (user clicked re-upload).
+            // The reset() sets dismissedExtractionId before clearing extractionId, but
+            // if the app was killed before the async SecureStore write completed, the
+            // persisted state may still have both fields set.
+            uploadState.dismissedExtractionId !== uploadState.extractionId
+          ) {
             setTarget('/(agreement)/review');
           } else {
+            // If extraction was dismissed but store wasn't fully persisted, clean up
+            if (uploadState.dismissedExtractionId && uploadState.extractionId === uploadState.dismissedExtractionId) {
+              uploadState.reset();
+            }
             setTarget('/(agreement)/upload');
           }
         }

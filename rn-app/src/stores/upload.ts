@@ -33,6 +33,9 @@ interface UploadState {
   lastUpdatedAt: number;       // Date.now() of last phase change
   errorCode: string | null;
   errorMessage: string | null;
+  /** Extraction ID the user explicitly abandoned via "Re-upload".
+   *  useMountDiscovery skips this ID so it won't resurrect the old record. */
+  dismissedExtractionId: string | null;
   _hasHydrated: boolean;
 }
 
@@ -96,6 +99,7 @@ const initialState: UploadState = {
   lastUpdatedAt: 0,
   errorCode: null,
   errorMessage: null,
+  dismissedExtractionId: null,
   _hasHydrated: false,
 };
 
@@ -115,6 +119,7 @@ export const useUploadStore = create<UploadStore>()(
           state.lastUpdatedAt = Date.now();
           state.errorCode = null;
           state.errorMessage = null;
+          state.dismissedExtractionId = null; // new upload = fresh start
         }),
 
       setExtractionId: (id) =>
@@ -144,6 +149,14 @@ export const useUploadStore = create<UploadStore>()(
 
       reset: () =>
         set((state) => {
+          // Remember the abandoned extraction so useMountDiscovery won't resurrect it.
+          // CRITICAL: Only overwrite dismissedExtractionId if we have a real extractionId.
+          // Without this guard, a double-reset (extractionStatus.reset() then agreement.resetUpload())
+          // erases the dismissed marker — the second call finds extractionId=null and sets
+          // dismissedExtractionId=null, allowing useMountDiscovery to resurrect the old record.
+          if (state.extractionId) {
+            state.dismissedExtractionId = state.extractionId;
+          }
           state.extractionId = null;
           state.uploadPhase = 'idle';
           state.fileName = null;
@@ -181,6 +194,7 @@ export const useUploadStore = create<UploadStore>()(
         lastUpdatedAt: state.lastUpdatedAt,
         errorCode: state.errorCode,
         errorMessage: state.errorMessage,
+        dismissedExtractionId: state.dismissedExtractionId,
       }),
       onRehydrateStorage: () => (state) => {
         // Auto-reset stale non-completed uploads on hydration

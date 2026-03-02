@@ -253,7 +253,7 @@ export function useExtractedData(
       return result.data!;
     },
     enabled: enabled && !!extractionId,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh — prevents "Not Found" from stale processing-phase cache
     retry: 2,
   });
 }
@@ -324,6 +324,9 @@ export function useUpdateExtraction() {
 
 interface UseAgreementOptions {
   extractionId?: string | null;
+  /** Whether to fetch extraction data. Default: true.
+   *  Set to false on upload screen to prevent caching empty data during processing. */
+  fetchExtractedData?: boolean;
 }
 
 /**
@@ -333,7 +336,7 @@ interface UseAgreementOptions {
  * along with all relevant state.
  */
 export function useAgreement(options: UseAgreementOptions = {}) {
-  const { extractionId = null } = options;
+  const { extractionId = null, fetchExtractedData = true } = options;
 
   // Current extraction ID — sourced from persisted store, with prop override
   const uploadStore = useUploadStore();
@@ -342,9 +345,11 @@ export function useAgreement(options: UseAgreementOptions = {}) {
   // Upload + process mutation
   const uploadMutation = useUploadAgreement();
 
-  // Extracted data query
+  // Extracted data query — only enabled when caller needs it.
+  // Upload screen sets fetchExtractedData=false to prevent caching empty data
+  // during processing (root cause of "Not Found" on review screen).
   const extractedDataQuery = useExtractedData(currentExtractionId, {
-    enabled: !!currentExtractionId,
+    enabled: fetchExtractedData && !!currentExtractionId,
   });
 
   // Confirm mutation
