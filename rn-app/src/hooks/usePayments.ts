@@ -6,42 +6,26 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
 import {
   initiatePayment,
   fetchPaymentHistory,
-  getSavedPaymentMethods,
-  addUpiVpa,
-  addCardToken,
-  deletePaymentMethod,
-  setDefaultPaymentMethod,
   generateReceipt,
   createPaymentSchedule,
   managePaymentSchedule,
   getPaymentSchedules,
   getSavingsHistory,
-  verifyUpiVpa,
-  saveBankPreference,
-  verifyCard,
   fetchBankList,
-  getPayuStoredCards,
   InitiatePaymentRequest,
   InitiatePaymentData,
   PaymentHistoryItem,
   PaymentHistoryPagination,
   PaymentHistorySummary,
-  SavedPaymentMethod,
   PaymentErrorCode,
   ReceiptData,
-  AddCardTokenRequest,
   CreateScheduleRequest,
-  PaymentSchedule,
   ManageScheduleRequest,
-  SavingsEntry,
-  SavingsHistoryData,
   fetchPaymentStamps,
   PaymentStampsResponse,
-  PayuStoredCard,
   NetbankingBank,
 } from '../services/api/payments';
 import { fetchFeeConfig, getGatewayFeeRates, type GatewayFeeRates } from '../services/payment';
@@ -54,8 +38,6 @@ import { dashboardKeys } from './useDashboard';
 export const paymentKeys = {
   all: ['payments'] as const,
   history: () => [...paymentKeys.all, 'history'] as const,
-  methods: () => [...paymentKeys.all, 'methods'] as const,
-  storedCards: () => [...paymentKeys.all, 'stored-cards'] as const,
   receipt: (paymentId: string) => [...paymentKeys.all, 'receipt', paymentId] as const,
   schedules: () => [...paymentKeys.all, 'schedules'] as const,
   cashback: () => [...paymentKeys.all, 'cashback'] as const,
@@ -164,44 +146,6 @@ export function useBankList() {
 }
 
 // ==============================================
-// PAYU STORED CARDS QUERY
-// ==============================================
-
-/**
- * Hook to fetch stored card tokens from PayU.
- * Used by the CVV-only payment flow for saved cards.
- * Gracefully returns empty array on error (client falls back to full card entry).
- */
-export function usePayuStoredCards() {
-  return useQuery<PayuStoredCard[]>({
-    queryKey: paymentKeys.storedCards(),
-    queryFn: async () => {
-      const { data } = await getPayuStoredCards();
-      return data ?? [];
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-}
-
-// ==============================================
-// SAVED PAYMENT METHODS QUERY
-// ==============================================
-
-export function useSavedPaymentMethods() {
-  return useQuery({
-    queryKey: paymentKeys.methods(),
-    queryFn: async () => {
-      const { data, error } = await getSavedPaymentMethods();
-      if (error) {
-        throw new Error(error);
-      }
-      return data;
-    },
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  });
-}
-
-// ==============================================
 // INITIATE PAYMENT MUTATION
 // ==============================================
 
@@ -233,171 +177,6 @@ export function useInitiatePayment(callbacks: UseInitiatePaymentCallbacks = {}) 
     },
     onError: (error: PaymentErrorCode) => {
       callbacks.onError?.(error);
-    },
-  });
-}
-
-// ==============================================
-// ADD UPI VPA MUTATION
-// ==============================================
-
-export interface AddUpiVpaParams {
-  vpa: string;
-  nickname?: string;
-  setPrimary?: boolean;
-}
-
-export interface AddUpiVpaResult {
-  id: string;
-  vpa?: string;
-  display_name?: string;
-}
-
-/**
- * Hook to add a new UPI VPA payment method.
- *
- * @returns Mutation object with:
- * - `mutate(params)` - Function to trigger the mutation
- * - `mutateAsync(params)` - Async version that returns a promise
- * - `isPending` - Loading state
- * - `isError` - Error state
- * - `error` - Error object if failed
- * - `isSuccess` - Success state
- * - `data` - Result data if successful
- * - `reset()` - Reset mutation state
- *
- * @example
- * const { mutate, isPending, error } = useAddUpiVpa();
- *
- * const handleAdd = () => {
- *   mutate({ vpa: 'user@upi', nickname: 'My UPI' });
- * };
- *
- * if (isPending) return <Loading />;
- * if (error) return <Error message={error.message} />;
- */
-export function useAddUpiVpa() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    meta: { suppressGlobalError: true },
-    mutationFn: async ({ vpa, nickname, setPrimary }: AddUpiVpaParams): Promise<AddUpiVpaResult> => {
-      const { data, error } = await addUpiVpa(vpa, nickname, setPrimary);
-      if (error) {
-        throw new Error(error);
-      }
-      if (!data) throw new Error('Unexpected empty response');
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
-    },
-  });
-}
-
-// ==============================================
-// ADD CARD TOKEN MUTATION
-// ==============================================
-
-/**
- * Hook to add a tokenized card payment method.
- *
- * @returns Mutation object with standard React Query mutation fields.
- *
- * @example
- * const { mutate, isPending, error } = useAddCardToken();
- *
- * const handleAdd = () => {
- *   mutate({
- *     card_token: 'payu_token_xxx',
- *     card_last4: '1234',
- *     card_network: 'visa',
- *     card_type: 'credit',
- *     card_expiry_month: 12,
- *     card_expiry_year: 2028,
- *   });
- * };
- */
-export function useAddCardToken() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    meta: { suppressGlobalError: true },
-    mutationFn: async (request: AddCardTokenRequest): Promise<SavedPaymentMethod> => {
-      const { data, error } = await addCardToken(request);
-      if (error) {
-        throw new Error(error);
-      }
-      if (!data) throw new Error('Unexpected empty response');
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
-    },
-  });
-}
-
-// ==============================================
-// DELETE PAYMENT METHOD MUTATION
-// ==============================================
-
-/**
- * Hook to delete a saved payment method.
- *
- * @returns Mutation object with:
- * - `mutate(methodId)` - Function to trigger deletion
- * - `isPending` - Loading state
- * - `isError` - Error state
- * - `error` - Error object if failed
- * - `reset()` - Reset mutation state
- *
- * @example
- * const { mutate: deleteMethod, isPending, error } = useDeletePaymentMethod();
- *
- * const handleDelete = (id: string) => {
- *   deleteMethod(id, {
- *     onSuccess: () => Alert.alert('Deleted!'),
- *     onError: (err) => Alert.alert('Error', err.message),
- *   });
- * };
- */
-export function useDeletePaymentMethod() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (methodId: string): Promise<void> => {
-      const { success, error } = await deletePaymentMethod(methodId);
-      if (!success) {
-        throw new Error(error ?? 'Failed to delete payment method');
-      }
-    },
-    // Optimistic update: remove the method from cache immediately for responsive UI
-    onMutate: async (methodId: string) => {
-      // Cancel any outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries({ queryKey: paymentKeys.methods() });
-
-      // Snapshot the previous value for rollback
-      const previousMethods = queryClient.getQueryData<SavedPaymentMethod[]>(paymentKeys.methods());
-
-      // Optimistically remove the method from cache
-      if (previousMethods) {
-        queryClient.setQueryData<SavedPaymentMethod[]>(
-          paymentKeys.methods(),
-          previousMethods.filter((m) => m.id !== methodId)
-        );
-      }
-
-      return { previousMethods };
-    },
-    onError: (_error, _methodId, context) => {
-      // Rollback to the previous value on error
-      if (context?.previousMethods) {
-        queryClient.setQueryData(paymentKeys.methods(), context.previousMethods);
-      }
-    },
-    onSettled: () => {
-      // Always refetch after error or success to ensure cache is in sync with server
-      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
     },
   });
 }
@@ -435,118 +214,6 @@ export function useGenerateReceipt() {
       }
       if (!data) throw new Error('Unexpected empty response');
       return data;
-    },
-  });
-}
-
-// ==============================================
-// PAYMENT METHODS ALIAS
-// ==============================================
-
-/**
- * Alias for useSavedPaymentMethods for convenience
- */
-export const usePaymentMethods = useSavedPaymentMethods;
-
-// ==============================================
-// ADD PAYMENT METHOD (GENERIC)
-// ==============================================
-
-export interface AddPaymentMethodRequest {
-  type: 'upi' | 'card' | 'netbanking';
-  details: string;
-  metadata?: Record<string, string>;
-  isDefault?: boolean;
-}
-
-export interface AddPaymentMethodResult {
-  id: string;
-  type: 'upi' | 'card' | 'netbanking';
-  details: string;
-  is_default: boolean;
-}
-
-/**
- * Hook to add a new payment method (UPI only).
- *
- * Card and netbanking are handled natively by PayU Checkout Pro SDK.
- * Only UPI VPA addresses can be saved directly.
- *
- * @returns Mutation object with standard React Query mutation fields.
- */
-export function useAddPaymentMethod() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (request: AddPaymentMethodRequest): Promise<AddPaymentMethodResult> => {
-      if (request.type === 'upi') {
-        const { data, error } = await addUpiVpa(
-          request.details,
-          request.metadata?.displayName,
-          request.isDefault
-        );
-        if (error) {
-          throw new Error(error);
-        }
-        if (!data) throw new Error('Unexpected empty response');
-        return {
-          id: data.id ?? `upi_${Date.now()}`,
-          type: 'upi',
-          details: request.details,
-          is_default: request.isDefault ?? false,
-        };
-      }
-
-      // Card and netbanking are handled by PayU Checkout Pro SDK natively
-      throw new Error(
-        `${request.type} payment methods are managed through PayU Checkout Pro. ` +
-        'Only UPI VPA addresses can be saved directly.'
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
-    },
-  });
-}
-
-// ==============================================
-// VERIFY UPI
-// ==============================================
-
-export interface VerifyUpiResult {
-  verified: boolean;
-  name: string;
-  vpa: string;
-}
-
-/**
- * Hook to verify a UPI VPA before adding it as a payment method.
- *
- * @returns Mutation object with standard React Query mutation fields.
- *
- * @example
- * const { mutate: verify, isPending, data, error } = useVerifyUpi();
- *
- * const handleVerify = () => {
- *   verify({ upiId: 'user@okicici' });
- * };
- *
- * if (isPending) return <Text>Verifying...</Text>;
- * if (data?.verified) return <Text>Account: {data.name}</Text>;
- */
-export function useVerifyUpi() {
-  return useMutation({
-    meta: { suppressGlobalError: true },
-    mutationFn: async ({ upiId }: { upiId: string }): Promise<VerifyUpiResult> => {
-      const result = await verifyUpiVpa(upiId);
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      return {
-        verified: result.valid,
-        name: result.name ?? upiId.split('@')[0],
-        vpa: result.vpa,
-      };
     },
   });
 }
@@ -598,69 +265,6 @@ export function useManageSchedule() {
 }
 
 // ==============================================
-// SET DEFAULT PAYMENT METHOD MUTATION
-// ==============================================
-
-export function useSetDefaultPaymentMethod() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (paymentMethodId: string) => {
-      const { success, error } = await setDefaultPaymentMethod(paymentMethodId);
-      if (!success) {
-        throw new Error(error ?? 'Failed to set default payment method');
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
-    },
-  });
-}
-
-// ==============================================
-// SAVE BANK PREFERENCE MUTATION
-// ==============================================
-
-/**
- * Hook to save or update the user's netbanking bank preference.
- */
-export function useSaveBankPreference() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    meta: { suppressGlobalError: true },
-    mutationFn: async ({ bankCode, bankName }: { bankCode: string; bankName: string }) => {
-      const { data, error } = await saveBankPreference(bankCode, bankName);
-      if (error) throw new Error(error);
-      if (!data) throw new Error('Unexpected empty response');
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
-    },
-  });
-}
-
-// ==============================================
-// VERIFY CARD MUTATION (Rs.1 tokenization)
-// ==============================================
-
-/**
- * Hook to initiate a Rs.1 card verification/tokenization session.
- * Returns PayU session params for launching the Core SDK.
- */
-export function useVerifyCard() {
-  return useMutation({
-    meta: { suppressGlobalError: true },
-    mutationFn: async () => {
-      const { data, error } = await verifyCard();
-      if (error) throw new Error(error);
-      if (!data) throw new Error('Unexpected empty response');
-      return data;
-    },
-  });
-}
-
-// ==============================================
 // SAVINGS HISTORY HOOK (replaces cashback history)
 // ==============================================
 
@@ -677,65 +281,3 @@ export function useSavingsHistory() {
   });
 }
 
-// ==============================================
-// COMBINED PAYMENT HOOK
-// ==============================================
-
-/**
- * Combined hook for common payment operations.
- * Provides a convenient interface for all payment-related queries and mutations
- * with explicit loading and error states.
- */
-export function usePayments() {
-  const historyQuery = usePaymentHistory();
-  const methodsQuery = useSavedPaymentMethods();
-  // NOTE: useInitiatePayment is NOT included here — consumers that need it should
-  // call useInitiatePayment() directly with their own onSuccess/onError callbacks.
-  // Including it here with no callbacks + suppressGlobalError silently swallows errors.
-  const addMethodMutation = useAddPaymentMethod();
-  const deleteMethodMutation = useDeletePaymentMethod();
-  const queryClient = useQueryClient();
-
-  const refreshAll = useCallback(() => {
-    return Promise.all([
-      queryClient.invalidateQueries({ queryKey: paymentKeys.all }),
-      queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
-    ]);
-  }, [queryClient]);
-
-  return {
-    // History query
-    history: historyQuery.data?.payments ?? [],
-    pagination: historyQuery.data?.pagination ?? null,
-    summary: historyQuery.data?.summary ?? null,
-    isLoadingHistory: historyQuery.isLoading,
-    historyError: historyQuery.error,
-    refetchHistory: historyQuery.refetch,
-
-    // Saved methods query
-    savedMethods: methodsQuery.data ?? [],
-    isLoadingMethods: methodsQuery.isLoading,
-    methodsError: methodsQuery.error,
-    refetchMethods: methodsQuery.refetch,
-
-    // Add payment method mutation
-    addMethod: addMethodMutation.mutate,
-    addMethodAsync: addMethodMutation.mutateAsync,
-    isAddingMethod: addMethodMutation.isPending,
-    addMethodError: addMethodMutation.error,
-    addMethodSuccess: addMethodMutation.isSuccess,
-    addedMethod: addMethodMutation.data,
-    resetAddMethod: addMethodMutation.reset,
-
-    // Delete payment method mutation
-    deleteMethod: deleteMethodMutation.mutate,
-    deleteMethodAsync: deleteMethodMutation.mutateAsync,
-    isDeletingMethod: deleteMethodMutation.isPending,
-    deleteMethodError: deleteMethodMutation.error,
-    deleteMethodSuccess: deleteMethodMutation.isSuccess,
-    resetDeleteMethod: deleteMethodMutation.reset,
-
-    // Utilities
-    refreshAll,
-  };
-}

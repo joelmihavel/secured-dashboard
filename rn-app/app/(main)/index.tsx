@@ -87,10 +87,10 @@ import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
 // Import DashboardState type and mapped types from dashboard service
 import type { DashboardState, MappedRecentPayment, MappedCashbackEntry, RawRecentPayment } from '@/src/services/api/dashboard';
 
-// Import saved payment methods hook and stamps
-import { useSavedPaymentMethods, usePaymentStamps } from '@/src/hooks/usePayments';
+// Import payment stamps
+import { usePaymentStamps } from '@/src/hooks/usePayments';
 import { usePaymentStore } from '@/src/stores/payment';
-import type { PaymentStampEntry, SavedPaymentMethod } from '@/src/services/api/payments';
+import type { PaymentStampEntry } from '@/src/services/api/payments';
 
 // Import colors from theme
 import { colors, spacing, radius } from '@/src/theme';
@@ -163,9 +163,6 @@ export default function HomeScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   // Scroll handler removed — ScrollDownIndicator removed from home screen.
 
-  // Get saved payment methods
-  const { data: savedMethods } = useSavedPaymentMethods();
-
   // Get payment stamps (per-month historical payment data)
   const { data: stampsData } = usePaymentStamps(tenancy?.id);
 
@@ -173,38 +170,8 @@ export default function HomeScreen() {
   // DERIVED VALUES
   // ==============================================
 
-  // Convert saved methods to PaymentMethod type for carousel
-  const paymentMethods: PaymentMethod[] = useMemo(() => {
-    if (!savedMethods) return [];
-    return savedMethods.map((method: SavedPaymentMethod) => {
-      // Derive a human-readable bank name from display_name
-      // UPI: "UPI - ICICI" -> "ICICI"; Card: "Visa ****2341" -> "Visa"
-      const bankName =
-        method.type === 'upi'
-          ? (method.display_name?.replace(/^UPI\s*-\s*/i, '') || method.upi_provider || 'Bank')
-          : method.type === 'card'
-            ? (method.card_network?.toUpperCase() || method.display_name?.split(' ')[0] || 'Card')
-            : (method.display_name || 'Bank');
-
-      // Format card expiry from month/year fields (e.g., 6/2026 -> "06/26")
-      const cardExpiry =
-        method.type === 'card' && method.card_expiry_month && method.card_expiry_year
-          ? `${String(method.card_expiry_month).padStart(2, '0')}/${String(method.card_expiry_year).slice(-2)}`
-          : undefined;
-
-      return {
-        id: method.id,
-        type: method.type, // Preserve original type: 'upi' | 'card' | 'netbanking'
-        bankName,
-        accountMasked: method.vpa || `****${method.last_four || ''}`,
-        upiId: method.vpa,
-        cardBrand: method.card_network,
-        cardLastFour: method.last_four,
-        cardExpiry,
-        isSelected: method.is_default,
-      };
-    });
-  }, [savedMethods]);
+  // Saved payment methods removed — PayU handles method selection natively
+  const paymentMethods: PaymentMethod[] = [];
 
   // Payment methods for the bottom sheet
   // User's first name for greeting

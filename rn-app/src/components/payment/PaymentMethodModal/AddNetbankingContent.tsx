@@ -28,7 +28,6 @@ import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Text as RNText } from 'react-native';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
 import { useBankList } from '@/src/hooks';
-import { saveBankPreference } from '@/src/services/api/payments';
 import { usePaymentStore } from '@/src/stores';
 import { BANK_LIST, type BankInfo } from '@/src/constants/bankList';
 import type { NetbankingBank } from '@/src/services/api/payments';
@@ -118,8 +117,7 @@ function toBankInfo(b: NetbankingBank): BankInfo {
   return { code: b.bank_code, name: b.bank_name, shortName: b.short_name ?? undefined, isPopular: b.is_popular };
 }
 
-export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, context = 'payment', onSaveComplete, onReadyForConfirm }: AddMethodContentProps) {
-  const isProfile = context === 'profile';
+export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, onReadyForConfirm }: AddMethodContentProps) {
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const storedAmount = usePaymentStore((s) => s.amount);
   const amount = sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0');
@@ -186,22 +184,9 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, con
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
-      // Profile context: save bank preference directly without payment
-      if (isProfile && onSaveComplete) {
-        const bankName = banks.find(b => b.code === selectedBankCode)?.name ?? selectedBankCode;
-        const { error: saveError } = await saveBankPreference(selectedBankCode, bankName);
-        if (saveError) {
-          Alert.alert('Save Failed', saveError || 'Could not save bank. Please try again.');
-          return;
-        }
-        onSaveComplete();
-        return;
-      }
-
-      // Payment context with confirm step: save bank then hand off to confirm
+      // Payment context with confirm step: hand off to confirm
       if (onReadyForConfirm) {
         const bankName = banks.find(b => b.code === selectedBankCode)?.name ?? selectedBankCode;
-        saveBankPreference(selectedBankCode, bankName).catch(() => {});
         onReadyForConfirm('netbanking', 'NB', { bankcode: selectedBankCode }, `Netbanking \u2022 ${bankName}`);
         return;
       }
@@ -240,7 +225,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, con
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [selectedBankCode, paymentId, executePayment, onInitiatePayment, isProfile, onSaveComplete, banks]);
+  }, [selectedBankCode, paymentId, executePayment, onInitiatePayment, banks, onReadyForConfirm]);
 
   return (
     <View style={styles.container}>
@@ -299,7 +284,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, con
       {/* Proceed Button */}
       <View style={styles.buttonSection}>
         <PrimaryButton
-          title={isProfile ? 'Save Bank' : (parseFloat(amount) > 0 ? `Save & Pay \u20B9${parseFloat(amount).toLocaleString('en-IN')}` : 'Add bank account')}
+          title={parseFloat(amount) > 0 ? `Pay \u20B9${parseFloat(amount).toLocaleString('en-IN')}` : 'Select Bank'}
           onPress={handleProceed}
           disabled={!selectedBankCode || isSubmitting}
           loading={isSubmitting}

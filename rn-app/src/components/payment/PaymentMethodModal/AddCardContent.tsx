@@ -25,8 +25,6 @@ import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Text as RNText } from 'react-native';
 import { SecureCardInput, type SecureCardInputRef } from '@/src/components/payment/SecureCardInput';
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
-import { launchCorePayment } from '@/src/services/payment/payuCoreService';
-import { addCardToken } from '@/src/services/api/payments';
 import { usePaymentStore } from '@/src/stores';
 import { colors } from '@/src/theme';
 
@@ -45,12 +43,10 @@ const FIGMA_COLORS = {
 // ADD CARD CONTENT
 // ==============================================
 
-export function AddCardContent({ paymentId, onBack, cardType = 'credit', onInitiatePayment, context = 'payment', onSaveComplete, onReadyForConfirm }: AddMethodContentProps) {
-  const isProfile = context === 'profile';
+export function AddCardContent({ paymentId, onBack, cardType = 'credit', onInitiatePayment, onReadyForConfirm }: AddMethodContentProps) {
   const sessionParams = usePaymentStore((s) => s.payuSessionParams);
   const storedAmount = usePaymentStore((s) => s.amount);
-  const { clearPayuSessionParams } = usePaymentStore();
-  const amount = isProfile ? '1' : (sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0'));
+  const amount = sessionParams?.amount ?? (storedAmount > 0 ? String(storedAmount) : '0');
 
   const cardInputRef = useRef<SecureCardInputRef>(null);
   const isSubmittingRef = useRef(false);
@@ -94,7 +90,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
             expiry_year: cardData.expiryYear,
             expiry_month: cardData.expiryMonth,
             name_on_card: cardData.nameOnCard,
-            store_card: '1',
+            store_card: '0',
           },
           label,
           () => cardInputRef.current?.clearCardData(),
@@ -134,38 +130,10 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
         expiry_year: cardData.expiryYear,
         expiry_month: cardData.expiryMonth,
         name_on_card: cardData.nameOnCard,
-        store_card: '1',
+        store_card: '0',
       };
 
-      // Profile context: Rs.1 verification — use launchCorePayment directly
-      // (executePayment navigates to status screen which we don't want)
-      if (isProfile && onSaveComplete) {
-        const sdkOutcome = await launchCorePayment(bankcode, currentSessionParams, instrumentParams);
-        cardInputRef.current?.clearCardData();
-        clearPayuSessionParams();
-
-        if (sdkOutcome.status === 'success') {
-          // Save card token client-side (webhook also saves as backup)
-          const payuResponse = sdkOutcome.payuResponse ?? {};
-          if (payuResponse.store_card_token) {
-            addCardToken({
-              card_token: String(payuResponse.store_card_token),
-              card_last4: String(payuResponse.card_no ?? '').slice(-4),
-              card_network: (String(payuResponse.bankcode ?? '').toLowerCase()) as 'visa' | 'mastercard' | 'rupay' | 'amex' | 'maestro',
-              card_type: cardType === 'credit' ? 'credit' : 'debit',
-              ...(Number(payuResponse.card_expiry_month) ? { card_expiry_month: Number(payuResponse.card_expiry_month) } : {}),
-              ...(Number(payuResponse.card_expiry_year) ? { card_expiry_year: Number(payuResponse.card_expiry_year) } : {}),
-            }).catch(() => {});
-          }
-          onSaveComplete();
-        } else if (sdkOutcome.status === 'failure') {
-          Alert.alert('Verification Failed', sdkOutcome.error || 'Card verification failed. Please try again.');
-        }
-        // cancelled/other: stay on form for retry
-        return;
-      }
-
-      // Fallback: direct payment via executePayment (navigates to status)
+      // Direct payment via executePayment (navigates to status)
       const outcome = await executePayment(
         bankcode,
         instrumentParams,
@@ -182,7 +150,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
       isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
-  }, [paymentId, executePayment, onInitiatePayment, cardType, isProfile, onSaveComplete, clearPayuSessionParams, onReadyForConfirm]);
+  }, [paymentId, executePayment, onInitiatePayment, cardType, onReadyForConfirm]);
 
   const formattedAmount = parseFloat(amount).toLocaleString('en-IN');
 
@@ -219,7 +187,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
         {/* Pay Button + Footer */}
         <View style={styles.buttonFooterSection}>
           <PrimaryButton
-            title={isProfile ? 'Verify Card (\u20B91)' : (parseFloat(amount) > 0 ? `Save & Pay \u20B9${formattedAmount}` : 'Save Card Details')}
+            title={parseFloat(amount) > 0 ? `Pay \u20B9${formattedAmount}` : 'Add Card Details'}
             onPress={handlePay}
             disabled={!isCardValid || isSubmitting}
             loading={isSubmitting}

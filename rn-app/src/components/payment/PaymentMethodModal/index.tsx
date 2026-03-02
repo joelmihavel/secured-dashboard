@@ -6,10 +6,10 @@
  * within the enter-rent.tsx screen.
  *
  * State machine:
- *   enter-amount → selector → add-method / enter-cvv → confirm-payment → PayU SDK
+ *   enter-amount → selector → [add-card | add-debit-card | add-netbanking | confirm-payment] → PayU SDK
  *
- * NOTE: Profile payment method editing uses EditPaymentMethodModal (separate component).
- * This modal handles ONLY rent payment context.
+ * UPI skips the form entirely — goes straight from selector to confirm-payment,
+ * then PayU Custom Browser opens with enforce_paymethod=upi (user picks UPI app there).
  *
  * Critical behaviors:
  * - Conditional rendering (NOT display:none) ensures SecureCardInput refs
@@ -33,19 +33,17 @@ import * as Haptics from 'expo-haptics';
 import { usePaymentStore } from '@/src/stores';
 import { useDashboard } from '@/src/hooks';
 import { initiatePayment, buildSessionParams } from '@/src/services/payment';
-import { sanitizeErrorForUI, addUpiVpa } from '@/src/services/api/payments';
+import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { BottomSheet } from '@/src/components/ui';
 
 import { usePaymentFlow } from '@/src/hooks/usePaymentFlow';
 import type { CorePaymentMode, InstrumentParams } from '@/src/services/payment/payuCoreService';
-import type { ModalView, PaymentMethodType, SavedMethodDetails, PaymentMethodModalProps } from './types';
+import type { ModalView, PaymentMethodType, PaymentMethodModalProps } from './types';
 import { EnterAmountContent } from './EnterAmountContent';
 import { MethodSelectorContent } from './MethodSelectorContent';
-import { AddUpiContent } from './AddUpiContent';
 import { AddCardContent } from './AddCardContent';
 import { AddNetbankingContent } from './AddNetbankingContent';
-import { EnterCvvContent } from './EnterCvvContent';
 import { ConfirmPaymentContent } from './ConfirmPaymentContent';
 
 export function PaymentMethodModal({
@@ -64,7 +62,7 @@ export function PaymentMethodModal({
   const isProceedingRef = useRef(false);
   const isDemoRef = useRef(false);
 
-  // Pending instrument details: stored between add-method/CVV and confirm-payment
+  // Pending instrument details: stored between add-method and confirm-payment
   const pendingInstrumentRef = useRef<{
     methodType: PaymentMethodType;
     corePaymentMode: string;
@@ -73,12 +71,6 @@ export function PaymentMethodModal({
     clearSensitiveData?: () => void;
   } | null>(null);
   const [isConfirmPaying, setIsConfirmPaying] = useState(false);
-
-  // CVV-only flow state
-  const [cvvCardToken, setCvvCardToken] = useState('');
-  const [cvvCardType, setCvvCardType] = useState<'CC' | 'DC'>('CC');
-  const [cvvLastFour, setCvvLastFour] = useState('');
-  const [cvvCardNetwork, setCvvCardNetwork] = useState('');
 
   // Sync paymentId when parent provides a new one
   useEffect(() => {
@@ -112,7 +104,6 @@ export function PaymentMethodModal({
     setIsInitiating(false);
     isProceedingRef.current = false;
     isDemoRef.current = false;
-    setCvvCardToken('');
     pendingInstrumentRef.current = null;
     onClose();
   }, [clearPayuSessionParams, onClose, initialView]);
@@ -127,7 +118,7 @@ export function PaymentMethodModal({
       setPaymentId('');
       setModalView('selector');
     } else {
-      // All add-method views and enter-cvv go back to selector
+      // All add-method views go back to selector
       clearPayuSessionParams();
       setPaymentId('');
       setModalView('selector');
@@ -142,22 +133,9 @@ export function PaymentMethodModal({
     setModalView('selector');
   }, [rentMonth]);
 
-  // --- Setup handler: navigate to add-method view WITHOUT initiating payment ---
-  const handleSetup = useCallback((methodType: PaymentMethodType) => {
-    const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
-    setCardType(resolvedCardType);
-    const viewMap: Record<PaymentMethodType, ModalView> = {
-      upi: 'add-upi',
-      card: 'add-card',
-      debit_card: 'add-debit-card',
-      netbanking: 'add-netbanking',
-    };
-    setModalView(viewMap[methodType]);
-  }, []);
-
   // --- On-demand initiate payment (called by add-method children in setup flow) ---
   const handleInitiateForChild = useCallback(
-    async (methodType: PaymentMethodType, instrumentDetails?: { vpa?: string }): Promise<{ paymentId: string } | null> => {
+    async (methodType: PaymentMethodType): Promise<{ paymentId: string } | null> => {
       if (!isConnected) {
         Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
         return null;
@@ -188,11 +166,6 @@ export function PaymentMethodModal({
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setProcessing(data.paymentId);
           setLastPayment(data.paymentId);
-
-          // Save payment method for demo users (fire-and-forget)
-          if (methodType === 'upi' && instrumentDetails?.vpa) {
-            addUpiVpa(instrumentDetails.vpa).catch(() => {});
-          }
 
           router.replace({
             pathname: '/(payment)/status',
@@ -253,7 +226,7 @@ export function PaymentMethodModal({
     try {
       let currentPaymentId = paymentId;
 
-      // Initiate payment if not yet done (saved UPI, new methods via confirm)
+      // Initiate payment if not yet done (UPI, new methods via confirm)
       if (!currentPaymentId) {
         const result = await handleInitiateForChild(pending.methodType);
         if (!result) return; // demo mode handled navigation
@@ -309,137 +282,105 @@ export function PaymentMethodModal({
     }
   }, [paymentId, executePayment, handleInitiateForChild, isConfirmPaying]);
 
-  // --- Proceed from method selector: initiate payment + execute or navigate ---
+  // --- Proceed from method selector ---
+  // UPI: skip form, go straight to confirm-payment (PayU handles UPI app selection)
+  // Card/Debit: navigate to card form
+  // Netbanking: navigate to bank selection form
   const handleProceed = useCallback(
-    async (methodType: PaymentMethodType, savedDetails?: SavedMethodDetails) => {
+    async (methodType: PaymentMethodType) => {
       if (isProceedingRef.current) return;
       isProceedingRef.current = true;
 
       try {
-      // Network connectivity check
-      if (!isConnected) {
-        Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
-        return;
-      }
+        // Network connectivity check
+        if (!isConnected) {
+          Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
+          return;
+        }
 
-      setIsInitiating(true);
-      setConfirming();
+        setIsInitiating(true);
+        setConfirming();
 
-      // Determine card type for CC/DC routing
-      const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
-      setCardType(resolvedCardType);
+        // Determine card type for CC/DC routing
+        const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
+        setCardType(resolvedCardType);
 
-      try {
-        // Read the user-entered amount from the store (rupees → paise)
-        const storeEnteredAmount = usePaymentStore.getState().enteredAmount;
-        const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
-
-        // Saved UPI → store VPA and go to confirm (NO initiatePayment here — S2S triggers on Pay)
-        if (savedDetails?.vpa && methodType === 'upi') {
+        // UPI: no form needed — go straight to confirm screen
+        // Payment will be initiated when user taps "Pay" on confirm screen
+        if (methodType === 'upi') {
           pendingInstrumentRef.current = {
             methodType: 'upi',
             corePaymentMode: 'upi',
-            params: { vpa: savedDetails.vpa },
-            methodLabel: `UPI \u2022 ${savedDetails.vpa}`,
+            params: {},
+            methodLabel: 'UPI',
           };
           setModalView('confirm-payment');
+          setIsInitiating(false);
           return;
         }
 
-        const { data, error } = await initiatePayment({
-          tenancyId,
-          paymentMethod: methodType,
-          cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
-          rentMonth,
-          amountPaise,
-        });
+        try {
+          // Read the user-entered amount from the store (rupees → paise)
+          const storeEnteredAmount = usePaymentStore.getState().enteredAmount;
+          const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
 
-        if (error || !data) {
-          throw new Error(error ?? 'Failed to initiate payment');
-        }
+          const { data, error } = await initiatePayment({
+            tenancyId,
+            paymentMethod: methodType,
+            cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
+            rentMonth,
+            amountPaise,
+          });
 
-        // Demo mode: route through confirm screen so Apple reviewers see the full flow
-        if (data.demoMode) {
+          if (error || !data) {
+            throw new Error(error ?? 'Failed to initiate payment');
+          }
+
+          // Demo mode: route through confirm screen so Apple reviewers see the full flow
+          if (data.demoMode) {
+            setProcessing(data.paymentId);
+            setLastPayment(data.paymentId);
+            setPaymentId(data.paymentId);
+            isDemoRef.current = true;
+
+            const methodLabel = methodType === 'card' ? 'Credit Card'
+              : methodType === 'debit_card' ? 'Debit Card'
+              : methodType === 'netbanking' ? 'Net Banking'
+              : methodType;
+
+            pendingInstrumentRef.current = {
+              methodType,
+              corePaymentMode: methodType,
+              params: {},
+              methodLabel,
+            };
+            setModalView('confirm-payment');
+            return;
+          }
+
+          // Store PayU session params
+          if (data.payuParams) {
+            setPayuSessionParams(buildSessionParams(data.payuParams as Record<string, string>));
+          }
           setProcessing(data.paymentId);
           setLastPayment(data.paymentId);
           setPaymentId(data.paymentId);
-          isDemoRef.current = true;
 
-          // Build instrument info for the confirm screen
-          let methodLabel = methodType === 'card' ? 'Credit Card' : methodType === 'debit_card' ? 'Debit Card' : methodType;
-          let coreMode: string = methodType;
-          let params: Record<string, string> = {};
-
-          if (savedDetails?.vpa) {
-            methodLabel = `UPI \u2022 ${savedDetails.vpa}`;
-            coreMode = 'upi';
-            params = { vpa: savedDetails.vpa };
-          } else if (savedDetails?.cardToken) {
-            methodLabel = `Card \u2022\u2022\u2022\u2022 ${savedDetails.lastFour ?? ''}`;
-            coreMode = savedDetails.cardType ?? 'CC';
-            params = { cardToken: savedDetails.cardToken };
-          } else if (savedDetails?.bankCode) {
-            methodLabel = 'Netbanking';
-            coreMode = 'NB';
-            params = { bankcode: savedDetails.bankCode };
-          }
-
-          pendingInstrumentRef.current = {
-            methodType,
-            corePaymentMode: coreMode,
-            params,
-            methodLabel,
+          // Navigate to add-method form
+          const viewMap: Record<Exclude<PaymentMethodType, 'upi'>, ModalView> = {
+            card: 'add-card',
+            debit_card: 'add-debit-card',
+            netbanking: 'add-netbanking',
           };
-          setModalView('confirm-payment');
-          return;
+          setModalView(viewMap[methodType]);
+        } catch (err) {
+          console.error('PaymentMethodModal initiate error:', err);
+          const rawMessage = err instanceof Error ? err.message : 'An error occurred';
+          const errorMessage = sanitizeErrorForUI(rawMessage);
+          Alert.alert('Payment Error', errorMessage);
+        } finally {
+          setIsInitiating(false);
         }
-
-        // Self-contained flow: store PayU session params
-        if (data.payuParams) {
-          setPayuSessionParams(buildSessionParams(data.payuParams as Record<string, string>));
-        }
-        setProcessing(data.paymentId);
-        setLastPayment(data.paymentId);
-        setPaymentId(data.paymentId);
-
-        // Saved card with token → CVV-only entry
-        if (savedDetails?.cardToken && (methodType === 'card' || methodType === 'debit_card')) {
-          setCvvCardToken(savedDetails.cardToken);
-          setCvvCardType(savedDetails.cardType ?? (methodType === 'card' ? 'CC' : 'DC'));
-          setCvvLastFour(savedDetails.lastFour ?? '');
-          setCvvCardNetwork(savedDetails.cardNetwork ?? '');
-          setModalView('enter-cvv');
-          return;
-        }
-
-        // Saved Netbanking → store instrument, go to confirm
-        if (savedDetails?.bankCode && methodType === 'netbanking') {
-          pendingInstrumentRef.current = {
-            methodType: 'netbanking',
-            corePaymentMode: 'NB',
-            params: { bankcode: savedDetails.bankCode },
-            methodLabel: `Netbanking`,
-          };
-          setModalView('confirm-payment');
-          return;
-        }
-
-        // Card or no saved details → navigate to add-method form
-        const viewMap: Record<PaymentMethodType, ModalView> = {
-          upi: 'add-upi',
-          card: 'add-card',
-          debit_card: 'add-debit-card',
-          netbanking: 'add-netbanking',
-        };
-        setModalView(viewMap[methodType]);
-      } catch (err) {
-        console.error('PaymentMethodModal initiate error:', err);
-        const rawMessage = err instanceof Error ? err.message : 'An error occurred';
-        const errorMessage = sanitizeErrorForUI(rawMessage);
-        Alert.alert('Payment Error', errorMessage);
-      } finally {
-        setIsInitiating(false);
-      }
       } finally {
         isProceedingRef.current = false;
       }
@@ -448,8 +389,6 @@ export function PaymentMethodModal({
       tenancyId,
       rentMonth,
       isConnected,
-      router,
-      executePayment,
       setConfirming,
       setProcessing,
       setLastPayment,
@@ -474,15 +413,8 @@ export function PaymentMethodModal({
             <MethodSelectorContent
               onBack={handleBack}
               onProceed={handleProceed}
-              onSetup={handleSetup}
-              onEdit={() => {}}
               isInitiating={isInitiating}
             />
-          </Animated.View>
-        )}
-        {modalView === 'add-upi' && (
-          <Animated.View entering={FadeIn.duration(200)} key="add-upi" style={styles.viewContent}>
-            <AddUpiContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} onReadyForConfirm={handleReadyForConfirm} />
           </Animated.View>
         )}
         {modalView === 'add-card' && (
@@ -498,19 +430,6 @@ export function PaymentMethodModal({
         {modalView === 'add-netbanking' && (
           <Animated.View entering={FadeIn.duration(200)} key="add-nb" style={styles.viewContent}>
             <AddNetbankingContent paymentId={paymentId} onBack={handleBack} onInitiatePayment={handleInitiateForChild} onReadyForConfirm={handleReadyForConfirm} />
-          </Animated.View>
-        )}
-        {modalView === 'enter-cvv' && (
-          <Animated.View entering={FadeIn.duration(200)} key="enter-cvv" style={styles.viewContent}>
-            <EnterCvvContent
-              paymentId={paymentId}
-              onBack={handleBack}
-              cardToken={cvvCardToken}
-              cardType={cvvCardType}
-              lastFour={cvvLastFour}
-              cardNetwork={cvvCardNetwork}
-              onReadyForConfirm={handleReadyForConfirm}
-            />
           </Animated.View>
         )}
         {modalView === 'confirm-payment' && (

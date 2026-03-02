@@ -26,7 +26,7 @@
  *         - Sign Out, divider, Delete Account
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -43,10 +43,7 @@ import * as StoreReview from 'expo-store-review';
 
 import { Screen, Text, Avatar, TextInput, PhoneInput, BackButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
-import { EditPaymentMethodModal } from '@/src/components/payment/PaymentMethodModal/EditPaymentMethodModal';
-import type { PaymentMethodType } from '@/src/components/payment/PaymentMethodModal/types';
-import { useDashboard, useAuth, useDeleteAccount, useSavedPaymentMethods } from '@/src/hooks';
-import type { SavedPaymentMethod } from '@/src/services/api/payments';
+import { useDashboard, useAuth, useDeleteAccount } from '@/src/hooks';
 import { colors } from '@/src/theme';
 import { s } from '@/src/theme/scale';
 
@@ -127,39 +124,6 @@ export default function ProfileScreen() {
   const { user, tenancy } = useDashboard();
   const { signOut } = useAuth();
   const deleteAccount = useDeleteAccount();
-  const { data: savedMethods } = useSavedPaymentMethods();
-
-  // Payment method edit modal state
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const handleEditModalClose = useCallback(() => setEditModalVisible(false), []);
-  const [editModalMethodType, setEditModalMethodType] = useState<string>('upi');
-  const [editModalMethodId, setEditModalMethodId] = useState<string>('');
-
-  // Build payment menu items dynamically from user's saved methods
-  const paymentMenuItems = useMemo(() => {
-    if (!savedMethods?.length) return [];
-
-    const items: { title: string; type: string; cardType?: string; testID: string }[] = [];
-
-    if (savedMethods.some((m: any) => m.type === 'upi')) {
-      items.push({ title: 'Edit UPI Method', type: 'upi', testID: 'edit-upi-button' });
-    }
-    // TODO: Re-enable card edit options once PayU Token Requestor onboarding is complete.
-    // Cards are saved to our DB but PayU tokenization (store_card_token) is not yet enabled
-    // for merchant key PLycrf. Contact PayU KAM to enable Token Requestor, then uncomment:
-    //
-    // if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'credit')) {
-    //   items.push({ title: 'Edit Credit Card', type: 'card', cardType: 'credit', testID: 'edit-credit-card-button' });
-    // }
-    // if (savedMethods.some((m: any) => m.type === 'card' && m.card_type === 'debit')) {
-    //   items.push({ title: 'Edit Debit Card', type: 'card', cardType: 'debit', testID: 'edit-debit-card-button' });
-    // }
-    if (savedMethods.some((m: any) => m.type === 'netbanking')) {
-      items.push({ title: 'Edit Bank Account', type: 'netbanking', testID: 'edit-bank-account-button' });
-    }
-
-    return items;
-  }, [savedMethods]);
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -180,20 +144,6 @@ export default function ProfileScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push('/(profile)/edit-bank-details' as never);
   }, [router]);
-
-  const handleEditPaymentMethod = useCallback((type: string, cardType?: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Find the saved method ID for this type
-    const method = savedMethods?.find((m: SavedPaymentMethod) => {
-      if (type === 'card' && cardType) return m.type === 'card' && m.card_type === cardType;
-      return m.type === type;
-    });
-    if (method) {
-      setEditModalMethodType(type === 'card' && cardType === 'debit' ? 'debit_card' : type);
-      setEditModalMethodId(method.id);
-      setEditModalVisible(true);
-    }
-  }, [router, savedMethods]);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -331,32 +281,17 @@ export default function ProfileScreen() {
           </Animated.View>
 
           {/* Payment Information section (41:8842): column, gap=24, paddingH=40 */}
-          {(tenancy?.verification_status?.bank_verified || paymentMenuItems.length > 0) && (
+          {tenancy?.verification_status?.bank_verified && (
             <Animated.View entering={FadeInDown.delay(160).duration(350)} style={styles.section}>
               <Text style={styles.sectionTitle}>
                 Payment Information
               </Text>
               <View style={styles.cardContainer}>
-                {tenancy?.verification_status?.bank_verified && (
-                  <>
-                    <CardMenuItem
-                      title="Edit Landlord Bank Details"
-                      onPress={handleEditBankDetails}
-                      testID="edit-bank-details-button"
-                    />
-                    {paymentMenuItems.length > 0 && <CardDivider />}
-                  </>
-                )}
-                {paymentMenuItems.map((item, index) => (
-                  <React.Fragment key={item.testID}>
-                    {index > 0 && <CardDivider />}
-                    <CardMenuItem
-                      title={item.title}
-                      onPress={() => handleEditPaymentMethod(item.type, item.cardType)}
-                      testID={item.testID}
-                    />
-                  </React.Fragment>
-                ))}
+                <CardMenuItem
+                  title="Edit Landlord Bank Details"
+                  onPress={handleEditBankDetails}
+                  testID="edit-bank-details-button"
+                />
               </View>
             </Animated.View>
           )}
@@ -415,14 +350,6 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* Payment Method Edit Modal — opens Card UI bottom sheet */}
-      <EditPaymentMethodModal
-        visible={editModalVisible}
-        onClose={handleEditModalClose}
-        tenancyId={tenancy?.id ?? ''}
-        methodType={editModalMethodType as PaymentMethodType}
-        savedMethodId={editModalMethodId}
-      />
     </Screen>
   );
 }

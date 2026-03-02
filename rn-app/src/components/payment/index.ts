@@ -24,9 +24,8 @@ export * from './AddMoreCard';
 // Secure Card Input (Core SDK flow)
 export * from './SecureCardInput';
 
-// Payment Method Modals
+// Payment Method Modal
 export { PaymentMethodModal } from './PaymentMethodModal';
-export { EditPaymentMethodModal } from './PaymentMethodModal/EditPaymentMethodModal';
 export type {
   ModalView,
   PaymentMethodModalProps,

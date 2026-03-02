@@ -12,32 +12,13 @@ import type { PaymentFlowOutcome } from '@/src/hooks/usePaymentFlow';
 export type ModalView =
   | 'enter-amount'
   | 'selector'
-  | 'add-upi'
   | 'add-card'
   | 'add-debit-card'
   | 'add-netbanking'
-  | 'enter-cvv'
   | 'confirm-payment';
 
 /** Method type passed from selector to orchestrator */
 export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';
-
-/** Saved method details passed when proceeding with an already-saved payment method */
-export interface SavedMethodDetails {
-  savedMethodId: string;
-  /** UPI VPA for direct UPI execution */
-  vpa?: string;
-  /** Bank code for direct netbanking execution */
-  bankCode?: string;
-  /** PayU stored card token for CVV-only flow */
-  cardToken?: string;
-  /** Card type for stored card payment (CC or DC) */
-  cardType?: 'CC' | 'DC';
-  /** Last 4 digits of card (for CVV view display) */
-  lastFour?: string;
-  /** Card network e.g. "VISA" (for CVV view display) */
-  cardNetwork?: string;
-}
 
 /** Props shared by all add-method content components */
 export interface AddMethodContentProps {
@@ -47,10 +28,6 @@ export interface AddMethodContentProps {
   /** Called when child needs to initiate payment (setup flow without pre-existing paymentId).
    *  instrumentDetails allows the child to pass method-specific data (e.g. VPA) for demo mode saving. */
   onInitiatePayment?: (methodType: PaymentMethodType, instrumentDetails?: { vpa?: string }) => Promise<{ paymentId: string } | null>;
-  /** Context: 'payment' for rent flow (default), 'profile' for method management */
-  context?: 'payment' | 'profile';
-  /** Called when method is saved successfully in profile context (close modal) */
-  onSaveComplete?: () => void;
   /** Called when instrument is ready for confirm step (payment context only).
    *  Transitions to confirm-payment view instead of executing payment directly. */
   onReadyForConfirm?: (
@@ -65,12 +42,8 @@ export interface AddMethodContentProps {
 /** Props for the method selector content */
 export interface MethodSelectorContentProps {
   onBack: () => void;
-  onProceed: (methodType: PaymentMethodType, savedDetails?: SavedMethodDetails) => void;
-  onSetup: (methodType: PaymentMethodType) => void;
-  onEdit: (methodType: PaymentMethodType, savedMethodId: string) => void;
+  onProceed: (methodType: PaymentMethodType) => void;
   isInitiating: boolean;
-  /** Show edit pencil icons on saved methods (default false — only true from profile) */
-  showEdit?: boolean;
 }
 
 /** Props for the rent payment modal shell / orchestrator */
@@ -83,36 +56,6 @@ export interface PaymentMethodModalProps {
   initialView?: ModalView;
   /** Pre-seeded payment ID for opening directly at add-method views. */
   initialPaymentId?: string;
-}
-
-/** Props for the edit method view */
-export interface EditMethodContentProps {
-  onBack: () => void;
-  methodType: PaymentMethodType;
-  savedMethodId: string;
-  onProceed: (methodType: PaymentMethodType, savedDetails?: SavedMethodDetails) => void;
-  onDeleteSuccess: (methodType: PaymentMethodType) => void;
-  isInitiating: boolean;
-  /** Context: 'payment' for rent flow (default), 'profile' for profile management */
-  context?: 'payment' | 'profile';
-}
-
-/** Props for the CVV-only entry view */
-export interface EnterCvvContentProps {
-  paymentId: string;
-  onBack: () => void;
-  cardToken: string;
-  cardType: 'CC' | 'DC';
-  lastFour: string;
-  cardNetwork: string;
-  /** Called when CVV is ready for confirm step (payment context only) */
-  onReadyForConfirm?: (
-    methodType: PaymentMethodType,
-    corePaymentMode: string,
-    instrumentParams: Record<string, string>,
-    methodLabel: string,
-    clearSensitiveData?: () => void,
-  ) => void;
 }
 
 /** Props for the confirm-payment view */
