@@ -238,7 +238,6 @@ export function useDeleteAccount() {
       if (error) throw new Error(error.message);
       return data!;
     },
-    meta: { suppressGlobalError: true },
     onSuccess: async () => {
       // 1. Clear Supabase session from SecureStore + memory
       await apiSignOut();

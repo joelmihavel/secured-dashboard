@@ -17,6 +17,7 @@ import {
 } from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
+import { reportFatalError } from '@/src/services/errorReporting';
 import { addBreadcrumb } from '@/src/config/sentry';
 
 // ==============================================
@@ -56,13 +57,26 @@ onlineManager.setEventListener((setOnline) => {
 
 const mutationCache = new MutationCache({
   onError: (error, _variables, _context, mutation) => {
-    // Mutation errors are always user-triggered operations — log a breadcrumb
-    // for diagnostics but NEVER navigate to the error screen. Individual
-    // mutations handle their own errors inline via onError / onSuccess callbacks.
+    if (mutation.meta?.suppressGlobalError) return;
+
     const errorMsg = error instanceof Error ? error.message : String(error);
-    addBreadcrumb(`Mutation error`, 'mutation', {
-      error: errorMsg,
-      suppressedGlobal: String(!!mutation.meta?.suppressGlobalError),
+
+    // Don't fire global error for known expected-error patterns
+    // that should be handled inline by the UI (e.g. invalid invite code)
+    const EXPECTED_PATTERNS = [
+      'invite code', 'referral code', 'INVALID_CODE', 'INVALID_INVITE_CODE',
+      'INVALID_REFERRAL', 'ALREADY_APPLIED', 'ALREADY_CLAIMED',
+    ];
+    if (EXPECTED_PATTERNS.some((p) => errorMsg.toLowerCase().includes(p.toLowerCase()))) {
+      return;
+    }
+
+    reportFatalError({
+      source: 'mutation_error',
+      title: 'Something went wrong',
+      message: 'An operation failed unexpectedly.',
+      technicalMessage: errorMsg,
+      originalError: error,
     });
   },
 });
