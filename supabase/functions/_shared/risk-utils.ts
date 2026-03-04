@@ -116,22 +116,24 @@ export async function computeRisk(
     factors.push({ factor: "tenant_name_match", signal: tenantSignal, weight: 5, detail: tenantDetail });
 
     // --- Signal 2: m360_risk_intel (weight 4) ---
-    const riskIntel = iv?.m360_risk_intelligence as { safe?: boolean; risk_level?: string } | null;
+    // Cashfree uses is_safe, fallback to safe for backward compat
+    const riskIntel = iv?.m360_risk_intelligence as { is_safe?: boolean; safe?: boolean; risk_level?: string } | null;
+    const isSafe = riskIntel?.is_safe ?? riskIntel?.safe;
     let riskIntelSignal: Signal;
     let riskIntelDetail: string;
 
     if (!riskIntel) {
       riskIntelSignal = "YELLOW";
       riskIntelDetail = "M360 risk intelligence not yet available";
-    } else if (riskIntel.safe === false || riskIntel.risk_level === "HIGH") {
+    } else if (isSafe === false || riskIntel.risk_level === "HIGH") {
       riskIntelSignal = "RED";
-      riskIntelDetail = `Unsafe (safe=${riskIntel.safe}, risk_level=${riskIntel.risk_level})`;
-    } else if (riskIntel.safe === true && riskIntel.risk_level === "LOW") {
+      riskIntelDetail = `Unsafe (is_safe=${isSafe}, risk_level=${riskIntel.risk_level})`;
+    } else if (isSafe === true && riskIntel.risk_level === "LOW") {
       riskIntelSignal = "GREEN";
       riskIntelDetail = `Safe (risk_level=${riskIntel.risk_level})`;
     } else {
       riskIntelSignal = "YELLOW";
-      riskIntelDetail = `Moderate (safe=${riskIntel.safe}, risk_level=${riskIntel.risk_level})`;
+      riskIntelDetail = `Moderate (is_safe=${isSafe}, risk_level=${riskIntel.risk_level})`;
     }
     factors.push({ factor: "m360_risk_intel", signal: riskIntelSignal, weight: 4, detail: riskIntelDetail });
 

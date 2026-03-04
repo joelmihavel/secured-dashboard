@@ -182,12 +182,16 @@ export function useAuth() {
     }
   }, [authStore.status]);
 
-  // Non-blocking Mobile 360 flow after OTP verification
+  // Non-blocking Mobile 360 flow after OTP verification.
+  // SKIP when auth was via Cashfree M360 — auth-otp already handles identity
+  // verification in its fire-and-forget background work. Running verify-identity
+  // on top would create duplicate CONSENT_GIVEN records that never progress.
   useEffect(() => {
     if (
       authStore.status === 'authenticated' &&
       authStore.isNewUser &&
       authStore.consentForMobile360 &&
+      authStore.otpMethod !== 'cashfree' && // auth-otp already handles M360 identity
       authStore.identityStatus !== 'completed' &&
       authStore.identityStatus !== 'not_available' &&
       !identityFiredRef.current

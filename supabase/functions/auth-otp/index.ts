@@ -353,7 +353,8 @@ async function handleRouteOtp(
         phone_masked: `XXXXXX${sanitizedPhone.slice(-4)}`,
         method: "supabase",
         m360_fallback: true,
-        m360_error: m360Error instanceof Error ? m360Error.message : String(m360Error),
+        m360_error: (m360Error as { rawMessage?: string }).rawMessage
+          ?? (m360Error instanceof Error ? m360Error.message : String(m360Error)),
       }
     );
 
@@ -646,6 +647,15 @@ async function verifyCashfreePath(
           m360Result
         );
 
+        // Clean up any stale CONSENT_GIVEN records created by the app's
+        // redundant verify-identity consent flow (race condition during auth).
+        // These records never progress because auth-otp already handled identity.
+        await supabase
+          .from("identity_verifications")
+          .delete()
+          .eq("user_id", userId)
+          .eq("status", "CONSENT_GIVEN");
+
         await supabase
           .from("identity_verifications")
           .insert({
@@ -847,10 +857,20 @@ async function createOrFindUser(
 
     // Auth user exists but no profile row — look up auth user and create profile
     console.log("[auth-otp] Auth user exists but no profile found, creating profile...");
-    const { data: authUser } = await supabase
+    // Try both phone formats: Supabase may store with or without '+' prefix
+    let { data: authUserRows } = await supabase
       .rpc("get_auth_user_by_phone", { p_phone: phoneWithCountryCode });
 
-    if (!authUser) {
+    // RPC returns TABLE → array. If no match with +91, try without +
+    if (!authUserRows || (Array.isArray(authUserRows) && authUserRows.length === 0)) {
+      const { data: retryRows } = await supabase
+        .rpc("get_auth_user_by_phone", { p_phone: sanitizedPhone });
+      authUserRows = retryRows;
+    }
+
+    const authUser = Array.isArray(authUserRows) ? authUserRows[0] : authUserRows;
+
+    if (!authUser?.id) {
       throw new AppError("User account exists but could not be located", "USER_NOT_FOUND", 404);
     }
 

@@ -125,6 +125,7 @@ serve(async (req: Request) => {
   const supabase = createServiceClient();
   let audit: AuditLogger | null = null;
   let userId: string | null = null;
+  let idempotencyKey: string | undefined; // Declared outside try so catch can access it
 
   try {
     // Authenticate user
@@ -152,7 +153,7 @@ serve(async (req: Request) => {
     const sanitizedIfsc = sanitizeIfsc(ifsc_code);
 
     // Generate idempotency key to prevent duplicate penny drops (which cost money)
-    const idempotencyKey = await generateIdempotencyKey(
+    idempotencyKey = await generateIdempotencyKey(
       "verify-bank",
       tenancy_id,
       account_number,
@@ -165,7 +166,7 @@ serve(async (req: Request) => {
     const idempotencyResult = await idempotency.check(idempotencyKey, validatedBody, {
       userId,
       endpoint: "verify-bank",
-      ttlHours: 24, // Cache for 24 hours
+      ttlHours: 1, // Short TTL — only prevents rapid duplicate submissions
     });
 
     // If we have a cached response, return it
@@ -482,8 +483,13 @@ serve(async (req: Request) => {
       },
     };
 
-    // Cache successful response for idempotency
-    await idempotency.complete(idempotencyKey, 200, responseBody);
+    // Only cache verified results — failed penny drops may be transient
+    // and the user should be allowed to retry with the same details.
+    if (bankAccount.verified) {
+      await idempotency.complete(idempotencyKey, 200, responseBody);
+    } else {
+      await idempotency.fail(idempotencyKey, responseBody.data.message);
+    }
 
     return jsonResponse(responseBody);
   } catch (error) {

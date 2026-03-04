@@ -40,9 +40,27 @@ function handleAppStateChange(nextState: AppStateStatus) {
     const elapsed = Date.now() - backgroundTimestamp;
     backgroundTimestamp = null;
     if (elapsed >= BACKGROUND_RECONNECT_THRESHOLD_MS) {
-      // Delay reconnect to let old WebSocket finish transitioning to CLOSED.
-      // Without this, send() on the old CLOSING socket throws DOMException.
-      setTimeout(() => reconnectAll(), 500);
+      // Long background (>5s): WebSocket is dead, reconnect after delay.
+      // 1500ms delay lets old WebSocket fully transition to CLOSED state —
+      // 500ms was not always enough on older iOS devices.
+      setTimeout(() => {
+        try { reconnectAll(); } catch { /* swallow — reconnect is best-effort */ }
+      }, 1500);
+    } else if (elapsed >= 1000) {
+      // Short background (1-5s): WebSocket may be in CLOSING state.
+      // Don't reconnect (expensive), but schedule a health check.
+      // If any channel is in a broken state, reconnect then.
+      setTimeout(() => {
+        try {
+          for (const [, entry] of channels) {
+            const state = (entry.channel as any)?.state;
+            if (state === 'closed' || state === 'errored') {
+              reconnectAll();
+              break;
+            }
+          }
+        } catch { /* swallow */ }
+      }, 2000);
     }
   }
 }
@@ -173,36 +191,44 @@ export function reconnectAll(): void {
       channelConfig.filter = filter;
     }
 
-    const newChannel = supabase
-      .channel(`rt:${key}:${Date.now()}`)
-      .on('postgres_changes', channelConfig, (payload: RealtimePostgresChangesPayload<any>) => {
-        const currentEntry = channels.get(key);
-        if (!currentEntry) return;
+    try {
+      const newChannel = supabase
+        .channel(`rt:${key}:${Date.now()}`)
+        .on('postgres_changes', channelConfig, (payload: RealtimePostgresChangesPayload<any>) => {
+          const currentEntry = channels.get(key);
+          if (!currentEntry) return;
 
-        for (const [, cbSet] of currentEntry.callbacks) {
-          for (const cb of cbSet) {
-            const timerKey = `reconn:${cb.toString().slice(0, 20)}`;
-            const existingTimer = currentEntry.debounceTimers.get(timerKey);
-            if (existingTimer) clearTimeout(existingTimer);
+          for (const [, cbSet] of currentEntry.callbacks) {
+            for (const cb of cbSet) {
+              const timerKey = `reconn:${cb.toString().slice(0, 20)}`;
+              const existingTimer = currentEntry.debounceTimers.get(timerKey);
+              if (existingTimer) clearTimeout(existingTimer);
 
-            currentEntry.debounceTimers.set(
-              timerKey,
-              setTimeout(() => {
-                currentEntry.debounceTimers.delete(timerKey);
-                cb(payload);
-              }, COALESCE_MS),
-            );
+              currentEntry.debounceTimers.set(
+                timerKey,
+                setTimeout(() => {
+                  currentEntry.debounceTimers.delete(timerKey);
+                  cb(payload);
+                }, COALESCE_MS),
+              );
+            }
           }
-        }
-      })
-      .subscribe();
+        })
+        .subscribe();
 
-    channels.set(key, {
-      channel: newChannel,
-      refCount: entry.refCount,
-      callbacks: entry.callbacks,
-      debounceTimers: new Map(),
-    });
+      channels.set(key, {
+        channel: newChannel,
+        refCount: entry.refCount,
+        callbacks: entry.callbacks,
+        debounceTimers: new Map(),
+      });
+    } catch {
+      // WebSocket may throw DOMException during subscribe if still in CLOSING state
+      // after iOS background. Safe to skip — next foreground recovery will retry.
+      if (__DEV__) {
+        console.log(`[RealtimeManager] Failed to resubscribe channel: ${key}`);
+      }
+    }
   }
 
   if (__DEV__) {

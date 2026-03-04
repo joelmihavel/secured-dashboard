@@ -238,7 +238,7 @@ function mapSetupError(errorMessage: string, errorBody?: Record<string, unknown>
       case 'EMAIL_FAILED':
         return { code: 'EMAIL_FAILED', message: (errorBody?.message as string) ?? errorMessage };
       case 'IDEMPOTENCY_CONFLICT':
-        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Request in progress, retrying...' };
+        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again.' };
       case 'RATE_LIMITED':
         return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment.' };
       // Fall through for unknown structured codes — use string matching below
@@ -266,7 +266,7 @@ function mapSetupError(errorMessage: string, errorBody?: Record<string, unknown>
     return { code: 'EMAIL_FAILED', message: errorMessage };
   }
   if (lower.includes('currently being processed') || lower.includes('idempotency')) {
-    return { code: 'IDEMPOTENCY_CONFLICT', message: 'Request in progress, retrying...' };
+    return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again.' };
   }
   if (lower.includes('not found')) {
     return { code: 'NOT_FOUND', message: errorMessage };

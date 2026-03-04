@@ -66,7 +66,7 @@ export async function resolveAgreementNames(
   // Fetch tenancy with extraction reference
   const { data: tenancy, error: tenancyError } = await supabase
     .from("tenancies")
-    .select("landlord_name, extracted_rental_info_id")
+    .select("landlord_name, landlord_names, extracted_rental_info_id")
     .eq("id", tenancyId)
     .single();
 
@@ -74,9 +74,14 @@ export async function resolveAgreementNames(
     return { names: [], primaryName: "", source: "none" };
   }
 
-  // Fetch extracted names from agreement (handles multiple landlords/tenants)
-  let extractedNames: string[] = [];
-  if (tenancy.extracted_rental_info_id) {
+  // Use tenancy.landlord_names (array) if available — it's the canonical source
+  // since it's copied from extraction at tenancy creation and includes all landlords.
+  // Fall back to extraction table for older tenancies created before this column existed.
+  let allNames: string[] = [];
+
+  if (party === "landlord" && tenancy.landlord_names?.length) {
+    allNames = tenancy.landlord_names;
+  } else if (tenancy.extracted_rental_info_id) {
     const field = party === "landlord" ? "landlord_names" : "tenant_names";
     const { data: extraction } = await supabase
       .from("extracted_rental_info")
@@ -84,20 +89,20 @@ export async function resolveAgreementNames(
       .eq("id", tenancy.extracted_rental_info_id)
       .single();
     if (extraction?.[field]?.length) {
-      extractedNames = extraction[field];
+      allNames = extraction[field];
     }
   }
 
-  // Build deduplicated list: primary name first, then extracted names
+  // Build deduplicated list: primary name first, then remaining names
   const names: string[] = [];
   const primaryName = party === "landlord" ? (tenancy.landlord_name ?? "") : "";
 
   if (primaryName) names.push(primaryName);
-  for (const name of extractedNames) {
+  for (const name of allNames) {
     if (name && !names.includes(name)) names.push(name);
   }
 
-  const source = extractedNames.length > 0
+  const source = allNames.length > 0
     ? "agreement" as const
     : primaryName
     ? "tenancy" as const

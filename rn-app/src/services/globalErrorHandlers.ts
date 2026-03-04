@@ -30,6 +30,9 @@ const IGNORED_REJECTION_PATTERNS = [
   'fetch failed',         // Fetch API failures during background
   'Failed to fetch',      // Fetch API failures (alternate message)
   'Load failed',          // iOS network load failures on resume
+  "execute 'send'",       // "Failed to execute 'send' on 'WebSocket'" after iOS background
+  "execute 'close'",      // WebSocket close errors during reconnection
+  'object is no longer',  // "The object is no longer usable" (WebSocket disposed)
   'PropertyDOM',          // react-native-screens internal error during navigation transitions
   'doesn\'t exist',       // Generic "Property X doesn't exist" from Fabric after background
   'does not exist',       // Alternate phrasing
@@ -43,6 +46,15 @@ const IGNORED_REJECTION_PATTERNS = [
   'INVITE_CODE_USED',
   'ALREADY_APPLIED',
   'ALREADY_CLAIMED',
+  // Supabase edge function expected errors
+  'AGREEMENT_NOT_CONFIRMED',
+  'claim-invite-code',
+  'get-waitlist-status',
+  'join-waitlist',
+  // React Native internal during transitions
+  'Cannot update a component',
+  'Cannot read properties of null',
+  'undefined is not an object',
 ];
 
 function shouldIgnoreRejection(message: string): boolean {
@@ -76,12 +88,17 @@ export function installGlobalErrorHandlers(): void {
     preventDefault?: () => void;
   }) => {
     const reason = event?.reason;
-    const message =
+    // Build a combined string from message + name + constructor for matching.
+    // DOMException objects have name='DOMException' but message='The object can no longer be used'
+    // — checking only message misses them.
+    const errorName = reason instanceof Error ? reason.name : '';
+    const errorMessage =
       reason instanceof Error
         ? reason.message
         : typeof reason === 'string'
           ? reason
           : 'Unknown promise rejection';
+    const message = errorName ? `${errorName}: ${errorMessage}` : errorMessage;
 
     if (shouldIgnoreRejection(message)) {
       // Swallow entirely — don't chain to Sentry or any previous handler.
@@ -119,7 +136,9 @@ export function installGlobalErrorHandlers(): void {
       // Swallow transient native errors entirely — don't show to user or chain
       // to RedBox/error overlay. These are iOS background lifecycle errors
       // (PropertyDOM, WebSocket) that resolve on the next render cycle.
-      if (shouldIgnoreRejection(error.message)) {
+      // Include error.name in match string — DOMException name != message.
+      const errorMatchString = error.name ? `${error.name}: ${error.message}` : error.message;
+      if (shouldIgnoreRejection(errorMatchString)) {
         if (__DEV__) {
           console.log('[GlobalErrorHandler] Swallowed transient error:', error.message);
         }

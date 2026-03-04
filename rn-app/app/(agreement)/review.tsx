@@ -9,7 +9,7 @@
  * All values sourced from Figma REST API -- no AI guesswork.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  AppState,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -241,31 +242,60 @@ export default function ReviewScreen() {
   // Detect stale cache: if extractedData exists but ALL fields are empty,
   // the data was cached during processing (when DB fields were still NULL).
   // Force a refetch to get the completed data.
-  // Retries up to 3 times with 2s delays to handle DB replication lag.
+  // Retries up to 5 times with 1.5s delays to handle DB replication lag.
   const refetchCountRef = React.useRef(0);
-  const MAX_REFETCH_ATTEMPTS = 3;
+  const MAX_REFETCH_ATTEMPTS = 5;
+  const [isRetryingStaleData, setIsRetryingStaleData] = React.useState(false);
+
+  // Synchronous stale check — determines if data is all-empty WITHOUT waiting
+  // for useEffect. Prevents the "Not Found" flash between query resolution and
+  // the async retry effect setting isRetryingStaleData=true.
+  const isDataAllEmpty = React.useMemo(() => {
+    if (!extractedData || isLoadingExtraction) return false;
+    return FIELDS.every((field) => !field.getValue(extractedData));
+  }, [extractedData, isLoadingExtraction]);
 
   React.useEffect(() => {
     if (!extractedData || isLoadingExtraction) return;
-    if (refetchCountRef.current >= MAX_REFETCH_ATTEMPTS) return;
+    if (refetchCountRef.current >= MAX_REFETCH_ATTEMPTS) {
+      setIsRetryingStaleData(false);
+      return;
+    }
 
-    const allEmpty = FIELDS.every((field) => {
-      const val = field.getValue(extractedData);
-      return !val;
-    });
-
-    if (allEmpty && extractionId) {
+    if (isDataAllEmpty && extractionId) {
       refetchCountRef.current++;
-      // Delay before clearing cache to allow DB write to propagate
-      const delay = refetchCountRef.current * 2000; // 2s, 4s, 6s
+      setIsRetryingStaleData(true);
+      // Delay before invalidating cache to allow DB write to propagate.
+      // invalidateQueries marks data stale AND triggers refetch (more reliable than removeQueries).
+      const delay = refetchCountRef.current * 1500; // 1.5s, 3s, 4.5s, 6s, 7.5s
       setTimeout(() => {
-        queryClient.removeQueries({ queryKey: agreementKeys.extraction(extractionId) });
+        queryClient.invalidateQueries({ queryKey: agreementKeys.extraction(extractionId) });
       }, delay);
     } else {
       // Data loaded successfully — reset counter
       refetchCountRef.current = 0;
+      setIsRetryingStaleData(false);
     }
-  }, [extractedData, extractionId, isLoadingExtraction, queryClient]);
+  }, [extractedData, extractionId, isLoadingExtraction, isDataAllEmpty, queryClient]);
+
+  // Refetch extraction data when app returns from background.
+  // Covers the case where extraction completes while app is backgrounded —
+  // without this, the review screen shows stale empty data until manual refresh.
+  const appStateRef = useRef(AppState.currentState);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      const wasBg = appStateRef.current.match(/inactive|background/);
+      appStateRef.current = next;
+      if (wasBg && next === 'active' && extractionId) {
+        // Reset retry counter so stale cache detection can re-run
+        refetchCountRef.current = 0;
+        queryClient.invalidateQueries({
+          queryKey: agreementKeys.extraction(extractionId),
+        });
+      }
+    });
+    return () => sub.remove();
+  }, [extractionId, queryClient]);
 
   // Get current value from extracted data
   const getFieldValue = useCallback(
@@ -277,18 +307,24 @@ export default function ReviewScreen() {
   );
 
   // Return to upload screen for a fresh re-upload.
-  // IMPORTANT: Do NOT reset state here — state changes before router.replace()
-  // trigger synchronous re-renders that cascade to parent layouts, deallocating
-  // the native screen container → "PropertyDOM doesn't exist" crash (lesson #28).
-  // All cleanup happens in upload.tsx's forceNew useEffect AFTER navigation.
   //
-  // We DO fire-and-forget abandonExtraction() to soft-delete the old DB record
-  // (sets user_verified=true). This is the PRIMARY fix for the re-upload loop —
-  // all DB queries filter on user_verified=false, so the old record becomes invisible
-  // to the journey router, useMountDiscovery, and checkManualReviewExtraction.
-  const handleReupload = useCallback(() => {
+  // CRITICAL: Set dismissedExtractionId in the upload store BEFORE navigation.
+  // Without this, useMountDiscovery on the upload screen runs before the forceNew
+  // cleanup effect → finds the still-active extraction → redirects back to review
+  // → infinite loop. dismissCurrentExtraction() is a minimal store update (no reset)
+  // so it won't trigger the "PropertyDOM doesn't exist" layout crash.
+  //
+  // Also fire-and-forget abandonExtraction() to soft-delete the DB record
+  // (sets user_verified=true). This makes the record invisible to the journey router,
+  // useMountDiscovery, and checkManualReviewExtraction.
+  const handleReupload = useCallback(async () => {
     if (extractionId) {
-      abandonExtraction(extractionId);
+      // 1. Mark as dismissed in store FIRST — blocks useMountDiscovery resurrection
+      useUploadStore.getState().dismissCurrentExtraction();
+      // 2. Soft-delete in DB — AWAIT to ensure the record is marked user_verified=true
+      // before navigating. Without this, useMountDiscovery on the upload screen can
+      // find the still-active extraction in DB and redirect back to review (loop).
+      await abandonExtraction(extractionId);
     }
     router.replace({
       pathname: '/(agreement)/upload',
@@ -350,13 +386,20 @@ export default function ReviewScreen() {
     transform: [{ translateY: translateY.value }],
   }));
 
-  // Loading state
-  if (isLoadingExtraction) {
+  // Loading state — also show when retrying stale cache (all fields empty)
+  // to avoid flashing "Not Found" values before real data arrives.
+  // isDataAllEmpty is a synchronous check that catches the first render frame
+  // where extractedData exists but all fields are NULL (before the retry useEffect fires).
+  const shouldShowLoading = isLoadingExtraction || isRetryingStaleData ||
+    (isDataAllEmpty && !!extractionId && refetchCountRef.current < MAX_REFETCH_ATTEMPTS);
+  if (shouldShowLoading) {
     return (
       <Screen testID="review-screen">
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ff9a6d" />
-          <Text style={styles.loadingText}>Loading your details...</Text>
+          <Text style={styles.loadingText}>
+            {isRetryingStaleData ? 'Fetching your agreement details...' : 'Loading your details...'}
+          </Text>
         </View>
       </Screen>
     );

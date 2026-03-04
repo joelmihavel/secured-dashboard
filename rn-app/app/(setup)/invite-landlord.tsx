@@ -198,7 +198,7 @@ export default function InviteLandlordScreen() {
   }, [router, reentry]);
 
   const handleLearnMore = useCallback(() => {
-    Linking.openURL('https://flent.in/secured/how-to-invite-landlord');
+    Linking.openURL('https://hiw-secured.flent.in/');
   }, []);
 
   const cleaned = phoneNumber.replace(/\D/g, '');

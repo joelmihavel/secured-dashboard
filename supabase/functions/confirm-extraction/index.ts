@@ -183,11 +183,13 @@ serve(async (req) => {
 
     // Apply user corrections from iOS if provided
     if (body.tenant_name) {
-      updateData.tenant_names = [body.tenant_name];
+      updateData.tenant_name = body.tenant_name;
+      // Don't wipe tenant_names array — preserve all names from extraction.
     }
     if (body.landlord_name) {
-      updateData.landlord_names = [body.landlord_name];
-      updateData.landlord_name = body.landlord_name; // Also update single field
+      updateData.landlord_name = body.landlord_name;
+      // Don't wipe landlord_names array — it contains all names from extraction.
+      // The singular landlord_name serves as the "primary" landlord for invite flow.
     }
     if (body.property_address) {
       updateData.property_address = body.property_address;
@@ -360,6 +362,7 @@ serve(async (req) => {
           lease_end_date: infoForTenancy.lease_end_date,
           // Landlord info
           landlord_name: infoForTenancy.landlord_name,
+          landlord_names: infoForTenancy.landlord_names ?? (infoForTenancy.landlord_name ? [infoForTenancy.landlord_name] : null),
           landlord_phone: infoForTenancy.landlord_phone,
           landlord_email: infoForTenancy.landlord_email,
         })

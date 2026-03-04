@@ -10,8 +10,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { trackEvent } from '../config/analytics';
 import { isCriticalUpdate, reloadApp } from '../config/updates';
+
+// Auto-apply downloaded updates after this much background time (5 minutes)
+const AUTO_APPLY_BACKGROUND_MS = 5 * 60 * 1000;
 
 // Dynamic import to prevent crash in dev builds
 let useUpdatesHook: (() => any) | null = null;
@@ -55,6 +59,8 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const hasHandledRef = useRef(false);
+  const updateReadyRef = useRef(false);
+  const backgroundedAtRef = useRef<number | null>(null);
 
   // Auto-download when an update becomes available
   useEffect(() => {
@@ -81,6 +87,7 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
               return;
             }
             trackEvent('ota_downloaded', { critical: false });
+            updateReadyRef.current = true;
           }
           // Always hide after fetch completes (new or not)
           clearTimeout(timeout);
@@ -92,6 +99,25 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
         });
     }
   }, [updates.isUpdateAvailable, updates.isDownloading, dismissed]);
+
+  // Auto-apply downloaded update when app returns from background after 5+ min
+  useEffect(() => {
+    const handleAppState = (nextState: AppStateStatus) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        backgroundedAtRef.current = Date.now();
+      } else if (nextState === 'active' && updateReadyRef.current && backgroundedAtRef.current) {
+        const elapsed = Date.now() - backgroundedAtRef.current;
+        if (elapsed >= AUTO_APPLY_BACKGROUND_MS) {
+          trackEvent('ota_auto_apply_foreground', { backgroundMs: elapsed });
+          updateReadyRef.current = false;
+          reloadApp();
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppState);
+    return () => subscription.remove();
+  }, []);
 
   // Track download progress
   useEffect(() => {

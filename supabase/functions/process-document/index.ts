@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: false, error: "Missing authorization header" }, 401);
     }
 
-    // Verify the user's JWT
+    // Verify user JWT
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -247,7 +247,6 @@ Deno.serve(async (req) => {
 
     console.log(`[process-document] Authenticated user: ${user.id}`);
 
-    // Parse request
     const body = await req.json();
 
     // V2: Accept extraction_id (from iOS app) OR V1: waitlist_entry_id + document_path
@@ -451,7 +450,7 @@ Deno.serve(async (req) => {
         landlord_names: extractedData.landlord_names,
         extraction_method: extractedData.extraction_method,
         is_city_supported: isCitySupported,
-        gemini_raw_response: extractedData.raw_gemini_data,
+        gemini_raw_response: extractedData.raw_gemini_data || (extractedData as any).gemini_debug || null,
         // Raw data for debugging (without duplicated fields)
         raw_extraction_data: extractedData.raw_doc_ai_data,
         // Update extraction status
@@ -637,12 +636,11 @@ async function processWithDocumentAI(
     let geminiResult: any = null;
 
     // Try Vertex AI Gemini with dedicated credentials (flent-ai-project-2)
-    // Note: Vertex AI uses specific regions like "us-central1", not just "us"
-    const vertexLocation = location === "us" ? "us-central1" : location;
+    // Uses GLOBAL endpoint with provisioned throughput
     if (vertexAiCredentials && vertexAiProjectId) {
       try {
         geminiDebug.vertex_ai_attempted = true;
-        console.log(`[process-document] Attempting Vertex AI Gemini in ${vertexLocation} (project: ${vertexAiProjectId})...`);
+        console.log(`[process-document] Attempting Vertex AI Gemini GLOBAL (project: ${vertexAiProjectId})...`);
 
         // Get separate access token for Vertex AI service account
         const vertexCredentialsJson = JSON.parse(vertexAiCredentials);
@@ -652,18 +650,13 @@ async function processWithDocumentAI(
           documentText,
           vertexAccessToken,
           vertexAiProjectId,
-          vertexLocation
+          "global"  // Use global endpoint — provisioned throughput
         );
         geminiDebug.vertex_ai_success = true;
         geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
       } catch (vertexError: any) {
         geminiDebug.vertex_ai_error = vertexError.message || String(vertexError);
         console.error("[process-document] Vertex AI Gemini failed:", vertexError.message || vertexError);
-        console.error("[process-document] Vertex AI error details:", JSON.stringify({
-          name: vertexError.name,
-          message: vertexError.message,
-          stack: vertexError.stack?.substring(0, 500)
-        }));
       }
     } else {
       geminiDebug.vertex_ai_error = "No VERTEX_AI_CREDENTIALS configured";
@@ -860,9 +853,13 @@ IMPORTANT:
 - MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID/Transaction No. IS the Stamp Certificate ID. If you detect the city is Mumbai/Maharashtra and see a GRN or Transaction ID, use that value as certificate_no.
 - Return ONLY the JSON object, no other text.`;
 
-  // Use Vertex AI Gemini endpoint
-  // Note: Relies on Edge Function timeout (150s default, 400s on paid plans)
-  const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent`;
+  // Use Vertex AI Gemini endpoint — global endpoint for provisioned throughput
+  // Global: https://aiplatform.googleapis.com/v1/projects/.../locations/global/...
+  // Regional: https://{location}-aiplatform.googleapis.com/v1/projects/.../locations/{location}/...
+  const host = location === "global"
+    ? "aiplatform.googleapis.com"
+    : `${location}-aiplatform.googleapis.com`;
+  const endpoint = `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent`;
 
   const response = await fetch(endpoint, {
     method: "POST",

@@ -14,6 +14,7 @@ import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
 import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
+import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
 import type { Session } from '@supabase/supabase-js';
 
 interface AuthContextValue {
@@ -81,12 +82,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           handleSignOut();
         } else if (event === 'TOKEN_REFRESHED') {
           if (newSession) {
-            // Token refresh with valid session — update silently
+            // Token refresh succeeded — update with fresh tokens
             setSession(newSession);
           } else {
-            // Token refresh failed (null session) — clear stale JWT
-            // This triggers isAuthenticated = false and redirects to login
-            setSession(null);
+            // Token refresh failed (likely transient network error, ISP DNS block,
+            // or Cloudflare proxy cold-start). DO NOT clear the session — the user
+            // stays logged in with the cached (possibly expired) session. The next
+            // authenticated API call will trigger another refresh attempt.
+            console.warn('[AuthProvider] TOKEN_REFRESHED returned null — keeping cached session');
           }
         } else if (event === 'SIGNED_IN' && newSession) {
           setSession(newSession);
@@ -96,14 +99,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Non-blocking — token registration failures are logged inside the function
           });
         } else if (event === 'INITIAL_SESSION') {
-          // Already handled by getSession() above — but update if different
-          setSession(newSession);
+          // getSession() above already set the initial state. INITIAL_SESSION fires
+          // with the pre-refresh (possibly expired) session BEFORE TOKEN_REFRESHED.
+          // Only update if we got a valid session (don't overwrite with null).
+          if (newSession) {
+            setSession(newSession);
+          }
         }
       }
     );
 
     return () => subscription.unsubscribe();
   }, [handleSignOut]);
+
+  // Proactively refresh session when app returns to foreground after background
+  useSessionMonitor({ enabled: !isLoading && !!session });
 
   const value: AuthContextValue = useMemo(() => ({
     session,

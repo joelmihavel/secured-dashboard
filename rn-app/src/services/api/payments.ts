@@ -972,7 +972,7 @@ function mapPaymentError(errorMessage: string, errorBody?: Record<string, unknow
       case 'RATE_LIMITED':
         return { code: 'RATE_LIMITED', message: 'Too many requests. Please wait a moment.' };
       case 'IDEMPOTENCY_CONFLICT':
-        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Request in progress, retrying...' };
+        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again.' };
       // Fall through for unknown structured codes — use string matching below
     }
   }

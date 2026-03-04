@@ -45,6 +45,10 @@ interface UploadActions {
   setPhase: (phase: UploadPhase) => void;
   setError: (code: string, message: string) => void;
   reset: () => void;
+  /** Mark the current extraction as dismissed (user chose "Re-upload").
+   *  Sets dismissedExtractionId WITHOUT clearing other state — safe to call
+   *  before navigation. useMountDiscovery checks this to prevent resurrection. */
+  dismissCurrentExtraction: () => void;
   isStale: () => boolean;
   setHasHydrated: (v: boolean) => void;
 }
@@ -145,6 +149,13 @@ export const useUploadStore = create<UploadStore>()(
           state.errorCode = code;
           state.errorMessage = message;
           state.lastUpdatedAt = Date.now();
+        }),
+
+      dismissCurrentExtraction: () =>
+        set((state) => {
+          if (state.extractionId) {
+            state.dismissedExtractionId = state.extractionId;
+          }
         }),
 
       reset: () =>

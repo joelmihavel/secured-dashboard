@@ -81,15 +81,42 @@ export class IdempotencyManager {
 
     // Key exists
     if (existing) {
-      // Validate request hash matches
-      if (existing.request_hash !== requestHash) {
-        throw new IdempotencyError(
-          "Idempotency key reused with different request parameters"
-        );
+      // Failed → always allow retry (user may have corrected their input)
+      if (existing.status === "failed") {
+        await this.supabase
+          .from("idempotency_keys")
+          .update({
+            status: "processing",
+            locked_at: new Date().toISOString(),
+            request_hash: requestHash,
+            request_body: body,
+          })
+          .eq("key", key);
+        return { isNew: true };
       }
 
-      // If completed, return cached response
-      if (existing.status === "completed") {
+      // Processing → only block if the lock is fresh (prevents double-tap)
+      if (existing.status === "processing") {
+        const lockedAt = existing.locked_at ? new Date(existing.locked_at).getTime() : 0;
+        const staleLockMs = 60_000;
+        if (Date.now() - lockedAt > staleLockMs) {
+          console.warn(`[idempotency] Reclaiming stale lock (locked ${Math.round((Date.now() - lockedAt) / 1000)}s ago)`);
+          await this.supabase
+            .from("idempotency_keys")
+            .update({
+              status: "processing",
+              locked_at: new Date().toISOString(),
+              request_hash: requestHash,
+              request_body: body,
+            })
+            .eq("key", key);
+          return { isNew: true };
+        }
+        throw new IdempotencyError("Request is currently being processed");
+      }
+
+      // Completed with same params → return cached response (skip duplicate API call)
+      if (existing.status === "completed" && existing.request_hash === requestHash) {
         return {
           isNew: false,
           cachedResponse: {
@@ -99,36 +126,20 @@ export class IdempotencyManager {
         };
       }
 
-      // If still processing, check for stale lock (crashed request)
-      if (existing.status === "processing") {
-        const lockedAt = existing.locked_at ? new Date(existing.locked_at).getTime() : 0;
-        const staleLockMs = 60_000; // 60 seconds — if still "processing" after this, assume crashed
-        if (Date.now() - lockedAt > staleLockMs) {
-          // Stale lock — reclaim it for this request
-          console.warn(`[idempotency] Reclaiming stale lock (locked ${Math.round((Date.now() - lockedAt) / 1000)}s ago)`);
-          await this.supabase
-            .from("idempotency_keys")
-            .update({
-              status: "processing",
-              locked_at: new Date().toISOString(),
-            })
-            .eq("key", key);
-          return { isNew: true };
-        }
-        throw new IdempotencyError("Request is currently being processed");
-      }
-
-      // If failed, allow retry
-      if (existing.status === "failed") {
-        // Update to processing
+      // Completed with different params → user changed input, allow fresh request
+      if (existing.status === "completed" && existing.request_hash !== requestHash) {
         await this.supabase
           .from("idempotency_keys")
           .update({
             status: "processing",
             locked_at: new Date().toISOString(),
+            request_hash: requestHash,
+            request_body: body,
+            response_status: null,
+            response_body: null,
+            completed_at: null,
           })
           .eq("key", key);
-
         return { isNew: true };
       }
     }

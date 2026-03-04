@@ -84,14 +84,17 @@ export function buildVerificationData(
     status: m360Status === "SUCCESS" ? "SUCCESS" : m360Status,
     verified_at: m360Status === "SUCCESS" ? new Date().toISOString() : null,
 
-    // Personal details
+    // Personal details (Cashfree nests under personal_details, fallback to root)
     m360_full_name: data?.full_name,
     m360_gender: data?.gender,
     m360_date_of_birth: data?.dob,
-    m360_age: data?.age,
+    m360_age: typeof data?.age === "string" ? parseInt(data.age, 10) || undefined : data?.age,
     m360_occupation: data?.occupation,
     m360_total_income: data?.total_income,
-    m360_relatives: data?.relatives,
+    m360_relatives: data?.personal_details?.relatives_details?.map((r) => ({
+      name: r.relative_name ?? (r as unknown as { name?: string }).name,
+      relation: r.relation,
+    })) ?? data?.relatives,
 
     // Contact info
     m360_phone_numbers: data?.phone_numbers,
@@ -100,34 +103,36 @@ export function buildVerificationData(
     // Identity documents (masked)
     m360_pan_details: data?.pan_details?.map((p) => ({
       ...p,
-      pan: maskPan(p.pan),
+      pan: maskPan(p.pan_number ?? p.pan ?? ""),
     })),
-    m360_aadhaar_masked: data?.aadhaar_number
-      ? maskAadhaar(data.aadhaar_number)
-      : null,
+    m360_aadhaar_masked: data?.aadhaar_details?.[0]?.masked_aadhaar_number
+      ?? (data?.aadhaar_number ? maskAadhaar(data.aadhaar_number) : null),
     m360_passport_details: data?.passport_details,
     m360_driving_license_details: data?.driving_license_details,
     m360_voter_details: data?.voter_details,
     m360_ration_card_details: data?.ration_card_details,
 
-    // Financial data (masked)
-    m360_bank_accounts: data?.bank_accounts?.map((b) => ({
-      account_masked: `XXXX${b.account_number.slice(-4)}`,
-      ifsc: b.ifsc,
-      bank_name: b.bank_name,
-    })),
-    m360_employment_details: data?.employment_details,
+    // Financial data (masked) — Cashfree uses bank_account_details with bank_account field
+    m360_bank_accounts: (data?.bank_account_details ?? data?.bank_accounts)?.map((b) => {
+      const acct = (b as { bank_account?: string }).bank_account
+        ?? (b as { account_number?: string }).account_number ?? "";
+      return {
+        account_masked: acct ? `XXXX${acct.slice(-4)}` : "XXXX????",
+        ifsc: b.ifsc,
+        bank_name: b.bank_name,
+      };
+    }),
+    m360_employment_details: Array.isArray(data?.employment_details)
+      ? data.employment_details
+      : data?.employment_details ? [data.employment_details] : undefined,
 
     // Addresses
     m360_addresses: data?.addresses,
 
     // Intelligence scores
     m360_credit_score: data?.credit_score,
-    m360_mobile_intelligence: data?.mobile_intelligence,
+    m360_mobile_intelligence: data?.mobile_number_intelligence ?? data?.mobile_intelligence,
     m360_risk_intelligence: data?.risk_intelligence,
-
-    // Social profiles
-    m360_social_profiles: data?.social_profiles,
 
     // Raw response
     raw_response: rawResponse,

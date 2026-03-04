@@ -185,7 +185,7 @@ export async function initiatePayment(params: {
         case 'RATE_LIMITED':
           return { data: null, error: 'Too many requests. Please wait a moment.' };
         case 'IDEMPOTENCY_CONFLICT':
-          return { data: null, error: 'Request in progress, retrying...' };
+          return { data: null, error: 'Please wait a moment and try again.' };
         case 'DB_ERROR':
           return { data: null, error: 'Server error creating payment. Please try again.' };
         case 'UPI_S2S_FAILED':

@@ -10,9 +10,9 @@
  * Prevents PropertyDOM crashes from navigation during screen transitions.
  */
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { AppState } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { setErrorListener, type ErrorReport } from '../services/errorReporting';
 import { useUploadStore } from '../stores/upload';
 
@@ -33,7 +33,13 @@ AppState.addEventListener('change', (state) => {
  */
 export function useErrorNavigation(): void {
   const router = useRouter();
-  const pathname = usePathname();
+  const segments = useSegments();
+  // Keep a ref to the latest segments so the listener closure always reads
+  // the CURRENT route, not the stale value from the last effect run.
+  // This prevents the error screen from appearing when the segments changed
+  // between the effect subscription and the listener firing (e.g., via setTimeout).
+  const segmentsRef = React.useRef(segments);
+  segmentsRef.current = segments;
 
   useEffect(() => {
     const unsubscribe = setErrorListener((report: ErrorReport) => {
@@ -62,11 +68,35 @@ export function useErrorNavigation(): void {
         return;
       }
 
-      // 3. Suppress if currently on agreement screens — navigation away
-      // from nested stack during transitions causes PropertyDOM crash
-      if (pathname?.startsWith('/(agreement)')) {
+      // 3. Suppress if currently on agreement or waitlist screens — navigation away
+      // from nested stack during transitions causes PropertyDOM crash.
+      // Waitlist screen: invite code errors are handled inline by UI, not globally.
+      //
+      // IMPORTANT: Read from ref (not closure) to get the CURRENT segments at
+      // fire time, not the segments at effect subscription time. The listener
+      // fires via setTimeout(0) flush from setErrorListener — by that time,
+      // segments may have changed.
+      const currentSegments = segmentsRef.current;
+      const firstSegment = currentSegments[0] ?? '';
+      if (firstSegment === '(agreement)' || firstSegment === '(waitlist)') {
         if (__DEV__) {
-          console.log('[useErrorNavigation] Suppressed (on agreement screen):', report.technicalMessage);
+          console.log('[useErrorNavigation] Suppressed (on agreement/waitlist screen):', report.technicalMessage);
+        }
+        return;
+      }
+
+      // 4. Suppress errors whose technical message matches known inline-handled patterns.
+      // These are errors that the UI handles with inline messages (e.g., invalid invite
+      // code, referral errors). Even if they escape the mutation layer, they should
+      // never navigate to the global error screen.
+      const tech = (report.technicalMessage || '').toLowerCase();
+      const INLINE_HANDLED_PATTERNS = [
+        'invite', 'referral', 'invalid_code', 'invalid_invite',
+        'already_claimed', 'already_applied', 'invite_code_used',
+      ];
+      if (INLINE_HANDLED_PATTERNS.some((p) => tech.includes(p))) {
+        if (__DEV__) {
+          console.log('[useErrorNavigation] Suppressed (inline-handled error):', report.technicalMessage);
         }
         return;
       }
@@ -93,5 +123,5 @@ export function useErrorNavigation(): void {
     });
 
     return unsubscribe;
-  }, [router, pathname]);
+  }, [router, segments]);
 }

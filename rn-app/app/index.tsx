@@ -57,6 +57,13 @@ async function queryUserStatus(): Promise<string | null> {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.warn('[journey-router] getUser failed:', userError?.message);
+      // If the server explicitly says user doesn't exist (deleted server-side),
+      // force sign-out to clear the stale cached session. Without this, the app
+      // stays in an authenticated-but-broken state showing skeleton screens.
+      if (userError?.message?.includes('not found') || userError?.message?.includes('User not found') || userError?.status === 404) {
+        console.warn('[journey-router] User deleted server-side — forcing sign-out');
+        await supabase.auth.signOut();
+      }
       return null;
     }
 
@@ -198,7 +205,34 @@ export default function Index() {
 
       // ── ROUTE ──
       if (!userStatus) {
-        // Both paths failed — default to upload
+        // Both paths failed. Verify the session is still valid — if getUser()
+        // fails here, the auth user was deleted server-side. Force sign-out
+        // instead of routing to upload (which would show a broken skeleton).
+        const { error: verifyError } = await supabase.auth.getUser();
+        if (verifyError) {
+          // Distinguish auth errors (user deleted/session revoked) from network errors.
+          // Network errors should NOT sign out — the session may still be valid.
+          const isAuthError = verifyError.status === 401
+            || verifyError.status === 403
+            || verifyError.status === 404
+            || verifyError.message?.includes('not found')
+            || verifyError.message?.includes('User not found')
+            || verifyError.message?.includes('invalid claim')
+            || verifyError.message?.includes('session_not_found');
+
+          if (isAuthError) {
+            console.warn('[journey-router] Auth error, forcing sign-out:', verifyError.message);
+            await supabase.auth.signOut();
+            setTarget('/(auth)/beta-splash');
+          } else {
+            // Network/timeout error — trust cached session, route to upload as safe default
+            console.warn('[journey-router] Network error (not signing out):', verifyError.message);
+            setTarget('/(agreement)/upload');
+          }
+          setJourneyResolved(true);
+          return;
+        }
+        // Session valid but no user_status — genuinely new user, go to upload
         setTarget('/(agreement)/upload');
         setJourneyResolved(true);
         return;

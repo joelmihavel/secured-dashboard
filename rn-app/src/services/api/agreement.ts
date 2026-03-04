@@ -751,7 +751,11 @@ export async function abandonExtraction(extractionId: string): Promise<void> {
   try {
     await supabase
       .from('extracted_rental_info')
-      .update({ user_verified: true, extraction_error: 'Abandoned by user (re-upload)' })
+      .update({
+        user_verified: true,
+        extraction_status: 'failed',
+        extraction_error: 'Abandoned by user (re-upload)',
+      })
       .eq('id', extractionId);
   } catch {
     // Silent fail — the frontend guards (dismissedExtractionId) are the backup

@@ -38,14 +38,14 @@ import { extractFirstName } from "../_shared/name-utils.ts";
 import { computeRisk } from "../_shared/risk-utils.ts";
 import {
   callCashfreeSendOtp as sharedCallCashfreeSendOtp,
-  callCashfreeVerifyOtp as sharedCallCashfreeVerifyOtp,
+  callCashfreeVerifyOtp,
   generateCfSignature,
   type Mobile360SendOtpResponse as SharedMobile360SendOtpResponse,
-  type Mobile360VerifyOtpResponse as SharedMobile360VerifyOtpResponse,
+  type Mobile360VerifyOtpResponse,
   type SendOtpParams as SharedSendOtpParams,
   type VerifyOtpParams as SharedVerifyOtpParams,
 } from "../_shared/cashfree-m360-otp.ts";
-import { processM360IdentityResult } from "../_shared/m360-identity-processor.ts";
+import { processM360IdentityResult, buildVerificationData } from "../_shared/m360-identity-processor.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -101,72 +101,7 @@ interface Mobile360SendOtpResponse {
   message?: string;
 }
 
-// Response from Verify OTP API
-interface Mobile360VerifyOtpResponse {
-  verification_id: string;
-  reference_id: string;
-  status: "SUCCESS" | "DETAILS_NOT_FOUND" | "OTP_INVALID" | "OTP_EXPIRED" | "VERIFICATION_FAILED";
-  message?: string;
-  data?: {
-    full_name?: string;
-    gender?: string;
-    dob?: string;
-    age?: number;
-    occupation?: string;
-    total_income?: string;
-    relatives?: Array<{ name: string; relation: string }>;
-    phone_numbers?: Array<{ number: string; type: string; source: string }>;
-    emails?: Array<{ email: string; source: string }>;
-    pan_details?: Array<{
-      pan: string;
-      name: string;
-      type: string;
-      aadhaar_linked: boolean;
-    }>;
-    aadhaar_number?: string;
-    passport_details?: unknown[];
-    driving_license_details?: unknown[];
-    voter_details?: unknown[];
-    ration_card_details?: unknown[];
-    bank_accounts?: Array<{
-      account_number: string;
-      ifsc: string;
-      bank_name: string;
-    }>;
-    employment_details?: {
-      uan?: string;
-      epfo?: string;
-      establishment?: string;
-    };
-    addresses?: Array<{
-      address: string;
-      city: string;
-      state: string;
-      pincode: string;
-      type: string;
-      source: string;
-    }>;
-    credit_score?: number;
-    mobile_intelligence?: {
-      valid: boolean;
-      subscriber_status: string;
-      connection_type: string;
-      provider: string;
-      connection_date?: string;
-    };
-    risk_intelligence?: {
-      safe: boolean;
-      risk_level: string;
-      reason: string;
-      description: string;
-    };
-    social_profiles?: Array<{
-      platform: string;
-      url: string;
-      username: string;
-    }>;
-  };
-}
+// Mobile360VerifyOtpResponse is now imported from shared cashfree-m360-otp.ts
 
 // ==============================================
 // VALIDATION SCHEMAS
@@ -478,60 +413,13 @@ async function handleVerifyOtp(
     otp,
   });
 
-  // Prepare verification data
-  const verificationData = {
-    reference_id: m360Result.reference_id,
-    status: m360Result.status === "SUCCESS" ? "SUCCESS" : m360Result.status,
-    verified_at: m360Result.status === "SUCCESS" ? new Date().toISOString() : null,
-
-    // Personal details
-    m360_full_name: m360Result.data?.full_name,
-    m360_gender: m360Result.data?.gender,
-    m360_date_of_birth: m360Result.data?.dob,
-    m360_age: m360Result.data?.age,
-    m360_occupation: m360Result.data?.occupation,
-    m360_total_income: m360Result.data?.total_income,
-    m360_relatives: m360Result.data?.relatives,
-
-    // Contact info
-    m360_phone_numbers: m360Result.data?.phone_numbers,
-    m360_emails: m360Result.data?.emails,
-
-    // Identity documents (masked)
-    m360_pan_details: m360Result.data?.pan_details?.map((p) => ({
-      ...p,
-      pan: maskPan(p.pan),
-    })),
-    m360_aadhaar_masked: m360Result.data?.aadhaar_number
-      ? maskAadhaar(m360Result.data.aadhaar_number)
-      : null,
-    m360_passport_details: m360Result.data?.passport_details,
-    m360_driving_license_details: m360Result.data?.driving_license_details,
-    m360_voter_details: m360Result.data?.voter_details,
-    m360_ration_card_details: m360Result.data?.ration_card_details,
-
-    // Financial data (masked)
-    m360_bank_accounts: m360Result.data?.bank_accounts?.map((b) => ({
-      account_masked: `XXXX${b.account_number.slice(-4)}`,
-      ifsc: b.ifsc,
-      bank_name: b.bank_name,
-    })),
-    m360_employment_details: m360Result.data?.employment_details,
-
-    // Addresses
-    m360_addresses: m360Result.data?.addresses,
-
-    // Intelligence scores
-    m360_credit_score: m360Result.data?.credit_score,
-    m360_mobile_intelligence: m360Result.data?.mobile_intelligence,
-    m360_risk_intelligence: m360Result.data?.risk_intelligence,
-
-    // Social profiles
-    m360_social_profiles: m360Result.data?.social_profiles,
-
-    // Raw response (for audit, will be encrypted at rest)
-    raw_response: m360Result,
-  };
+  // Prepare verification data using shared processor (single source of truth for field mapping)
+  const verificationData = buildVerificationData(
+    m360Result.status,
+    m360Result.reference_id,
+    m360Result.data,
+    m360Result
+  );
 
   // Update verification record
   const { data: verification, error: updateError } = await supabase
@@ -678,118 +566,6 @@ async function callCashfreeSendOtp(
     if (error instanceof ExternalServiceError) throw error;
 
     console.error("Cashfree Send OTP failed:", error);
-    throw new ExternalServiceError(
-      "Cashfree",
-      error instanceof Error ? error.message : "Unknown error"
-    );
-  }
-}
-
-// ==============================================
-// CASHFREE MOBILE 360 VERIFY OTP API
-// ==============================================
-
-interface VerifyOtpParams {
-  verification_id: string;
-  otp: string;
-}
-
-async function callCashfreeVerifyOtp(
-  params: VerifyOtpParams
-): Promise<Mobile360VerifyOtpResponse> {
-  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
-    throw new ExternalServiceError("Cashfree", "API credentials not configured");
-  }
-
-  try {
-    const response = await fetch(`${CASHFREE_BASE_URL}/mobile360/otp/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-client-id": CASHFREE_APP_ID,
-        "x-client-secret": CASHFREE_SECRET_KEY,
-        "x-api-version": "2024-12-01",
-      },
-      body: JSON.stringify({
-        verification_id: params.verification_id,
-        otp: params.otp,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Cashfree Verify OTP API error:", data);
-
-      // Handle specific error cases
-      if (data.code === "otp_invalid" || data.status === "OTP_INVALID") {
-        return {
-          verification_id: params.verification_id,
-          reference_id: data.reference_id ?? params.verification_id,
-          status: "OTP_INVALID",
-          message: "Invalid OTP. Please try again.",
-        };
-      }
-
-      if (data.code === "otp_expired" || data.status === "OTP_EXPIRED") {
-        return {
-          verification_id: params.verification_id,
-          reference_id: data.reference_id ?? params.verification_id,
-          status: "OTP_EXPIRED",
-          message: "OTP has expired. Please request a new one.",
-        };
-      }
-
-      // No data found is a valid response
-      if (data.status === "DETAILS_NOT_FOUND") {
-        return {
-          verification_id: params.verification_id,
-          reference_id: data.reference_id ?? params.verification_id,
-          status: "DETAILS_NOT_FOUND",
-          message: "No identity data found for this phone number",
-        };
-      }
-
-      throw new ExternalServiceError(
-        "Cashfree",
-        data.message ?? `HTTP ${response.status}`
-      );
-    }
-
-    // Map Cashfree response to our interface
-    return {
-      verification_id: data.verification_id ?? params.verification_id,
-      reference_id: data.reference_id ?? params.verification_id,
-      status: data.status ?? "SUCCESS",
-      data: {
-        full_name: data.full_name ?? data.name,
-        gender: data.gender,
-        dob: data.dob,
-        age: data.age,
-        occupation: data.occupation,
-        total_income: data.total_income,
-        relatives: data.relatives,
-        phone_numbers: data.phone_numbers,
-        emails: data.emails,
-        pan_details: data.pan_details,
-        aadhaar_number: data.aadhaar_number,
-        passport_details: data.passport_details,
-        driving_license_details: data.driving_license_details,
-        voter_details: data.voter_details,
-        ration_card_details: data.ration_card_details,
-        bank_accounts: data.bank_accounts,
-        employment_details: data.employment_details,
-        addresses: data.addresses,
-        credit_score: data.credit_score,
-        mobile_intelligence: data.mobile_intelligence,
-        risk_intelligence: data.risk_intelligence,
-        social_profiles: data.social_profiles,
-      },
-    };
-  } catch (error) {
-    if (error instanceof ExternalServiceError) throw error;
-
-    console.error("Cashfree Verify OTP failed:", error);
     throw new ExternalServiceError(
       "Cashfree",
       error instanceof Error ? error.message : "Unknown error"
@@ -1074,60 +850,15 @@ async function handleFetchWithConsent(
     });
   }
 
-  // Prepare verification data (for SUCCESS or other terminal statuses)
+  // Prepare verification data using shared processor (single source of truth for field mapping)
   const verificationData = {
-    reference_id: m360Result.reference_id,
-    status: m360Result.status === "SUCCESS" ? "SUCCESS" : m360Result.status,
-    verified_at: m360Result.status === "SUCCESS" ? new Date().toISOString() : null,
+    ...buildVerificationData(
+      m360Result.status,
+      m360Result.reference_id,
+      m360Result.data,
+      m360Result
+    ),
     tenancy_id: tenancy_id ?? null,
-
-    // Personal details
-    m360_full_name: m360Result.data?.full_name,
-    m360_gender: m360Result.data?.gender,
-    m360_date_of_birth: m360Result.data?.dob,
-    m360_age: m360Result.data?.age,
-    m360_occupation: m360Result.data?.occupation,
-    m360_total_income: m360Result.data?.total_income,
-    m360_relatives: m360Result.data?.relatives,
-
-    // Contact info
-    m360_phone_numbers: m360Result.data?.phone_numbers,
-    m360_emails: m360Result.data?.emails,
-
-    // Identity documents (masked)
-    m360_pan_details: m360Result.data?.pan_details?.map((p: { pan: string }) => ({
-      ...p,
-      pan: maskPan(p.pan),
-    })),
-    m360_aadhaar_masked: m360Result.data?.aadhaar_number
-      ? maskAadhaar(m360Result.data.aadhaar_number)
-      : null,
-    m360_passport_details: m360Result.data?.passport_details,
-    m360_driving_license_details: m360Result.data?.driving_license_details,
-    m360_voter_details: m360Result.data?.voter_details,
-    m360_ration_card_details: m360Result.data?.ration_card_details,
-
-    // Financial data (masked)
-    m360_bank_accounts: m360Result.data?.bank_accounts?.map((b: { account_number: string; ifsc: string; bank_name: string }) => ({
-      account_masked: `XXXX${b.account_number.slice(-4)}`,
-      ifsc: b.ifsc,
-      bank_name: b.bank_name,
-    })),
-    m360_employment_details: m360Result.data?.employment_details,
-
-    // Addresses
-    m360_addresses: m360Result.data?.addresses,
-
-    // Intelligence scores
-    m360_credit_score: m360Result.data?.credit_score,
-    m360_mobile_intelligence: m360Result.data?.mobile_intelligence,
-    m360_risk_intelligence: m360Result.data?.risk_intelligence,
-
-    // Social profiles
-    m360_social_profiles: m360Result.data?.social_profiles,
-
-    // Raw response (for audit)
-    raw_response: m360Result,
   };
 
   // Update the consent record with Mobile 360 data

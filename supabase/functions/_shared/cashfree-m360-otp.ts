@@ -23,42 +23,77 @@ export interface Mobile360SendOtpResponse {
 export interface Mobile360VerifyOtpResponse {
   verification_id: string;
   reference_id: string;
-  status: "SUCCESS" | "DETAILS_NOT_FOUND" | "OTP_INVALID" | "OTP_EXPIRED" | "VERIFICATION_FAILED";
+  status: "SUCCESS" | "DETAILS_NOT_FOUND" | "OTP_INVALID" | "OTP_EXPIRED" | "VERIFICATION_FAILED" | "OTP_GENERATED";
   message?: string;
   data?: Mobile360IdentityData;
 }
 
 export interface Mobile360IdentityData {
+  // Cashfree nests personal data under personal_details
+  personal_details?: {
+    full_name?: string;
+    gender?: string;
+    dob?: string;
+    age?: string | number;
+    occupation?: string;
+    total_income?: string;
+    relatives_details?: Array<{ relative_name: string; relation: string }>;
+  };
+  // Fallback: some fields may appear at root level
   full_name?: string;
   gender?: string;
   dob?: string;
-  age?: number;
+  age?: string | number;
   occupation?: string;
   total_income?: string;
   relatives?: Array<{ name: string; relation: string }>;
+
   phone_numbers?: Array<{ number: string; type: string; source: string }>;
   emails?: Array<{ email: string; source: string }>;
+
+  // PAN: Cashfree uses pan_number + metadata, fallback to flat pan
   pan_details?: Array<{
-    pan: string;
-    name: string;
-    type: string;
-    aadhaar_linked: boolean;
+    pan_number?: string;
+    pan?: string;
+    name?: string;
+    metadata?: { registered_name?: string; type?: string; aadhaar_linked?: boolean };
+    type?: string;
+    aadhaar_linked?: boolean;
   }>;
+
+  // Aadhaar: Cashfree returns array of {masked_aadhaar_number}, fallback to string
+  aadhaar_details?: Array<{ masked_aadhaar_number?: string }>;
   aadhaar_number?: string;
+
   passport_details?: unknown[];
   driving_license_details?: unknown[];
   voter_details?: unknown[];
   ration_card_details?: unknown[];
-  bank_accounts?: Array<{
-    account_number: string;
-    ifsc: string;
-    bank_name: string;
+
+  // Bank: Cashfree uses bank_account_details with bank_account field
+  bank_account_details?: Array<{
+    bank_account?: string;
+    account_number?: string;
+    ifsc?: string;
+    bank_name?: string;
   }>;
-  employment_details?: {
+  bank_accounts?: Array<{
+    account_number?: string;
+    ifsc?: string;
+    bank_name?: string;
+  }>;
+
+  // Employment: Cashfree returns array
+  employment_details?: Array<{
+    uan?: string;
+    epfo?: string;
+    establishment?: string;
+  }> | {
     uan?: string;
     epfo?: string;
     establishment?: string;
   };
+
   addresses?: Array<{
     address: string;
     city: string;
@@ -67,25 +102,37 @@ export interface Mobile360IdentityData {
     type: string;
     source: string;
   }>;
+
   credit_score?: number;
-  mobile_intelligence?: {
-    valid: boolean;
-    subscriber_status: string;
-    connection_type: string;
-    provider: string;
+
+  // Cashfree uses mobile_number_intelligence, fallback to mobile_intelligence
+  mobile_number_intelligence?: {
+    is_valid_number?: boolean;
+    valid?: boolean;
+    subscriber_status?: string;
+    connection_type?: string;
+    current_service_provider?: string;
+    provider?: string;
     connection_date?: string;
   };
-  risk_intelligence?: {
-    safe: boolean;
-    risk_level: string;
-    reason: string;
-    description: string;
+  mobile_intelligence?: {
+    valid?: boolean;
+    subscriber_status?: string;
+    connection_type?: string;
+    provider?: string;
+    connection_date?: string;
   };
-  social_profiles?: Array<{
-    platform: string;
-    url: string;
-    username: string;
-  }>;
+
+  // Cashfree uses is_safe / risk_reason / risk_description
+  risk_intelligence?: {
+    is_safe?: boolean;
+    safe?: boolean;
+    risk_level?: string;
+    risk_reason?: string;
+    reason?: string;
+    risk_description?: string;
+    description?: string;
+  };
 }
 
 export interface SendOtpParams {
@@ -265,10 +312,10 @@ export async function callCashfreeSendOtp(
         };
       }
 
-      throw new ExternalServiceError(
-        "Cashfree",
-        data.message ?? `HTTP ${response.status}`
-      );
+      const errorDetail = data.code
+        ? `[${data.code}] ${data.message ?? `HTTP ${response.status}`}`
+        : (data.message ?? `HTTP ${response.status}`);
+      throw new ExternalServiceError("Cashfree", errorDetail);
     }
 
     return {
@@ -380,10 +427,10 @@ export async function callCashfreeVerifyOtp(
         };
       }
 
-      throw new ExternalServiceError(
-        "Cashfree",
-        data.message ?? `HTTP ${response.status}`
-      );
+      const errorDetail = data.code
+        ? `[${data.code}] ${data.message ?? `HTTP ${response.status}`}`
+        : (data.message ?? `HTTP ${response.status}`);
+      throw new ExternalServiceError("Cashfree", errorDetail);
     }
 
     return {
@@ -391,28 +438,32 @@ export async function callCashfreeVerifyOtp(
       reference_id: data.reference_id ?? params.verification_id,
       status: data.status ?? "SUCCESS",
       data: {
-        full_name: data.full_name ?? data.name,
-        gender: data.gender,
-        dob: data.dob,
-        age: data.age,
-        occupation: data.occupation,
-        total_income: data.total_income,
+        // Personal details: try personal_details nested object first, fall back to root
+        full_name: data.personal_details?.full_name ?? data.full_name ?? data.name,
+        gender: data.personal_details?.gender ?? data.gender,
+        dob: data.personal_details?.dob ?? data.dob,
+        age: data.personal_details?.age ?? data.age,
+        occupation: data.personal_details?.occupation ?? data.occupation,
+        total_income: data.personal_details?.total_income ?? data.total_income,
         relatives: data.relatives,
+        personal_details: data.personal_details,
         phone_numbers: data.phone_numbers,
         emails: data.emails,
         pan_details: data.pan_details,
+        aadhaar_details: data.aadhaar_details,
         aadhaar_number: data.aadhaar_number,
         passport_details: data.passport_details,
         driving_license_details: data.driving_license_details,
         voter_details: data.voter_details,
         ration_card_details: data.ration_card_details,
+        bank_account_details: data.bank_account_details,
         bank_accounts: data.bank_accounts,
         employment_details: data.employment_details,
         addresses: data.addresses,
         credit_score: data.credit_score,
+        mobile_number_intelligence: data.mobile_number_intelligence,
         mobile_intelligence: data.mobile_intelligence,
         risk_intelligence: data.risk_intelligence,
-        social_profiles: data.social_profiles,
       },
     };
   } catch (error) {

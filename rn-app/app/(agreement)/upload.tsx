@@ -29,6 +29,7 @@ import {
   Alert,
   StyleSheet,
   Image,
+  AppState,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -707,11 +708,15 @@ export default function UploadScreen() {
   // (b) useMountDiscovery resurrecting the old extraction from DB.
   // The ref is cleared in handleUpload when a new upload begins.
   // ============================================
-  const isForceNewActiveRef = React.useRef(false);
+  // CRITICAL: Initialize synchronously from URL param so the ref is already true
+  // on the very first render. If set inside useEffect, the extraction status effect
+  // fires first (effect ordering) with stale cached data and navigates back to review
+  // before forceNew cleanup can clear the cache — causing the re-upload loop.
+  const isForceNewActiveRef = React.useRef(forceNew === 'true');
 
   useEffect(() => {
     if (forceNew === 'true') {
-      isForceNewActiveRef.current = true; // Block ALL status navigation until new upload
+      isForceNewActiveRef.current = true; // Redundant but safe — ensures consistency
       setDocument(null);
       setUploadState('idle');
       setUploadProgress(0);
@@ -725,6 +730,29 @@ export default function UploadScreen() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forceNew]);
+
+  // ============================================
+  // APP STATE RECOVERY — detect interrupted uploads on foreground resume
+  // iOS kills XHR when app is backgrounded >30s. If we were in uploading_file
+  // phase, the XHR was killed but the mutation might not have caught the error yet.
+  // Check on foreground resume and show a clear error.
+  // ============================================
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') return;
+
+      const store = useUploadStore.getState();
+      // If store says uploading_file but mutation is no longer running,
+      // the XHR was killed during background. Surface the error.
+      if (
+        (store.uploadPhase === 'uploading_file' || store.uploadPhase === 'requesting_url') &&
+        !agreement.isUploading
+      ) {
+        store.setError('UPLOAD_INTERRUPTED', 'Upload was interrupted. Please try again.');
+      }
+    });
+    return () => sub.remove();
+  }, [agreement.isUploading]);
 
   // Sync real upload progress from hook — update whenever progress changes,
   // including reset to 0 on error (not just when isUploading)
@@ -748,11 +776,19 @@ export default function UploadScreen() {
   const storeErrorMessage = useUploadStore((s) => s.errorMessage);
   useEffect(() => {
     if (storePhase === 'idle' && uploadState === 'uploading' && !agreement.isUploading) {
-      // Mount discovery found extractionId no longer exists — reset to idle
+      // Mount discovery found extractionId no longer exists — reset to idle.
+      // Show a brief alert so user knows upload was interrupted (not a crash).
       setUploadState('idle');
       setUploadProgress(0);
       setDocument(null);
       setErrorOverrideMessage(null);
+      // Only show alert if this wasn't a forceNew reset (user-initiated re-upload)
+      if (!isForceNewActiveRef.current) {
+        Alert.alert(
+          'Upload Interrupted',
+          'Your upload was interrupted. Please select the file and try again.'
+        );
+      }
     } else if (storePhase === 'failed' && uploadState === 'uploading') {
       // processDocument fire-and-forget failed, or other async error —
       // store.setError() was called outside the mutation lifecycle.
@@ -817,7 +853,12 @@ export default function UploadScreen() {
         // useAgreement() fires useExtractedData during processing (when fields
         // are still NULL in DB), caching empty data for 5 minutes. Removing
         // the cache here forces the review screen to fetch fresh (completed) data.
+        // Cancel first to prevent in-flight fetches from repopulating stale data.
+        queryClient.cancelQueries({ queryKey: agreementKeys.extraction(eid) });
         queryClient.removeQueries({ queryKey: agreementKeys.extraction(eid) });
+        // Also clear the full agreement key tree to prevent any stale data leaks
+        queryClient.cancelQueries({ queryKey: ['agreement'] });
+        queryClient.removeQueries({ queryKey: ['agreement', 'extraction'] });
 
         setTimeout(() => {
           router.replace({
