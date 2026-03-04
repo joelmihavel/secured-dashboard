@@ -7,7 +7,7 @@
  * Used by: verify-bank, verify-utility, verify-pan
  */
 
-import { matchNamesWithGemini, matchConsumerNameWithPropertyGemini, type NameMatchResult } from "./gemini.ts";
+import { matchNamesWithGemini, matchNameAgainstCandidates, matchConsumerNameWithPropertyGemini, type NameMatchResult } from "./gemini.ts";
 
 // ==============================================
 // TYPES
@@ -146,27 +146,19 @@ export async function matchAgainstAgreementNames(
   }
 
   try {
-    console.log(`[name-match-service] Matching "${verifiedName}" against ${candidateNames.length} candidate(s) with context=${context}`);
+    console.log(`[name-match-service] Matching "${verifiedName}" against ${candidateNames.length} candidate(s) in single Gemini call, context=${context}`);
 
-    let bestResult: NameMatchResult | null = null;
-    let matchedName: string | null = null;
-
-    for (const candidate of candidateNames) {
-      const result = await matchNamesWithGemini(verifiedName, candidate, context);
-      if (!bestResult || result.confidence > bestResult.confidence) {
-        bestResult = result;
-        matchedName = candidate;
-      }
-    }
+    // Single Gemini call with ALL candidates — eliminates multi-call priority bugs
+    const result = await matchNameAgainstCandidates(verifiedName, candidateNames, context);
 
     return {
-      matched: bestResult!.is_match,
-      matchedName,
-      score: bestResult!.confidence,
+      matched: result.matched,
+      matchedName: result.matched_name,
+      score: result.confidence,
       details: {
         gemini_used: true,
-        reasoning: bestResult!.reasoning,
-        match_type: bestResult!.match_type,
+        reasoning: result.reasoning,
+        match_type: result.match_type,
         all_candidates: candidateNames.length > 1 ? candidateNames : undefined,
         name_at_source: verifiedName,
       },
@@ -214,10 +206,12 @@ export async function matchAgainstAgreementNames(
  * Enhanced over verify-bank's simpler version with initials handling.
  */
 export function calculateNameMatchScore(name1: string, name2: string): number {
-  // Normalize names
+  // Normalize: uppercase, strip titles/relational suffixes, keep only letters+spaces
   const normalize = (s: string) =>
     s
       .toUpperCase()
+      .replace(/\b[SWDC]\/O\b.*/, "")                                   // Strip S/O, W/O etc + everything after
+      .replace(/\b(MR|MRS|MS|DR|SHRI|SMT|KUMARI|LATE|PROF)\b\.?/g, "") // Strip titles
       .replace(/[^A-Z\s]/g, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -228,61 +222,38 @@ export function calculateNameMatchScore(name1: string, name2: string): number {
   if (n1 === n2) return 1;
   if (!n1 || !n2) return 0;
 
-  // Split into words and compare
   const words1 = n1.split(" ");
   const words2 = n2.split(" ");
 
-  // Check if one name contains initials (single letter words)
-  const hasInitials1 = words1.some((w) => w.length === 1);
-  const hasInitials2 = words2.some((w) => w.length === 1);
-
-  // If initials present, expand comparison
-  if (hasInitials1 || hasInitials2) {
-    // Compare first letters of each word
-    const initials1 = words1.map((w) => w[0]).join("");
-    const initials2 = words2.map((w) => w[0]).join("");
-
-    if (initials1 === initials2) {
-      return 0.85; // High match for matching initials
-    }
-
-    // Check if full name contains initial pattern
-    const fullWords1 = words1.filter((w) => w.length > 1);
-    const fullWords2 = words2.filter((w) => w.length > 1);
-
-    const fullInitials1 = fullWords1.map((w) => w[0]).join("");
-    const fullInitials2 = fullWords2.map((w) => w[0]).join("");
-
-    if (fullInitials1.includes(initials2.replace(/[^A-Z]/g, "")) ||
-        fullInitials2.includes(initials1.replace(/[^A-Z]/g, ""))) {
-      return 0.8;
-    }
+  // Subset match: one name's words are all contained in the other
+  // e.g. "DEEKSHA" vs "DEEKSHA AGARWAL", "RAMESH SHARMA" vs "RAMESH KUMAR SHARMA"
+  const [shorter, longer] = words1.length <= words2.length ? [words1, words2] : [words2, words1];
+  if (shorter.length >= 1 && shorter.every((w) => longer.includes(w))) {
+    return Math.max(0.82, (shorter.length / longer.length) * 0.95);
   }
 
-  // Calculate Levenshtein distance
+  // Initials handling: "R K SHARMA" vs "RAMESH KUMAR SHARMA"
+  const hasInitials1 = words1.some((w) => w.length === 1);
+  const hasInitials2 = words2.some((w) => w.length === 1);
+  if (hasInitials1 || hasInitials2) {
+    const initials1 = words1.map((w) => w[0]).join("");
+    const initials2 = words2.map((w) => w[0]).join("");
+    if (initials1 === initials2) return 0.85;
+  }
+
+  // Levenshtein distance
   const len1 = n1.length;
   const len2 = n2.length;
-  const dp: number[][] = Array(len1 + 1)
-    .fill(null)
-    .map(() => Array(len2 + 1).fill(0));
-
+  const dp: number[][] = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
   for (let i = 0; i <= len1; i++) dp[i][0] = i;
   for (let j = 0; j <= len2; j++) dp[0][j] = j;
-
   for (let i = 1; i <= len1; i++) {
     for (let j = 1; j <= len2; j++) {
       const cost = n1[i - 1] === n2[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
     }
   }
-
-  const distance = dp[len1][len2];
-  const maxLen = Math.max(len1, len2);
-  return 1 - distance / maxLen;
+  return 1 - dp[len1][len2] / Math.max(len1, len2);
 }
 
 // ==============================================

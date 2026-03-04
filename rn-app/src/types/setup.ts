@@ -18,7 +18,7 @@
 /** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface BankVerificationRequest {
   tenancyId: string;
-  accountHolderName: string;
+  accountHolderName?: string; // Optional — name comes from penny drop response
   accountNumber: string;
   ifscCode: string;
   partyType?: 'landlord' | 'tenant';

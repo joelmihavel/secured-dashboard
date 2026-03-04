@@ -29,11 +29,9 @@ import {
 } from "../_shared/errors.ts";
 import { validateSchema } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { matchNamesWithGemini, matchAddressesWithGemini } from "../_shared/gemini.ts";
+import { verifyUtilityBillWithGemini } from "../_shared/gemini.ts";
 import {
   resolveAgreementNames,
-  matchAgainstAgreementNames,
-  matchUtilityConsumerAgainstProperty,
   calculateNameMatchScore as sharedCalculateNameMatchScore,
 } from "../_shared/name-match-service.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
@@ -47,12 +45,9 @@ const API_CLUB_BASE_URL =
   Deno.env.get("API_CLUB_BASE_URL") ?? "https://prod.apiclub.in/api/v1";
 const PROXY_SECRET = Deno.env.get("PROXY_SECRET");
 
-// Matching thresholds (used as fallback if Gemini fails)
-const ADDRESS_MATCH_THRESHOLD = 0.7; // 70%
-const NAME_MATCH_THRESHOLD = 0.7; // 70%
-
-// Use Gemini AI for matching (recommended for production)
-const USE_GEMINI_MATCHING = Deno.env.get("USE_GEMINI_MATCHING") !== "false";
+// Fallback thresholds (only used when Gemini fails)
+const ADDRESS_MATCH_THRESHOLD = 0.7;
+const NAME_MATCH_THRESHOLD = 0.7;
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -339,13 +334,6 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
     const allLandlordNames = resolved.names;
     const primaryLandlordName = resolved.primaryName;
 
-    // Fetch landlord bank accounts for bank name cross-check
-    const { data: landlordBankAccounts } = await supabase
-      .from("bank_accounts")
-      .select("account_holder_name, verified_account_holder_name, verified")
-      .eq("user_id", userId)
-      .eq("party_type", "landlord");
-
     // Fetch electricity bill from API Club
     const billResult = await fetchElectricityBill(consumer_number, operator_code, operatorParams);
 
@@ -368,196 +356,71 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
     // API Club BESCOM returns customer_name instead of consumer_name — normalize
     const consumerName = billResult.response?.consumer_name ?? billResult.response?.customer_name ?? "";
 
-    // Calculate match scores - use Gemini AI if available, fallback to algorithmic
-    let addressMatchScore = 0;
-    let nameMatchScore = 0;
-    let isAddressVerified = false;
-    let isNameVerified = false;
+    // Single Gemini call — all data in, any match = pass
+    let isFullyVerified = false;
+    let matchScore = 0;
     let bestMatchLandlordName = primaryLandlordName;
     let matchDetails: {
       gemini_used: boolean;
-      name_reasoning?: string;
-      address_reasoning?: string;
-      name_match_type?: string;
-      address_match_type?: string;
-      matched_landlord_name?: string;
+      reasoning?: string;
+      match_type?: string;
+      match_found_in?: string;
+      matched_value?: string;
       all_landlord_names?: string[];
-      bank_name_reasoning?: string;
-      bank_name_match_type?: string;
-      bank_account_holder_name?: string;
-      building_name_matched?: boolean;
-      building_name?: string;
     } = { gemini_used: false };
 
-    if (isBillFetched && USE_GEMINI_MATCHING && consumerName && allLandlordNames.length > 0) {
+    if (isBillFetched && consumerName) {
       try {
-        console.log("[verify-utility] Using Gemini AI for semantic matching against", allLandlordNames.length, "landlord name(s)");
+        console.log("[verify-utility] Single Gemini call: consumer name + landlords + addresses");
 
-        // 1. Address matching — done once (address doesn't change per landlord name)
-        const addressResult = await matchAddressesWithGemini(tenancyAddress, billAddress, "utility_verification");
-        addressMatchScore = addressResult.confidence / 100;
-        isAddressVerified = addressResult.is_match;
-        matchDetails.address_reasoning = addressResult.reasoning;
-        matchDetails.address_match_type = addressResult.match_type;
+        const result = await verifyUtilityBillWithGemini(
+          consumerName,
+          allLandlordNames,
+          tenancyAddress,
+          billAddress,
+        );
 
-        // 2. Name matching — use shared service
-        const nameMatchResult = await matchAgainstAgreementNames({
-          verifiedName: consumerName,
-          candidateNames: allLandlordNames,
-          context: "landlord_verification",
-          matchThreshold: NAME_MATCH_THRESHOLD,
-        });
-
-        nameMatchScore = nameMatchResult.score / 100;
-        isNameVerified = nameMatchResult.matched;
-        bestMatchLandlordName = nameMatchResult.matchedName ?? primaryLandlordName;
+        isFullyVerified = result.verified;
+        matchScore = result.confidence / 100;
+        bestMatchLandlordName = result.matched_value ?? primaryLandlordName;
 
         matchDetails = {
-          ...matchDetails,
-          gemini_used: nameMatchResult.details.gemini_used,
-          name_reasoning: nameMatchResult.details.reasoning,
-          name_match_type: nameMatchResult.details.match_type,
-          matched_landlord_name: bestMatchLandlordName,
+          gemini_used: true,
+          reasoning: result.reasoning,
+          match_type: result.name_match_type,
+          match_found_in: result.match_found_in,
+          matched_value: result.matched_value ?? undefined,
           all_landlord_names: allLandlordNames.length > 1 ? allLandlordNames : undefined,
         };
 
-        console.log("[verify-utility] Landlord matching result:", {
-          name_match: isNameVerified,
-          name_score: nameMatchResult.score,
-          address_match: isAddressVerified,
-          address_confidence: addressResult.confidence,
-          matched_landlord: bestMatchLandlordName,
+        console.log("[verify-utility] Verification result:", {
+          verified: isFullyVerified,
+          match_found_in: result.match_found_in,
+          matched_value: result.matched_value,
+          confidence: result.confidence,
           landlord_count: allLandlordNames.length,
         });
       } catch (geminiError) {
-        console.warn("[verify-utility] Matching failed, falling back to algorithmic:", geminiError);
-        addressMatchScore = calculateAddressMatchScore(tenancyAddress, billAddress);
-        nameMatchScore = 0;
+        console.warn("[verify-utility] Gemini failed, falling back to algorithmic:", geminiError);
+
+        // Algorithmic fallback: check name overlap against landlords
+        let bestNameScore = 0;
         for (const landlordName of allLandlordNames) {
           const score = sharedCalculateNameMatchScore(landlordName, consumerName);
-          if (score > nameMatchScore) {
-            nameMatchScore = score;
+          if (score > bestNameScore) {
+            bestNameScore = score;
             bestMatchLandlordName = landlordName;
           }
         }
-        isAddressVerified = addressMatchScore >= ADDRESS_MATCH_THRESHOLD;
-        isNameVerified = nameMatchScore >= NAME_MATCH_THRESHOLD;
-      }
-    } else {
-      // Use algorithmic matching (Gemini disabled or no data)
-      addressMatchScore = isBillFetched ? calculateAddressMatchScore(tenancyAddress, billAddress) : 0;
-      nameMatchScore = 0;
-      if (isBillFetched && consumerName) {
-        for (const landlordName of allLandlordNames) {
-          const score = sharedCalculateNameMatchScore(landlordName, consumerName);
-          if (score > nameMatchScore) {
-            nameMatchScore = score;
-            bestMatchLandlordName = landlordName;
-          }
-        }
-      }
-      isAddressVerified = isBillFetched && addressMatchScore >= ADDRESS_MATCH_THRESHOLD;
-      isNameVerified = isBillFetched && nameMatchScore >= NAME_MATCH_THRESHOLD;
-    }
 
-    // 3. Building/society name fallback — if consumer name didn't match any landlord,
-    //    check if it's a building/society/apartment name matching the property address.
-    //    Common in Indian apartments where electricity is under building/RWA name.
-    if (isBillFetched && consumerName && !isNameVerified && tenancyAddress) {
-      try {
-        console.log("[verify-utility] Landlord name match failed — trying building/society name match");
-        const propertyResult = await matchUtilityConsumerAgainstProperty({
-          consumerName,
-          propertyAddress: tenancyAddress,
-        });
+        // Address fallback
+        const addressScore = calculateAddressMatchScore(tenancyAddress, billAddress);
 
-        if (propertyResult.matched) {
-          isNameVerified = true;
-          nameMatchScore = propertyResult.score / 100;
-          matchDetails.name_reasoning = propertyResult.details.reasoning;
-          matchDetails.name_match_type = propertyResult.details.match_type ?? "building_match";
-          matchDetails.building_name_matched = true;
-          matchDetails.building_name = propertyResult.matchedName ?? undefined;
-          matchDetails.gemini_used = matchDetails.gemini_used || (propertyResult.details.gemini_used ?? false);
-
-          console.log("[verify-utility] Building/society name match result:", {
-            matched: true,
-            score: propertyResult.score,
-            building_name: propertyResult.matchedName,
-          });
-        }
-      } catch (buildingMatchError) {
-        console.warn("[verify-utility] Building name match failed:", buildingMatchError);
+        // Any one match = pass
+        isFullyVerified = bestNameScore >= NAME_MATCH_THRESHOLD || addressScore >= ADDRESS_MATCH_THRESHOLD;
+        matchScore = Math.max(bestNameScore, addressScore);
       }
     }
-
-    // 4. Bank account name cross-check — Gemini-first, lenient matching
-    //    Goal: catch fraud (completely different person), NOT penalize formatting differences
-    //    between utility bills and bank records.
-    let bankNameMatchScore = 0;
-    let isBankNameVerified = false;
-    let bestBankAccountName: string | null = null;
-
-    if (landlordBankAccounts?.length && consumerName && isBillFetched) {
-      for (const account of landlordBankAccounts) {
-        const bankName = account.verified_account_holder_name || account.account_holder_name;
-        if (!bankName) continue;
-
-        if (USE_GEMINI_MATCHING) {
-          try {
-            // Gemini with bank_verification context — explicitly lenient prompt
-            const geminiResult = await matchNamesWithGemini(consumerName, bankName, "bank_verification");
-
-            // Use Gemini's semantic is_match directly — it understands Indian name
-            // variations, initials, abbreviations. Don't override with numeric threshold.
-            if (geminiResult.confidence / 100 > bankNameMatchScore) {
-              bankNameMatchScore = geminiResult.confidence / 100;
-              isBankNameVerified = geminiResult.is_match;
-              bestBankAccountName = bankName;
-              matchDetails.bank_name_reasoning = geminiResult.reasoning;
-              matchDetails.bank_name_match_type = geminiResult.match_type;
-            }
-          } catch (geminiError) {
-            console.warn("[verify-utility] Gemini bank name matching failed for account, using algorithmic:", geminiError);
-            // Algorithmic fallback — but use a lower threshold (60%) since
-            // Levenshtein can't understand Indian name semantics
-            const score = sharedCalculateNameMatchScore(consumerName, bankName);
-            if (score > bankNameMatchScore) {
-              bankNameMatchScore = score;
-              isBankNameVerified = score >= 0.6; // Lower threshold for algorithmic
-              bestBankAccountName = bankName;
-            }
-          }
-        } else {
-          const score = sharedCalculateNameMatchScore(consumerName, bankName);
-          if (score > bankNameMatchScore) {
-            bankNameMatchScore = score;
-            isBankNameVerified = score >= 0.6;
-            bestBankAccountName = bankName;
-          }
-        }
-      }
-      matchDetails.bank_account_holder_name = bestBankAccountName ?? undefined;
-
-      console.log("[verify-utility] Bank name cross-check:", {
-        bank_name_verified: isBankNameVerified,
-        bank_name_score: Math.round(bankNameMatchScore * 100),
-        consumer_name: consumerName,
-        bank_account_holder: bestBankAccountName,
-      });
-    }
-
-    // Verification decision:
-    // - Address: skip if bill API returned no address data (BESCOM, some operators)
-    // - Bank name: skip if no bank account added yet
-    const hasBankAccount = landlordBankAccounts && landlordBankAccounts.length > 0;
-    const hasAddressData = !!(billResult.response?.address || billResult.response?.city || billResult.response?.state);
-    const addressPassed = hasAddressData ? isAddressVerified : true; // skip if no data
-    if (!hasAddressData && isBillFetched) {
-      console.log("[verify-utility] Bill API returned no address — skipping address match");
-    }
-    const isFullyVerified = isNameVerified && addressPassed &&
-      (!hasBankAccount || isBankNameVerified);
 
     // Create utility verification record
     const verificationData = {
@@ -575,26 +438,20 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       bill_due_date: billResult.response?.due_date,
       bill_address: billAddress,
       bill_data: billResult.response,
-      address_match_score: addressMatchScore * 100,
-      name_match_score: nameMatchScore * 100,
-      address_verified: isAddressVerified,
-      name_verified: isNameVerified,
-      bank_name_match_score: bankNameMatchScore * 100,
-      bank_name_verified: isBankNameVerified,
+      address_match_score: matchScore * 100,
+      name_match_score: matchScore * 100,
+      address_verified: isFullyVerified,
+      name_verified: isFullyVerified,
+      bank_name_match_score: 0,
+      bank_name_verified: false,
       verified_at: isFullyVerified ? new Date().toISOString() : null,
       match_details: {
         gemini_used: matchDetails.gemini_used,
-        name_reasoning: matchDetails.name_reasoning,
-        address_reasoning: matchDetails.address_reasoning,
-        name_match_type: matchDetails.name_match_type,
-        address_match_type: matchDetails.address_match_type,
-        matched_landlord_name: matchDetails.matched_landlord_name,
+        reasoning: matchDetails.reasoning,
+        match_type: matchDetails.match_type,
+        match_found_in: matchDetails.match_found_in,
+        matched_value: matchDetails.matched_value,
         all_landlord_names: matchDetails.all_landlord_names,
-        bank_name_reasoning: matchDetails.bank_name_reasoning,
-        bank_name_match_type: matchDetails.bank_name_match_type,
-        bank_account_holder_name: matchDetails.bank_account_holder_name,
-        building_name_matched: matchDetails.building_name_matched,
-        building_name: matchDetails.building_name,
       },
     };
 
@@ -625,93 +482,56 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
         "utility_verification",
         verification.id,
         {
-          address_match_score: addressMatchScore,
-          name_match_score: nameMatchScore,
-          bank_name_match_score: bankNameMatchScore,
+          match_score: matchScore,
+          match_found_in: matchDetails.match_found_in,
+          matched_value: matchDetails.matched_value,
           consumer_name: consumerName,
           landlord_name: bestMatchLandlordName,
-          bank_account_holder_name: bestBankAccountName,
         }
       );
     } else {
-      const failureReason = !isBillFetched
-        ? "BILL_FETCH_FAILED"
-        : !isNameVerified
-        ? "NAME_MISMATCH"
-        : !isAddressVerified
-        ? "ADDRESS_MISMATCH"
-        : "BANK_NAME_MISMATCH";
-
-      const failureMessage = !isBillFetched
-        ? billResult.message ?? "Failed to fetch bill"
-        : !isNameVerified
-        ? `Name match ${(nameMatchScore * 100).toFixed(0)}% below threshold (bill: "${billResult.response?.consumer_name}", landlord: "${bestMatchLandlordName}")`
-        : !isAddressVerified
-        ? `Address match ${(addressMatchScore * 100).toFixed(0)}% below threshold`
-        : `Bank name match ${(bankNameMatchScore * 100).toFixed(0)}% below threshold (bill: "${billResult.response?.consumer_name}", bank: "${bestBankAccountName}")`;
-
       await audit.logFailure(
         AuditActions.UTILITY_VERIFICATION_FAILED,
         "verification",
-        failureReason,
-        failureMessage,
+        !isBillFetched ? "BILL_FETCH_FAILED" : "NO_MATCH",
+        !isBillFetched
+          ? (billResult.message ?? "Failed to fetch bill")
+          : `No match found — consumer: "${consumerName}", landlords: ${allLandlordNames.join(", ")}`,
         "utility_verification",
         verification.id,
         {
-          address_match_score: addressMatchScore,
-          name_match_score: nameMatchScore,
-          bank_name_match_score: bankNameMatchScore,
+          match_score: matchScore,
           tenancy_address: tenancyAddress,
           bill_address: billAddress,
-          landlord_name: bestMatchLandlordName,
-          consumer_name: billResult.response?.consumer_name,
-          bank_account_holder_name: bestBankAccountName,
+          consumer_name: consumerName,
+          all_landlord_names: allLandlordNames,
         }
       );
     }
 
-    // Build verification message
-    let message: string;
-    if (isFullyVerified) {
-      message = "Ownership verified successfully - landlord name and address match";
-    } else if (!isBillFetched) {
-      message = billResult.message ?? "Failed to fetch electricity bill";
-    } else if (!isNameVerified && !isAddressVerified) {
-      message = "Verification failed - neither landlord name nor address match";
-    } else if (!isNameVerified) {
-      message = "Landlord name on bill doesn't match";
-    } else if (!isAddressVerified) {
-      message = "Address on bill doesn't match property address";
-    } else if (hasBankAccount && !isBankNameVerified) {
-      message = "The name on the electricity bill doesn't match the bank account holder name";
-    } else {
-      message = "Verification failed";
-    }
+    const message = isFullyVerified
+      ? "Ownership verified successfully"
+      : !isBillFetched
+      ? (billResult.message ?? "Failed to fetch electricity bill")
+      : "The electricity bill details do not match the rental agreement. Please ensure you are using the correct consumer number for your rented property.";
 
     return jsonResponse({
       success: true,
       data: {
         verification_id: verification.id,
         verified: isFullyVerified,
-        name_verified: isNameVerified,
-        address_verified: isAddressVerified,
-        bank_name_verified: isBankNameVerified,
-        consumer_name: billResult.response?.consumer_name,
+        consumer_name: consumerName,
         landlord_name: bestMatchLandlordName,
-        name_match_score: Math.round(nameMatchScore * 100),
-        address_match_score: Math.round(addressMatchScore * 100),
-        bank_name_match_score: Math.round(bankNameMatchScore * 100),
-        bank_account_holder_name: bestBankAccountName,
-        match_threshold: NAME_MATCH_THRESHOLD * 100,
+        match_score: Math.round(matchScore * 100),
+        match_found_in: matchDetails.match_found_in,
+        matched_value: matchDetails.matched_value,
         bill_amount: billResult.response?.bill_amount,
         bill_due_date: billResult.response?.due_date,
         message,
         matching_method: matchDetails.gemini_used ? "gemini_ai" : "algorithmic",
         ...(matchDetails.gemini_used && {
-          name_reasoning: matchDetails.name_reasoning,
-          address_reasoning: matchDetails.address_reasoning,
-          name_match_type: matchDetails.name_match_type,
-          address_match_type: matchDetails.address_match_type,
+          reasoning: matchDetails.reasoning,
+          match_type: matchDetails.match_type,
         }),
       },
     });

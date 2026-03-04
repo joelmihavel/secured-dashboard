@@ -315,10 +315,10 @@ export async function verifyBank(
   // Map camelCase request to snake_case for edge function
   const body = {
     tenancy_id: request.tenancyId,
-    account_holder_name: request.accountHolderName,
     account_number: request.accountNumber,
     ifsc_code: request.ifscCode,
     party_type: request.partyType ?? 'landlord',
+    ...(request.accountHolderName && { account_holder_name: request.accountHolderName }),
     ...(request.existingBankAccountId && { existing_bank_account_id: request.existingBankAccountId }),
   };
 

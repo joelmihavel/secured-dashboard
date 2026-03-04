@@ -303,7 +303,7 @@ serve(async (req: Request) => {
     } else if (!panValid) {
       message = "PAN card is not valid. Please check the PAN number.";
     } else {
-      message = `PAN holder "${registeredName}" does not match any landlord in your agreement. Expected: ${resolved.names.join(" or ")}`;
+      message = "The PAN holder name does not match any landlord in your rental agreement. Please ensure you are verifying your landlord's PAN.";
     }
 
     const responseBody = {

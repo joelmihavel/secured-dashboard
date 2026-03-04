@@ -136,46 +136,47 @@ export async function matchNamesWithGemini(
   name2: string,
   context: "landlord_verification" | "tenant_verification" | "bank_verification" | "agreement_bank_verification" | "pan_verification" | "pan_huf_verification" = "landlord_verification"
 ): Promise<NameMatchResult> {
-  const prompt = `You are an expert at matching Indian names for ${context.replace(/_/g, " ")}.
-Your task is to determine if these two names refer to the same person.
+  const prompt = `You are an expert at matching Indian names. Your job is to determine if two names refer to the same person. Your default bias should be MATCH unless the names are clearly different people.
 
-Name 1 (from user input): "${name1}"
-Name 2 (from official document/bill): "${name2}"
+Name 1: "${name1}"
+Name 2: "${name2}"
 
-Consider these Indian name variations:
-1. Initials: "R K SHARMA" = "RAMESH KUMAR SHARMA" = "R KUMAR SHARMA"
-2. Titles: "MR", "MRS", "DR", "SHRI", "SMT", "KUMARI" should be ignored
-3. Suffixes: "JI", "SAHAB", "(HUF)", "S/O", "W/O", "D/O", "C/O" and what follows should be handled appropriately
-4. Common variations: "KUMAR" = "KR" = "K", "MOHAMMED" = "MOHAMMAD" = "MD" = "MOHD"
-5. Spelling variations: "SINGH" = "SINGHJI", "DEVI" as suffix for women
-6. Joint names: "RAMESH / SEEMA SHARMA" matches either "RAMESH SHARMA" or "SEEMA SHARMA"
-7. Middle names may be omitted or abbreviated
-8. Name order might be different (SHARMA RAMESH vs RAMESH SHARMA)
+IMPORTANT — Indian names are extremely loose. You MUST account for ALL of these real-world variations and PASS them:
+1. Initials vs full names: "R K SHARMA" = "RAMESH KUMAR SHARMA" = "R KUMAR SHARMA"
+2. First name only vs full name: "DEEKSHA" = "DEEKSHA AGARWAL" (just missing surname)
+3. Missing middle names: "RAMESH SHARMA" = "RAMESH KUMAR SHARMA"
+4. Titles/honorifics — IGNORE completely: MR, MRS, MS, DR, SHRI, SMT, KUMARI, LATE, PROF
+5. Relational suffixes — IGNORE what follows: S/O, W/O, D/O, C/O (e.g. "RAMESH S/O MOHAN" = "RAMESH")
+6. Common abbreviations: KUMAR=KR=K, MOHAMMED=MOHAMMAD=MD=MOHD, SINGH=SINGHJI, CHANDRA=CH
+7. Hindi/Sanskrit transliteration variants: LAKSHMI=LAXMI, SHUBHAM=SUBHAM, GANESH=GANESH, VIDYA=VIDHYA, KRISHNA=KRUSHNA, SHIV=SHIVA, JAYESH=JAYESHBHAI, MUKESH=MUKESHBHAI
+8. Joint/combined names: "RAMESH / SEEMA SHARMA" matches either "RAMESH SHARMA" or "SEEMA SHARMA"
+9. Name order swapped: "SHARMA RAMESH" = "RAMESH SHARMA"
+10. Bank name truncation: Banks often truncate names — "DEEKSHA AGAR" = "DEEKSHA AGARWAL"
+11. Extra/missing spaces: "RAMA KRISHNA" = "RAMAKRISHNA"
+12. (HUF) suffix: Strip it — "RAMESH SHARMA (HUF)" = "RAMESH SHARMA"
+13. Nicknames and short forms: "RAJU" could be "RAJESH", "SEEMA" could be "SEEMANTHINI"
 
-Return a JSON object with:
+CRITICAL RULE: Only return is_match=false if the names clearly belong to DIFFERENT PEOPLE (e.g. "RAMESH SHARMA" vs "SUNIL VERMA"). If there is ANY reasonable possibility they are the same person, return is_match=true. We are catching fraud (completely wrong person), NOT penalizing formatting differences.
+
+Return ONLY a JSON object (no markdown, no explanation outside JSON):
 {
-  "is_match": boolean (true if same person, false otherwise),
-  "confidence": number (0-100, how confident you are),
+  "is_match": boolean,
+  "confidence": number (0-100),
   "reasoning": string (brief explanation),
-  "normalized_name1": string (the name1 cleaned up),
-  "normalized_name2": string (the name2 cleaned up),
+  "normalized_name1": string,
+  "normalized_name2": string,
   "match_type": "exact" | "strong" | "partial" | "weak" | "no_match"
 }
 
-Rules for match_type:
-- "exact": Names are identical after normalization
-- "strong": High confidence same person (initials expand correctly, common variations)
-- "partial": Likely same person but some uncertainty (partial name match)
-- "weak": Possibly same person but significant differences
+match_type guide:
+- "exact": Identical after normalization
+- "strong": Same person, formatting/abbreviation differences
+- "partial": Likely same person, missing parts (e.g. first name only)
+- "weak": Possibly same person, significant differences but not clearly different
 - "no_match": Clearly different people
 
-Context-specific guidance:
-- For landlord_verification: confirm the electricity bill holder is the landlord. Be reasonably lenient as real-world documents have variations.
-- For bank_verification: confirm the electricity bill consumer is the same person as the bank account holder. Bank records often have abbreviated or formally different name formats (e.g. "RAMESH K" in bank vs "RAMESH KUMAR SHARMA" on bill). Be lenient — only reject if the names clearly refer to different people. Partial matches, missing middle names, initials vs full names, and minor spelling differences should all PASS. The goal is to catch fraud (completely different person), NOT penalize formatting differences.
-- For agreement_bank_verification: confirm the bank account holder name (from Cashfree penny drop) matches a landlord/owner name from the rental agreement. Bank records use formal abbreviated names while agreements may use full names with titles or initials. Be lenient — only reject if the names clearly refer to different people. Initials vs full names, missing middle names, title differences (Mr/Shri), and minor spelling variations should all PASS. The goal is to catch fraud (tenant adding their own bank account instead of landlord's), NOT to penalize formatting differences between bank records and legal documents.
-- For tenant_verification: confirm the app user is one of the tenants listed in the rental agreement. The user may have typed a casual/shortened name (e.g. 'Rishabh') while the agreement has their formal legal name (e.g. 'RISHABH KUMAR AGNIHOTRI'). Be lenient — initials vs full names, missing middle names, case differences, and minor spelling variations should all PASS. Only reject if the names clearly refer to different people.
-- For pan_verification: confirm the PAN card holder matches a landlord/owner in the rental agreement. PAN records use formal legal names (e.g. "RISHABH KUMAR AGNIHOTRI") while agreements may have variations. Be lenient with initials, titles, middle names, and case. Only reject if clearly different people.
-- For pan_huf_verification: the PAN belongs to a Hindu Undivided Family (HUF). The registered name is the Karta (primary member) — e.g. "RISHABH KUMAR AGNIHOTRI (HUF)". Strip "(HUF)" suffix and match the Karta name against landlord names. HUF properties are common in India — the Karta managing the HUF's property IS the landlord for our purposes. Be lenient with name variations.`;
+Context: ${context.replace(/_/g, " ")}
+${context === "agreement_bank_verification" ? "The bank name comes from a Cashfree penny drop (formal bank records). The agreement name comes from a rental agreement PDF. These are very different document types — expect large formatting differences. Only reject if clearly a different person (e.g. tenant adding their own bank instead of landlord's)." : ""}${context === "pan_verification" ? "PAN records use formal legal names. Agreements may have casual/short forms. Only reject if clearly different people." : ""}${context === "pan_huf_verification" ? "This PAN belongs to a Hindu Undivided Family (HUF). Strip '(HUF)' and match the Karta name. HUF property ownership is common in India." : ""}${context === "tenant_verification" ? "The user typed their name casually in the app. The agreement has their formal legal name. Be very lenient — first name only should match." : ""}`;
 
   try {
     const result = await callGemini(prompt);
@@ -327,6 +328,240 @@ function fallbackBuildingNameMatch(consumerName: string, propertyAddress: string
       similarity >= 70 ? "partial" :
       similarity >= 60 ? "weak" : "no_match",
   };
+}
+
+// ==============================================
+// MULTI-CANDIDATE NAME MATCHING (single Gemini call)
+// ==============================================
+
+export interface MultiCandidateMatchResult {
+  matched: boolean;
+  matched_name: string | null;     // Which candidate matched (null if none)
+  confidence: number;              // 0-100
+  reasoning: string;
+  match_type: "exact" | "strong" | "partial" | "weak" | "no_match";
+}
+
+/**
+ * Matches a verified name against ALL candidate names in a SINGLE Gemini call.
+ * Eliminates the multi-call priority bug and is faster (1 API call vs N).
+ */
+export async function matchNameAgainstCandidates(
+  verifiedName: string,
+  candidateNames: string[],
+  context: "landlord_verification" | "tenant_verification" | "bank_verification" | "agreement_bank_verification" | "pan_verification" | "pan_huf_verification" = "landlord_verification"
+): Promise<MultiCandidateMatchResult> {
+  const candidateList = candidateNames.map((n, i) => `  ${i + 1}. "${n}"`).join("\n");
+
+  const prompt = `You are an expert at matching Indian names. Your job is to determine if a bank-verified name matches ANY ONE of the candidate names from a rental agreement.
+
+VERIFIED NAME (from bank records): "${verifiedName}"
+
+CANDIDATE NAMES (from rental agreement — landlords/co-owners):
+${candidateList}
+
+Your task: Does the verified name match ANY ONE of the candidates above? Even a close/partial match to any single candidate is sufficient.
+
+IMPORTANT — Indian names are extremely loose. You MUST account for ALL of these:
+1. Initials vs full names: "R K SHARMA" = "RAMESH KUMAR SHARMA"
+2. First name only vs full name: "NEEL ROY" = "NEEL ROY CRUZ" (just missing surname)
+3. Missing middle names: "RAMESH SHARMA" = "RAMESH KUMAR SHARMA"
+4. Titles/honorifics — IGNORE: MR, MRS, MS, DR, SHRI, SMT, KUMARI, LATE, PROF
+5. Relational suffixes — IGNORE: S/O, W/O, D/O, C/O and everything after them
+6. Common abbreviations: KUMAR=KR=K, MOHAMMED=MOHAMMAD=MD=MOHD, SINGH=SINGHJI
+7. Hindi/Sanskrit transliteration variants: LAKSHMI=LAXMI, SHUBHAM=SUBHAM, KRISHNA=KRUSHNA
+8. Name order swapped: "SHARMA RAMESH" = "RAMESH SHARMA"
+9. Bank name truncation: Banks truncate names — "NEEL ROY" = "NEEL ROY CRUZ"
+10. Extra/missing spaces: "RAMA KRISHNA" = "RAMAKRISHNA"
+11. (HUF) suffix: Strip it
+12. Joint names: "RAMESH / SEEMA SHARMA" matches either one
+
+CRITICAL RULE: Only return matched=false if the verified name clearly belongs to a COMPLETELY DIFFERENT PERSON from ALL candidates. If there is ANY reasonable possibility it matches any one candidate, return matched=true. We are catching fraud (completely wrong person), NOT penalizing formatting differences. Even a close match is fine.
+
+Return ONLY a JSON object:
+{
+  "matched": boolean,
+  "matched_name": string or null (the candidate name that matched, null if none),
+  "confidence": number (0-100),
+  "reasoning": string (brief explanation),
+  "match_type": "exact" | "strong" | "partial" | "weak" | "no_match"
+}
+
+Context: ${context.replace(/_/g, " ")}
+${context === "agreement_bank_verification" ? "The verified name comes from a Cashfree penny drop (formal bank records). The candidates come from a rental agreement PDF. Expect large formatting differences. Only reject if clearly a different person." : ""}${context === "pan_verification" ? "PAN records use formal legal names. Agreements may have casual/short forms. Only reject if clearly different people." : ""}`;
+
+  try {
+    const result = await callGemini(prompt);
+    const parsed = JSON.parse(result) as MultiCandidateMatchResult;
+
+    if (typeof parsed.matched !== "boolean" || typeof parsed.confidence !== "number") {
+      throw new Error("Invalid response format from Gemini");
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Gemini multi-candidate matching failed:", error);
+
+    // Fallback: basic substring/word matching
+    return fallbackMultiCandidateMatch(verifiedName, candidateNames);
+  }
+}
+
+function fallbackMultiCandidateMatch(verifiedName: string, candidateNames: string[]): MultiCandidateMatchResult {
+  const normalize = (s: string) =>
+    s.toUpperCase().replace(/[^A-Z\s]/g, "").replace(/\s+/g, " ").trim();
+
+  const verified = normalize(verifiedName);
+  const verifiedWords = verified.split(" ");
+
+  let bestScore = 0;
+  let bestCandidate: string | null = null;
+
+  for (const candidate of candidateNames) {
+    const norm = normalize(candidate);
+    if (verified === norm) return { matched: true, matched_name: candidate, confidence: 100, reasoning: "Exact match", match_type: "exact" };
+
+    const candidateWords = norm.split(" ");
+    const [shorter, longer] = verifiedWords.length <= candidateWords.length ? [verifiedWords, candidateWords] : [candidateWords, verifiedWords];
+    if (shorter.length >= 1 && shorter.every((w) => longer.includes(w))) {
+      const score = Math.max(82, (shorter.length / longer.length) * 95);
+      if (score > bestScore) { bestScore = score; bestCandidate = candidate; }
+    }
+  }
+
+  if (bestScore >= 70) {
+    return { matched: true, matched_name: bestCandidate, confidence: Math.round(bestScore), reasoning: "Subset word match", match_type: "partial" };
+  }
+
+  return { matched: false, matched_name: null, confidence: 0, reasoning: "No match in fallback", match_type: "no_match" };
+}
+
+// ==============================================
+// UTILITY BILL VERIFICATION (single Gemini call)
+// ==============================================
+
+export interface UtilityVerificationResult {
+  verified: boolean;
+  match_found_in: "landlord_name" | "building_name" | "address" | "none";
+  matched_value: string | null;       // Which landlord/building/address matched
+  confidence: number;                 // 0-100
+  reasoning: string;
+  name_match_type: "exact" | "strong" | "partial" | "weak" | "no_match";
+}
+
+/**
+ * Single Gemini call for electricity bill verification.
+ * Sends ALL context (consumer name, landlord names, property address, bill address)
+ * and asks Gemini: does ANY of this match? Loose matching — any match = pass.
+ */
+export async function verifyUtilityBillWithGemini(
+  consumerName: string,
+  landlordNames: string[],
+  propertyAddress: string,
+  billAddress: string,
+): Promise<UtilityVerificationResult> {
+  const landlordList = landlordNames.map((n, i) => `  ${i + 1}. "${n}"`).join("\n");
+
+  const prompt = `You are an expert at verifying Indian electricity bill ownership. Your job is to determine if an electricity bill belongs to the property described in a rental agreement.
+
+ELECTRICITY BILL DETAILS:
+- Consumer Name: "${consumerName}"
+- Bill Address: "${billAddress || "Not provided"}"
+
+RENTAL AGREEMENT DETAILS:
+- Landlord Name(s):
+${landlordList}
+- Property Address: "${propertyAddress}"
+
+Your task: Does the electricity bill belong to this property? Check ALL of the following — if ANY ONE matches, return verified=true:
+
+1. LANDLORD NAME MATCH: Does the consumer name match ANY of the landlord names?
+   - Apply Indian name looseness: initials, truncation, titles, S/O W/O, transliteration, missing middle names, swapped order
+   - "R K SHARMA" = "RAMESH KUMAR SHARMA", "NEEL ROY" = "NEEL ROY CRUZ"
+   - Even a close/partial match counts
+
+2. BUILDING/SOCIETY NAME MATCH: Is the consumer name actually a building, housing society, RWA, or apartment complex name that matches the property address?
+   - In India, many apartment electricity connections are under the building/RWA/society name, NOT the flat owner
+   - Examples: "GREEN VALLEY APARTMENTS RWA", "PRESTIGE LAKESIDE HABITAT OWNERS ASSOC", "SOBHA DREAM ACRES MAINTENANCE"
+   - Suffixes to recognize: CHS, CHSL, RWA, AOA, OWNERS ASSOCIATION, WELFARE ASSOCIATION, MAINTENANCE COMMITTEE
+
+3. ADDRESS MATCH: Does the bill address match the property address?
+   - Handle Indian address variations: RD=ROAD, NAGAR, COLONY, SOCIETY, pincodes (6 digits)
+   - Building/flat number variations: "FLAT 101 TOWER A" = "A-101"
+   - Even partial address overlap (same area/building) counts
+
+CRITICAL RULES:
+- Default bias = MATCH. We are catching fraud (completely wrong property), NOT penalizing formatting differences.
+- If ANY ONE of the three checks above shows a reasonable match, return verified=true.
+- Only return verified=false if the bill clearly belongs to a DIFFERENT property/person entirely.
+
+Return ONLY a JSON object:
+{
+  "verified": boolean,
+  "match_found_in": "landlord_name" | "building_name" | "address" | "none",
+  "matched_value": string or null (the specific landlord name / building name / address part that matched),
+  "confidence": number (0-100),
+  "reasoning": string (brief explanation of what matched or why nothing matched),
+  "name_match_type": "exact" | "strong" | "partial" | "weak" | "no_match"
+}
+
+If multiple things match, pick the strongest match for match_found_in.`;
+
+  try {
+    const result = await callGemini(prompt);
+    const parsed = JSON.parse(result) as UtilityVerificationResult;
+
+    if (typeof parsed.verified !== "boolean" || typeof parsed.confidence !== "number") {
+      throw new Error("Invalid response format from Gemini");
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Gemini utility verification failed:", error);
+
+    // Fallback: basic word matching against landlord names + address
+    return fallbackUtilityVerification(consumerName, landlordNames, propertyAddress, billAddress);
+  }
+}
+
+function fallbackUtilityVerification(
+  consumerName: string,
+  landlordNames: string[],
+  propertyAddress: string,
+  billAddress: string,
+): UtilityVerificationResult {
+  const normalize = (s: string) =>
+    s.toUpperCase().replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
+  const consumer = normalize(consumerName);
+  const consumerWords = consumer.split(" ");
+
+  // Check landlord names
+  for (const name of landlordNames) {
+    const norm = normalize(name);
+    if (consumer === norm) return { verified: true, match_found_in: "landlord_name", matched_value: name, confidence: 100, reasoning: "Exact name match", name_match_type: "exact" };
+    const nameWords = norm.split(" ");
+    const [shorter, longer] = consumerWords.length <= nameWords.length ? [consumerWords, nameWords] : [nameWords, consumerWords];
+    if (shorter.length >= 1 && shorter.every((w) => longer.includes(w))) {
+      return { verified: true, match_found_in: "landlord_name", matched_value: name, confidence: 80, reasoning: "Subset word match", name_match_type: "partial" };
+    }
+  }
+
+  // Check address overlap
+  if (billAddress && propertyAddress) {
+    const addr1Words = new Set(normalize(propertyAddress).split(" ").filter((w) => w.length > 2));
+    const addr2Words = new Set(normalize(billAddress).split(" ").filter((w) => w.length > 2));
+    const overlap = [...addr1Words].filter((w) => addr2Words.has(w));
+    const score = addr1Words.size > 0 ? (overlap.length / addr1Words.size) * 100 : 0;
+    // Check pincode match
+    const pin1 = propertyAddress.match(/\d{6}/)?.[0];
+    const pin2 = billAddress.match(/\d{6}/)?.[0];
+    if ((pin1 && pin2 && pin1 === pin2) || score >= 50) {
+      return { verified: true, match_found_in: "address", matched_value: pin1 ?? overlap.join(" "), confidence: Math.round(Math.min(score + (pin1 === pin2 ? 30 : 0), 100)), reasoning: "Address overlap", name_match_type: "partial" };
+    }
+  }
+
+  return { verified: false, match_found_in: "none", matched_value: null, confidence: 0, reasoning: "No match found in fallback", name_match_type: "no_match" };
 }
 
 // ==============================================

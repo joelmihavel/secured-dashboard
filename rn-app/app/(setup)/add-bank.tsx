@@ -14,7 +14,7 @@
  * - Spans [21,33] = #FF9A6D accent ("Bank Details")
  * - fontSize 48, lineHeight 64, letterSpacing -2, PlusJakartaSans-Regular
  *
- * Form inputs: 4 fields (Account Holder Name, Account Number, IFSC, PAN CARD)
+ * Form inputs: 3 fields (Account Number, IFSC, PAN CARD) — holder name comes from penny drop
  * - Label: 12px/20px PlusJakartaSans-Medium #A9A9A9
  * - Hint: 14px/20px PlusJakartaSans-Regular #878787 textAlign right
  * - Input: 20px/32px PlusJakartaSans-Regular placeholder #444444
@@ -74,7 +74,6 @@ export default function AddBankScreen() {
   const { tenancy } = useDashboard();
 
   // Bank form state
-  const [accountHolderName, setAccountHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
   const [panCard, setPanCard] = useState('');
@@ -90,12 +89,6 @@ export default function AddBankScreen() {
   const panVerified = panResult?.panVerified === true;
 
   // Clear field-level errors when user types
-  const handleAccountHolderNameChange = useCallback((text: string) => {
-    setAccountHolderName(text);
-    setErrors((prev) => { const { accountHolderName: _, ...rest } = prev; return rest; });
-    setApiError(null);
-  }, []);
-
   const handleAccountNumberChange = useCallback((text: string) => {
     setAccountNumber(text);
     setErrors((prev) => { const { accountNumber: _, ...rest } = prev; return rest; });
@@ -117,7 +110,6 @@ export default function AddBankScreen() {
   // Validate all fields
   const validateAllFields = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!accountHolderName.trim()) newErrors.accountHolderName = 'Required';
     if (!accountNumber.trim()) newErrors.accountNumber = 'Required';
     else if (!validateAccountNumber(accountNumber)) newErrors.accountNumber = '9-18 digits required';
     if (!ifscCode.trim()) newErrors.ifscCode = 'Required';
@@ -127,7 +119,7 @@ export default function AddBankScreen() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [accountHolderName, accountNumber, ifscCode, panCard]);
+  }, [accountNumber, ifscCode, panCard]);
 
   // Fire PAN verification (chained after bank success, or standalone retry)
   const firePanVerification = useCallback((bankAccountId: string) => {
@@ -197,7 +189,6 @@ export default function AddBankScreen() {
         tenancyId: tenancy.id,
         accountNumber: accountNumber.replace(/\s/g, ''),
         ifscCode: ifscCode.toUpperCase(),
-        accountHolderName: accountHolderName.trim(),
       },
       {
         onSuccess: (data) => {
@@ -208,14 +199,7 @@ export default function AddBankScreen() {
             firePanVerification(data.bankAccountId);
           } else {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            const bankError = data.message ||
-              (data.agreementNameMatched === false
-                ? `Account holder "${data.verifiedName ?? 'unknown'}" doesn't match any landlord in your agreement.`
-                : `Name mismatch: verified as "${data.verifiedName ?? 'unknown'}".`);
-            setErrors((prev) => ({
-              ...prev,
-              accountHolderName: bankError,
-            }));
+            setApiError(data.message || 'Bank account verification failed. Please check the details and try again.');
           }
         },
         onError: (error: SetupError) => {
@@ -227,7 +211,7 @@ export default function AddBankScreen() {
         },
       }
     );
-  }, [validateAllFields, tenancy?.id, bankVerified, verificationResult?.bankAccountId, firePanVerification, verifyBank, accountNumber, ifscCode, accountHolderName]);
+  }, [validateAllFields, tenancy?.id, bankVerified, verificationResult?.bankAccountId, firePanVerification, verifyBank, accountNumber, ifscCode]);
 
   // Loading states
   const isLoading = verifyBank.isPending || verifyPanMutation.isPending;
@@ -238,7 +222,6 @@ export default function AddBankScreen() {
 
   // Form validity
   const allFieldsFilled =
-    accountHolderName.length > 0 &&
     accountNumber.length > 0 &&
     ifscCode.length > 0 &&
     panCard.length > 0;
@@ -286,18 +269,7 @@ export default function AddBankScreen() {
           {/* Form - Figma: gap 16 between fields */}
           <View style={styles.formContainer}>
             <TextInput
-              label="Account Holder Name"
-              value={accountHolderName}
-              onChangeText={handleAccountHolderNameChange}
-              placeholder="e.g. John Smith"
-              error={errors.accountHolderName}
-              success={bankFieldSuccess}
-              disabled={bankFieldsDisabled}
-              autoCapitalize="words"
-            />
-
-            <TextInput
-              label="Account holder number"
+              label="Account Number"
               value={accountNumber}
               onChangeText={handleAccountNumberChange}
               placeholder="e.g. 1234567890"

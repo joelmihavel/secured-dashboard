@@ -21,7 +21,7 @@ import {
   handleError,
 } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { matchNamesWithGemini } from "../_shared/gemini.ts";
+import { matchNameAgainstCandidates } from "../_shared/gemini.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
 
 // ==============================================
@@ -291,33 +291,27 @@ serve(async (req) => {
         ?? [];
 
       if (userForMatch?.full_name && tenantNames.length > 0) {
-        let bestMatchIndex = -1;
-        let bestMatchScore = 0;
-        let bestMatchType = "no_match";
+        // Single Gemini call with all tenant names
+        const matchResult = await matchNameAgainstCandidates(
+          userForMatch.full_name,
+          tenantNames,
+          "tenant_verification"
+        );
 
-        for (let i = 0; i < tenantNames.length; i++) {
-          const matchResult = await matchNamesWithGemini(
-            userForMatch.full_name,
-            tenantNames[i],
-            "tenant_verification"
-          );
-          if (matchResult.confidence > bestMatchScore) {
-            bestMatchScore = matchResult.confidence;
-            bestMatchType = matchResult.match_type;
-            bestMatchIndex = i;
-          }
-        }
+        const bestMatchIndex = matchResult.matched_name
+          ? tenantNames.indexOf(matchResult.matched_name)
+          : -1;
 
         await adminClient
           .from("users")
           .update({
             matched_tenant_index: bestMatchIndex >= 0 ? bestMatchIndex : null,
-            tenant_match_score: bestMatchScore,
-            tenant_match_type: bestMatchType,
+            tenant_match_score: matchResult.confidence,
+            tenant_match_type: matchResult.match_type,
           })
           .eq("id", user.id);
 
-        console.log(`[confirm-extraction] Tenant match: index=${bestMatchIndex}, score=${bestMatchScore}, type=${bestMatchType}`);
+        console.log(`[confirm-extraction] Tenant match: index=${bestMatchIndex}, score=${matchResult.confidence}, type=${matchResult.match_type}`);
       } else {
         // Cannot match — mark as no_match
         await adminClient

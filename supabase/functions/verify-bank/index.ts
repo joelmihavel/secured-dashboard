@@ -59,7 +59,7 @@ const NAME_MATCH_THRESHOLD = 0.8;
 
 interface VerifyBankRequest {
   tenancy_id: string;
-  account_holder_name: string;
+  account_holder_name?: string; // Optional — populated from penny drop response if not provided
   account_number: string;
   ifsc_code: string;
   party_type?: "landlord" | "tenant";
@@ -87,7 +87,7 @@ interface CashfreePennyDropResponse {
 
 const requestSchema = {
   tenancy_id: { required: true, type: "string" as const },
-  account_holder_name: { required: true, type: "string" as const, minLength: 2, maxLength: 100 },
+  account_holder_name: { required: false, type: "string" as const, minLength: 2, maxLength: 100 },
   account_number: { required: true, type: "string" as const, minLength: 9, maxLength: 18 },
   ifsc_code: {
     required: true,
@@ -218,19 +218,20 @@ serve(async (req: Request) => {
       const maskedAccount = maskAccountNumber(account_number);
       const encryptedAccount = await encrypt(account_number);
 
+      const demoName = account_holder_name || "DEMO ACCOUNT";
       const { data: demoBankAccount, error: demoErr } = await supabase
         .from("bank_accounts")
         .insert({
           user_id: userId,
           party_type,
-          account_holder_name,
+          account_holder_name: demoName,
           account_number_encrypted: encryptedAccount,
           account_number_masked: maskedAccount,
           ifsc_code: sanitizedIfsc,
           verified: true,
           penny_drop_status: "SUCCESS",
           penny_drop_name_match_score: 100,
-          verified_account_holder_name: account_holder_name,
+          verified_account_holder_name: demoName,
           verified_at: new Date().toISOString(),
           is_primary: true,
           agreement_name_matched: true,
@@ -287,14 +288,16 @@ serve(async (req: Request) => {
     const pennyDropResult = await callCashfreePennyDrop({
       account_number,
       ifsc_code: sanitizedIfsc,
-      account_holder_name,
+      account_holder_name: account_holder_name || "ACCOUNT HOLDER",
     });
 
-    // Calculate name match score (user-typed name vs Cashfree name — kept as secondary data)
-    const nameMatchScore = calculateNameMatchScore(
-      account_holder_name,
-      pennyDropResult.name_at_bank ?? ""
-    );
+    // Use bank-returned name as the canonical account holder name
+    const resolvedAccountHolderName = pennyDropResult.name_at_bank || account_holder_name || "";
+
+    // Secondary score: user-typed name vs bank name (informational only, not used for gating)
+    const nameMatchScore = account_holder_name
+      ? calculateNameMatchScore(account_holder_name, pennyDropResult.name_at_bank ?? "")
+      : 1; // If user didn't provide name, skip this score
 
     // Match Cashfree's name_at_bank against agreement landlord names (shared service)
     let agreementNameMatched = false;
@@ -342,7 +345,7 @@ serve(async (req: Request) => {
       .insert({
         user_id: userId,
         party_type,
-        account_holder_name,
+        account_holder_name: resolvedAccountHolderName || null,
         account_number_encrypted: encryptedAccountNumber,
         account_number_masked: maskAccountNumber(account_number),
         ifsc_code: sanitizedIfsc,
@@ -448,7 +451,7 @@ serve(async (req: Request) => {
         bankAccount.id,
         {
           name_match_score: nameMatchScore,
-          provided_name: account_holder_name,
+          provided_name: account_holder_name || null,
           bank_name: pennyDropResult.name_at_bank,
           agreement_name_matched: agreementNameMatched,
           agreement_match_score: agreementMatchScore,
@@ -478,7 +481,7 @@ serve(async (req: Request) => {
           : pennyDropResult.status !== "SUCCESS"
           ? pennyDropResult.message ?? "Bank account verification failed"
           : !agreementNameMatched
-          ? `The account holder "${nameAtBank}" does not match any landlord name in your agreement. Expected: ${allLandlordNames.join(" or ")}`
+          ? "The bank account holder name does not match any landlord in your rental agreement. Please ensure you are adding your landlord's bank account."
           : "Verification failed",
       },
     };
