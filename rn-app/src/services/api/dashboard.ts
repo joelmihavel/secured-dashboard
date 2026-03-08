@@ -47,7 +47,9 @@ export interface DashboardTenancy {
   lease_start_date: string | null;
   agreement_cert_id: string | null;
   landlord_name: string;
+  landlord_phone: string | null;
   tenant_names: string[];
+  security_deposit: number; // In rupees, from extracted_rental_info
   verification_status: TenancyVerificationStatus;
 }
 
@@ -57,6 +59,7 @@ export interface UpcomingPayment {
   amount_paise: number;
   days_until_due: number;
   is_overdue: boolean;
+  already_paid: boolean;
   cashback_eligible: boolean;
   past_cutoff: boolean;
   cutoff_day: number; // Day of month (1-28), defaults to 7
@@ -71,10 +74,11 @@ export interface CashbackBalance {
   verification_complete: boolean;
   total_savings_paise: number;
   total_savings: number;
+  // Available cashback balance (from RPC get_available_cashback — canonical source)
+  available_balance_paise?: number;
+  available_balance?: number;
   // Legacy (transition period)
   legacy_wallet_balance: number;
-  // DEPRECATED — kept for backward compat during transition
-  available_balance?: number;
   pending_balance?: number;
   total_earned?: number;
   total_used?: number;
@@ -89,6 +93,7 @@ export interface RawRecentPayment {
   paid_at: string | null;
   cashback_earned: number;
   cashback_applied: number;
+  payment_method: string | null;
 }
 
 export interface Notification {
@@ -262,7 +267,7 @@ export function mapRecentPayments(
 ): MappedRecentPayment[] {
   return rawPayments.map((p) => ({
     id: p.id,
-    title: `${parseRentMonthLabel(p.rent_month)} rent`,
+    title: `${parseRentMonthLabel(p.rent_month)}  rent`,
     status: mapPaymentStatusToUI(p.status),
     date: formatPaidAtDate(p.paid_at),
     amount: p.amount,
@@ -277,8 +282,14 @@ export function mapRecentPayments(
  * Pending/processing payments become "pending" entries.
  */
 export function deriveCashbackEntries(
-  rawPayments: RawRecentPayment[]
+  rawPayments: RawRecentPayment[],
+  monthlyRent?: number,
+  discountRate: number = 0.01,
 ): MappedCashbackEntry[] {
+  // Expected cashback per month (1% of agreement rent), used as fallback
+  // when the backend didn't record the cashback amount on the payment
+  const expectedCashback = monthlyRent ? Math.round(monthlyRent * discountRate) : 0;
+
   return rawPayments.map((p) => {
     const monthLabel = parseRentMonthLabel(p.rent_month);
     let status: MappedCashbackEntry['status'];
@@ -296,10 +307,10 @@ export function deriveCashbackEntries(
           statusLabel = 'Paid - On Time';
           amount = cashbackAmount;
         } else {
-          // Paid but no cashback (e.g., verification incomplete at time of payment)
-          status = 'delayed';
-          statusLabel = 'Paid - No Cashback';
-          amount = null;
+          // Paid but cashback not recorded — show expected amount as fallback
+          status = 'paid';
+          statusLabel = 'Paid';
+          amount = expectedCashback > 0 ? expectedCashback : 0;
         }
         break;
       case 'failed':
@@ -323,7 +334,7 @@ export function deriveCashbackEntries(
 
     return {
       id: `cb_${p.id}`,
-      title: `${monthLabel} Cashback`,
+      title: `${monthLabel}  Cashback`,
       status,
       statusLabel,
       amount,

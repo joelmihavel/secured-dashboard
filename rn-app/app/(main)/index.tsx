@@ -141,9 +141,9 @@ export default function HomeScreen() {
     [resolvedData?.recent_payments]
   );
   const cashbackEntries = useMemo(
-    () => deriveCashbackEntries(resolvedData?.recent_payments ?? []),
+    () => deriveCashbackEntries(resolvedData?.recent_payments ?? [], tenancy?.monthly_rent, cashback?.discount_rate),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [resolvedData?.recent_payments]
+    [resolvedData?.recent_payments, tenancy?.monthly_rent, cashback?.discount_rate]
   );
 
   // Tab state for Recent Payments / Cashbacks
@@ -178,10 +178,11 @@ export default function HomeScreen() {
   const userName = user?.first_name ?? 'there';
 
   // Payment due calculations
-  const daysUntilDue = upcomingPayment?.days_until_due ?? 0;
-  const isOverdue = upcomingPayment?.is_overdue ?? false;
-  const isMissed = isOverdue && daysUntilDue <= -30 && daysUntilDue > -60; // Missed if overdue by more than 30 days
-  const isMultipleOverdue = isOverdue && daysUntilDue <= -60;
+  const alreadyPaid = upcomingPayment?.already_paid ?? false;
+  const daysUntilDue = alreadyPaid ? null : (upcomingPayment?.days_until_due ?? 0);
+  const isOverdue = alreadyPaid ? false : (upcomingPayment?.is_overdue ?? false);
+  const isMissed = isOverdue && (daysUntilDue ?? 0) <= -30 && (daysUntilDue ?? 0) > -60; // Missed if overdue by more than 30 days
+  const isMultipleOverdue = isOverdue && (daysUntilDue ?? 0) <= -60;
   const rentAmount = upcomingPayment?.amount ?? tenancy?.monthly_rent ?? 0;
 
   // Derive the missed month name from rent_month (ISO date "YYYY-MM-DD")
@@ -200,8 +201,8 @@ export default function HomeScreen() {
   }, [upcomingPayment?.rent_month]);
 
   // Cashback values
-  const cashbackBalance = cashback?.total_savings ?? 0;
-  const allTimeCashback = cashback?.total_savings ?? 0;
+  const cashbackBalance = cashback?.available_balance ?? cashback?.legacy_wallet_balance ?? 0;
+  const allTimeCashback = cashback?.total_savings ?? cashbackBalance;
   const cashbackRate = (cashback?.discount_rate ?? 0.01) * 100; // Backend sends 0.01 (1%), UI displays as percentage
 
   // Show bottom footer for active payment states when there's an upcoming payment
@@ -272,25 +273,85 @@ export default function HomeScreen() {
 
     // 1. Upcoming payment (always first if exists)
     if (upcomingPayment && rentAmount > 0) {
-      let earlyStatus: 'upcoming' | 'late' | 'missed' = 'upcoming';
-      if (isMissed || isMultipleOverdue) earlyStatus = 'missed';
-      else if (isOverdue) earlyStatus = 'late';
+      // When already paid, show paid/late stamp with receipt link
+      if (alreadyPaid) {
+        // Find the successful rent payment for this month.
+        // upcomingPayment.rent_month is "YYYY-MM", recent_payments[].rent_month is "YYYY-MM-DD".
+        // Match by prefix to handle both formats. Also filter for real rent (not ₹10 test payments).
+        const rentMonthPrefix = upcomingPayment.rent_month; // "2026-03"
+        const paidPayment = resolvedData?.recent_payments?.find(
+          (p: RawRecentPayment) => p.status === 'success'
+            && p.rent_month.startsWith(rentMonthPrefix)
+            && p.amount >= rentAmount
+        );
+        const rawCashback = paidPayment
+          ? (paidPayment.cashback_applied > 0 ? paidPayment.cashback_applied : paidPayment.cashback_earned)
+          : 0;
+        const cashbackAmount = rawCashback > 0 ? rawCashback : Math.round(rentAmount * (cashbackRate / 100));
 
-      items.push({
-        type: 'payment',
-        id: 'upcoming',
-        data: {
-          monthName: formatMonth(upcomingPayment.rent_month),
-          cashbackEarned: Math.round(rentAmount * (cashbackRate / 100)),
-          status: earlyStatus,
-          yearlyStamps,
-          lateCount: summaryLate,
-          missedCount: summaryMissed,
-          onAddPaymentMethod: paymentMethods.length === 0 ? handleAddPayment : undefined,
-          rentDueDay: tenancy.rent_due_day,
-          cardIndex: cardCounter++,
-        }
-      });
+        // Determine if payment was late (paid after rent due day)
+        const paidStatus: 'paid' | 'late' = (() => {
+          if (!paidPayment?.paid_at || !tenancy?.rent_due_day) return 'paid';
+          const paidDate = new Date(paidPayment.paid_at);
+          // Due date is rent_due_day of the payment month (IST)
+          const monthParts = paidPayment.rent_month.match(/^(\d{4})-(\d{2})/);
+          if (!monthParts) return 'paid';
+          const dueDate = new Date(
+            parseInt(monthParts[1]),
+            parseInt(monthParts[2]) - 1,
+            tenancy.rent_due_day,
+            23, 59, 59 // End of due day IST (approx — generous)
+          );
+          return paidDate > dueDate ? 'late' : 'paid';
+        })();
+
+        items.push({
+          type: 'payment',
+          id: 'upcoming',
+          data: {
+            monthName: formatMonth(upcomingPayment.rent_month),
+            cashbackEarned: cashbackAmount,
+            status: paidStatus,
+            onViewReceipt: paidPayment ? () => {
+              router.push({
+                pathname: '/(payment)/status',
+                params: {
+                  paymentId: paidPayment.id,
+                  amount: String(paidPayment.amount),
+                  method: paidPayment.payment_method ?? '',
+                  initialStatus: 'success',
+                  source: 'receipt_view',
+                  landlordName: tenancy?.landlord_name ?? '',
+                  agreementId: tenancy?.agreement_cert_id ?? '',
+                },
+              } as never);
+            } : undefined,
+            yearlyStamps,
+            lateCount: summaryLate,
+            missedCount: summaryMissed,
+            cardIndex: cardCounter++,
+          }
+        });
+      } else {
+        let earlyStatus: 'upcoming' | 'late' | 'missed' = 'upcoming';
+        if (isMissed || isMultipleOverdue) earlyStatus = 'missed';
+        else if (isOverdue) earlyStatus = 'late';
+
+        items.push({
+          type: 'payment',
+          id: 'upcoming',
+          data: {
+            monthName: formatMonth(upcomingPayment.rent_month),
+            cashbackEarned: Math.round(rentAmount * (cashbackRate / 100)),
+            status: earlyStatus,
+            yearlyStamps,
+            lateCount: summaryLate,
+            missedCount: summaryMissed,
+            rentDueDay: tenancy.rent_due_day,
+            cardIndex: cardCounter++,
+          }
+        });
+      }
     }
 
     // 2. Historical stamps (most recent first, deduplicated against upcoming)
@@ -308,7 +369,9 @@ export default function HomeScreen() {
           id: `stamp-${stamp.month}`,
           data: {
             monthName: formatMonth(stamp.month),
-            cashbackEarned: (stamp.cashback_applied_paise ?? 0) / 100,
+            cashbackEarned: (stamp.cashback_applied_paise ?? 0) > 0
+              ? stamp.cashback_applied_paise / 100
+              : hasPayment ? Math.round(rentAmount * (cashbackRate / 100)) : 0,
             status: cardStatus,
             onViewReceipt: hasPayment ? () => {
               router.push({
@@ -316,6 +379,7 @@ export default function HomeScreen() {
                 params: {
                   paymentId: stamp.payment_id!,
                   amount: String((stamp.amount_paise ?? 0) / 100),
+                  method: stamp.payment_method ?? '',
                   initialStatus: 'success',
                   source: 'receipt_view',
                   landlordName: tenancy?.landlord_name ?? '',
@@ -323,37 +387,6 @@ export default function HomeScreen() {
                 },
               } as never);
             } : undefined,
-            yearlyStamps,
-            lateCount: summaryLate,
-            missedCount: summaryMissed,
-            cardIndex: cardCounter++,
-          }
-        });
-      });
-    } else if (recentPayments.length > 0) {
-      // Fallback: Use recent_payments from dashboard when stamps API hasn't loaded
-      recentPayments.slice(0, 3).forEach((payment) => {
-        items.push({
-          type: 'payment',
-          id: `payment-${payment.id}`,
-          data: {
-            monthName: payment.title.split(' ')[0] + " '26",
-            cashbackEarned: payment.amount * (cashbackRate / 100),
-            status: payment.status === 'failed' ? 'missed' : payment.status === 'pending' || payment.status === 'processing' ? 'upcoming' : 'paid',
-            onViewReceipt: () => {
-              router.push({
-                pathname: '/(payment)/status',
-                params: {
-                  paymentId: payment.id,
-                  amount: String(payment.amount),
-                  method: 'upi',
-                  initialStatus: 'success',
-                  source: 'receipt_view',
-                  landlordName: tenancy?.landlord_name ?? '',
-                  agreementId: tenancy?.agreement_cert_id ?? '',
-                },
-              } as never);
-            },
             yearlyStamps,
             lateCount: summaryLate,
             missedCount: summaryMissed,
@@ -387,6 +420,8 @@ export default function HomeScreen() {
     paymentMethods,
     upcomingPayment,
     rentAmount,
+    alreadyPaid,
+    resolvedData,
     isMissed,
     isMultipleOverdue,
     isOverdue,
@@ -484,7 +519,7 @@ export default function HomeScreen() {
         const handleHowItWorks = useCallback(async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           try {
-            await Linking.openURL('https://flent.in/secured/how-it-works-for-landlords');
+            await Linking.openURL('https://hiw-secured.flent.in/');
           } catch (e) {
             console.warn('Failed to open URL:', e);
           }
@@ -686,6 +721,7 @@ export default function HomeScreen() {
             emptyStateVariant,
             carouselItems,
             daysUntilDue,
+            alreadyPaid,
             isOverdue,
             isMissed,
             isMultipleOverdue,
@@ -751,7 +787,8 @@ interface ContentProps {
   cashbackEntries: MappedCashbackEntry[];
   emptyStateVariant: EmptyStateVariant;
   carouselItems: CarouselCardItem[];
-  daysUntilDue: number;
+  daysUntilDue: number | null;
+  alreadyPaid: boolean;
   isOverdue: boolean;
   isMissed: boolean;
   isMultipleOverdue: boolean;
@@ -786,6 +823,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     emptyStateVariant,
     carouselItems,
     daysUntilDue,
+    alreadyPaid,
     isOverdue,
     isMissed,
     isMultipleOverdue,
@@ -826,7 +864,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
           <View style={styles.contentContainer}>
             <HomeEmptyState
               variant={emptyStateVariant}
-              daysUntilDue={daysUntilDue}
+              daysUntilDue={daysUntilDue ?? undefined}
               carouselItems={carouselItems}
               bankDetailsComplete={verificationStatus?.bank_verified ?? false}
               addressProofComplete={verificationStatus?.utility_verified ?? false}
@@ -855,8 +893,8 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
       }
 
       // Sub-case B: Has transactions — render active-style layout inline
-      const pvHeadlineVariant = isOverdue ? 'overdue' : 'due';
-      const pvDaysValue = isOverdue ? Math.abs(daysUntilDue) : daysUntilDue;
+      const pvHeadlineVariant = alreadyPaid ? 'paid' : isOverdue ? 'overdue' : 'due';
+      const pvDaysValue = isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
 
       return (
         <View style={styles.contentContainer}>
@@ -881,11 +919,21 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
                 onPaymentPress={onPaymentPress}
               />
             ) : (
-              <CashbackEmptyState
-                accruedAmount={cashbackBalance}
-                allTimeTotal={allTimeCashback}
-                cashbackRate={cashbackRate}
-              />
+              cashbackEntries.length > 0 ? (
+                <CashbacksList
+                  balance={cashbackBalance}
+                  allTimeTotal={allTimeCashback}
+                  cashbackRate={cashbackRate}
+                  entries={cashbackEntries}
+                  onEntryPress={onCashbackEntryPress}
+                />
+              ) : (
+                <CashbackEmptyState
+                  accruedAmount={cashbackBalance}
+                  allTimeTotal={allTimeCashback}
+                  cashbackRate={cashbackRate}
+                />
+              )
             )}
           </View>
           {/* Divider — Figma 684:9207 */}
@@ -905,8 +953,8 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     case 'payment_due':
     case 'payment_overdue':
       // Active states with payment methods, tabs, and payment list
-      const headlineVariant = isMultipleOverdue ? 'multiple_overdue' : isMissed ? 'missed' : isOverdue ? 'overdue' : 'due';
-      const daysValue = isOverdue ? Math.abs(daysUntilDue) : daysUntilDue;
+      const headlineVariant = alreadyPaid ? 'paid' : isMultipleOverdue ? 'multiple_overdue' : isMissed ? 'missed' : isOverdue ? 'overdue' : 'due';
+      const daysValue = isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
 
       return (
         <View style={styles.contentContainer}>

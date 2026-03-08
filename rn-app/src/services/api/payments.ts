@@ -1246,6 +1246,8 @@ export interface PaymentStampEntry {
   amount_paise: number | null;
   /** Cashback applied (instant discount) in paise for this month's payment. null if no payment. */
   cashback_applied_paise: number | null;
+  /** Payment method used (e.g. 'CC', 'upi', 'netbanking'). null if no payment. */
+  payment_method: string | null;
   /** @deprecated Always 0 in instant-discount model. Use cashback_applied_paise instead. */
   cashback_earned: number;
 }

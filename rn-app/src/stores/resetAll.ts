@@ -5,6 +5,7 @@
  * Resets all Zustand stores and clears the React Query cache.
  */
 
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from './auth';
 import { useUploadStore } from './upload';
 import { useWaitlistStore } from './waitlist';
@@ -25,4 +26,7 @@ export function clearAllStores() {
   useSetupStore.getState().reset();
   useProfileStore.getState().reset();
   queryClient.clear();
+
+  // Clear cached journey route so next launch goes through full resolution
+  SecureStore.deleteItemAsync('flent_last_journey_target').catch(() => {});
 }

@@ -20,6 +20,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SecureStore from 'expo-secure-store';
 import { getWaitlistStatus } from '@/src/services/api/waitlist';
 const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
 const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
@@ -30,6 +31,8 @@ import { usePaymentStore } from '@/src/stores/payment';
 import { isReviewMode } from '@/src/review/reviewMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { supabase } from '@/src/services/supabase/client';
+
+const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
 // Global screenshot params for dev pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
@@ -185,6 +188,28 @@ export default function Index() {
         }
       }
 
+      // ── FAST PATH: Use cached last route for instant navigation ──
+      // Avoids 1-3s of network calls (getUser + PostgREST) on every app open.
+      // The cached route is validated in background; if stale, user gets
+      // redirected on next render cycle.
+      const cachedRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
+      if (cachedRoute && (cachedRoute === '/(main)' || cachedRoute === '/(setup)' || cachedRoute === '/(waitlist)')) {
+        console.log('[journey-router] Fast path: using cached route', cachedRoute);
+        setTarget(cachedRoute);
+        setJourneyResolved(true);
+        // Validate in background — if user_status changed, redirect
+        queryUserStatus().then(async (userStatus) => {
+          if (!userStatus) return; // Network failed, keep cached route
+          const correctTarget = statusToTarget(userStatus);
+          if (correctTarget && correctTarget !== cachedRoute) {
+            console.log('[journey-router] Background validation: route changed', cachedRoute, '->', correctTarget);
+            SecureStore.setItemAsync(LAST_ROUTE_KEY, correctTarget).catch(() => {});
+            router.replace(correctTarget as never);
+          }
+        }).catch(() => {}); // Non-fatal background check
+        return;
+      }
+
       // ── PRIMARY PATH: PostgREST (getUser validates session server-side) ──
       let userStatus = await queryUserStatus();
 
@@ -205,33 +230,21 @@ export default function Index() {
 
       // ── ROUTE ──
       if (!userStatus) {
-        // Both paths failed. Verify the session is still valid — if getUser()
-        // fails here, the auth user was deleted server-side. Force sign-out
-        // instead of routing to upload (which would show a broken skeleton).
-        const { error: verifyError } = await supabase.auth.getUser();
-        if (verifyError) {
-          // Distinguish auth errors (user deleted/session revoked) from network errors.
-          // Network errors should NOT sign out — the session may still be valid.
-          const isAuthError = verifyError.status === 401
-            || verifyError.status === 403
-            || verifyError.status === 404
-            || verifyError.message?.includes('not found')
-            || verifyError.message?.includes('User not found')
-            || verifyError.message?.includes('invalid claim')
-            || verifyError.message?.includes('session_not_found');
-
-          if (isAuthError) {
-            console.warn('[journey-router] Auth error, forcing sign-out:', verifyError.message);
-            await supabase.auth.signOut();
-            setTarget('/(auth)/beta-splash');
-          } else {
-            // Network/timeout error — trust cached session, route to upload as safe default
-            console.warn('[journey-router] Network error (not signing out):', verifyError.message);
-            setTarget('/(agreement)/upload');
-          }
+        // Both paths failed. Check if we still have a cached session before
+        // giving up. Use getSession() (reads from storage, auto-refreshes if
+        // expired) instead of getUser() (network call that fails on stale tokens).
+        // A 401 from getUser() does NOT mean the user was deleted — it just means
+        // the access token expired. Only sign out if there's truly no session.
+        const { data: { session: fallbackSession } } = await supabase.auth.getSession();
+        if (!fallbackSession) {
+          // No session at all — user is genuinely signed out
+          console.warn('[journey-router] No session after both paths failed — signing out');
+          setTarget('/(auth)/beta-splash');
           setJourneyResolved(true);
           return;
         }
+        // Session exists but routing failed (transient network issue) — safe default
+        console.warn('[journey-router] Session valid but routing failed — defaulting to upload');
         // Session valid but no user_status — genuinely new user, go to upload
         setTarget('/(agreement)/upload');
         setJourneyResolved(true);
@@ -328,10 +341,18 @@ export default function Index() {
     if (!rootNavigationState?.key) return;
     hasNavigatedRef.current = true;
     router.replace(target as never);
+    // Cache the route for instant navigation on next app launch
+    if (target === '/(main)' || target === '/(setup)' || target === '/(waitlist)') {
+      SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
+    } else if (target === '/(auth)/beta-splash') {
+      // User signed out — clear cached route
+      SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
+    }
     // Hide native splash AFTER navigation fires — keeps splash visible during
     // font loading, auth checks, and journey resolution (prevents black screen).
-    // Small delay lets the target screen mount before the splash fades.
-    setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 150);
+    // 500ms gives the target screen time to mount and render its first frame.
+    // The native splash (same #131313 background) is visually seamless.
+    setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 500);
   }, [journeyResolved, target, router, rootNavigationState?.key]);
 
   // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack

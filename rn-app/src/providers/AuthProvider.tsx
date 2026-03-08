@@ -79,7 +79,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (event === 'SIGNED_OUT') {
-          handleSignOut();
+          // Guard: only sign out if the user genuinely has no valid session.
+          // The SDK fires SIGNED_OUT on transient refresh failures (network
+          // timeout, CF proxy cold-start, ISP DNS block). Verify with getSession()
+          // before actually logging the user out.
+          supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+            if (!currentSession) {
+              handleSignOut();
+            } else {
+              console.warn('[AuthProvider] SIGNED_OUT fired but session still exists — ignoring (transient refresh failure)');
+            }
+          }).catch(() => {
+            // getSession() itself failed — don't log out on network errors
+            console.warn('[AuthProvider] SIGNED_OUT + getSession() failed — keeping session');
+          });
         } else if (event === 'TOKEN_REFRESHED') {
           if (newSession) {
             // Token refresh succeeded — update with fresh tokens

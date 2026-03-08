@@ -57,7 +57,9 @@ interface DashboardData {
     lease_start_date: string | null;
     lease_end_date: string | null;
     landlord_name: string;
+    landlord_phone: string | null;
     tenant_names: string[];
+    security_deposit: number;
     agreement_cert_id: string | null;
     verification_status: {
       bank_verified: boolean;
@@ -263,16 +265,16 @@ serve(async (req: Request) => {
         .eq("id", userId)
         .single(),
 
-      // 2. Active tenancy (join extracted_rental_info for tenant_names)
+      // 2. Active tenancy (join extracted_rental_info for tenant_names + security_deposit)
       supabase
         .from("tenancies")
         .select(`
           id, status, property_address, property_city,
           monthly_rent_paise, maintenance_paise, rent_due_day, lease_start_date, lease_end_date,
-          landlord_name, agreement_cert_id,
+          landlord_name, landlord_phone, agreement_cert_id,
           bank_verified, utility_verified, landlord_approved, landlord_response,
           cashback_cutoff_day, created_at,
-          extracted_rental_info:extracted_rental_info_id ( tenant_names )
+          extracted_rental_info:extracted_rental_info_id ( tenant_names, security_deposit_paise )
         `)
         .eq("user_id", userId)
         .in("status", ["active", "pending_verification"])
@@ -280,12 +282,12 @@ serve(async (req: Request) => {
         .limit(1)
         .maybeSingle(),
 
-      // 3. Total instant discount savings
+      // 3. Total cashback earned (earned + discount entries)
       supabase
         .from("cashback_ledger")
-        .select("amount_paise")
+        .select("amount_paise, transaction_type")
         .eq("user_id", userId)
-        .eq("transaction_type", "discount"),
+        .in("transaction_type", ["earned", "discount"]),
 
       // 4. Legacy wallet balance (transition period)
       supabase.rpc("get_available_cashback", { p_user_id: userId }),
@@ -293,7 +295,7 @@ serve(async (req: Request) => {
       // 5. Recent payments (last 5)
       supabase
         .from("payments")
-        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise")
+        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise, payment_method")
         .eq("user_id", userId)
         .neq("status", "initiated")
         .order("created_at", { ascending: false })
@@ -366,14 +368,18 @@ serve(async (req: Request) => {
       const rentMonthYYYYMM = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
       const rentMonthStr = `${rentMonthYYYYMM}-01`;
 
-      // Check if a successful payment already exists for this month (UI indicator only)
-      const { data: existingPayment } = await supabase
+      // Check if the actual rent was paid this month.
+      // Only count payments where rent_amount_paise >= monthly_rent_paise (ignores ₹10 test payments).
+      // Use limit(1) instead of maybeSingle() — multiple qualifying payments may exist.
+      const { data: existingPayments } = await supabase
         .from("payments")
-        .select("id, status")
+        .select("id, status, rent_amount_paise")
         .eq("tenancy_id", tenancy.id)
         .eq("payment_month", rentMonthStr)
         .eq("status", "success")
-        .maybeSingle();
+        .gte("rent_amount_paise", tenancy.monthly_rent_paise)
+        .limit(1);
+      const existingPayment = existingPayments?.[0] ?? null;
 
       const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
       const cutoffDate = new Date(Date.UTC(currentYear, currentMonth, cutoffDay, 18, 29, 59, 999));
@@ -393,11 +399,13 @@ serve(async (req: Request) => {
       };
     }
 
-    // Calculate savings summary (instant discount model)
+    // Calculate savings summary (earned + discount entries)
     const totalSavingsPaise = discountEntries.reduce(
       (sum: number, e: { amount_paise: number }) => sum + e.amount_paise, 0
     );
-    const legacyBalance = (legacyWalletBalance ?? 0) / 100;
+    // Available cashback balance from RPC (canonical source of truth)
+    const availableCashbackPaise = legacyWalletBalance ?? 0;
+    const legacyBalance = availableCashbackPaise / 100;
     const maxDiscountPaise = tenancy ? Math.floor(tenancy.monthly_rent_paise * 0.01) : 0;
     const verificationComplete = tenancy
       ? tenancy.bank_verified && tenancy.utility_verified && tenancy.landlord_approved
@@ -412,6 +420,7 @@ serve(async (req: Request) => {
       paid_at: p.paid_at,
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
       cashback_applied: (p.cashback_applied_paise ?? 0) / 100,
+      payment_method: p.payment_method ?? null,
     }));
 
     // Format notifications
@@ -457,7 +466,9 @@ serve(async (req: Request) => {
             lease_start_date: tenancy.lease_start_date ?? null,
             lease_end_date: tenancy.lease_end_date,
             landlord_name: tenancy.landlord_name,
+            landlord_phone: tenancy.landlord_phone ?? null,
             tenant_names: (tenancy as any).extracted_rental_info?.tenant_names ?? [],
+            security_deposit: ((tenancy as any).extracted_rental_info?.security_deposit_paise ?? 0) / 100,
             agreement_cert_id: tenancy.agreement_cert_id ?? null,
             verification_status: {
               bank_verified: tenancy.bank_verified,
@@ -475,6 +486,8 @@ serve(async (req: Request) => {
         verification_complete: verificationComplete,
         total_savings_paise: totalSavingsPaise,
         total_savings: totalSavingsPaise / 100,
+        available_balance_paise: availableCashbackPaise,
+        available_balance: legacyBalance,
         legacy_wallet_balance: legacyBalance,
       },
       recent_payments: recentPayments,

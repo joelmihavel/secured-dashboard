@@ -434,7 +434,7 @@ export default function PaymentStatusScreen() {
   const params = useLocalSearchParams() as unknown as StatusParams;
   const paymentId = params.paymentId ?? '';
   const amount = params.amount ?? '32,175';
-  const method = (params.method ?? 'upi') as 'upi' | 'card' | 'netbanking';
+  const method = (params.method ?? '') as string;
   const cashback = params.cashback ?? '0';
   const transactionId = params.transactionId ?? `SEC${Date.now().toString().slice(-8)}`;
   const errorMessage = params.error ?? '';
@@ -975,7 +975,7 @@ export default function PaymentStatusScreen() {
       amount: formatted,
       cashbackApplied: Number(cashback) || 0,
       date: formatDisplayDate(new Date().toISOString()),
-      method: method.toUpperCase(),
+      method: method ? method.toUpperCase() : '\u2014',
       landlordName: params.landlordName || 'N/A',
       panCard: 'N/A',
       agreementId: params.agreementId ? `#${params.agreementId}` : 'N/A',

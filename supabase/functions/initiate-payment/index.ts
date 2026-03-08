@@ -271,16 +271,10 @@ serve(async (req: Request) => {
       throw new PaymentError("Landlord bank account not verified yet", "BANK_NOT_VERIFIED");
     }
 
-    // Amount guardrails: minimum INR 100, maximum = monthly rent
+    // Amount guardrail: minimum INR 10
     const MIN_AMOUNT_PAISE = 1000; // INR 10
     if (validatedBody.amount_paise && validatedBody.amount_paise < MIN_AMOUNT_PAISE) {
       throw new PaymentError("Minimum payment amount is \u20B910", "AMOUNT_TOO_LOW");
-    }
-    if (validatedBody.amount_paise && validatedBody.amount_paise > tenancy.monthly_rent_paise) {
-      throw new PaymentError(
-        "Amount cannot exceed monthly rent",
-        "AMOUNT_EXCEEDS_RENT"
-      );
     }
 
     // Credit card requires landlord approval + utility verification
@@ -421,7 +415,7 @@ serve(async (req: Request) => {
 
     // Cutoff gate — cashback only if payment is made on or before the cutoff day
     // cutoff_day comes from the rent agreement; defaults to 7 if not specified
-    const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
+    const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day ?? 7;
     const [rentYear, rentMonthNum] = rent_month.split("-").map(Number);
     // Cutoff date: end of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
     const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));

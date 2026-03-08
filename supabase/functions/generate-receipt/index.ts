@@ -154,7 +154,7 @@ serve(async (req: Request) => {
       .select(`
         id, payu_txn_id, payu_mihpayid, payu_bank_ref_num,
         payment_gateway, gateway_payment_id, payment_method_details,
-        amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
+        rent_amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
         payment_method, status, rent_month, paid_at, created_at, due_date,
         tenancies (
           id, property_address, property_city, property_state, property_pincode,
@@ -211,7 +211,7 @@ serve(async (req: Request) => {
     const taxData = includeTax ? calculateTax(pgFeePaise) : null;
 
     // Build receipt data
-    const amountPaise = payment.amount_paise ?? 0;
+    const amountPaise = payment.rent_amount_paise ?? 0;
     const cashbackAppliedPaise = payment.cashback_applied_paise ?? 0;
     const cashbackEarnedPaise = payment.cashback_earned_paise ?? 0;
     const netAmountPaise = amountPaise - cashbackAppliedPaise;

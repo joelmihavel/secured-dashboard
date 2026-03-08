@@ -126,7 +126,7 @@ function CashbacksListComponent({
 
               {/* Right: Amount */}
               <View style={styles.historyAmountContainer}>
-                {entry.amount !== null ? (
+                {entry.amount !== null && entry.amount !== undefined ? (
                   <>
                     <Text style={styles.historyRupee}>₹</Text>
                     <Text style={styles.historyAmount}>{entry.amount}</Text>

@@ -59,8 +59,6 @@ export interface PaymentMonthData {
   lateCount?: number;
   /** Cumulative missed payment count (for yellow badge number) */
   missedCount?: number;
-  /** Action for zero state when there are no payment methods setup */
-  onAddPaymentMethod?: () => void;
   /** Rent due day of month (e.g. 4 for 4th) — shown in upcoming stamp */
   rentDueDay?: number;
   /** Unique index to cycle between 3D furniture assets */
@@ -242,40 +240,24 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
           )}
         </View>
 
-        {/* Bottom: Cashback Box (Frame 2095586539) or Add Payment Method */}
-        {data.onAddPaymentMethod ? (
-          <LinearGradient
-            colors={['rgba(77, 77, 77, 0.08)', 'rgba(179, 179, 179, 0.08)']}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.cashbackBox}
-          >
-            <Pressable
-              onPress={data.onAddPaymentMethod}
-              style={styles.addPaymentContainer}
-            >
-              <Text style={styles.addPaymentText}>+ add new payment method</Text>
-            </Pressable>
-          </LinearGradient>
-        ) : (
-          <LinearGradient
-            colors={['rgba(77, 77, 77, 0.08)', 'rgba(179, 179, 179, 0.08)']}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.cashbackBox}
-          >
-            <View style={styles.cashbackRow}>
-              <Text style={styles.cashbackLabel}>{config.label}</Text>
-              <View style={styles.cashbackAmountContainer}>
-                <RNText style={styles.cashbackCurrency}>₹</RNText>
-                <RNText style={styles.cashbackAmountValue}>
-                  {Math.round(data.cashbackEarned)}
-                </RNText>
-                <RNText style={styles.cashbackDecimal}>.00</RNText>
-              </View>
+        {/* Bottom: Cashback Box (Frame 2095586539) */}
+        <LinearGradient
+          colors={['rgba(77, 77, 77, 0.08)', 'rgba(179, 179, 179, 0.08)']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.cashbackBox}
+        >
+          <View style={styles.cashbackRow}>
+            <Text style={styles.cashbackLabel}>{config.label}</Text>
+            <View style={styles.cashbackAmountContainer}>
+              <RNText style={styles.cashbackCurrency}>₹</RNText>
+              <RNText style={styles.cashbackAmountValue}>
+                {Math.round(data.cashbackEarned)}
+              </RNText>
+              <RNText style={styles.cashbackDecimal}>.00</RNText>
             </View>
-          </LinearGradient>
-        )}
+          </View>
+        </LinearGradient>
       </View>
     </Animated.View>
   );
@@ -525,19 +507,6 @@ const styles = StyleSheet.create({
     fontSize: sf(14),
     lineHeight: sf(28),
     fontFamily: 'PlusJakartaSans-Regular',
-  },
-  addPaymentContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addPaymentText: {
-    color: '#FF9A6D',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    fontFamily: 'PlusJakartaSans-Regular',
-    textAlign: 'center',
-    textDecorationLine: 'underline', // Figma 705:6521
   },
 
   // BACK CARD

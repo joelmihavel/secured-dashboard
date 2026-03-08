@@ -227,7 +227,7 @@ serve(async (req: Request) => {
     // Find the payment record with tenancy details (including monthly_rent_paise for cashback cap)
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
-      .select("*, tenancy:tenancies(user_id, monthly_rent_paise, bank_verified, utility_verified, landlord_approved)")
+      .select("*, tenancy:tenancies(user_id, monthly_rent_paise, bank_verified, utility_verified, landlord_approved, cashback_cutoff_day, rent_due_day)")
       .eq("payu_txn_id", payload.txnid)
       .single();
 
@@ -424,8 +424,30 @@ serve(async (req: Request) => {
       }
     }
 
+    // Cutoff re-validation: ensure payment was completed before the cashback cutoff
+    // This prevents edge cases where payment was initiated before cutoff but completed after
+    let cashbackBlockedByCutoff = false;
+    if (isSuccess && (payment.cashback_applied_paise > 0 || payment.cashback_earned_paise > 0)) {
+      const tenancyData = payment.tenancy as Record<string, any> | null;
+      const cutoffDay = tenancyData?.cashback_cutoff_day ?? tenancyData?.rent_due_day ?? 7;
+      const [rentYear, rentMonthNum] = (payment.payment_month as string).split("-").map(Number);
+      // End of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
+      const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
+      const paidAt = new Date(updateData.paid_at ?? payment.paid_at ?? Date.now());
+
+      if (paidAt > cutoffDate) {
+        console.warn(`[payment-webhook] Payment ${payment.id} completed past cutoff (paid: ${paidAt.toISOString()}, cutoff: ${cutoffDate.toISOString()}). Zeroing cashback.`);
+        cashbackBlockedByCutoff = true;
+        // Zero out cashback on the payment record
+        updateData.cashback_applied_paise = 0;
+        updateData.cashback_earned_paise = 0;
+        updateData.intended_cashback_paise = 0;
+        updateData.accumulated_redeemed_paise = 0;
+      }
+    }
+
     // PATH A: Verified user — instant discount was applied at initiation
-    if (isSuccess && payment.cashback_applied_paise > 0 && userId) {
+    if (isSuccess && payment.cashback_applied_paise > 0 && userId && !cashbackBlockedByCutoff) {
       try {
         await supabase.from("cashback_ledger").insert({
           user_id: userId,
@@ -464,7 +486,7 @@ serve(async (req: Request) => {
     }
 
     // PATH B: Unverified user — earn 1% into balance
-    if (isSuccess && payment.cashback_earned_paise > 0 && userId) {
+    if (isSuccess && payment.cashback_earned_paise > 0 && userId && !cashbackBlockedByCutoff) {
       try {
         await supabase.from("cashback_ledger").insert({
           user_id: userId,
