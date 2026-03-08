@@ -68,7 +68,7 @@ Comprehensive E2E testing of the Flent Secured backend was performed. The backen
 
 **Processing Pipeline**:
 1. GCP Document AI for OCR (secured-by-flent project)
-2. Vertex AI Gemini 2.5 Flash for entity extraction (flent-ai-project-2)
+2. Vertex AI Gemini 3 Flash for entity extraction (flent-ai-project-2)
 3. Fallback to Gemini API key if Vertex AI fails
 
 ### 2.3 confirm-extraction Endpoint

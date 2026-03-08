@@ -155,7 +155,7 @@ Indian ISPs (Jio, Airtel, and others) periodically block `*.supabase.co` domains
 | Service | Purpose |
 |---------|---------|
 | PayU India | Payment gateway (UPI, cards, net banking) |
-| Google Gemini 1.5 Flash | AI-powered rent agreement data extraction |
+| Google Gemini 3 Flash | AI-powered rent agreement data extraction |
 | Twilio | WhatsApp messages and SMS for landlord invites, notifications, and OTP |
 | Resend | Transactional email delivery for landlord notifications |
 | Expo Push API | Push notification delivery to registered devices |
