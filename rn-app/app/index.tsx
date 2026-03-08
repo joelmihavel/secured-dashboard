@@ -60,13 +60,12 @@ async function queryUserStatus(): Promise<string | null> {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.warn('[journey-router] getUser failed:', userError?.message);
-      // If the server explicitly says user doesn't exist (deleted server-side),
-      // force sign-out to clear the stale cached session. Without this, the app
-      // stays in an authenticated-but-broken state showing skeleton screens.
-      if (userError?.message?.includes('not found') || userError?.message?.includes('User not found') || userError?.status === 404) {
-        console.warn('[journey-router] User deleted server-side — forcing sign-out');
-        await supabase.auth.signOut();
-      }
+      // DO NOT call signOut() here. GoTrue returns similar error messages
+      // ("not found", 401) for both deleted users AND expired JWTs that haven't
+      // been refreshed yet. Calling signOut() on an expired-but-refreshable
+      // session causes a legitimate user to be logged out on cold start.
+      // If the user is truly deleted, the SDK's next auto-refresh will fail
+      // with a non-retryable error and fire SIGNED_OUT through AuthProvider.
       return null;
     }
 

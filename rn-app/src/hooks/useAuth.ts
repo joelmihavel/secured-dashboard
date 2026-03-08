@@ -10,15 +10,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, VerifyOtpRequest } from '../services/api/auth';
 import { isReviewMode, deactivateReviewMode } from '../review/reviewMode';
 import { useAuthStore } from '../stores/auth';
-import { useUploadStore } from '../stores/upload';
-import { useWaitlistStore } from '../stores/waitlist';
-import { usePaymentStore } from '../stores/payment';
-import { useSetupStore } from '../stores/setup';
-import { useProfileStore } from '../stores/profile';
 import { useRecordConsent, useIdentityFetch } from './useIdentityVerification';
 import { supabase } from '../services/supabase/client';
 import { queryClient as globalQueryClient } from '../providers/QueryProvider';
 import { setUserContext, clearUserContext } from '../config/sentry';
+import { clearAllStores } from '../stores/resetAll';
+import { markUserInitiatedSignOut } from '../providers/AuthProvider';
 
 // ==============================================
 // ERROR NORMALIZATION
@@ -254,17 +251,26 @@ export function useAuth() {
   );
 
   const signOut = useCallback(async () => {
+    // Signal to AuthProvider that this is a user-initiated sign-out.
+    // Prevents the delayed SIGNED_OUT handler from redundantly clearing
+    // stores and navigating a second time 2 seconds later.
+    markUserInitiatedSignOut();
+
     if (isReviewMode()) deactivateReviewMode();
-    await apiSignOut();
+
+    // Try SDK signOut (revokes refresh token server-side + clears local session).
+    // If this fails (server 500, network error), the SDK does NOT clear the
+    // session from SecureStore. clearAllStores() handles this — it explicitly
+    // deletes the Supabase session key from SecureStore as a fallback.
+    await apiSignOut().catch(() => {});
+
     clearUserContext();
-    authStore.reset();
-    useUploadStore.getState().reset();
-    useWaitlistStore.getState().reset();
-    usePaymentStore.getState().reset();
-    useSetupStore.getState().reset();
-    useProfileStore.getState().reset();
+    // Nuclear cleanup: resets all Zustand stores, explicitly deletes all
+    // persisted SecureStore keys (including Supabase session + chunks),
+    // tears down WebSocket channels, and clears React Query cache.
+    clearAllStores();
     globalQueryClient.clear();
-  }, [authStore]);
+  }, []);
 
   return {
     // State

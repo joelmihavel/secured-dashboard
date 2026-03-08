@@ -180,33 +180,20 @@ export async function callEdgeFunction<T = unknown>(
       'x-region': 'ap-south-1', // Pin to Mumbai — co-locate with DB for lowest latency
     };
 
-    // Add auth token if required and available
+    // Add auth token if required and available.
+    // IMPORTANT: Never call refreshSession() here — it races with the SDK's
+    // built-in autoRefreshToken timer and causes refresh token rotation conflicts
+    // (the old token gets invalidated, the second caller gets SIGNED_OUT).
+    // Instead, trust getSession() which returns the SDK's managed session.
+    // If the token is expired, the SDK will have already refreshed it (or will
+    // on the next tick). If the request gets a 401, the retry block below
+    // will handle it with a single controlled refresh.
     if (requireAuth) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        // Session missing from cache — attempt refresh before failing
-        // (handles transient null during token refresh / background return)
-        const { data: { session: refreshed }, error: refreshErr } =
-          await supabase.auth.refreshSession();
-        if (refreshErr || !refreshed?.access_token) {
-          return { data: null, error: 'Not authenticated' };
-        }
-        headers['Authorization'] = `Bearer ${refreshed.access_token}`;
-      } else {
-        // Check if token is expired or about to expire (within 60s buffer)
-        const expiresAt = session.expires_at; // Unix timestamp in seconds
-        const now = Math.floor(Date.now() / 1000);
-        if (expiresAt && expiresAt - now < 60) {
-          const { data: { session: refreshed }, error: refreshErr } =
-            await supabase.auth.refreshSession();
-          if (refreshErr || !refreshed?.access_token) {
-            return { data: null, error: 'Not authenticated' };
-          }
-          headers['Authorization'] = `Bearer ${refreshed.access_token}`;
-        } else {
-          headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
+        return { data: null, error: 'Not authenticated' };
       }
+      headers['Authorization'] = `Bearer ${session.access_token}`;
     }
 
     const fetchOptions: RequestInit = {
@@ -251,11 +238,15 @@ export async function callEdgeFunction<T = unknown>(
 
     let data = await safeJson(response);
 
-    // Retry once on 401 with a refreshed token (handles stale JWT edge cases)
+    // Retry once on 401: wait briefly for the SDK's auto-refresh to complete,
+    // then re-read the session. This avoids calling refreshSession() manually
+    // which races with the SDK's autoRefreshToken and causes SIGNED_OUT events
+    // when refresh token rotation is enabled.
     if (response.status === 401 && requireAuth) {
-      const { data: { session: retrySession }, error: retryErr } =
-        await supabase.auth.refreshSession();
-      if (!retryErr && retrySession?.access_token) {
+      // Give the SDK's auto-refresh a moment to complete (it fires on token expiry)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { data: { session: retrySession } } = await supabase.auth.getSession();
+      if (retrySession?.access_token) {
         headers['Authorization'] = `Bearer ${retrySession.access_token}`;
         const retryController = new AbortController();
         const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);

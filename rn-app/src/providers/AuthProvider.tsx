@@ -8,7 +8,7 @@
  * Handles: sign-out navigation (single controlled redirect)
  */
 
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
@@ -41,25 +41,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  // Use refs for values accessed inside the onAuthStateChange callback
+  // to avoid re-subscribing on every navigation (router is NOT referentially stable
+  // in Expo Router — it changes on every navigation state update).
+  const routerRef = useRef(router);
+  routerRef.current = router;
+
   const hasRedirectedRef = useRef(false);
 
-  const handleSignOut = useCallback(() => {
-    // Prevent multiple simultaneous redirects
-    if (hasRedirectedRef.current) return;
-    hasRedirectedRef.current = true;
+  // Track whether a user-initiated sign-out is in progress.
+  // When the user taps "Sign Out", useAuth().signOut() clears stores and navigates.
+  // The SDK then fires SIGNED_OUT, and our delayed handler would redundantly
+  // call clearAllStores() + router.replace() again. This flag prevents that.
+  const userInitiatedSignOutRef = useRef(false);
 
-    if (isReviewMode()) deactivateReviewMode();
-    clearAllStores();
-    setSession(null);
+  // Expose a way for useAuth().signOut() to signal that it's handling cleanup.
+  // This is set via a module-level function so useAuth doesn't need a context dependency.
+  useEffect(() => {
+    _setUserInitiatedSignOutFlag = (value: boolean) => {
+      userInitiatedSignOutRef.current = value;
+    };
+    return () => {
+      _setUserInitiatedSignOutFlag = () => {};
+    };
+  }, []);
 
-    router.replace('/(auth)/beta-splash' as never);
-
-    // Reset after navigation settles
-    setTimeout(() => {
-      hasRedirectedRef.current = false;
-    }, 1000);
-  }, [router]);
-
+  // Subscribe once — never re-subscribe. Uses refs for mutable values.
   useEffect(() => {
     // 1. Get initial session
     const initSession = async () => {
@@ -79,20 +87,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (event === 'SIGNED_OUT') {
-          // Guard: only sign out if the user genuinely has no valid session.
-          // The SDK fires SIGNED_OUT on transient refresh failures (network
-          // timeout, CF proxy cold-start, ISP DNS block). Verify with getSession()
-          // before actually logging the user out.
-          supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-            if (!currentSession) {
-              handleSignOut();
-            } else {
-              console.warn('[AuthProvider] SIGNED_OUT fired but session still exists — ignoring (transient refresh failure)');
+          // If user-initiated sign-out is in progress, useAuth().signOut() already
+          // handled cleanup. Just update React state and skip the delayed guard.
+          if (userInitiatedSignOutRef.current) {
+            userInitiatedSignOutRef.current = false;
+            setSession(null);
+            return;
+          }
+
+          // Guard: The SDK fires SIGNED_OUT on transient refresh failures (network
+          // timeout, CF proxy cold-start, ISP DNS block). The SDK clears the
+          // in-memory session BEFORE firing this event, so an immediate getSession()
+          // always returns null — making it useless as a guard.
+          //
+          // Wait 2 seconds for the SDK's auto-refresh to potentially recover
+          // (it retries on transient failures), then check if a session was restored.
+          setTimeout(async () => {
+            try {
+              const { data: { session: recoveredSession } } = await supabase.auth.getSession();
+              if (recoveredSession) {
+                console.warn('[AuthProvider] SIGNED_OUT fired but session recovered after delay — ignoring (transient refresh failure)');
+                setSession(recoveredSession);
+                return;
+              }
+              // No recovered session — this is a genuine sign-out
+              if (hasRedirectedRef.current) return;
+              hasRedirectedRef.current = true;
+
+              if (isReviewMode()) deactivateReviewMode();
+              clearAllStores();
+              setSession(null);
+
+              routerRef.current.replace('/(auth)/beta-splash' as never);
+
+              // Reset after navigation settles
+              setTimeout(() => {
+                hasRedirectedRef.current = false;
+              }, 2000);
+            } catch {
+              // getSession() itself failed — don't log out on network errors
+              console.warn('[AuthProvider] SIGNED_OUT + getSession() failed — keeping session');
             }
-          }).catch(() => {
-            // getSession() itself failed — don't log out on network errors
-            console.warn('[AuthProvider] SIGNED_OUT + getSession() failed — keeping session');
-          });
+          }, 2000);
         } else if (event === 'TOKEN_REFRESHED') {
           if (newSession) {
             // Token refresh succeeded — update with fresh tokens
@@ -123,7 +159,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 
     return () => subscription.unsubscribe();
-  }, [handleSignOut]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps — subscribe once, use refs for mutable values
 
   // Proactively refresh session when app returns to foreground after background
   useSessionMonitor({ enabled: !isLoading && !!session });
@@ -139,4 +176,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+/**
+ * Module-level function to signal user-initiated sign-out.
+ * Called by useAuth().signOut() to prevent AuthProvider's delayed
+ * SIGNED_OUT handler from redundantly clearing stores + navigating.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let _setUserInitiatedSignOutFlag: (value: boolean) => void = () => {};
+export function markUserInitiatedSignOut(): void {
+  _setUserInitiatedSignOutFlag(true);
 }

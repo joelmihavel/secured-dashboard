@@ -99,30 +99,35 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}): void 
         backgroundedAtRef.current = null;
 
         try {
-          // Refresh the Supabase session
-          const { data, error } = await supabase.auth.refreshSession();
+          // Check session validity WITHOUT calling refreshSession().
+          // refreshSession() calls _callRefreshToken() internally, which fires
+          // SIGNED_OUT if the refresh fails with a non-retryable error (e.g.
+          // refresh token reuse detection after rotation). The SDK's built-in
+          // auto-refresh timer handles token renewal safely — we just need to
+          // know if a session exists so we can invalidate stale dashboard data.
+          const { data: { session }, error } = await supabase.auth.getSession();
 
           if (error) {
             logBreadcrumb(
-              'Session refresh failed on foreground',
+              'Session check failed on foreground',
               'auth',
               { error: error.message }
             );
             return;
           }
 
-          if (data.session) {
+          if (session) {
             logBreadcrumb(
-              'Session refreshed on foreground',
+              'Session valid on foreground',
               'auth',
-              { expiresAt: data.session.expires_at }
+              { expiresAt: session.expires_at }
             );
 
-            // Session is valid -- invalidate dashboard queries for fresh data
+            // Session exists -- invalidate dashboard queries for fresh data
             queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
           } else {
             logBreadcrumb(
-              'No session after refresh -- user signed out elsewhere',
+              'No session on foreground -- user signed out elsewhere',
               'auth'
             );
           }
