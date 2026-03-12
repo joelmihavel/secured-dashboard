@@ -288,7 +288,7 @@ async function handleRouteOtp(
     let otpTriggered = false;
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabaseAnonKey = (Deno.env.get("SB_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!;
 
       const otpResponse = await fetch(`${supabaseUrl}/auth/v1/otp`, {
         method: "POST",
@@ -959,7 +959,7 @@ async function generateSession(
   // OPT-2: Exchange token_hash server-side via GoTrue /verify
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseAnonKey = (Deno.env.get("SB_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!;
 
     const verifyResponse = await fetch(`${supabaseUrl}/auth/v1/verify`, {
       method: "POST",

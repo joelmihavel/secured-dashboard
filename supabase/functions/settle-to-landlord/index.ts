@@ -185,7 +185,7 @@ serve(async (req: Request) => {
           { tenancy_id: tenancy?.id, payout_paise: payoutAmountPaise, rent_paise: maxAllowedPayout },
         );
         // Notify user of settlement failure
-        notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
           user_id: payment.user_id,
           notification_type: "settlement_failed",
           template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
@@ -228,7 +228,7 @@ serve(async (req: Request) => {
         );
 
         // Notify user of settlement failure
-        notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
           user_id: payment.user_id,
           notification_type: "settlement_failed",
           template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },

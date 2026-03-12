@@ -374,7 +374,7 @@ IMPORTANT — Indian names are extremely loose. You MUST account for ALL of thes
 9. Bank name truncation: Banks truncate names — "NEEL ROY" = "NEEL ROY CRUZ"
 10. Extra/missing spaces: "RAMA KRISHNA" = "RAMAKRISHNA"
 11. (HUF) suffix: Strip it
-12. Joint names: "RAMESH / SEEMA SHARMA" matches either one
+12. Joint bank accounts: Verified name may contain MULTIPLE names — "RAMESH KUMAR AND SEEMA SHARMA", "RAMESH / SEEMA", "RAMESH KUMAR & SEEMA SHARMA". If ANY part of the joint name matches ANY candidate, return matched=true with that candidate as matched_name.
 
 CRITICAL RULE: Only return matched=false if the verified name clearly belongs to a COMPLETELY DIFFERENT PERSON from ALL candidates. If there is ANY reasonable possibility it matches any one candidate, return matched=true. We are catching fraud (completely wrong person), NOT penalizing formatting differences. Even a close match is fine.
 
@@ -411,26 +411,39 @@ function fallbackMultiCandidateMatch(verifiedName: string, candidateNames: strin
   const normalize = (s: string) =>
     s.toUpperCase().replace(/[^A-Z\s]/g, "").replace(/\s+/g, " ").trim();
 
-  const verified = normalize(verifiedName);
-  const verifiedWords = verified.split(" ");
+  // Split joint names (e.g., "RAMESH KUMAR AND SEEMA SHARMA") into parts
+  const splitJointName = (name: string): string[] => {
+    const parts = name.split(/\s+(?:AND|&)\s+|\s*\/\s*/i).map(p => p.trim()).filter(Boolean);
+    return parts.length > 0 ? parts : [name];
+  };
+
+  const verifiedParts = splitJointName(verifiedName);
 
   let bestScore = 0;
   let bestCandidate: string | null = null;
 
   for (const candidate of candidateNames) {
-    const norm = normalize(candidate);
-    if (verified === norm) return { matched: true, matched_name: candidate, confidence: 100, reasoning: "Exact match", match_type: "exact" };
+    const normCandidate = normalize(candidate);
 
-    const candidateWords = norm.split(" ");
-    const [shorter, longer] = verifiedWords.length <= candidateWords.length ? [verifiedWords, candidateWords] : [candidateWords, verifiedWords];
-    if (shorter.length >= 1 && shorter.every((w) => longer.includes(w))) {
-      const score = Math.max(82, (shorter.length / longer.length) * 95);
-      if (score > bestScore) { bestScore = score; bestCandidate = candidate; }
+    // Check each part of the verified name (joint account) against each candidate
+    for (const part of verifiedParts) {
+      const normPart = normalize(part);
+      if (!normPart) continue;
+
+      if (normPart === normCandidate) return { matched: true, matched_name: candidate, confidence: 100, reasoning: "Exact match", match_type: "exact" };
+
+      const partWords = normPart.split(" ");
+      const candidateWords = normCandidate.split(" ");
+      const [shorter, longer] = partWords.length <= candidateWords.length ? [partWords, candidateWords] : [candidateWords, partWords];
+      if (shorter.length >= 1 && shorter.every((w) => longer.includes(w))) {
+        const score = Math.max(82, (shorter.length / longer.length) * 95);
+        if (score > bestScore) { bestScore = score; bestCandidate = candidate; }
+      }
     }
   }
 
   if (bestScore >= 70) {
-    return { matched: true, matched_name: bestCandidate, confidence: Math.round(bestScore), reasoning: "Subset word match", match_type: "partial" };
+    return { matched: true, matched_name: bestCandidate, confidence: Math.round(bestScore), reasoning: "Subset word match (joint name split)", match_type: "partial" };
   }
 
   return { matched: false, matched_name: null, confidence: 0, reasoning: "No match in fallback", match_type: "no_match" };
@@ -478,6 +491,7 @@ Your task: Does the electricity bill belong to this property? Check ALL of the f
 1. LANDLORD NAME MATCH: Does the consumer name match ANY of the landlord names?
    - Apply Indian name looseness: initials, truncation, titles, S/O W/O, transliteration, missing middle names, swapped order
    - "R K SHARMA" = "RAMESH KUMAR SHARMA", "NEEL ROY" = "NEEL ROY CRUZ"
+   - JOINT NAMES: Consumer name may contain MULTIPLE landlords joined — "RAMESH KUMAR AND SEEMA SHARMA", "RAMESH / SEEMA", "RAMESH KUMAR & SEEMA SHARMA". If ANY part matches ANY landlord, it's a match.
    - Even a close/partial match counts
 
 2. BUILDING/SOCIETY NAME MATCH: Is the consumer name actually a building, housing society, RWA, or apartment complex name that matches the property address?
@@ -533,17 +547,27 @@ function fallbackUtilityVerification(
   const normalize = (s: string) =>
     s.toUpperCase().replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 
-  const consumer = normalize(consumerName);
-  const consumerWords = consumer.split(" ");
+  // Split joint consumer names (e.g., "RAMESH KUMAR AND SEEMA SHARMA")
+  const splitJointName = (name: string): string[] => {
+    const parts = name.split(/\s+(?:AND|&)\s+|\s*\/\s*/i).map(p => p.trim()).filter(Boolean);
+    return parts.length > 0 ? parts : [name];
+  };
 
-  // Check landlord names
-  for (const name of landlordNames) {
-    const norm = normalize(name);
-    if (consumer === norm) return { verified: true, match_found_in: "landlord_name", matched_value: name, confidence: 100, reasoning: "Exact name match", name_match_type: "exact" };
-    const nameWords = norm.split(" ");
-    const [shorter, longer] = consumerWords.length <= nameWords.length ? [consumerWords, nameWords] : [nameWords, consumerWords];
-    if (shorter.length >= 1 && shorter.every((w) => longer.includes(w))) {
-      return { verified: true, match_found_in: "landlord_name", matched_value: name, confidence: 80, reasoning: "Subset word match", name_match_type: "partial" };
+  const consumerParts = splitJointName(consumerName).map(normalize);
+
+  // Check each consumer name part against each landlord name
+  for (const consumerPart of consumerParts) {
+    if (!consumerPart) continue;
+    const consumerWords = consumerPart.split(" ");
+
+    for (const name of landlordNames) {
+      const norm = normalize(name);
+      if (consumerPart === norm) return { verified: true, match_found_in: "landlord_name", matched_value: name, confidence: 100, reasoning: "Exact name match", name_match_type: "exact" };
+      const nameWords = norm.split(" ");
+      const [shorter, longer] = consumerWords.length <= nameWords.length ? [consumerWords, nameWords] : [nameWords, consumerWords];
+      if (shorter.length >= 1 && shorter.every((w) => longer.includes(w))) {
+        return { verified: true, match_found_in: "landlord_name", matched_value: name, confidence: 80, reasoning: "Subset word match (joint name split)", name_match_type: "partial" };
+      }
     }
   }
 

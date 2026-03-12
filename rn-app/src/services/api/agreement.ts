@@ -757,8 +757,8 @@ export async function abandonExtraction(extractionId: string): Promise<void> {
         extraction_error: 'Abandoned by user (re-upload)',
       })
       .eq('id', extractionId);
-  } catch {
-    // Silent fail — the frontend guards (dismissedExtractionId) are the backup
+  } catch (err) {
+    console.warn('[abandonExtraction] Failed to abandon extraction', extractionId, err);
   }
 }
 

@@ -219,8 +219,8 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAnonKey = (Deno.env.get("SB_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!;
+  const supabaseServiceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
   // Create service role client outside try block so it's accessible in catch
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -259,22 +259,41 @@ Deno.serve(async (req) => {
 
     console.log(`[process-document] Processing document for extraction: ${extraction_id}`);
 
-    // If document_path not provided, look it up from extracted_rental_info table
+    // Fetch extraction record — needed for document_path lookup AND idempotency guard
+    const { data: extractionRecord, error: lookupError } = await supabase
+      .from("extracted_rental_info")
+      .select("document_storage_path, extraction_status, user_verified")
+      .eq("id", extraction_id)
+      .single();
+
+    if (lookupError || !extractionRecord) {
+      console.error("[process-document] Failed to find extraction record:", lookupError);
+      return jsonResponse({
+        error: "Extraction record not found",
+        extraction_id
+      }, 404);
+    }
+
+    // Idempotency guard: skip if already completed or abandoned
+    if (extractionRecord.extraction_status === "completed") {
+      console.log(`[process-document] Extraction ${extraction_id} already completed — skipping re-processing`);
+      return jsonResponse({
+        success: true,
+        extracted_rental_info_id: extraction_id,
+        message: "Already processed",
+        extraction_status: "completed",
+      }, 200);
+    }
+    if (extractionRecord.user_verified) {
+      console.log(`[process-document] Extraction ${extraction_id} was abandoned (user_verified=true) — skipping`);
+      return jsonResponse({
+        success: false,
+        error: "Extraction was abandoned",
+        extraction_id,
+      }, 409);
+    }
+
     if (!document_path) {
-      const { data: extractionRecord, error: lookupError } = await supabase
-        .from("extracted_rental_info")
-        .select("document_storage_path")
-        .eq("id", extraction_id)
-        .single();
-
-      if (lookupError || !extractionRecord) {
-        console.error("[process-document] Failed to find extraction record:", lookupError);
-        return jsonResponse({
-          error: "Extraction record not found",
-          extraction_id
-        }, 404);
-      }
-
       document_path = extractionRecord.document_storage_path;
       console.log(`[process-document] Found document path: ${document_path}`);
     }
@@ -343,10 +362,10 @@ Deno.serve(async (req) => {
 
     let extractedData: ExtractedData;
 
-    // ENH 2: 120s timeout around Document AI + Gemini calls.
-    // On abort, mark extraction as failed — reduces user wait from 7 min
-    // (client staleness) to 2 min.
-    const PROCESSING_TIMEOUT_MS = 120_000;
+    // ENH 2: 300s timeout around Document AI + Gemini calls.
+    // Large/complex PDFs can take 2-3 min for Document AI + Gemini.
+    // Edge function wall clock is 400s on paid plan; keep internal timeout below that.
+    const PROCESSING_TIMEOUT_MS = 300_000;
 
     if (gcpCredentials && gcpProcessorId) {
       // Production: Use GCP Document AI + Vertex AI Gemini
@@ -363,7 +382,7 @@ Deno.serve(async (req) => {
       );
 
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Processing timed out after 120 seconds")), PROCESSING_TIMEOUT_MS);
+        setTimeout(() => reject(new Error("Processing timed out after 300 seconds")), PROCESSING_TIMEOUT_MS);
       });
 
       extractedData = await Promise.race([processingPromise, timeoutPromise]);
@@ -447,7 +466,11 @@ Deno.serve(async (req) => {
         fields_extracted: extractedData.fields_extracted,
         // Direct columns (not in raw_extraction_data)
         tenant_names: extractedData.tenant_names,
+        tenant_name: extractedData.tenant_names?.[0] ?? null,
         landlord_names: extractedData.landlord_names,
+        landlord_name: extractedData.landlord_names?.length
+          ? extractedData.landlord_names.join(" & ")
+          : null,
         extraction_method: extractedData.extraction_method,
         is_city_supported: isCitySupported,
         gemini_raw_response: extractedData.raw_gemini_data || (extractedData as any).gemini_debug || null,
@@ -1491,6 +1514,20 @@ async function updateWaitlistEntries(
   updates: Record<string, any>
 ) {
   if (!userId) return;
+
+  // Ensure waitlist_entries row exists before updating.
+  // join_waitlist is idempotent — returns existing row if already present.
+  const { data: joinData, error: joinError } = await supabase.rpc("join_waitlist", {
+    p_user_id: userId,
+  });
+  if (joinError) {
+    console.log("[process-document] Note: join_waitlist failed (non-fatal):", joinError.message);
+  } else if (joinData?.[0]?.is_new) {
+    await supabase.from("users").update({
+      user_status: "waitlisted",
+      status_updated_at: new Date().toISOString(),
+    }).eq("id", userId).eq("user_status", "signed_up");
+  }
 
   const { error } = await supabase
     .from("waitlist_entries")

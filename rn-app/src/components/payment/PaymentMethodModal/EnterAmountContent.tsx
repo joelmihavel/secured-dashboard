@@ -67,7 +67,7 @@ export function EnterAmountContent({
 
   const monthlyRent = tenancy?.monthly_rent ?? 0;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 0;
-  const isOverdue = daysUntilDue < 0;
+  const isOverdue = daysUntilDue < 0 && !upcomingPayment?.already_paid;
   const rentMonth = upcomingPayment?.rent_month ?? '';
   const isAllVerified =
     tenancy?.verification_status?.bank_verified &&
@@ -126,9 +126,6 @@ export function EnterAmountContent({
   const validation = useMemo((): ValidationBubble | null => {
     if (parsedAmount <= 0) return null;
 
-    if (parsedAmount > monthlyRent && monthlyRent > 0) {
-      return { severity: 'error', message: 'Rent cannot exceed contract value' };
-    }
     if (parsedAmount < monthlyRent && monthlyRent > 0) {
       return { severity: 'warning', message: 'Cashback will apply on reduced rent' };
     }
@@ -139,7 +136,7 @@ export function EnterAmountContent({
   }, [parsedAmount, monthlyRent, isAllVerified]);
 
   // Can proceed?
-  const canContinue = parsedAmount > 0 && (monthlyRent === 0 || parsedAmount <= monthlyRent);
+  const canContinue = parsedAmount > 0;
 
   // Default pill (when no validation message)
   const showDefaultPill = !validation && parsedAmount > 0;

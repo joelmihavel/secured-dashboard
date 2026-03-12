@@ -192,7 +192,7 @@ const PaymentMethodRow = memo(({
           <RNText style={styles.disabledBannerText}>
             {method.disabledReason}
           </RNText>
-          <Pressable onPress={() => Linking.openURL('https://flent.in/secured/how-it-works-for-landlords')}>
+          <Pressable onPress={() => Linking.openURL('https://hiw-secured.flent.in/')}>
             <RNText style={styles.learnMoreText}>Learn More</RNText>
           </Pressable>
         </View>

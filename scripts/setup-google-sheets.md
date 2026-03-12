@@ -88,7 +88,7 @@ Format the D column as Percentage for conversion rates.
 
 ```javascript
 // ===== Configuration =====
-const SUPABASE_URL = 'https://devapi.flent.in';  // CF Worker proxy
+const SUPABASE_URL = 'https://zqlowjveyqiagnbmfwsb.supabase.co';  // CF Worker proxy
 const VIEW_USERS = 'v_user_funnel';
 const VIEW_PAYMENTS = 'v_payment_detail';
 
@@ -336,16 +336,16 @@ function setupTrigger() {
 SRK=$(supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb | grep service_role | awk '{print $NF}')
 
 # Test v_user_funnel
-curl -s "https://devapi.flent.in/rest/v1/v_user_funnel?select=phone,name,user_status&limit=3" \
+curl -s "https://zqlowjveyqiagnbmfwsb.supabase.co/rest/v1/v_user_funnel?select=phone,name,user_status&limit=3" \
   -H "apikey: $SRK" -H "Authorization: Bearer $SRK" | python3 -m json.tool
 
 # Test v_payment_detail
-curl -s "https://devapi.flent.in/rest/v1/v_payment_detail?select=user_phone,payment_status,total_amount_paise&limit=3" \
+curl -s "https://zqlowjveyqiagnbmfwsb.supabase.co/rest/v1/v_payment_detail?select=user_phone,payment_status,total_amount_paise&limit=3" \
   -H "apikey: $SRK" -H "Authorization: Bearer $SRK" | python3 -m json.tool
 
 # Verify anon key is BLOCKED
 ANON=$(supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb | grep anon | awk '{print $NF}')
-curl -s "https://devapi.flent.in/rest/v1/v_user_funnel?limit=1" \
+curl -s "https://zqlowjveyqiagnbmfwsb.supabase.co/rest/v1/v_user_funnel?limit=1" \
   -H "apikey: $ANON" -H "Authorization: Bearer $ANON"
 # Should return 401 or empty
 ```

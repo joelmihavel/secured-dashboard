@@ -175,8 +175,8 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = (Deno.env.get("SB_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!;
+    const supabaseServiceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
     // Validate auth header
     const authHeader = req.headers.get("Authorization");
@@ -234,12 +234,60 @@ serve(async (req) => {
 
     const userStatus = (userRecord?.user_status as string) ?? "signed_up";
 
+    // ==============================================
+    // GET ONBOARDED COUNT + DYNAMIC CONFIG (needed for ALL paths)
+    // Moved above no-entry check so the response always includes batch data.
+    // ==============================================
+
+    let onboardedCount = 0;
+    const { data: onboardedResult, error: onboardedError } = await adminClient
+      .rpc("get_onboarded_count");
+
+    if (onboardedError) {
+      console.error("[get-waitlist-status] RPC get_onboarded_count failed:", onboardedError);
+      // Fallback: query directly
+      const { count } = await adminClient
+        .from("waitlist_entries")
+        .select("*", { count: "exact", head: true })
+        .eq("admin_review", "approved");
+      onboardedCount = count ?? 0;
+    } else {
+      onboardedCount = (onboardedResult as number) ?? 0;
+    }
+
+    let reviewTimeline: { hours: number; display_text: string } | undefined;
+    let batchConfig: {
+      current_batch: number;
+      batch_size: number;
+      batch_launch_date: string | null;
+      rejection_cooldown_days: number;
+    } | undefined;
+
+    const { data: configRows } = await adminClient
+      .from("app_config")
+      .select("key, value")
+      .in("key", ["review_timeline", "batch_config"]);
+
+    if (configRows) {
+      for (const row of configRows) {
+        if (row.key === "review_timeline") {
+          reviewTimeline = row.value as typeof reviewTimeline;
+        } else if (row.key === "batch_config") {
+          batchConfig = row.value as typeof batchConfig;
+        }
+      }
+    }
+
     // No waitlist entry — user hasn't been assigned a position yet
     if (!waitlistEntry) {
       const response: WaitlistStatusResponse = {
         success: true,
         has_entry: false,
         user_status: userStatus,
+        onboarded_count: onboardedCount,
+        total_member_slots: batchConfig?.batch_size ?? TOTAL_MEMBER_SLOTS,
+        review_timeline: reviewTimeline,
+        batch_config: batchConfig,
       };
       return jsonResponse(response, 200, headers);
     }
@@ -267,42 +315,6 @@ serve(async (req) => {
         .limit(1)
         .maybeSingle();
       extractedInfo = extraction;
-    }
-
-    // ==============================================
-    // GET ONBOARDED COUNT
-    // ==============================================
-
-    const { data: onboardedResult } = await adminClient
-      .rpc("get_onboarded_count");
-
-    const onboardedCount = (onboardedResult as number) ?? 0;
-
-    // ==============================================
-    // GET DYNAMIC CONFIG (review_timeline + batch_config)
-    // ==============================================
-
-    let reviewTimeline: { hours: number; display_text: string } | undefined;
-    let batchConfig: {
-      current_batch: number;
-      batch_size: number;
-      batch_launch_date: string | null;
-      rejection_cooldown_days: number;
-    } | undefined;
-
-    const { data: configRows } = await adminClient
-      .from("app_config")
-      .select("key, value")
-      .in("key", ["review_timeline", "batch_config"]);
-
-    if (configRows) {
-      for (const row of configRows) {
-        if (row.key === "review_timeline") {
-          reviewTimeline = row.value as typeof reviewTimeline;
-        } else if (row.key === "batch_config") {
-          batchConfig = row.value as typeof batchConfig;
-        }
-      }
     }
 
     // ==============================================

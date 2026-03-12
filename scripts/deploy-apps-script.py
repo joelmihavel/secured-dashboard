@@ -18,7 +18,7 @@ PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 
 # Supabase service key
 SRK = subprocess.run(
-    ['bash', '-c', 'supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb 2>/dev/null | grep service_role | awk \'{print $NF}\''],
+    ['bash', '-c', 'supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb 2>/dev/null | grep secret | awk \'{print $NF}\''],
     capture_output=True, text=True, cwd=PROJECT_DIR
 ).stdout.strip()
 if not SRK:
@@ -89,7 +89,7 @@ def api(method, url, body=None):
 # ── Apps Script code ──
 APPS_SCRIPT_CODE = r"""
 // ===== Configuration =====
-const SUPABASE_URL = 'https://devapi.flent.in';
+const SUPABASE_URL = 'https://zqlowjveyqiagnbmfwsb.supabase.co';
 const VIEW_USERS = 'v_user_funnel';
 const VIEW_PAYMENTS = 'v_payment_detail';
 

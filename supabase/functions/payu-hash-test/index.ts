@@ -1,7 +1,7 @@
 /**
  * PayU Hash Diagnostic — one-shot test function.
  * Tests credentials + hash against PayU's actual endpoints.
- * Call: curl https://zqlowjveyqiagnbmfwsb.supabase.co/functions/v1/payu-hash-test
+ * Call: curl https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/payu-hash-test
  */
 
 import { corsHeaders } from "../_shared/cors.ts";
@@ -98,8 +98,8 @@ Deno.serve(async (req) => {
       firstname,
       email,
       phone: "9999999999",
-      surl: "https://zqlowjveyqiagnbmfwsb.supabase.co/functions/v1/payment-webhook",
-      furl: "https://zqlowjveyqiagnbmfwsb.supabase.co/functions/v1/payment-webhook",
+      surl: "https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/payment-webhook",
+      furl: "https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/payment-webhook",
       hash: paymentHash,
       udf1: "",
       udf2: "",

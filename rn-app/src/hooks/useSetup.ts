@@ -203,14 +203,13 @@ export function useVerifyUtility() {
 // ==============================================
 
 /**
- * Hook for sending landlord invitation email.
+ * Hook for sending landlord WhatsApp invitation via Twilio template.
  *
  * Usage:
  *   const invite = useSendLandlordInvite();
- *   invite.mutate(request, { onSuccess, onError });
+ *   invite.mutate({ tenancyId, landlordPhone, countryCode }, { onSuccess, onError });
  *
- * Note: The edge function sends email, not SMS. The request accepts
- * landlordName and landlordEmail (not phone/channel).
+ * On first invite, pass landlordPhone + countryCode. On resend, just tenancyId.
  */
 export function useSendLandlordInvite() {
   const queryClient = useQueryClient();

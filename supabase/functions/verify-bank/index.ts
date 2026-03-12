@@ -408,9 +408,14 @@ serve(async (req: Request) => {
 
     // Update tenancy verification status if landlord account verified
     if (party_type === "landlord" && bankAccount.verified) {
+      const tenancyUpdate: Record<string, unknown> = { bank_verified: true };
+      // Write back verified landlord name — this is the confirmed landlord whose bank we'll pay into
+      if (matchedLandlordName) {
+        tenancyUpdate.landlord_name = matchedLandlordName;
+      }
       await supabase
         .from("tenancies")
-        .update({ bank_verified: true })
+        .update(tenancyUpdate)
         .eq("id", tenancy_id);
 
       // Advance user_status from approved → active (bank is the mandatory gate)

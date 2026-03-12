@@ -27,10 +27,10 @@ set -euo pipefail
 PROJECT_REF="zqlowjveyqiagnbmfwsb"
 BASE="https://${PROJECT_REF}.supabase.co"
 
-# --- Get service role key ---
-SRK=$(npx supabase projects api-keys --project-ref "$PROJECT_REF" 2>/dev/null | grep service_role | awk '{print $NF}')
+# --- Get secret key (new opaque format, replaces legacy service_role JWT) ---
+SRK=$(npx supabase projects api-keys --project-ref "$PROJECT_REF" 2>/dev/null | grep secret | awk '{print $NF}')
 if [ -z "$SRK" ]; then
-  echo "ERROR: Could not retrieve service role key. Are you logged into Supabase CLI?"
+  echo "ERROR: Could not retrieve secret key. Are you logged into Supabase CLI?"
   exit 1
 fi
 

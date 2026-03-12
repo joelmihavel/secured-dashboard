@@ -5,13 +5,58 @@
 // ============================================================================
 
 // ===== Configuration =====
-var SUPABASE_URL = 'https://devapi.flent.in';
+var SUPABASE_URL = 'https://zqlowjveyqiagnbmfwsb.supabase.co';
+var SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Euh6wOeHbdsc4Y0aBq3l7g_3-FPkaut'; // public key — safe to embed
 var HOLYGRAIL_ID = '1E1GAWuzMSSsdV-osseKOQhwwzgGsbflC1PnojBV8WUU';
+
+// BOOTSTRAP: Sets script properties. Run once manually via Apps Script editor or doGet(?action=bootstrap).
+// Keys must be provided as arguments or set manually in Script Properties (Project Settings > Script Properties).
+// NEVER hardcode keys in source code.
+function _bootstrap() {
+  var props = PropertiesService.getScriptProperties();
+  var serviceKey = props.getProperty('SUPABASE_SERVICE_KEY');
+  var adminKey = props.getProperty('ADMIN_API_KEY');
+  if (!serviceKey || !adminKey) {
+    Logger.log('ERROR: Set SUPABASE_SERVICE_KEY and ADMIN_API_KEY in Script Properties before running bootstrap.');
+    return 'FAIL: keys not set in Script Properties. Go to Project Settings > Script Properties.';
+  }
+  Logger.log('Script properties verified');
+  return 'OK: both keys found in Script Properties';
+}
 
 function getServiceKey() {
   var key = PropertiesService.getScriptProperties().getProperty('SUPABASE_SERVICE_KEY');
-  if (key) return key;
-  return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbG93anZleXFpYWduYm1md3NiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODk5NjU1NSwiZXhwIjoyMDg0NTcyNTU1fQ.2eeohYeOPhcN1mAkoNmhU3FBAKcmDEnEQ9sx8LnapSU';
+  if (!key) throw new Error('SUPABASE_SERVICE_KEY not set in Script Properties. Run _bootstrap() after setting keys.');
+  return key;
+}
+
+function getAdminKey() {
+  var key = PropertiesService.getScriptProperties().getProperty('ADMIN_API_KEY');
+  if (!key) throw new Error('ADMIN_API_KEY not set in Script Properties. Run _bootstrap() after setting keys.');
+  return key;
+}
+
+// ===== Diagnostic — remove after confirming sync works =====
+function _testFetch() {
+  var key = getServiceKey();
+  var headers = { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key };
+  var url = SUPABASE_URL + '/functions/v1/admin-fetch-views';
+  Logger.log('URL: ' + url);
+  Logger.log('Key starts with: ' + key.substring(0, 15));
+  var resp = UrlFetchApp.fetch(url, { headers: headers, muteHttpExceptions: true });
+  Logger.log('Status: ' + resp.getResponseCode());
+  Logger.log('Body: ' + resp.getContentText().substring(0, 500));
+  return resp.getResponseCode();
+}
+
+// ===== Date Helpers =====
+/** Convert UTC date string to IST (UTC+5:30) Date object for Sheets display */
+function toIST(val) {
+  if (!val) return '';
+  var d = new Date(val);
+  if (isNaN(d.getTime())) return val;
+  d.setMinutes(d.getMinutes() + 330); // +5h30m
+  return d;
 }
 
 // ===== Color Palette =====
@@ -57,6 +102,24 @@ function syncAll() {
       return (b.signed_up_at || '') > (a.signed_up_at || '') ? 1 : -1;
     });
 
+    // Auto-audit waitlisted users with admin_review = 'due'
+    try {
+      var dueUsers = allData.users.filter(function(r) {
+        return r.user_status === 'waitlisted' && r.admin_review === 'due';
+      });
+      if (dueUsers.length > 0) {
+        var userIds = dueUsers.map(function(r) { return r.user_id; }).filter(Boolean);
+        if (userIds.length > 0) {
+          var auditResults = runBatchAudit(userIds, true);
+          if (auditResults) {
+            mergeAuditResults(allData.users, auditResults);
+          }
+        }
+      }
+    } catch (e) {
+      Logger.log('WARNING: Auto-audit failed (non-fatal): ' + e.message);
+    }
+
     var tenantMap = {};
     try { tenantMap = fetchTenantLog(); } catch (e) {
       Logger.log('WARNING: Tenant Log fetch failed: ' + e.message);
@@ -81,9 +144,15 @@ function syncAll() {
   }
 }
 
-// Web app endpoint — allows triggering syncAll via HTTP GET
+// Web app endpoint — allows triggering syncAll or bootstrap via HTTP GET
 function doGet(e) {
   try {
+    var action = (e && e.parameter && e.parameter.action) || 'sync';
+    if (action === 'bootstrap') {
+      var result = _bootstrap();
+      return ContentService.createTextOutput(JSON.stringify({ ok: true, action: 'bootstrap', result: result }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     syncAll();
     return ContentService.createTextOutput(JSON.stringify({ ok: true, ts: new Date().toISOString() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -116,6 +185,15 @@ function onOpen() {
     { name: 'Sync Now', functionName: 'syncAll' },
     { name: 'Rebuild Charts', functionName: 'rebuildAllCharts' },
     { name: 'Setup Auto-Sync (10 min)', functionName: 'setupTrigger' },
+    null, // separator
+    { name: '\u2713 Approve Selected Users', functionName: 'approveSelectedUsers' },
+    { name: '\u2717 Reject Selected Users', functionName: 'rejectSelectedUsers' },
+    null, // separator
+    { name: '\uD83D\uDD12 Setup Column Protection', functionName: 'setupUsersProtection' },
+    { name: '\u26A1 Setup Edit Trigger', functionName: 'setupEditTrigger' },
+    null, // separator
+    { name: '\u2795 Add Reviewer Access', functionName: 'addReviewerAccess' },
+    { name: '\u2796 Remove Reviewer Access', functionName: 'removeReviewerAccess' },
   ]);
 }
 
@@ -135,24 +213,729 @@ function ensureTrigger() {
 }
 
 // ============================================================================
+// APPROVE / REJECT SELECTED USERS
+// ============================================================================
+
+/**
+ * Helper: extract user rows from the active selection on Users/User Details sheet.
+ * Returns array of { userId, name, phone, rent, risk, adminReview, auditStatus, missingData, row }.
+ * Cols: 1=ID 2=Phone 3=Status 4=Name 5=Rent 6=Address 12=Risk 13=AdminReview 14=AuditStatus 15=MissingData
+ */
+function _getSelectedUserRows() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var sheetName = sheet.getName();
+  if (sheetName !== 'Users' && sheetName !== 'User Details') return { error: 'Please select rows on the "Users" sheet.' };
+
+  var selection = sheet.getActiveRange();
+  if (!selection) return { error: 'No rows selected.' };
+
+  var startRow = selection.getRow();
+  var numRows = selection.getNumRows();
+  if (startRow <= 1) { startRow = 2; numRows = numRows - (2 - selection.getRow()); }
+  if (numRows <= 0) return { error: 'No data rows selected (header row doesn\'t count).' };
+
+  // Read all needed columns in one batch: cols 1-15
+  var data = sheet.getRange(startRow, 1, numRows, 15).getValues();
+  var users = [];
+  for (var i = 0; i < data.length; i++) {
+    var userId = String(data[i][0] || '').trim();
+    if (!userId || userId.length < 30) continue;
+    users.push({
+      userId: userId,
+      phone: String(data[i][1] || ''),
+      status: String(data[i][2] || ''),
+      name: String(data[i][3] || '') || userId.substring(0, 8),
+      rent: String(data[i][4] || ''),
+      risk: String(data[i][11] || ''),
+      adminReview: String(data[i][12] || '').trim().toLowerCase(),
+      auditStatus: String(data[i][13] || ''),
+      missingData: String(data[i][14] || ''),
+      row: startRow + i,
+    });
+  }
+
+  if (users.length === 0) return { error: 'No valid user IDs found. Make sure you selected data rows (not headers).' };
+  return { users: users, sheet: sheet };
+}
+
+/**
+ * Helper: build a readable summary of users for confirmation dialogs.
+ */
+function _buildUserSummary(users, maxShow) {
+  maxShow = maxShow || 10;
+  var lines = [];
+  for (var i = 0; i < Math.min(users.length, maxShow); i++) {
+    var u = users[i];
+    var line = (i + 1) + '. ' + u.name;
+    if (u.phone) line += '  (' + u.phone + ')';
+    if (u.rent) line += '  —  ₹' + u.rent;
+    if (u.risk && u.risk !== 'PENDING') line += '  [' + u.risk + ']';
+    lines.push(line);
+  }
+  if (users.length > maxShow) lines.push('... + ' + (users.length - maxShow) + ' more');
+  return lines.join('\n');
+}
+
+/**
+ * Helper: instantly update Status + Admin Review columns on the Users sheet
+ * after a successful approve/reject, so admins see the change without waiting for sync.
+ * Cols: 3=Status, 13=Admin Review
+ */
+function _updateSheetStatus(userIds, newReview) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+    if (!sheet) return;
+    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, ADMIN_REVIEW_COL).getValues();
+    var statusMap = { 'approved': 'approved', 'rejected': 'not_eligible' };
+    var newStatus = statusMap[newReview] || newReview;
+    var idSet = {};
+    for (var i = 0; i < userIds.length; i++) idSet[userIds[i]] = true;
+    for (var r = 0; r < data.length; r++) {
+      var rowId = String(data[r][0] || '').trim();
+      if (idSet[rowId]) {
+        sheet.getRange(r + 2, 3).setValue(newStatus);       // Status col
+        sheet.getRange(r + 2, ADMIN_REVIEW_COL).setValue(newReview); // Admin Review col
+      }
+    }
+  } catch (e) {
+    Logger.log('_updateSheetStatus error: ' + e.message);
+  }
+}
+
+/**
+ * Helper: run pre-approval audit with auto_fix on a batch of user IDs.
+ * Returns { ok, users: [{user_id, status, blockers, auto_fixes}], unfixable: [{user_id, name, blockers}], errorMsg }.
+ */
+function _runPreApprovalAudit(userIds) {
+  var key = getServiceKey();
+  var adminKey = getAdminKey();
+  try {
+    var resp = UrlFetchApp.fetch(SUPABASE_URL + '/functions/v1/pre-approval-audit', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key },
+      payload: JSON.stringify({ user_ids: userIds, auto_fix: true, admin_key: adminKey }),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code !== 200) {
+      var errMsg = '';
+      try { errMsg = JSON.parse(body).message || body; } catch (_) { errMsg = body; }
+      return { ok: false, errorMsg: 'Audit HTTP ' + code + ': ' + errMsg.substring(0, 400) };
+    }
+    var data = JSON.parse(body);
+    var users = data.users || [];
+    // Identify users still blocked after auto_fix (ignore B02/B04 which are status-related, not data gaps)
+    var unfixable = [];
+    for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      var realBlockers = (u.blockers || []).filter(function(b) {
+        return b.code !== 'B02' && b.code !== 'B04';
+      });
+      if (realBlockers.length > 0) {
+        unfixable.push({ user_id: u.user_id, name: u.name || u.phone || u.user_id.substring(0, 8), blockers: realBlockers });
+      }
+    }
+    // Count fixes applied
+    var totalFixes = 0;
+    for (var j = 0; j < users.length; j++) {
+      totalFixes += (users[j].auto_fixes || []).length;
+    }
+    return { ok: true, users: users, unfixable: unfixable, totalFixes: totalFixes };
+  } catch (e) {
+    return { ok: false, errorMsg: 'Audit network error: ' + e.message };
+  }
+}
+
+/**
+ * Helper: call admin-waitlist edge function.
+ * Returns { ok, result, errorMsg }.
+ */
+function _callAdminWaitlist(payload) {
+  var key = getServiceKey();
+  var adminKey = getAdminKey();
+  payload.admin_key = adminKey;
+  try {
+    var resp = UrlFetchApp.fetch(SUPABASE_URL + '/functions/v1/admin-waitlist', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    });
+    var code = resp.getResponseCode();
+    var body = resp.getContentText();
+    if (code === 200) {
+      return { ok: true, result: JSON.parse(body) };
+    } else {
+      var errMsg = '';
+      try { errMsg = JSON.parse(body).message || body; } catch (_) { errMsg = body; }
+      return { ok: false, errorMsg: 'HTTP ' + code + ': ' + errMsg.substring(0, 400) };
+    }
+  } catch (e) {
+    return { ok: false, errorMsg: 'Network error: ' + e.message };
+  }
+}
+
+function approveSelectedUsers() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    SpreadsheetApp.getUi().alert('Another operation is in progress. Please wait.');
+    return;
+  }
+
+  try {
+    var sel = _getSelectedUserRows();
+    if (sel.error) { SpreadsheetApp.getUi().alert(sel.error); return; }
+    var ui = SpreadsheetApp.getUi();
+
+    // Filter: skip already approved users
+    var eligible = [];
+    var skipped = [];
+    for (var i = 0; i < sel.users.length; i++) {
+      var u = sel.users[i];
+      if (u.adminReview === 'approved') {
+        skipped.push(u.name + ' (already approved)');
+      } else {
+        eligible.push(u);
+      }
+    }
+
+    if (eligible.length === 0) {
+      ui.alert('Nothing to approve', 'All ' + skipped.length + ' selected user(s) are already approved.', ui.ButtonSet.OK);
+      return;
+    }
+
+    var userIds = eligible.map(function(u) { return u.userId; });
+
+    // Step 1: Run pre-approval audit with auto_fix BEFORE approving
+    ui.alert('Running Audit', 'Running pre-approval audit with auto-fix for ' + eligible.length + ' user(s)...\nThis may take a moment.', ui.ButtonSet.OK);
+    var audit = _runPreApprovalAudit(userIds);
+
+    if (!audit.ok) {
+      ui.alert('Audit Failed', audit.errorMsg + '\n\nApproval aborted.', ui.ButtonSet.OK);
+      return;
+    }
+
+    // Step 2: Check for unfixable blockers
+    var warnings = '';
+    if (audit.totalFixes > 0) {
+      warnings += '\n\n🔧 Auto-fixed ' + audit.totalFixes + ' data gap(s).';
+    }
+
+    if (audit.unfixable.length > 0) {
+      // Remove unfixable users from approval list
+      var unfixableIds = {};
+      for (var k = 0; k < audit.unfixable.length; k++) unfixableIds[audit.unfixable[k].user_id] = true;
+      var fixable = eligible.filter(function(u) { return !unfixableIds[u.userId]; });
+      var blockedUsers = eligible.filter(function(u) { return unfixableIds[u.userId]; });
+
+      warnings += '\n\n⛔ ' + audit.unfixable.length + ' user(s) have unfixable issues (will NOT be approved):';
+      for (var m = 0; m < Math.min(audit.unfixable.length, 5); m++) {
+        var uf = audit.unfixable[m];
+        var blockerTexts = uf.blockers.map(function(b) { return b.code + ': ' + b.message; });
+        warnings += '\n  • ' + uf.name + ' — ' + blockerTexts.join(', ');
+      }
+      if (audit.unfixable.length > 5) warnings += '\n  ... + ' + (audit.unfixable.length - 5) + ' more';
+
+      if (fixable.length === 0) {
+        ui.alert('Cannot Approve', 'All ' + eligible.length + ' user(s) have unfixable data gaps.' + warnings + '\n\nNo users approved.', ui.ButtonSet.OK);
+        return;
+      }
+
+      // Continue with only fixable users
+      eligible = fixable;
+      userIds = eligible.map(function(u) { return u.userId; });
+    }
+
+    var summary = _buildUserSummary(eligible);
+    var msg = 'Approve ' + eligible.length + ' user(s)?\n\n' + summary;
+    if (skipped.length > 0) msg += '\n\nSkipping ' + skipped.length + ' already approved.';
+    msg += warnings;
+    msg += '\n\nThis will advance their status to "approved".';
+
+    var confirm = ui.alert('✓ Confirm Approval', msg, ui.ButtonSet.YES_NO);
+    if (confirm !== ui.Button.YES) return;
+
+    var resp = _callAdminWaitlist({ action: 'approve', user_ids: userIds });
+
+    if (resp.ok) {
+      var r = resp.result;
+      var successCount = r.approved || userIds.length;
+      var resultMsg = '✓ Approved: ' + successCount + ' user(s)';
+      if (r.errors && r.errors.length > 0) {
+        resultMsg += '\n\nFailed (' + r.errors.length + '):';
+        r.errors.slice(0, 5).forEach(function(e) { resultMsg += '\n  • ' + (e.user_id || '').substring(0, 8) + ': ' + e.error; });
+      }
+      if (skipped.length > 0) resultMsg += '\n\nSkipped: ' + skipped.length + ' already approved.';
+      _updateSheetStatus(userIds, 'approved');
+      ui.alert('Approval Complete', resultMsg, ui.ButtonSet.OK);
+    } else {
+      ui.alert('Approval Failed', resp.errorMsg, ui.ButtonSet.OK);
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function rejectSelectedUsers() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    SpreadsheetApp.getUi().alert('Another operation is in progress. Please wait.');
+    return;
+  }
+
+  try {
+    var sel = _getSelectedUserRows();
+    if (sel.error) { SpreadsheetApp.getUi().alert(sel.error); return; }
+    var ui = SpreadsheetApp.getUi();
+
+    // Filter: skip already rejected users
+    var eligible = [];
+    var skipped = [];
+    for (var i = 0; i < sel.users.length; i++) {
+      var u = sel.users[i];
+      if (u.adminReview === 'rejected') {
+        skipped.push(u.name + ' (already rejected)');
+      } else {
+        eligible.push(u);
+      }
+    }
+
+    if (eligible.length === 0) {
+      ui.alert('Nothing to reject', 'All ' + skipped.length + ' selected user(s) are already rejected.', ui.ButtonSet.OK);
+      return;
+    }
+
+    // Warn if rejecting approved users
+    var approvedOnes = eligible.filter(function(u) { return u.adminReview === 'approved'; });
+    var approvedWarning = '';
+    if (approvedOnes.length > 0) {
+      approvedWarning = '\n\n⚠ ' + approvedOnes.length + ' user(s) are currently APPROVED and will be reverted:\n';
+      approvedWarning += approvedOnes.slice(0, 3).map(function(u) { return '  • ' + u.name; }).join('\n');
+      if (approvedOnes.length > 3) approvedWarning += '\n  ... + ' + (approvedOnes.length - 3) + ' more';
+    }
+
+    var summary = _buildUserSummary(eligible);
+
+    // Prompt for optional reason
+    var reasonResp = ui.prompt('✗ Reject ' + eligible.length + ' User(s)',
+      'Users to reject:\n' + summary + approvedWarning +
+      (skipped.length > 0 ? '\n\nSkipping ' + skipped.length + ' already rejected.' : '') +
+      '\n\n──────────────────────────\nEnter rejection reason (optional):',
+      ui.ButtonSet.OK_CANCEL);
+
+    if (reasonResp.getSelectedButton() !== ui.Button.OK) return;
+    var reason = reasonResp.getResponseText().trim();
+
+    // Final confirmation
+    var confirmMsg = 'Reject ' + eligible.length + ' user(s)?\n\n' + summary;
+    if (reason) confirmMsg += '\n\nReason: "' + reason + '"';
+    if (skipped.length > 0) confirmMsg += '\n\nSkipping ' + skipped.length + ' already rejected.';
+
+    var confirm = ui.alert('✗ Confirm Rejection', confirmMsg, ui.ButtonSet.YES_NO);
+    if (confirm !== ui.Button.YES) return;
+
+    var userIds = eligible.map(function(u) { return u.userId; });
+    var effectiveReason = reason || 'Admin rejected (no reason given)';
+    var payload = { action: 'reject', user_ids: userIds, rejection_reasons: userIds.map(function() { return effectiveReason; }) };
+    var resp = _callAdminWaitlist(payload);
+
+    if (resp.ok) {
+      var r = resp.result;
+      var successCount = r.rejected || userIds.length;
+      var resultMsg = '✗ Rejected: ' + successCount + ' user(s)\nReason: "' + reason + '"';
+      if (r.errors && r.errors.length > 0) {
+        resultMsg += '\n\nFailed (' + r.errors.length + '):';
+        r.errors.slice(0, 5).forEach(function(e) { resultMsg += '\n  • ' + (e.user_id || '').substring(0, 8) + ': ' + e.error; });
+      }
+      if (skipped.length > 0) resultMsg += '\n\nSkipped: ' + skipped.length + ' already rejected.';
+      _updateSheetStatus(userIds, 'rejected');
+      ui.alert('Rejection Complete', resultMsg, ui.ButtonSet.OK);
+    } else {
+      ui.alert('Rejection Failed', resp.errorMsg, ui.ButtonSet.OK);
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ============================================================================
+// ON-EDIT TRIGGER — Admin Review column changes
+// Must be INSTALLABLE (not simple) to use UrlFetchApp and UI dialogs.
+// Run setupEditTrigger() once from the menu to install it.
+// ============================================================================
+
+var ADMIN_REVIEW_COL = 13; // Admin Review is column 13 on Users sheet
+
+function onAdminReviewEdit(e) {
+  try {
+    var sheet = e.range.getSheet();
+    if (sheet.getName() !== 'Users') return;
+
+    var col = e.range.getColumn();
+    var row = e.range.getRow();
+    if (col !== ADMIN_REVIEW_COL || row <= 1) return;
+
+    var newValue = String(e.value || '').trim().toLowerCase();
+    var oldValue = String(e.oldValue || '').trim().toLowerCase();
+    if (newValue === oldValue) return;
+    if (newValue !== 'approved' && newValue !== 'rejected') return;
+
+    // Read context for all edited rows in one batch
+    var numRows = e.range.getNumRows();
+    var rowData = sheet.getRange(row, 1, numRows, 15).getValues(); // cols 1-15
+    var users = [];
+    for (var i = 0; i < rowData.length; i++) {
+      var userId = String(rowData[i][0] || '').trim();
+      if (!userId || userId.length < 30) continue;
+      var currentReview = String(rowData[i][12] || '').trim().toLowerCase();
+      // For single-cell edit, rowData[i][12] is the NEW value; use oldValue for row 0
+      if (i === 0) currentReview = oldValue;
+      users.push({
+        userId: userId,
+        name: String(rowData[i][3] || '') || userId.substring(0, 8),
+        phone: String(rowData[i][1] || ''),
+        rent: String(rowData[i][4] || ''),
+        risk: String(rowData[i][11] || ''),
+        auditStatus: String(rowData[i][13] || ''),
+        missingData: String(rowData[i][14] || ''),
+        currentReview: currentReview,
+      });
+    }
+    if (users.length === 0) return;
+
+    var ui = SpreadsheetApp.getUi();
+    var action = newValue === 'approved' ? 'APPROVE' : 'REJECT';
+    var icon = newValue === 'approved' ? '✓' : '✗';
+
+    // Skip users already in the target state
+    var eligible = [];
+    var skippedNames = [];
+    for (var j = 0; j < users.length; j++) {
+      if (users[j].currentReview === newValue) {
+        skippedNames.push(users[j].name + ' (already ' + newValue + ')');
+      } else {
+        eligible.push(users[j]);
+      }
+    }
+
+    if (eligible.length === 0) {
+      ui.alert('Nothing to do', 'All selected user(s) are already ' + newValue + '.', ui.ButtonSet.OK);
+      e.range.setValue(oldValue || 'due');
+      return;
+    }
+
+    // Build detailed user summary
+    var summary = _buildUserSummary(eligible);
+    var userIds = eligible.map(function(u) { return u.userId; });
+    var warnings = '';
+
+    // For APPROVAL: run pre-approval audit with auto_fix first
+    if (newValue === 'approved') {
+      var audit = _runPreApprovalAudit(userIds);
+      if (!audit.ok) {
+        ui.alert('Audit Failed', audit.errorMsg + '\n\nApproval aborted. Cell reverted.', ui.ButtonSet.OK);
+        e.range.setValue(oldValue || 'due');
+        return;
+      }
+      if (audit.totalFixes > 0) {
+        warnings += '\n\n🔧 Auto-fixed ' + audit.totalFixes + ' data gap(s).';
+      }
+      if (audit.unfixable.length > 0) {
+        var unfixableIds = {};
+        for (var k = 0; k < audit.unfixable.length; k++) unfixableIds[audit.unfixable[k].user_id] = true;
+        var fixable = eligible.filter(function(u) { return !unfixableIds[u.userId]; });
+        warnings += '\n\n⛔ ' + audit.unfixable.length + ' user(s) have unfixable issues (will NOT be approved):';
+        for (var m = 0; m < Math.min(audit.unfixable.length, 5); m++) {
+          var uf = audit.unfixable[m];
+          var blockerTexts = uf.blockers.map(function(b) { return b.code + ': ' + b.message; });
+          warnings += '\n  • ' + uf.name + ' — ' + blockerTexts.join(', ');
+        }
+        if (fixable.length === 0) {
+          ui.alert('Cannot Approve', 'All user(s) have unfixable data gaps.' + warnings + '\n\nCell reverted.', ui.ButtonSet.OK);
+          e.range.setValue(oldValue || 'due');
+          return;
+        }
+        eligible = fixable;
+        userIds = eligible.map(function(u) { return u.userId; });
+        summary = _buildUserSummary(eligible);
+      }
+    }
+
+    // For REJECTION: warn about reverting approved users
+    if (newValue === 'rejected') {
+      var approvedOnes = eligible.filter(function(u) { return u.currentReview === 'approved'; });
+      if (approvedOnes.length > 0) {
+        warnings = '\n\n⚠ ' + approvedOnes.length + ' user(s) are currently APPROVED and will be reverted.';
+      }
+    }
+
+    // Rejection: prompt for optional reason
+    var reason = '';
+    if (newValue === 'rejected') {
+      var reasonResp = ui.prompt(icon + ' ' + action + ' ' + eligible.length + ' user(s)',
+        'Users:\n' + summary + warnings +
+        (skippedNames.length > 0 ? '\n\nSkipping: ' + skippedNames.join(', ') : '') +
+        '\n\n──────────────────────────\nEnter rejection reason (optional):',
+        ui.ButtonSet.OK_CANCEL);
+      if (reasonResp.getSelectedButton() !== ui.Button.OK) {
+        e.range.setValue(oldValue || 'due');
+        return;
+      }
+      reason = reasonResp.getResponseText().trim();
+    }
+
+    // Final confirmation
+    var confirmMsg = action + ' ' + eligible.length + ' user(s)?\n\n' + summary;
+    if (reason) confirmMsg += '\n\nReason: "' + reason + '"';
+    if (skippedNames.length > 0) confirmMsg += '\n\nSkipping: ' + skippedNames.length + ' already ' + newValue + '.';
+    confirmMsg += warnings;
+
+    var confirm = ui.alert(icon + ' Confirm ' + action, confirmMsg, ui.ButtonSet.YES_NO);
+    if (confirm !== ui.Button.YES) {
+      e.range.setValue(oldValue || 'due');
+      return;
+    }
+
+    // Call backend
+    var payload = { action: newValue === 'approved' ? 'approve' : 'reject', user_ids: userIds };
+    if (newValue === 'rejected') {
+      var effectiveReason = reason || 'Admin rejected (no reason given)';
+      payload.rejection_reasons = userIds.map(function() { return effectiveReason; });
+    }
+
+    var resp = _callAdminWaitlist(payload);
+
+    if (resp.ok) {
+      var r = resp.result;
+      var count = r.approved || r.rejected || userIds.length;
+      var resultMsg = icon + ' ' + action + ': ' + count + ' user(s) updated.';
+      if (r.errors && r.errors.length > 0) {
+        resultMsg += '\n\nFailed (' + r.errors.length + '):';
+        r.errors.slice(0, 5).forEach(function(err) { resultMsg += '\n  • ' + (err.user_id || '').substring(0, 8) + ': ' + err.error; });
+      }
+      // Instant status update in the sheet (no sync needed)
+      _updateSheetStatus(userIds, newValue);
+      ui.alert(action + ' Complete', resultMsg, ui.ButtonSet.OK);
+    } else {
+      ui.alert(action + ' Failed', resp.errorMsg + '\n\nCell reverted.', ui.ButtonSet.OK);
+      e.range.setValue(oldValue || 'due');
+    }
+  } catch (err) {
+    Logger.log('onAdminReviewEdit error: ' + err.message + '\n' + err.stack);
+    try { e.range.setValue(String(e.oldValue || 'due').trim().toLowerCase()); } catch (_) {}
+  }
+}
+
+// ============================================================================
+// SHEET PROTECTION — lock everything except Admin Review column
+// ============================================================================
+
+/**
+ * Run once to set up protection on the Users sheet.
+ * Protects all columns except Admin Review (col 13).
+ * Editors can only change the Admin Review dropdown.
+ * Owner (you) retains full access.
+ *
+ * To grant access: Flent Admin → Add Reviewer Access, then enter their email.
+ * They'll get edit access ONLY to the Admin Review column.
+ */
+function setupUsersProtection() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var allSheets = ss.getSheets();
+
+  // Get saved reviewer emails
+  var reviewerEmails = [];
+  try {
+    var saved = PropertiesService.getScriptProperties().getProperty('REVIEWER_EMAILS');
+    if (saved) reviewerEmails = saved.split(',').map(function(e) { return e.trim(); }).filter(Boolean);
+  } catch (e) {}
+
+  var protectedCount = 0;
+
+  for (var i = 0; i < allSheets.length; i++) {
+    var sheet = allSheets[i];
+    var name = sheet.getName();
+
+    // Remove existing protections on this sheet
+    sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET).forEach(function(p) {
+      p.remove();
+    });
+
+    var protection = sheet.protect().setDescription(name + ' — locked');
+    protection.setWarningOnly(false);
+
+    // Users sheet: unprotect Admin Review column only
+    if (name === 'Users') {
+      var lastRow = Math.max(sheet.getLastRow(), 500);
+      protection.setUnprotectedRanges([sheet.getRange(2, ADMIN_REVIEW_COL, lastRow, 1)]);
+      protection.setDescription('Users — Admin Review editable');
+    }
+
+    // Add reviewers as editors (they can only edit unprotected ranges)
+    if (reviewerEmails.length > 0) {
+      protection.addEditors(reviewerEmails);
+    }
+
+    protectedCount++;
+  }
+
+  Logger.log('Protected ' + protectedCount + ' sheets. Reviewers: ' + (reviewerEmails.length || 'none'));
+  SpreadsheetApp.getUi().alert('Protection set on all ' + protectedCount + ' sheets.\n\n' +
+    'Only the "Admin Review" column on the Users sheet is editable by reviewers.\n' +
+    'All other sheets and columns are fully locked.\n\n' +
+    'Reviewers: ' + (reviewerEmails.length > 0 ? reviewerEmails.join(', ') : 'none — use "Add Reviewer Access" to add.'));
+}
+
+/**
+ * Add a reviewer who can edit the Admin Review column.
+ * They get: sheet-level editor on the unprotected range + spreadsheet viewer access.
+ * They will NOT see the hidden user_id column or be able to edit other columns.
+ */
+function addReviewerAccess() {
+  var ui = SpreadsheetApp.getUi();
+  var resp = ui.prompt('Add Reviewer',
+    'Enter the email address of the person who should be able to approve/reject users:',
+    ui.ButtonSet.OK_CANCEL);
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+
+  var email = resp.getResponseText().trim().toLowerCase();
+  if (!email || email.indexOf('@') === -1) {
+    ui.alert('Invalid email address.');
+    return;
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Users');
+  if (!sheet) { ui.alert('Users sheet not found.'); return; }
+
+  // 1. Share the spreadsheet as viewer (so they can open it)
+  try {
+    ss.addViewer(email);
+  } catch (e) {
+    // May already have access — fine
+  }
+
+  // 2. Add as editor to the sheet protection (so they can edit Admin Review)
+  var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+  if (protections.length === 0) {
+    ui.alert('No protection found on Users sheet.\n\nRun "Setup Column Protection" first.');
+    return;
+  }
+
+  protections[0].addEditor(email);
+
+  // 3. Save to Script Properties for persistence across protection resets
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var existing = props.getProperty('REVIEWER_EMAILS') || '';
+    var emails = existing.split(',').map(function(e) { return e.trim(); }).filter(Boolean);
+    if (emails.indexOf(email) === -1) emails.push(email);
+    props.setProperty('REVIEWER_EMAILS', emails.join(','));
+  } catch (e) { /* non-critical */ }
+
+  ui.alert('Access Granted',
+    email + ' can now:\n' +
+    '  • View the Users sheet\n' +
+    '  • Edit the Admin Review dropdown\n' +
+    '  • Trigger approve/reject via the dropdown\n\n' +
+    'They cannot edit any other columns.',
+    ui.ButtonSet.OK);
+}
+
+/**
+ * Remove a reviewer's access.
+ */
+function removeReviewerAccess() {
+  var ui = SpreadsheetApp.getUi();
+
+  // Show current reviewers
+  var currentEmails = '';
+  try {
+    currentEmails = PropertiesService.getScriptProperties().getProperty('REVIEWER_EMAILS') || '';
+  } catch (e) {}
+
+  var resp = ui.prompt('Remove Reviewer',
+    'Current reviewers: ' + (currentEmails || '(none)') +
+    '\n\nEnter the email to remove:',
+    ui.ButtonSet.OK_CANCEL);
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+
+  var email = resp.getResponseText().trim().toLowerCase();
+  if (!email) return;
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  if (!sheet) return;
+
+  // Remove from protection
+  var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+  if (protections.length > 0) {
+    protections[0].removeEditor(email);
+  }
+
+  // Remove from saved list
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var emails = (props.getProperty('REVIEWER_EMAILS') || '').split(',')
+      .map(function(e) { return e.trim(); })
+      .filter(function(e) { return e && e !== email; });
+    props.setProperty('REVIEWER_EMAILS', emails.join(','));
+  } catch (e) {}
+
+  ui.alert('Removed', email + ' can no longer edit Admin Review.', ui.ButtonSet.OK);
+}
+
+/**
+ * Install the onEdit trigger as an INSTALLABLE trigger.
+ * Simple onEdit can't use UrlFetchApp or UI dialogs.
+ * Run once from the Flent Admin menu.
+ */
+function setupEditTrigger() {
+  // Remove any existing onAdminReviewEdit triggers to avoid duplicates
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'onAdminReviewEdit') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+
+  ScriptApp.newTrigger('onAdminReviewEdit')
+    .forSpreadsheet(SpreadsheetApp.getActive())
+    .onEdit()
+    .create();
+
+  SpreadsheetApp.getUi().alert('Edit trigger installed!\n\nChanging the Admin Review dropdown on the Users sheet will now show a confirmation dialog and call the backend.');
+}
+
+// ============================================================================
 // DATA FETCHING
 // ============================================================================
 
 function fetchAllViews() {
   var key = getServiceKey();
-  var headers = { 'apikey': key, 'Authorization': 'Bearer ' + key };
-  var requests = [
-    { url: SUPABASE_URL + '/rest/v1/v_user_funnel?select=*', headers: headers, muteHttpExceptions: true },
-    { url: SUPABASE_URL + '/rest/v1/v_payment_detail?select=*', headers: headers, muteHttpExceptions: true },
-    { url: SUPABASE_URL + '/rest/v1/v_m360_detail?select=*', headers: headers, muteHttpExceptions: true },
-    { url: SUPABASE_URL + '/rest/v1/v_verification_analysis?select=*', headers: headers, muteHttpExceptions: true },
-  ];
-  var responses = UrlFetchApp.fetchAll(requests);
+  var headers = { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key };
+
+  // Fetch views via edge function (sb_secret_* keys can't call REST API directly)
+  var viewsResp = UrlFetchApp.fetch(SUPABASE_URL + '/functions/v1/admin-fetch-views', {
+    headers: headers, muteHttpExceptions: true
+  });
+  var payResp = UrlFetchApp.fetch(SUPABASE_URL + '/functions/v1/admin-payment-data', {
+    headers: headers, muteHttpExceptions: true
+  });
+
+  var views = {};
+  if (viewsResp.getResponseCode() === 200) {
+    views = JSON.parse(viewsResp.getContentText());
+  } else {
+    Logger.log('admin-fetch-views error: ' + viewsResp.getContentText());
+  }
+
   return {
-    users: parseResp(responses[0], 'v_user_funnel'),
-    payments: parseResp(responses[1], 'v_payment_detail'),
-    m360: parseResp(responses[2], 'v_m360_detail'),
-    verifications: parseResp(responses[3], 'v_verification_analysis'),
+    users: views.user_funnel || [],
+    payments: parseResp(payResp, 'admin-payment-data'),
+    m360: views.m360 || [],
+    verifications: views.verifications || [],
   };
 }
 
@@ -242,14 +1025,66 @@ function fetchTenantLog() {
 }
 
 // ============================================================================
-// USERS SHEET (11 columns — clean operator view + Flent Tenant match)
+// AUTO-AUDIT — calls pre-approval-audit edge function
+// ============================================================================
+
+function runBatchAudit(userIds, autoFix) {
+  var key = getServiceKey();
+  var batchSize = 50;
+  var allResults = [];
+
+  for (var i = 0; i < userIds.length; i += batchSize) {
+    var batch = userIds.slice(i, i + batchSize);
+    try {
+      var resp = UrlFetchApp.fetch(SUPABASE_URL + '/functions/v1/pre-approval-audit', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key },
+        payload: JSON.stringify({ user_ids: batch, auto_fix: !!autoFix }),
+        muteHttpExceptions: true,
+      });
+
+      if (resp.getResponseCode() === 200) {
+        var data = JSON.parse(resp.getContentText());
+        if (data.users && Array.isArray(data.users)) {
+          allResults = allResults.concat(data.users);
+        }
+      } else {
+        Logger.log('Audit batch failed (' + resp.getResponseCode() + '): ' + resp.getContentText().substring(0, 200));
+      }
+    } catch (e) {
+      Logger.log('Audit batch error: ' + e.message);
+    }
+  }
+
+  return allResults;
+}
+
+function mergeAuditResults(users, auditResults) {
+  var auditMap = {};
+  auditResults.forEach(function(r) {
+    auditMap[r.user_id] = r;
+  });
+
+  users.forEach(function(u) {
+    var audit = auditMap[u.user_id];
+    if (!audit) return;
+    u._audit_status = audit.status; // READY, WARNING, BLOCKED
+    var fixCount = (audit.auto_fixes || []).filter(function(f) { return f.success; }).length;
+    u._audit_fixes = fixCount > 0 ? fixCount + ' fixed' : '';
+  });
+}
+
+// ============================================================================
+// USERS SHEET (12 columns — clean operator view + Flent Tenant match)
 // ============================================================================
 
 function writeUsersSheet(data, tenantMap) {
   var sheet = getOrCreateSheet('Users');
-  var headers = ['Phone', 'Status', 'Name', 'Rent (\u20B9)', 'Address', 'Google Maps',
-                 'Security Deposit (\u20B9)', 'Sign Up', 'Risk', 'Admin Review', 'Flent Tenant'];
-  var widths = [130, 110, 200, 100, 280, 100, 140, 170, 90, 120, 180];
+  var headers = ['ID', 'Phone', 'Status', 'Name', 'Rent (\u20B9)', 'Address', 'Google Maps',
+                 'Security Deposit (\u20B9)', 'Sign Up', 'Hours Since', 'SLA', 'Risk', 'Admin Review',
+                 'Audit Status', 'Missing Data', 'Flent Tenant'];
+  var widths = [50, 130, 110, 200, 100, 280, 100, 140, 170, 90, 70, 90, 120, 100, 200, 180];
   var mapsUrls = [];
   tenantMap = tenantMap || {};
 
@@ -273,7 +1108,34 @@ function writeUsersSheet(data, tenantMap) {
       }
     }
 
+    // Hours since sign-up
+    var hoursSince = '';
+    var slaBreach = '';
+    if (r.signed_up_at) {
+      var signedUp = new Date(r.signed_up_at);
+      var nowMs = Date.now();
+      var diffHours = Math.round((nowMs - signedUp.getTime()) / (1000 * 60 * 60));
+      hoursSince = diffHours;
+      slaBreach = diffHours > 24 ? 'BREACHED' : 'OK';
+    }
+
+    // Audit: ready-to-approve check + missing data
+    var missingData = [];
+    if (r.extraction_status !== 'completed') missingData.push('Agreement');
+    if (!r.property_address) missingData.push('Address');
+    if (!r.landlord_display_name && !r.landlord_name) missingData.push('Landlord');
+    if (!r.monthly_rent_paise || r.monthly_rent_paise === 0) missingData.push('Rent');
+    if (!r.lease_start_date) missingData.push('Lease Start');
+    if (!r.lease_end_date) missingData.push('Lease End');
+    if (r.m360_status !== 'SUCCESS' && !r.m360_full_name) missingData.push('M360 Identity');
+    if (!r.property_city) missingData.push('City');
+    if (!r.risk_level || r.risk_level === 'PENDING') missingData.push('Risk Score');
+    if (!r.waitlist_position && r.waitlist_position !== 0) missingData.push('Waitlist');
+    // Prefer server audit status if available, else compute locally
+    var auditStatus = r._audit_status || (missingData.length === 0 ? 'READY' : 'BLOCKED');
+
     return [
+      r.user_id || '',
       displayPhone(r.phone),
       r.user_status || '',
       name,
@@ -281,19 +1143,24 @@ function writeUsersSheet(data, tenantMap) {
       r.property_address || '',
       mapsUrl ? 'View Map' : '',
       rent, // security deposit = rent proxy
-      r.signed_up_at ? new Date(r.signed_up_at) : '',
+      r.signed_up_at ? toIST(r.signed_up_at) : '',
+      hoursSince,
+      slaBreach,
       r.risk_level || '',
       r.admin_review || '',
+      auditStatus,
+      missingData.join(', '),
       tenantLabel,
     ];
   });
 
   writeSheetData(sheet, headers, rows, widths);
+  sheet.hideColumns(1); // Hide user_id column
 
-  // Hyperlinks for Google Maps (col 6)
+  // Hyperlinks for Google Maps (col 7)
   for (var i = 0; i < mapsUrls.length; i++) {
     if (mapsUrls[i]) {
-      var cell = sheet.getRange(i + 2, 6);
+      var cell = sheet.getRange(i + 2, 7);
       cell.setRichTextValue(SpreadsheetApp.newRichTextValue().setText('View Map').setLinkUrl(mapsUrls[i]).build());
       cell.setFontColor(C.LINK);
     }
@@ -302,20 +1169,46 @@ function writeUsersSheet(data, tenantMap) {
   // Conditional formatting
   var rc = rows.length;
   if (rc > 0) {
-    applyStatusColors(sheet, 2, rc, statusRules());        // Status col 2
-    sheet.getRange(2, 4, rc, 1).setNumberFormat('\u20B9#,##0');  // Rent
-    sheet.getRange(2, 7, rc, 1).setNumberFormat('\u20B9#,##0');  // Security Deposit
-    sheet.getRange(2, 8, rc, 1).setNumberFormat('dd-MMM-yyyy h:mm AM/PM');  // Sign Up
-    applyStatusColors(sheet, 9, rc, riskRules());           // Risk col 9
-    applyStatusColors(sheet, 10, rc, reviewRules());        // Admin Review col 10
-    // Flent Tenant col 11 — Active (green), Moved Out (amber), No (muted)
-    applyStatusColors(sheet, 11, rc, tenantRules());
-    // Text wrap on Address column (col 5)
-    sheet.getRange(2, 5, rc, 1).setWrap(true);
+    applyStatusColors(sheet, 3, rc, statusRules());        // Status col 3
+    sheet.getRange(2, 5, rc, 1).setNumberFormat('\u20B9#,##0');  // Rent col 5
+    sheet.getRange(2, 8, rc, 1).setNumberFormat('\u20B9#,##0');  // Security Deposit col 8
+    sheet.getRange(2, 9, rc, 1).setNumberFormat('dd-MMM-yyyy h:mm AM/PM');  // Sign Up col 9
+    sheet.getRange(2, 10, rc, 1).setHorizontalAlignment('center'); // Hours Since col 10
+    // SLA col 11
+    applyStatusColors(sheet, 11, rc, {
+      'breached': { bg: C.RED_BG, fg: C.RED },
+      'BREACHED': { bg: C.RED_BG, fg: C.RED },
+      'ok': { bg: C.GREEN_BG, fg: C.GREEN },
+      'OK': { bg: C.GREEN_BG, fg: C.GREEN },
+    });
+    applyStatusColors(sheet, 12, rc, riskRules());           // Risk col 12
+    applyStatusColors(sheet, 13, rc, reviewRules());        // Admin Review col 13
+    // Data validation dropdown on Admin Review col 13
+    var reviewValidation = SpreadsheetApp.newDataValidation()
+      .requireValueInList(['due', 'approved', 'rejected'], true)
+      .setAllowInvalid(false)
+      .setHelpText('Select: due, approved, or rejected')
+      .build();
+    sheet.getRange(2, 13, rc, 1).setDataValidation(reviewValidation);
+    // Audit Status col 14
+    applyStatusColors(sheet, 14, rc, {
+      'ready': { bg: C.GREEN_BG, fg: C.GREEN },
+      'READY': { bg: C.GREEN_BG, fg: C.GREEN },
+      'warning': { bg: C.AMBER_BG, fg: C.AMBER },
+      'WARNING': { bg: C.AMBER_BG, fg: C.AMBER },
+      'blocked': { bg: C.RED_BG, fg: C.RED },
+      'BLOCKED': { bg: C.RED_BG, fg: C.RED },
+    });
+    // Missing Data col 15
+    sheet.getRange(2, 15, rc, 1).setWrap(true).setFontSize(9).setFontColor(C.MUTED);
+    // Flent Tenant col 16
+    applyStatusColors(sheet, 16, rc, tenantRules());
+    // Text wrap on Address column (col 6)
+    sheet.getRange(2, 6, rc, 1).setWrap(true);
   }
 
   sheet.setFrozenRows(1);
-  sheet.setFrozenColumns(1);
+  sheet.setFrozenColumns(2); // Freeze Phone column (ID is hidden col 1)
 }
 
 // ============================================================================
@@ -328,6 +1221,7 @@ function writeUserDetailsSheet(data) {
   // Column groups with sub-header coloring
   var groups = [
     { label: 'User', color: C.HEADER, cols: [
+      { key: 'user_id', header: 'ID' },
       { key: 'phone', header: 'Phone' },
       { key: 'user_status', header: 'Status' },
       { key: '_name', header: 'Name' },
@@ -383,7 +1277,9 @@ function writeUserDetailsSheet(data) {
       { key: 'cashback_balance_paise', header: 'CB Balance (\u20B9)', fmt: 'paise' },
       { key: 'last_payment_at', header: 'Last Payment', fmt: 'date' },
     ]},
-    { label: 'Approval', color: C.HEADER, cols: [
+    { label: 'Audit', color: C.HEADER, cols: [
+      { key: '_audit_status', header: 'Audit Status' },
+      { key: '_audit_fixes', header: 'Auto Fixes' },
       { key: '_ready', header: 'Ready to Approve' },
       { key: '_missing', header: 'Missing Data' },
     ]},
@@ -429,11 +1325,13 @@ function writeUserDetailsSheet(data) {
       if (c.key === '_maps') return mapsUrl ? 'View Map' : '';
       if (c.key === '_ready') return ready;
       if (c.key === '_missing') return missing.join(', ');
+      if (c.key === '_audit_status') return r._audit_status || '';
+      if (c.key === '_audit_fixes') return r._audit_fixes || '';
       var val = r[c.key];
       if (val === null || val === undefined) return '';
       if (c.key === 'phone' || c.key === 'landlord_phone') return displayPhone(val);
       if (c.fmt === 'paise') return Math.round(val / 100);
-      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return new Date(val);
+      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return toIST(val);
       if (c.fmt === 'bool') return val === true ? '\u2713' : val === false ? '\u2717' : '';
       return val;
     });
@@ -479,6 +1377,26 @@ function writeUserDetailsSheet(data) {
       readyRange.setFontWeight('bold').setHorizontalAlignment('center');
     }
 
+    // Audit Status coloring
+    var auditStatusIdx = allCols.findIndex(function(c) { return c.key === '_audit_status'; }) + 1;
+    if (auditStatusIdx > 0) {
+      var auditRange = sheet.getRange(2, auditStatusIdx, rc, 1);
+      var auditVals = auditRange.getValues();
+      auditRange.setBackgrounds(auditVals.map(function(v) {
+        if (v[0] === 'READY') return [C.GREEN_BG];
+        if (v[0] === 'WARNING') return [C.AMBER_BG];
+        if (v[0] === 'BLOCKED') return [C.RED_BG];
+        return [C.MUTED_BG];
+      }));
+      auditRange.setFontColors(auditVals.map(function(v) {
+        if (v[0] === 'READY') return [C.GREEN];
+        if (v[0] === 'WARNING') return [C.AMBER];
+        if (v[0] === 'BLOCKED') return [C.RED];
+        return [C.MUTED];
+      }));
+      auditRange.setFontWeight('bold').setHorizontalAlignment('center');
+    }
+
     // Bool columns coloring
     allCols.forEach(function(c, idx) {
       if (c.fmt === 'bool') {
@@ -520,12 +1438,15 @@ function writeUserDetailsSheet(data) {
 
   trimSheet(sheet, rc + 1, totalCols);
 
+  // Hide user_id column (col 1)
+  sheet.hideColumns(1);
+
   // Hide sensitive columns
   var incomeIdx = allCols.findIndex(function(c) { return c.key === 'm360_total_income'; }) + 1;
   if (incomeIdx > 0) sheet.hideColumns(incomeIdx);
 
   sheet.setFrozenRows(1);
-  sheet.setFrozenColumns(1);
+  sheet.setFrozenColumns(2);
 }
 
 // ============================================================================
@@ -535,8 +1456,10 @@ function writeUserDetailsSheet(data) {
 function writeLandlordsSheet(data) {
   var sheet = getOrCreateSheet('Landlords');
   var headers = ['Landlord Name', 'Landlord Phone', 'Property Address', 'City', 'State',
-                 'Tenant Name', 'Tenant Phone', 'Rent (\u20B9)', 'Lease Start', 'Lease End', 'LL Approved'];
-  var widths = [180, 130, 280, 100, 100, 180, 130, 100, 110, 110, 110];
+                 'Tenant Name', 'Tenant Phone', 'Rent (\u20B9)',
+                 'Bank A/C', 'IFSC', 'Bank Holder Name', 'Bank Verified',
+                 'Lease Start', 'Lease End', 'LL Approved'];
+  var widths = [180, 130, 280, 100, 100, 180, 130, 100, 150, 120, 180, 100, 110, 110, 110];
 
   var rows = [];
   data.forEach(function(r) {
@@ -550,6 +1473,10 @@ function writeLandlordsSheet(data) {
       r.m360_full_name || r.name || '',
       displayPhone(r.phone),
       r.monthly_rent_paise ? Math.round(r.monthly_rent_paise / 100) : '',
+      r.ll_bank_account_masked || '',
+      r.ll_bank_ifsc || '',
+      r.ll_bank_holder_name || '',
+      r.ll_bank_verified === true ? '\u2713' : r.ll_bank_verified === false ? '\u2717' : '',
       r.lease_start_date || '',
       r.lease_end_date || '',
       r.landlord_approved === true ? '\u2713' : r.landlord_approved === false ? '\u2717' : '',
@@ -560,8 +1487,18 @@ function writeLandlordsSheet(data) {
   var rc = rows.length;
   if (rc > 0) {
     sheet.getRange(2, 8, rc, 1).setNumberFormat('\u20B9#,##0');
-    // Bool coloring for LL Approved (col 11)
-    var approvedRange = sheet.getRange(2, 11, rc, 1);
+    // Bool coloring for Bank Verified (col 12)
+    var bankVerifiedRange = sheet.getRange(2, 12, rc, 1);
+    var bvVals = bankVerifiedRange.getValues();
+    bankVerifiedRange.setBackgrounds(bvVals.map(function(v) {
+      return [v[0] === '\u2713' ? C.GREEN_BG : v[0] === '\u2717' ? C.RED_BG : C.ROW_EVEN];
+    }));
+    bankVerifiedRange.setFontColors(bvVals.map(function(v) {
+      return [v[0] === '\u2713' ? C.GREEN : v[0] === '\u2717' ? C.RED : C.MUTED];
+    }));
+    bankVerifiedRange.setFontWeight('bold').setHorizontalAlignment('center');
+    // Bool coloring for LL Approved (col 15)
+    var approvedRange = sheet.getRange(2, 15, rc, 1);
     var vals = approvedRange.getValues();
     approvedRange.setBackgrounds(vals.map(function(v) {
       return [v[0] === '\u2713' ? C.GREEN_BG : v[0] === '\u2717' ? C.RED_BG : C.ROW_EVEN];
@@ -666,7 +1603,7 @@ function writeVerificationsSheet(data) {
         return JSON.stringify(val);
       }
       if (c.fmt === 'bool') return val === true ? '\u2713' : val === false ? '\u2717' : '';
-      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return new Date(val);
+      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return toIST(val);
       if (c.key === 'agreement_confidence' && val) return Math.round(Number(val));
       return val;
     });
@@ -1147,7 +2084,7 @@ function writeM360Sheet(data) {
     return cols.map(function(c) {
       var val = r[c.key];
       if (val === null || val === undefined) return '';
-      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return new Date(val);
+      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return toIST(val);
       return val;
     });
   });
@@ -1201,6 +2138,9 @@ function writePaymentsSheet(data) {
     { key: 'property_city', header: 'City' },
     { key: 'landlord_name', header: 'Landlord' },
     { key: 'tenancy_rent_paise', header: 'Agreed Rent (\u20B9)', fmt: 'paise' },
+    { key: 'll_bank_account', header: 'LL Bank A/C', fmt: 'text' },
+    { key: 'll_bank_ifsc', header: 'LL IFSC', fmt: 'text' },
+    { key: 'll_bank_holder', header: 'LL Bank Holder' },
   ];
   var headers = cols.map(function(c) { return c.header; });
   var rows = data.map(function(r) {
@@ -1208,7 +2148,7 @@ function writePaymentsSheet(data) {
       var val = r[c.key];
       if (val === null || val === undefined) return '';
       if (c.fmt === 'paise') return Math.round(val / 100);
-      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return new Date(val);
+      if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return toIST(val);
       return val;
     });
   });
@@ -1224,10 +2164,11 @@ function writePaymentsSheet(data) {
       'initiated': { bg: C.AMBER_BG, fg: C.AMBER },
       'failed': { bg: C.RED_BG, fg: C.RED },
     });
-    // Currency and date formatting
+    // Currency, date, and text formatting
     cols.forEach(function(c, idx) {
       if (c.fmt === 'paise') sheet.getRange(2, idx + 1, rc, 1).setNumberFormat('\u20B9#,##0');
       if (c.fmt === 'date') sheet.getRange(2, idx + 1, rc, 1).setNumberFormat('dd-MMM-yyyy');
+      if (c.fmt === 'text') sheet.getRange(2, idx + 1, rc, 1).setNumberFormat('@');
     });
   }
   sheet.setFrozenRows(1);

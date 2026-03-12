@@ -158,12 +158,12 @@ serve(async (req: Request) => {
         })
         .eq("id", userId);
 
-      // Update tenancy status to pending_verification (setup phase)
+      // Activate tenancy (demo users skip the pending_verification phase)
       await supabase
         .from("tenancies")
-        .update({ status: "pending_verification" })
+        .update({ status: "active" })
         .eq("user_id", userId)
-        .eq("status", "pending");
+        .in("status", ["pending", "pending_verification"]);
 
       console.log(`[join-waitlist] Demo auto-approval for test user ${userId}`);
 

@@ -585,7 +585,7 @@ export default function WaitlistScreen() {
     {
       label: 'In Review',
       value: isPendingLong
-        ? (status?.estimatedReviewTime || 'Approximately 24-48 hrs')
+        ? (status?.estimatedReviewTime || 'Approximately 72 hrs')
         : reviewTime,
       status: 'active',
     },

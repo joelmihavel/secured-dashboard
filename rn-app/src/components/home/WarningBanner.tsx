@@ -58,6 +58,7 @@ function WarningBannerComponent({ type, customMessage }: WarningBannerProps) {
         variant="muted"
         textColor={config.textColor}
         backgroundColor={config.backgroundColor}
+        style={{ alignSelf: 'center' }}
       />
     </View>
   );

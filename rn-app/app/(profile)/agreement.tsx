@@ -181,9 +181,9 @@ export default function ProfileAgreementScreen() {
       },
       {
         label: 'One-Time Deposit',
-        value: t?.security_deposit
+        value: (t?.security_deposit as number)
           ? formatCurrency(t.security_deposit as number)
-          : '\u20B9 130,000',
+          : 'N/A',
       },
       {
         label: 'Rent Duration',

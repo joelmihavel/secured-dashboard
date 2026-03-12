@@ -94,25 +94,16 @@ export interface UtilityVerificationResponse {
 /** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface LandlordInviteRequest {
   tenancyId: string;
-  landlordName?: string;
-  landlordEmail?: string;
   landlordPhone?: string;
   countryCode?: string;
-  resend?: boolean;
 }
 
-/** Mapped RN response from send-landlord-invite edge function */
+/** Mapped RN response from invite-landlord-whatsapp edge function */
 export interface LandlordInviteResponse {
   success: boolean;
-  alreadyApproved?: boolean;
-  inviteId?: string;
-  status?: string;
-  sentVia?: string;
-  expiresAt?: string;
   message: string;
-  inviteLink?: string;
-  landlordEmailMasked?: string;
-  landlordStatus?: LandlordInviteStatus;
+  landlordPhoneMasked?: string;
+  inviteCount?: number;
 }
 
 // ==============================================
