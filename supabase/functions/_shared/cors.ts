@@ -23,6 +23,7 @@ const PRODUCTION_ORIGINS = [
   "https://www.flentsecured.com",
   "https://app.flentsecured.com",
   "https://landlord.flentsecured.com",
+  "https://uowjtrzmszuaiokqxgir.supabase.co",
   "https://zqlowjveyqiagnbmfwsb.supabase.co",
 ];
 
