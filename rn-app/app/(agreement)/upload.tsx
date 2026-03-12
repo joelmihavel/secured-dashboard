@@ -58,6 +58,7 @@ import {
   validateFileSize,
   validateAgreementType,
 } from '@/src/services/payment';
+import { abandonExtraction } from '@/src/services/api/agreement';
 import { navigateToError } from '@/src/utils';
 import { useUploadStore } from '@/src/stores/upload';
 import { colors } from '@/src/theme/colors';
@@ -936,6 +937,11 @@ export default function UploadScreen() {
 
   const handleRemoveDocument = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Abandon old extraction so it doesn't block future uploads
+    const eid = useUploadStore.getState().extractionId;
+    if (eid) {
+      abandonExtraction(eid);
+    }
     extractionStatus.reset();
     setDocument(null);
     setUploadState('idle');
@@ -1074,7 +1080,13 @@ export default function UploadScreen() {
     }
   }, [document, agreement, router, isConnected, extractionStatus.hasActiveExtraction]);
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = useCallback(async () => {
+    // Abandon old extraction in DB so upload-document won't block with PROCESSING_IN_PROGRESS.
+    // Awaited so the DB update lands before the user re-uploads.
+    const eid = useUploadStore.getState().extractionId;
+    if (eid) {
+      await abandonExtraction(eid);
+    }
     extractionStatus.reset();
     setUploadState('idle');
     setUploadProgress(0);

@@ -10,7 +10,6 @@
 
 -- Drop the incorrect landlord-based trigger if it exists
 DROP TRIGGER IF EXISTS trigger_activate_tenancy_on_landlord_approval ON tenancies;
-
 DROP FUNCTION IF EXISTS activate_tenancy_on_landlord_approval();
 
 -- Replace the waitlist sync function to also activate tenancies
@@ -44,7 +43,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Trigger already exists from 20260304140001, just replace the function above.
 -- Re-create to be safe:
 DROP TRIGGER IF EXISTS on_waitlist_admin_review_change ON waitlist_entries;
-
 CREATE TRIGGER on_waitlist_admin_review_change
   AFTER UPDATE OF admin_review ON waitlist_entries
   FOR EACH ROW

@@ -140,8 +140,6 @@ verify_jwt = false
 [functions.send-sms]
 verify_jwt = false
 
-[functions.landlord-approve]
-verify_jwt = false
 
 [functions.seed-test-data]
 verify_jwt = false
@@ -262,6 +260,57 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.verify-pan]
+verify_jwt = false
+
+[functions.invite-landlord-whatsapp]
+verify_jwt = false
+
+[functions.landlord-auth-otp]
+verify_jwt = false
+
+[functions.landlord-confirm]
+verify_jwt = false
+
+[functions.notify-landlord]
+verify_jwt = false
+
+[functions.extraction-recovery]
+verify_jwt = false
+
+[functions.admin-encrypt]
+verify_jwt = false
+
+[functions.admin-payment-data]
+verify_jwt = false
+
+[functions.pre-approval-audit]
+verify_jwt = false
+
+[functions.admin-fetch-views]
+verify_jwt = false
+
+[functions.broadcast-app-update]
+verify_jwt = false
+
+[functions.debug-payment]
+verify_jwt = false
+
+[functions.get-payu-stored-cards]
+verify_jwt = false
+
+[functions.payu-hash-test]
+verify_jwt = false
+
+[functions.payu-post-inspector]
+verify_jwt = false
+
+[functions.reprocess-extractions]
+verify_jwt = false
+
+[functions.test-gemini-extraction]
+verify_jwt = false
+
+[functions.twilio-debug]
 verify_jwt = false
 
 [edge_runtime]

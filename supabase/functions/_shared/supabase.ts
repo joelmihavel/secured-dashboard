@@ -13,14 +13,20 @@ import { AuthError } from "./errors.ts";
 // ==============================================
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Prefer new opaque keys (SB_PUBLISHABLE_KEY / SB_SECRET_KEY) over legacy
+// auto-injected vars (SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY).
+// Legacy vars may contain stale JWT values after key migration (bug #37648).
+const SUPABASE_ANON_KEY =
+  Deno.env.get("SB_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY =
+  Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // Validate required environment variables
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error(
     "Missing required Supabase environment variables. " +
-      "Ensure SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY are set."
+      "Ensure SUPABASE_URL and SB_PUBLISHABLE_KEY/SB_SECRET_KEY (or legacy SUPABASE_ANON_KEY/SUPABASE_SERVICE_ROLE_KEY) are set."
   );
 }
 
@@ -151,26 +157,15 @@ export function verifyServiceRole(authHeader: string | null): boolean {
 
   const token = authHeader.replace("Bearer ", "");
 
-  // Validate the token is a service_role JWT.
-  // Note: SUPABASE_SERVICE_ROLE_KEY env var in the Deno runtime may be an
-  // sb_secret_* string (not a JWT), so we decode the incoming JWT payload
-  // and verify the role claim instead of doing a direct string comparison.
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-      throw new AuthError("Unauthorized - invalid token format");
-    }
-    // Decode JWT payload (base64url)
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    if (payload.role !== "service_role") {
-      throw new AuthError("Unauthorized - service role required");
-    }
-  } catch (e) {
-    if (e instanceof AuthError) throw e;
-    throw new AuthError("Unauthorized - service role required");
+  // Accept the service role key via direct comparison with the env var.
+  // This works for both legacy JWT keys and new sb_secret_* keys.
+  // No unsigned JWT fallback — that would let anyone forge admin access
+  // by crafting a JWT payload with role:"service_role".
+  if (token === SUPABASE_SERVICE_ROLE_KEY) {
+    return true;
   }
 
-  return true;
+  throw new AuthError("Unauthorized - service role required");
 }
 
 /**
@@ -184,14 +179,7 @@ export function hasServiceRoleAuth(authHeader: string | null): boolean {
   if (!authHeader) return false;
 
   const token = authHeader.replace("Bearer ", "");
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return false;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return payload.role === "service_role";
-  } catch {
-    return false;
-  }
+  return token === SUPABASE_SERVICE_ROLE_KEY;
 }
 
 // ==============================================

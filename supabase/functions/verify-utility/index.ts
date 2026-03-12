@@ -404,12 +404,18 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
         console.warn("[verify-utility] Gemini failed, falling back to algorithmic:", geminiError);
 
         // Algorithmic fallback: check name overlap against landlords
+        // Split joint consumer names (e.g., "RAMESH KUMAR AND SEEMA SHARMA")
+        const consumerParts = consumerName.split(/\s+(?:AND|&)\s+|\s*\/\s*/i).map(p => p.trim()).filter(Boolean);
+        if (consumerParts.length === 0) consumerParts.push(consumerName);
+
         let bestNameScore = 0;
         for (const landlordName of allLandlordNames) {
-          const score = sharedCalculateNameMatchScore(landlordName, consumerName);
-          if (score > bestNameScore) {
-            bestNameScore = score;
-            bestMatchLandlordName = landlordName;
+          for (const part of consumerParts) {
+            const score = sharedCalculateNameMatchScore(landlordName, part);
+            if (score > bestNameScore) {
+              bestNameScore = score;
+              bestMatchLandlordName = landlordName;
+            }
           }
         }
 

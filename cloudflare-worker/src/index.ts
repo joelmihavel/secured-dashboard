@@ -1,5 +1,21 @@
 export default {
   async fetch(request: Request, env: { SUPABASE_HOST: string }): Promise<Response> {
+    // Handle CORS preflight at the edge — don't proxy OPTIONS to Supabase
+    if (request.method === "OPTIONS") {
+      const origin = request.headers.get("Origin") || "*";
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers":
+            "authorization, x-client-info, apikey, content-type, x-idempotency-key, x-request-id, x-admin-key",
+          "Access-Control-Max-Age": "86400",
+          "Access-Control-Allow-Credentials": "true",
+        },
+      });
+    }
+
     const url = new URL(request.url);
     url.hostname = env.SUPABASE_HOST;
     url.protocol = "https:";
@@ -51,9 +67,17 @@ export default {
       redirect: "follow",
     });
 
+    // Ensure CORS headers match the request origin (upstream may use static origin)
+    const origin = request.headers.get("Origin");
+    const responseHeaders = new Headers(resp.headers);
+    if (origin) {
+      responseHeaders.set("Access-Control-Allow-Origin", origin);
+      responseHeaders.set("Access-Control-Allow-Credentials", "true");
+    }
+
     return new Response(resp.body, {
       status: resp.status,
-      headers: resp.headers,
+      headers: responseHeaders,
     });
   },
 };

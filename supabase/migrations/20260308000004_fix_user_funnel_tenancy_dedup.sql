@@ -21,7 +21,6 @@ WHERE t1.user_id = t2.user_id
 
 -- Step 2: Recreate view with LATERAL LIMIT 1 for tenancies
 DROP VIEW IF EXISTS public.v_user_funnel;
-
 CREATE VIEW public.v_user_funnel AS
 SELECT
   u.id AS user_id,
@@ -138,5 +137,4 @@ LEFT JOIN LATERAL (
 ORDER BY u.created_at DESC;
 
 REVOKE ALL ON public.v_user_funnel FROM anon;
-
 GRANT SELECT ON public.v_user_funnel TO service_role;

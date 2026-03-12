@@ -10,11 +10,11 @@
  * Run: npx tsx supabase/functions/_tests/test-waitlist-backend.ts
  */
 
-const SUPABASE_URL = "https://zqlowjveyqiagnbmfwsb.supabase.co";
+const SUPABASE_URL = "https://uowjtrzmszuaiokqxgir.supabase.co";
 const ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbG93anZleXFpYWduYm1md3NiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5OTY1NTUsImV4cCI6MjA4NDU3MjU1NX0.k-CdevFklQdbfs9s-89_5RXke-Wcx6lVzu8gcolL0NM";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvd2p0cnptc3p1YWlva3F4Z2lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDEwOTIsImV4cCI6MjA3ODgxNzA5Mn0.4KzwE_6dXvSOEc06gFmtObsm89qfTbwckbAVbT4imKg";
 const SERVICE_ROLE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbG93anZleXFpYWduYm1md3NiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODk5NjU1NSwiZXhwIjoyMDg0NTcyNTU1fQ.2eeohYeOPhcN1mAkoNmhU3FBAKcmDEnEQ9sx8LnapSU";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvd2p0cnptc3p1YWlva3F4Z2lyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzI0MTA5MiwiZXhwIjoyMDc4ODE3MDkyfQ.RiKkfFqA7ZlIgxW_pbkQ8YjvbCvzohPL244n0A-ubks";
 
 const TEST_PHONE = "+919999999999";
 

@@ -125,7 +125,7 @@ function RootLayoutInner() {
     return cleanup;
   }, []);
 
-  // Check for OTA updates on foreground
+  // Check for OTA updates on cold start + foreground returns
   useEffect(() => {
     const cleanup = setupAutoUpdateCheck();
     return cleanup;

@@ -130,6 +130,20 @@ serve(async (req: Request) => {
         if (statusError) {
           console.error("[admin-waitlist] Failed to sync user_status on approve:", statusError);
         }
+
+        // Activate tenancies for approved users (pending_verification → active)
+        const { error: tenancyError } = await supabase
+          .from("tenancies")
+          .update({
+            status: "active",
+            updated_at: new Date().toISOString(),
+          })
+          .in("user_id", Array.from(approvedIds))
+          .eq("status", "pending_verification");
+
+        if (tenancyError) {
+          console.error("[admin-waitlist] Failed to activate tenancies on approve:", tenancyError);
+        }
       }
 
       await audit.logSuccess("WAITLIST_BATCH_APPROVED", "admin", "waitlist_entries", undefined, {
@@ -140,7 +154,7 @@ serve(async (req: Request) => {
       // Send push notifications to approved users
       if (approvedIds.size > 0) {
         const supabaseUrl = getSupabaseUrl();
-        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
         // Fetch first names for template
         const { data: users } = await supabase
@@ -213,7 +227,7 @@ serve(async (req: Request) => {
       // Send push notifications to rejected users
       if (rejectedIds.size > 0) {
         const supabaseUrl = getSupabaseUrl();
-        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
         await Promise.allSettled(
           Array.from(rejectedIds).map((uid) =>

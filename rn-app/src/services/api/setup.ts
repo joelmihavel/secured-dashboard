@@ -24,7 +24,6 @@ import type {
   UtilityOperator,
   LandlordInviteRequest,
   LandlordInviteResponse,
-  LandlordInviteStatus,
   SetupProgress,
   SetupStep,
   SetupError,
@@ -116,19 +115,13 @@ interface RawOperatorsResponse {
   };
 }
 
-/** Raw response from send-landlord-invite edge function */
+/** Raw response from invite-landlord-whatsapp edge function */
 interface RawSendInviteResponse {
   success: boolean;
   data: {
-    already_approved?: boolean;
-    invite_id?: string;
-    status?: string;
-    sent_via?: string;
-    expires_at?: string;
-    message: string;
-    invite_link?: string;
-    landlord_email_masked?: string;
-    landlord_status?: string;
+    message_id?: string;
+    landlord_phone_masked: string;
+    invite_count: number;
   };
 }
 
@@ -205,18 +198,11 @@ function mapOperator(raw: RawOperator): UtilityOperator {
 }
 
 function mapInviteResponse(raw: RawSendInviteResponse): LandlordInviteResponse {
-  const d = raw.data;
   return {
     success: raw.success,
-    alreadyApproved: d.already_approved,
-    inviteId: d.invite_id,
-    status: d.status,
-    sentVia: d.sent_via,
-    expiresAt: d.expires_at,
-    message: d.message,
-    inviteLink: d.invite_link,
-    landlordEmailMasked: d.landlord_email_masked,
-    landlordStatus: (d.landlord_status as LandlordInviteResponse['landlordStatus']) ?? undefined,
+    message: 'WhatsApp invite sent',
+    landlordPhoneMasked: raw.data.landlord_phone_masked,
+    inviteCount: raw.data.invite_count,
   };
 }
 
@@ -510,31 +496,27 @@ export async function verifyUtility(
 }
 
 /**
- * Send (or resend) landlord invitation email.
+ * Send landlord WhatsApp invitation via Twilio template.
  *
- * Edge function: POST /functions/v1/send-landlord-invite
+ * Edge function: POST /functions/v1/invite-landlord-whatsapp
  * Auth: Required (JWT)
  * Request mapping: camelCase -> snake_case
  * Response mapping: snake_case -> camelCase
  *
- * Note: The edge function sends email (not SMS/WhatsApp).
- * To resend, pass { resend: true } in the request.
+ * On first invite, pass landlordPhone + countryCode.
+ * On resend, just pass tenancyId (phone already saved on tenancy).
  */
 export async function sendLandlordInvite(
   request: LandlordInviteRequest
 ): Promise<{ data: LandlordInviteResponse | null; error: SetupError | null }> {
-  // Map camelCase request to snake_case for edge function
   const body: Record<string, unknown> = {
     tenancy_id: request.tenancyId,
   };
-  if (request.landlordName) body.landlord_name = request.landlordName;
-  if (request.landlordEmail) body.landlord_email = request.landlordEmail;
   if (request.landlordPhone) body.landlord_phone = request.landlordPhone;
   if (request.countryCode) body.country_code = request.countryCode;
-  if (request.resend) body.resend = true;
 
   const { data, error, errorBody } = await callEdgeFunction<RawSendInviteResponse>(
-    'send-landlord-invite',
+    'invite-landlord-whatsapp',
     body,
     true // requireAuth
   );
@@ -551,14 +533,14 @@ export async function sendLandlordInvite(
 }
 
 /**
- * Resend landlord invitation. Uses the same edge function with resend=true.
+ * Resend landlord WhatsApp invitation. Phone already saved on tenancy from first invite.
  *
  * @param tenancyId - The tenancy to resend the invite for
  */
 export async function resendLandlordInvite(
   tenancyId: string
 ): Promise<{ data: LandlordInviteResponse | null; error: SetupError | null }> {
-  return sendLandlordInvite({ tenancyId, resend: true });
+  return sendLandlordInvite({ tenancyId });
 }
 
 /**

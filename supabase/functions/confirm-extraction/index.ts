@@ -83,8 +83,8 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = (Deno.env.get("SB_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!;
+    const supabaseServiceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
     // Validate auth header
     const authHeader = req.headers.get("Authorization");
@@ -341,7 +341,7 @@ serve(async (req) => {
         .insert({
           user_id: user.id,
           extracted_rental_info_id: extractionId,
-          status: "pending",
+          status: "pending_verification",
           // Copy key fields from updated extraction (includes user corrections)
           property_address: infoForTenancy.property_address,
           property_city: infoForTenancy.property_city,
@@ -349,13 +349,13 @@ serve(async (req) => {
           property_pincode: infoForTenancy.property_pincode,
           monthly_rent_paise: infoForTenancy.monthly_rent_paise,
           maintenance_paise: infoForTenancy.maintenance_paise ?? 0,
-          security_deposit_paise: infoForTenancy.security_deposit_paise,
           rent_due_day: infoForTenancy.rent_due_day || 1,
           cashback_cutoff_day: infoForTenancy.rent_due_day || null,
           lease_start_date: infoForTenancy.lease_start_date,
           lease_end_date: infoForTenancy.lease_end_date,
-          // Landlord info
-          landlord_name: infoForTenancy.landlord_name,
+          // Landlord info — prefer singular (user-corrected), fallback to all names joined
+          landlord_name: infoForTenancy.landlord_name
+            ?? (infoForTenancy.landlord_names?.length ? infoForTenancy.landlord_names.join(" & ") : null),
           landlord_names: infoForTenancy.landlord_names ?? (infoForTenancy.landlord_name ? [infoForTenancy.landlord_name] : null),
           landlord_phone: infoForTenancy.landlord_phone,
           landlord_email: infoForTenancy.landlord_email,
@@ -363,7 +363,15 @@ serve(async (req) => {
         .select("id")
         .single();
 
-      if (!tenancyError && tenancy) {
+      if (tenancyError?.code === "23505") {
+        // Tenancy already exists (recovery created it first) — fetch existing
+        const { data: existing } = await adminClient
+          .from("tenancies").select("id")
+          .eq("user_id", user.id).eq("extracted_rental_info_id", extractionId).single();
+        if (existing) tenancyId = existing.id;
+      } else if (tenancyError) {
+        console.error("Failed to create tenancy:", tenancyError);
+      } else if (tenancy) {
         tenancyId = tenancy.id;
 
         // Link extraction to tenancy

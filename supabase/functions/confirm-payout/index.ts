@@ -157,7 +157,7 @@ serve(async (req: Request) => {
       // Send settlement_complete notification to user
       if (payment.user_id) {
         const amountRupees = (payoutPaise / 100).toLocaleString("en-IN");
-        notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
           user_id: payment.user_id,
           notification_type: "settlement_complete",
           template_vars: {

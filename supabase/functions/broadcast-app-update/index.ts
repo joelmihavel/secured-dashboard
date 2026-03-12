@@ -98,7 +98,7 @@ serve(async (req: Request) => {
 
     // Send notifications in batches
     const supabaseUrl = getSupabaseUrl();
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
     let sentCount = 0;
     let failedCount = 0;

@@ -17,7 +17,7 @@ import React, { memo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
 import { s, sf } from '@/src/theme/scale';
 
-export type HeadlineVariant = 'due' | 'overdue' | 'missed' | 'multiple_overdue';
+export type HeadlineVariant = 'due' | 'overdue' | 'missed' | 'multiple_overdue' | 'paid';
 
 export interface HeadlineSectionProps {
   variant: HeadlineVariant;
@@ -62,6 +62,13 @@ function HeadlineSectionComponent({
           <RNText style={styles.headline}>
             <RNText style={styles.grayText}>Multiple payments{'\n'}</RNText>
             <RNText style={styles.accentText}>are overdue</RNText>
+          </RNText>
+        );
+      case 'paid':
+        return (
+          <RNText style={styles.headline}>
+            <RNText style={styles.grayText}>Your rent is{'\n'}</RNText>
+            <RNText style={styles.accentText}>paid this month</RNText>
           </RNText>
         );
       default:

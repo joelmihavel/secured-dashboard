@@ -69,8 +69,8 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = (Deno.env.get("SB_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!;
+    const supabaseServiceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
     // Validate auth header
     const authHeader = req.headers.get("Authorization");
@@ -303,11 +303,26 @@ serve(async (req) => {
     }
 
     // ==============================================
-    // LINK WAITLIST_ENTRIES TO THIS EXTRACTION
+    // ENSURE WAITLIST_ENTRIES ROW EXISTS & LINK EXTRACTION
     // ==============================================
-    // waitlist_entries row already exists (created by on_user_created_join_waitlist trigger).
-    // Just update it to point to our new extraction — do NOT upsert/insert, because that
-    // fires waitlist_entries_sync_trigger which creates a DUPLICATE extracted_rental_info row.
+    // The waitlist_entries row is created by the join_waitlist RPC (called from the
+    // waitlist screen). If the user navigated directly to agreement upload without
+    // visiting the waitlist screen, no row exists yet. We call join_waitlist to
+    // ensure the row exists (it's idempotent — returns existing row if already present).
+
+    const { data: joinData, error: joinError } = await adminClient.rpc("join_waitlist", {
+      p_user_id: user.id,
+    });
+    if (joinError) {
+      console.log("[upload-document] Note: join_waitlist failed (non-fatal):", joinError.message);
+    } else if (joinData?.[0]?.is_new) {
+      // Advance user_status — the join_waitlist RPC only creates the row,
+      // the edge function wrapper normally handles status advancement.
+      await adminClient.from("users").update({
+        user_status: "waitlisted",
+        status_updated_at: new Date().toISOString(),
+      }).eq("id", user.id).eq("user_status", "signed_up");
+    }
 
     await adminClient.from("waitlist_entries").update(
       {

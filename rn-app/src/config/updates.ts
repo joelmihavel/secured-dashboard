@@ -162,12 +162,19 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
 // ==============================================
 
 /**
- * Set up automatic update checking when app returns to foreground.
+ * Set up automatic update checking on cold start + foreground returns.
+ *
+ * Fires an immediate check on setup (cold start — AppState starts 'active'
+ * so the change listener won't trigger). Subsequent checks fire when the
+ * app returns to foreground. 5-minute throttle prevents double-checking.
  *
  * Call once in root layout. Returns cleanup function.
  */
 export function setupAutoUpdateCheck(): () => void {
   if (__DEV__) return () => {};
+
+  // Immediate check on cold start
+  checkForUpdates();
 
   const handleAppStateChange = (nextState: AppStateStatus) => {
     if (nextState === 'active') {

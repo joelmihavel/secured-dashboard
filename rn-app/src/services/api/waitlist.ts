@@ -270,7 +270,7 @@ interface RawValidateReferralResponse {
 function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistStatusData {
   const batchConfig = raw.batch_config;
   const reviewTimeline = raw.review_timeline;
-  const defaultReviewText = reviewTimeline?.display_text ?? 'Approximately 24 hrs';
+  const defaultReviewText = reviewTimeline?.display_text ?? 'Approximately 72 hrs';
   const rejectionCooldownDays = batchConfig?.rejection_cooldown_days ?? 30;
 
   // No entry means user hasn't joined waitlist yet — treat as pending
@@ -281,8 +281,8 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
       position: null,
       estimatedWaitDays: null,
       submissionDate: null,
-      currentOnboarded: 0,
-      totalMemberSlots: batchConfig?.batch_size ?? 200,
+      currentOnboarded: raw.onboarded_count ?? 0,
+      totalMemberSlots: raw.total_member_slots ?? batchConfig?.batch_size ?? 200,
       estimatedReviewTime: defaultReviewText,
       rejectionReasons: [],
       nextApplicationCountdown: 0,
@@ -339,8 +339,8 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
   let estimatedReviewTime = defaultReviewText;
   if (state === 'pending_long') {
     // For pending_long, show a higher range if the backend provides hours
-    const hours = reviewTimeline?.hours ?? 24;
-    estimatedReviewTime = `Approximately ${hours}-${hours * 2} hrs`;
+    const hours = reviewTimeline?.hours ?? 72;
+    estimatedReviewTime = `Approximately ${hours} hrs`;
   }
 
   // Calculate countdown for rejected users

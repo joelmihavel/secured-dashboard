@@ -172,10 +172,16 @@ async function twilioRequest(
 export async function sendWhatsApp(
   message: WhatsAppMessage
 ): Promise<NotificationResult> {
-  // Format phone number for WhatsApp
-  const to = message.to.startsWith("whatsapp:")
-    ? message.to
-    : `whatsapp:+91${message.to.replace(/^\+?91/, "")}`;
+  // Format phone number for WhatsApp (supports any E.164 number)
+  let to: string;
+  if (message.to.startsWith("whatsapp:")) {
+    to = message.to;
+  } else if (message.to.startsWith("+")) {
+    to = `whatsapp:${message.to}`;
+  } else {
+    // Legacy fallback: bare digits, assume Indian
+    to = `whatsapp:+91${message.to.replace(/^91/, "")}`;
+  }
 
   const body: Record<string, string> = {
     From: TWILIO_WHATSAPP_NUMBER,

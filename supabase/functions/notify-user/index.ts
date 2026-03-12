@@ -261,7 +261,7 @@ serve(async (req: Request) => {
 
       // Call send-push-notification edge function internally
       const supabaseUrl = getSupabaseUrl();
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
       const pushResponse = await fetch(
         `${supabaseUrl}/functions/v1/send-push-notification`,

@@ -26,7 +26,7 @@ import { Text, PrimaryButton } from '@/src/components/ui';
 import { s, sf } from '@/src/theme/scale';
 
 export interface BottomFooterProps {
-  dueInDays: number;
+  dueInDays: number | null;
   amount: number;
   buttonLabel?: string;
   onPress: () => void;
@@ -54,7 +54,7 @@ function BottomFooterComponent({
       {/* Left side - Due info */}
       <View style={styles.leftContent}>
         <Text style={styles.dueLabel} numberOfLines={1} ellipsizeMode="tail">
-          {dueInDays < 0 ? `${Math.abs(dueInDays)} Days Overdue` : `Due in ${dueInDays} Days`}
+          {dueInDays === null ? 'Paid this month' : dueInDays < 0 ? `${Math.abs(dueInDays)} Days Overdue` : dueInDays === 0 ? 'Due Today' : `Due in ${dueInDays} Days`}
         </Text>
         <Text style={styles.amountText} numberOfLines={1} ellipsizeMode="tail">
           <Text inherit style={styles.rupeeSymbol}>{'₹ '}</Text>

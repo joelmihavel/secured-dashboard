@@ -28,7 +28,7 @@
  * Backend: send-landlord-invite edge function (POST, auth required)
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -42,7 +42,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, AlertBanner, Text, PhoneInput, TextInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
+import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
 import { DottedGridPattern, DottedGridPresets } from '@/src/components/patterns/DottedGridPattern';
 import { useSendLandlordInvite, useDashboard } from '@/src/hooks';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
@@ -74,10 +74,18 @@ export default function InviteLandlordScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [maxDigits, setMaxDigits] = useState(10);
-  const [landlordEmail, setLandlordEmail] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [inviteSent, setInviteSent] = useState(false);
+
+  // Pre-fill phone on return visits (phone saved on tenancy from previous invite)
+  useEffect(() => {
+    if (tenancy?.landlord_phone && !phoneNumber) {
+      const raw = tenancy.landlord_phone.replace(/\D/g, '');
+      const digits = raw.length > 10 ? raw.slice(-10) : raw;
+      setPhoneNumber(digits);
+    }
+  }, [tenancy?.landlord_phone]);
 
   // Animated progress bar
   const progress = useSharedValue(66.67);
@@ -107,12 +115,6 @@ export default function InviteLandlordScreen() {
     setMaxDigits(country.maxDigits);
   }, []);
 
-  const handleEmailChange = useCallback((text: string) => {
-    setLandlordEmail(text);
-    setErrors((prev) => { const { email: _, ...rest } = prev; return rest; });
-    setApiError(null);
-  }, []);
-
   const handlePhoneBlur = useCallback(() => {
     const cleaned = phoneNumber.replace(/\D/g, '');
     if (cleaned.length > 0 && cleaned.length < maxDigits) {
@@ -128,14 +130,9 @@ export default function InviteLandlordScreen() {
     if (!cleaned) newErrors.phone = 'Required';
     else if (cleaned.length < maxDigits) newErrors.phone = `Enter ${maxDigits} digit number`;
 
-    const trimmedEmail = landlordEmail.trim();
-    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      newErrors.email = 'Enter a valid email address';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [phoneNumber, maxDigits, landlordEmail]);
+  }, [phoneNumber, maxDigits]);
 
   const handleSubmit = useCallback(() => {
     if (!validateForm()) {
@@ -155,30 +152,20 @@ export default function InviteLandlordScreen() {
     sendLandlordInvite.mutate(
       {
         tenancyId: tenancy.id,
-        landlordName: 'Landlord',
         landlordPhone: cleaned,
-        landlordEmail: landlordEmail.trim() || undefined,
         countryCode: countryCode,
       },
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          if (data.alreadyApproved) {
+          setInviteSent(true);
+          setTimeout(() => {
             if (reentry) {
               router.replace('/(main)' as never);
             } else {
               router.push('/(setup)/pending-steps' as never);
             }
-          } else {
-            setInviteSent(true);
-            setTimeout(() => {
-              if (reentry) {
-                router.replace('/(main)' as never);
-              } else {
-                router.push('/(setup)/pending-steps' as never);
-              }
-            }, 1500);
-          }
+          }, 1500);
         },
         onError: (error: SetupError) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -186,7 +173,7 @@ export default function InviteLandlordScreen() {
         },
       }
     );
-  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, landlordEmail, tenancy?.id, router]);
+  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, tenancy?.id, router]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -264,16 +251,6 @@ export default function InviteLandlordScreen() {
               placeholder="Enter Number"
               error={errors.phone}
               disabled={sendLandlordInvite.isPending}
-            />
-
-            <TextInput
-              label="Landlord's Email (optional)"
-              value={landlordEmail}
-              onChangeText={handleEmailChange}
-              placeholder="e.g. landlord@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email}
             />
 
             <TouchableOpacity style={styles.inviteBanner} onPress={handleLearnMore}>

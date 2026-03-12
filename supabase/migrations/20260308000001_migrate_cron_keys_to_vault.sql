@@ -140,4 +140,4 @@ SELECT cron.schedule(
 --   - expire-stale-payments     → calls expire_stale_payments() SQL function
 --   - cleanup-processed-webhooks → direct DELETE SQL
 --   - expire-stale-otp-requests → direct UPDATE SQL
--- ==============================================;
+-- ==============================================

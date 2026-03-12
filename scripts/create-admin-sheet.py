@@ -51,7 +51,7 @@ def api(method, url, body=None):
 
 # ── Supabase key ──
 SRK = subprocess.run(
-    ['bash', '-c', 'supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb 2>/dev/null | grep service_role | awk \'{print $NF}\''],
+    ['bash', '-c', 'supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb 2>/dev/null | grep secret | awk \'{print $NF}\''],
     capture_output=True, text=True, cwd=PROJECT_DIR
 ).stdout.strip()
 if not SRK:
@@ -237,7 +237,7 @@ PAYMENT_COLUMNS = [
 
 def fetch_supabase(view):
     r = subprocess.run(['curl', '-s',
-        f'https://devapi.flent.in/rest/v1/{view}?select=*',
+        f'https://zqlowjveyqiagnbmfwsb.supabase.co/rest/v1/{view}?select=*',
         '-H', f'apikey: {SRK}', '-H', f'Authorization: Bearer {SRK}'],
         capture_output=True, text=True)
     if r.returncode != 0:

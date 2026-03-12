@@ -24,16 +24,19 @@ const PRODUCTION_ORIGINS = [
   "https://app.flentsecured.com",
   "https://landlord.flentsecured.com",
   "https://uowjtrzmszuaiokqxgir.supabase.co",
-  "https://zqlowjveyqiagnbmfwsb.supabase.co",
+  "https://hiw-landlord.flent.in",
+  "https://inquisitive-millions-803120.framer.app",
 ];
 
 const DEVELOPMENT_ORIGINS = [
   ...PRODUCTION_ORIGINS,
-  "https://uowjtrzmszuaiokqxgir.supabase.co",
+  "https://zqlowjveyqiagnbmfwsb.supabase.co",
   "http://localhost:3000",
   "http://localhost:8081",
   "capacitor://localhost",
   "http://localhost",
+  "https://hiw-landlord.flent.in",
+  "https://inquisitive-millions-803120.framer.app",
 ];
 
 const ALLOWED_ORIGINS = IS_PRODUCTION ? PRODUCTION_ORIGINS : DEVELOPMENT_ORIGINS;
