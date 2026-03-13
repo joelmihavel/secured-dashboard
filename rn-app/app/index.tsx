@@ -8,8 +8,9 @@
  *  4. Authenticated, active -> main dashboard
  *
  * Routing uses TWO strategies (PostgREST primary, edge function fallback):
- *  - PRIMARY: getSession() (reads local cache) → PostgREST query for user_status
- *    Uses cached session — avoids triggering SDK refresh chain race condition.
+ *  - PRIMARY: userId from AuthProvider context → PostgREST query for user_status
+ *    NEVER calls getSession() — in auth-js v2.65.1 it triggers _callRefreshToken()
+ *    which races with autoRefreshToken and causes spurious SIGNED_OUT events.
  *  - FALLBACK: getWaitlistStatus() edge function via callEdgeFunction
  *    Provides richer data but has manual auth that can fail on stale sessions.
  *
@@ -51,29 +52,22 @@ type JourneyTarget =
 /**
  * Query user_status directly via PostgREST (PRIMARY routing path).
  *
- * Uses getSession() (local cache read) instead of getUser() (server call).
- * getUser() triggers the SDK's internal _callRefreshToken() chain, which
- * races with autoRefreshToken — both consume the refresh token simultaneously.
- * With refresh token rotation (Supabase default), the second attempt gets 401
- * → SDK fires _removeSession() → SIGNED_OUT → spurious logout.
+ * Accepts userId from AuthProvider context — NEVER calls getSession().
+ * In auth-js v2.65.1, getSession() calls _callRefreshToken() when the JWT
+ * is expired. This races with autoRefreshToken — both consume the refresh
+ * token simultaneously. With refresh token rotation (Supabase default),
+ * the second attempt gets 401 → _removeSession() → SIGNED_OUT → logout.
  *
- * The PostgREST query itself validates the token server-side (via RLS).
- * If the token is expired, PostgREST returns 401, and we fall through to
- * the edge function fallback. The SDK's auto-refresh handles token renewal
- * independently without racing.
+ * The PostgREST query uses the Supabase client's internal token (managed
+ * by the SDK). If the token is expired, PostgREST returns 401, and we
+ * fall through to the edge function fallback.
  */
-async function queryUserStatus(): Promise<string | null> {
+async function queryUserStatus(userId: string): Promise<string | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) {
-      console.warn('[journey-router] No session available for routing');
-      return null;
-    }
-
     const { data: userRecord, error } = await supabase
       .from('users')
       .select('user_status')
-      .eq('id', session.user.id)
+      .eq('id', userId)
       .single();
 
     if (error || !userRecord?.user_status) {
@@ -118,18 +112,12 @@ function statusToTarget(userStatus: string): JourneyTarget | '/(agreement)/revie
  * "Re-upload Agreement", the old extraction is dismissed and should NOT cause
  * routing to waitlist/review (prevents the re-upload loop).
  */
-async function checkManualReviewExtraction(): Promise<boolean> {
+async function checkManualReviewExtraction(userId: string): Promise<boolean> {
   try {
-    // Use getSession() instead of getUser() to avoid triggering the SDK's
-    // refresh chain race condition (see queryUserStatus comment above).
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return false;
-    const user = session.user;
-
     const { data } = await supabase
       .from('extracted_rental_info')
       .select('id, needs_manual_review, is_city_supported')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('extraction_status', 'completed')
       .eq('user_verified', false)
       .order('created_at', { ascending: false })
@@ -153,12 +141,12 @@ async function checkManualReviewExtraction(): Promise<boolean> {
 export default function Index() {
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
-  const { isAuthenticated, isLoading: authLoading } = useAuthContext();
+  const { isAuthenticated, isLoading: authLoading, session: authSession } = useAuthContext();
   const [journeyResolved, setJourneyResolved] = useState(false);
   const [target, setTarget] = useState<JourneyTarget | string | null>(null);
   const hasNavigatedRef = useRef(false);
 
-  const resolveAuthenticatedJourney = useCallback(async () => {
+  const resolveAuthenticatedJourney = useCallback(async (userId: string) => {
     try {
       // Wait for upload store hydration (max 500ms) before reading state.
       // SecureStore is fast (~10-50ms), but we need the store ready before
@@ -201,7 +189,7 @@ export default function Index() {
         setTarget(cachedRoute);
         setJourneyResolved(true);
         // Validate in background — if user_status changed, redirect
-        queryUserStatus().then(async (userStatus) => {
+        queryUserStatus(userId).then(async (userStatus) => {
           if (!userStatus) return; // Network failed, keep cached route
           const correctTarget = statusToTarget(userStatus);
           if (correctTarget && correctTarget !== cachedRoute) {
@@ -213,8 +201,8 @@ export default function Index() {
         return;
       }
 
-      // ── PRIMARY PATH: PostgREST (getUser validates session server-side) ──
-      let userStatus = await queryUserStatus();
+      // ── PRIMARY PATH: PostgREST query with user ID from AuthProvider context ──
+      let userStatus = await queryUserStatus(userId);
 
       // ── FALLBACK PATH: Edge function via callEdgeFunction ──
       if (!userStatus) {
@@ -233,22 +221,9 @@ export default function Index() {
 
       // ── ROUTE ──
       if (!userStatus) {
-        // Both paths failed. Check if we still have a cached session before
-        // giving up. Use getSession() (reads from storage, auto-refreshes if
-        // expired) instead of getUser() (network call that fails on stale tokens).
-        // A 401 from getUser() does NOT mean the user was deleted — it just means
-        // the access token expired. Only sign out if there's truly no session.
-        const { data: { session: fallbackSession } } = await supabase.auth.getSession();
-        if (!fallbackSession) {
-          // No session at all — user is genuinely signed out
-          console.warn('[journey-router] No session after both paths failed — signing out');
-          setTarget('/(auth)/beta-splash');
-          setJourneyResolved(true);
-          return;
-        }
-        // Session exists but routing failed (transient network issue) — safe default
-        console.warn('[journey-router] Session valid but routing failed — defaulting to upload');
-        // Session valid but no user_status — genuinely new user, go to upload
+        // Both paths failed. We already know we're authenticated (AuthProvider
+        // confirmed), so this is a transient network issue — safe default.
+        console.warn('[journey-router] Both routing paths failed — defaulting to upload');
         setTarget('/(agreement)/upload');
         setJourneyResolved(true);
         return;
@@ -263,7 +238,7 @@ export default function Index() {
         // signed_up — need to check extraction state to route correctly
         // First: check if there's a completed extraction awaiting manual review.
         // If so, the upload is done — route to waitlist, not back to upload.
-        const manualReview = await checkManualReviewExtraction();
+        const manualReview = await checkManualReviewExtraction(userId);
         if (manualReview) {
           setTarget('/(waitlist)');
         } else {
@@ -339,8 +314,15 @@ export default function Index() {
     }
 
     // Authenticated, normal mode — resolve full journey
-    resolveAuthenticatedJourney();
-  }, [authLoading, isAuthenticated, resolveAuthenticatedJourney]);
+    const userId = authSession?.user?.id;
+    if (!userId) {
+      // Session exists but no user ID — shouldn't happen, safe fallback
+      setTarget('/(agreement)/upload');
+      setJourneyResolved(true);
+      return;
+    }
+    resolveAuthenticatedJourney(userId);
+  }, [authLoading, isAuthenticated, authSession, resolveAuthenticatedJourney]);
 
   // Imperative one-shot navigation — guarded by navigation readiness.
   // In release mode, SecureStore resolves auth state faster than fonts load,
