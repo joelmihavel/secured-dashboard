@@ -52,6 +52,56 @@ let lastCheckTime = 0;
 const MIN_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes (reduced from 30m for payment app)
 
 // ==============================================
+// COLD-START OTA GATE (for splash-aware reload)
+// ==============================================
+// index.tsx calls waitForColdStartOTA() before hiding the splash screen.
+// If an OTA update downloads while the splash is still visible, we reload
+// behind the splash → user sees a single continuous splash, not two.
+
+let _otaUpdateDownloaded = false;
+let _otaUpdateDetected = false;
+let _otaWaiters: Array<(downloaded: boolean) => void> = [];
+
+/** Called by useOTAUpdates when checkForUpdateAsync finds an update */
+export function notifyUpdateDetected(): void {
+  _otaUpdateDetected = true;
+}
+
+/** Called by useOTAUpdates when fetchUpdateAsync completes successfully */
+export function notifyUpdateDownloaded(): void {
+  _otaUpdateDownloaded = true;
+  // Resolve all waiters
+  _otaWaiters.forEach((resolve) => resolve(true));
+  _otaWaiters = [];
+}
+
+/**
+ * Wait for a cold-start OTA download to complete (max 4s).
+ * Returns true if an update was downloaded and a reload is recommended.
+ * Returns false immediately if no update was detected, or after 4s timeout.
+ *
+ * Called by index.tsx before SplashScreen.hideAsync() to allow
+ * reloading behind the native splash (single splash experience).
+ */
+export async function waitForColdStartOTA(): Promise<boolean> {
+  if (__DEV__ || !Updates) return false;
+  // No update detected — return immediately (zero delay for normal launches)
+  if (!_otaUpdateDetected) return false;
+  // Already downloaded — reload now
+  if (_otaUpdateDownloaded) return true;
+
+  // Update detected but still downloading — wait up to 4s
+  return new Promise<boolean>((resolve) => {
+    _otaWaiters.push(resolve);
+    setTimeout(() => {
+      // Remove from waiters and resolve false (timed out)
+      _otaWaiters = _otaWaiters.filter((w) => w !== resolve);
+      resolve(false);
+    }, 4000);
+  });
+}
+
+// ==============================================
 // EMERGENCY LAUNCH DETECTION
 // ==============================================
 

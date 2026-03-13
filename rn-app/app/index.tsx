@@ -8,8 +8,8 @@
  *  4. Authenticated, active -> main dashboard
  *
  * Routing uses TWO strategies (PostgREST primary, edge function fallback):
- *  - PRIMARY: getUser() (server-side validation) → PostgREST query for user_status
- *    Uses SDK's built-in auth — more robust than manual token handling.
+ *  - PRIMARY: getSession() (reads local cache) → PostgREST query for user_status
+ *    Uses cached session — avoids triggering SDK refresh chain race condition.
  *  - FALLBACK: getWaitlistStatus() edge function via callEdgeFunction
  *    Provides richer data but has manual auth that can fail on stale sessions.
  *
@@ -32,6 +32,7 @@ import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, getJourneyRouteTarget } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { supabase } from '@/src/services/supabase/client';
+import { waitForColdStartOTA, reloadApp } from '@/src/config/updates';
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
@@ -50,30 +51,29 @@ type JourneyTarget =
 /**
  * Query user_status directly via PostgREST (PRIMARY routing path).
  *
- * 1. Calls getUser() — validates token server-side and triggers refresh if expired
- * 2. Queries public.users via PostgREST — RLS policy users_select_own allows this
+ * Uses getSession() (local cache read) instead of getUser() (server call).
+ * getUser() triggers the SDK's internal _callRefreshToken() chain, which
+ * races with autoRefreshToken — both consume the refresh token simultaneously.
+ * With refresh token rotation (Supabase default), the second attempt gets 401
+ * → SDK fires _removeSession() → SIGNED_OUT → spurious logout.
  *
- * This bypasses callEdgeFunction's manual auth handling. The Supabase SDK
- * manages token injection internally, which is more resilient to session edge cases.
+ * The PostgREST query itself validates the token server-side (via RLS).
+ * If the token is expired, PostgREST returns 401, and we fall through to
+ * the edge function fallback. The SDK's auto-refresh handles token renewal
+ * independently without racing.
  */
 async function queryUserStatus(): Promise<string | null> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.warn('[journey-router] getUser failed:', userError?.message);
-      // DO NOT call signOut() here. GoTrue returns similar error messages
-      // ("not found", 401) for both deleted users AND expired JWTs that haven't
-      // been refreshed yet. Calling signOut() on an expired-but-refreshable
-      // session causes a legitimate user to be logged out on cold start.
-      // If the user is truly deleted, the SDK's next auto-refresh will fail
-      // with a non-retryable error and fire SIGNED_OUT through AuthProvider.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      console.warn('[journey-router] No session available for routing');
       return null;
     }
 
     const { data: userRecord, error } = await supabase
       .from('users')
       .select('user_status')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
 
     if (error || !userRecord?.user_status) {
@@ -120,8 +120,11 @@ function statusToTarget(userStatus: string): JourneyTarget | '/(agreement)/revie
  */
 async function checkManualReviewExtraction(): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
+    // Use getSession() instead of getUser() to avoid triggering the SDK's
+    // refresh chain race condition (see queryUserStatus comment above).
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return false;
+    const user = session.user;
 
     const { data } = await supabase
       .from('extracted_rental_info')
@@ -355,11 +358,22 @@ export default function Index() {
       // User signed out — clear cached route
       SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
     }
-    // Hide native splash AFTER navigation fires — keeps splash visible during
-    // font loading, auth checks, and journey resolution (prevents black screen).
-    // 500ms gives the target screen time to mount and render its first frame.
-    // The native splash (same #131313 background) is visually seamless.
-    setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 500);
+    // Before hiding splash, check if an OTA update downloaded during the loading
+    // phase. If so, reload behind the still-visible splash → user sees a single
+    // continuous splash instead of splash → content → splash (double splash).
+    // waitForColdStartOTA() returns immediately (zero delay) if no update was
+    // detected, so normal launches are unaffected.
+    const hideSplashOrReload = async () => {
+      const shouldReload = await waitForColdStartOTA();
+      if (shouldReload) {
+        console.log('[journey-router] OTA update ready — reloading behind splash');
+        reloadApp(); // Splash stays visible → single splash on reload
+        return;
+      }
+      // No OTA update — hide splash after 500ms to let target screen render
+      setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 500);
+    };
+    hideSplashOrReload();
   }, [journeyResolved, target, router, rootNavigationState?.key]);
 
   // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack

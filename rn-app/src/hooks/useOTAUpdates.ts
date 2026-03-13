@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { trackEvent } from '../config/analytics';
-import { isCriticalUpdate, reloadApp } from '../config/updates';
+import { isCriticalUpdate, reloadApp, notifyUpdateDetected, notifyUpdateDownloaded } from '../config/updates';
 import { usePaymentStore, selectIsProcessing } from '../stores';
 
 // Auto-apply downloaded updates after this much background time (5 minutes)
@@ -122,6 +122,7 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
   useEffect(() => {
     if (updates.isUpdateAvailable && !updates.isDownloading && !hasHandledRef.current && !dismissed) {
       hasHandledRef.current = true;
+      notifyUpdateDetected(); // Signal to index.tsx that an OTA download is starting
       setBannerState('downloading');
       setDownloadProgress(0);
 
@@ -130,6 +131,7 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
 
       fetchUpdateAsync!()
         .then((result: any) => {
+          notifyUpdateDownloaded(); // Signal that download completed
           // Clear safety timeout on any resolution
           if (safetyTimeoutRef.current) {
             clearTimeout(safetyTimeoutRef.current);

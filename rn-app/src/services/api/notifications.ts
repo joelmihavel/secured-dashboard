@@ -28,8 +28,10 @@ export interface NotificationPreferences {
  * Fetch the current user's notification preferences.
  */
 export async function getNotificationPreferences(): Promise<NotificationPreferences> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  // Use getSession() instead of getUser() to avoid triggering SDK refresh chain race
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) throw new Error('Not authenticated');
+  const user = session.user;
 
   const { data, error } = await supabase
     .from('notification_preferences')
@@ -48,8 +50,10 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
 export async function updateNotificationPreferences(
   prefs: Partial<NotificationPreferences>
 ): Promise<NotificationPreferences> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  // Use getSession() instead of getUser() to avoid triggering SDK refresh chain race
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) throw new Error('Not authenticated');
+  const user = session.user;
 
   const { data, error } = await supabase
     .from('notification_preferences')

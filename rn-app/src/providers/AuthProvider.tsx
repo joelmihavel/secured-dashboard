@@ -79,6 +79,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const hasRedirectedRef = useRef(false);
 
+  // Backup of last known good session for SIGNED_OUT recovery.
+  // The SDK clears both memory AND SecureStore before firing SIGNED_OUT,
+  // so getSession() always returns null. This ref preserves the session
+  // for re-injection when the sign-out was caused by a transient refresh failure.
+  const lastKnownSessionRef = useRef<Session | null>(null);
+  // Prevent infinite recovery loops — only attempt once per SIGNED_OUT event.
+  const recoveryAttemptedRef = useRef(false);
+
   // Track whether a user-initiated sign-out is in progress.
   // When the user taps "Sign Out", useAuth().signOut() clears stores and navigates.
   // The SDK then fires SIGNED_OUT, and our delayed handler would redundantly
@@ -114,6 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             return;
           }
           setSession(initialSession);
+          lastKnownSessionRef.current = initialSession;
         } else {
           setSession(null);
         }
@@ -139,21 +148,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
 
           // Guard: The SDK fires SIGNED_OUT on transient refresh failures (network
-          // timeout, CF proxy cold-start, ISP DNS block). The SDK clears the
-          // in-memory session BEFORE firing this event, so an immediate getSession()
-          // always returns null — making it useless as a guard.
+          // timeout, CF proxy cold-start, ISP DNS block). The SDK clears both
+          // in-memory session AND SecureStore BEFORE firing this event, so
+          // getSession() always returns null — making it useless as a guard.
           //
-          // Wait 2 seconds for the SDK's auto-refresh to potentially recover
-          // (it retries on transient failures), then check if a session was restored.
+          // Strategy: Wait 2s for auto-refresh recovery, then try re-injecting
+          // the backup session. If re-injection succeeds, the SDK refreshes
+          // the tokens and we're back in business. If it fails, it's genuine.
           setTimeout(async () => {
             try {
               const { data: { session: recoveredSession } } = await supabase.auth.getSession();
               if (recoveredSession) {
                 console.warn('[AuthProvider] SIGNED_OUT fired but session recovered after delay — ignoring (transient refresh failure)');
                 setSession(recoveredSession);
+                lastKnownSessionRef.current = recoveredSession;
+                recoveryAttemptedRef.current = false;
                 return;
               }
-              // No recovered session — this is a genuine sign-out
+
+              // Try re-injecting the backup session (only once to prevent loops).
+              // setSession() will attempt to refresh the tokens. If the refresh
+              // token was already consumed, it fires another SIGNED_OUT — the
+              // recoveryAttemptedRef guard prevents re-entry.
+              const backup = lastKnownSessionRef.current;
+              if (backup?.refresh_token && !recoveryAttemptedRef.current) {
+                recoveryAttemptedRef.current = true;
+                console.warn('[AuthProvider] Attempting session recovery from backup...');
+                const { data: { session: restoredSession }, error: restoreError } =
+                  await supabase.auth.setSession({
+                    access_token: backup.access_token,
+                    refresh_token: backup.refresh_token,
+                  });
+                if (restoredSession && !restoreError) {
+                  console.warn('[AuthProvider] Session recovered from backup — ignoring SIGNED_OUT');
+                  setSession(restoredSession);
+                  lastKnownSessionRef.current = restoredSession;
+                  return;
+                }
+                // Recovery failed — fall through to genuine sign-out
+                console.warn('[AuthProvider] Backup recovery failed:', restoreError?.message);
+              }
+
+              // No recovery possible — genuine sign-out
+              recoveryAttemptedRef.current = false;
+              lastKnownSessionRef.current = null;
               if (hasRedirectedRef.current) return;
               hasRedirectedRef.current = true;
 
@@ -170,13 +208,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
               }, 2000);
             } catch {
               // getSession() itself failed — don't log out on network errors
-              console.warn('[AuthProvider] SIGNED_OUT + getSession() failed — keeping session');
+              console.warn('[AuthProvider] SIGNED_OUT + recovery failed — keeping session');
             }
           }, 2000);
         } else if (event === 'TOKEN_REFRESHED') {
           if (newSession) {
             // Token refresh succeeded — update with fresh tokens
             setSession(newSession);
+            lastKnownSessionRef.current = newSession;
+            recoveryAttemptedRef.current = false;
           } else {
             // Token refresh failed (likely transient network error, ISP DNS block,
             // or Cloudflare proxy cold-start). DO NOT clear the session — the user
@@ -186,6 +226,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } else if (event === 'SIGNED_IN' && newSession) {
           setSession(newSession);
+          lastKnownSessionRef.current = newSession;
+          recoveryAttemptedRef.current = false;
           hasRedirectedRef.current = false;
           // Register push token after successful auth
           registerForPushNotifications().catch(() => {
@@ -197,6 +239,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Only update if we got a valid session (don't overwrite with null).
           if (newSession) {
             setSession(newSession);
+            lastKnownSessionRef.current = newSession;
           }
         }
       }
