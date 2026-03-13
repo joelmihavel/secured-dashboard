@@ -90,8 +90,11 @@ const ExpoSecureStoreAdapter = {
       }
       await SecureStore.setItemAsync(`${key}_chunks`, String(chunks.length));
     } catch (err) {
+      // MUST NOT throw — the Supabase SDK calls setItem internally during
+      // session persistence. If this throws, the SDK's _saveSession breaks,
+      // leaving the internal session state corrupt (SIGNED_OUT fires, PostgREST
+      // calls fail with 401, dashboard shows black screen).
       console.error('SecureStore setItem failed:', key, err);
-      throw err;
     }
   },
 
@@ -107,8 +110,9 @@ const ExpoSecureStoreAdapter = {
       }
       await SecureStore.deleteItemAsync(key);
     } catch (err) {
+      // MUST NOT throw — the Supabase SDK calls removeItem during signOut.
+      // Throwing here breaks the signOut flow and leaves stale session data.
       console.error('SecureStore removeItem failed:', key, err);
-      throw err;
     }
   },
 };

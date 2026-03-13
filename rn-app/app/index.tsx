@@ -145,8 +145,14 @@ export default function Index() {
   const [journeyResolved, setJourneyResolved] = useState(false);
   const [target, setTarget] = useState<JourneyTarget | string | null>(null);
   const hasNavigatedRef = useRef(false);
+  const isResolvingRef = useRef(false); // Guard against concurrent journey resolutions
 
   const resolveAuthenticatedJourney = useCallback(async (userId: string) => {
+    // Prevent re-entry: multiple auth events (INITIAL_SESSION, SIGNED_IN,
+    // TOKEN_REFRESHED) cause the effect to re-fire. Without this guard,
+    // concurrent resolutions flash the skeleton and can set conflicting targets.
+    if (isResolvingRef.current || journeyResolved) return;
+    isResolvingRef.current = true;
     try {
       // Wait for upload store hydration (max 500ms) before reading state.
       // SecureStore is fast (~10-50ms), but we need the store ready before
@@ -271,12 +277,18 @@ export default function Index() {
       console.error('[journey-router] resolveAuthenticatedJourney error:', err);
       setTarget('/(agreement)/upload');
       setJourneyResolved(true);
+    } finally {
+      isResolvingRef.current = false;
     }
-  }, []);
+  }, [journeyResolved]);
 
-  // Resolve journey target once auth state is known
+  // Resolve journey target once auth state is known.
+  // IMPORTANT: Does NOT depend on authSession — only on authLoading and isAuthenticated.
+  // Multiple auth events (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED) change authSession,
+  // but re-firing the effect for each one causes concurrent journey resolutions that
+  // flash the skeleton UI and can navigate to wrong targets.
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || journeyResolved) return;
 
     // Review mode — no real Supabase session exists, so check this BEFORE isAuthenticated.
     // isReviewMode() reads a module-level variable (not React state), so AuthProvider's
@@ -313,7 +325,9 @@ export default function Index() {
       return;
     }
 
-    // Authenticated, normal mode — resolve full journey
+    // Authenticated, normal mode — resolve full journey.
+    // Read userId directly from authSession — no dep on authSession object
+    // to avoid re-firing on every token refresh.
     const userId = authSession?.user?.id;
     if (!userId) {
       // Session exists but no user ID — shouldn't happen, safe fallback
@@ -322,7 +336,8 @@ export default function Index() {
       return;
     }
     resolveAuthenticatedJourney(userId);
-  }, [authLoading, isAuthenticated, authSession, resolveAuthenticatedJourney]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated]);
 
   // Imperative one-shot navigation — guarded by navigation readiness.
   // In release mode, SecureStore resolves auth state faster than fonts load,
@@ -344,13 +359,14 @@ export default function Index() {
     // behind the still-visible splash for a seamless update. Don't WAIT for
     // in-progress downloads -- waitForColdStartOTA() returns immediately now.
     // Updates still downloading will apply on next launch or background return.
-    waitForColdStartOTA().then((shouldReload) => {
+    waitForColdStartOTA().then(async (shouldReload) => {
       if (shouldReload) {
         console.log('[journey-router] OTA update ready — reloading behind splash');
-        reloadApp();
-        return;
+        const reloaded = await reloadApp();
+        if (reloaded) return; // App is restarting — nothing more to do
+        // reloadApp failed — fall through to hide splash normally
       }
-      // No OTA update -- hide splash after brief delay to let target screen render
+      // No OTA update (or reload failed) -- hide splash after brief delay
       setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
     });
   }, [journeyResolved, target, router, rootNavigationState?.key]);
