@@ -23,18 +23,7 @@ import { createServiceClient, createAuthenticatedClient } from "../_shared/supab
 import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { computeRisk } from "../_shared/risk-utils.ts";
-import { isTestUser } from "../_shared/demo-helpers.ts";
-
-// ==============================================
-// TYPES
-// ==============================================
-
-interface JoinWaitlistResult {
-  entry_id: string;
-  entry_position: number;
-  is_new: boolean;
-}
+import { ensureWaitlistState, maybeAutoApproveDemoUser } from "../_shared/onboarding.ts";
 
 // ==============================================
 // MAIN HANDLER
@@ -81,7 +70,7 @@ serve(async (req: Request) => {
     }
 
     // Allow if user is already waitlisted or beyond (idempotent)
-    const allowedStatuses = ["agreement_confirmed", "waitlisted", "approved", "active"];
+    const allowedStatuses = ["signed_up", "agreement_confirmed", "waitlisted", "approved", "active"];
     if (!allowedStatuses.includes(userData.user_status)) {
       return jsonResponse(
         {
@@ -95,96 +84,38 @@ serve(async (req: Request) => {
       );
     }
 
-    // Call the join_waitlist RPC (idempotent)
-    const { data: rpcResult, error: rpcError } = await supabase
-      .rpc("join_waitlist", { p_user_id: userId })
-      .single();
-
-    if (rpcError) {
-      console.error("[join-waitlist] RPC error:", rpcError);
-      throw new Error("Failed to join waitlist");
-    }
-
-    const result = rpcResult as JoinWaitlistResult;
-
-    // Advance user_status from agreement_confirmed → waitlisted
-    if (result.is_new && userData.user_status === "agreement_confirmed") {
-      const { error: statusError } = await supabase
-        .from("users")
-        .update({
-          user_status: "waitlisted",
-          status_updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId)
-        .eq("user_status", "agreement_confirmed"); // Optimistic lock
-
-      if (statusError) {
-        console.error("[join-waitlist] Failed to advance user_status:", statusError);
-        // Non-fatal — waitlist entry was created, status can be corrected
-      }
-    }
-
-    // Compute risk assessment for the waitlist entry
-    if (result.is_new) {
-      try {
-        const riskResult = await computeRisk(userId, supabase);
-        await supabase.from("waitlist_entries").update({
-          risk_level: riskResult.risk_level,
-          risk_factors: riskResult.risk_factors,
-          risk_computed_at: new Date().toISOString(),
-        }).eq("id", result.entry_id);
-        console.log(`[join-waitlist] Risk computed: ${riskResult.risk_level} for entry ${result.entry_id}`);
-      } catch (riskError) {
-        console.error("[join-waitlist] Risk computation failed (non-fatal):", riskError);
-        // risk_level stays 'PENDING' (column default)
-      }
-    }
+    const result = await ensureWaitlistState({
+      supabase,
+      userId,
+      currentUserStatus: userData.user_status,
+    });
 
     // ── DEMO AUTO-APPROVAL ──────────────────────────────────────────
     // Test users bypass admin review — instant approval for Apple Review flow.
-    if (result.is_new && await isTestUser(userId, supabase)) {
-      // Auto-approve the waitlist entry
-      await supabase
-        .from("waitlist_entries")
-        .update({ admin_review: "approved" })
-        .eq("id", result.entry_id);
-
-      // Advance user_status to "approved"
-      await supabase
-        .from("users")
-        .update({
-          user_status: "approved",
-          status_updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      // Activate tenancy (demo users skip the pending_verification phase)
-      await supabase
-        .from("tenancies")
-        .update({ status: "active" })
-        .eq("user_id", userId)
-        .in("status", ["pending", "pending_verification"]);
-
-      console.log(`[join-waitlist] Demo auto-approval for test user ${userId}`);
-
+    const demoResult = await maybeAutoApproveDemoUser({
+      supabase,
+      userId,
+      waitlistEntryId: result.entryId,
+    });
+    if (demoResult.autoApproved) {
       await audit.logSuccess(
         "WAITLIST_DEMO_AUTO_APPROVED",
-        "waitlist",
+        "system",
         "waitlist_entries",
-        result.entry_id,
-        { demo: true, position: result.entry_position }
+        result.entryId,
+        { demo: true, position: result.position }
       );
     }
     // ── END DEMO AUTO-APPROVAL ──────────────────────────────────────
 
     // Log audit event
-    if (result.is_new) {
+    if (result.isNew) {
       await audit.logSuccess(
         "WAITLIST_JOINED",
-        "waitlist",
+        "system",
         "waitlist_entries",
-        result.entry_id,
-        { position: result.entry_position }
+        result.entryId,
+        { position: result.position }
       );
     }
 
@@ -192,9 +123,9 @@ serve(async (req: Request) => {
       {
         success: true,
         data: {
-          entry_id: result.entry_id,
-          position: result.entry_position,
-          is_new: result.is_new,
+          entry_id: result.entryId,
+          position: result.position,
+          is_new: result.isNew,
         },
       },
       200,
@@ -204,7 +135,7 @@ serve(async (req: Request) => {
     if (audit && userId) {
       await audit.logFailure(
         "WAITLIST_JOIN_FAILED",
-        "waitlist",
+        "system",
         error instanceof Error ? error.message : "Unknown error",
         "Failed to join waitlist",
         "user",

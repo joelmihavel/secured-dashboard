@@ -18,7 +18,7 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text as RNText, TouchableOpacity, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, Text as RNText, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +44,7 @@ import { s } from '@/src/theme/scale';
 import { typography } from '@/src/theme/typography';
 import { spacing, radius } from '@/src/theme';
 import type { TimelineItemData } from '@/src/components/waitlist/ApplicationTimeline';
+import { useUploadStore } from '@/src/stores/upload';
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -298,6 +299,35 @@ export default function WaitlistScreen() {
     }
   }, [viewState, navigateToApproved, isNavigating, transitionOpacity]);
 
+  useEffect(() => {
+    if (!status?.requiresReupload || isNavigating) {
+      return;
+    }
+
+    setIsNavigating(true);
+    useUploadStore.getState().prepareForReupload({
+      extractionId: status.extractionId,
+      fileName: status.fileName,
+      errorMessage:
+        status.reuploadMessage ??
+        'Please upload a valid rental agreement to continue.',
+    });
+
+    transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
+      if (finished) {
+        runOnJS(navigateToAgreement)();
+      }
+    });
+  }, [
+    status?.requiresReupload,
+    status?.reuploadMessage,
+    status?.extractionId,
+    status?.fileName,
+    navigateToAgreement,
+    isNavigating,
+    transitionOpacity,
+  ]);
+
   // Journey demo mode: auto-approve after 3 seconds when pending
   useEffect(() => {
     if (isJourneyMode() && viewState === 'pending') {
@@ -309,12 +339,22 @@ export default function WaitlistScreen() {
     }
   }, [viewState, queryClient]);
 
-  // Auto-join waitlist on first visit if no entry exists
+  // Auto-join waitlist on first visit if no entry exists.
+  // Guard: only fire when status is resolved (not null) and explicitly doesn't require reupload.
+  // Without the `status !== undefined` check, stale cached data (where requiresReupload is
+  // not yet computed) could trigger join before the reupload redirect effect runs.
   useEffect(() => {
-    if (!isLoading && viewState === 'pending' && !status?.position && !isJoiningWaitlist) {
+    if (
+      !isLoading &&
+      status !== undefined &&
+      viewState === 'pending' &&
+      !status?.position &&
+      status?.requiresReupload === false &&
+      !isJoiningWaitlist
+    ) {
       joinWaitlist();
     }
-  }, [isLoading, viewState, status?.position]);
+  }, [isLoading, viewState, status, isJoiningWaitlist, joinWaitlist]);
 
   // Handle AGREEMENT_NOT_CONFIRMED gate error — redirect to agreement upload
   useEffect(() => {

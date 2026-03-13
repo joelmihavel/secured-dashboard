@@ -21,8 +21,7 @@ import {
   handleError,
 } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { matchNameAgainstCandidates } from "../_shared/gemini.ts";
-import { isTestUser } from "../_shared/demo-helpers.ts";
+import { finalizeExtractionForOnboarding } from "../_shared/onboarding.ts";
 
 // ==============================================
 // TYPES
@@ -227,160 +226,18 @@ serve(async (req) => {
 
     console.log("[confirm-extraction] Updating extraction with:", JSON.stringify(updateData).substring(0, 500));
 
-    const { error: updateError } = await adminClient
-      .from("extracted_rental_info")
-      .update(updateData)
-      .eq("id", extractionId);
-
-    if (updateError) {
-      console.error("Failed to update extracted_rental_info:", updateError);
-      throw new AppError(
-        "Failed to confirm extraction",
-        "UPDATE_ERROR",
-        500
-      );
-    }
-
-    // BUG 3 FIX: Re-fetch the updated record so tenancy creation uses
-    // user-corrected data instead of the stale pre-update snapshot.
-    const { data: updatedInfo } = await adminClient
-      .from("extracted_rental_info")
-      .select("*")
-      .eq("id", extractionId)
-      .single();
-
-    const infoForTenancy = updatedInfo ?? extractedInfo;
-
-    // ==============================================
-    // LOCK USER ROLE (V1 compatibility)
-    // ==============================================
-
-    const { error: roleError } = await adminClient
-      .from("users")
-      .update({
-        role: confirmedRole,
-        is_role_locked: true,
-        role_locked_at: new Date().toISOString(),
-        // V2: update user_status to agreement_confirmed (gated — must join waitlist separately)
-        user_status: "agreement_confirmed",
-        status_updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id)
-      .eq("is_role_locked", false); // Only update if not already locked
-
-    if (roleError) {
-      console.error("Failed to lock user role:", roleError);
-      // Don't throw - extraction is confirmed, role lock is secondary
-    }
-
-    // ==============================================
-    // TENANT IDENTIFICATION VIA GEMINI
-    // ==============================================
-    // Match the authenticated user against tenant names in the agreement
-
-    try {
-      const { data: userForMatch } = await adminClient
-        .from("users")
-        .select("full_name")
-        .eq("id", user.id)
-        .single();
-
-      // Get tenant_names: prefer user-corrected data, fall back to DB
-      const tenantNames: string[] = updateData.tenant_names
-        ?? (extractedInfo.tenant_names as string[])
-        ?? [];
-
-      if (userForMatch?.full_name && tenantNames.length > 0) {
-        // Single Gemini call with all tenant names
-        const matchResult = await matchNameAgainstCandidates(
-          userForMatch.full_name,
-          tenantNames,
-          "tenant_verification"
-        );
-
-        const bestMatchIndex = matchResult.matched_name
-          ? tenantNames.indexOf(matchResult.matched_name)
-          : -1;
-
-        await adminClient
-          .from("users")
-          .update({
-            matched_tenant_index: bestMatchIndex >= 0 ? bestMatchIndex : null,
-            tenant_match_score: matchResult.confidence,
-            tenant_match_type: matchResult.match_type,
-          })
-          .eq("id", user.id);
-
-        console.log(`[confirm-extraction] Tenant match: index=${bestMatchIndex}, score=${matchResult.confidence}, type=${matchResult.match_type}`);
-      } else {
-        // Cannot match — mark as no_match
-        await adminClient
-          .from("users")
-          .update({
-            tenant_match_type: "no_match",
-            tenant_match_score: 0,
-          })
-          .eq("id", user.id);
-        console.log("[confirm-extraction] Skipping tenant match: missing full_name or tenant_names");
-      }
-    } catch (tenantMatchError) {
-      console.error("[confirm-extraction] Tenant identification failed (non-fatal):", tenantMatchError);
-    }
-
-    // ==============================================
-    // CREATE TENANCY RECORD (V2 improvement)
-    // ==============================================
-    // V2 creates a tenancy from confirmed extraction data
-
-    let tenancyId: string | undefined;
-
-    if (confirmedRole === "tenant") {
-      // BUG 3 FIX: Use infoForTenancy (post-correction) instead of extractedInfo (pre-correction)
-      const { data: tenancy, error: tenancyError } = await adminClient
-        .from("tenancies")
-        .insert({
-          user_id: user.id,
-          extracted_rental_info_id: extractionId,
-          status: "pending_verification",
-          // Copy key fields from updated extraction (includes user corrections)
-          property_address: infoForTenancy.property_address,
-          property_city: infoForTenancy.property_city,
-          property_state: infoForTenancy.property_state,
-          property_pincode: infoForTenancy.property_pincode,
-          monthly_rent_paise: infoForTenancy.monthly_rent_paise,
-          maintenance_paise: infoForTenancy.maintenance_paise ?? 0,
-          rent_due_day: infoForTenancy.rent_due_day || 1,
-          cashback_cutoff_day: infoForTenancy.rent_due_day || null,
-          lease_start_date: infoForTenancy.lease_start_date,
-          lease_end_date: infoForTenancy.lease_end_date,
-          // Landlord info — prefer singular (user-corrected), fallback to all names joined
-          landlord_name: infoForTenancy.landlord_name
-            ?? (infoForTenancy.landlord_names?.length ? infoForTenancy.landlord_names.join(" & ") : null),
-          landlord_names: infoForTenancy.landlord_names ?? (infoForTenancy.landlord_name ? [infoForTenancy.landlord_name] : null),
-          landlord_phone: infoForTenancy.landlord_phone,
-          landlord_email: infoForTenancy.landlord_email,
-        })
-        .select("id")
-        .single();
-
-      if (tenancyError?.code === "23505") {
-        // Tenancy already exists (recovery created it first) — fetch existing
-        const { data: existing } = await adminClient
-          .from("tenancies").select("id")
-          .eq("user_id", user.id).eq("extracted_rental_info_id", extractionId).single();
-        if (existing) tenancyId = existing.id;
-      } else if (tenancyError) {
-        console.error("Failed to create tenancy:", tenancyError);
-      } else if (tenancy) {
-        tenancyId = tenancy.id;
-
-        // Link extraction to tenancy
-        await adminClient
-          .from("extracted_rental_info")
-          .update({ tenancy_id: tenancyId })
-          .eq("id", extractionId);
-      }
-    }
+    const finalization = await finalizeExtractionForOnboarding({
+      supabase: adminClient,
+      userId: user.id,
+      extractionId,
+      confirmedRole,
+      extractionUpdates: updateData,
+      syncWaitlistFields: {
+        extraction_status: "completed",
+        contract_status: extractedInfo.contract_status ?? "user_review",
+      },
+      autoApproveDemo: true,
+    });
 
     // ==============================================
     // AUDIT LOG
@@ -393,67 +250,19 @@ serve(async (req) => {
       extractionId,
       {
         confirmed_role: confirmedRole,
-        tenancy_created: !!tenancyId,
-        tenancy_id: tenancyId,
+        tenancy_created: !!finalization.tenancyId,
+        tenancy_id: finalization.tenancyId,
       }
     );
 
-    // ==============================================
-    // DEMO AUTO-APPROVE: Skip waitlist for test users
-    // ==============================================
-    // After confirming extraction, test users are instantly approved
-    // so Apple reviewers never see the waitlist screen.
-
-    let finalUserStatus = "agreement_confirmed";
-
-    if (await isTestUser(user.id, adminClient)) {
-      try {
-        // Join waitlist via RPC (idempotent)
-        const { data: rpcResult } = await adminClient
-          .rpc("join_waitlist", { p_user_id: user.id })
-          .single();
-
-        if (rpcResult) {
-          const entryId = (rpcResult as any).entry_id;
-
-          // Auto-approve the waitlist entry
-          await adminClient
-            .from("waitlist_entries")
-            .update({ admin_review: "approved" })
-            .eq("id", entryId);
-
-          // Advance user_status to "approved"
-          await adminClient
-            .from("users")
-            .update({
-              user_status: "approved",
-              status_updated_at: new Date().toISOString(),
-            })
-            .eq("id", user.id);
-
-          // Update tenancy to pending_verification (setup phase)
-          if (tenancyId) {
-            await adminClient
-              .from("tenancies")
-              .update({ status: "pending_verification" })
-              .eq("id", tenancyId);
-          }
-
-          finalUserStatus = "approved";
-          console.log(`[confirm-extraction] Demo auto-approved test user ${user.id}`);
-
-          await audit.logSuccess(
-            "EXTRACTION_DEMO_AUTO_APPROVED",
-            "extraction",
-            "waitlist_entries",
-            entryId,
-            { demo: true, tenancy_id: tenancyId }
-          );
-        }
-      } catch (autoApproveError) {
-        console.error("[confirm-extraction] Demo auto-approve failed (non-fatal):", autoApproveError);
-        // Falls back to normal waitlist flow
-      }
+    if (finalization.autoApprovedDemo && finalization.waitlistEntryId) {
+      await audit.logSuccess(
+        "EXTRACTION_DEMO_AUTO_APPROVED",
+        "extraction",
+        "waitlist_entries",
+        finalization.waitlistEntryId,
+        { demo: true, tenancy_id: finalization.tenancyId }
+      );
     }
 
     // ==============================================
@@ -467,11 +276,11 @@ serve(async (req) => {
       user_id: user.id,
       confirmed_role: confirmedRole,
       contract_status: "confirmed",
-      tenancy_id: tenancyId, // V2 addition
+      tenancy_id: finalization.tenancyId, // V2 addition
       // Nested data object for iOS compatibility
-      data: tenancyId ? {
-        tenancy_id: tenancyId,
-        user_status: finalUserStatus,
+      data: finalization.tenancyId ? {
+        tenancy_id: finalization.tenancyId,
+        user_status: finalization.finalUserStatus,
       } : undefined,
     };
 

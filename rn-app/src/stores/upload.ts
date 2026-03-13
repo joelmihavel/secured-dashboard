@@ -44,6 +44,12 @@ interface UploadActions {
   setExtractionId: (id: string) => void;
   setPhase: (phase: UploadPhase) => void;
   setError: (code: string, message: string) => void;
+  prepareForReupload: (params: {
+    extractionId?: string | null;
+    fileName?: string | null;
+    errorCode?: string;
+    errorMessage: string;
+  }) => void;
   reset: () => void;
   /** Mark the current extraction as dismissed (user chose "Re-upload").
    *  Sets dismissedExtractionId WITHOUT clearing other state — safe to call
@@ -148,6 +154,20 @@ export const useUploadStore = create<UploadStore>()(
           state.uploadPhase = 'failed';
           state.errorCode = code;
           state.errorMessage = message;
+          state.lastUpdatedAt = Date.now();
+        }),
+
+      prepareForReupload: ({ extractionId, fileName, errorCode = 'REUPLOAD_REQUIRED', errorMessage }) =>
+        set((state) => {
+          const dismissedId = extractionId ?? state.extractionId;
+          if (dismissedId) {
+            state.dismissedExtractionId = dismissedId;
+          }
+          state.extractionId = null;
+          state.uploadPhase = 'failed';
+          state.fileName = fileName ?? state.fileName;
+          state.errorCode = errorCode;
+          state.errorMessage = errorMessage;
           state.lastUpdatedAt = Date.now();
         }),
 

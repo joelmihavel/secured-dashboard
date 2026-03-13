@@ -16,6 +16,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { handleCors, getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { AuthError, ValidationError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { ensureWaitlistState } from "../_shared/onboarding.ts";
 
 // ==============================================
 // CONSTANTS
@@ -195,17 +196,25 @@ serve(async (req) => {
     // ==============================================
     // On re-upload, mark existing completed+unverified extractions as failed
     // so they don't block the new upload or confuse mount discovery.
+    //
+    // TIME GUARD: Only mark extractions older than 2 minutes as orphaned.
+    // finalizeExtractionForOnboarding runs async after process-document completes
+    // and sets user_verified=true. If we mark a just-completed extraction as failed
+    // while finalization is in-flight, the finalize step will operate on a "failed"
+    // record, breaking the flow. 2 minutes gives ample time for finalization.
 
+    const orphanCutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     const { data: orphanedExtractions } = await adminClient
       .from("extracted_rental_info")
       .select("id")
       .eq("user_id", user.id)
       .eq("extraction_status", "completed")
-      .eq("user_verified", false);
+      .eq("user_verified", false)
+      .lt("updated_at", orphanCutoff);
 
     if (orphanedExtractions && orphanedExtractions.length > 0) {
       const orphanIds = orphanedExtractions.map((e: { id: string }) => e.id);
-      console.log(`[upload-document] Marking ${orphanIds.length} orphaned completed extraction(s) as failed:`, orphanIds);
+      console.log(`[upload-document] Marking ${orphanIds.length} orphaned completed extraction(s) as failed (older than 2min):`, orphanIds);
       await adminClient
         .from("extracted_rental_info")
         .update({
@@ -310,18 +319,16 @@ serve(async (req) => {
     // visiting the waitlist screen, no row exists yet. We call join_waitlist to
     // ensure the row exists (it's idempotent — returns existing row if already present).
 
-    const { data: joinData, error: joinError } = await adminClient.rpc("join_waitlist", {
-      p_user_id: user.id,
-    });
-    if (joinError) {
-      console.log("[upload-document] Note: join_waitlist failed (non-fatal):", joinError.message);
-    } else if (joinData?.[0]?.is_new) {
-      // Advance user_status — the join_waitlist RPC only creates the row,
-      // the edge function wrapper normally handles status advancement.
-      await adminClient.from("users").update({
-        user_status: "waitlisted",
-        status_updated_at: new Date().toISOString(),
-      }).eq("id", user.id).eq("user_status", "signed_up");
+    try {
+      await ensureWaitlistState({
+        supabase: adminClient,
+        userId: user.id,
+      });
+    } catch (joinError) {
+      console.log(
+        "[upload-document] Note: failed to ensure waitlist state (non-fatal):",
+        joinError instanceof Error ? joinError.message : String(joinError),
+      );
     }
 
     await adminClient.from("waitlist_entries").update(

@@ -9,6 +9,7 @@
 // - Status updates for UI feedback
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { ensureWaitlistState, finalizeExtractionForOnboarding } from "../_shared/onboarding.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -226,6 +227,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   let extraction_id: string | undefined;
+  let completedExtractionPersisted = false;
 
   try {
     // Validate auth header (required by Supabase Edge Functions)
@@ -490,6 +492,8 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to store extracted data: ${insertError.message}`);
     }
 
+    completedExtractionPersisted = true;
+
     // Store rental parties
     const partyInserts = [
       ...extractedData.tenants.map((t) => ({
@@ -534,11 +538,28 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Also update waitlist_entries for V1 compatibility
-    await updateWaitlistEntries(supabase, rentalInfo?.user_id, {
-      extraction_status: "completed",
-      contract_status: evaluationResult.contract_status,
-    });
+    const shouldAutoFinalize =
+      evaluationResult.contract_status === "user_review"
+      || evaluationResult.contract_status === "manual_review";
+
+    if (shouldAutoFinalize && rentalInfo?.user_id) {
+      await finalizeExtractionForOnboarding({
+        supabase,
+        userId: rentalInfo.user_id,
+        extractionId: extraction_id,
+        confirmedRole: "tenant",
+        syncWaitlistFields: {
+          extraction_status: "completed",
+          contract_status: evaluationResult.contract_status,
+        },
+        autoApproveDemo: true,
+      });
+    } else {
+      await updateWaitlistEntries(supabase, rentalInfo?.user_id, {
+        extraction_status: "completed",
+        contract_status: evaluationResult.contract_status,
+      });
+    }
 
     const result: ProcessingResult = {
       success: true,
@@ -568,19 +589,24 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("[process-document] Error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Update status to failed with error details for client-side display
-    if (extraction_id) {
+    if (extraction_id && !completedExtractionPersisted) {
       await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
-        extraction_error: error.message,
+        extraction_error: errorMessage,
+      });
+    } else if (extraction_id && completedExtractionPersisted) {
+      await updateExtractionStatus(supabase, extraction_id, {
+        extraction_error: errorMessage,
       });
     }
 
     return jsonResponse({
       success: false,
-      error: error.message,
-      error_code: categorizeError(error.message),
+      error: errorMessage,
+      error_code: categorizeError(errorMessage),
     }, 500);
   }
 });
@@ -1390,23 +1416,10 @@ function evaluateExtraction(
     };
   }
 
-  // Second check: Agreement expiry validation
-  // If lease_end_date is in the past, the agreement is expired and cannot be used
-  if (extractedData?.lease_end_date) {
-    const endDate = new Date(extractedData.lease_end_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Compare dates only, not time
-
-    if (!isNaN(endDate.getTime()) && endDate < today) {
-      const formattedEnd = extractedData.lease_end_date; // Already YYYY-MM-DD
-      console.log(`[process-document] Agreement expired: lease_end_date=${formattedEnd}`);
-      return {
-        needs_manual_review: true,
-        review_reason: `This agreement expired on ${formattedEnd}. Please upload a current, valid rental agreement.`,
-        contract_status: 'expired',
-      };
-    }
-  }
+  // Agreement expiry is NOT a blocker — expired leases are common (renewed
+  // verbally, extension pending, etc.). The risk engine (computeRisk signal 6)
+  // adds a RED "agreement_expiry" factor with weight 4, which auto-escalates
+  // risk_level to HIGH. Admin sees this and can reject if warranted.
 
   // Second check: Critical fields that make the agreement invalid if missing
   // Without these, the agreement is unusable — no point in manual review
@@ -1515,18 +1528,16 @@ async function updateWaitlistEntries(
 ) {
   if (!userId) return;
 
-  // Ensure waitlist_entries row exists before updating.
-  // join_waitlist is idempotent — returns existing row if already present.
-  const { data: joinData, error: joinError } = await supabase.rpc("join_waitlist", {
-    p_user_id: userId,
-  });
-  if (joinError) {
-    console.log("[process-document] Note: join_waitlist failed (non-fatal):", joinError.message);
-  } else if (joinData?.[0]?.is_new) {
-    await supabase.from("users").update({
-      user_status: "waitlisted",
-      status_updated_at: new Date().toISOString(),
-    }).eq("id", userId).eq("user_status", "signed_up");
+  try {
+    await ensureWaitlistState({
+      supabase,
+      userId,
+    });
+  } catch (joinError) {
+    console.log(
+      "[process-document] Note: failed to ensure waitlist state (non-fatal):",
+      joinError instanceof Error ? joinError.message : String(joinError),
+    );
   }
 
   const { error } = await supabase
@@ -1629,4 +1640,3 @@ async function geocodePropertyAddress(
 
   console.log(`[process-document] Successfully geocoded property for rental info ${extractedRentalInfoId}`);
 }
-

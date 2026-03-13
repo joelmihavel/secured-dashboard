@@ -1,7 +1,23 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import UploadScreen from '../upload';
+
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+}
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +39,10 @@ jest.mock('react-native-safe-area-context', () => {
     useSafeAreaInsets: () => ({ top: 47, bottom: 34, left: 0, right: 0 }),
   };
 });
+
+jest.mock('react-native-keyboard-controller', () => ({
+  useKeyboardHandler: jest.fn(),
+}));
 
 // DottedPattern (heavy SVG)
 jest.mock('@/src/components/patterns', () => ({
@@ -64,35 +84,29 @@ jest.mock('@/src/hooks/useExtractionStatus', () => ({
 }));
 
 // Upload store - mock with hydrated state so screen renders past loading gate
+const createUploadStoreState = (): Record<string, any> => ({
+  _hasHydrated: true,
+  extractionId: null,
+  uploadPhase: 'idle',
+  fileName: null,
+  lastUpdatedAt: 0,
+  errorCode: null,
+  errorMessage: null,
+  isStale: () => false,
+  reset: jest.fn(),
+  setPhase: jest.fn(),
+  prepareForReupload: jest.fn(),
+});
+
+let mockUploadStoreState: Record<string, any> = createUploadStoreState();
+
 jest.mock('@/src/stores/upload', () => ({
   useUploadStore: Object.assign(
     (selector: (s: any) => any) => {
-      const state = {
-        _hasHydrated: true,
-        extractionId: null,
-        uploadPhase: 'idle',
-        fileName: null,
-        lastUpdatedAt: 0,
-        errorCode: null,
-        errorMessage: null,
-        isStale: () => false,
-        reset: jest.fn(),
-      };
-      return selector(state);
+      return selector(mockUploadStoreState);
     },
     {
-      getState: () => ({
-        _hasHydrated: true,
-        extractionId: null,
-        uploadPhase: 'idle',
-        fileName: null,
-        lastUpdatedAt: 0,
-        errorCode: null,
-        errorMessage: null,
-        isStale: () => false,
-        reset: jest.fn(),
-        setPhase: jest.fn(),
-      }),
+      getState: () => mockUploadStoreState,
     }
   ),
 }));
@@ -144,51 +158,69 @@ describe('UploadScreen', () => {
     mockUpload.mockClear();
     mockResetUpload.mockClear();
     mockSearchParams = {};
+    mockUploadStoreState = createUploadStoreState();
   });
 
   // ── Idle State (default) ────────────────────────────────────────────────
 
   it('renders with testID "upload-screen"', () => {
-    const { getByTestId } = render(<UploadScreen />);
+    const { getByTestId } = renderWithClient(<UploadScreen />);
     expect(getByTestId('upload-screen')).toBeTruthy();
   });
 
   it('renders title "One" and "More Step"', () => {
-    const { getByText } = render(<UploadScreen />);
+    const { getByText } = renderWithClient(<UploadScreen />);
     expect(getByText('One')).toBeTruthy();
     expect(getByText('More Step')).toBeTruthy();
   });
 
   it('renders subtitle about rental agreement', () => {
-    const { getByText } = render(<UploadScreen />);
+    const { getByText } = renderWithClient(<UploadScreen />);
     expect(getByText(/rental agreement/)).toBeTruthy();
   });
 
   it('renders upload hints', () => {
-    const { getByText } = render(<UploadScreen />);
+    const { getByText } = renderWithClient(<UploadScreen />);
     expect(getByText(/Upload Rental Agreement/)).toBeTruthy();
     expect(getByText(/PDF/)).toBeTruthy();
   });
 
   it('renders proceed button with testID', () => {
-    const { getByTestId } = render(<UploadScreen />);
+    const { getByTestId } = renderWithClient(<UploadScreen />);
     expect(getByTestId('proceed-button')).toBeTruthy();
   });
 
   it('matches snapshot (idle)', () => {
-    const { toJSON } = render(<UploadScreen />);
+    const { toJSON } = renderWithClient(<UploadScreen />);
     expect(toJSON()).toMatchSnapshot();
   });
 
   // ── Button States ─────────────────────────────────────────────────────
 
   it('renders Proceed button text in idle state', () => {
-    const { getByText } = render(<UploadScreen />);
+    const { getByText } = renderWithClient(<UploadScreen />);
     expect(getByText('Proceed')).toBeTruthy();
   });
 
   it('renders without crashing', () => {
-    const { toJSON } = render(<UploadScreen />);
+    const { toJSON } = renderWithClient(<UploadScreen />);
     expect(toJSON()).toBeTruthy();
+  });
+
+  it('keeps the CTA disabled for waitlist-triggered reuploads', () => {
+    mockUploadStoreState = {
+      ...createUploadStoreState(),
+      uploadPhase: 'failed',
+      fileName: 'Agreement.pdf',
+      errorCode: 'REUPLOAD_REQUIRED',
+      errorMessage: 'Please upload a valid rental agreement to continue.',
+    };
+
+    const { getByText, getByTestId } = renderWithClient(<UploadScreen />);
+
+    expect(getByText('Upload again')).toBeTruthy();
+    expect(getByText('Agreement.pdf')).toBeTruthy();
+    expect(getByText('Please upload a valid rental agreement to continue.')).toBeTruthy();
+    expect(getByTestId('proceed-button').props.accessibilityState?.disabled).toBe(true);
   });
 });

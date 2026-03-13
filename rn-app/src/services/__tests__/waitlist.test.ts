@@ -68,11 +68,66 @@ describe('Waitlist API Service', () => {
       const result = await getWaitlistStatus();
 
       expect(result.data?.state).toBe('pending');
+      expect(result.data?.contractStatus).toBe('user_review');
       expect(result.data?.position).toBe(42);
       expect(result.data?.currentOnboarded).toBe(18);
       expect(result.data?.totalMemberSlots).toBe(150);
+      expect(result.data?.requiresReupload).toBe(false);
       expect(result.data?.submissionDate).toBeTruthy();
       expect(result.error).toBeNull();
+    });
+
+    it('returns pending_long for manual review contracts', async () => {
+      mockCallEdgeFunction.mockResolvedValue({
+        data: {
+          success: true,
+          has_entry: true,
+          contract_status: 'manual_review',
+          review_reason: 'Low confidence extraction.',
+          waitlist_entry: {
+            admin_review: 'due',
+            contract_status: 'manual_review',
+            extraction_status: 'completed',
+            created_at: '2026-01-27T10:00:00Z',
+            rejection_reasons: [],
+          },
+        },
+        error: null,
+      });
+
+      const result = await getWaitlistStatus();
+
+      expect(result.data?.state).toBe('pending_long');
+      expect(result.data?.requiresManualReview).toBe(true);
+      expect(result.data?.contractStatus).toBe('manual_review');
+    });
+
+    it('flags invalid documents for re-upload', async () => {
+      mockCallEdgeFunction.mockResolvedValue({
+        data: {
+          success: true,
+          has_entry: true,
+          extraction_id: 'ext-001',
+          original_filename: 'Agreement.pdf',
+          contract_status: 'invalid_document',
+          review_reason: 'This does not appear to be a rental agreement.',
+          waitlist_entry: {
+            admin_review: 'due',
+            contract_status: 'invalid_document',
+            extraction_status: 'completed',
+            created_at: '2026-01-27T10:00:00Z',
+            rejection_reasons: [],
+          },
+        },
+        error: null,
+      });
+
+      const result = await getWaitlistStatus();
+
+      expect(result.data?.requiresReupload).toBe(true);
+      expect(result.data?.reuploadMessage).toContain('rental agreement');
+      expect(result.data?.extractionId).toBe('ext-001');
+      expect(result.data?.fileName).toBe('Agreement.pdf');
     });
 
     it('returns approved state', async () => {
@@ -123,6 +178,10 @@ describe('Waitlist API Service', () => {
           success: true,
           has_entry: true,
           admin_review: 'in_progress',
+          review_timeline: {
+            hours: 48,
+            display_text: 'Approximately 24-48 hrs',
+          },
           waitlist_entry: {
             admin_review: 'in_progress',
             created_at: '2026-01-27T10:00:00Z',
@@ -135,7 +194,7 @@ describe('Waitlist API Service', () => {
       const result = await getWaitlistStatus();
 
       expect(result.data?.state).toBe('pending_long');
-      expect(result.data?.estimatedReviewTime).toContain('24-48');
+      expect(result.data?.estimatedReviewTime).toContain('48 hrs');
     });
 
     it('returns pending when no entry exists', async () => {

@@ -4,12 +4,13 @@
  * Computes a multi-signal risk score for waitlist entries.
  * Used by join-waitlist (initial computation) and verify-identity (recomputation).
  *
- * 5 weighted signals:
+ * 6 weighted signals:
  * 1. tenant_name_match (weight 5) — from users.tenant_match_score/type
  * 2. m360_risk_intel (weight 4) — from identity_verifications.m360_risk_intelligence
  * 3. m360_data_available (weight 3) — from identity_verifications.status
  * 4. credit_score (weight 3) — from identity_verifications.m360_credit_score
  * 5. agreement_confidence (weight 2) — from extracted_rental_info.extraction_confidence
+ * 6. agreement_expiry (weight 4) — from extracted_rental_info.lease_end_date (RED if past)
  */
 
 // ==============================================
@@ -74,7 +75,7 @@ export async function computeRisk(
         .maybeSingle(),
       supabase
         .from("extracted_rental_info")
-        .select("extraction_confidence")
+        .select("extraction_confidence, lease_end_date")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -204,6 +205,23 @@ export async function computeRisk(
       }
     }
     factors.push({ factor: "agreement_confidence", signal: confSignal, weight: 2, detail: confDetail });
+
+    // --- Signal 6: agreement_expiry (weight 4) ---
+    // Expired agreements are allowed through but flagged as high risk
+    const leaseEndDate = extraction?.lease_end_date as string | null;
+    if (leaseEndDate) {
+      const endDate = new Date(leaseEndDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (!isNaN(endDate.getTime()) && endDate < today) {
+        factors.push({
+          factor: "agreement_expiry",
+          signal: "RED",
+          weight: 4,
+          detail: `Agreement expired on ${leaseEndDate}`,
+        });
+      }
+    }
 
     // --- Compute overall risk level ---
     const totalWeight = factors.reduce((sum, f) => sum + f.weight, 0);

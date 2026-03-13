@@ -52,7 +52,6 @@ import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
 import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
-import { agreementKeys } from '@/src/hooks/useAgreement';
 import { useExtractionStatus } from '@/src/hooks/useExtractionStatus';
 import {
   getMimeType,
@@ -619,6 +618,13 @@ export default function UploadScreen() {
   // Extraction status tracking — polling + Realtime + AppState recovery
   const extractionStatus = useExtractionStatus({ enabled: hasHydrated });
 
+  // CRITICAL: All hooks must be declared before the hasHydrated early return below.
+  // React requires hooks to be called in the same order on every render.
+  // isForceNewActiveRef stays true until the user starts a NEW upload.
+  // This prevents: (a) status effect navigating with stale data, and
+  // (b) useMountDiscovery resurrecting the old extraction from DB.
+  const isForceNewActiveRef = React.useRef(forceNew === 'true');
+
   // Derive initial upload state from persisted store or URL params
   const getInitialUploadState = (): UploadState => {
     // forceNew = re-upload from review screen, always start fresh
@@ -635,7 +641,7 @@ export default function UploadScreen() {
       case 'server_processing':
         return 'uploading';
       case 'completed':
-        // useExtractionStatus will detect and redirect to review
+        // useExtractionStatus will detect and redirect to waitlist
         return 'uploading';
       case 'failed':
         return 'error_expired';
@@ -704,18 +710,8 @@ export default function UploadScreen() {
   // FORCE-NEW RESET (re-upload from review screen)
   // When returning with forceNew=true, we must reset ALL state and block
   // the status effect from navigating with stale cached data.
-  //
-  // isForceNewActiveRef stays true until the user starts a NEW upload.
-  // This prevents: (a) status effect navigating with stale data, and
-  // (b) useMountDiscovery resurrecting the old extraction from DB.
   // The ref is cleared in handleUpload when a new upload begins.
   // ============================================
-  // CRITICAL: Initialize synchronously from URL param so the ref is already true
-  // on the very first render. If set inside useEffect, the extraction status effect
-  // fires first (effect ordering) with stale cached data and navigates back to review
-  // before forceNew cleanup can clear the cache — causing the re-upload loop.
-  const isForceNewActiveRef = React.useRef(forceNew === 'true');
-
   useEffect(() => {
     if (forceNew === 'true') {
       isForceNewActiveRef.current = true; // Redundant but safe — ensures consistency
@@ -775,6 +771,7 @@ export default function UploadScreen() {
   // ============================================
 
   const storePhase = useUploadStore((s) => s.uploadPhase);
+  const storeErrorCode = useUploadStore((s) => s.errorCode);
   const storeErrorMessage = useUploadStore((s) => s.errorMessage);
   useEffect(() => {
     if (storePhase === 'idle' && uploadState === 'uploading' && !agreement.isUploading) {
@@ -805,10 +802,9 @@ export default function UploadScreen() {
   }, [storePhase, storeErrorMessage, uploadState, agreement.isUploading]);
 
   // ============================================
-  // EXTRACTION STATUS → UI STATE (single navigation authority)
-  // React to query data from useExtractionStatus to drive all
-  // status transitions and navigation. This is the ONLY place
-  // that navigates to the review screen.
+  // EXTRACTION STATUS → UI STATE
+  // Users normally leave this screen as soon as the upload completes.
+  // These transitions are a fallback for resumed or stale sessions.
   // ============================================
 
   useEffect(() => {
@@ -826,16 +822,6 @@ export default function UploadScreen() {
         setUploadProgress(100);
         agreement.setExtractionId(eid);
 
-        // Check for manual review conditions
-        if (status.needsManualReview || !status.isCitySupported) {
-          setUploadState('manual_review');
-          setErrorOverrideMessage(
-            status.extractionError ??
-            "Our team will review it manually and get back to you within 24 hours."
-          );
-          return;
-        }
-
         // Check for expired/invalid contract status
         if (status.contractStatus === 'expired' || status.contractStatus === 'invalid_document') {
           setUploadState('error_expired');
@@ -847,26 +833,20 @@ export default function UploadScreen() {
           return;
         }
 
-        // Happy path: completed and valid
-        setUploadState('success');
+        if (status.needsManualReview || !status.isCitySupported) {
+          setUploadState('manual_review');
+          setErrorOverrideMessage(
+            status.extractionError ??
+            "Our team will review it manually and get back to you within 24 hours."
+          );
+        } else {
+          setUploadState('success');
+          setErrorOverrideMessage(null);
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Remove any stale extraction data from React Query cache.
-        // useAgreement() fires useExtractedData during processing (when fields
-        // are still NULL in DB), caching empty data for 5 minutes. Removing
-        // the cache here forces the review screen to fetch fresh (completed) data.
-        // Cancel first to prevent in-flight fetches from repopulating stale data.
-        queryClient.cancelQueries({ queryKey: agreementKeys.extraction(eid) });
-        queryClient.removeQueries({ queryKey: agreementKeys.extraction(eid) });
-        // Also clear the full agreement key tree to prevent any stale data leaks
-        queryClient.cancelQueries({ queryKey: ['agreement'] });
-        queryClient.removeQueries({ queryKey: ['agreement', 'extraction'] });
-
         setTimeout(() => {
-          router.replace({
-            pathname: '/(agreement)/review',
-            params: { extractionId: eid },
-          } as never);
+          router.replace('/(waitlist)' as never);
         }, FIGMA.animation.duration);
         break;
       }
@@ -967,7 +947,7 @@ export default function UploadScreen() {
   const handleUpload = useCallback(async () => {
     if (!document) return;
 
-    // Journey demo mode: simulate upload progress, then advance to review
+    // Journey demo mode: simulate upload progress, then advance to waitlist
     if (isJourneyMode()) {
       setUploadState('uploading');
       setUploadProgress(0);
@@ -988,10 +968,8 @@ export default function UploadScreen() {
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
       advanceJourneyStage(); // agreement_upload → agreement_review
-      router.replace({
-        pathname: '/(agreement)/review',
-        params: { extractionId: 'journey-ext-001' },
-      } as never);
+      advanceJourneyStage(); // agreement_review → waitlist
+      router.replace('/(waitlist)' as never);
       return;
     }
 
@@ -1040,11 +1018,8 @@ export default function UploadScreen() {
         document.size ?? 0
       );
 
-      // Upload completed + processDocument fired in background.
-      // The useExtractionStatus polling + Realtime now drives all transitions:
-      // completed → review screen, failed → error state, manual_review → waitlist.
-      // No synchronous result to check here — the useEffect on extractionStatus.data
-      // (above) handles everything.
+      // Upload is done; backend extraction continues asynchronously.
+      router.replace('/(waitlist)' as never);
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1144,7 +1119,13 @@ export default function UploadScreen() {
 
   // Get current state config
   const config = STATE_CONFIG[uploadState];
-  const isButtonEnabled = uploadState === 'idle' ? !!document : config.buttonEnabled;
+  const requiresFreshDocument =
+    uploadState === 'error_expired' && storeErrorCode === 'REUPLOAD_REQUIRED';
+  const isButtonEnabled = uploadState === 'idle'
+    ? !!document
+    : requiresFreshDocument
+      ? false
+      : config.buttonEnabled;
 
   const handleButtonPress = () => {
     switch (uploadState) {
@@ -1156,13 +1137,7 @@ export default function UploadScreen() {
         handleGetNotified();
         break;
       case 'success':
-        // Navigate to review (same as auto-navigate after upload)
-        if (agreement.extractionId) {
-          router.replace({
-            pathname: '/(agreement)/review',
-            params: { extractionId: agreement.extractionId },
-          } as never);
-        }
+        handleGetNotified();
         break;
       case 'uploading':
         // No action while uploading

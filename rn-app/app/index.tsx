@@ -87,7 +87,7 @@ async function queryUserStatus(userId: string): Promise<string | null> {
  * Map user_status string to a JourneyTarget route.
  * Returns null for statuses that need upload store context (signed_up).
  */
-function statusToTarget(userStatus: string): JourneyTarget | '/(agreement)/review' | null {
+function statusToTarget(userStatus: string): JourneyTarget | null {
   switch (userStatus) {
     case 'approved':
       return '/(setup)';
@@ -105,7 +105,7 @@ function statusToTarget(userStatus: string): JourneyTarget | '/(agreement)/revie
 }
 
 /**
- * Check if the current user has a completed extraction awaiting manual review.
+ * Check if the current user has a completed extraction awaiting backend review.
  * Used by the journey router to route signed_up users to waitlist instead of upload.
  *
  * Also checks dismissedExtractionId from the upload store — if the user clicked
@@ -156,7 +156,7 @@ export default function Index() {
     try {
       // Wait for upload store hydration (max 500ms) before reading state.
       // SecureStore is fast (~10-50ms), but we need the store ready before
-      // deciding whether to route to review vs upload.
+      // deciding whether to route to waitlist vs upload.
       if (!useUploadStore.getState()._hasHydrated) {
         await new Promise<void>((resolve) => {
           const unsub = useUploadStore.subscribe((s) => {
@@ -242,24 +242,28 @@ export default function Index() {
         setTarget(resolved);
       } else {
         // signed_up — need to check extraction state to route correctly
-        // First: check if there's a completed extraction awaiting manual review.
+        // First: check if there's a completed extraction awaiting backend review.
         // If so, the upload is done — route to waitlist, not back to upload.
         const manualReview = await checkManualReviewExtraction(userId);
         if (manualReview) {
           setTarget('/(waitlist)');
         } else {
-          // Check upload store for review vs upload
+          // Check upload store for async-processing vs upload
           const uploadState = useUploadStore.getState();
           if (
-            uploadState.uploadPhase === 'completed' &&
+            (
+              uploadState.uploadPhase === 'processing' ||
+              uploadState.uploadPhase === 'server_processing' ||
+              uploadState.uploadPhase === 'completed'
+            ) &&
             uploadState.extractionId &&
-            // Don't route to review if this extraction was dismissed (user clicked re-upload).
+            // Don't route to waitlist if this extraction was dismissed (user clicked re-upload).
             // The reset() sets dismissedExtractionId before clearing extractionId, but
             // if the app was killed before the async SecureStore write completed, the
             // persisted state may still have both fields set.
             uploadState.dismissedExtractionId !== uploadState.extractionId
           ) {
-            setTarget('/(agreement)/review');
+            setTarget('/(waitlist)');
           } else {
             // If extraction was dismissed but store wasn't fully persisted, clean up
             if (uploadState.dismissedExtractionId && uploadState.extractionId === uploadState.dismissedExtractionId) {

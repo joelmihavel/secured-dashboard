@@ -19,6 +19,7 @@ import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { ValidationError, AuthError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { notifyUser } from "../_shared/notifications.ts";
+import { ensureTenancyForExtraction } from "../_shared/onboarding.ts";
 
 // ==============================================
 // TYPES
@@ -94,7 +95,7 @@ serve(async (req: Request) => {
     // EXECUTE ACTION
     // ==============================================
 
-    const results: Array<{ user_id: string; success: boolean; error?: string }> = [];
+    const results: Array<{ user_id: string; success: boolean; error?: string; warning?: string }> = [];
 
     if (body.action === "approve") {
       // Batch approve
@@ -119,16 +120,106 @@ serve(async (req: Request) => {
 
       // Sync user_status → approved for all successfully approved users
       if (approvedIds.size > 0) {
+        const approvedUserIds = Array.from(approvedIds);
+
         const { error: statusError } = await supabase
           .from("users")
           .update({
             user_status: "approved",
             status_updated_at: new Date().toISOString(),
           })
-          .in("id", Array.from(approvedIds));
+          .in("id", approvedUserIds);
 
         if (statusError) {
           console.error("[admin-waitlist] Failed to sync user_status on approve:", statusError);
+        }
+
+        const { data: existingTenancies } = await supabase
+          .from("tenancies")
+          .select("user_id")
+          .in("user_id", approvedUserIds);
+
+        const usersWithTenancy = new Set(
+          (existingTenancies ?? []).map((row: { user_id: string }) => row.user_id),
+        );
+        const missingTenancyUserIds = approvedUserIds.filter((uid) => !usersWithTenancy.has(uid));
+
+        const tenancyWarnings = new Map<string, string>();
+        if (missingTenancyUserIds.length > 0) {
+          // First try: user_verified=true extractions (normal flow)
+          const { data: verifiedExtractions, error: extractionError } = await supabase
+            .from("extracted_rental_info")
+            .select("*")
+            .in("user_id", missingTenancyUserIds)
+            .eq("extraction_status", "completed")
+            .eq("user_verified", true)
+            .order("created_at", { ascending: false });
+
+          if (extractionError) {
+            console.error("[admin-waitlist] Failed to load verified extractions:", extractionError);
+          }
+
+          const latestByUser = new Map<string, Record<string, any>>();
+          for (const extraction of verifiedExtractions ?? []) {
+            if (!latestByUser.has(extraction.user_id)) {
+              latestByUser.set(extraction.user_id as string, extraction);
+            }
+          }
+
+          // Fallback: for users without verified extractions, try completed+unverified.
+          // In the new flow (no review screen), user_verified may not be set yet if
+          // finalizeExtractionForOnboarding hasn't run. Still recover the tenancy.
+          const stillMissing = missingTenancyUserIds.filter((uid) => !latestByUser.has(uid));
+          if (stillMissing.length > 0) {
+            const { data: unverifiedExtractions } = await supabase
+              .from("extracted_rental_info")
+              .select("*")
+              .in("user_id", stillMissing)
+              .eq("extraction_status", "completed")
+              .order("created_at", { ascending: false });
+
+            for (const extraction of unverifiedExtractions ?? []) {
+              if (!latestByUser.has(extraction.user_id as string)) {
+                latestByUser.set(extraction.user_id as string, extraction);
+                console.warn(`[admin-waitlist] Using unverified extraction ${extraction.id} for tenancy recovery of ${extraction.user_id}`);
+              }
+            }
+          }
+
+          for (const userId of missingTenancyUserIds) {
+            const extraction = latestByUser.get(userId);
+            if (!extraction) {
+              console.error(`[admin-waitlist] No extraction available to recover tenancy for ${userId}`);
+              tenancyWarnings.set(userId, "No completed extraction found — tenancy not created");
+              continue;
+            }
+
+            try {
+              const { tenancyId, missingFields } = await ensureTenancyForExtraction({
+                supabase,
+                userId,
+                extraction,
+                confirmedRole: "tenant",
+              });
+              if (!tenancyId && missingFields?.length) {
+                const msg = `Tenancy not created — extraction missing: ${missingFields.join(", ")}`;
+                console.error(`[admin-waitlist] ${msg} for ${userId}`);
+                tenancyWarnings.set(userId, msg);
+              }
+            } catch (tenancyRecoveryError) {
+              const msg = tenancyRecoveryError instanceof Error ? tenancyRecoveryError.message : String(tenancyRecoveryError);
+              console.error(`[admin-waitlist] Failed to recover tenancy for ${userId}:`, msg);
+              tenancyWarnings.set(userId, `Tenancy creation failed: ${msg}`);
+            }
+          }
+        }
+
+        // Attach tenancy warnings to per-user results so admin sees issues
+        if (tenancyWarnings.size > 0) {
+          for (const r of results) {
+            const warn = tenancyWarnings.get(r.user_id);
+            if (warn) r.warning = warn;
+          }
         }
 
         // Activate tenancies for approved users (pending_verification → active)
@@ -138,7 +229,7 @@ serve(async (req: Request) => {
             status: "active",
             updated_at: new Date().toISOString(),
           })
-          .in("user_id", Array.from(approvedIds))
+          .in("user_id", approvedUserIds)
           .eq("status", "pending_verification");
 
         if (tenancyError) {
@@ -146,7 +237,7 @@ serve(async (req: Request) => {
         }
       }
 
-      await audit.logSuccess("WAITLIST_BATCH_APPROVED", "admin", "waitlist_entries", undefined, {
+      await audit.logSuccess("WAITLIST_BATCH_APPROVED", "system", "waitlist_entries", undefined, {
         count: approvedIds.size,
         user_ids: body.user_ids,
       });
@@ -217,7 +308,7 @@ serve(async (req: Request) => {
         }
       }
 
-      await audit.logSuccess("WAITLIST_BATCH_REJECTED", "admin", "waitlist_entries", undefined, {
+      await audit.logSuccess("WAITLIST_BATCH_REJECTED", "system", "waitlist_entries", undefined, {
         count: rejectedIds.size,
         user_ids: body.user_ids,
         rejection_reasons: body.rejection_reasons,
@@ -259,7 +350,7 @@ serve(async (req: Request) => {
         });
       }
 
-      await audit.logSuccess("WAITLIST_BATCH_IN_PROGRESS", "admin", "waitlist_entries", undefined, {
+      await audit.logSuccess("WAITLIST_BATCH_IN_PROGRESS", "system", "waitlist_entries", undefined, {
         count: updatedIds.size,
         user_ids: body.user_ids,
       });

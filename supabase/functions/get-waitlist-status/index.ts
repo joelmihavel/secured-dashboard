@@ -23,9 +23,12 @@ interface WaitlistStatusResponse {
   success: boolean;
   has_entry: boolean;
   user_status?: string; // Master journey state from users table
+  extraction_id?: string | null;
+  original_filename?: string | null;
   // Polling fields (used by iOS app)
   contract_status?: string;
   extraction_status?: string;
+  review_reason?: string | null;
   requires_manual_review?: boolean;
   manual_review_reason?: string | null;
   fields_extracted?: number;
@@ -278,12 +281,46 @@ serve(async (req) => {
       }
     }
 
-    // No waitlist entry — user hasn't been assigned a position yet
+    // No waitlist entry — user hasn't been assigned a position yet.
+    // Still expose the latest extraction fields so the app can keep users on
+    // the waitlist screen (or bounce them back to re-upload) immediately
+    // after upload, even if the compatibility row is missing temporarily.
     if (!waitlistEntry) {
+      const { data: latestExtraction } = await adminClient
+        .from("extracted_rental_info")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const latestExtractionStatus = (latestExtraction?.extraction_status as string) || undefined;
+      const latestContractStatus =
+        (latestExtraction?.contract_status as string | undefined) ||
+        (latestExtractionStatus
+          ? mapExtractionStatusToContract(
+              latestExtractionStatus,
+              (latestExtraction?.user_verified as boolean) || false
+            )
+          : undefined);
+      const latestReviewReason =
+        (latestExtraction?.review_reason as string | null) ??
+        (latestExtraction?.extraction_error as string | null) ??
+        null;
+
       const response: WaitlistStatusResponse = {
         success: true,
         has_entry: false,
         user_status: userStatus,
+        extraction_id: (latestExtraction?.id as string) ?? null,
+        original_filename: (latestExtraction?.original_filename as string) ?? null,
+        contract_status: latestContractStatus,
+        extraction_status: latestExtractionStatus,
+        review_reason: latestReviewReason,
+        requires_manual_review:
+          (latestExtraction?.needs_manual_review as boolean | undefined) ??
+          latestContractStatus === "manual_review",
+        manual_review_reason: latestReviewReason,
         onboarded_count: onboardedCount,
         total_member_slots: batchConfig?.batch_size ?? TOTAL_MEMBER_SLOTS,
         review_timeline: reviewTimeline,
@@ -327,7 +364,16 @@ serve(async (req) => {
       ? Math.round((extractedInfo.extraction_confidence as number) * 100)
       : 0;
     const fieldsExtracted = extractedInfo ? calculateFieldsExtracted(extractedInfo) : 0;
-    const contractStatus = mapExtractionStatusToContract(extractionStatus, userVerified);
+    const contractStatus =
+      (extractedInfo?.contract_status as string | undefined) ||
+      mapExtractionStatusToContract(extractionStatus, userVerified);
+    const reviewReason =
+      (extractedInfo?.review_reason as string | null) ??
+      (extractedInfo?.extraction_error as string | null) ??
+      null;
+    const requiresManualReview =
+      (extractedInfo?.needs_manual_review as boolean | undefined) ??
+      contractStatus === "manual_review";
 
     // Admin review comes from waitlist_entries (authoritative)
     const adminReview = waitlistEntry.admin_review as string;
@@ -346,12 +392,15 @@ serve(async (req) => {
       success: true,
       has_entry: true,
       user_status: userStatus,
+      extraction_id: (extractedInfo?.id as string) ?? waitlistEntry.extraction_id ?? null,
+      original_filename: (extractedInfo?.original_filename as string) ?? null,
 
       // Polling fields at root level
       contract_status: contractStatus,
       extraction_status: extractionStatus,
-      requires_manual_review: extractionStatus === "manual_review",
-      manual_review_reason: (extractedInfo?.extraction_error as string) || null,
+      review_reason: reviewReason,
+      requires_manual_review: requiresManualReview,
+      manual_review_reason: reviewReason,
       fields_extracted: fieldsExtracted,
       total_fields: 14,
       confidence_score: confidenceScore,
@@ -364,8 +413,8 @@ serve(async (req) => {
         status: entryStatus,
         extraction_status: extractionStatus,
         contract_status: contractStatus,
-        requires_manual_review: extractionStatus === "manual_review",
-        manual_review_reason: (extractedInfo?.extraction_error as string) || null,
+        requires_manual_review: requiresManualReview,
+        manual_review_reason: reviewReason,
         waitlist_position: waitlistEntry.waitlist_position,
         document_uploaded: !!(extractedInfo?.document_storage_path),
         admin_review: adminReview,
@@ -440,7 +489,7 @@ serve(async (req) => {
     // Log successful status check
     await audit.logSuccess(
       "WAITLIST_STATUS_CHECKED",
-      "waitlist",
+      "system",
       "waitlist_entries",
       waitlistEntry.id,
       {

@@ -28,6 +28,7 @@ export interface WaitlistStatusData {
   state: WaitlistState;
   /** Master journey state from users.user_status */
   userStatus: string;
+  contractStatus: string | null;
   position: number | null;
   estimatedWaitDays: number | null;
   submissionDate: string | null;
@@ -48,6 +49,14 @@ export interface WaitlistStatusData {
   requiresManualReview: boolean;
   /** Extraction pipeline status (pending/processing/completed/failed) */
   extractionStatus: string | null;
+  /** Latest extraction record linked to the waitlist state */
+  extractionId: string | null;
+  /** Last uploaded filename for re-upload fallback UX */
+  fileName: string | null;
+  /** Whether the user must return to upload and submit a new agreement */
+  requiresReupload: boolean;
+  /** User-facing reason shown on the upload error state */
+  reuploadMessage: string | null;
 }
 
 export interface ClaimInviteCodeResponse {
@@ -125,8 +134,11 @@ interface RawWaitlistStatusResponse {
   success: boolean;
   has_entry: boolean;
   user_status?: string;
+  extraction_id?: string | null;
+  original_filename?: string | null;
   contract_status?: string;
   extraction_status?: string;
+  review_reason?: string | null;
   requires_manual_review?: boolean;
   manual_review_reason?: string | null;
   fields_extracted?: number;
@@ -272,12 +284,44 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
   const reviewTimeline = raw.review_timeline;
   const defaultReviewText = reviewTimeline?.display_text ?? 'Approximately 72 hrs';
   const rejectionCooldownDays = batchConfig?.rejection_cooldown_days ?? 30;
+  const extractionStatus = raw.extraction_status ?? raw.waitlist_entry?.extraction_status ?? null;
+  const contractStatus = raw.contract_status ?? raw.waitlist_entry?.contract_status ?? null;
+  const reviewReason =
+    raw.review_reason ??
+    raw.manual_review_reason ??
+    raw.waitlist_entry?.manual_review_reason ??
+    null;
+  const rejectionReasons = raw.waitlist_entry?.rejection_reasons ?? [];
+  // Match rejection reasons that specifically reference document issues.
+  // Uses word boundaries and bidirectional phrases to avoid false positives
+  // (e.g. "invalid" alone could match "invalid city").
+  // Patterns cover both word orders: "invalid document" AND "document is invalid",
+  // "expired agreement" AND "agreement has expired". Gap of .{0,15} allows
+  // natural phrasing like "document is clearly invalid".
+  const hasDocumentRejectionReason = rejectionReasons.some((reason) =>
+    /re-?upload\b|invalid.{0,15}document|document.{0,15}(invalid|expired|rejected)|expired.{0,15}(agreement|lease|document)|(agreement|lease|document).{0,15}expired/i.test(reason)
+  );
+  const requiresReupload =
+    contractStatus === 'invalid_document' ||
+    extractionStatus === 'failed' ||
+    (raw.waitlist_entry?.admin_review === 'rejected' && hasDocumentRejectionReason);
+
+  let reuploadMessage: string | null = null;
+  if (requiresReupload) {
+    reuploadMessage =
+      rejectionReasons[0] ??
+      reviewReason ??
+      (extractionStatus === 'failed'
+        ? 'We could not process this document. Please upload a valid rental agreement.'
+        : 'This does not appear to be a valid rental agreement. Please upload the correct document.');
+  }
 
   // No entry means user hasn't joined waitlist yet — treat as pending
   if (!raw.has_entry) {
     return {
       state: 'pending',
       userStatus: raw.user_status ?? 'signed_up',
+      contractStatus,
       position: null,
       estimatedWaitDays: null,
       submissionDate: null,
@@ -290,21 +334,24 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
       batchNumber: null,
       currentBatch: batchConfig?.current_batch ?? 1,
       rejectionCooldownDays,
-      requiresManualReview: raw.requires_manual_review ?? false,
-      extractionStatus: raw.extraction_status ?? null,
+      requiresManualReview: raw.requires_manual_review ?? contractStatus === 'manual_review',
+      extractionStatus,
+      extractionId: raw.extraction_id ?? null,
+      fileName: raw.original_filename ?? null,
+      requiresReupload,
+      reuploadMessage,
     };
   }
 
   // Derive state from admin_review field
   let state: WaitlistState = 'pending';
   const adminReview = raw.admin_review ?? raw.waitlist_entry?.admin_review;
-  const extractionStatus = raw.extraction_status ?? raw.waitlist_entry?.extraction_status;
 
   if (adminReview === 'approved') {
     state = 'approved';
   } else if (adminReview === 'rejected') {
     state = 'rejected';
-  } else if (adminReview === 'in_progress' || extractionStatus === 'manual_review') {
+  } else if (adminReview === 'in_progress' || contractStatus === 'manual_review') {
     state = 'pending_long';
   } else {
     state = 'pending';
@@ -325,10 +372,9 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
   }
 
   // Build rejection reasons if rejected
-  const rejectionReasons: string[] = raw.waitlist_entry?.rejection_reasons ?? [];
   if (rejectionReasons.length === 0 && state === 'rejected') {
-    if (raw.requires_manual_review && raw.manual_review_reason) {
-      rejectionReasons.push(raw.manual_review_reason);
+    if ((raw.requires_manual_review || contractStatus === 'manual_review') && reviewReason) {
+      rejectionReasons.push(reviewReason);
     }
     if (extractionStatus === 'failed') {
       rejectionReasons.push('Document processing failed. Please re-upload.');
@@ -367,6 +413,7 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
   return {
     state,
     userStatus: raw.user_status ?? 'signed_up',
+    contractStatus,
     position,
     estimatedWaitDays,
     submissionDate,
@@ -379,8 +426,15 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
     batchNumber: raw.waitlist_entry?.batch_number ?? null,
     currentBatch: batchConfig?.current_batch ?? 1,
     rejectionCooldownDays,
-    requiresManualReview: raw.requires_manual_review ?? raw.waitlist_entry?.requires_manual_review ?? false,
+    requiresManualReview:
+      raw.requires_manual_review ??
+      raw.waitlist_entry?.requires_manual_review ??
+      contractStatus === 'manual_review',
     extractionStatus: extractionStatus ?? null,
+    extractionId: raw.extraction_id ?? null,
+    fileName: raw.original_filename ?? null,
+    requiresReupload,
+    reuploadMessage,
   };
 }
 

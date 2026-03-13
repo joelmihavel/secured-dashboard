@@ -1,7 +1,23 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import WaitlistScreen from '../index';
+
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+}
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -22,6 +38,10 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
+jest.mock('react-native-keyboard-controller', () => ({
+  useKeyboardHandler: jest.fn(),
+}));
+
 jest.mock('@expo/vector-icons', () => {
   const { View } = require('react-native');
   return { Ionicons: (props: any) => <View {...props} /> };
@@ -34,6 +54,7 @@ const mockClearReferralCode = jest.fn();
 const mockRefresh = jest.fn();
 const mockClaimInviteCode = jest.fn();
 let mockWaitlistState: Record<string, any> = {};
+const mockPrepareForReupload = jest.fn();
 
 const defaultWaitlistState = () => ({
   status: {
@@ -67,6 +88,14 @@ const defaultWaitlistState = () => ({
 jest.mock('@/src/hooks', () => ({
   useWaitlist: () => mockWaitlistState,
   useNetworkStatus: () => ({ isConnected: true, isInternetReachable: true, type: 'wifi' }),
+}));
+
+jest.mock('@/src/stores/upload', () => ({
+  useUploadStore: {
+    getState: () => ({
+      prepareForReupload: mockPrepareForReupload,
+    }),
+  },
 }));
 
 // Mock waitlist components that are heavy
@@ -141,29 +170,30 @@ describe('WaitlistScreen', () => {
     mockReplace.mockClear();
     mockJoinWaitlist.mockClear();
     mockRefresh.mockClear();
+    mockPrepareForReupload.mockClear();
     mockWaitlistState = defaultWaitlistState();
   });
 
   // ── Pending State ────────────────────────────────────────────────────────
 
   it('renders pending state with welcome text', () => {
-    const { getByText } = render(<WaitlistScreen />);
+    const { getByText } = renderWithClient(<WaitlistScreen />);
     expect(getByText(/Welcome,/)).toBeTruthy();
     expect(getByText('Rishabh')).toBeTruthy();
   });
 
   it('renders subtitle "Your application is in review"', () => {
-    const { getByText } = render(<WaitlistScreen />);
+    const { getByText } = renderWithClient(<WaitlistScreen />);
     expect(getByText('Your application is in review')).toBeTruthy();
   });
 
   it('renders "Have an Invite Code?" text', () => {
-    const { getByText } = render(<WaitlistScreen />);
+    const { getByText } = renderWithClient(<WaitlistScreen />);
     expect(getByText('Have an Invite Code?')).toBeTruthy();
   });
 
   it('renders without crashing (pending)', () => {
-    const { toJSON } = render(<WaitlistScreen />);
+    const { toJSON } = renderWithClient(<WaitlistScreen />);
     expect(toJSON()).toBeTruthy();
   });
 
@@ -171,7 +201,7 @@ describe('WaitlistScreen', () => {
 
   it('renders loading state with skeleton', () => {
     mockWaitlistState = { ...defaultWaitlistState(), viewState: 'loading', isLoading: true };
-    const { toJSON } = render(<WaitlistScreen />);
+    const { toJSON } = renderWithClient(<WaitlistScreen />);
     expect(toJSON()).toBeTruthy();
   });
 
@@ -182,7 +212,7 @@ describe('WaitlistScreen', () => {
       ...defaultWaitlistState(),
       viewState: 'rejected',
     };
-    const { getByText } = render(<WaitlistScreen />);
+    const { getByText } = renderWithClient(<WaitlistScreen />);
     // The screen renders "We can't approve you" with "right now" in orange
     expect(getByText(/approve you/)).toBeTruthy();
     expect(getByText(/right now/)).toBeTruthy();
@@ -193,7 +223,7 @@ describe('WaitlistScreen', () => {
       ...defaultWaitlistState(),
       viewState: 'rejected',
     };
-    const { getByTestId } = render(<WaitlistScreen />);
+    const { getByTestId } = renderWithClient(<WaitlistScreen />);
     expect(getByTestId('benefits-card')).toBeTruthy();
   });
 
@@ -201,15 +231,37 @@ describe('WaitlistScreen', () => {
 
   it('redirects to approved page when viewState is "approved"', () => {
     mockWaitlistState = { ...defaultWaitlistState(), viewState: 'approved' };
-    render(<WaitlistScreen />);
+    renderWithClient(<WaitlistScreen />);
     // The redirect happens via reanimated withTiming callback with runOnJS,
     // which fires synchronously in the mock environment
     expect(mockReplace).toHaveBeenCalledWith('/(waitlist)/approved');
   });
 
   it('does not redirect when viewState is "pending"', () => {
-    render(<WaitlistScreen />);
+    renderWithClient(<WaitlistScreen />);
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('redirects to upload when status requires re-upload', () => {
+    mockWaitlistState = {
+      ...defaultWaitlistState(),
+      status: {
+        ...defaultWaitlistState().status,
+        extractionId: 'ext-001',
+        fileName: 'Agreement.pdf',
+        requiresReupload: true,
+        reuploadMessage: 'Please upload a valid rental agreement.',
+      },
+    };
+
+    renderWithClient(<WaitlistScreen />);
+
+    expect(mockPrepareForReupload).toHaveBeenCalledWith({
+      extractionId: 'ext-001',
+      fileName: 'Agreement.pdf',
+      errorMessage: 'Please upload a valid rental agreement.',
+    });
+    expect(mockReplace).toHaveBeenCalledWith('/(agreement)/upload');
   });
 
   // ── Error State ──────────────────────────────────────────────────────────
@@ -220,7 +272,7 @@ describe('WaitlistScreen', () => {
       viewState: 'error',
       error: { code: 'NETWORK_ERROR', message: 'Failed to connect' },
     };
-    const { getByText } = render(<WaitlistScreen />);
+    const { getByText } = renderWithClient(<WaitlistScreen />);
     expect(getByText(/something/)).toBeTruthy();
     expect(getByText(/went wrong/)).toBeTruthy();
   });
@@ -229,7 +281,7 @@ describe('WaitlistScreen', () => {
 
   it('renders pending_long state with extended wait messaging', () => {
     mockWaitlistState = { ...defaultWaitlistState(), viewState: 'pending_long' };
-    const { getByText } = render(<WaitlistScreen />);
+    const { getByText } = renderWithClient(<WaitlistScreen />);
     expect(getByText(/Taking a bit longer than usual/)).toBeTruthy();
   });
 });
