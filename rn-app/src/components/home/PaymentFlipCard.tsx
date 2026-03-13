@@ -166,18 +166,21 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
   });
 
   const config = useMemo(() => {
+    // Show "Cashback Potential" for any unpaid month (no receipt = no actual payment)
+    const hasReceipt = !!data.onViewReceipt;
+    const cashbackLabel = hasReceipt ? 'Cashback\nEarned' : 'Cashback\nPotential';
     switch (data.status) {
       case 'late':
-        return { badgeVariant: 'late' as BadgeVariant, badgeCount: data.lateCount ?? 1, label: 'Cashback\nEarned', showReceipt: true };
+        return { badgeVariant: 'late' as BadgeVariant, badgeCount: data.lateCount ?? 1, label: cashbackLabel, showReceipt: hasReceipt };
       case 'missed':
-        return { badgeVariant: 'missed' as BadgeVariant, badgeCount: data.missedCount ?? 1, label: 'Cashback\nEarned', showReceipt: true };
+        return { badgeVariant: 'missed' as BadgeVariant, badgeCount: data.missedCount ?? 1, label: cashbackLabel, showReceipt: hasReceipt };
       case 'upcoming':
         return { badgeVariant: 'upcoming' as BadgeVariant, badgeCount: 0, label: 'Cashback\nPotential', showReceipt: false };
       case 'paid':
       default:
         return { badgeVariant: 'paid' as BadgeVariant, badgeCount: 0, label: 'Cashback\nEarned', showReceipt: true };
     }
-  }, [data.status, data.lateCount, data.missedCount]);
+  }, [data.status, data.lateCount, data.missedCount, data.onViewReceipt]);
 
   const renderFront = () => (
     <Animated.View style={[styles.cardContainer, frontAnimatedStyle]}>

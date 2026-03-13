@@ -86,7 +86,7 @@ const BADGE_CONFIGS: Record<
 > = {
   paid: {
     bg: '#FF9A6D', // colours/brand/500
-    ringStroke: 'transparent',
+    ringStroke: '#4D4D4D', // Figma Ellipse 21915/21916
     textFill: '#000000',
     label: 'you did it | ',
     centerType: 'logo',
@@ -97,7 +97,7 @@ const BADGE_CONFIGS: Record<
     ringStroke: '#797979',
     textFill: '#878787',
     label: 'upcoming payment | ',
-    centerType: 'logo',
+    centerType: 'count', // Figma 694:6667: shows number, not logo
     centerColor: '#878787', // colours/neutral/600
   },
   late: {
