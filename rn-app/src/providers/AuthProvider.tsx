@@ -8,7 +8,7 @@
  * Handles: sign-out navigation (single controlled redirect)
  */
 
-import React, { createContext, useContext, useEffect, useState, useRef, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
@@ -85,6 +85,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // call clearAllStores() + router.replace() again. This flag prevents that.
   const userInitiatedSignOutRef = useRef(false);
 
+  // Tracks current session without triggering re-renders. Used by the
+  // SIGNED_OUT handler to check if TOKEN_REFRESHED recovered the session.
+  const sessionRef = useRef<Session | null>(null);
+
+  const updateSession = useCallback((s: Session | null) => {
+    sessionRef.current = s;
+    setSession(s);
+  }, []);
+
   // Expose a way for useAuth().signOut() to signal that it's handling cleanup.
   // This is set via a module-level function so useAuth doesn't need a context dependency.
   useEffect(() => {
@@ -110,15 +119,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const deleted = await isUserDeletedOnServer(initialSession.access_token);
           if (deleted) {
             await supabase.auth.signOut({ scope: 'local' });
-            setSession(null);
+            updateSession(null);
             return;
           }
-          setSession(initialSession);
+          updateSession(initialSession);
         } else {
-          setSession(null);
+          updateSession(null);
         }
       } catch {
-        setSession(null);
+        updateSession(null);
       } finally {
         setIsLoading(false);
       }
@@ -134,52 +143,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // handled cleanup. Just update React state and skip the delayed guard.
           if (userInitiatedSignOutRef.current) {
             userInitiatedSignOutRef.current = false;
-            setSession(null);
+            updateSession(null);
             return;
           }
 
-          // Guard: The SDK fires SIGNED_OUT on transient refresh failures (network
-          // timeout, CF proxy cold-start, ISP DNS block). The SDK clears both
-          // in-memory session AND SecureStore BEFORE firing this event.
+          // SDK fires SIGNED_OUT on transient refresh failures (network timeout,
+          // ISP DNS block, Cloudflare cold-start). If TOKEN_REFRESHED fires within
+          // 3s, the SIGNED_OUT was transient -- ignore it.
           //
-          // Wait 2s for the SDK's auto-refresh to potentially recover, then
-          // check if a session exists. If it does, ignore the SIGNED_OUT.
-          // NEVER call setSession() with stale tokens here — it triggers
-          // SIGNED_IN → SIGNED_OUT oscillation (the stale refresh token
-          // fails, causing another SIGNED_OUT → user sees screen spinning).
+          // NEVER call getSession() here -- it triggers _callRefreshToken() which
+          // can race with autoRefreshToken and cause another SIGNED_OUT (loop).
+          // Instead, wait and check if TOKEN_REFRESHED resolves the situation.
+          const signOutTimestamp = Date.now();
           setTimeout(async () => {
-            try {
-              const { data: { session: recoveredSession } } = await supabase.auth.getSession();
-              if (recoveredSession) {
-                console.warn('[AuthProvider] SIGNED_OUT fired but session recovered after delay — ignoring');
-                setSession(recoveredSession);
-                return;
-              }
-
-              // No recovery — genuine sign-out
-              if (hasRedirectedRef.current) return;
-              hasRedirectedRef.current = true;
-
-              if (isReviewMode()) deactivateReviewMode();
-              if (isJourneyMode()) deactivateJourneyMode();
-              clearAllStores();
-              setSession(null);
-
-              routerRef.current.replace('/(auth)/beta-splash' as never);
-
-              // Reset after navigation settles
-              setTimeout(() => {
-                hasRedirectedRef.current = false;
-              }, 2000);
-            } catch {
-              // getSession() itself failed — don't log out on network errors
-              console.warn('[AuthProvider] SIGNED_OUT + getSession() failed — keeping session');
+            // If a TOKEN_REFRESHED event updated the session after this SIGNED_OUT,
+            // the session ref will be non-null. Check the ref directly to avoid
+            // stale closure over session state.
+            if (sessionRef.current) {
+              console.warn('[AuthProvider] SIGNED_OUT ignored -- session recovered via TOKEN_REFRESHED');
+              return;
             }
-          }, 2000);
+
+            // No recovery -- genuine sign-out
+            if (hasRedirectedRef.current) return;
+            hasRedirectedRef.current = true;
+
+            console.log('[AuthProvider] SIGNED_OUT confirmed -- clearing session', {
+              elapsed: Date.now() - signOutTimestamp,
+            });
+
+            if (isReviewMode()) deactivateReviewMode();
+            if (isJourneyMode()) deactivateJourneyMode();
+            await clearAllStores();
+            updateSession(null);
+
+            routerRef.current.replace('/(auth)/beta-splash' as never);
+
+            // Reset after navigation settles
+            setTimeout(() => {
+              hasRedirectedRef.current = false;
+            }, 2000);
+          }, 3000);
         } else if (event === 'TOKEN_REFRESHED') {
           if (newSession) {
-            // Token refresh succeeded — update with fresh tokens
-            setSession(newSession);
+            // Token refresh succeeded -- update with fresh tokens
+            updateSession(newSession);
           } else {
             // Token refresh failed (likely transient network error, ISP DNS block,
             // or Cloudflare proxy cold-start). DO NOT clear the session — the user
@@ -188,7 +196,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.warn('[AuthProvider] TOKEN_REFRESHED returned null — keeping cached session');
           }
         } else if (event === 'SIGNED_IN' && newSession) {
-          setSession(newSession);
+          updateSession(newSession);
           hasRedirectedRef.current = false;
           // Register push token after successful auth
           registerForPushNotifications().catch(() => {
@@ -199,7 +207,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // with the pre-refresh (possibly expired) session BEFORE TOKEN_REFRESHED.
           // Only update if we got a valid session (don't overwrite with null).
           if (newSession) {
-            setSession(newSession);
+            updateSession(newSession);
           }
         }
       }
@@ -210,7 +218,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []); // Empty deps — subscribe once, use refs for mutable values
 
   // Proactively refresh session when app returns to foreground after background
-  useSessionMonitor({ enabled: !isLoading && !!session });
+  useSessionMonitor({ enabled: !isLoading && !!session, currentSession: session });
 
   const value: AuthContextValue = useMemo(() => ({
     session,

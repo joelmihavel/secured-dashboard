@@ -20,6 +20,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
 import { dashboardKeys } from './useDashboard';
+import type { Session } from '@supabase/supabase-js';
 
 /**
  * Lightweight breadcrumb logger.
@@ -97,6 +98,8 @@ export interface UseSessionMonitorOptions {
   enabled?: boolean;
   /** Minimum background duration before triggering refresh. Defaults to 5s. */
   minBackgroundDuration?: number;
+  /** Current session from AuthProvider. Avoids calling getSession() internally. */
+  currentSession?: Session | null;
 }
 
 /**
@@ -114,6 +117,11 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}): void 
   const backgroundedAtRef = useRef<number | null>(null);
   const lastRefreshRef = useRef<number>(0);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+
+  // Keep currentSession in a ref so the AppState listener and poll interval
+  // always see the latest value without re-subscribing on every session update.
+  const currentSessionRef = useRef<Session | null>(options.currentSession ?? null);
+  currentSessionRef.current = options.currentSession ?? null;
 
   useEffect(() => {
     if (!enabled) return;
@@ -151,49 +159,38 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}): void 
         lastRefreshRef.current = now;
         backgroundedAtRef.current = null;
 
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession();
+        // Use the session from AuthProvider context -- NEVER call getSession() here.
+        // getSession() triggers _callRefreshToken() in auth-js v2.65.1 which races
+        // with autoRefreshToken and can cause SIGNED_OUT -> spurious logout.
+        const session = currentSessionRef.current;
+        if (!session) {
+          logBreadcrumb('No session on foreground -- user signed out', 'auth');
+          return;
+        }
 
-          if (error) {
+        logBreadcrumb('Session available on foreground', 'auth', {
+          expiresAt: session.expires_at,
+        });
+
+        // Invalidate dashboard queries for fresh data
+        queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+
+        try {
+          // Server-side validation: detect deleted/banned users via direct fetch.
+          // NEVER uses supabase.auth.getUser() -- that triggers the SDK's internal
+          // refresh chain which can fire SIGNED_OUT on transient failures.
+          const result = await validateUserServerSide(session.access_token);
+          if (result === 'deleted') {
             logBreadcrumb(
-              'Session check failed on foreground',
+              'Server confirms user deleted -- signing out locally',
               'auth',
-              { error: error.message }
+              { result }
             );
+            await supabase.auth.signOut({ scope: 'local' });
             return;
           }
-
-          if (session) {
-            logBreadcrumb(
-              'Session valid on foreground',
-              'auth',
-              { expiresAt: session.expires_at }
-            );
-
-            // Session exists -- invalidate dashboard queries for fresh data
-            queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
-
-            // Server-side validation: detect deleted/banned users via direct fetch.
-            // NEVER uses supabase.auth.getUser() — that triggers the SDK's internal
-            // refresh chain which can fire SIGNED_OUT on transient failures.
-            const result = await validateUserServerSide(session.access_token);
-            if (result === 'deleted') {
-              logBreadcrumb(
-                'Server confirms user deleted — signing out locally',
-                'auth',
-                { result }
-              );
-              await supabase.auth.signOut({ scope: 'local' });
-              return;
-            }
-            // 'expired' and 'network_error' are safe — SDK auto-refresh handles expiry,
-            // and network errors shouldn't log anyone out.
-          } else {
-            logBreadcrumb(
-              'No session on foreground -- user signed out elsewhere',
-              'auth'
-            );
-          }
+          // 'expired' and 'network_error' are safe -- SDK auto-refresh handles expiry,
+          // and network errors shouldn't log anyone out.
         } catch (err) {
           // Non-fatal -- session might still be valid from cache
           logBreadcrumb(
@@ -212,11 +209,10 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}): void 
     // Uses direct fetch — never supabase.auth.getUser().
     const pollInterval = setInterval(async () => {
       if (appStateRef.current !== 'active') return;
+      const currentSession = currentSessionRef.current;
+      if (!currentSession) return;
 
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession) return;
-
         const result = await validateUserServerSide(currentSession.access_token);
         if (result === 'deleted') {
           logBreadcrumb(

@@ -89,8 +89,9 @@ const ExpoSecureStoreAdapter = {
         await SecureStore.setItemAsync(`${key}_${i}`, chunks[i]);
       }
       await SecureStore.setItemAsync(`${key}_chunks`, String(chunks.length));
-    } catch {
-      console.error('SecureStore setItem failed:', key);
+    } catch (err) {
+      console.error('SecureStore setItem failed:', key, err);
+      throw err;
     }
   },
 
@@ -105,8 +106,9 @@ const ExpoSecureStoreAdapter = {
         await SecureStore.deleteItemAsync(`${key}_chunks`);
       }
       await SecureStore.deleteItemAsync(key);
-    } catch {
-      console.error('SecureStore removeItem failed:', key);
+    } catch (err) {
+      console.error('SecureStore removeItem failed:', key, err);
+      throw err;
     }
   },
 };
@@ -136,6 +138,25 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     }),
   },
 });
+
+/**
+ * Deduplicating wrapper around supabase.auth.getSession().
+ *
+ * Multiple callers (callEdgeFunction, useSessionMonitor, AuthProvider) can
+ * call getSession() concurrently. While the SDK serializes internally via
+ * pendingInLock, each call still queues up and extends lock-hold time.
+ * This wrapper ensures only ONE getSession() is in flight at a time --
+ * concurrent callers reuse the same promise.
+ */
+let _getSessionInFlight: Promise<{ data: { session: any }; error: any }> | null = null;
+
+export async function getSessionSafe() {
+  if (_getSessionInFlight) return _getSessionInFlight;
+  _getSessionInFlight = supabase.auth.getSession().finally(() => {
+    _getSessionInFlight = null;
+  });
+  return _getSessionInFlight;
+}
 
 /**
  * Get the Supabase functions URL for edge function calls
@@ -189,7 +210,7 @@ export async function callEdgeFunction<T = unknown>(
     // on the next tick). If the request gets a 401, the retry block below
     // will handle it with a single controlled refresh.
     if (requireAuth) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await getSessionSafe();
       if (!session?.access_token) {
         return { data: null, error: 'Not authenticated' };
       }
@@ -245,7 +266,7 @@ export async function callEdgeFunction<T = unknown>(
     if (response.status === 401 && requireAuth) {
       // Give the SDK's auto-refresh a moment to complete (it fires on token expiry)
       await new Promise(resolve => setTimeout(resolve, 1500));
-      const { data: { session: retrySession } } = await supabase.auth.getSession();
+      const { data: { session: retrySession } } = await getSessionSafe();
       if (retrySession?.access_token) {
         headers['Authorization'] = `Bearer ${retrySession.access_token}`;
         const retryController = new AbortController();

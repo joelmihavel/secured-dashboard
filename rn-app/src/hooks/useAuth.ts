@@ -268,7 +268,7 @@ export function useAuth() {
     // Nuclear cleanup: resets all Zustand stores, explicitly deletes all
     // persisted SecureStore keys (including Supabase session + chunks),
     // tears down WebSocket channels, and clears React Query cache.
-    clearAllStores();
+    await clearAllStores();
     globalQueryClient.clear();
   }, []);
 

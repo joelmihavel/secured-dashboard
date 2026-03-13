@@ -340,22 +340,19 @@ export default function Index() {
       // User signed out — clear cached route
       SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
     }
-    // Before hiding splash, check if an OTA update downloaded during the loading
-    // phase. If so, reload behind the still-visible splash → user sees a single
-    // continuous splash instead of splash → content → splash (double splash).
-    // waitForColdStartOTA() returns immediately (zero delay) if no update was
-    // detected, so normal launches are unaffected.
-    const hideSplashOrReload = async () => {
-      const shouldReload = await waitForColdStartOTA();
+    // If an OTA update finished downloading during auth resolution, reload
+    // behind the still-visible splash for a seamless update. Don't WAIT for
+    // in-progress downloads -- waitForColdStartOTA() returns immediately now.
+    // Updates still downloading will apply on next launch or background return.
+    waitForColdStartOTA().then((shouldReload) => {
       if (shouldReload) {
         console.log('[journey-router] OTA update ready — reloading behind splash');
-        reloadApp(); // Splash stays visible → single splash on reload
+        reloadApp();
         return;
       }
-      // No OTA update — hide splash after 500ms to let target screen render
-      setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 500);
-    };
-    hideSplashOrReload();
+      // No OTA update -- hide splash after brief delay to let target screen render
+      setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
+    });
   }, [journeyResolved, target, router, rootNavigationState?.key]);
 
   // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack

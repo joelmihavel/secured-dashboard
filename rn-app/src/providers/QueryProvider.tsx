@@ -29,12 +29,9 @@ import { addBreadcrumb } from '@/src/config/sentry';
 if (Platform.OS !== 'web') {
   AppState.addEventListener('change', (status) => {
     if (status === 'active') {
-      // Delay focus notification until AFTER native views stabilize and WebSocket
-      // reconnection completes. RealtimeManager reconnects at 1500ms — refetching
-      // at the same time creates contention that causes DOMException on render.
-      // 3000ms delay ensures: ResumeOverlay fades (750ms) + WebSocket reconnects (1500ms)
-      // + buffer for Hermes GC to reclaim disposed views.
-      setTimeout(() => focusManager.setFocused(true), 3000);
+      // Brief delay for native views to stabilize before triggering refetches.
+      // WebSocket reconnection is non-blocking and React Query refetches run in parallel.
+      setTimeout(() => focusManager.setFocused(true), 500);
     } else {
       focusManager.setFocused(false);
     }

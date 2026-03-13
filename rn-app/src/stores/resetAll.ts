@@ -55,7 +55,7 @@ async function clearSupabaseSessionFromStorage(): Promise<void> {
   }
 }
 
-export function clearAllStores() {
+export async function clearAllStores() {
   // Tear down all WebSocket channels before clearing query cache
   removeAllChannels();
 
@@ -70,12 +70,14 @@ export function clearAllStores() {
   // Explicitly delete all persisted SecureStore keys.
   // Don't rely on Zustand's async persist write — if the app is killed
   // before it completes, stale data from the old user survives in keychain.
-  for (const key of PERSISTED_SECURE_STORE_KEYS) {
-    SecureStore.deleteItemAsync(key).catch(() => {});
-  }
+  await Promise.all(
+    PERSISTED_SECURE_STORE_KEYS.map(key =>
+      SecureStore.deleteItemAsync(key).catch(() => {})
+    )
+  );
 
   // Nuclear cleanup of Supabase session from SecureStore.
   // Handles the case where SDK's signOut() failed (server 500, network error)
   // and _removeSession() was never called, leaving the session in keychain.
-  clearSupabaseSessionFromStorage();
+  await clearSupabaseSessionFromStorage();
 }

@@ -76,29 +76,20 @@ export function notifyUpdateDownloaded(): void {
 }
 
 /**
- * Wait for a cold-start OTA download to complete (max 4s).
+ * Check whether a cold-start OTA download already completed.
  * Returns true if an update was downloaded and a reload is recommended.
- * Returns false immediately if no update was detected, or after 4s timeout.
+ * Returns false immediately otherwise -- never waits for in-progress
+ * downloads. Updates that haven't finished will apply on next launch or
+ * when the user backgrounds the app for 5+ minutes (useOTAUpdates).
  *
  * Called by index.tsx before SplashScreen.hideAsync() to allow
  * reloading behind the native splash (single splash experience).
  */
 export async function waitForColdStartOTA(): Promise<boolean> {
   if (__DEV__ || !Updates) return false;
-  // No update detected — return immediately (zero delay for normal launches)
-  if (!_otaUpdateDetected) return false;
-  // Already downloaded — reload now
-  if (_otaUpdateDownloaded) return true;
-
-  // Update detected but still downloading — wait up to 4s
-  return new Promise<boolean>((resolve) => {
-    _otaWaiters.push(resolve);
-    setTimeout(() => {
-      // Remove from waiters and resolve false (timed out)
-      _otaWaiters = _otaWaiters.filter((w) => w !== resolve);
-      resolve(false);
-    }, 4000);
-  });
+  // Only reload if the download already completed during auth resolution.
+  // Don't wait for in-progress downloads -- that blocks cold start.
+  return _otaUpdateDownloaded;
 }
 
 // ==============================================
