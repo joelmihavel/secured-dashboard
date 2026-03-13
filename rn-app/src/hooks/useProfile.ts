@@ -9,7 +9,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
+// useRouter removed — AuthProvider handles post-signout navigation
 import {
   updateProfile,
   requestAvatarUpload,
@@ -25,12 +25,9 @@ import {
   type ProfileError,
 } from '../services/api/profile';
 import { signOut as apiSignOut } from '../services/api/auth';
-import { useAuthStore } from '../stores/auth';
-import { useUploadStore } from '../stores/upload';
-import { useWaitlistStore } from '../stores/waitlist';
-import { usePaymentStore } from '../stores/payment';
-import { useSetupStore } from '../stores/setup';
-import { useProfileStore } from '../stores/profile';
+import { clearAllStores } from '../stores/resetAll';
+import { markUserInitiatedSignOut } from '../providers/AuthProvider';
+import { clearUserContext } from '../config/sentry';
 import { queryClient as globalQueryClient } from '../providers/QueryProvider';
 import { dashboardKeys } from './useDashboard';
 import { paymentKeys } from './usePayments';
@@ -230,8 +227,6 @@ export function useProfilePaymentMethods() {
  * 4. Navigates to splash screen
  */
 export function useDeleteAccount() {
-  const router = useRouter();
-
   return useMutation({
     mutationFn: async (params?: { reason?: string }) => {
       const { data, error } = await requestAccountDeletion(params?.reason);
@@ -239,19 +234,15 @@ export function useDeleteAccount() {
       return data!;
     },
     onSuccess: async () => {
-      // 1. Clear Supabase session from SecureStore + memory
-      await apiSignOut();
-      // 2. Reset all Zustand stores
-      useAuthStore.getState().reset();
-      useUploadStore.getState().reset();
-      useWaitlistStore.getState().reset();
-      usePaymentStore.getState().reset();
-      useSetupStore.getState().reset();
-      useProfileStore.getState().reset();
-      // 3. Clear React Query cache
+      // Signal user-initiated sign-out so AuthProvider navigates immediately
+      // (not after 3s transient-failure debounce). AuthProvider handles navigation.
+      markUserInitiatedSignOut();
+      clearUserContext();
+      // SDK signOut fires SIGNED_OUT → AuthProvider navigates to beta-splash
+      await apiSignOut().catch(() => {});
+      // Nuclear cleanup: all stores, SecureStore keys, query cache, realtime channels
+      await clearAllStores();
       globalQueryClient.clear();
-      // 4. Navigate to splash (replace prevents back-nav to dead session)
-      router.replace('/(auth)/splash' as never);
     },
   });
 }

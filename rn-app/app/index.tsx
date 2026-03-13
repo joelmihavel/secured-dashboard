@@ -286,6 +286,33 @@ export default function Index() {
     }
   }, [journeyResolved]);
 
+  // Reset journey state when user signs out so the router re-evaluates.
+  // Without this, journeyResolved stays true after sign-out, and the router
+  // never re-fires to redirect to beta-splash. AuthProvider navigates on
+  // user-initiated sign-out, but this handles edge cases (OTA reload after
+  // sign-out, transient SIGNED_OUT → recovery → genuine sign-out later).
+  const wasAuthenticatedRef = useRef(isAuthenticated);
+  useEffect(() => {
+    if (wasAuthenticatedRef.current && !isAuthenticated && !authLoading) {
+      // Auth state transitioned from true → false (sign-out)
+      setJourneyResolved(false);
+      setTarget(null);
+      hasNavigatedRef.current = false;
+      isResolvingRef.current = false;
+    }
+    wasAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated, authLoading]);
+
+  // Safety: always hide splash after max timeout, even if navigation fails.
+  // Prevents splash from staying forever on edge cases (OTA reload timing,
+  // navigation failure, slow auth resolution).
+  useEffect(() => {
+    const safetyTimeout = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 6000);
+    return () => clearTimeout(safetyTimeout);
+  }, []);
+
   // Resolve journey target once auth state is known.
   // IMPORTANT: Does NOT depend on authSession — only on authLoading and isAuthenticated.
   // Multiple auth events (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED) change authSession,

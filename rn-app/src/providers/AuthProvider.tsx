@@ -10,6 +10,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
@@ -17,6 +18,16 @@ import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, deactivateJourneyMode } from '@/src/review/journeyMode';
 import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
 import type { Session } from '@supabase/supabase-js';
+
+/**
+ * DB migration key — bump this when switching Supabase projects.
+ * On first launch after a DB migration, stale sessions (signed by the old
+ * project's JWT secret) linger in iOS Keychain because Keychain data
+ * persists across app uninstalls. Without cleanup, the app loads the old
+ * session → all API calls 401 → degraded UX before eventual SIGNED_OUT.
+ */
+const DB_MIGRATION_KEY = 'flent_db_migration';
+const CURRENT_DB_VERSION = 'main_v1'; // Was: dev DB zqlowjveyqiagnbmfwsb → now: main DB uowjtrzmszuaiokqxgir
 
 /**
  * Validates a user exists on the server via direct fetch.
@@ -110,6 +121,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // 1. Get initial session
     const initSession = async () => {
       try {
+        // DB migration guard: clear stale keychain sessions from old Supabase project.
+        // iOS Keychain persists across app uninstalls, so users who had the Dev DB build
+        // and install the Main DB build would load a session signed by the wrong JWT secret.
+        const storedVersion = await SecureStore.getItemAsync(DB_MIGRATION_KEY).catch(() => null);
+        if (storedVersion !== CURRENT_DB_VERSION) {
+          console.log('[AuthProvider] DB migration detected — clearing stale keychain session');
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          await SecureStore.setItemAsync(DB_MIGRATION_KEY, CURRENT_DB_VERSION).catch(() => {});
+          updateSession(null);
+          setIsLoading(false);
+          return;
+        }
+
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         if (initialSession) {
           // Server-validate the cached session immediately on cold start.
@@ -139,11 +163,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (event === 'SIGNED_OUT') {
-          // If user-initiated sign-out is in progress, useAuth().signOut() already
-          // handled cleanup. Just update React state and skip the delayed guard.
+          // User-initiated sign-out (from useAuth().signOut() or useDeleteAccount()).
+          // Skip the 3s transient-failure debounce — navigate immediately.
+          // useAuth().signOut() handles store cleanup; we just need to update
+          // React state and navigate.
           if (userInitiatedSignOutRef.current) {
             userInitiatedSignOutRef.current = false;
             updateSession(null);
+            if (!hasRedirectedRef.current) {
+              hasRedirectedRef.current = true;
+              routerRef.current.replace('/(auth)/beta-splash' as never);
+              setTimeout(() => { hasRedirectedRef.current = false; }, 2000);
+            }
             return;
           }
 
