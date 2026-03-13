@@ -718,6 +718,7 @@ export default function HomeScreen() {
             emptyStateVariant,
             carouselItems,
             daysUntilDue,
+            daysUntilNextDue,
             alreadyPaid,
             isOverdue,
             isMissed,
@@ -749,7 +750,7 @@ export default function HomeScreen() {
       {showBottomFooter ? (
         <View style={styles.bottomFooterContainer}>
           <BottomFooter
-            dueInDays={daysUntilDue}
+            dueInDays={alreadyPaid ? daysUntilNextDue : daysUntilDue}
             amount={rentAmount}
             buttonLabel="Review & pay"
             disabled={false} // All states can trigger payment — verification sheet gates if needed
@@ -785,6 +786,7 @@ interface ContentProps {
   emptyStateVariant: EmptyStateVariant;
   carouselItems: CarouselCardItem[];
   daysUntilDue: number | null;
+  daysUntilNextDue: number | null;
   alreadyPaid: boolean;
   isOverdue: boolean;
   isMissed: boolean;
@@ -820,6 +822,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     emptyStateVariant,
     carouselItems,
     daysUntilDue,
+    daysUntilNextDue,
     alreadyPaid,
     isOverdue,
     isMissed,
