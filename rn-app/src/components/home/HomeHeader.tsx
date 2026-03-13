@@ -52,7 +52,6 @@ function HomeHeaderComponent({
       {/* Logo + Greeting */}
       <View style={styles.leftContent}>
         <Logo size={32} />
-        <Text style={styles.greeting}>Hi, {userName}</Text>
       </View>
 
       {/* Avatar */}
@@ -80,13 +79,6 @@ const styles = StyleSheet.create({
   leftContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16, // Figma 684:9049: gap 16 between logo and greeting
-  },
-  greeting: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 14, // Figma: fontSize 14
-    lineHeight: 20, // Figma: lineHeight 20
-    color: '#CBCBCB', // Figma: #CBCBCB (neutral[300])
   },
   avatarContainer: {
     position: 'relative',

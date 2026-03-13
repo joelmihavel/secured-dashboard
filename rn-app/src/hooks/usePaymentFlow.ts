@@ -24,6 +24,7 @@ import {
 import { addCardToken, addUpiVpa, saveBankPreference } from '@/src/services/api/payments';
 import { paymentKeys } from '@/src/hooks/usePayments';
 import { dashboardKeys } from '@/src/hooks/useDashboard';
+import { profileKeys } from '@/src/hooks/useProfile';
 import { captureError } from '@/src/config/sentry';
 
 export type PaymentFlowOutcome =
@@ -147,7 +148,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                   { flow: 'payment_method_save', paymentMode }
                 );
               }
-              queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
+              queryClient.invalidateQueries({ queryKey: profileKeys.paymentMethods() });
               queryClient.invalidateQueries({ queryKey: dashboardKeys.data() });
             })();
 

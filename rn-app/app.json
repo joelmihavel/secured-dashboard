@@ -180,7 +180,7 @@
       "url": "https://u.expo.dev/76348d87-1f03-489a-a606-9d7bab4acd66",
       "enabled": true,
       "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "ON_LOAD"
+      "checkAutomatically": "ON_ERROR_RECOVERY"
     },
     "runtimeVersion": {
       "policy": "appVersion"

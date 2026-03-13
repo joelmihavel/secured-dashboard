@@ -179,6 +179,13 @@ export default function HomeScreen() {
 
   // Payment due calculations
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
+  // When already paid, compute days until next month's due date for "Upcoming rent payment in X days"
+  const daysUntilNextDue = useMemo(() => {
+    if (!alreadyPaid || !tenancy?.rent_due_day) return null;
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, tenancy.rent_due_day);
+    return Math.ceil((nextMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  }, [alreadyPaid, tenancy?.rent_due_day]);
   const daysUntilDue = alreadyPaid ? null : (upcomingPayment?.days_until_due ?? 0);
   const isOverdue = alreadyPaid ? false : (upcomingPayment?.is_overdue ?? false);
   const isMissed = isOverdue && (daysUntilDue ?? 0) <= -30 && (daysUntilDue ?? 0) > -60; // Missed if overdue by more than 30 days
@@ -205,18 +212,8 @@ export default function HomeScreen() {
   const allTimeCashback = cashback?.total_savings ?? cashbackBalance;
   const cashbackRate = (cashback?.discount_rate ?? 0.01) * 100; // Backend sends 0.01 (1%), UI displays as percentage
 
-  // Show bottom footer for active payment states when there's an upcoming payment
-  // (not during processing or when no payment is due)
-  const showBottomFooter = useMemo(() => {
-    const hasUpcomingPayment = upcomingPayment !== null && rentAmount > 0;
-    return (
-      hasUpcomingPayment &&
-      (dashboardState === 'all_verified' ||
-        dashboardState === 'payment_due' ||
-        dashboardState === 'payment_overdue' ||
-        dashboardState === 'pending_verification')
-    );
-  }, [dashboardState, upcomingPayment, rentAmount]);
+  // Show bottom footer whenever there's a tenancy with rent
+  const showBottomFooter = upcomingPayment !== null && rentAmount > 0;
 
   // Helper: format month from ISO date to display format
   const formatMonth = useCallback((dateStr: string) => {
@@ -894,13 +891,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
 
       // Sub-case B: Has transactions — render active-style layout inline
       const pvHeadlineVariant = alreadyPaid ? 'paid' : isOverdue ? 'overdue' : 'due';
-      const pvDaysValue = isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
+      const pvDaysValue = alreadyPaid ? (daysUntilNextDue ?? 0) : isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
 
       return (
         <View style={styles.contentContainer}>
           <HeadlineSection
             variant={pvHeadlineVariant}
-            daysUntilDue={pvHeadlineVariant === 'due' ? pvDaysValue : undefined}
+            daysUntilDue={pvHeadlineVariant === 'paid' ? pvDaysValue : pvHeadlineVariant === 'due' ? pvDaysValue : undefined}
             daysOverdue={pvHeadlineVariant === 'overdue' ? pvDaysValue : undefined}
           />
           <RentStatusCarousel items={carouselItems} />
@@ -954,7 +951,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     case 'payment_overdue':
       // Active states with payment methods, tabs, and payment list
       const headlineVariant = alreadyPaid ? 'paid' : isMultipleOverdue ? 'multiple_overdue' : isMissed ? 'missed' : isOverdue ? 'overdue' : 'due';
-      const daysValue = isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
+      const daysValue = alreadyPaid ? (daysUntilNextDue ?? 0) : isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
 
       return (
         <View style={styles.contentContainer}>
@@ -963,7 +960,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               paddingLeft: 64, paddingRight: 64 -- DO NOT add parent padding */}
           <HeadlineSection
             variant={headlineVariant}
-            daysUntilDue={headlineVariant === 'due' ? daysValue : undefined}
+            daysUntilDue={headlineVariant === 'paid' ? daysValue : headlineVariant === 'due' ? daysValue : undefined}
             daysOverdue={headlineVariant === 'overdue' ? daysValue : undefined}
             missedMonth={headlineVariant === 'missed' ? (missedMonthName || 'This Month') : undefined}
           />

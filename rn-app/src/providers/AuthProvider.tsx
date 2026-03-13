@@ -14,8 +14,37 @@ import { supabase } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
 import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
+import { isJourneyMode, deactivateJourneyMode } from '@/src/review/journeyMode';
 import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
 import type { Session } from '@supabase/supabase-js';
+
+/**
+ * Validates a user exists on the server via direct fetch.
+ * NEVER uses supabase.auth.getUser() — that triggers the SDK's internal
+ * _callRefreshToken() → _removeSession() → SIGNED_OUT chain when the JWT
+ * is expired and the refresh token has been rotated.
+ */
+async function isUserDeletedOnServer(accessToken: string): Promise<boolean> {
+  try {
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) return false;
+
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+      },
+    });
+
+    // Only 403/404 means user was genuinely deleted/banned.
+    // 401 = token expired (normal, SDK auto-refresh will handle it).
+    // 5xx = server error (transient, keep session).
+    return response.status === 403 || response.status === 404;
+  } catch {
+    return false; // Network error — keep session
+  }
+}
 
 interface AuthContextValue {
   session: Session | null;
@@ -73,7 +102,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const initSession = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        setSession(initialSession);
+        if (initialSession) {
+          // Server-validate the cached session immediately on cold start.
+          // A deleted/banned user may still have a valid JWT in SecureStore.
+          // Uses direct fetch — NEVER supabase.auth.getUser() which triggers
+          // the SDK's _callRefreshToken() → _removeSession() → SIGNED_OUT chain.
+          const deleted = await isUserDeletedOnServer(initialSession.access_token);
+          if (deleted) {
+            await supabase.auth.signOut({ scope: 'local' });
+            setSession(null);
+            return;
+          }
+          setSession(initialSession);
+        } else {
+          setSession(null);
+        }
       } catch {
         setSession(null);
       } finally {
@@ -115,6 +158,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               hasRedirectedRef.current = true;
 
               if (isReviewMode()) deactivateReviewMode();
+              if (isJourneyMode()) deactivateJourneyMode();
               clearAllStores();
               setSession(null);
 
@@ -168,7 +212,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextValue = useMemo(() => ({
     session,
     isLoading,
-    isAuthenticated: !!session || isReviewMode(),
+    isAuthenticated: !!session || isReviewMode() || isJourneyMode(),
   }), [session, isLoading]);
 
   return (

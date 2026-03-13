@@ -34,6 +34,8 @@ import {
   validateAgreementType,
 } from '../services/payment/storageService';
 import { useUploadStore } from '../stores/upload';
+import { isJourneyMode } from '../review/journeyMode';
+import { getJourneyExtractedData } from '../review/journeyData';
 
 // ==============================================
 // QUERY KEYS
@@ -242,6 +244,11 @@ export function useExtractedData(
   return useQuery({
     queryKey: agreementKeys.extraction(extractionId ?? ''),
     queryFn: async (): Promise<ExtractedAgreementData> => {
+      // Journey demo mode: return mock extracted data (bypasses PostgREST)
+      if (isJourneyMode()) {
+        return getJourneyExtractedData() as unknown as ExtractedAgreementData;
+      }
+
       if (!extractionId) {
         throw new Error('Missing extraction ID');
       }

@@ -51,6 +51,7 @@ import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/services/supabase/client';
 import { isReviewMode } from '@/src/review/reviewMode';
+import { isJourneyMode } from '@/src/review/journeyMode';
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
@@ -243,7 +244,7 @@ export default function OTPScreen() {
   // Navigate when auth store confirms authenticated instead.
   const authStatus = useAuthStore((s) => s.status);
   useEffect(() => {
-    if (isReviewMode() && authStatus === 'authenticated' && !isNavigating) {
+    if ((isReviewMode() || isJourneyMode()) && authStatus === 'authenticated' && !isNavigating) {
       setIsNavigating(true);
       Keyboard.dismiss();
       setIsVisible(false);

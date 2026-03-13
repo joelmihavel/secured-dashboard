@@ -5,6 +5,12 @@
  * the Supabase session on app foreground. Re-fetches dashboard data
  * if the session is still valid.
  *
+ * IMPORTANT: This hook NEVER calls supabase.auth.getUser(). That method
+ * triggers the SDK's internal _callRefreshToken() → _removeSession() →
+ * SIGNED_OUT chain when the JWT is expired and the refresh token has been
+ * rotated. Instead, we make a direct fetch to /auth/v1/user with the
+ * current access token, bypassing the SDK's dangerous refresh machinery.
+ *
  * Usage in root layout or a top-level provider:
  *   useSessionMonitor();
  */
@@ -33,11 +39,58 @@ function logBreadcrumb(message: string, category: string, data?: Record<string, 
   }
 }
 
+/**
+ * Validates a user's session against the server WITHOUT using supabase.auth.getUser().
+ *
+ * Why: getUser() internally calls _useSession() → __loadSession() → _callRefreshToken()
+ * when the JWT is expired. If the refresh token was already consumed (rotation), the
+ * server returns 401, which is non-retryable, so the SDK calls _removeSession() →
+ * fires SIGNED_OUT → user gets logged out spuriously (e.g. during interrupted uploads).
+ *
+ * This function makes a direct HTTP call with the current access token. If the token
+ * is expired, the server returns 401 — but we DON'T trigger a logout for that, because
+ * token expiry is normal and the SDK's auto-refresh timer will handle renewal. We only
+ * treat 403/404 as "user deleted/banned" signals.
+ *
+ * Returns:
+ *  - 'valid': user exists on server
+ *  - 'deleted': user was deleted/banned (403 or 404)
+ *  - 'expired': token expired (401) — normal, let SDK auto-refresh handle it
+ *  - 'network_error': couldn't reach server — keep session
+ */
+async function validateUserServerSide(accessToken: string): Promise<'valid' | 'deleted' | 'expired' | 'network_error'> {
+  try {
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) return 'network_error';
+
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+      },
+    });
+
+    if (response.ok) return 'valid';
+    if (response.status === 401) return 'expired'; // Token expired — not a deletion
+    if (response.status === 403 || response.status === 404) return 'deleted';
+    return 'network_error'; // 5xx, etc. — don't sign out
+  } catch {
+    return 'network_error';
+  }
+}
+
 /** Minimum time (ms) the app must have been backgrounded before triggering a refresh */
 const MIN_BACKGROUND_DURATION_MS = 5_000; // 5 seconds
 
 /** Cooldown between session refreshes to avoid hammering the server */
 const REFRESH_COOLDOWN_MS = 30_000; // 30 seconds
+
+/** Interval for periodic server-side session validation while foregrounded.
+ * This is a fallback for when realtime DELETE subscription is disconnected.
+ * Matches the JWT expiry (1 hour) — the primary instant-logout mechanism
+ * is the realtime DELETE subscription, not this poll. */
+const FOREGROUND_POLL_INTERVAL_MS = 60 * 60_000; // 1 hour
 
 export interface UseSessionMonitorOptions {
   /** Whether monitoring is enabled. Defaults to true. */
@@ -99,12 +152,6 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}): void 
         backgroundedAtRef.current = null;
 
         try {
-          // Check session validity WITHOUT calling refreshSession().
-          // refreshSession() calls _callRefreshToken() internally, which fires
-          // SIGNED_OUT if the refresh fails with a non-retryable error (e.g.
-          // refresh token reuse detection after rotation). The SDK's built-in
-          // auto-refresh timer handles token renewal safely — we just need to
-          // know if a session exists so we can invalidate stale dashboard data.
           const { data: { session }, error } = await supabase.auth.getSession();
 
           if (error) {
@@ -125,6 +172,22 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}): void 
 
             // Session exists -- invalidate dashboard queries for fresh data
             queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+
+            // Server-side validation: detect deleted/banned users via direct fetch.
+            // NEVER uses supabase.auth.getUser() — that triggers the SDK's internal
+            // refresh chain which can fire SIGNED_OUT on transient failures.
+            const result = await validateUserServerSide(session.access_token);
+            if (result === 'deleted') {
+              logBreadcrumb(
+                'Server confirms user deleted — signing out locally',
+                'auth',
+                { result }
+              );
+              await supabase.auth.signOut({ scope: 'local' });
+              return;
+            }
+            // 'expired' and 'network_error' are safe — SDK auto-refresh handles expiry,
+            // and network errors shouldn't log anyone out.
           } else {
             logBreadcrumb(
               'No session on foreground -- user signed out elsewhere',
@@ -144,8 +207,33 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}): void 
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
+    // Periodic server-side validation while the app is foregrounded.
+    // Fallback for when realtime DELETE subscription is disconnected.
+    // Uses direct fetch — never supabase.auth.getUser().
+    const pollInterval = setInterval(async () => {
+      if (appStateRef.current !== 'active') return;
+
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (!currentSession) return;
+
+        const result = await validateUserServerSide(currentSession.access_token);
+        if (result === 'deleted') {
+          logBreadcrumb(
+            'Periodic poll: user deleted — signing out',
+            'auth',
+            { result }
+          );
+          await supabase.auth.signOut({ scope: 'local' });
+        }
+      } catch {
+        // Network error — keep session
+      }
+    }, FOREGROUND_POLL_INTERVAL_MS);
+
     return () => {
       subscription.remove();
+      clearInterval(pollInterval);
     };
   }, [enabled, minBackgroundDuration, queryClient]);
 }

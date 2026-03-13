@@ -127,13 +127,15 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
   if (now - lastCheckTime < MIN_CHECK_INTERVAL) {
     return { status: 'throttled', isCritical: false };
   }
-  lastCheckTime = now;
 
   isChecking = true;
 
   try {
     trackEvent('ota_check');
     const update = await Updates.checkForUpdateAsync();
+
+    // Only set throttle timestamp after successful check
+    lastCheckTime = Date.now();
 
     if (!update.isAvailable) {
       return { status: 'no_update', isCritical: false };

@@ -17,6 +17,7 @@ import { Screen, Text, Logo, PrimaryButton } from '@/src/components';
 import { BgLine } from '@/src/components/ui/BgLine';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard } from '@/src/hooks';
+import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { colors } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
 
@@ -65,6 +66,7 @@ export default function PendingStepsScreen() {
   const monthlyCashback = Math.floor(monthlyRent * cashbackRate / 100);
 
   const handleStartEarning = useCallback(() => {
+    if (isJourneyMode()) advanceJourneyStage(); // setup → active
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.replace('/(main)' as never);
   }, [router]);

@@ -136,8 +136,9 @@ function HomeEmptyStateComponent({
           Figma 243-4062: Empty state headline does NOT show "Paying with:" label
           Only show "Paying with:" when payment carousel is visible */}
       <HeadlineSection
-        variant="due"
-        daysUntilDue={daysUntilDue}
+        variant={daysUntilDue !== undefined && daysUntilDue < 0 ? 'overdue' : 'due'}
+        daysUntilDue={daysUntilDue !== undefined && daysUntilDue >= 0 ? daysUntilDue : undefined}
+        daysOverdue={daysUntilDue !== undefined && daysUntilDue < 0 ? Math.abs(daysUntilDue) : undefined}
       />
 
       {/* Rent Status Carousel (for UPI variants) */}

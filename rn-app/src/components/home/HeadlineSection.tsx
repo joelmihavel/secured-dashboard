@@ -67,8 +67,8 @@ function HeadlineSectionComponent({
       case 'paid':
         return (
           <RNText style={styles.headline}>
-            <RNText style={styles.grayText}>Your rent is{'\n'}</RNText>
-            <RNText style={styles.accentText}>paid this month</RNText>
+            <RNText style={styles.grayText}>Upcoming rent{'\n'}payment in </RNText>
+            <RNText style={styles.accentText}>{daysUntilDue} days</RNText>
           </RNText>
         );
       default:

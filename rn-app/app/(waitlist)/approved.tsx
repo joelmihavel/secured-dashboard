@@ -48,6 +48,7 @@ import {
   DottedGridPattern,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
+import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
 import { spacing, radius } from '@/src/theme';
@@ -229,6 +230,7 @@ export default function WaitlistApprovedScreen() {
   const handleStepInside = useCallback(() => {
     if (isNavigating) return;
     setIsNavigating(true);
+    if (isJourneyMode()) advanceJourneyStage(); // setup → active (next stage)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
       if (finished) {

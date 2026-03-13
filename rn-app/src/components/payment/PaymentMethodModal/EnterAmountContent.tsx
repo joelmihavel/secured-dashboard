@@ -67,7 +67,8 @@ export function EnterAmountContent({
 
   const monthlyRent = tenancy?.monthly_rent ?? 0;
   const daysUntilDue = upcomingPayment?.days_until_due ?? 0;
-  const isOverdue = daysUntilDue < 0 && !upcomingPayment?.already_paid;
+  const alreadyPaid = upcomingPayment?.already_paid ?? false;
+  const isOverdue = daysUntilDue < 0 && !alreadyPaid;
   const rentMonth = upcomingPayment?.rent_month ?? '';
   const isAllVerified =
     tenancy?.verification_status?.bank_verified &&
@@ -118,9 +119,11 @@ export function EnterAmountContent({
         return `${MONTHS[now.getMonth()]} ${now.getFullYear()} RENT`;
       })();
 
-  const dueBadgeText = isOverdue
-    ? 'OVERDUE'
-    : `DUE IN ${Math.abs(daysUntilDue)} DAYS`;
+  const dueBadgeText = alreadyPaid
+    ? 'RENT PAID'
+    : isOverdue
+      ? 'OVERDUE'
+      : `DUE IN ${Math.abs(daysUntilDue)} DAYS`;
 
   // Validation
   const validation = useMemo((): ValidationBubble | null => {
@@ -169,7 +172,7 @@ export function EnterAmountContent({
         {/* Header Row */}
         <View style={styles.headerRow}>
           <Text style={styles.headerLabelLeft}>{monthDisplay}</Text>
-          <Text style={[styles.headerLabelRight, isOverdue && styles.headerLabelOverdue]}>
+          <Text style={[styles.headerLabelRight, isOverdue && styles.headerLabelOverdue, alreadyPaid && styles.headerLabelPaid]}>
             {dueBadgeText}
           </Text>
         </View>
@@ -273,6 +276,9 @@ const styles = StyleSheet.create({
   },
   headerLabelOverdue: {
     color: colors.error.default,
+  },
+  headerLabelPaid: {
+    color: colors.brand[500],
   },
 
   // Amount — Figma 759:299540

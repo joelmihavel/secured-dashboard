@@ -36,7 +36,9 @@ import {
   DottedGridPattern,
   SkeletonLoader,
 } from '@/src/components';
-import { useWaitlist } from '@/src/hooks';
+import { useWaitlist, waitlistKeys } from '@/src/hooks';
+import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
+import { useQueryClient } from '@tanstack/react-query';
 import { colors } from '@/src/theme/colors';
 import { s } from '@/src/theme/scale';
 import { typography } from '@/src/theme/typography';
@@ -248,6 +250,7 @@ const FIGMA = {
 export default function WaitlistScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   const {
     status,
@@ -294,6 +297,17 @@ export default function WaitlistScreen() {
       });
     }
   }, [viewState, navigateToApproved, isNavigating, transitionOpacity]);
+
+  // Journey demo mode: auto-approve after 3 seconds when pending
+  useEffect(() => {
+    if (isJourneyMode() && viewState === 'pending') {
+      const timer = setTimeout(() => {
+        advanceJourneyStage(); // waitlist → setup (internally changes mock response)
+        queryClient.invalidateQueries({ queryKey: waitlistKeys.status() });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [viewState, queryClient]);
 
   // Auto-join waitlist on first visit if no entry exists
   useEffect(() => {

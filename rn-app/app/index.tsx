@@ -29,6 +29,7 @@ import { useAuthContext } from '@/src/providers';
 import { useUploadStore } from '@/src/stores/upload';
 import { usePaymentStore } from '@/src/stores/payment';
 import { isReviewMode } from '@/src/review/reviewMode';
+import { isJourneyMode, getJourneyRouteTarget } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { supabase } from '@/src/services/supabase/client';
 
@@ -304,6 +305,13 @@ export default function Index() {
     // context may still have isAuthenticated=false from a stale render.
     if (isReviewMode()) {
       setTarget('/(main)');
+      setJourneyResolved(true);
+      return;
+    }
+
+    // Journey demo mode — route based on current stage
+    if (isJourneyMode()) {
+      setTarget(getJourneyRouteTarget());
       setJourneyResolved(true);
       return;
     }

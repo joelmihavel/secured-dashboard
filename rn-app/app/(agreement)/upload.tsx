@@ -49,6 +49,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
+import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
 import { agreementKeys } from '@/src/hooks/useAgreement';
@@ -904,6 +905,19 @@ export default function UploadScreen() {
   }, [extractionStatus.data]);
 
   const handlePickDocument = useCallback(async () => {
+    // Journey demo mode: skip DocumentPicker, set fake document immediately
+    if (isJourneyMode()) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setDocument({
+        uri: 'file:///journey-demo-agreement.pdf',
+        name: 'Rental_Agreement_Demo.pdf',
+        type: 'pdf',
+        size: 1024 * 512, // 512KB fake size
+      });
+      setUploadState('idle');
+      return;
+    }
+
     // Block file picker while an extraction is actively processing
     if (extractionStatus.hasActiveExtraction) {
       Alert.alert(
@@ -952,6 +966,34 @@ export default function UploadScreen() {
 
   const handleUpload = useCallback(async () => {
     if (!document) return;
+
+    // Journey demo mode: simulate upload progress, then advance to review
+    if (isJourneyMode()) {
+      setUploadState('uploading');
+      setUploadProgress(0);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      const steps = [
+        { progress: 25, delay: 400 },
+        { progress: 50, delay: 400 },
+        { progress: 75, delay: 400 },
+        { progress: 100, delay: 400 },
+      ];
+
+      for (const step of steps) {
+        await new Promise((resolve) => setTimeout(resolve, step.delay));
+        setUploadProgress(step.progress);
+      }
+
+      // Brief pause at 100% before navigating
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      advanceJourneyStage(); // agreement_upload → agreement_review
+      router.replace({
+        pathname: '/(agreement)/review',
+        params: { extractionId: 'journey-ext-001' },
+      } as never);
+      return;
+    }
 
     // Deduplication: block new upload while an extraction is actively processing
     if (extractionStatus.hasActiveExtraction) {

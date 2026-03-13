@@ -6,7 +6,7 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   fetchDashboard,
   DashboardData,
@@ -21,6 +21,8 @@ import {
 import { useRealtimeQuery } from './useRealtimeQuery';
 import { useAuthStore } from '../stores/auth';
 import { paymentKeys } from './usePayments';
+import { subscribe } from '../services/supabase/realtimeManager';
+import { supabase } from '../services/supabase/client';
 
 // ==============================================
 // QUERY KEYS
@@ -150,6 +152,28 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     queryKeys: [dashboardKeys.all],
     enabled: !!userId,
   });
+
+  // 5. User deletion → instant force logout
+  // When a user is deleted from public.users (admin or backend),
+  // sign out locally immediately without waiting for JWT expiry.
+  // Replica identity is FULL on users table, so old_record contains all columns.
+  useEffect(() => {
+    if (!userId) return;
+
+    const unsubscribe = subscribe(
+      'users',
+      'DELETE',
+      async (payload: any) => {
+        const deletedId = payload.old?.id ?? payload.old_record?.id;
+        if (deletedId === userId) {
+          await supabase.auth.signOut({ scope: 'local' });
+        }
+      },
+      `id=eq.${userId}`,
+    );
+
+    return unsubscribe;
+  }, [userId]);
 
   // When the query is in error state, return null values instead of stale cached data
   // to prevent the UI from showing outdated information after a failed refresh.

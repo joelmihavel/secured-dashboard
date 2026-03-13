@@ -66,7 +66,7 @@ export function useOptimisticPaymentMethod() {
 
         await serverCall();
         // Invalidate methods cache to reflect server state
-        queryClient.invalidateQueries({ queryKey: paymentKeys.methods() });
+        queryClient.invalidateQueries({ queryKey: profileKeys.paymentMethods() });
         addBreadcrumb('Payment method selected optimistically (confirmed)', 'optimistic');
       } catch (error) {
         // Revert on failure

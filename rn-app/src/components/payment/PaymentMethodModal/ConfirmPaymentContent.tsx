@@ -151,6 +151,7 @@ export function ConfirmPaymentContent({
   // Fee NOT included — PayU charges it separately
   const payableAmount = totalRent - appliedCashback;
 
+  const alreadyPaid = upcomingPayment?.already_paid ?? false;
   const daysUntilDue = upcomingPayment?.due_date
     ? Math.max(
         0,
@@ -183,7 +184,7 @@ export function ConfirmPaymentContent({
         <View style={s.infoCard}>
           <View style={s.infoTextArea}>
             <RNText style={s.rentDueText}>
-              Rent due in {daysUntilDue} days
+              {alreadyPaid ? 'Rent paid' : `Rent due in ${daysUntilDue} days`}
             </RNText>
             <RNText style={s.cashbackInfoText}>
               You'll earn {Math.round(cashbackPct * 100)}% cashback on this rent payment

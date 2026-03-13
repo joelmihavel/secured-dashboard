@@ -15,6 +15,7 @@
 import { supabase } from '../supabase';
 import { tryCatch, logError, getErrorMessage } from '@/src/utils';
 import { isReviewPhone, activateReviewMode, isReviewMode, deactivateReviewMode, REVIEW_OTP } from '@/src/review/reviewMode';
+import { isJourneyPhone, activateJourneyMode, isJourneyMode, deactivateJourneyMode, REVIEW_OTP as JOURNEY_OTP } from '@/src/review/journeyMode';
 
 // ==============================================
 // TYPES
@@ -81,6 +82,12 @@ export async function sendOtp(
   // Review mode: intercept before any network call
   if (isReviewPhone(request.phone_number)) {
     activateReviewMode();
+    return { data: { method: 'supabase' as OtpMethod }, error: null };
+  }
+
+  // Journey demo mode: intercept before any network call
+  if (isJourneyPhone(request.phone_number)) {
+    activateJourneyMode();
     return { data: { method: 'supabase' as OtpMethod }, error: null };
   }
 
@@ -165,6 +172,18 @@ export async function verifyOtp(
     };
   }
 
+  // Journey demo mode: validate OTP locally, return mock new user.
+  if (isJourneyMode()) {
+    if (request.otp !== JOURNEY_OTP) {
+      return { data: null, error: { code: 'INVALID_OTP', message: 'The code you entered is incorrect' } };
+    }
+
+    return {
+      data: { user_id: 'journey-user-id', is_new_user: true, identity_status: null },
+      error: null,
+    };
+  }
+
   if (request.method === 'supabase') {
     return verifyOtpViaSupabaseAuth(request);
   }
@@ -239,6 +258,11 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
   if (isReviewMode()) {
     deactivateReviewMode();
     // Let the real sign-out run to clear SecureStore + fire SIGNED_OUT event
+  }
+
+  // Journey demo mode: deactivate and reset stage
+  if (isJourneyMode()) {
+    deactivateJourneyMode();
   }
 
   const result = await tryCatch(

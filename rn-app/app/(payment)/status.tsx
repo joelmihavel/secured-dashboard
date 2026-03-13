@@ -290,9 +290,10 @@ interface ReceiptRowProps {
   value: string;
   isPayableRent?: boolean;
   isCashback?: boolean;
+  isPositive?: boolean;
 }
 
-const ReceiptRow = memo(({ label, value, isPayableRent, isCashback }: ReceiptRowProps) => (
+const ReceiptRow = memo(({ label, value, isPayableRent, isCashback, isPositive }: ReceiptRowProps) => (
   <View style={styles.receiptRow}>
     <View style={styles.labelContainer}>
       <ReceiptIcon />
@@ -302,6 +303,7 @@ const ReceiptRow = memo(({ label, value, isPayableRent, isCashback }: ReceiptRow
       style={[
         isPayableRent ? styles.payableRentValueText :
         isCashback ? styles.cashbackValueText :
+        isPositive ? styles.positiveValueText :
         styles.valueText,
         styles.valueMaxWidth,
       ]}
@@ -338,6 +340,7 @@ PendingContent.displayName = 'PendingContent';
 interface SuccessContentProps {
   amount: string;
   cashbackApplied: number;
+  cashbackEarned: number;
   date: string;
   method: string;
   landlordName: string;
@@ -350,6 +353,7 @@ interface SuccessContentProps {
 const SuccessContent = memo(({
   amount,
   cashbackApplied,
+  cashbackEarned,
   date,
   method,
   landlordName,
@@ -358,13 +362,24 @@ const SuccessContent = memo(({
   transactionId,
   payableRent,
 }: SuccessContentProps) => {
-  const cashbackDisplay = cashbackApplied > 0 ? `- \u20B9  ${cashbackApplied.toLocaleString('en-IN')}` : `- \u20B9 0`;
+  // Single cashback row — label/color depends on whether it was deducted (applied) or accumulated (earned)
+  const wasApplied = cashbackApplied > 0;
+  const cashbackValue = wasApplied ? cashbackApplied : cashbackEarned;
 
   return (
     <View style={styles.receiptDetails}>
       <ReceiptRow label="Amount paid" value={`\u20B9  ${amount}`} />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Cashback Applied" value={cashbackDisplay} isCashback />
+      {cashbackValue > 0 && (
+        <>
+          <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+          <ReceiptRow
+            label={wasApplied ? 'Cashback Applied' : 'Cashback Earned'}
+            value={`${wasApplied ? '-' : '+'} \u20B9 ${cashbackValue.toLocaleString('en-IN')}`}
+            isCashback={wasApplied}
+            isPositive={!wasApplied}
+          />
+        </>
+      )}
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
       <ReceiptRow label="Date" value={date} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
@@ -960,6 +975,7 @@ export default function PaymentStatusScreen() {
       return {
         amount: rp.amount.toLocaleString('en-IN'),
         cashbackApplied: rp.cashbackApplied,
+        cashbackEarned: rp.cashbackEarned ?? (rp.amount > 0 ? Math.round(rp.amount * 0.01) : 0),
         date: formatDisplayDate(rp.paidAt),
         method: rp.paymentMethod ?? method.toUpperCase(),
         landlordName: landlord.name,
@@ -971,9 +987,11 @@ export default function PaymentStatusScreen() {
     }
 
     const formatted = Number(amount) ? Number(amount).toLocaleString('en-IN') : amount;
+    const amountNum = Number(amount) || 0;
     return {
       amount: formatted,
       cashbackApplied: Number(cashback) || 0,
+      cashbackEarned: amountNum > 0 ? Math.round(amountNum * 0.01) : 0,
       date: formatDisplayDate(new Date().toISOString()),
       method: method ? method.toUpperCase() : '\u2014',
       landlordName: params.landlordName || 'N/A',
@@ -997,6 +1015,7 @@ export default function PaymentStatusScreen() {
           <SuccessContent
             amount={displayData.amount}
             cashbackApplied={displayData.cashbackApplied}
+            cashbackEarned={displayData.cashbackEarned}
             date={displayData.date}
             method={displayData.method}
             landlordName={displayData.landlordName}
@@ -1276,6 +1295,13 @@ const styles = StyleSheet.create({
     fontSize: sf(14),
     lineHeight: sf(20),
     color: PAYMENT_COLORS.cashbackDeduct, // #EF9194
+    textAlign: 'right' as const,
+  },
+  positiveValueText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(14),
+    lineHeight: sf(20),
+    color: '#4CAF50', // green — cashback earned/accumulated
     textAlign: 'right' as const,
   },
   valueMaxWidth: {

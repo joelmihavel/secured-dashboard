@@ -302,16 +302,10 @@ export function deriveCashbackEntries(
 
     switch (p.status) {
       case 'success':
-        if (cashbackAmount > 0) {
-          status = 'paid';
-          statusLabel = 'Paid - On Time';
-          amount = cashbackAmount;
-        } else {
-          // Paid but cashback not recorded — show expected amount as fallback
-          status = 'paid';
-          statusLabel = 'Paid';
-          amount = expectedCashback > 0 ? expectedCashback : 0;
-        }
+        status = 'paid';
+        statusLabel = cashbackAmount > 0 ? 'Paid - On Time' : 'Paid';
+        // Use actual cashback if recorded, otherwise compute 1% of rent as earned
+        amount = cashbackAmount > 0 ? cashbackAmount : expectedCashback;
         break;
       case 'failed':
         status = 'missed';
@@ -483,8 +477,8 @@ export function getDashboardState(data: DashboardData | null): DashboardState {
     return hasRecentSuccess ? 'payment_success' : 'all_verified';
   }
 
-  // Payment due
-  if (data.upcoming_payment.is_overdue) {
+  // Payment due — already_paid is handled by rendering layer (headlineVariant + footer visibility)
+  if (data.upcoming_payment.is_overdue && !data.upcoming_payment.already_paid) {
     return 'payment_overdue';
   }
 

@@ -2,22 +2,26 @@
  * Update Banner Component
  *
  * Ultra-slim OTA update bar at the very bottom of the screen.
- * Only visible while actively downloading. Auto-hides when done.
- * Critical updates show briefly before auto-restart.
+ * States:
+ *  - downloading: shimmer animation, "Updating..."
+ *  - ready: tappable, "Update ready — tap to restart"
+ *  - critical: non-dismissable, "Applying critical update..."
+ *  - restarting: non-dismissable, "Restarting..."
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, Animated, Easing } from 'react-native';
+import { Text, StyleSheet, Animated, Easing, Pressable } from 'react-native';
 import { colors } from '@/src/theme';
 import { useOTAUpdates } from '@/src/hooks/useOTAUpdates';
 
 export function UpdateBanner() {
-  const { bannerState } = useOTAUpdates();
+  const { bannerState, applyUpdate, dismiss } = useOTAUpdates();
   const [slideAnim] = useState(new Animated.Value(20));
   const shimmer = useRef(new Animated.Value(0)).current;
 
   const shouldShow =
     bannerState === 'downloading' ||
+    bannerState === 'ready' ||
     bannerState === 'critical' ||
     bannerState === 'restarting';
 
@@ -49,25 +53,51 @@ export function UpdateBanner() {
   if (!shouldShow) return null;
 
   const isCritical = bannerState === 'critical' || bannerState === 'restarting';
+  const isReady = bannerState === 'ready';
+  const isTappable = isReady;
 
   const shimmerWidth = shimmer.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: ['0%', '60%', '100%'],
   });
 
-  return (
+  const message = (() => {
+    switch (bannerState) {
+      case 'downloading': return 'Updating...';
+      case 'ready': return 'Update ready \u2014 tap to restart';
+      case 'critical': return 'Applying critical update...';
+      case 'restarting': return 'Restarting...';
+      default: return '';
+    }
+  })();
+
+  const content = (
     <Animated.View
-      style={[styles.container, { transform: [{ translateY: slideAnim }] }]}
-      pointerEvents="none"
+      style={[
+        styles.container,
+        isReady && styles.readyContainer,
+        { transform: [{ translateY: slideAnim }] },
+      ]}
+      pointerEvents={isTappable ? 'auto' : 'none'}
     >
       {bannerState === 'downloading' && (
         <Animated.View style={[styles.progressFill, { width: shimmerWidth }]} />
       )}
-      <Text style={[styles.message, isCritical && styles.criticalMessage]}>
-        {isCritical ? 'Applying update...' : 'Updating...'}
+      <Text style={[styles.message, isCritical && styles.criticalMessage, isReady && styles.readyMessage]}>
+        {message}
       </Text>
     </Animated.View>
   );
+
+  if (isTappable) {
+    return (
+      <Pressable onPress={applyUpdate} onLongPress={dismiss}>
+        {content}
+      </Pressable>
+    );
+  }
+
+  return content;
 }
 
 const styles = StyleSheet.create({
@@ -83,6 +113,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
+  readyContainer: {
+    height: 28,
+    backgroundColor: 'rgba(32,32,32,0.98)',
+  },
   progressFill: {
     position: 'absolute',
     left: 0,
@@ -97,5 +131,10 @@ const styles = StyleSheet.create({
   },
   criticalMessage: {
     color: '#DC3545',
+  },
+  readyMessage: {
+    fontSize: 11,
+    fontFamily: 'PlusJakartaSans-Medium',
+    color: colors.brand[500],
   },
 });
