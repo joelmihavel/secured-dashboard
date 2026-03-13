@@ -58,15 +58,34 @@ const mutationCache = new MutationCache({
   onError: (error, _variables, _context, mutation) => {
     if (mutation.meta?.suppressGlobalError) return;
 
-    const errorMsg = error instanceof Error ? error.message : String(error);
+    // Extract a meaningful error message from various error shapes.
+    // Mutations often throw plain objects like { code: 'X', message: 'Y' }
+    // — String(obj) gives '[object Object]' which is useless for matching.
+    const errorMsg =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : error && typeof error === 'object' && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : String(error);
+
+    const errorCode =
+      error && typeof error === 'object' && 'code' in error
+        ? String((error as { code: unknown }).code)
+        : '';
 
     // Don't fire global error for known expected-error patterns
-    // that should be handled inline by the UI (e.g. invalid invite code)
+    // that should be handled inline by the UI (e.g. invalid invite code, auth errors)
     const EXPECTED_PATTERNS = [
       'invite code', 'referral code', 'INVALID_CODE', 'INVALID_INVITE_CODE',
       'INVALID_REFERRAL', 'ALREADY_APPLIED', 'ALREADY_CLAIMED',
+      // Auth errors — handled inline by upload.tsx and other screens
+      'NOT_AUTHENTICATED', 'not authenticated', 'unauthorized',
+      'Please sign in', 'session expired', 'AUTH_ERROR',
     ];
-    if (EXPECTED_PATTERNS.some((p) => errorMsg.toLowerCase().includes(p.toLowerCase()))) {
+    const combined = `${errorCode} ${errorMsg}`.toLowerCase();
+    if (EXPECTED_PATTERNS.some((p) => combined.includes(p.toLowerCase()))) {
       return;
     }
 

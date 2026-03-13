@@ -38,6 +38,7 @@ export function useNotificationPreferences() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.preferences() });
     },
+    meta: { suppressGlobalError: true },
   });
 
   return {

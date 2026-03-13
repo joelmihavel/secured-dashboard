@@ -59,7 +59,7 @@ import {
   validateAgreementType,
 } from '@/src/services/payment';
 import { abandonExtraction } from '@/src/services/api/agreement';
-import { navigateToError } from '@/src/utils';
+// navigateToError removed — auth errors now handled inline to avoid error-screen loops
 import { useUploadStore } from '@/src/stores/upload';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
@@ -1078,15 +1078,14 @@ export default function UploadScreen() {
           break;
 
         case 'NOT_AUTHENTICATED':
-          // Session is genuinely lost (callEdgeFunction already retried refresh).
-          // Navigate to error screen — user needs to re-authenticate.
-          navigateToError(router, {
-            title: 'Session Expired',
-            message: 'Your session has expired. Please sign in again to continue.',
-            actionLabel: 'Sign In',
-            action: '/(auth)/beta-splash',
-          });
-          return;
+          // Session appeared lost during the edge function call, but may have
+          // been a transient issue (SDK auto-refresh in flight, SecureStore
+          // read timing). Show an inline retry instead of navigating to the
+          // error screen — navigating away can cause error-screen loops when
+          // the MutationCache's global onError races with this handler.
+          setUploadState('error_expired');
+          setErrorOverrideMessage('Please sign in to continue. If this persists, try restarting the app.');
+          break;
 
         default:
           // Generic server error — show a helpful retry message

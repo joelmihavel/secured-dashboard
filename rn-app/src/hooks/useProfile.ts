@@ -74,6 +74,7 @@ export function useUpdateProfile() {
       // Invalidate dashboard to refresh user data across the app
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -145,6 +146,7 @@ export function useUploadAvatar() {
       // Invalidate dashboard to reflect new avatar everywhere
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -182,6 +184,7 @@ export function usePixelateAvatar() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -244,6 +247,7 @@ export function useDeleteAccount() {
       await clearAllStores();
       globalQueryClient.clear();
     },
+    meta: { suppressGlobalError: true },
   });
 }
 

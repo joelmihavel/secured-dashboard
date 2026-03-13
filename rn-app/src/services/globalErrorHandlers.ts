@@ -46,6 +46,12 @@ const IGNORED_REJECTION_PATTERNS = [
   'INVITE_CODE_USED',
   'ALREADY_APPLIED',
   'ALREADY_CLAIMED',
+  // Auth errors — handled inline by component catch handlers
+  'NOT_AUTHENTICATED',
+  'not authenticated',
+  'Please sign in',
+  'session expired',
+  'AUTH_ERROR',
   // Supabase edge function expected errors
   'AGREEMENT_NOT_CONFIRMED',
   'claim-invite-code',

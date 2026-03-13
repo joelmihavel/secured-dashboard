@@ -209,6 +209,7 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
         agreementErr?.message ?? 'Upload failed'
       );
     },
+    meta: { suppressGlobalError: true },
   });
 
   return {
@@ -293,6 +294,7 @@ export function useConfirmExtraction() {
       // Also invalidate dashboard since tenancy was created
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -322,6 +324,7 @@ export function useUpdateExtraction() {
       // Invalidate extraction data to refetch updated values
       queryClient.invalidateQueries({ queryKey: agreementKeys.extraction(data.extractionId) });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 

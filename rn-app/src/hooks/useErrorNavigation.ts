@@ -68,9 +68,10 @@ export function useErrorNavigation(): void {
         return;
       }
 
-      // 3. Suppress if currently on agreement or waitlist screens — navigation away
-      // from nested stack during transitions causes PropertyDOM crash.
-      // Waitlist screen: invite code errors are handled inline by UI, not globally.
+      // 3. Suppress if currently on screens with inline error handling.
+      // These screens catch mutation errors via onError/try-catch and show
+      // inline feedback. Without suppression, MutationCache's reportFatalError
+      // races the component handler → "Something went wrong" error screen loop.
       //
       // IMPORTANT: Read from ref (not closure) to get the CURRENT segments at
       // fire time, not the segments at effect subscription time. The listener
@@ -78,7 +79,14 @@ export function useErrorNavigation(): void {
       // segments may have changed.
       const currentSegments = segmentsRef.current;
       const firstSegment = currentSegments[0] ?? '';
-      if (firstSegment === '(agreement)' || firstSegment === '(waitlist)') {
+      if (
+        firstSegment === '(agreement)' ||
+        firstSegment === '(waitlist)' ||
+        firstSegment === '(setup)' ||
+        firstSegment === '(profile)' ||
+        firstSegment === '(auth)' ||
+        firstSegment === '(payment)'
+      ) {
         if (__DEV__) {
           console.log('[useErrorNavigation] Suppressed (on agreement/waitlist screen):', report.technicalMessage);
         }
@@ -93,6 +101,9 @@ export function useErrorNavigation(): void {
       const INLINE_HANDLED_PATTERNS = [
         'invite', 'referral', 'invalid_code', 'invalid_invite',
         'already_claimed', 'already_applied', 'invite_code_used',
+        // Auth errors — handled inline by component catch handlers
+        'not_authenticated', 'not authenticated', 'please sign in',
+        'session expired', 'auth_error', 'unauthorized',
       ];
       if (INLINE_HANDLED_PATTERNS.some((p) => tech.includes(p))) {
         if (__DEV__) {

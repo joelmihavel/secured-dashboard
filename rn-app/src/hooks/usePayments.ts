@@ -215,6 +215,7 @@ export function useGenerateReceipt() {
       if (!data) throw new Error('Unexpected empty response');
       return data;
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -246,6 +247,7 @@ export function useCreateSchedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.schedules() });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
@@ -261,6 +263,7 @@ export function useManageSchedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.schedules() });
     },
+    meta: { suppressGlobalError: true },
   });
 }
 
