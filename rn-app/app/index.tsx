@@ -64,6 +64,29 @@ type JourneyTarget =
  * by the SDK). If the token is expired, PostgREST returns 401, and we
  * fall through to the edge function fallback.
  */
+/**
+ * Wait for the Supabase SDK's autoRefreshToken to fire TOKEN_REFRESHED.
+ * On cold start with an expired JWT, the SDK automatically attempts a
+ * refresh but it's async. This helper lets the journey router wait for
+ * fresh tokens before retrying PostgREST queries.
+ *
+ * Returns true if TOKEN_REFRESHED fires within the timeout, false otherwise.
+ */
+async function waitForTokenRefresh(timeoutMs: number = 5000): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'TOKEN_REFRESHED') {
+        subscription.unsubscribe();
+        resolve(true);
+      } else if (event === 'SIGNED_OUT') {
+        subscription.unsubscribe();
+        resolve(false);
+      }
+    });
+    setTimeout(() => { subscription.unsubscribe(); resolve(false); }, timeoutMs);
+  });
+}
+
 async function queryUserStatus(userId: string): Promise<string | null> {
   try {
     const { data: userRecord, error } = await supabase
@@ -228,11 +251,34 @@ export default function Index() {
         }
       }
 
+      // ── RETRY AFTER TOKEN REFRESH ──
+      // On cold start after app kill, the persisted JWT is often expired.
+      // The SDK's autoRefreshToken fires TOKEN_REFRESHED async, but the
+      // journey router reaches here before it completes. Wait for fresh
+      // tokens and retry once before giving up.
+      //
+      // Always retry after the wait — TOKEN_REFRESHED may have fired
+      // between the first attempt and our subscription (missed event),
+      // but the Supabase client will have fresh tokens regardless.
+      if (!userStatus) {
+        console.log('[journey-router] Both paths failed, waiting for token refresh...');
+        addBreadcrumb('waiting for token refresh before retry', 'navigation');
+        await waitForTokenRefresh(5000);
+        console.log('[journey-router] Retrying after token refresh wait...');
+        userStatus = await queryUserStatus(userId);
+        if (!userStatus) {
+          const { data: retryData, error: retryError } = await getWaitlistStatus();
+          if (!retryError && retryData?.userStatus) {
+            userStatus = retryData.userStatus;
+          }
+        }
+      }
+
       // ── ROUTE ──
       if (!userStatus) {
-        // Both paths failed. We already know we're authenticated (AuthProvider
-        // confirmed), so this is a transient network issue — safe default.
-        console.warn('[journey-router] Both routing paths failed — defaulting to upload');
+        // Both paths failed even after token refresh — genuine network issue
+        // or auth failure. Default to upload as safe fallback.
+        console.warn('[journey-router] Routing failed after token refresh — defaulting to upload');
         setTarget('/(agreement)/upload');
         setJourneyResolved(true);
         return;

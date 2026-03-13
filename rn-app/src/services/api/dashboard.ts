@@ -283,13 +283,9 @@ export function mapRecentPayments(
  */
 export function deriveCashbackEntries(
   rawPayments: RawRecentPayment[],
-  monthlyRent?: number,
-  discountRate: number = 0.01,
+  _monthlyRent?: number,
+  _discountRate: number = 0.01,
 ): MappedCashbackEntry[] {
-  // Expected cashback per month (1% of agreement rent), used as fallback
-  // when the backend didn't record the cashback amount on the payment
-  const expectedCashback = monthlyRent ? Math.round(monthlyRent * discountRate) : 0;
-
   return rawPayments.map((p) => {
     const monthLabel = parseRentMonthLabel(p.rent_month);
     let status: MappedCashbackEntry['status'];
@@ -304,8 +300,8 @@ export function deriveCashbackEntries(
       case 'success':
         status = 'paid';
         statusLabel = cashbackAmount > 0 ? 'Paid - On Time' : 'Paid';
-        // Use actual cashback if recorded, otherwise compute 1% of rent as earned
-        amount = cashbackAmount > 0 ? cashbackAmount : expectedCashback;
+        // Only show actual cashback recorded on this payment — never fabricate
+        amount = cashbackAmount > 0 ? cashbackAmount : null;
         break;
       case 'failed':
         status = 'missed';

@@ -179,7 +179,7 @@ export default function HomeScreen() {
 
   // Payment due calculations
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
-  // When already paid, compute days until next month's due date for "Upcoming rent payment in X days"
+  // When already paid, compute days until next month's due date for "Next rent payment in X days"
   const daysUntilNextDue = useMemo(() => {
     if (!alreadyPaid || !tenancy?.rent_due_day) return null;
     const now = new Date();
@@ -588,6 +588,7 @@ export default function HomeScreen() {
         paymentId: payment.id,
         initialStatus: statusMap[payment.status] ?? 'pending',
         amount: String(payment.amount),
+        method: rawPayment?.payment_method ?? '',
         cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
         transactionId: payment.id,
         source: 'receipt_view',
@@ -617,6 +618,7 @@ export default function HomeScreen() {
       params: {
         paymentId: entry.paymentId,
         amount: String(rawPayment?.amount ?? 0),
+        method: rawPayment?.payment_method ?? '',
         initialStatus: statusMap[entry.status] ?? 'pending',
         cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
         source: 'receipt_view',
