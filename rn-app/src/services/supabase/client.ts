@@ -10,6 +10,65 @@ import * as SecureStore from 'expo-secure-store';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { interceptEdgeFunction } from '@/src/review/reviewInterceptor';
 
+/**
+ * In-memory navigator lock for Supabase auth operations.
+ *
+ * The SDK's default `lockNoOp` provides NO serialization — concurrent calls
+ * to `_callRefreshToken()` (from autoRefreshToken, getSession, getUser, etc.)
+ * all fire simultaneously. With Supabase's refresh token rotation (default),
+ * the second concurrent refresh consumes an already-rotated token → 401 →
+ * `_removeSession()` → SIGNED_OUT → spurious logout.
+ *
+ * This lock serializes all auth operations keyed by lock name:
+ * - acquireTimeout = 0: auto-refresh skips if lock is held (returns immediately)
+ * - acquireTimeout > 0: waits up to N ms for the lock
+ * - acquireTimeout < 0: waits indefinitely (getSession, getUser)
+ */
+const _locks = new Map<string, Promise<unknown>>();
+
+const navigatorLock = async <R>(name: string, acquireTimeout: number, fn: () => Promise<R>): Promise<R | undefined> => {
+  // Spin until the lock is free (or timeout)
+  const deadline = acquireTimeout > 0 ? Date.now() + acquireTimeout : 0;
+
+  for (;;) {
+    const existing = _locks.get(name);
+
+    if (!existing) break; // Lock is free — acquire it below
+
+    if (acquireTimeout === 0) {
+      // Auto-refresh uses timeout=0 → skip if lock held (another refresh is running)
+      return;
+    }
+
+    if (acquireTimeout > 0) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) return; // Timed out
+      await Promise.race([
+        existing.catch(() => {}),
+        new Promise<void>((r) => setTimeout(r, remaining)),
+      ]);
+    } else {
+      // acquireTimeout < 0 → wait indefinitely
+      await existing.catch(() => {});
+    }
+    // Loop back to check if someone else grabbed it while we were waiting
+  }
+
+  // Acquire the lock — store a controllable promise so other callers can wait on it
+  let resolve: () => void;
+  const lockPromise = new Promise<void>((r) => { resolve = r; });
+  _locks.set(name, lockPromise);
+
+  try {
+    return await fn();
+  } finally {
+    resolve!();
+    if (_locks.get(name) === lockPromise) {
+      _locks.delete(name);
+    }
+  }
+};
+
 // Environment configuration - fail fast if not set
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -120,6 +179,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    lock: navigatorLock,
   },
   global: {
     headers: {
