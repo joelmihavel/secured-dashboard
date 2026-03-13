@@ -118,49 +118,6 @@ export function getJourneyResponse(
     }
   }
 
-  // ── Stage: waitlist ──
-  if (stage === 'waitlist') {
-    if (baseName === 'get-waitlist-status') {
-      return {
-        has_entry: true,
-        user_status: 'waitlisted',
-        waitlist_entry: {
-          status: 'pending',
-          extraction_status: 'completed',
-          contract_status: 'confirmed',
-          requires_manual_review: false,
-          manual_review_reason: null,
-          waitlist_position: 12,
-          document_uploaded: true,
-          admin_review: false,
-          rejection_reasons: [],
-          created_at: '2026-01-15T10:00:00Z',
-          has_invite_code: false,
-          batch_number: 1,
-        },
-        batch_config: {
-          current_batch: 1,
-          rejection_cooldown_days: 30,
-        },
-        extraction_status: 'completed',
-        requires_manual_review: false,
-      };
-    }
-    if (baseName === 'join-waitlist') {
-      return {
-        entry_id: 'journey-wl-001',
-        position: 12,
-        is_new: false,
-      };
-    }
-    if (baseName === 'claim-invite-code') {
-      return {
-        code: 'JOURNEY-INVITE',
-        message: 'Invite code claimed',
-      };
-    }
-  }
-
   // ── Stage: setup ──
   if (stage === 'setup') {
     if (baseName === 'get-waitlist-status') {

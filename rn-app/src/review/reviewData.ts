@@ -238,7 +238,7 @@ const reviewResponses: Record<string, unknown> = {
       name: 'Flent Technologies Pvt Ltd',
       address: 'WeWork Galaxy, Residency Road, Bangalore 560025',
       gstin: '29AABCT1332L1ZI',
-      support_email: 'support@flent.in',
+      support_email: 'secured@flent.in',
       support_phone: '+918001234567',
     },
   },

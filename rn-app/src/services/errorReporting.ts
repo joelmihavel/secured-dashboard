@@ -148,7 +148,7 @@ export function reportFatalError(report: Omit<ErrorReport, 'id' | 'timestamp' | 
 // SUPPORT EMAIL
 // ==============================================
 
-const SUPPORT_EMAIL = 'support@flent.in';
+const SUPPORT_EMAIL = 'secured@flent.in';
 
 /**
  * Build a pre-filled mailto URI with all error context.

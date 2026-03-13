@@ -7,7 +7,9 @@
  * In-memory only — no persistence, no AsyncStorage.
  * Reuses REVIEW_OTP ('123456') from reviewMode.ts.
  *
- * Stage machine: agreement_upload → agreement_review → waitlist → setup → active
+ * Stage machine: agreement_upload → agreement_review → setup → active
+ * (waitlist skipped — mock user has no DB row, so the real API fails and the
+ * screen gets stuck at error state instead of advancing)
  */
 
 import { REVIEW_OTP } from './reviewMode';
@@ -19,14 +21,12 @@ export const JOURNEY_PHONE = '+919999900002';
 export type JourneyStage =
   | 'agreement_upload'
   | 'agreement_review'
-  | 'waitlist'
   | 'setup'
   | 'active';
 
 const STAGE_ORDER: JourneyStage[] = [
   'agreement_upload',
   'agreement_review',
-  'waitlist',
   'setup',
   'active',
 ];
@@ -76,8 +76,6 @@ export function getJourneyRouteTarget(): string {
       return '/(agreement)/upload';
     case 'agreement_review':
       return '/(agreement)/review';
-    case 'waitlist':
-      return '/(waitlist)';
     case 'setup':
       return '/(setup)';
     case 'active':

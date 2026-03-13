@@ -139,6 +139,10 @@ export { useRealtimeQuery } from './useRealtimeQuery';
 export { useOTAUpdates } from './useOTAUpdates';
 export type { BannerState, UseOTAUpdatesReturn } from './useOTAUpdates';
 
+// Force Update
+export { useForceUpdate } from './useForceUpdate';
+export type { ForceUpdateState } from './useForceUpdate';
+
 // Waitlist
 export {
   useWaitlist,

@@ -561,7 +561,7 @@ export function buildFallbackReceiptData(params: FallbackReceiptParams): Receipt
       name: 'Flent Technologies Private Limited',
       address: 'Mumbai, Maharashtra',
       gstin: '',
-      supportEmail: 'support@flent.in',
+      supportEmail: 'secured@flent.in',
       supportPhone: '+91 93210 93210',
     },
   };

@@ -26,7 +26,9 @@ import { getWaitlistStatus } from '@/src/services/api/waitlist';
 const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
 const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
 import { SkeletonLoader } from '@/src/components';
+import { ForceUpdateModal } from '@/src/components/ui/ForceUpdateModal';
 import { useAuthContext } from '@/src/providers';
+import { useForceUpdate } from '@/src/hooks/useForceUpdate';
 import { useUploadStore } from '@/src/stores/upload';
 import { usePaymentStore } from '@/src/stores/payment';
 import { isReviewMode } from '@/src/review/reviewMode';
@@ -142,6 +144,7 @@ export default function Index() {
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
   const { isAuthenticated, isLoading: authLoading, session: authSession } = useAuthContext();
+  const { isRequired: forceUpdateRequired, message: forceUpdateMessage, isLoading: forceUpdateLoading } = useForceUpdate();
   const [journeyResolved, setJourneyResolved] = useState(false);
   const [target, setTarget] = useState<JourneyTarget | string | null>(null);
   const hasNavigatedRef = useRef(false);
@@ -401,6 +404,11 @@ export default function Index() {
       setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
     });
   }, [journeyResolved, target, router, rootNavigationState?.key]);
+
+  // Force update blocks ALL navigation — user must update from App Store
+  if (forceUpdateRequired) {
+    return <ForceUpdateModal message={forceUpdateMessage} />;
+  }
 
   // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack
   return <SkeletonLoader />;

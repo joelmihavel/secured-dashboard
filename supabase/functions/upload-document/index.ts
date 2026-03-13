@@ -16,7 +16,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { handleCors, getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { AuthError, ValidationError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { ensureWaitlistState } from "../_shared/onboarding.ts";
+// NOTE: ensureWaitlistState removed — it prematurely advances user_status to
+// 'waitlisted' before the upload completes. If the function crashes after the
+// status change but before returning success, the user is stuck at waitlist
+// with a pending extraction. process-document handles status advancement when
+// extraction actually completes. We call join_waitlist RPC directly to create
+// the waitlist entry (needed for linking) without changing user_status.
 
 // ==============================================
 // CONSTANTS
@@ -314,19 +319,16 @@ serve(async (req) => {
     // ==============================================
     // ENSURE WAITLIST_ENTRIES ROW EXISTS & LINK EXTRACTION
     // ==============================================
-    // The waitlist_entries row is created by the join_waitlist RPC (called from the
-    // waitlist screen). If the user navigated directly to agreement upload without
-    // visiting the waitlist screen, no row exists yet. We call join_waitlist to
-    // ensure the row exists (it's idempotent — returns existing row if already present).
+    // Create the waitlist entry via join_waitlist RPC (idempotent) so we can
+    // link the extraction. Does NOT advance user_status — that happens in
+    // process-document after extraction actually completes. This prevents
+    // users getting stuck at 'waitlisted' if this function crashes mid-flight.
 
     try {
-      await ensureWaitlistState({
-        supabase: adminClient,
-        userId: user.id,
-      });
+      await adminClient.rpc("join_waitlist", { p_user_id: user.id });
     } catch (joinError) {
       console.log(
-        "[upload-document] Note: failed to ensure waitlist state (non-fatal):",
+        "[upload-document] Note: failed to create waitlist entry (non-fatal):",
         joinError instanceof Error ? joinError.message : String(joinError),
       );
     }

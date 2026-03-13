@@ -516,7 +516,7 @@ export default function HomeScreen() {
         const handleHowItWorks = useCallback(async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           try {
-            await Linking.openURL('https://hiw-secured.flent.in/');
+            await Linking.openURL('https://flent.in/secured/how-it-works');
           } catch (e) {
             console.warn('Failed to open URL:', e);
           }

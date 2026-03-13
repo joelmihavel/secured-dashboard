@@ -2,7 +2,7 @@
   "expo": {
     "name": "Flent Secured",
     "slug": "flent-secured",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "flentsecured",
@@ -182,9 +182,7 @@
       "fallbackToCacheTimeout": 3000,
       "checkAutomatically": "ON_LOAD"
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": { "policy": "appVersion" },
     "experiments": {
       "typedRoutes": true
     },
