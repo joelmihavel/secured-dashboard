@@ -30,7 +30,6 @@ const PRODUCTION_ORIGINS = [
 
 const DEVELOPMENT_ORIGINS = [
   ...PRODUCTION_ORIGINS,
-  "https://zqlowjveyqiagnbmfwsb.supabase.co",
   "http://localhost:3000",
   "http://localhost:8081",
   "capacitor://localhost",

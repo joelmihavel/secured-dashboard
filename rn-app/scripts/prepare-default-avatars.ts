@@ -11,7 +11,7 @@
  *
  * Prerequisites:
  *   - SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars set
- *   - Or run: eval $(supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb | grep SERVICE)
+ *   - Or run: eval $(supabase projects api-keys --project-ref uowjtrzmszuaiokqxgir | grep SERVICE)
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -26,8 +26,8 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars');
-  console.error('Run: export SUPABASE_URL=https://zqlowjveyqiagnbmfwsb.supabase.co');
-  console.error('Run: export SUPABASE_SERVICE_ROLE_KEY=$(supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb | grep service_role | awk \'{print $NF}\')');
+  console.error('Run: export SUPABASE_URL=https://uowjtrzmszuaiokqxgir.supabase.co');
+  console.error('Run: export SUPABASE_SERVICE_ROLE_KEY=$(supabase projects api-keys --project-ref uowjtrzmszuaiokqxgir | grep service_role | awk \'{print $NF}\')');
   process.exit(1);
 }
 

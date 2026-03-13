@@ -5,8 +5,8 @@
 // ============================================================================
 
 // ===== Configuration =====
-var SUPABASE_URL = 'https://zqlowjveyqiagnbmfwsb.supabase.co';
-var SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Euh6wOeHbdsc4Y0aBq3l7g_3-FPkaut'; // public key — safe to embed
+var SUPABASE_URL = 'https://uowjtrzmszuaiokqxgir.supabase.co';
+var SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_c80tL8IG3x46DQhLQ7WKfg_QUgIMI2x'; // public key — safe to embed
 var HOLYGRAIL_ID = '1E1GAWuzMSSsdV-osseKOQhwwzgGsbflC1PnojBV8WUU';
 
 // BOOTSTRAP: Sets script properties. Run once manually via Apps Script editor or doGet(?action=bootstrap).
@@ -14,10 +14,10 @@ var HOLYGRAIL_ID = '1E1GAWuzMSSsdV-osseKOQhwwzgGsbflC1PnojBV8WUU';
 // NEVER hardcode keys in source code.
 function _bootstrap() {
   var props = PropertiesService.getScriptProperties();
-  var serviceKey = props.getProperty('SUPABASE_SERVICE_KEY');
+  var serviceKey = props.getProperty('SUPABASE_SECRET_KEY');
   var adminKey = props.getProperty('ADMIN_API_KEY');
   if (!serviceKey || !adminKey) {
-    Logger.log('ERROR: Set SUPABASE_SERVICE_KEY and ADMIN_API_KEY in Script Properties before running bootstrap.');
+    Logger.log('ERROR: Set SUPABASE_SECRET_KEY and ADMIN_API_KEY in Script Properties before running bootstrap.');
     return 'FAIL: keys not set in Script Properties. Go to Project Settings > Script Properties.';
   }
   Logger.log('Script properties verified');
@@ -25,8 +25,8 @@ function _bootstrap() {
 }
 
 function getServiceKey() {
-  var key = PropertiesService.getScriptProperties().getProperty('SUPABASE_SERVICE_KEY');
-  if (!key) throw new Error('SUPABASE_SERVICE_KEY not set in Script Properties. Run _bootstrap() after setting keys.');
+  var key = PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');
+  if (!key) throw new Error('SUPABASE_SECRET_KEY not set in Script Properties. Run _bootstrap() after setting keys.');
   return key;
 }
 

@@ -7,8 +7,15 @@
 const { Pool } = require('pg');
 
 // Use pooler URLs (IPv4) since direct connections are IPv6-only
-const DEV_URL = 'postgresql://postgres.zqlowjveyqiagnbmfwsb:FlentSecured%232k26@aws-1-ap-south-1.pooler.supabase.com:5432/postgres';
-const MAIN_URL = 'postgresql://postgres.uowjtrzmszuaiokqxgir:FlentSecured%232k26@aws-1-ap-south-1.pooler.supabase.com:5432/postgres';
+// Connection strings read from environment to avoid hardcoded credentials.
+// Usage: DEV_DB_URL=... MAIN_DB_URL=... node scripts/migrate_direct.js
+const DEV_URL = process.env.DEV_DB_URL || '';
+const MAIN_URL = process.env.MAIN_DB_URL || '';
+if (!DEV_URL || !MAIN_URL) {
+  console.error('Set DEV_DB_URL and MAIN_DB_URL environment variables');
+  console.error('Example: DEV_DB_URL="postgresql://postgres.zqlowjveyqiagnbmfwsb:PASSWORD@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"');
+  process.exit(1);
+}
 
 const devPool = new Pool({ connectionString: DEV_URL, ssl: { rejectUnauthorized: false } });
 const mainPool = new Pool({ connectionString: MAIN_URL, ssl: { rejectUnauthorized: false } });

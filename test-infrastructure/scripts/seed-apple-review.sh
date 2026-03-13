@@ -31,7 +31,7 @@
 
 set -euo pipefail
 
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 SUPABASE_URL="https://${PROJECT_REF}.supabase.co"
 MODE="${1:-all}"
 

@@ -142,7 +142,7 @@ fi
 # ---------------------------------------------------------------------------
 # Safety check: refuse to run against production
 # ---------------------------------------------------------------------------
-PRODUCTION_REF="zqlowjveyqiagnbmfwsb"
+PRODUCTION_REF="uowjtrzmszuaiokqxgir"
 if echo "$DB_URL" | grep -q "$PRODUCTION_REF"; then
     echo -e "${RED}SAFETY BLOCK: Refusing to run isolation checks against production database.${RESET}"
     echo -e "${RED}This tool must only run against the local Supabase instance.${RESET}"

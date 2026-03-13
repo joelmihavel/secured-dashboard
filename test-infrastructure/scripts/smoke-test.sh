@@ -4,7 +4,7 @@
 # Usage: ./scripts/smoke-test.sh [--verbose]
 set -euo pipefail
 
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 VERBOSE=false
 [ "${1:-}" = "--verbose" ] && VERBOSE=true
 

@@ -86,7 +86,7 @@ serve(async (req: Request) => {
         payment_month, paid_at,
         tenancy:tenancies(
           id, landlord_name, landlord_phone, property_address,
-          landlord_bank_account_id
+          landlord_user_id
         )
       `)
       .eq("status", "success")
@@ -125,7 +125,7 @@ serve(async (req: Request) => {
         landlord_name: string;
         landlord_phone: string | null;
         property_address: string;
-        landlord_bank_account_id: string | null;
+        landlord_user_id: string | null;
       } | null;
 
       if (!tenancy) {
@@ -154,14 +154,16 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // Fetch landlord bank details
+      // Fetch landlord bank details via landlord_user_id -> bank_accounts (party_type='landlord', primary)
       let bankAccount = null;
-      if (tenancy.landlord_bank_account_id) {
+      if (tenancy.landlord_user_id) {
         const { data: bank } = await supabase
           .from("bank_accounts")
           .select("id, account_holder_name, account_number_masked, ifsc_code, verified")
-          .eq("id", tenancy.landlord_bank_account_id)
-          .single();
+          .eq("user_id", tenancy.landlord_user_id)
+          .eq("party_type", "landlord")
+          .eq("is_primary", true)
+          .maybeSingle();
         bankAccount = bank;
       }
 

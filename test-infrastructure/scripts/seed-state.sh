@@ -11,7 +11,7 @@ STATE=${1:?"Usage: $0 <state> <phone> [options]"}
 PHONE=${2:?"Usage: $0 <state> <phone> [options]"}
 shift 2
 
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 
 # Validate state
 VALID_STATES="clean otp_sent verified signed_up agreement_confirmed agreement_uploaded extraction_confirmed landlord_invited waitlisted waitlisted_rejected approved setup_complete active"

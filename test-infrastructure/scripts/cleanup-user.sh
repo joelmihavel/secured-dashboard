@@ -8,7 +8,7 @@
 set -euo pipefail
 
 PHONE=${1:?"Usage: $0 <phone>"}
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 
 # Validate phone pattern
 if ! echo "$PHONE" | grep -qE '^\+91999990[0-9]{4}$'; then

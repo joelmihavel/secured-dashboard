@@ -18,7 +18,7 @@ PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 
 # Supabase service key
 SRK = subprocess.run(
-    ['bash', '-c', 'supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb 2>/dev/null | grep secret | awk \'{print $NF}\''],
+    ['bash', '-c', 'supabase projects api-keys --project-ref uowjtrzmszuaiokqxgir 2>/dev/null | grep secret | awk \'{print $NF}\''],
     capture_output=True, text=True, cwd=PROJECT_DIR
 ).stdout.strip()
 if not SRK:
@@ -94,7 +94,7 @@ const VIEW_USERS = 'v_user_funnel';
 const VIEW_PAYMENTS = 'v_payment_detail';
 
 function getServiceKey() {
-  var key = PropertiesService.getScriptProperties().getProperty('SUPABASE_SERVICE_KEY');
+  var key = PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');
   if (key) return key;
   return '""" + SRK + r"""';
 }

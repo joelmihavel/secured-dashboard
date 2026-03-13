@@ -4,7 +4,7 @@
 # Usage: ./scripts/cleanup-all-test-data.sh [--execute]
 set -euo pipefail
 
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 EXECUTE=false
 [ "${1:-}" = "--execute" ] && EXECUTE=true
 

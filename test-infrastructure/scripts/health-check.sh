@@ -4,7 +4,7 @@
 # Usage: ./scripts/health-check.sh
 set -euo pipefail
 
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 
 # Get service role key
 SERVICE_KEY=$(supabase projects api-keys --project-ref "$PROJECT_REF" 2>/dev/null | grep service_role | awk '{print $NF}')

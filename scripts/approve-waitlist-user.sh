@@ -24,7 +24,7 @@
 set -euo pipefail
 
 # --- Config ---
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 BASE="https://${PROJECT_REF}.supabase.co"
 
 # --- Get secret key (new opaque format, replaces legacy service_role JWT) ---

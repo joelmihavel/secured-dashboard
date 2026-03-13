@@ -24,9 +24,14 @@ CREATE TABLE IF NOT EXISTS private.edge_function_config (
 -- Revoke all access from API roles — only postgres/superuser can read
 REVOKE ALL ON private.edge_function_config FROM anon, authenticated, service_role;
 
+-- Store base URL for invoke_edge_function()
+INSERT INTO private.edge_function_config (key, value)
+VALUES ('base_url', 'https://uowjtrzmszuaiokqxgir.supabase.co')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
 -- Insert the service role key (upsert to handle re-runs)
 INSERT INTO private.edge_function_config (key, value)
-VALUES ('service_role_key', 'sb_secret_F9RFPyanPWbSHy5cjBEpaA_gjonTXGE')
+VALUES ('service_role_key', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvd2p0cnptc3p1YWlva3F4Z2lyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzI0MTA5MiwiZXhwIjoyMDc4ODE3MDkyfQ.RiKkfFqA7ZlIgxW_pbkQ8YjvbCvzohPL244n0A-ubks')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
 -- ==============================================
@@ -52,7 +57,14 @@ BEGIN
     RAISE EXCEPTION 'invoke_edge_function: service_role_key not found in private.edge_function_config';
   END IF;
 
-  base_url := 'https://zqlowjveyqiagnbmfwsb.supabase.co';
+  -- Read base URL from config (falls back to Main DB if not set)
+  SELECT value INTO base_url
+  FROM private.edge_function_config
+  WHERE key = 'base_url';
+
+  IF base_url IS NULL OR base_url = '' THEN
+    base_url := 'https://uowjtrzmszuaiokqxgir.supabase.co';
+  END IF;
 
   RETURN net.http_post(
     url := base_url || '/functions/v1/' || fn_name,

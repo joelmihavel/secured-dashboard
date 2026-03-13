@@ -52,7 +52,7 @@ def api(method, url, body=None):
 
 # ── Supabase key ──
 SRK = subprocess.run(
-    ['bash', '-c', 'supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb 2>/dev/null | grep service_role | awk \'{print $NF}\''],
+    ['bash', '-c', 'supabase projects api-keys --project-ref uowjtrzmszuaiokqxgir 2>/dev/null | grep secret | awk \'{print $NF}\''],
     capture_output=True, text=True, cwd=PROJECT_DIR
 ).stdout.strip()
 

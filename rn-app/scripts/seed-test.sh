@@ -21,7 +21,7 @@ set -e
 
 STATE=${1:?"Usage: $0 <target_state> [phone_number]"}
 PHONE=${2:-"+919999900001"}
-PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PROJECT_REF="uowjtrzmszuaiokqxgir"
 
 # Validate state
 VALID_STATES="signed_up agreement_confirmed waitlisted waitlisted_rejected approved active"

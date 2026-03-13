@@ -32,7 +32,7 @@ Create a new Google Sheet with **5 tabs** (exact names):
 1. In Apps Script, go to **Project Settings** (gear icon)
 2. Scroll to **Script Properties**
 3. Click **Add Script Property**:
-   - **Property**: `SUPABASE_SERVICE_KEY`
+   - **Property**: `SUPABASE_SECRET_KEY`
    - **Value**: paste the service_role key
 4. Click **Save**
 
@@ -93,7 +93,7 @@ const VIEW_USERS = 'v_user_funnel';
 const VIEW_PAYMENTS = 'v_payment_detail';
 
 function getServiceKey() {
-  return PropertiesService.getScriptProperties().getProperty('SUPABASE_SERVICE_KEY');
+  return PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');
 }
 
 // ===== Main Sync =====

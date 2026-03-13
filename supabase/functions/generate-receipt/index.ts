@@ -213,7 +213,11 @@ serve(async (req: Request) => {
     // Build receipt data
     const amountPaise = payment.rent_amount_paise ?? 0;
     const cashbackAppliedPaise = payment.cashback_applied_paise ?? 0;
-    const cashbackEarnedPaise = payment.cashback_earned_paise ?? 0;
+    // If cashback_earned not recorded but payment succeeded, compute as 1% of rent
+    const rawEarnedPaise = payment.cashback_earned_paise ?? 0;
+    const cashbackEarnedPaise = rawEarnedPaise > 0
+      ? rawEarnedPaise
+      : (payment.status === "success" ? Math.floor(amountPaise * 0.01) : 0);
     const netAmountPaise = amountPaise - cashbackAppliedPaise;
 
     const receiptData: ReceiptData = {

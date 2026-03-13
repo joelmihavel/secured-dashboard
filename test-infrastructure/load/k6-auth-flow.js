@@ -4,7 +4,7 @@ import { Rate } from 'k6/metrics';
 
 const errorRate = new Rate('errors');
 
-const BASE_URL = __ENV.SUPABASE_URL || 'https://zqlowjveyqiagnbmfwsb.supabase.co';
+const BASE_URL = __ENV.SUPABASE_URL || 'https://uowjtrzmszuaiokqxgir.supabase.co';
 const ANON_KEY = __ENV.SUPABASE_ANON_KEY || '';
 
 export const options = {

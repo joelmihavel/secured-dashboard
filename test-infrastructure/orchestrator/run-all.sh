@@ -52,7 +52,7 @@ RUN_FRONTEND="$SCRIPT_DIR/run-frontend.sh"
 RUN_E2E="$SCRIPT_DIR/run-e2e.sh"
 
 # Production safety guard
-PRODUCTION_PROJECT_REF="zqlowjveyqiagnbmfwsb"
+PRODUCTION_PROJECT_REF="uowjtrzmszuaiokqxgir"
 
 # -- Color output helpers --
 RED='\033[0;31m'

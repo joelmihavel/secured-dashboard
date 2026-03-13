@@ -51,7 +51,7 @@ def api(method, url, body=None):
 
 # ── Supabase key ──
 SRK = subprocess.run(
-    ['bash', '-c', 'supabase projects api-keys --project-ref zqlowjveyqiagnbmfwsb 2>/dev/null | grep secret | awk \'{print $NF}\''],
+    ['bash', '-c', 'supabase projects api-keys --project-ref uowjtrzmszuaiokqxgir 2>/dev/null | grep secret | awk \'{print $NF}\''],
     capture_output=True, text=True, cwd=PROJECT_DIR
 ).stdout.strip()
 if not SRK:
@@ -145,8 +145,8 @@ apps_script_code = match.group(1).strip()
 
 # Embed Supabase key as fallback
 apps_script_code = apps_script_code.replace(
-    "return PropertiesService.getScriptProperties().getProperty('SUPABASE_SERVICE_KEY');",
-    f"var key = PropertiesService.getScriptProperties().getProperty('SUPABASE_SERVICE_KEY');\n"
+    "return PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');",
+    f"var key = PropertiesService.getScriptProperties().getProperty('SUPABASE_SECRET_KEY');\n"
     f"  if (key) return key;\n"
     f"  return '{SRK}';"
 )

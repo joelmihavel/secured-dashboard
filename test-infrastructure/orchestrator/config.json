@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "project": "flent-secured",
-  "production_project_ref": "zqlowjveyqiagnbmfwsb",
+  "production_project_ref": "uowjtrzmszuaiokqxgir",
   "timeouts": {
     "backend": 300000,
     "frontend": 600000,
