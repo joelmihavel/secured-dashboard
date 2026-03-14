@@ -339,8 +339,6 @@ PendingContent.displayName = 'PendingContent';
 
 interface SuccessContentProps {
   amount: string;
-  cashbackApplied: number;
-  cashbackEarned: number;
   date: string;
   method: string;
   landlordName: string;
@@ -352,8 +350,6 @@ interface SuccessContentProps {
 
 const SuccessContent = memo(({
   amount,
-  cashbackApplied,
-  cashbackEarned,
   date,
   method,
   landlordName,
@@ -362,24 +358,9 @@ const SuccessContent = memo(({
   transactionId,
   payableRent,
 }: SuccessContentProps) => {
-  // Single cashback row — label/color depends on whether it was deducted (applied) or accumulated (earned)
-  const wasApplied = cashbackApplied > 0;
-  const cashbackValue = wasApplied ? cashbackApplied : cashbackEarned;
-
   return (
     <View style={styles.receiptDetails}>
       <ReceiptRow label="Amount paid" value={`\u20B9  ${amount}`} />
-      {cashbackValue > 0 && (
-        <>
-          <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-          <ReceiptRow
-            label={wasApplied ? 'Cashback Applied' : 'Cashback Earned'}
-            value={`${wasApplied ? '-' : '+'} \u20B9 ${cashbackValue.toLocaleString('en-IN')}`}
-            isCashback={wasApplied}
-            isPositive={!wasApplied}
-          />
-        </>
-      )}
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
       <ReceiptRow label="Date" value={date} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
@@ -853,10 +834,7 @@ export default function PaymentStatusScreen() {
         receiptNumber: receipt.receiptNumber,
         payment: {
           amount: receipt.payment.amount,
-          netAmountPaid: receipt.payment.netAmountPaid,
           pgFee: receipt.payment.pgFee,
-          cashbackApplied: receipt.payment.cashbackApplied,
-          cashbackEarned: receipt.payment.cashbackEarned,
           paymentMethod: receipt.payment.paymentMethod,
           paidAt: receipt.payment.paidAt,
           rentMonthDisplay: receipt.payment.rentMonthDisplay,
@@ -879,7 +857,6 @@ export default function PaymentStatusScreen() {
       htmlData = buildFallbackReceiptData({
         amount,
         method,
-        cashback,
         transactionId,
         landlordName: params.landlordName,
         agreementId: params.agreementId,
@@ -904,7 +881,7 @@ export default function PaymentStatusScreen() {
         'Unable to generate the receipt PDF. Please try again later.',
       );
     }
-  }, [receiptData, paymentId, amount, method, cashback, transactionId, params.landlordName, params.agreementId]);
+  }, [receiptData, paymentId, amount, method, transactionId, params.landlordName, params.agreementId]);
 
   // ============================================
   // DERIVED UI VALUES
@@ -974,24 +951,19 @@ export default function PaymentStatusScreen() {
       const { payment: rp, landlord, agreement } = receiptData;
       return {
         amount: rp.amount.toLocaleString('en-IN'),
-        cashbackApplied: rp.cashbackApplied,
-        cashbackEarned: rp.cashbackEarned ?? (rp.amount > 0 ? Math.round(rp.amount * 0.01) : 0),
         date: formatDisplayDate(rp.paidAt),
         method: rp.paymentMethod ?? method.toUpperCase(),
         landlordName: landlord.name,
         panCard: landlord.panMasked ?? 'N/A',
         agreementId: agreement.certId ? `#${agreement.certId}` : 'N/A',
         transactionId: rp.utr ?? rp.transactionId ?? transactionId,
-        payableRent: rp.netAmountPaid.toLocaleString('en-IN'),
+        payableRent: rp.amount.toLocaleString('en-IN'),
       };
     }
 
     const formatted = Number(amount) ? Number(amount).toLocaleString('en-IN') : amount;
-    const amountNum = Number(amount) || 0;
     return {
       amount: formatted,
-      cashbackApplied: Number(cashback) || 0,
-      cashbackEarned: amountNum > 0 ? Math.round(amountNum * 0.01) : 0,
       date: formatDisplayDate(new Date().toISOString()),
       method: method ? method.toUpperCase() : '\u2014',
       landlordName: params.landlordName || 'N/A',
@@ -1000,7 +972,7 @@ export default function PaymentStatusScreen() {
       transactionId: transactionId,
       payableRent: formatted,
     };
-  }, [receiptData, amount, cashback, method, transactionId, params.landlordName, params.agreementId]);
+  }, [receiptData, amount, method, transactionId, params.landlordName, params.agreementId]);
 
   // ============================================
   // RENDER CARD CONTENT
@@ -1014,8 +986,6 @@ export default function PaymentStatusScreen() {
         return (
           <SuccessContent
             amount={displayData.amount}
-            cashbackApplied={displayData.cashbackApplied}
-            cashbackEarned={displayData.cashbackEarned}
             date={displayData.date}
             method={displayData.method}
             landlordName={displayData.landlordName}
