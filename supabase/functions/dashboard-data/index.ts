@@ -245,6 +245,7 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization");
     const { userId } = await createAuthenticatedClient(authHeader);
 
+
     // ============================================
     // PHASE 1: Parallel independent queries
     // ============================================
@@ -265,7 +266,7 @@ serve(async (req: Request) => {
         .eq("id", userId)
         .single(),
 
-      // 2. Active tenancy (join extracted_rental_info for tenant_names + security_deposit)
+      // 2. Active tenancy
       supabase
         .from("tenancies")
         .select(`
@@ -273,8 +274,7 @@ serve(async (req: Request) => {
           monthly_rent_paise, maintenance_paise, rent_due_day, lease_start_date, lease_end_date,
           landlord_name, landlord_phone, agreement_cert_id,
           bank_verified, utility_verified, landlord_approved, landlord_response,
-          cashback_cutoff_day, created_at,
-          extracted_rental_info:extracted_rental_info_id ( tenant_names, security_deposit_paise )
+          cashback_cutoff_day, created_at, extracted_rental_info_id
         `)
         .eq("user_id", userId)
         .in("status", ["active", "pending_verification"])
@@ -334,8 +334,20 @@ serve(async (req: Request) => {
     const landlordBank = landlordBankResult.data ?? null;
 
     // ============================================
-    // PHASE 1.5: Fetch stamp payments (depends on tenancy)
+    // PHASE 1.5: Fetch extracted_rental_info + stamp payments (depend on tenancy)
     // ============================================
+    // Fetch extracted_rental_info separately (no FK on Main DB, so PostgREST
+    // embedded resource join fails silently and nulls the entire tenancy row).
+    let extractedRentalInfo: { tenant_names: string[]; security_deposit_paise: number } | null = null;
+    if (tenancy?.extracted_rental_info_id) {
+      const { data: eriData } = await supabase
+        .from("extracted_rental_info")
+        .select("tenant_names, security_deposit_paise")
+        .eq("id", tenancy.extracted_rental_info_id)
+        .maybeSingle();
+      extractedRentalInfo = eriData;
+    }
+
     let allTenancyPayments: any[] = [];
     if (tenancy?.id) {
       const { data: stampPayments } = await supabase
@@ -467,8 +479,8 @@ serve(async (req: Request) => {
             lease_end_date: tenancy.lease_end_date,
             landlord_name: tenancy.landlord_name,
             landlord_phone: tenancy.landlord_phone ?? null,
-            tenant_names: (tenancy as any).extracted_rental_info?.tenant_names ?? [],
-            security_deposit: ((tenancy as any).extracted_rental_info?.security_deposit_paise ?? 0) / 100,
+            tenant_names: extractedRentalInfo?.tenant_names ?? [],
+            security_deposit: (extractedRentalInfo?.security_deposit_paise ?? 0) / 100,
             agreement_cert_id: tenancy.agreement_cert_id ?? null,
             verification_status: {
               bank_verified: tenancy.bank_verified,
