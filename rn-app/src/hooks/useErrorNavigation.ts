@@ -85,7 +85,8 @@ export function useErrorNavigation(): void {
         firstSegment === '(setup)' ||
         firstSegment === '(profile)' ||
         firstSegment === '(auth)' ||
-        firstSegment === '(payment)'
+        firstSegment === '(payment)' ||
+        firstSegment === '(main)'
       ) {
         if (__DEV__) {
           console.log('[useErrorNavigation] Suppressed (on agreement/waitlist screen):', report.technicalMessage);

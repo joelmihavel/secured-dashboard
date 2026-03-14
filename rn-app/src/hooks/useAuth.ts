@@ -11,11 +11,9 @@ import { sendOtp, verifyOtp, resendOtp, signOut as apiSignOut, SendOtpRequest, V
 import { isReviewMode, deactivateReviewMode } from '../review/reviewMode';
 import { useAuthStore } from '../stores/auth';
 import { useRecordConsent, useIdentityFetch } from './useIdentityVerification';
-import { supabase } from '../services/supabase/client';
-import { queryClient as globalQueryClient } from '../providers/QueryProvider';
 import { setUserContext, clearUserContext } from '../config/sentry';
 import { clearAllStores } from '../stores/resetAll';
-import { markUserInitiatedSignOut } from '../providers/AuthProvider';
+import { markUserInitiatedSignOut, useAuthContext } from '../providers/AuthProvider';
 
 // ==============================================
 // ERROR NORMALIZATION
@@ -160,6 +158,7 @@ export function useResendOtp() {
 
 export function useAuth() {
   const authStore = useAuthStore();
+  const { session: authSession } = useAuthContext();
   const sendOtpMutation = useSendOtp();
   const verifyOtpMutation = useVerifyOtp();
   const resendOtpMutation = useResendOtp();
@@ -167,17 +166,15 @@ export function useAuth() {
   const identityFetchMutation = useIdentityFetch();
   const identityFiredRef = useRef(false);
 
-  // Hydrate userName from Supabase session for returning users
+  // Hydrate userName from auth context session for returning users.
+  // NEVER call supabase.auth.getSession() — it triggers _callRefreshToken()
+  // which races with autoRefreshToken causing spurious SIGNED_OUT events.
   useEffect(() => {
-    if (authStore.status === 'authenticated' && !authStore.userName) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        const name = session?.user?.user_metadata?.name;
-        if (name) authStore.setUserName(name);
-      }).catch(() => {
-        // Non-critical
-      });
+    if (authStore.status === 'authenticated' && !authStore.userName && authSession) {
+      const name = authSession.user?.user_metadata?.name;
+      if (name) authStore.setUserName(name);
     }
-  }, [authStore.status]);
+  }, [authStore.status, authSession]);
 
   // Non-blocking Mobile 360 flow after OTP verification.
   // SKIP when auth was via Cashfree M360 — auth-otp already handles identity
@@ -268,8 +265,8 @@ export function useAuth() {
     // Nuclear cleanup: resets all Zustand stores, explicitly deletes all
     // persisted SecureStore keys (including Supabase session + chunks),
     // tears down WebSocket channels, and clears React Query cache.
+    // clearAllStores() already calls queryClient.clear() internally.
     await clearAllStores();
-    globalQueryClient.clear();
   }, []);
 
   return {

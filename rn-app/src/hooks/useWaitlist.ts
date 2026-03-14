@@ -25,7 +25,7 @@ import {
   selectCountdownText,
 } from '../stores/waitlist';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../services/supabase/client';
+import { useAuthContext } from '../providers/AuthProvider';
 import { useRealtimeQuery } from './useRealtimeQuery';
 
 // ==============================================
@@ -332,23 +332,24 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
   const store = useWaitlistStore();
   const queryClient = useQueryClient();
   const authUserName = useAuthStore((s) => s.userName);
+  const { session: authSession } = useAuthContext();
 
-  // Hydrate name from Supabase session when auth store is empty.
+  // Hydrate name from auth context session when auth store is empty.
   // This covers returning users where the Zustand store starts fresh
   // but the name was saved to user_metadata during sign-up.
+  // NEVER call supabase.auth.getSession() — it triggers _callRefreshToken()
+  // which races with autoRefreshToken causing spurious SIGNED_OUT events.
   const [sessionName, setSessionName] = useState('');
   useEffect(() => {
-    if (!authUserName) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        const name = session?.user?.user_metadata?.name;
-        if (name) {
-          setSessionName(name);
-          // Also sync back to auth store so other screens pick it up
-          useAuthStore.getState().setUserName(name);
-        }
-      }).catch(() => {});
+    if (!authUserName && authSession) {
+      const name = authSession.user?.user_metadata?.name;
+      if (name) {
+        setSessionName(name);
+        // Also sync back to auth store so other screens pick it up
+        useAuthStore.getState().setUserName(name);
+      }
     }
-  }, [authUserName]);
+  }, [authUserName, authSession]);
 
   // Status query
   const statusQuery = useWaitlistStatus(options);

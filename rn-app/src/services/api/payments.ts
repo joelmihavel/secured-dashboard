@@ -416,9 +416,9 @@ function mapRawPaymentHistoryItem(raw: RawPaymentHistoryItem): PaymentHistoryIte
     cashback_earned: raw.cashback_earned,
     net_amount: raw.net_amount,
     // Paise values derived for backward compat
-    amount_paise: Math.round(raw.amount * 100),
-    pg_fee_paise: Math.round(raw.pg_fee * 100),
-    cashback_applied_paise: Math.round(raw.cashback_applied * 100),
+    amount_paise: Math.round((raw.amount ?? 0) * 100),
+    pg_fee_paise: Math.round((raw.pg_fee ?? 0) * 100),
+    cashback_applied_paise: Math.round((raw.cashback_applied ?? 0) * 100),
     status: raw.status as PaymentHistoryItem['status'],
     payment_method: raw.payment_method as PaymentMethod | null,
     rent_month: raw.rent_month,

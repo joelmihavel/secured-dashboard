@@ -15,7 +15,9 @@
  *   Returns: { success, data: { payment_methods[], primary_method_id, grouped_methods, total_count } }
  */
 
-import { callEdgeFunction } from '../supabase';
+import { callEdgeFunction, getFunctionsUrl } from '../supabase';
+import { getSessionSafe } from '../supabase/client';
+import { addBreadcrumb } from '@/src/config/sentry';
 
 // ==============================================
 // TYPES -- RN App UI Contract
@@ -407,29 +409,39 @@ export async function pixelateAvatar(
     const formData = new FormData();
     formData.append('image', blob, `avatar.${contentType === 'image/png' ? 'png' : 'jpg'}`);
 
-    // Call edge function directly with FormData
-    const { data: session } = await (await import('../supabase')).supabase.auth.getSession();
-    const token = session?.session?.access_token;
+    // Raw fetch required: callEdgeFunction hardcodes Content-Type: application/json
+    // and JSON.stringify(body), which is incompatible with FormData uploads.
+    // We still use getSessionSafe (deduplicating), AbortController timeout, and breadcrumbs.
+    const { data: { session } } = await getSessionSafe();
+    const token = session?.access_token;
 
     if (!token) {
       return { data: null, error: { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' } };
     }
 
-    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
 
-    const uploadResponse = await fetch(
-      `${supabaseUrl}/functions/v1/pixelate-avatar`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          apikey: anonKey ?? '',
-          'x-region': 'ap-south-1',
-        },
-        body: formData,
-      }
-    );
+    addBreadcrumb('API call: POST pixelate-avatar', 'api', { method: 'POST', requireAuth: true });
+
+    let uploadResponse: Response;
+    try {
+      uploadResponse = await fetch(
+        `${getFunctionsUrl()}/pixelate-avatar`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+            'x-region': 'ap-south-1',
+          },
+          body: formData,
+          signal: controller.signal,
+        }
+      );
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     const result = await uploadResponse.json();
 

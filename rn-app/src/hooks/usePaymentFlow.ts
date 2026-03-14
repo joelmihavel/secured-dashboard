@@ -149,7 +149,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                 );
               }
               queryClient.invalidateQueries({ queryKey: profileKeys.paymentMethods() });
-              queryClient.invalidateQueries({ queryKey: dashboardKeys.data() });
+              queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
             })();
 
             return { status: 'navigating' };

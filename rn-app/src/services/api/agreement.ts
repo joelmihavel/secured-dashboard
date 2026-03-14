@@ -24,6 +24,21 @@ import {
 import { callEdgeFunction, supabase } from '../supabase';
 
 // ==============================================
+// UTILITIES
+// ==============================================
+
+const QUERY_TIMEOUT_MS = 10_000;
+
+/** Race a promise against a timeout — used for direct Supabase client queries */
+const withTimeout = <T>(promise: Promise<T>, ms: number = QUERY_TIMEOUT_MS): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Query timeout')), ms)
+    ),
+  ]);
+
+// ==============================================
 // TYPES -- RN App UI Contract (camelCase)
 // ==============================================
 
@@ -449,11 +464,13 @@ const EXTRACTION_SELECT_COLUMNS = [
 export async function getExtractedAgreementData(
   extractionId: string
 ): Promise<{ data: ExtractedAgreementData | null; error: AgreementError | null }> {
-  const { data: raw, error } = await supabase
-    .from('extracted_rental_info')
-    .select(EXTRACTION_SELECT_COLUMNS)
-    .eq('id', extractionId)
-    .single();
+  const { data: raw, error } = await withTimeout(
+    supabase
+      .from('extracted_rental_info')
+      .select(EXTRACTION_SELECT_COLUMNS)
+      .eq('id', extractionId)
+      .single()
+  );
 
   if (error || !raw) {
     return {
@@ -528,19 +545,20 @@ export async function confirmExtraction(
   };
 
   // Only include corrections that were provided
-  if (request.tenantName) body.tenant_name = request.tenantName;
-  if (request.landlordName) body.landlord_name = request.landlordName;
-  if (request.propertyAddress) body.property_address = request.propertyAddress;
-  if (request.propertyCity) body.property_city = request.propertyCity;
-  if (request.propertyState) body.property_state = request.propertyState;
-  if (request.propertyPincode) body.property_pincode = request.propertyPincode;
-  if (request.monthlyRentPaise) body.monthly_rent_paise = request.monthlyRentPaise;
-  if (request.securityDepositPaise) body.security_deposit_paise = request.securityDepositPaise;
-  if (request.rentDueDay) body.rent_due_day = request.rentDueDay;
-  if (request.leaseStartDate) body.lease_start_date = request.leaseStartDate;
-  if (request.leaseEndDate) body.lease_end_date = request.leaseEndDate;
-  if (request.landlordPhone) body.landlord_phone = request.landlordPhone;
-  if (request.landlordEmail) body.landlord_email = request.landlordEmail;
+  // Use !== undefined (not truthiness) to allow zero/empty-string values
+  if (request.tenantName !== undefined) body.tenant_name = request.tenantName;
+  if (request.landlordName !== undefined) body.landlord_name = request.landlordName;
+  if (request.propertyAddress !== undefined) body.property_address = request.propertyAddress;
+  if (request.propertyCity !== undefined) body.property_city = request.propertyCity;
+  if (request.propertyState !== undefined) body.property_state = request.propertyState;
+  if (request.propertyPincode !== undefined) body.property_pincode = request.propertyPincode;
+  if (request.monthlyRentPaise !== undefined) body.monthly_rent_paise = request.monthlyRentPaise;
+  if (request.securityDepositPaise !== undefined) body.security_deposit_paise = request.securityDepositPaise;
+  if (request.rentDueDay !== undefined) body.rent_due_day = request.rentDueDay;
+  if (request.leaseStartDate !== undefined) body.lease_start_date = request.leaseStartDate;
+  if (request.leaseEndDate !== undefined) body.lease_end_date = request.leaseEndDate;
+  if (request.landlordPhone !== undefined) body.landlord_phone = request.landlordPhone;
+  if (request.landlordEmail !== undefined) body.landlord_email = request.landlordEmail;
 
   const { data, error, errorBody } = await callEdgeFunction<RawConfirmExtractionResponse>(
     'confirm-extraction',
@@ -646,13 +664,26 @@ const STATUS_SELECT_COLUMNS = [
 export async function fetchExtractionStatus(
   extractionId: string
 ): Promise<ExtractionStatusData | null> {
-  const { data, error } = await supabase
-    .from('extracted_rental_info')
-    .select(STATUS_SELECT_COLUMNS)
-    .eq('id', extractionId)
-    .single();
+  const { data, error } = await withTimeout(
+    supabase
+      .from('extracted_rental_info')
+      .select(STATUS_SELECT_COLUMNS)
+      .eq('id', extractionId)
+      .single()
+  );
 
-  if (error || !data) return null;
+  if (error) {
+    // PGRST116 = "JSON object requested, single row not found" → record genuinely missing
+    if (error.code === 'PGRST116') {
+      console.debug('[fetchExtractionStatus] Record not found:', extractionId);
+      return null;
+    }
+    // Any other error is a network/server issue — throw so callers can distinguish
+    console.warn('[fetchExtractionStatus] Query failed:', error.message, error.code);
+    throw new Error(`fetchExtractionStatus failed: ${error.message}`);
+  }
+
+  if (!data) return null;
 
   const row = data as unknown as Record<string, unknown>;
   return {
@@ -749,14 +780,20 @@ function mapAgreementErrorFromMessage(message: string): AgreementError {
  */
 export async function abandonExtraction(extractionId: string): Promise<void> {
   try {
-    await supabase
-      .from('extracted_rental_info')
-      .update({
-        user_verified: true,
-        extraction_status: 'failed',
-        extraction_error: 'Abandoned by user (re-upload)',
-      })
-      .eq('id', extractionId);
+    const { error } = await withTimeout(
+      supabase
+        .from('extracted_rental_info')
+        .update({
+          user_verified: true,
+          extraction_status: 'failed',
+          extraction_error: 'Abandoned by user (re-upload)',
+        })
+        .eq('id', extractionId)
+    );
+
+    if (error) {
+      console.warn('abandonExtraction: Supabase update failed:', error.message);
+    }
   } catch (err) {
     console.warn('[abandonExtraction] Failed to abandon extraction', extractionId, err);
   }

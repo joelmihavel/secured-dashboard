@@ -2,7 +2,6 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import {
   generateErrorId,
-  reportFatalError,
   buildSupportEmailUri,
 } from '../../services/errorReporting';
 import { Text } from './Typography/Text';

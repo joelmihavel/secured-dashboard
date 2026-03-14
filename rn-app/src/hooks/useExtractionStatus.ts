@@ -29,6 +29,7 @@ import { supabase } from '../services/supabase/client';
 import { fetchExtractionStatus, type ExtractionStatusData } from '../services/api/agreement';
 import { agreementKeys } from './useAgreement';
 import { useUploadStore } from '../stores/upload';
+import { useAuthStore } from '../stores/auth';
 
 // ==============================================
 // CONSTANTS
@@ -289,17 +290,18 @@ function useMountDiscovery(enabled: boolean) {
     // No extractionId in store — check DB for active extraction.
     // Only resume 'processing' and 'completed' records.
     // 'pending' means the file was never uploaded — don't resume those.
+    // Read userId from auth store (synchronous) instead of calling
+    // supabase.auth.getSession() which triggers _callRefreshToken() and
+    // races with autoRefreshToken causing spurious SIGNED_OUT events.
     (async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) return;
+        const userId = useAuthStore.getState().userId;
+        if (!userId) return;
 
         const { data } = await supabase
           .from('extracted_rental_info')
           .select('id, extraction_status, updated_at, user_verified, needs_manual_review, is_city_supported')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .in('extraction_status', ['processing', 'completed'])
           .eq('user_verified', false)
           .order('created_at', { ascending: false })

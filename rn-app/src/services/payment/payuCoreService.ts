@@ -613,7 +613,7 @@ export async function launchCorePayment(
       udf1: sessionParams.udf1 ?? '',
       udf2: sessionParams.udf2 ?? '',
       udf3: sessionParams.udf3 ?? '',
-      hash: sessionParams.hash?.slice(0, 16) + '...',
+      hash: sessionParams.hash ? 'present' : 'missing',
     });
 
     try {
