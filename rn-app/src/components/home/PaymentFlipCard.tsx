@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable, Dimensions, Text as RNText } from 'react-native';
+import { View, StyleSheet, Pressable, TouchableOpacity, Dimensions, Text as RNText } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -235,9 +235,9 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
         <View style={styles.middleSection}>
           <Text style={styles.monthText}>{data.monthName}</Text>
           {config.showReceipt ? (
-            <Pressable onPress={data.onViewReceipt}>
+            <TouchableOpacity activeOpacity={0.7} onPress={data.onViewReceipt} hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}>
               <Text style={styles.viewReceiptText}>View Rent Receipt</Text>
-            </Pressable>
+            </TouchableOpacity>
           ) : (
             <Text style={styles.upcomingPaymentText}>Upcoming Payment</Text>
           )}
