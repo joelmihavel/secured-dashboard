@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable, TouchableOpacity, Dimensions, Text as RNText } from 'react-native';
+import { View, StyleSheet, Pressable, Dimensions, Text as RNText } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -73,6 +73,8 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
   const flippedRef = useRef(false);
   const flipAnim = useSharedValue(0);
   const [hasFlipped, setHasFlipped] = useState(false);
+  // Track if receipt link was tapped — onPressIn fires before parent's onPress
+  const receiptTappedRef = useRef(false);
 
   // Cycle through furniture sequentially: Sofa Yellow -> Chair Green -> Chair Red -> repeat
   const furnitureType = useMemo(() => {
@@ -86,6 +88,13 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
   const furnitureAnim = useSharedValue(0);
 
   const handlePress = () => {
+    // If the receipt link was tapped, navigate instead of flipping
+    if (receiptTappedRef.current) {
+      receiptTappedRef.current = false;
+      data.onViewReceipt?.();
+      return;
+    }
+
     const toFlipped = !flippedRef.current;
     flippedRef.current = toFlipped;
 
@@ -235,9 +244,9 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
         <View style={styles.middleSection}>
           <Text style={styles.monthText}>{data.monthName}</Text>
           {config.showReceipt ? (
-            <TouchableOpacity activeOpacity={0.7} onPress={data.onViewReceipt} hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}>
+            <Pressable onPressIn={() => { receiptTappedRef.current = true; }} hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}>
               <Text style={styles.viewReceiptText}>View Rent Receipt</Text>
-            </TouchableOpacity>
+            </Pressable>
           ) : (
             <Text style={styles.upcomingPaymentText}>Upcoming Payment</Text>
           )}
