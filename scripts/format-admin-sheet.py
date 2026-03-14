@@ -279,7 +279,7 @@ print(f"  Applied {len(cond_rules)} conditional format rules")
 print("\n[5/5] Syncing M360 data...")
 
 m360_data = json.loads(subprocess.run(['curl', '-s',
-    f'https://zqlowjveyqiagnbmfwsb.supabase.co/rest/v1/v_m360_detail?select=*',
+    f'https://uowjtrzmszuaiokqxgir.supabase.co/rest/v1/v_m360_detail?select=*',
     '-H', f'apikey: {SRK}', '-H', f'Authorization: Bearer {SRK}'],
     capture_output=True, text=True).stdout)
 

@@ -237,7 +237,7 @@ PAYMENT_COLUMNS = [
 
 def fetch_supabase(view):
     r = subprocess.run(['curl', '-s',
-        f'https://zqlowjveyqiagnbmfwsb.supabase.co/rest/v1/{view}?select=*',
+        f'https://uowjtrzmszuaiokqxgir.supabase.co/rest/v1/{view}?select=*',
         '-H', f'apikey: {SRK}', '-H', f'Authorization: Bearer {SRK}'],
         capture_output=True, text=True)
     if r.returncode != 0:

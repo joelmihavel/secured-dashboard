@@ -89,7 +89,7 @@ def api(method, url, body=None):
 # ── Apps Script code ──
 APPS_SCRIPT_CODE = r"""
 // ===== Configuration =====
-const SUPABASE_URL = 'https://zqlowjveyqiagnbmfwsb.supabase.co';
+const SUPABASE_URL = 'https://uowjtrzmszuaiokqxgir.supabase.co';
 const VIEW_USERS = 'v_user_funnel';
 const VIEW_PAYMENTS = 'v_payment_detail';
 
