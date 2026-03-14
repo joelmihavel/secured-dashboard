@@ -276,10 +276,17 @@ export default function Index() {
 
       // ── ROUTE ──
       if (!userStatus) {
-        // Both paths failed even after token refresh — genuine network issue
-        // or auth failure. Default to upload as safe fallback.
-        console.warn('[journey-router] Routing failed after token refresh — defaulting to upload');
-        setTarget('/(agreement)/upload');
+        // Both paths failed even after token refresh — genuine network issue.
+        // Trust the cached route if available (user was here before).
+        // Only default to upload if there's no prior history at all.
+        const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
+        if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)' || fallbackRoute === '/(waitlist)')) {
+          console.warn('[journey-router] Routing failed — using cached route:', fallbackRoute);
+          setTarget(fallbackRoute);
+        } else {
+          console.warn('[journey-router] Routing failed, no cached route — defaulting to upload');
+          setTarget('/(agreement)/upload');
+        }
         setJourneyResolved(true);
         return;
       }
@@ -328,7 +335,13 @@ export default function Index() {
         error: err instanceof Error ? err.message : String(err),
       });
       console.error('[journey-router] resolveAuthenticatedJourney error:', err);
-      setTarget('/(agreement)/upload');
+      // Trust cached route on exceptions — don't send active users to upload
+      const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
+      if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)' || fallbackRoute === '/(waitlist)')) {
+        setTarget(fallbackRoute);
+      } else {
+        setTarget('/(agreement)/upload');
+      }
       setJourneyResolved(true);
     } finally {
       isResolvingRef.current = false;

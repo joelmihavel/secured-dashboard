@@ -27,7 +27,7 @@ import type { Session } from '@supabase/supabase-js';
  * session → all API calls 401 → degraded UX before eventual SIGNED_OUT.
  */
 const DB_MIGRATION_KEY = 'flent_db_migration';
-const CURRENT_DB_VERSION = 'main_v1'; // Was: dev DB zqlowjveyqiagnbmfwsb → now: main DB uowjtrzmszuaiokqxgir
+const CURRENT_DB_VERSION = 'main_v3'; // Only bump when Supabase project changes — NOT for code fixes
 
 /**
  * Validates a user exists on the server via direct fetch.
@@ -100,6 +100,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // SIGNED_OUT handler to check if TOKEN_REFRESHED recovered the session.
   const sessionRef = useRef<Session | null>(null);
 
+  // Set by migration guard to prevent INITIAL_SESSION from re-setting a cleared session.
+  // Without this, the guard calls signOut → sets session=null, but INITIAL_SESSION fires
+  // with the cached (stale) session and overwrites the null → user stays "authenticated".
+  const migrationGuardFiredRef = useRef(false);
+
   const updateSession = useCallback((s: Session | null) => {
     sessionRef.current = s;
     setSession(s);
@@ -127,6 +132,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const storedVersion = await SecureStore.getItemAsync(DB_MIGRATION_KEY).catch(() => null);
         if (storedVersion !== CURRENT_DB_VERSION) {
           console.log('[AuthProvider] DB migration detected — clearing stale keychain session');
+          migrationGuardFiredRef.current = true; // Block INITIAL_SESSION from re-setting
           await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
           await SecureStore.setItemAsync(DB_MIGRATION_KEY, CURRENT_DB_VERSION).catch(() => {});
           updateSession(null);
@@ -237,7 +243,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // getSession() above already set the initial state. INITIAL_SESSION fires
           // with the pre-refresh (possibly expired) session BEFORE TOKEN_REFRESHED.
           // Only update if we got a valid session (don't overwrite with null).
-          if (newSession) {
+          // SKIP if migration guard already cleared the session — prevents re-setting
+          // a stale Dev DB session that the guard just removed.
+          if (newSession && !migrationGuardFiredRef.current) {
             updateSession(newSession);
           }
         }

@@ -181,7 +181,7 @@ export function useDashboard(options: UseDashboardOptions = {}) {
 
   return {
     ...query,
-    dashboardState: hasError ? ('no_tenancy' as DashboardState) : dashboardState,
+    dashboardState: hasError ? ('error' as DashboardState) : dashboardState,
 
     // Raw data accessors (edge function shape) — nulled on error to avoid stale display
     user: hasError ? null : (query.data?.user ?? null),
