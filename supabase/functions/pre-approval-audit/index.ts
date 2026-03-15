@@ -226,7 +226,9 @@ serve(async (req: Request) => {
         }
 
         // Fix 2: Advance user_status
-        if (extraction?.user_verified && waitlistMap.has(userId) &&
+        // Accept either user_verified (legacy) or extraction_status='completed' (new flow)
+        const extractionReady = extraction?.user_verified || extraction?.extraction_status === "completed";
+        if (extractionReady && waitlistMap.has(userId) &&
             (user.user_status === "signed_up" || user.user_status === "agreement_confirmed")) {
           try {
             const oldStatus = user.user_status;
@@ -238,8 +240,8 @@ serve(async (req: Request) => {
           }
         }
 
-        // Fix 3: Missing tenancy (ONLY if extraction is user_verified)
-        if (extraction?.user_verified && !tenancy && !extraction.tenancy_id) {
+        // Fix 3: Missing tenancy (if extraction is completed or user_verified)
+        if (extractionReady && !tenancy && !extraction.tenancy_id) {
           // Pre-validate required fields
           const missingFields: string[] = [];
           if (!extraction.property_address) missingFields.push("property_address");
@@ -387,8 +389,10 @@ serve(async (req: Request) => {
       }
 
       // B06: Extraction not confirmed by user
-      if (extraction && extraction.user_verified !== true) {
-        blockers.push({ code: "B06", message: "Extraction not confirmed by user" });
+      // In the new agreement upload flow, extraction_status='completed' is sufficient.
+      // user_verified is only required in the legacy flow where users manually confirmed.
+      if (extraction && extraction.extraction_status !== "completed" && extraction.user_verified !== true) {
+        blockers.push({ code: "B06", message: "Extraction not completed or confirmed by user" });
       }
 
       // B07: No tenancy
