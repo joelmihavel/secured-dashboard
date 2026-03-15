@@ -75,7 +75,7 @@ def curl_json(
     description: str = "",
 ) -> Any:
     """Execute an HTTP request via curl and return parsed JSON."""
-    cmd: list[str] = ["curl", "-s", "-X", method, url]
+    cmd: list[str] = ["curl", "-s", "-m", "30", "-X", method, url]
     for k, v in (headers or {}).items():
         cmd += ["-H", f"{k}: {v}"]
     if body is not None:

@@ -151,9 +151,17 @@ function syncAll() {
   }
 }
 
-// Web app endpoint — allows triggering syncAll or bootstrap via HTTP GET
+// Web app endpoint — allows triggering syncAll or bootstrap via HTTP GET.
+// Requires ?key= matching ADMIN_API_KEY in Script Properties as defense-in-depth.
 function doGet(e) {
   try {
+    var providedKey = (e && e.parameter && e.parameter.key) || '';
+    var expectedKey = PropertiesService.getScriptProperties().getProperty('ADMIN_API_KEY') || '';
+    if (!providedKey || !expectedKey || providedKey !== expectedKey) {
+      return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'Unauthorized' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     var action = (e && e.parameter && e.parameter.action) || 'sync';
     if (action === 'bootstrap') {
       var result = _bootstrap();
