@@ -221,6 +221,7 @@ const reviewResponses: Record<string, unknown> = {
       name: 'Alex Reviewer',
       phone: '+919999900001',
       email: 'reviewer@flent.in',
+      pan_masked: 'ABCPA****R',
     },
     property: {
       address: '42 MG Road, Indiranagar, Bangalore 560038',
@@ -235,11 +236,8 @@ const reviewResponses: Record<string, unknown> = {
       cert_id: 'KA-BLR-2025-001234',
     },
     company: {
-      name: 'Flent Technologies Pvt Ltd',
-      address: 'WeWork Galaxy, Residency Road, Bangalore 560025',
+      name: 'Flent Secured',
       gstin: '29AABCT1332L1ZI',
-      support_email: 'secured@flent.in',
-      support_phone: '+918001234567',
     },
   },
 

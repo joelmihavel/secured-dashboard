@@ -258,6 +258,7 @@ export function createMockReceiptData(
       name: 'Rishabh Sharma',
       phone: '+919876543210',
       email: 'rishabh@flent.in',
+      panMasked: 'ABCPS****A',
     },
     property: {
       address: '42 MG Road, Indiranagar, Bangalore 560038',
@@ -272,11 +273,8 @@ export function createMockReceiptData(
       certId: 'KA-BLR-2025-001234',
     },
     company: {
-      name: 'Flent Technologies Pvt Ltd',
-      address: 'WeWork Galaxy, Residency Road, Bangalore 560025',
+      name: 'Flent Secured',
       gstin: '29AABCT1332L1ZI',
-      supportEmail: 'support@flent.in',
-      supportPhone: '+918001234567',
     },
     ...overrides,
   };

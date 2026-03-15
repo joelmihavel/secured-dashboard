@@ -842,7 +842,12 @@ export default function PaymentStatusScreen() {
           timeliness: receipt.payment.timeliness ?? null,
           transactionId: receipt.payment.transactionId,
         },
-        tenant: receipt.tenant,
+        tenant: {
+          name: receipt.tenant.name,
+          phone: receipt.tenant.phone,
+          email: receipt.tenant.email,
+          panMasked: receipt.tenant.panMasked ?? null,
+        },
         property: receipt.property,
         landlord: {
           name: receipt.landlord.name,
@@ -851,7 +856,6 @@ export default function PaymentStatusScreen() {
         agreement: {
           certId: receipt.agreement?.certId ?? null,
         },
-        company: receipt.company,
       };
     } else {
       htmlData = buildFallbackReceiptData({

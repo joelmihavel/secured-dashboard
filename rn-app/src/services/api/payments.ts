@@ -297,6 +297,7 @@ interface RawReceiptData {
     name: string;
     phone: string | null;
     email: string | null;
+    pan_masked: string | null;
   };
   property: {
     address: string;
@@ -312,10 +313,7 @@ interface RawReceiptData {
   };
   company: {
     name: string;
-    address: string;
     gstin: string;
-    support_email: string;
-    support_phone: string;
   };
 }
 
@@ -373,6 +371,7 @@ export interface ReceiptData {
     name: string;
     phone: string | null;
     email: string | null;
+    panMasked: string | null;
   };
   property: {
     address: string;
@@ -388,10 +387,7 @@ export interface ReceiptData {
   };
   company: {
     name: string;
-    address: string;
     gstin: string;
-    supportEmail: string;
-    supportPhone: string;
   };
 }
 
@@ -480,7 +476,12 @@ function mapRawReceiptData(raw: RawReceiptData): ReceiptData {
       utr: raw.payment.utr,
       timeliness: raw.payment.timeliness,
     },
-    tenant: raw.tenant,
+    tenant: {
+      name: raw.tenant.name,
+      phone: raw.tenant.phone,
+      email: raw.tenant.email,
+      panMasked: raw.tenant.pan_masked ?? null,
+    },
     property: raw.property,
     landlord: {
       name: raw.landlord.name,
@@ -492,10 +493,7 @@ function mapRawReceiptData(raw: RawReceiptData): ReceiptData {
     },
     company: {
       name: raw.company.name,
-      address: raw.company.address,
       gstin: raw.company.gstin,
-      supportEmail: raw.company.support_email,
-      supportPhone: raw.company.support_phone,
     },
   };
 }

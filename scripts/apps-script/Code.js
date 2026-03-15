@@ -39,11 +39,16 @@ function getAdminKey() {
 // ===== Diagnostic — remove after confirming sync works =====
 function _testFetch() {
   var key = getServiceKey();
-  var headers = { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key };
+  var adminKey = getAdminKey();
   var url = SUPABASE_URL + '/functions/v1/admin-fetch-views';
   Logger.log('URL: ' + url);
-  Logger.log('Key starts with: ' + key.substring(0, 15));
-  var resp = UrlFetchApp.fetch(url, { headers: headers, muteHttpExceptions: true });
+  var resp = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key },
+    payload: JSON.stringify({ admin_key: adminKey }),
+    muteHttpExceptions: true,
+  });
   Logger.log('Status: ' + resp.getResponseCode());
   Logger.log('Body: ' + resp.getContentText().substring(0, 500));
   return resp.getResponseCode();
@@ -219,7 +224,7 @@ function ensureTrigger() {
 /**
  * Helper: extract user rows from the active selection on Users/User Details sheet.
  * Returns array of { userId, name, phone, rent, risk, adminReview, auditStatus, missingData, row }.
- * Cols: 1=ID 2=Phone 3=Status 4=Name 5=Rent 6=Address 12=Risk 13=AdminReview 14=AuditStatus 15=MissingData
+ * Cols: 1=ID 2=Phone 3=Status 4=Name 5=Rent 6=Address 12=Risk 13=AdminReview 14=Extraction 15=Queue# 16=AuditStatus 17=MissingData 18=FlentTenant
  */
 function _getSelectedUserRows() {
   var sheet = SpreadsheetApp.getActiveSheet();
@@ -234,8 +239,8 @@ function _getSelectedUserRows() {
   if (startRow <= 1) { startRow = 2; numRows = numRows - (2 - selection.getRow()); }
   if (numRows <= 0) return { error: 'No data rows selected (header row doesn\'t count).' };
 
-  // Read all needed columns in one batch: cols 1-15
-  var data = sheet.getRange(startRow, 1, numRows, 15).getValues();
+  // Read all needed columns in one batch: cols 1-17
+  var data = sheet.getRange(startRow, 1, numRows, 17).getValues();
   var users = [];
   for (var i = 0; i < data.length; i++) {
     var userId = String(data[i][0] || '').trim();
@@ -248,8 +253,8 @@ function _getSelectedUserRows() {
       rent: String(data[i][4] || ''),
       risk: String(data[i][11] || ''),
       adminReview: String(data[i][12] || '').trim().toLowerCase(),
-      auditStatus: String(data[i][13] || ''),
-      missingData: String(data[i][14] || ''),
+      auditStatus: String(data[i][15] || ''),
+      missingData: String(data[i][16] || ''),
       row: startRow + i,
     });
   }
@@ -914,14 +919,25 @@ function setupEditTrigger() {
 
 function fetchAllViews() {
   var key = getServiceKey();
+  var adminKey = getAdminKey();
   var headers = { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Authorization': 'Bearer ' + key };
 
-  // Fetch views via edge function (sb_secret_* keys can't call REST API directly)
+  // Fetch views via edge function with body-based admin_key auth
+  // (Supabase relay strips/replaces Authorization for opaque keys,
+  //  but still requires it to accept the request)
   var viewsResp = UrlFetchApp.fetch(SUPABASE_URL + '/functions/v1/admin-fetch-views', {
-    headers: headers, muteHttpExceptions: true
+    method: 'post',
+    contentType: 'application/json',
+    headers: headers,
+    payload: JSON.stringify({ admin_key: adminKey }),
+    muteHttpExceptions: true
   });
   var payResp = UrlFetchApp.fetch(SUPABASE_URL + '/functions/v1/admin-payment-data', {
-    headers: headers, muteHttpExceptions: true
+    method: 'post',
+    contentType: 'application/json',
+    headers: headers,
+    payload: JSON.stringify({ admin_key: adminKey }),
+    muteHttpExceptions: true
   });
 
   var views = {};
@@ -1083,8 +1099,8 @@ function writeUsersSheet(data, tenantMap) {
   var sheet = getOrCreateSheet('Users');
   var headers = ['ID', 'Phone', 'Status', 'Name', 'Rent (\u20B9)', 'Address', 'Google Maps',
                  'Security Deposit (\u20B9)', 'Sign Up', 'Hours Since', 'SLA', 'Risk', 'Admin Review',
-                 'Audit Status', 'Missing Data', 'Flent Tenant'];
-  var widths = [50, 130, 110, 200, 100, 280, 100, 140, 170, 90, 70, 90, 120, 100, 200, 180];
+                 'Extraction', 'Queue #', 'Audit Status', 'Missing Data', 'Flent Tenant'];
+  var widths = [50, 130, 110, 200, 100, 280, 100, 140, 170, 90, 70, 90, 120, 100, 60, 100, 200, 180];
   var mapsUrls = [];
   tenantMap = tenantMap || {};
 
@@ -1148,6 +1164,8 @@ function writeUsersSheet(data, tenantMap) {
       slaBreach,
       r.risk_level || '',
       r.admin_review || '',
+      r.extraction_status || '',
+      r.waitlist_position || '',
       auditStatus,
       missingData.join(', '),
       tenantLabel,
@@ -1185,13 +1203,23 @@ function writeUsersSheet(data, tenantMap) {
     applyStatusColors(sheet, 13, rc, reviewRules());        // Admin Review col 13
     // Data validation dropdown on Admin Review col 13
     var reviewValidation = SpreadsheetApp.newDataValidation()
-      .requireValueInList(['due', 'approved', 'rejected'], true)
+      .requireValueInList(['due', 'in_progress', 'approved', 'rejected'], true)
       .setAllowInvalid(false)
-      .setHelpText('Select: due, approved, or rejected')
+      .setHelpText('Select: due, in_progress, approved, or rejected')
       .build();
     sheet.getRange(2, 13, rc, 1).setDataValidation(reviewValidation);
-    // Audit Status col 14
+    // Extraction Status col 14
     applyStatusColors(sheet, 14, rc, {
+      'completed': { bg: C.GREEN_BG, fg: C.GREEN },
+      'processing': { bg: C.AMBER_BG, fg: C.AMBER },
+      'pending': { bg: C.AMBER_BG, fg: C.AMBER },
+      'manual_review': { bg: C.AMBER_BG, fg: C.AMBER },
+      'failed': { bg: C.RED_BG, fg: C.RED },
+    });
+    // Queue # col 15
+    sheet.getRange(2, 15, rc, 1).setHorizontalAlignment('center');
+    // Audit Status col 16
+    applyStatusColors(sheet, 16, rc, {
       'ready': { bg: C.GREEN_BG, fg: C.GREEN },
       'READY': { bg: C.GREEN_BG, fg: C.GREEN },
       'warning': { bg: C.AMBER_BG, fg: C.AMBER },
@@ -1199,10 +1227,10 @@ function writeUsersSheet(data, tenantMap) {
       'blocked': { bg: C.RED_BG, fg: C.RED },
       'BLOCKED': { bg: C.RED_BG, fg: C.RED },
     });
-    // Missing Data col 15
-    sheet.getRange(2, 15, rc, 1).setWrap(true).setFontSize(9).setFontColor(C.MUTED);
-    // Flent Tenant col 16
-    applyStatusColors(sheet, 16, rc, tenantRules());
+    // Missing Data col 17
+    sheet.getRange(2, 17, rc, 1).setWrap(true).setFontSize(9).setFontColor(C.MUTED);
+    // Flent Tenant col 18
+    applyStatusColors(sheet, 18, rc, tenantRules());
     // Text wrap on Address column (col 6)
     sheet.getRange(2, 6, rc, 1).setWrap(true);
   }
@@ -1897,6 +1925,7 @@ function writeLegendsSheet() {
   var sections = [
     { title: 'User Status', sheet: 'Users / User Details', items: [
       { value: 'signed_up', label: 'Signed Up', desc: 'User registered but not yet onboarded', badge: BADGE.muted },
+      { value: 'agreement_confirmed', label: 'Agreement Confirmed', desc: 'User confirmed extracted agreement data', badge: BADGE.amber },
       { value: 'waitlisted', label: 'Waitlisted', desc: 'Pending admin review in waitlist queue', badge: BADGE.amber },
       { value: 'approved', label: 'Approved', desc: 'Admin approved, can proceed to payment', badge: BADGE.green },
       { value: 'active', label: 'Active', desc: 'Completed first payment, fully onboarded', badge: BADGE.green },
@@ -1904,8 +1933,15 @@ function writeLegendsSheet() {
     ]},
     { title: 'Admin Review', sheet: 'Users / User Details', items: [
       { value: 'due', label: 'Due', desc: 'Not yet reviewed by admin', badge: BADGE.amber },
+      { value: 'in_progress', label: 'In Progress', desc: 'Admin is reviewing the application', badge: BADGE.amber },
       { value: 'approved', label: 'Approved', desc: 'Admin approved the application', badge: BADGE.green },
       { value: 'rejected', label: 'Rejected', desc: 'Admin rejected the application', badge: BADGE.red },
+    ]},
+    { title: 'Tenancy Status', sheet: 'User Details', items: [
+      { value: 'pending_verification', label: 'Pending Verification', desc: 'Tenancy created, awaiting admin approval', badge: BADGE.amber },
+      { value: 'active', label: 'Active', desc: 'Tenancy verified and active', badge: BADGE.green },
+      { value: 'expired', label: 'Expired', desc: 'Lease period ended', badge: BADGE.muted },
+      { value: 'terminated', label: 'Terminated', desc: 'Tenancy cancelled or terminated', badge: BADGE.red },
     ]},
     { title: 'Risk Level', sheet: 'Users / Verifications', items: [
       { value: 'LOW', label: 'Low', desc: 'Low risk \u2014 clear signals, safe profile', badge: BADGE.green },

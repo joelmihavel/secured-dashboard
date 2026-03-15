@@ -275,7 +275,7 @@ export interface Database {
           payu_mihpayid: string | null;
           payment_method: string | null;
           idempotency_key: string;
-          rent_month: string;
+          payment_month: string;
           created_at: string;
           paid_at: string | null;
         };

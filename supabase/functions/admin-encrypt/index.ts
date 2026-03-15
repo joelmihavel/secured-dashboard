@@ -1,9 +1,14 @@
 /**
  * Admin Encrypt — encrypts a value using the shared ENCRYPTION_KEY.
- * Service-role only. One-off utility.
+ * Admin-only. One-off utility.
+ *
+ * Auth: admin_key in request body (Supabase relay strips Authorization header
+ * for opaque keys, so body-based auth is the only reliable method).
+ *
+ * Endpoint: POST /functions/v1/admin-encrypt
+ * Body: { admin_key: string, value: string }
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { verifyServiceRole } from "../_shared/supabase.ts";
 import { handleCors, errorResponse } from "../_shared/cors.ts";
 import { encrypt } from "../_shared/crypto.ts";
 
@@ -13,13 +18,19 @@ serve(async (req: Request) => {
 
   if (req.method !== "POST") return errorResponse("Method not allowed", 405);
 
+  let body: Record<string, unknown>;
   try {
-    verifyServiceRole(req.headers.get("Authorization"));
+    body = await req.json();
   } catch {
-    return errorResponse("Unauthorized", 401);
+    return errorResponse("Invalid JSON body", 400);
   }
 
-  const { value } = await req.json();
+  const expectedKey = Deno.env.get("ADMIN_API_KEY");
+  if (!body.admin_key || !expectedKey || body.admin_key !== expectedKey) {
+    return errorResponse("Unauthorized - invalid admin key", 401);
+  }
+
+  const value = body.value as string;
   if (!value) return errorResponse("Missing value", 400);
 
   const encrypted = await encrypt(value);

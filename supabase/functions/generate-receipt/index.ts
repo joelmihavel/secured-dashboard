@@ -54,6 +54,7 @@ interface ReceiptData {
     name: string;
     phone: string | null;
     email: string | null;
+    pan_masked: string | null;
   };
 
   property: {
@@ -89,10 +90,7 @@ interface ReceiptData {
 
   company: {
     name: string;
-    address: string;
     gstin: string;
-    support_email: string;
-    support_phone: string;
   };
 }
 
@@ -101,11 +99,8 @@ interface ReceiptData {
 // ==============================================
 
 const COMPANY_INFO = {
-  name: Deno.env.get("COMPANY_NAME") || "Flent Technologies Private Limited",
-  address: Deno.env.get("COMPANY_ADDRESS") || "Bangalore, Karnataka, India",
+  name: Deno.env.get("COMPANY_NAME") || "Flent Secured",
   gstin: Deno.env.get("COMPANY_GSTIN") || "",
-  support_email: Deno.env.get("SUPPORT_EMAIL") || "support@flentsecured.com",
-  support_phone: Deno.env.get("SUPPORT_PHONE") || "",
 };
 
 // GST configuration
@@ -113,9 +108,9 @@ const GST_RATE = 0.18; // 18% GST
 const HSN_SAC_CODE = "997212"; // SAC code for rental payment facilitation services
 const PG_FEE_TAXABLE = true; // PG fee is the taxable service amount
 
-if (!COMPANY_INFO.gstin || !COMPANY_INFO.support_phone) {
+if (!COMPANY_INFO.gstin) {
   console.warn(
-    "WARNING: COMPANY_GSTIN and SUPPORT_PHONE not configured. Receipts will be incomplete."
+    "WARNING: COMPANY_GSTIN not configured. Receipts will be incomplete."
   );
 }
 
@@ -155,12 +150,12 @@ serve(async (req: Request) => {
         id, payu_txn_id, payu_mihpayid, payu_bank_ref_num,
         payment_gateway, gateway_payment_id, payment_method_details,
         rent_amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
-        payment_method, status, rent_month, paid_at, created_at, due_date,
+        payment_method, status, payment_month, paid_at, created_at, due_date,
         tenancies (
           id, property_address, property_city, property_state, property_pincode,
           landlord_name, landlord_pan_masked, agreement_cert_id, rent_due_day,
           users!tenancies_user_id_fkey (
-            first_name, last_name, phone
+            first_name, last_name, phone, pan_number
           ),
           bank_accounts (
             account_number_masked, party_type
@@ -188,7 +183,7 @@ serve(async (req: Request) => {
     const { data: authUser } = await supabase.auth.admin.getUserById(userId);
 
     // Format rent month for display
-    const rentMonthDate = new Date(payment.rent_month);
+    const rentMonthDate = new Date(payment.payment_month);
     const rentMonthDisplay = rentMonthDate.toLocaleDateString("en-IN", {
       month: "long",
       year: "numeric",
@@ -240,17 +235,18 @@ serve(async (req: Request) => {
         net_amount_paid_paise: netAmountPaise,
         payment_method: formatPaymentMethod(payment.payment_method),
         status: payment.status,
-        rent_month: payment.rent_month,
+        rent_month: payment.payment_month,
         rent_month_display: rentMonthDisplay,
         paid_at: payment.paid_at,
         utr: resolveUtr(payment),
-        timeliness: computeTimeliness(payment.paid_at, payment.due_date, tenancy?.rent_due_day, payment.rent_month),
+        timeliness: computeTimeliness(payment.paid_at, payment.due_date, tenancy?.rent_due_day, payment.payment_month),
       },
 
       tenant: {
         name: formatTenantName(tenancy?.users),
         phone: tenancy?.users?.phone ?? null,
         email: authUser?.user?.email ?? null,
+        pan_masked: maskPan(tenancy?.users?.pan_number),
       },
 
       property: {
@@ -380,6 +376,12 @@ function formatPaymentMethod(method: string | null): string | null {
     wallet: "Wallet",
   };
   return methodMap[method.toLowerCase()] ?? method;
+}
+
+/** Masks a PAN number for display, e.g. "ABCDE1234F" → "ABCDE****F" */
+function maskPan(pan: string | null | undefined): string | null {
+  if (!pan || pan.length < 5) return null;
+  return pan.slice(0, 5) + '****' + pan.slice(-1);
 }
 
 /** Resolves UTR (Unique Transaction Reference) from PayU payment data. */

@@ -29,6 +29,7 @@ export interface ReceiptHtmlData {
     name: string;
     phone: string | null;
     email: string | null;
+    panMasked: string | null;
   };
   property: {
     address: string;
@@ -40,13 +41,6 @@ export interface ReceiptHtmlData {
   };
   agreement: {
     certId: string | null;
-  };
-  company: {
-    name: string;
-    address: string;
-    gstin: string;
-    supportEmail: string;
-    supportPhone: string;
   };
 }
 
@@ -93,20 +87,25 @@ function esc(value: string | null | undefined): string {
 // ---------------------------------------------------------------------------
 
 const C = {
-  bg: '#131313',
-  card: '#202020',
+  bg: '#0E0E0E',
+  cardBg: '#181818',
+  card: '#1E1E1E',
   cardBorder: '#2A2A2A',
+  cardBorderLight: '#333333',
   accent: '#FF9A6D',
   accentLight: '#FFAE8A',
-  textPrimary: '#DDDDDD',
+  accentDim: 'rgba(255,154,109,0.12)',
+  accentDimBorder: 'rgba(255,154,109,0.25)',
+  textPrimary: '#E0E0E0',
   textSecondary: '#A9A9A9',
-  textMuted: '#878787',
+  textMuted: '#777777',
   textDim: '#555555',
-  divider: '#2A2A2A',
-  successGreen: '#06C270',
-  successBg: 'rgba(6,194,112,0.08)',
-  errorRed: '#E5484D',
-  errorBg: 'rgba(229,72,77,0.08)',
+  divider: '#272727',
+  successGreen: '#34D399',
+  successBg: 'rgba(52,211,153,0.10)',
+  successBorder: 'rgba(52,211,153,0.25)',
+  errorRed: '#F87171',
+  errorBg: 'rgba(248,113,113,0.10)',
   white: '#FFFFFF',
   pillBg: '#2A2A2A',
 } as const;
@@ -116,7 +115,7 @@ const C = {
 // ---------------------------------------------------------------------------
 
 export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
-  const { payment, tenant, property, landlord, agreement, company } = receipt;
+  const { payment, tenant, property, landlord, agreement } = receipt;
 
   const transactionRef = payment.utr
     ? payment.utr
@@ -134,9 +133,9 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
 
   const timelinessBadge =
     payment.timeliness === 'on_time'
-      ? `<span style="display:inline-block;background:${C.successBg};color:${C.successGreen};font-size:10px;font-weight:600;padding:3px 10px;border-radius:4px;letter-spacing:0.5px;">ON TIME</span>`
+      ? `<span class="badge badge-success">ON TIME</span>`
       : payment.timeliness === 'late'
-        ? `<span style="display:inline-block;background:${C.errorBg};color:${C.errorRed};font-size:10px;font-weight:600;padding:3px 10px;border-radius:4px;letter-spacing:0.5px;">LATE</span>`
+        ? `<span class="badge badge-late">LATE</span>`
         : '';
 
   const totalPaid = payment.amount + payment.pgFee;
@@ -152,29 +151,290 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
   @page { size: A4; margin: 0; }
   body {
     background: ${C.bg};
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 13px;
     line-height: 1.5;
     color: ${C.textPrimary};
-    padding: 32px 28px;
+    padding: 40px 32px;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .container {
-    max-width: 560px;
+    max-width: 540px;
     margin: 0 auto;
-    background: ${C.bg};
   }
-  .brand-strip {
-    height: 4px;
-    background: linear-gradient(90deg, ${C.accent} 0%, ${C.accentLight} 100%);
-    border-radius: 2px 2px 0 0;
+
+  /* Brand header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
   }
-  .card {
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: ${C.white};
+    letter-spacing: -0.3px;
+  }
+  .brand-name span { color: ${C.accent}; }
+  .brand-sub {
+    font-size: 9px;
+    color: ${C.textMuted};
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  .receipt-meta {
+    text-align: right;
+  }
+  .receipt-meta .label {
+    font-size: 9px;
+    color: ${C.textMuted};
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .receipt-meta .value {
+    font-size: 12px;
+    font-weight: 600;
+    color: ${C.textPrimary};
+    font-variant-numeric: tabular-nums;
+    margin-top: 1px;
+  }
+  .receipt-meta .date {
+    font-size: 11px;
+    color: ${C.textSecondary};
+    margin-top: 2px;
+  }
+
+  /* Main card */
+  .main-card {
     background: ${C.card};
     border: 1px solid ${C.cardBorder};
-    border-radius: 10px;
+    border-radius: 16px;
     overflow: hidden;
+  }
+  .accent-bar {
+    height: 3px;
+    background: linear-gradient(90deg, ${C.accent} 0%, ${C.accentLight} 50%, ${C.accent} 100%);
+  }
+  .card-body {
+    padding: 28px 28px 24px;
+  }
+
+  /* Hero amount section */
+  .hero {
+    background: ${C.bg};
+    border: 1px solid ${C.cardBorder};
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
+  }
+  .hero-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .amount-label {
+    font-size: 10px;
+    color: ${C.textMuted};
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+  }
+  .amount-value {
+    font-size: 38px;
+    font-weight: 700;
+    color: ${C.white};
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+  }
+  .amount-value .currency {
+    font-size: 22px;
+    font-weight: 400;
+    color: ${C.textMuted};
+    vertical-align: top;
+    position: relative;
+    top: 4px;
+    margin-right: 2px;
+  }
+  .amount-time {
+    font-size: 11px;
+    color: ${C.textMuted};
+    margin-top: 8px;
+  }
+  .paid-stamp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2.5px solid ${C.successGreen};
+    border-radius: 10px;
+    padding: 10px 22px;
+    transform: rotate(-4deg);
+    -webkit-transform: rotate(-4deg);
+  }
+  .paid-stamp span {
+    font-size: 22px;
+    font-weight: 800;
+    color: ${C.successGreen};
+    letter-spacing: 5px;
+    line-height: 1;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.8px;
+    margin-top: 8px;
+  }
+  .badge-success {
+    background: ${C.successBg};
+    color: ${C.successGreen};
+    border: 1px solid ${C.successBorder};
+  }
+  .badge-late {
+    background: ${C.errorBg};
+    color: ${C.errorRed};
+    border: 1px solid rgba(248,113,113,0.25);
+  }
+
+  /* Section headers */
+  .section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: ${C.accent};
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid ${C.divider};
+  }
+
+  /* Detail rows */
+  .detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid ${C.divider};
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .label {
+    font-size: 13px;
+    color: ${C.textMuted};
+  }
+  .detail-row .value {
+    font-size: 13px;
+    color: ${C.textPrimary};
+    font-weight: 500;
+    text-align: right;
+  }
+  .detail-row .value.bold {
+    font-size: 14px;
+    color: ${C.white};
+    font-weight: 700;
+  }
+  .detail-row .value.mono {
+    font-size: 12px;
+    color: ${C.textSecondary};
+    font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    word-break: break-all;
+    max-width: 240px;
+  }
+  .method-pill {
+    display: inline-block;
+    background: ${C.accentDim};
+    color: ${C.accent};
+    border: 1px solid ${C.accentDimBorder};
+    padding: 3px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  /* Party cards */
+  .parties-grid {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .party-card {
+    flex: 1;
+    background: ${C.bg};
+    border: 1px solid ${C.cardBorder};
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .party-label {
+    font-size: 9px;
+    color: ${C.textMuted};
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+  }
+  .party-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: ${C.white};
+    margin-bottom: 4px;
+  }
+  .party-detail {
+    font-size: 11px;
+    color: ${C.textSecondary};
+    line-height: 1.5;
+  }
+  .pan-tag {
+    display: inline-block;
+    background: ${C.accentDim};
+    border: 1px solid ${C.accentDimBorder};
+    color: ${C.accent};
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 6px;
+    font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.5px;
+  }
+
+  /* Spacer */
+  .spacer { height: 24px; }
+  .spacer-sm { height: 16px; }
+
+  /* Footer */
+  .footer {
+    padding: 18px 28px;
+    border-top: 1px solid ${C.divider};
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .footer-brand-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: ${C.textSecondary};
+  }
+  .footer-brand-text span { color: ${C.accent}; }
+  .footer-note {
+    font-size: 9px;
+    color: ${C.textDim};
+    text-align: right;
+    max-width: 220px;
+    line-height: 1.4;
   }
 </style>
 </head>
@@ -182,194 +442,129 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
 
 <div class="container">
 
-  <!-- ======= BRAND STRIP ======= -->
-  <div class="brand-strip"></div>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <svg width="24" height="28" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.accent}"/>
+      </svg>
+      <div>
+        <div class="brand-name"><span>Flent</span> Secured</div>
+        <div class="brand-sub">Rent Receipt</div>
+      </div>
+    </div>
+    <div class="receipt-meta">
+      <div class="label">Receipt No.</div>
+      <div class="value">${esc(receipt.receiptNumber)}</div>
+      <div class="date">${esc(formatDate(payment.paidAt))}</div>
+    </div>
+  </div>
 
-  <!-- ======= MAIN RECEIPT CARD ======= -->
-  <div class="card" style="border-radius:0 0 10px 10px;border-top:none;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:28px 32px 0;">
+  <!-- MAIN CARD -->
+  <div class="main-card">
+    <div class="accent-bar"></div>
+    <div class="card-body">
 
-      <!-- HEADER: Logo + Receipt Info -->
-      <tr>
-        <td>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td valign="middle" style="width:55%;">
-                <table cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td valign="middle" style="padding-right:10px;">
-                      <svg width="26" height="30" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.accent}"/>
-                      </svg>
-                    </td>
-                    <td valign="middle">
-                      <div style="font-size:17px;font-weight:700;color:${C.white};line-height:1.2;">
-                        <span style="color:${C.accent};">Flent</span> Secured
-                      </div>
-                      <div style="font-size:9px;color:${C.textMuted};text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;">Rent Receipt</div>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-              <td valign="middle" align="right" style="width:45%;">
-                <div style="font-size:10px;color:${C.textMuted};text-transform:uppercase;letter-spacing:0.5px;">Receipt No.</div>
-                <div style="font-size:12px;font-weight:600;color:${C.textPrimary};font-variant-numeric:tabular-nums;margin-top:1px;">${esc(receipt.receiptNumber)}</div>
-                <div style="font-size:11px;color:${C.textSecondary};margin-top:2px;">${esc(formatDate(payment.paidAt))}</div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-
-      <tr><td style="height:24px;"></td></tr>
-
-      <!-- HERO: Amount + PAID Badge -->
-      <tr>
-        <td>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.bg};border-radius:10px;border:1px solid ${C.cardBorder};">
-            <tr>
-              <td style="padding:24px;">
-                <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td valign="middle">
-                      <div style="font-size:10px;color:${C.textMuted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Amount Paid</div>
-                      <div style="font-size:36px;font-weight:700;color:${C.white};line-height:1;font-variant-numeric:tabular-nums;">
-                        <span style="font-size:22px;font-weight:400;color:${C.textMuted};vertical-align:top;position:relative;top:3px;">&#8377;</span>${esc(formatIndianAmount(payment.amount))}
-                      </div>
-                      <div style="font-size:11px;color:${C.textMuted};margin-top:6px;">${esc(formatTime(payment.paidAt))}</div>
-                    </td>
-                    <td valign="middle" align="right">
-                      <div style="display:inline-block;border:2px solid ${C.successGreen};border-radius:8px;padding:8px 18px;transform:rotate(-3deg);-webkit-transform:rotate(-3deg);">
-                        <div style="font-size:20px;font-weight:800;color:${C.successGreen};letter-spacing:4px;line-height:1;">PAID</div>
-                      </div>
-                      ${timelinessBadge ? `<div style="margin-top:8px;text-align:center;">${timelinessBadge}</div>` : ''}
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-
-      <tr><td style="height:24px;"></td></tr>
+      <!-- HERO: Amount + PAID Stamp -->
+      <div class="hero">
+        <div class="hero-inner">
+          <div>
+            <div class="amount-label">Amount Paid</div>
+            <div class="amount-value">
+              <span class="currency">&#8377;</span>${esc(formatIndianAmount(payment.amount))}
+            </div>
+            <div class="amount-time">${esc(formatTime(payment.paidAt))}</div>
+          </div>
+          <div style="text-align:center;">
+            <div class="paid-stamp"><span>PAID</span></div>
+            ${timelinessBadge ? `<div style="text-align:center;">${timelinessBadge}</div>` : ''}
+          </div>
+        </div>
+      </div>
 
       <!-- PAYMENT DETAILS -->
-      <tr>
-        <td>
-          <div style="font-size:10px;font-weight:600;color:${C.accent};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Payment Details</div>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};">Rent Month</td>
-              <td align="right" style="padding:10px 0;font-size:13px;color:${C.textPrimary};font-weight:500;">${esc(payment.rentMonthDisplay)}</td>
-            </tr>
-            <tr><td colspan="2" style="border-bottom:1px solid ${C.divider};"></td></tr>
-            <tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};">Rent Amount</td>
-              <td align="right" style="padding:10px 0;font-size:13px;color:${C.textPrimary};">&#8377;${esc(formatIndianAmount(payment.amount))}</td>
-            </tr>
-            ${payment.pgFee > 0 ? `
-            <tr><td colspan="2" style="border-bottom:1px solid ${C.divider};"></td></tr>
-            <tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};">Convenience Fee</td>
-              <td align="right" style="padding:10px 0;font-size:13px;color:${C.textPrimary};">&#8377;${esc(formatIndianAmount(payment.pgFee))}</td>
-            </tr>` : ''}
-            ${payment.pgFee > 0 ? `
-            <tr><td colspan="2" style="border-bottom:1px solid ${C.divider};"></td></tr>
-            <tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};font-weight:600;">Total Paid</td>
-              <td align="right" style="padding:10px 0;font-size:14px;color:${C.white};font-weight:700;">&#8377;${esc(formatIndianAmount(totalPaid))}</td>
-            </tr>` : ''}
-            <tr><td colspan="2" style="border-bottom:1px solid ${C.divider};"></td></tr>
-            <tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};">Payment Method</td>
-              <td align="right" style="padding:10px 0;font-size:13px;color:${C.textPrimary};">
-                <span style="display:inline-block;background:${C.pillBg};color:${C.accent};padding:3px 12px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.5px;">${esc(methodDisplay)}</span>
-              </td>
-            </tr>
-            <tr><td colspan="2" style="border-bottom:1px solid ${C.divider};"></td></tr>
-            <tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};">Transaction Ref</td>
-              <td align="right" style="padding:10px 0;font-size:12px;color:${C.textSecondary};font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all;max-width:240px;">${esc(transactionRef)}</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+      <div class="section-title">Payment Details</div>
+      <div>
+        <div class="detail-row">
+          <div class="label">Rent Month</div>
+          <div class="value" style="font-weight:600;">${esc(payment.rentMonthDisplay)}</div>
+        </div>
+        <div class="detail-row">
+          <div class="label">Rent Amount</div>
+          <div class="value">&#8377;${esc(formatIndianAmount(payment.amount))}</div>
+        </div>
+        ${payment.pgFee > 0 ? `
+        <div class="detail-row">
+          <div class="label">Convenience Fee</div>
+          <div class="value">&#8377;${esc(formatIndianAmount(payment.pgFee))}</div>
+        </div>
+        <div class="detail-row">
+          <div class="label" style="font-weight:600;">Total Paid</div>
+          <div class="value bold">&#8377;${esc(formatIndianAmount(totalPaid))}</div>
+        </div>` : ''}
+        <div class="detail-row">
+          <div class="label">Payment Method</div>
+          <div class="value"><span class="method-pill">${esc(methodDisplay)}</span></div>
+        </div>
+        <div class="detail-row" style="border-bottom:none;">
+          <div class="label">Transaction Ref</div>
+          <div class="value mono">${esc(transactionRef)}</div>
+        </div>
+      </div>
 
-      <tr><td style="height:24px;"></td></tr>
+      <div class="spacer"></div>
 
       <!-- PARTIES -->
-      <tr>
-        <td>
-          <div style="font-size:10px;font-weight:600;color:${C.accent};text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Parties</div>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td valign="top" style="width:50%;padding-right:8px;">
-                <div style="background:${C.bg};border-radius:8px;border:1px solid ${C.cardBorder};padding:14px 16px;">
-                  <div style="font-size:9px;color:${C.textMuted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Tenant</div>
-                  <div style="font-size:14px;font-weight:600;color:${C.white};margin-bottom:3px;">${esc(tenant.name) || '&mdash;'}</div>
-                  ${tenant.phone ? `<div style="font-size:11px;color:${C.textSecondary};">${esc(tenant.phone)}</div>` : ''}
-                  ${tenant.email ? `<div style="font-size:11px;color:${C.textSecondary};word-break:break-all;">${esc(tenant.email)}</div>` : ''}
-                </div>
-              </td>
-              <td valign="top" style="width:50%;padding-left:8px;">
-                <div style="background:${C.bg};border-radius:8px;border:1px solid ${C.cardBorder};padding:14px 16px;">
-                  <div style="font-size:9px;color:${C.textMuted};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Landlord</div>
-                  <div style="font-size:14px;font-weight:600;color:${C.white};margin-bottom:3px;">${esc(landlord.name)}</div>
-                  ${landlord.panMasked ? `<div style="font-size:11px;color:${C.textSecondary};">PAN: ${esc(landlord.panMasked)}</div>` : ''}
-                </div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+      <div class="section-title">Parties</div>
+      <div class="parties-grid">
+        <div class="party-card">
+          <div class="party-label">Tenant</div>
+          <div class="party-name">${esc(tenant.name) || '&mdash;'}</div>
+          ${tenant.phone ? `<div class="party-detail">${esc(tenant.phone)}</div>` : ''}
+          ${tenant.email ? `<div class="party-detail" style="word-break:break-all;">${esc(tenant.email)}</div>` : ''}
+          ${tenant.panMasked ? `<div class="pan-tag">PAN ${esc(tenant.panMasked)}</div>` : ''}
+        </div>
+        <div class="party-card">
+          <div class="party-label">Landlord</div>
+          <div class="party-name">${esc(landlord.name)}</div>
+          ${landlord.panMasked ? `<div class="pan-tag">PAN ${esc(landlord.panMasked)}</div>` : ''}
+        </div>
+      </div>
 
-      <tr><td style="height:20px;"></td></tr>
+      <div class="spacer"></div>
 
       <!-- PROPERTY & AGREEMENT -->
-      <tr>
-        <td>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${C.divider};">
-            ${propertyLine ? `<tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};width:35%;">Property</td>
-              <td align="right" style="padding:10px 0;font-size:13px;color:${C.textPrimary};">${propertyLine}</td>
-            </tr>
-            <tr><td colspan="2" style="border-bottom:1px solid ${C.divider};"></td></tr>` : ''}
-            ${agreement.certId ? `<tr>
-              <td style="padding:10px 0;font-size:13px;color:${C.textMuted};">Agreement ID</td>
-              <td align="right" style="padding:10px 0;font-size:12px;color:${C.textSecondary};font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;">${esc(agreement.certId)}</td>
-            </tr>` : ''}
-          </table>
-        </td>
-      </tr>
+      ${propertyLine || agreement.certId ? `
+      <div class="section-title">Property</div>
+      <div>
+        ${propertyLine ? `
+        <div class="detail-row">
+          <div class="label">Address</div>
+          <div class="value">${propertyLine}</div>
+        </div>` : ''}
+        ${agreement.certId ? `
+        <div class="detail-row" style="border-bottom:none;">
+          <div class="label">Agreement ID</div>
+          <div class="value mono">${esc(agreement.certId)}</div>
+        </div>` : ''}
+      </div>
+      <div class="spacer-sm"></div>
+      ` : ''}
 
-      <tr><td style="height:12px;"></td></tr>
-
-    </table>
+    </div>
 
     <!-- FOOTER -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.bg};border-top:1px solid ${C.cardBorder};">
-      <tr>
-        <td style="padding:16px 32px;">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td valign="top" style="width:60%;">
-                <div style="font-size:11px;font-weight:600;color:${C.textSecondary};">${esc(company.name)}</div>
-                <div style="font-size:10px;color:${C.textMuted};margin-top:2px;">${esc(company.address)}</div>
-                ${company.gstin ? `<div style="font-size:10px;color:${C.textMuted};margin-top:1px;">GSTIN: ${esc(company.gstin)}</div>` : ''}
-              </td>
-              <td valign="top" align="right" style="width:40%;">
-                <div style="font-size:10px;color:${C.textMuted};">${esc(company.supportEmail)}</div>
-                <div style="font-size:10px;color:${C.textMuted};margin-top:1px;">${esc(company.supportPhone)}</div>
-              </td>
-            </tr>
-          </table>
-          <div style="text-align:center;margin-top:14px;font-size:9px;color:${C.textDim};">
-            This is a computer-generated receipt and does not require a signature.
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div class="footer">
+      <div class="footer-brand">
+        <svg width="14" height="16" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.accent}"/>
+        </svg>
+        <div class="footer-brand-text"><span>Flent</span> Secured</div>
+      </div>
+      <div class="footer-note">
+        Computer-generated receipt.<br/>Does not require a signature.
+      </div>
+    </div>
   </div>
 
 </div>
@@ -420,6 +615,7 @@ export function buildFallbackReceiptData(params: FallbackReceiptParams): Receipt
       name: '',
       phone: null,
       email: null,
+      panMasked: null,
     },
     property: {
       address: '',
@@ -431,13 +627,6 @@ export function buildFallbackReceiptData(params: FallbackReceiptParams): Receipt
     },
     agreement: {
       certId: params.agreementId ?? null,
-    },
-    company: {
-      name: 'Flent Technologies Private Limited',
-      address: 'Mumbai, Maharashtra',
-      gstin: '',
-      supportEmail: 'secured@flent.in',
-      supportPhone: '+91 93210 93210',
     },
   };
 }

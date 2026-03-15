@@ -1,26 +1,37 @@
 /**
  * Admin Payment Data — returns payments with decrypted landlord bank details.
- * Service-role only. Called by Apps Script for the Payments sheet.
+ * Admin-only. Called by Apps Script for the Payments sheet.
+ *
+ * Auth: admin_key in request body (Supabase relay strips Authorization header
+ * for opaque keys, so body-based auth is the only reliable method).
+ *
+ * Endpoint: POST /functions/v1/admin-payment-data
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createServiceClient } from "../_shared/supabase.ts";
-import { verifyServiceRole } from "../_shared/supabase.ts";
 import { handleCors, errorResponse } from "../_shared/cors.ts";
+import { AuthError } from "../_shared/errors.ts";
 import { decrypt } from "../_shared/crypto.ts";
 
 serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  if (req.method !== "GET") {
-    return errorResponse("Method not allowed", 405);
+  if (req.method !== "POST") {
+    return errorResponse("Method not allowed — use POST with admin_key in body", 405);
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    verifyServiceRole(authHeader);
-  } catch {
-    return errorResponse("Unauthorized", 401);
+    const body = await req.json();
+    const expectedKey = Deno.env.get("ADMIN_API_KEY");
+    if (!body.admin_key || !expectedKey || body.admin_key !== expectedKey) {
+      throw new AuthError("Unauthorized - invalid admin key");
+    }
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return errorResponse("Unauthorized", 401);
+    }
+    return errorResponse("Invalid request body", 400);
   }
 
   const supabase = createServiceClient();
@@ -125,6 +136,9 @@ serve(async (req: Request) => {
   });
 
   return new Response(JSON.stringify(result), {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
   });
 });
