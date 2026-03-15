@@ -1207,7 +1207,11 @@ function writeUsersSheet(data, tenantMap) {
 
     // Audit: ready-to-approve check + missing data
     var missingData = [];
-    if (r.extraction_status !== 'completed') missingData.push('Agreement');
+    if (!r.extraction_id) {
+      missingData.push('\u26A0 Re-upload needed');
+    } else if (r.extraction_status !== 'completed') {
+      missingData.push('Agreement (' + (r.extraction_status || 'unknown') + ')');
+    }
     if (!r.property_address) missingData.push('Address');
     if (!r.landlord_display_name && !r.landlord_name) missingData.push('Landlord');
     if (!r.monthly_rent_paise || r.monthly_rent_paise === 0) missingData.push('Rent');
@@ -1330,7 +1334,11 @@ function writeReviewSheet(data) {
 
     // Compute audit status + missing data (same logic as Users sheet)
     var missingData = [];
-    if (r.extraction_status !== 'completed') missingData.push('Agreement');
+    if (!r.extraction_id) {
+      missingData.push('\u26A0 Re-upload needed');
+    } else if (r.extraction_status !== 'completed') {
+      missingData.push('Agreement (' + (r.extraction_status || 'unknown') + ')');
+    }
     if (!r.property_address) missingData.push('Address');
     if (!r.landlord_display_name && !r.landlord_name) missingData.push('Landlord');
     if (!r.monthly_rent_paise || r.monthly_rent_paise === 0) missingData.push('Rent');
