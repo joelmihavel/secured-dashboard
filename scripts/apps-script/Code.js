@@ -2638,7 +2638,7 @@ function computeKPIs(users, payments) {
     byStatus[st] = (byStatus[st] || 0) + 1;
 
     if (u.admin_review === 'approved') approved++;
-    if (!u.admin_review || u.admin_review === 'pending') pending++;
+    if (u.user_status === 'waitlisted' && u.admin_review !== 'approved' && u.admin_review !== 'rejected') pending++;
     if (u.successful_payments > 0) paid++;
 
     totalRevenue += (u.total_paid_paise || 0);
