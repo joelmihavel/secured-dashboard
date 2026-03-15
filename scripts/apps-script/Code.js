@@ -2113,7 +2113,9 @@ function writeVerificationsSheet(data) {
 
   trimSheet(sheet, rc + 2, totalCols);
   sheet.setFrozenRows(2);
-  sheet.setFrozenColumns(2);
+  // Freeze first group boundary (3 = User group has 3 cols: Phone, Name, Status)
+  // to avoid cutting through merged header cells in row 1
+  try { sheet.setFrozenColumns(3); } catch (e) { Logger.log('Freeze cols skipped: ' + e.message); }
 }
 
 /**
@@ -2232,6 +2234,10 @@ function writeLegendsSheet() {
   sheet.clearContents();
   sheet.clearFormats();
   sheet.setHiddenGridlines(true);
+  // Ensure enough rows exist before writing (Legends needs ~100 rows for all sections)
+  if (sheet.getMaxRows() < 150) {
+    sheet.insertRowsAfter(sheet.getMaxRows(), 150 - sheet.getMaxRows());
+  }
 
   // Badge colors: darker bg with white text for readability
   var BADGE = {
